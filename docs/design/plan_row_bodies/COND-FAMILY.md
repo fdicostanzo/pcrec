@@ -8467,3 +8467,36 @@ capture-twice with the proposal "the caller's captures are one flat set of names
 rules". RUN for that question (python `re`, the two uses as `d1`, `d2`): `A SEQ "," SEQ A`, A := `[d = /\d+/] &
 capture(d:)`: WHOLE `7,5` HOLDS (first `7`, last `5`), `7` FAILS / SEARCHED `x7,5 1,2` `7,5`@1 (first `7`, last
 `5`) / FIND-ALL `7,5 1,2` [`7,5`@0 (`7`, `5`), `1,2`@4 (`1`, `2`)].
+
+### 2026-11-23 OWNER RULING — capture-twice: (a) (the same-label-twice rules); and an OBSERVATION: two kinds of label reference, one that sets a new group, one that refers to a group that exists
+tags: lib/structural/capture core/labels/export/caller-ambiguous core/operators/bindings/label-variables core/holes/bare-condition/nested-scope core/holes/bare-condition/bound-condition core/labels/one-rule
+
+ASKED AS A RULING (slug capture-twice: a caller capture name requested twice: (a) the caller's captures are one
+flat set of names under the same-label-twice rules: in a sequence the last mention, across `|` the branch taken,
+across `&` an ambiguous name, a compile error; (b) a compile error whenever two requests can give one name; the
+manager's leaning (a)). HIS WORDS, whole:
+
+"capture-twice: (a). but your example did make me question some details: row(a:,...) defines a: which doesn't
+exist. capture(l.d:) is intended as a reference to l.d. if capture is defined to take a label, should it be
+provided as capture(l.d)? then we have two different kinds of label references. one you can set to a new group
+and one that is a reference to a group that exists. the second one is dangerous and can't be used like the
+first. A(a:, B) := B & (a: 5) then C:= [x = /\d/] | A(/\w/, x)"
+
+Class: a RULING on capture-twice: (a). It answers the open caller-ambiguous for requested captures (the manager's
+reading (f) of 2026-11-22, "an error at the second request", is WITHDRAWN). And an OBSERVATION with a QUESTION
+(DISCUSSION, nothing ruled): two kinds of label reference: one "you can set to a new group" (`row(a:, ...)`
+"defines a: which doesn't exist"), one "a reference to a group that exists" (`capture(l.d)`; his question whether
+it is then written without the mark); "the second one is dangerous and can't be used like the first", with his
+example.
+
+Check-his-regex: his call `A(/\w/, x)` has the arguments in the other order than the head `A(a:, B)`; read as
+`A(x, /\w/)` (told to him). RUN (python `re`, hand-lowered: in the second branch of the `|` x is unset, so
+`(x: 5)` fails): `C := [x = /\d/] | A(x, /\w/)`, A(a:, B) := `B & (a: 5)`: WHOLE `5` HOLDS, `7` HOLDS, `a` FAILS
+/ SEARCHED `a5` `5`@1 / FIND-ALL `a 5 b7` [`5`@2, `7`@5]: the second branch never matches; C answers as `/\d/`.
+
+The manager's readings (marked; told to him): (a) the SET kind keeps the body inside bare-nested-scope (the body
+holds the spot it labels); the READ kind is an exception to it ("A separately defined piece names only labels it
+holds and reads only its own settings"): the body reads the caller's label as it stands at the body's spot,
+which may be unset there (his example) or an earlier pass's; (b) the read kind is what bound-condition's first
+alternative was (`A(x:) := (x: < 2100)`, 2026-11-22); the way that works today is passing the CONDITION, written
+and resolved in the caller's text; (c) a body may read its own label parameter after placing it.
