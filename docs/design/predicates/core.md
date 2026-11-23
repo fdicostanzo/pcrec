@@ -237,8 +237,17 @@ by: core/principles/rx-owns-flags
 - Built up inside another rx, an rx inherits an explicit `i` only: for a hole, core/holes/flags.
 - An `&` written at program level has no surrounding rx: each side keeps its own flags (a reading); so does a
   sequence operand at program level (a reading).
+- The flags at a point of a literal, in order (the manager's reading, composing four pieces): its own text; an
+  explicit `i` or `-i` in force at the hole it is inserted in (core/holes/flags); its file's program options from
+  the statement on (lib/builtin/options); the file default.
+- `r` and the `a`-family are not inherited at a hole: only an explicit `i` or `-i` is (core/holes/flags).
+- `pattern($x)` carries the flags in force where its group is written (lib/builtin/pattern, a reading).
+- Is an `i` written by an option hole explicit (`/(?${o})${w}/`, o := `"i"`)? (open option-hole-explicit: the
+  lines "Candidate (a)", explicit, and "Candidate (b)", weak.)
 see: core/holes/flags lib/builtin/options
 WHOLE `aB` HOLDS, `AB` FAILS / SEARCHED `AB aB` `aB`@3 / FIND-ALL `ab aB Ab` [`ab`@0, `aB`@3] (`/a(?i)b/`)
+Candidate (a) of option-hole-explicit: WHOLE `ab` HOLDS, `AB` HOLDS / SEARCHED `x AB ab` `AB`@2 / FIND-ALL `ab AB Ab` [`ab`@0, `AB`@3, `Ab`@6] (`/(?${o})${w}/`, o := `"i"`, w := `/ab/` in a library file that sets nothing)
+Candidate (b) of option-hole-explicit: WHOLE `ab` HOLDS, `AB` FAILS / SEARCHED `x AB ab` `ab`@5 / FIND-ALL `ab AB Ab` [`ab`@0] (`/(?${o})${w}/`, o := `"i"`, w := `/ab/` in a library file that sets nothing)
 
 ### The sequence operator   [core/patterns/sequence]   ruled 2026-11-17
 `A SEQ B` is regex concatenation, A's text then B's, an assertion at a part's edge seeing its neighbours; it binds tighter than `&` and `|`.
@@ -575,6 +584,7 @@ date.year, from outside: WHOLE `2025-01-02!` HOLDS, `1999-01-02!` FAILS / SEARCH
 date.month, from outside: modes: a compile error (`date & (date.month: "01")`, the same date: the list takes `year` only).
 Through a call that uses its argument alone: modes: a compile error (`[(=d) = B(A)] & (d: <5)`, A := `/(?<d>\d)/`, B(rx) := `/${rx}xx/`: the call exports no such label, so the list cannot take it); `[(=l) = atomic(B | A)]` alike, B and A bindings used alone in the argument (an argument exports what its own text writes, a part used alone in it nothing: lib/convention/argument-labels).
 All but one: WHOLE `2025-01-02!` HOLDS, `1999-02-03!` FAILS / SEARCHED `1999-02-03! 2025-01-02!` `2025-01-02!`@12 / FIND-ALL `2025-01-02! 1999-02-03! 2001-01-02!` [`2025-01-02!`@0, `2001-01-02!`@24] (`date & (date.day: "02")`, date := `[(=, _ = month) = isodate] SEQ "!"`, isodate := `[year = /\d{4}/] SEQ "-" SEQ [month = /\d\d/] SEQ "-" SEQ [day = /\d\d/]`)
+Through a call that passes its argument's labels on: WHOLE `3` HOLDS, `7` FAILS / SEARCHED `x73` `3`@2 / FIND-ALL `3 7 4` [`3`@0, `4`@4] (`[(=l) = atomic(/(?<l>\d)/)] & (l: <5)`)
 
 ### Part labels and paths   [core/labels/paths]   ruled 2026-11-22
 A part label `[x = A]` names part A; `x.h` is the label h as part A exports it, and a part label mentioned more than once names its last mention where the reference is written.
@@ -724,10 +734,14 @@ needs: core/labels/paths/call-prefix core/labels/export
   error (core/labels/paths/argument-default). The error is at the reference and names its rule (its message the
   manager's call; a reading).
 - It settles call-prefix case 2: legal, under this condition.
+- Through a body that labels or lists the spot, does the caller read `A.d` by the argument's name, or only by the
+  call's path (`B.p.d`)? (open spot-read-name: candidate (a) is the line "Visible through the call"; candidate (b)
+  makes that program a compile error and prints the line "Candidate (b) of spot-read-name".)
 Visible through the call: WHOLE `7-3` FAILS, `3-7` HOLDS, `3-3` HOLDS / SEARCHED `7-3 3-7` `3-7`@4 / FIND-ALL `7-3 3-7 1-2 9-9` [`3-7`@4, `1-2`@8] (`B(A) & (A.d: <5)`, A := `/(?<d>\d)/`, B(rx) := `/${[p = rx]}-(?<d>\d)/`)
 Used alone by the body: modes: a compile error (`B(A) & (A.d: <5)`, A := `/(?<d>\d)/`, B(rx) := `/${rx}-(?<d>\d)/`: argument-default).
 Closed by the macro: modes: a compile error (`B(A) & (A.d: <5)`, A := `/(?<d>\d)/`, B(rx) := `/${[_ = rx]}xx/`; `[c = B(A)] & (c.d: <5)` alike: no `d` is exported, a compile error by the reading in core/labels/paths, a label not visible through its source).
 Closed by a `_` part label: modes: a compile error (`B(A) & (A.d: <5)`, A := `/(?<d>\d)/`, B(rx) := `/${[_p = rx]}xx/`; `c.d` and `B.d` alike; inside its binding a `_` part label is an ordinary one: the line "Statement 6", core/labels/export).
+Candidate (b) of spot-read-name: WHOLE `7-3` FAILS, `3-7` HOLDS, `3-3` HOLDS / SEARCHED `7-3 3-7` `3-7`@4 / FIND-ALL `7-3 3-7 1-2 9-9` [`3-7`@4, `1-2`@8] (`B(A) & (B.p.d: <5)`, A := `/(?<d>\d)/`, B(rx) := `/${[p = rx]}-(?<d>\d)/`)
 
 ### The caller's read of an argument the body uses alone   [core/labels/paths/argument-default]   ruled 2026-11-22
 Where a macro's body uses an argument alone, the caller's read of that argument's labels (`A.d` in `B(A)`, a group written in place) is a compile error: the argument is a template.
@@ -1504,6 +1518,8 @@ see: core/holes/and-in-hole core/diagnostics/warnings
   case-insensitive hole (the second line below).
 WHOLE `ID-BLAH` HOLDS, `id-blah` HOLDS / SEARCHED `x ID-BLAH id-blah` `ID-BLAH`@2 / FIND-ALL `id-blah ID-BLAH Id-Blah` [`id-blah`@0, `ID-BLAH`@8, `Id-Blah`@16] (`/(?i)id-${/[a-z]+/ & /b.*/}/`)
 WHOLE `ax` HOLDS, `AX` HOLDS / SEARCHED `-ax Ax` `ax`@1 / FIND-ALL `ax AX 7x` [`ax`@0, `AX`@3] (`/(?i)${C}/`, C := `/[a-z]x/ & /[A-Z]x/`; `C` as a program: WHOLE `ax` FAILS, `AX` FAILS)
+Bound in a library: WHOLE `id-blah` HOLDS, `id-BLAH` FAILS / SEARCHED `x id-BLAH id-blah` `id-blah`@10 / FIND-ALL `id-blah id-BLAH id-bx` [`id-blah`@0, `id-bx`@16] (`/id-${C}/` in a program file opening `@options(i)`, C := `/[a-z]+/ & /b.*/` in a library file that sets nothing)
+Written in the hole: WHOLE `id-blah` HOLDS, `id-BLAH` HOLDS / SEARCHED `x id-BLAH id-blah` `id-BLAH`@2 / FIND-ALL `id-blah id-BLAH id-bx` [`id-blah`@0, `id-BLAH`@8, `id-bx`@16] (`/id-${/[a-z]+/ & /b.*/}/` in a program file opening `@options(i)`)
 
 ### Labels through a hole   [core/holes/labels]   ruled 2026-11-22
 For labels, only an inserted pattern's exported labels flow into the outer pattern, no further out unless the insert is labelled: a hole is a part used alone; for matching it behaves like a literal.

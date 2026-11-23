@@ -134,10 +134,12 @@ readings:
 - the built-in `pattern($x)`, the group's static pattern, PURE although it mentions a label; union of duplicate definitions; flags as compiled in place; inner named groups as fields; "not self-contained" an error — the manager's leaning in the record's 2026-11-14 00:10 notes (his question: how to get the group's PATTERN without its match); LEAN in the draft (§13 O48), OUT of phase 1 (the draft's census, CF:889).
 - `/(?<x>\d+),${pattern($x)}/` is `(?<x>\d+),(?:\d+)`: WHOLE `12,345` HOLDS / SEARCHED `1,2`@1 / FIND-ALL [`1,22`@0, `3,4`@5] — SUPPORTED (preddoc4 PART PT; sabotage s12, the backreference, caught).
 - for a part label `[x = A]` (no group in rx text) `pattern($x)` is A's pattern (review r77 FIXIND-8) — UNTESTED (a reading).
+- (review r84 A6 (4), a reading of the piece's own sentence "the flags in force where the group is written come along") they come along over an explicit flag at the hole: `/(?i)(?<x>ab),(?-i)${pattern($x)}/` holds on `ab,AB` — SUPPORTED as run (docs/dev/lanes/predfix84_evidence/ predfix84_model.py PATFLAGS, the line "Under another flag").
 evidence: docs/dev/lanes/preddoc4_evidence/ PART PT.
 history:
 - 2026-11-19 (lane preddoc4): a new piece: a name on the closed built-in list with no piece (review r59 COMPB-3).
 - 2026-11-22 (lane predfix77, review r77 D12 (FIXIND-8); record "2026-11-22 MANAGER — review r77 (predfold1121): dispositions ruled (no owner words)"): a bullet for a part label (pure-label: `[x = A]` is no longer "the group form").
+- 2026-11-23 (lane predfix84, review r84 A6 (4); record "2026-11-23 MANAGER — review r84 (predspot1122): the dispositions, ruled with the 2026-11-23 rulings in hand; no owner words"): the flags bullet gains "over an explicit flag at the hole (a reading; ...)" and the line "Under another flag".
 
 ## lib/builtin/eval — eval
 slugs:

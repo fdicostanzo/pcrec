@@ -140,10 +140,11 @@ module: ?
 defined: native (it reads a group's written pattern, which no expression of the language reaches)
 - `/(?<x>\d+),${pattern($x)}/` reuses x's pattern; `\k<x>` would repeat x's text instead.
 - Two groups of the name give the union of their patterns; the flags in force where the group is written come
-  along; a group that refers outside itself (a backreference, a call) is the error "not self-contained".
+  along, over an explicit flag at the hole (a reading; the line "Under another flag"); a group that refers outside itself (a backreference, a call) is the error "not self-contained".
 - For a part label `[x = A]` (no group in rx text) the pattern is A's (a reading).
 - It stands out of the first build (the draft's reading).
 WHOLE `12,345` HOLDS, `12,` FAILS / SEARCHED `a1,2` `1,2`@1 / FIND-ALL `1,22 3,4` [`1,22`@0, `3,4`@5] (`/(?<x>\d+),${pattern($x)}/` is `(?<x>\d+),(?:\d+)`)
+Under another flag: WHOLE `ab,AB` HOLDS, `AB,ab` HOLDS, `ab,ac` FAILS / SEARCHED `x ab,AB` `ab,AB`@2 / FIND-ALL `ab,AB AB,Ab` [`ab,AB`@0, `AB,Ab`@6] (`/(?i)(?<x>ab),(?-i)${pattern($x)}/`)
 
 ### eval   [lib/builtin/eval]   under-construction 2026-11-19
 `eval(...)`, an rx built at match time from a text, is an idea on record: an opaque filter, effectively a callout, that only a named module would provide.
@@ -182,8 +183,11 @@ defined: native (compile-time effects: how a file's literals are read; the compi
   each with its own (a reading, run).
 - His `n`: "Using predicate language it's going to be more likely to use () in a literal to mean no capturing
   group." Under `n` a plain `( )` is no capture and no numbered label (core/labels/numbers).
-- Not ruled: the spelling, and whether it may appear more than once; whether `i` may be set weakly insensitive only
-  at the top of a file; options beyond the four (`xx`, `J`, `U`, the `&`-in-rx switch: the idea's list).
+- Not ruled: the spelling; options beyond the four (`xx`, `J`, `U`, the `&`-in-rx switch: the idea's list).
+- May `@options(..)` stand below a binding of its file, appear more than once, or turn a flag off (`@options(-s)`)?
+  (open options-position: "Candidate (a)", from the statement on, and "Candidate (b)", only at the top of a file.)
+- Do program options reach a string constant (`"ab"`) and an argument literal a library body places? (open
+  options-reach-constants: "Candidate (a)", they do, and "Candidate (b)", they do not, a line each.)
 - `@options.strict(/no-fail/)` makes the warning named `no-fail` an error; "every warning" is the selector that
   matches every name.
 - The `@options` family's other members, capability opt-ins declared in the source, are an idea
@@ -191,6 +195,12 @@ defined: native (compile-time effects: how a file's literals are read; the compi
 - An effect: written after `@` only, as a statement.
 A library keeps its own options: WHOLE `a\nb` HOLDS, `axb` HOLDS / SEARCHED `a\nb axb` `a\nb`@0 / FIND-ALL `a\nb axb ayb` [`a\nb`@0, `axb`@4, `ayb`@8] (`/a${dot}b/`, dot := `/./` in a library file opening `@options(s)`)
 Never across an import: WHOLE `a\nb` FAILS, `axb` HOLDS / SEARCHED `a\nb axb` `axb`@4 / FIND-ALL `a\nb axb ayb` [`axb`@4, `ayb`@8] (`/a${dot}b/` in a program file opening `@options(s)`, dot := `/./` in a library file that sets nothing)
+Candidate (a) of options-reach-constants: WHOLE `ab` HOLDS, `AB` HOLDS / SEARCHED `x AB ab` `AB`@2 / FIND-ALL `ab AB` [`ab`@0, `AB`@3] (`"ab"` in a program file opening `@options(i)`)
+Candidate (b) of options-reach-constants: WHOLE `ab` HOLDS, `AB` FAILS / SEARCHED `x AB ab` `ab`@5 / FIND-ALL `ab AB` [`ab`@0] (`"ab"` in a program file opening `@options(i)`)
+Candidate (a) of options-reach-constants: WHOLE `a\nb` HOLDS, `axb` HOLDS / SEARCHED `a\nb axb` `a\nb`@0 / FIND-ALL `a\nb axb` [`a\nb`@0, `axb`@4] (`atomic(/a.b/)` in a program file opening `@options(s)`, atomic(X) := `/(?>${[(=) = X]})/` in a library file)
+Candidate (b) of options-reach-constants: WHOLE `a\nb` FAILS, `axb` HOLDS / SEARCHED `a\nb axb` `axb`@4 / FIND-ALL `a\nb axb` [`axb`@4] (`atomic(/a.b/)` in a program file opening `@options(s)`, atomic(X) := `/(?>${[(=) = X]})/` in a library file)
+Candidate (a) of options-position: WHOLE `x\ny` FAILS, `xay` HOLDS / SEARCHED `x\ny xay` `xay`@4 / FIND-ALL `x\ny xay xby` [`xay`@4, `xby`@8] (`/x${a}y/` in a program file writing a := `/./`, then `@options(s)`, then the program)
+Candidate (b) of options-position: modes: a compile error (`/x${a}y/` in a program file writing a := `/./`, then `@options(s)`, then the program: `@options` below a binding)
 
 ## Modifiers   [lib/modifiers]
 
@@ -449,8 +459,10 @@ defined: language
 - The gaps cross line breaks. Inside the argument `^` and `$` are the ends of the value filtered:
   `contains(/^err/)` is "starts with `err`" (WHOLE, 0 of 1,365 texts differ from `startsWith("err")`).
 - The negated test is `!contains(x)`.
-- s's labels pass on (lib/convention/argument-labels): `contains.n`; under `!contains(x)` none is visible.
+- s's labels pass on (lib/convention/argument-labels): `contains.n`, the LAST occurrence (the leading gap is
+  greedy, as endsWith's; the line "The last occurrence"); under `!contains(x)` none is visible.
 WHOLE `xerrx` HOLDS, `er` FAILS / SEARCHED `a err b` `a err b`@0 / FIND-ALL `err err` [`err err`@0] (`contains("err")` is `(?s:.*)(?:err)(?s:.*)`)
+The last occurrence: WHOLE `a1b2` HOLDS (contains.n = `2`), `ab` FAILS / SEARCHED `x a1b2` `x a1b2`@0 / FIND-ALL `a1b2 ab` [`a1b2 ab`@0] (`contains(/(?<n>\d)/)`)
 
 ### startsWith   [lib/search/starts-with]   ruled 2026-11-22
 `startsWith(s)` is the plain gap body `/(?:${[(=) = s]})(?s:.*)/`, no anchors of its own, passing s's labels on.
@@ -525,7 +537,10 @@ defined: language
   not stated.
 - A PREIMAGE filter: `prefix_in(2, "Columbus")` never holds (no 2-character member), while his `left(rx, n)` is an
   IMAGE (lib/strings/left).
+- S is laid into a hole as quoted's is (the pattern side of the `&`, placed), so its labels pass on by the
+  list (lib/convention/argument-labels; a reading): the line "S's labels, through the call".
 WHOLE `xyz` HOLDS, `abc` FAILS / SEARCHED `abxyq` `xyq`@2 / FIND-ALL `xy ab` [`xy ab`@0] (`prefix_in(2, /abc|xy/)`)
+S's labels, through the call: WHOLE `abcz` HOLDS, `abz` FAILS, `xyzz` FAILS / SEARCHED `-abcz` `abcz`@1 / FIND-ALL `abcz xyzz` [`abcz xyzz`@0] (`prefix_in(3, /(?<a>ab)c|xy/) & (prefix_in.a: "ab")`)
 
 ## Counting   [lib/counting]
 
