@@ -10,6 +10,7 @@ computed and checked by `c6selftest`). NO timing run, probe or real launch of an
 - STATE: delivered. Committed on lane/bsu6t. The timer `cards.py time` and the reader `cards.py c6decide` are built. The
   CPU-quiet control is ported into cards.py once (R-1). `c6selftest` has 52 rows, 0 failed (it had 27). Three DRY runs went end to
   end and each record round-trips through the standalone reader.
+OWED: none (no job queued by this lane; what the kit manager schedules after the code round is in OWED RUNS).
 - Rulings file `docs/dev/lanes/bsu6t_rulings.md`: re-read at each checkpoint (before the dry runs, before make strict, before
   this report). Last entry applied: **R-1** (kit manager, 2026-11-23: plan APPROVED; conditions (a)-(d), each answered below).
 - Premise finding, sent to the kit manager before R-1. The brief said the quiet gate is in cards.py, and it is not. It lived only in
