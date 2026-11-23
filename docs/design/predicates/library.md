@@ -27,7 +27,7 @@ module: ?
 - What an argument exports, and what the caller writes inside one: core/labels/export/arguments (the line
   "An expression exports what its text writes" is run here).
 - Covered, each piece restating its body with the list on its spot: peek, atomic, when, list_of, padded, quoted,
-  anchored, any_case (its candidate body), contains, startsWith, endsWith, rx.repeat, capture; and prefix_in,
+  anchored, any_case (its candidate body), contains, startsWith, endsWith, rx.repeat; and prefix_in,
   suffix_in, slice_in, whose S a body lays into a hole as quoted's (a reading).
 - "Places" leaves out (the manager's answer on wrapper-export, put to him with transform-export): an argument used only as a filter (the right side of `&` in a body;
   none today) or under a complement (a complement's labels are never visible), the set arguments (`between`, the S
@@ -315,7 +315,8 @@ default: yes
 defined: language
 - The body: `peek(A) := /(?=${[(=) = A]})/`. Nothing in it is particular to `peek`: it is a useful transform.
 - Labels A sets are readable after it, as after any lookahead, through the call: `peek.d` (wrapper-export, "agree
-  (a)"; lib/convention/argument-labels); the caller's `d` written in A is a template's, not its own to read bare.
+  (a)"; lib/convention/argument-labels); a group written in A in place is the caller's own, read bare too
+  (core/labels/export/arguments).
 - `NOT peek(A)` is the negative peek, `(?!A)`: "A cannot match here" (core/filters/negation).
 - A condition given as A is zero width already: `peek(c)` tests c where it stands, as c does (a reading).
 - `default: yes`: in the default-imported set, so written bare, not `module.peek` (the owner's lean).
@@ -406,9 +407,9 @@ defined: language
   the argument (the lines below).
 - His ruling: "occurences et al should only set labels not captures unless they are so declared." The body's `hit`
   is the label-only group (core/labels/label-only-group): no caller capture. A group written in the ARGUMENT is the
-  caller's own text and stays a capture (`occurrences(/(?<n>\d+)/)`: n); the caller reads it through the spot the
-  body labels, `occurrences.hit.n`, not bare (the manager's reading (d): `hit` is a spot, so the body writes no
-  `(=)`; core/labels/paths/argument-default); whether it reaches the caller as a capture awaits capture-export. How a
+  caller's own text (`occurrences(/(?<n>\d+)/)`: n): read through the spot the body labels, `occurrences.hit.n`
+  (the manager's reading (d): `hit` is a spot, so the body writes no `(=)`), or bare, the caller's own
+  (core/labels/export/arguments); a caller capture only where the program asks for one (capture-export). How a
   helper declares a capture is not stated (lib/structural/capture/add-on).
 - A call may name its hit label (his spelling `occurrences(x, label = "foo")`, a placeholder: `label` is reserved
   metadata). Called twice in one definition, a plain read through the macro's name is binding-prefix's compile
