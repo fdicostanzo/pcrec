@@ -166,6 +166,7 @@ When the subject's evidence includes a sweep with committed or scratch RAW data,
 COMMON assigns the round's PLANTS (sabotage rows, dropped marks, planted compilers) to ONE lens; two lenses planting the same sites duplicate each other (2026-11-20 r62 k146fix: DEPTH-5 and CHECK-1). The plant applier demands an EXACT SAB_COUNT match per pair, so a row whose anchor occurs twice fails loudly rather than planting once (r64 k147fix S48: the first applier ignored SAB_COUNT=2).
 When the subject changes text that a function EMITS (a witness, a listing, a rendered form), COMMON lists every caller of that function, found by grep, and assigns all of them to ONE lens; a second consumer is a reader the subject moves (2026-11-20 kit R-46 round: the DFA's second consumer was nearly missed).
 When a critic or the subject reads a lane gate, COMMON states that `scripts/lanecheck` PASSES only on "lanecheck: DONE rc=0"; it prints "DONE rc=1" on a failure (r80 process).
+When the subject runs work in PARALLEL (a pool, workers, -j), the parallelism lens drills a worker that DIES (os._exit, OOM kill): the run must fail promptly and name the unit, never hang (r87: both critics found the hang).
 mandate, read-only rules, subject and paths, the guide files, design docs and
 spec sections the subject cites, the denylist, the output format), then one
 short per-lens prompt: title `CRITIC <lens> (<model>): <topic>`, "read COMMON
