@@ -9030,3 +9030,37 @@ The manager's thoughts (told to him; each marked, none ruled; for the fold to te
 - (d) A value left of `:` reads zero or more labels; with none it is fixed at compile time and draws
   `pcrec.test.always` / `pcrec.test.never`; bound alone it names no label, so bound-condition does not refuse it.
 Put to him as slug optional-place.
+
+### 2026-11-23 OWNER, on optional-place: "Before the colon"; and a proposal: an alternative operator to the colon, `:` and `?:`
+tags: core/conditions/form core/conditions/defaults core/conditions/form/value-left core/operators/precedence core/patterns/quantifiers core/spellings/placeholders core/conditions/two-valued
+
+ASKED AS A RULING (slug optional-place: is the mark the entry's, written before the colon, meaning "the entry
+holds when its left part has no value"; `(a?, b): R` a compile error pointing at the default; `h+` / `h*` refused
+for now; the manager's leaning yes). HIS WORDS, whole:
+
+"Before the colon: then perhaps it's an alternative operator to the colon like :  ?:  rather than a separate
+operator. I like that because then we aren't using ? For two different meanings"
+
+Class: an ANSWER on the place ("Before the colon:"), taken as the ruling on optional-place's first part: the mark
+is the entry's, before the colon (the reading taken, told to him so he can object). And a PROPOSAL with a LEAN
+("perhaps"; "I like that"): it is not a mark on the left part at all but a second ENTRY OPERATOR beside `:`,
+spelled `?:`, his reason: "then we aren't using ? For two different meanings" (`?` stays regex's optional and
+nothing else). The spelling is a placeholder. Not ruled by these words: the operator form itself (his "perhaps"),
+the joint and value cases, `(a?, b)`, `h+` / `h*`.
+
+The manager's thoughts (told to him; each marked, none ruled; hand-worked from the rules and from runs already in
+the record, no new run):
+- (a) Two entry operators: `p: S` (the left part has a value and it is in S) and `p ?: S` (the left part has no
+  value, or it is in S). Nothing about the left part changes: a label path, a joint, a value, each as today.
+- (b) It closes optional-label-general as "special, and not a quantifier": there is no `h?` to generalise, so
+  `h+` / `h*` do not arise; `(a?, b)` is not a form.
+- (c) `NOT (h ?: S)` is "h present and outside S", the answers of `(h: !S)`: yesterday's run of `NOT (h?: <5)`
+  (WHOLE `x` FAILS, `3x` FAILS, `7x` HOLDS) against the printed table of core/conditions/two-valued for
+  `(h: !<5)` (`x` / `3x` / `7x`: FAILS / FAILS / HOLDS).
+- (d) A default with it, `(h = v ?: S)`, is a default that can never be used: `pcrec.default.unused` (a warning
+  exists for that), or an error; the manager's call later.
+- (e) The token: `?:` is read whole, so a postfix `?` on a value directly before a colon needs parentheses; in
+  rx text `(?:` is untouched (the operator is of the expression language only).
+- (f) The macro-head idea of the previous entry (`max?`) would then be a different use of `?` from the entry
+  operator: "closer, not the same" gets a little further apart; noted for when call-forms is taken up.
+- (g) The capture request: `(h ?: capture("h"))`.
