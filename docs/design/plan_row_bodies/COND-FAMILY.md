@@ -9973,3 +9973,32 @@ That is the opposite of "an error regardless" (his belief of the entry above), a
 argument-default's error and closed-argument's error case; what remains an error is ambiguity (the binding
 referenced more than once) and a place where no label could be written.
 Put to him as slug binding-as-label, with the three candidates and this table.
+
+### 2026-11-23 OWNER, a fourth condition for the shorthand: "a label on the binding has not already been made"
+tags: core/labels/paths/binding-prefix core/labels/paths/closed-argument core/labels/paths/argument-default core/labels/paths/call-prefix core/labels/export/arguments core/labels/paths/label-reference
+
+Asked **binding-as-label** ((s) the shorthand everywhere a label could be written; (b) never through an
+argument; (a) as the documents have it; with the table of three bodies). HIS WORDS, whole:
+
+"Consider one additional rule based on your examples which is that a label on the binding has not already been
+made"
+
+Class: a PROPOSAL ("Consider"): a FOURTH condition on his shorthand of the entry above: the binding's name
+stands for a skipped label only where no label has already been made on that binding there. NOT a ruling.
+What it gives (the manager's working, marked; told to him): each placed thing then has exactly ONE name, the
+label that was written on it, else, where none was written, the binding's name. For `B(A)`, A referenced once:
+- the body uses its argument alone: no label was made: `A.d` is LEGAL (reverses argument-default's error; the
+  answers of the explicit form: WHOLE `3xx` HOLDS, `7xx` FAILS / SEARCHED `7xx 3xx` `3xx`@4 / FIND-ALL
+  `3xx 7xx 4xx` [`3xx`@0, `4xx`@8], run 2026-11-23);
+- the body labels the spot (`[p = rx]`): a label was made: `A.d` is a compile error, the read is `B.p.d` (his
+  "B.h might be closer to the mark"; reverses the printed legal lines of call-prefix case 2; the answers run in
+  the entry "on the door example": WHOLE `7-3` FAILS, `3-7` HOLDS, `3-3` HOLDS / SEARCHED `7-3 3-7` `3-7`@4 /
+  FIND-ALL `7-3 3-7 1-2 9-9` [`3-7`@4, `1-2`@8]);
+- the body closes the spot (`[_ = rx]`): the blank label was made: `A.d` is a compile error (as today);
+- the caller writes its own label (`B([a = A])`): `a.d` is legal whatever the body does (argument-label,
+  closing-own-label), and `A.d` is then a compile error (a label was made); this last line is already the
+  documents' reading for a use inside a definition ("The name reaches the UNLABELLED uses only": `[a = A] SEQ "!"
+  & (A.h: <5)` is a compile error).
+The manager's reading of WHOSE label counts (marked; taken from "based on your examples", whose rows were the
+body's label and the body's blank mark): a label made by anyone on that use, the body included.
+Put to him as the ruling binding-as-label, in his four conditions.
