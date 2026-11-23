@@ -1272,7 +1272,8 @@ def time_cells(rundir, cl, path, with_approx=True, retime=0, launch=None, stop=N
                         if x is not None:
                             launches[c].append(x)
                             drawn[c].append(v)
-                            ran[c].append(exe_id(argv[c][v][3]))
+                            if c6:
+                                ran[c].append(exe_id(argv[c][v][3]))
                     except GateFail as e:
                         out[c] = row_line(c, "gatefail" if c6 else "void", note=str(e))
                     except Exception as e:      # noqa: BLE001 -- the arm is void, re-run once (F7)
