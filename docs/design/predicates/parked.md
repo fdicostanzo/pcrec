@@ -232,7 +232,9 @@ modes: n/a (parked: not in the language)
 A `?` mark in a macro's head for an optional positional argument with no default, so a head and a condition look closer.
 Trigger: the call-forms ruling (its absent setting for "no maximum", "no width").
 Source: his question on optional-label-general (the details entry).
-see: core/operators/bindings/call-forms core/conditions/form/optional-entry
+- It would give `?` a second meaning, against his own reason for the `?:` operator: "then we aren't using ? For
+  two different meanings" (core/conditions/form/optional-entry).
+see: core/operators/bindings/call-forms core/conditions/form/optional-entry core/conditions/form/optional-general
 modes: n/a (parked: not in the language)
 
 ### An explicit product of arrays   [parked/ideas/cartesian]   parked 2026-11-19

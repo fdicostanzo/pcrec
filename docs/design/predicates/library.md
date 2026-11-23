@@ -130,7 +130,7 @@ defined: native (a compile-time effect on the file's public names)
   an edge assertion in it is the edge-assertion error.
 - Candidates: (a) `@export(names)` as above, selecting among the public names; (b) no call: every public binding
   (the `_` rule, core/labels/export) is exported.
-- An effect: written after `@` only, as a statement.
+- A compile-time effect: written after `@` only, as a statement (core/operators/statements).
 modes: n/a (a question; no matching involved)
 
 ### pattern   [lib/builtin/pattern]   reading 2026-11-19
@@ -164,7 +164,7 @@ defined: native (a compile-time effect on the compiler's diagnostics)
 - An `@warn.off` that suppresses nothing draws `pcrec.warn.unused` (core/diagnostics/warnings).
 - Errors cannot be switched off. Its reach (the rest of the file), a per-binding form and a whole-build compiler
   option are readings.
-- An effect: written after `@` only, as a statement.
+- A compile-time effect: written after `@` only, as a statement (core/operators/statements).
 modes: n/a (a compile-time effect; no matching involved)
 
 ### @options, @options.strict   [lib/builtin/options]   ruled 2026-11-22
@@ -192,7 +192,7 @@ defined: native (compile-time effects: how a file's literals are read; the compi
   matches every name.
 - The `@options` family's other members, capability opt-ins declared in the source, are an idea
   (parked/ideas/capability-optins); one table for the controls of one fact is parked/ideas/severity-table.
-- An effect: written after `@` only, as a statement.
+- A compile-time effect: written after `@` only, as a statement (core/operators/statements).
 A library keeps its own options: WHOLE `a\nb` HOLDS, `axb` HOLDS / SEARCHED `a\nb axb` `a\nb`@0 / FIND-ALL `a\nb axb ayb` [`a\nb`@0, `axb`@4, `ayb`@8] (`/a${dot}b/`, dot := `/./` in a library file opening `@options(s)`)
 Never across an import: WHOLE `a\nb` FAILS, `axb` HOLDS / SEARCHED `a\nb axb` `axb`@4 / FIND-ALL `a\nb axb ayb` [`axb`@4, `ayb`@8] (`/a${dot}b/` in a program file opening `@options(s)`, dot := `/./` in a library file that sets nothing)
 Candidate (a) of options-reach-constants: WHOLE `ab` HOLDS, `AB` HOLDS / SEARCHED `x AB ab` `AB`@2 / FIND-ALL `ab AB` [`ab`@0, `AB`@3] (`"ab"` in a program file opening `@options(i)`)
@@ -339,11 +339,14 @@ defined: language
 - Labels the test sets are visible after the call through it (`when.h`), set on the then branch and unset on the
   else branch, a failed test setting nothing (a reading); each spot carries the list (lib/convention/argument-labels),
   the guard's `NOT peek(test)` none (a negation's labels are never visible). A read written in then of a label the
-  test sets is a read of another argument's template: a compile error (a reading; core/labels/paths/argument-default).
+  caller writes in the test is legal: the label is the caller's own (core/labels/export/arguments; the line "A read
+  in then", on a user macro of the same shape). `when(A, (A.h: ..))` is legal by closed-argument's condition: the
+  test's spot carries the list, so `h` is visible through the call (a reading; core/labels/paths/closed-argument).
   A name test and then both hold is one label, the last mention (the manager's answer on wrapper-export; run on a user macro of
   the same shape: lib/convention/argument-labels' line "Two arguments").
 - `//` stands for the owner's `null`, "nothing required"; `when`, `then`, `else` are placeholder spellings.
 WHOLE `12` HOLDS, `1` FAILS / SEARCHED `x123` `x`@0 / FIND-ALL `12 x 123 1x 7` [`12`@0, `x`@3, `12`@5, `x`@10] (`when(peek(/\d/), /\d\d/, else = /\w/)` is `(?=\d)\d\d|(?!\d)\w`)
+A read in then: WHOLE `3` HOLDS, `7` FAILS / SEARCHED `7 3` `3`@2 / FIND-ALL `3 7 4` [`3`@0, `4`@4] (`W(/(?<h>\d)/, (h: <5))`, W(a, b) := `[(=) = a] SEQ [(=) = b]`; `W(A, (A.h: <5))` with A := `/(?<h>\d)/` the same answers)
 
 ### The test of `when`   [lib/control/when-test]   ruled 2026-11-18
 A condition or a `peek(A)` as the test consumes nothing and then starts where the test stands; a bare pattern as the test is consumed and then continues after it.
@@ -789,7 +792,8 @@ see: lib/structural/capture/add-on core/filters/negation/effects core/conditions
 module: ?
 defined: ?
 - His words: "optional-label: yes." answered the statement that the request's shape is `(h: capture("h"))`, the
-  label required, `(h ?: capture("h"))`, if present, and `rx & capture("name")`, the stretch; the shape was his
+  label required, `(h?: capture("h"))` (written `(h ?: ..)` here, his later lean), if present, and
+  `rx & capture("name")`, the stretch; the shape was his
   proposal: "would it be better to isodate & (isodate.year: capture("year"))".
 - A capture is made only where the program asks for one (core/labels/export/capture-export); a named group in a
   part makes none.
@@ -801,11 +805,15 @@ defined: ?
   written; whether a request with no name gives the last step is not stated).
 - Requested twice: the same-label-twice rules (the last mention in a sequence, the branch taken across `|`, a
   compile error across `&`).
-- After a loop the caller gets the label as a plain read gives it: the last pass's own value, unset where that pass
-  set nothing; every pass is the array request (lib/structural/capture/add-on).
-- On `0` only where `0` is complete, `rx & capture("name")` or a hole written last; on an open `0` a compile error
-  for now (core/conditions/match-so-far). Under `NOT` or `!`: core/filters/negation/effects.
-- A one-literal program returns PCRE's own captures; a request in a composed program gives the label (a reading).
+- After a loop the caller gets the label (array-capture), as a plain read gives it: the last pass's own value,
+  unset where that pass set nothing (the manager's answer); every pass is the array request (lib/structural/capture/add-on).
+- On `0` only where `0` is complete, `rx & capture("name")` or a hole written last (the manager's reading (a) of
+  zero-open); on an open `0` a compile error for now (core/conditions/match-so-far). Under `NOT` or `!`:
+  core/filters/negation/effects.
+- A one-literal program (a program that is exactly one literal) returns PCRE's own captures; any request makes the
+  requested name follow the label rules, so a request after a loop gives the label (a reading; the line "After a loop").
+- Inside a set operator, with a value left of `:` or inside a group question: a compile error for now (the
+  conservative reading; open, lib/structural/capture/in-set).
 Requires the label: WHOLE `x` FAILS, `3x` HOLDS (h = `3`) / SEARCHED `x 3x` `3x`@2 / FIND-ALL `x 3x x` [`3x`@2] (`/(?<h>\d)?x/ & (h: capture("h"))`)
 If present: WHOLE `x` HOLDS (h unset), `3x` HOLDS (h = `3`) / SEARCHED `x 3x` `x`@0 / FIND-ALL `x 3x x` [`x`@0, `3x`@2, `x`@5] (`/(?<h>\d)?x/ & (h ?: capture("h"))`)
 The stretch: WHOLE `12` HOLDS, `x` FAILS / SEARCHED `x12` `12`@1 / FIND-ALL `1 22` [`1`@0, `22`@2] (`/\d+/ & capture("n")`)
@@ -813,6 +821,22 @@ Requested twice, the last mention: WHOLE `7,5` HOLDS (d = `5`), `7` FAILS / SEAR
 Through the label's path: WHOLE `2025-01-02` HOLDS (year = `2025`) / SEARCHED `x 2025-01-02` `2025-01-02`@2 / FIND-ALL `2025-01-02 1999-12-31` [`2025-01-02`@0, `1999-12-31`@11] (`isodate & (isodate.year: capture("year"))`, isodate := `[year = /\d{4}/] SEQ "-" SEQ [month = /\d\d/] SEQ "-" SEQ [day = /\d\d/]`)
 A request on an open `0`: modes: a compile error (`/\d${(0: capture("n"))}x/`: pattern text follows the hole, so `0` is open there; for now).
 A request on `0` written last: WHOLE `12` HOLDS, `x` FAILS / SEARCHED `a12` `12`@1 / FIND-ALL `1 22` [`1`@0, `22`@2] (`/\d+${(0: capture("n"))}/`)
+After a loop: WHOLE `3;;` HOLDS (h unset), `3;` HOLDS (h = `3`), `3;4;` HOLDS (h = `4`) / SEARCHED `3;; 3;` `3;;`@0 / FIND-ALL `3; ;` [`3;`@0, `;`@3] (`/(?:(?<h>\d)?;)+/ & (h ?: capture("h"))`)
+
+### A capture request inside a set   [lib/structural/capture/in-set]   open capture-in-set 2026-11-23
+Is a capture request legal inside a set operator (`|`, `&` right of `:`), with a value left of `:`, or inside a group question? For now a compile error.
+needs: lib/structural/capture
+see: core/filters/negation/effects core/conditions/form/optional-edges
+module: ?
+defined: ?
+- The definition today (the conservative reading, marked): a compile error for now; no rule says which path of a
+  set union makes the request.
+- Candidate (a): keep the compile error.
+- Candidate (b): the request is made where the entry holds on the accepting path; as a set it is `anything`, so a
+  union with it accepts every value (the lines below; what the caller receives is not modelled).
+Inside a union: modes: a compile error (`/(?<h>\d)?x/ & (h: "3" | capture("h"))`; `(h: <5 & capture("h"))`, `($a: capture("h"))` and `some((h: capture("h")))` alike: for now).
+Candidate (b) of capture-in-set, a union: WHOLE `3x` HOLDS, `5x` HOLDS, `x` FAILS / SEARCHED `5x 3x` `5x`@0 / FIND-ALL `3x 5x x` [`3x`@0, `5x`@3] (`/(?<h>\d)?x/ & (h: "3" | capture("h"))`)
+Candidate (b) of capture-in-set, an intersection: WHOLE `3x` HOLDS, `5x` FAILS, `x` FAILS / SEARCHED `5x 3x` `3x`@3 / FIND-ALL `3x 5x x` [`3x`@0] (`/(?<h>\d)?x/ & (h: <5 & capture("h"))`)
 
 ### Making a label a capture   [lib/structural/capture/add-on]   under-construction 2026-11-23
 A label is made the caller's capture after the fact by the request (lib/structural/capture); the request for every setting of a looped label, the array request, is ruled and unbuilt.
@@ -884,11 +908,13 @@ defined: ?
   literal(l:)`, the label forwarded (label-forward); `row(l:, k, f = anything) := /\{(?:${member_any},)*${ws}"${k}"
   ${ws}:${ws}${value(l:) & (l: f)}${ws}(?:,${member_any})*\}/`, a member any member, `_:` its labels.
 - The label is set to the unquoted text, so the string `"3"` and the number `3` read alike (his string-label words:
-  "the row's label argument is set to the unquoted portion").
-- A filter inside the argument and a test on the label agree in every mode (`row(_:, "msg", contains("timeout"))`
-  and `row(_x:, "msg") & (_x: contains("timeout"))`; a reading, run).
+  "the row() label arg would be set to the unquoted portion of the string").
+- A filter inside the argument and a test on the label agree in every mode (the line "A filter inside the argument";
+  a reading, run). The sketch's `row` reads its label (`& (l: f)`), so it refuses `_` (a body that reads its label
+  parameter, core/operators/bindings/label-omitted): the caller names one; an open point of the library's design.
 - Several rows joined by `&` read at the line: an ordinary entry over their labels; several keys in one row: the last
   fitting member in the object's order (the lines below; readings, run).
+A filter inside the argument: WHOLE `{"msg":"db timeout"}` HOLDS, `{"msg":"ok"}` FAILS, `{"msg":"timeout a","msg":"ok"}` HOLDS / SEARCHED `{"msg":"ok"} {"msg":"db timeout"}` `{"msg":"db timeout"}`@13 / FIND-ALL `{"msg":"ok"} {"msg":"db timeout"} {"msg":"timeout"}` [`{"msg":"db timeout"}`@13, `{"msg":"timeout"}`@34] (`row(m:, "msg", contains("timeout"))`, the sketch above; `row(m:, "msg") & (m: contains("timeout"))` the same answers)
 The label on the data: WHOLE `{"v":"ok"}` HOLDS, `{"v":3}` HOLDS, `{"v":7}` FAILS, `{"v":"no"}` FAILS, `{"v":true}` FAILS, `{"v":"3"}` HOLDS / SEARCHED `{"v":7} {"v":"ok"} {"v":3}` `{"v":"ok"}`@8 / FIND-ALL `{"v":"ok"} {"v":7} {"v":3} {"v":"no"} {"v":"3"}` [`{"v":"ok"}`@0, `{"v":3}`@19, `{"v":"3"}`@38] (`row(v:, "v") & (v: "ok" | <5)`, the sketch above)
 A filter over two rows at the line: WHOLE `{"lo":3,"hi":7}` HOLDS, `{"hi":7,"lo":3}` HOLDS, `{"lo":7,"hi":3}` FAILS, `{"lo":3}` FAILS, `{"lo":"3","hi":"7"}` HOLDS, `{"lo":3,"x":true,"hi":7}` HOLDS / SEARCHED `{"lo":7,"hi":3} {"hi":9,"lo":8}` `{"hi":9,"lo":8}`@16 / FIND-ALL `{"lo":3,"hi":7} {"lo":7,"hi":3} {"lo":3} {"hi":2,"lo":1}` [`{"lo":3,"hi":7}`@0, `{"hi":2,"lo":1}`@41] (`row(lo:, "lo") & row(hi:, "hi") & (lo: <$hi)`, the sketch above)
 Several keys: WHOLE `{"a":3}` HOLDS (x = `3`), `{"b":3}` HOLDS (x = `3`), `{"a":7,"b":3}` HOLDS (x = `3`), `{"a":3,"b":7}` HOLDS (x = `3`), `{"a":7,"b":8}` FAILS, `{"c":3}` FAILS / SEARCHED `{"a":7,"b":8} {"a":3,"b":7}` `{"a":3,"b":7}`@14 / FIND-ALL `{"a":3} {"c":1} {"a":7,"b":8} {"b":4,"a":9}` [`{"a":3}`@0, `{"b":4,"a":9}`@30] (`row(x:, "a" | "b") & (x: <5)`, the sketch above)
