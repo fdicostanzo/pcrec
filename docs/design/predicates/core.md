@@ -480,15 +480,15 @@ see: core/labels/backreferences core/labels/export/flat-read-outside core/labels
    writes, a label an export list it writes takes; none beginning with `_`) and, through a public part label, the
    labels that part exports, by path (`pub.a.h`, each step passed by the previous one, a member's metadata alike)
    and by name (`pub.h`) (readings; run: the lines "Statement 3"). A part used alone exports nothing, through a hole
-   and the sequence operator alike, nor a part under a `_` part label or `[_ = A]`; a read from outside of a label
-   only such a part holds is a compile error (the manager's reading (c), run: the line "Used alone, from outside").
+   and the sequence operator alike, nor a part under a `_` part label or `[_ = A]` (the caller's own label inside:
+   open, core/labels/export/closed-own); a read from outside of a label only such a part holds is a compile error (the manager's reading (c), run: the line "Used alone, from outside").
    A call exports what its body exports. A passed label is referenced with its source and read as labels are inside
    (core/labels/paths/label-reference). `pub := [a = A] SEQ "!"` shows `a`, `h`; `/${A}!/`, `A SEQ "!"` none.
 4. A part label only disambiguates; it gives no access to anything private.
 5. The caller's captures are those the program asks for (lib/structural/capture): a named group in a part of a
-   composed program is no capture by default (core/labels/export/capture-export); one literal stays plain PCRE.
+   composed program is no capture by default (core/labels/export/capture-export); one literal stays plain PCRE (a reading).
 6. A part label beginning with `_` (`[_a = A]`) is an ordinary part label inside its binding and exports nothing outside it.
-7. `[_ = A]` makes none of A's labels visible anywhere outside A; A matches as before.
+7. `[_ = A]` makes none of A's labels visible anywhere outside A; A matches as before (a sent label: label-in-argument; the caller's own: closed-own).
 - His analogy, the four forms ("[a = A ] is making the labels from A public to local and later bindings"):
   | the form | his word | exported to the bindings that use it | the local name |
   |---|---|---|---|
@@ -558,7 +558,7 @@ see: core/labels/labels-vs-captures core/labels/export/caller-ambiguous lib/stru
 - A program that is ONE literal stays plain PCRE, every group a capture, numbers included (reading (b)); "a part of a
   composed program" is every literal of a program of more than one literal, its own top-level literals included
   (reading (c)).
-- The seam, stated: a one-literal program returns PCRE's carried value for a group; the same group requested in a
+- The seam, stated (a reading): a one-literal program returns PCRE's carried value for a group; the same group requested in a
   composed program returns the label (lib/structural/capture).
 WHOLE `3!` HOLDS, `33!` FAILS / SEARCHED `x3!` `3!`@1 / FIND-ALL `3! 7! 4` [`3!`@0, `7!`@3] (`q`, q := `/${A}!/`, A := `/(?<h>\d)/`); the caller's captures: none
 
@@ -604,6 +604,8 @@ see: core/labels/paths/argument-default core/labels/paths/two-sources core/label
 - A caller's label on a spot that holds the caller's in-place argument reads that argument by the inside rules
   (argument-export, the reading taken of his "this aligns with my understanding"; the line "A caller's label on the spot").
 - His ruled error stands: `B(A) & (A.d: ..)`, B using A alone: `d` is written in A's text, not the caller's.
+- Under a body that closes the spot (`[_ = rx]`), a part label or an in-place group the caller writes: open
+  (core/labels/export/closed-own); a sent label passes (core/operators/bindings/label-in-argument).
 - What a call exports of its argument, by shape:
   | the shape | the caller reads | ground |
   |---|---|---|
@@ -611,7 +613,9 @@ see: core/labels/paths/argument-default core/labels/paths/two-sources core/label
   | `B(/(?<d>\d)/)`, `d` bare | the caller's own (core/labels/paths/two-sources) | argument-label |
   | `B(A & (h: "3"))` | a compile error; `B(A & (A.h: "3"))` is legal | label-reference |
   | `identity(A)`, `identity.h` | A's exported labels, through the list on the spot | transform-export |
-  | `identity((A))`, `identity.h` | nothing: an expression exports what its own text writes, a part used alone in it nothing | a reading |
+  | `identity([a = A])`, `identity.a.h` | `a.h` too, by path through the call (statement 3) | a reading |
+  | `A(x:)` sent, `A.x` or `[c = A(x:)]`, `c.x` | not offered: a compile error for now; `x` is read bare | a reading |
+  | `identity((A))`, `identity.h` | nothing: an expression exports what its own text writes, a part used alone in it nothing (in tension with core/principles/meaning-not-spelling: `(A)` and `A` match alike) | a reading |
   | `[(=h) = rx]` in a body | a compile error at the definition: a parameter exports nothing the body can list | a reading |
 A part label written on the argument: WHOLE `3xx` HOLDS, `7xx` FAILS / SEARCHED `7xx 3xx` `3xx`@4 / FIND-ALL `3xx 7xx 4xx` [`3xx`@0, `4xx`@8] (`B([f = /\d/]) & (f: <5)`, B(rx) := `/${rx}xx/`)
 Placed twice, the last mention: WHOLE `7,3` HOLDS, `3,7` FAILS / SEARCHED `3,7 7,3` `7,3`@4 / FIND-ALL `7,3 3,7 1,2` [`7,3`@0, `1,2`@8] (`pair([f = /\d/]) & (f: <5)`, pair(p) := `/${p},${p}/`)
@@ -620,11 +624,33 @@ The read inside the argument: WHOLE `2000-01-02xx` HOLDS, `2001-01-02xx` FAILS /
 The body using its argument alone: modes: a compile error (`B(A) & (A.d: <5)`, A := `/(?<d>\d)/`, B(rx) := `/${rx}xx/`: `d` is written in A's text, not the caller's, and B uses A alone; argument-default).
 A caller's label on the spot: WHOLE `2000-01-02xx` HOLDS, `2001-01-02xx` FAILS / SEARCHED `1999-12-31xx 2000-03-04xx` `2000-03-04xx`@13 / FIND-ALL `2000-01-02xx 2001-01-02xx 2000-12-31xx` [`2000-01-02xx`@0, `2000-12-31xx`@26] (`R(x:, isodate) & (x.year: 2000)`, R(l:, v) := `/${[l = v]}xx/`, isodate := `[year = /\d{4}/] SEQ "-" SEQ [month = /\d\d/] SEQ "-" SEQ [day = /\d\d/]`)
 A part label on an argument of a list body: WHOLE `3` HOLDS, `7` FAILS / SEARCHED `7 3` `3`@2 / FIND-ALL `3 7 4` [`3`@0, `4`@4] (`identity([a = A]) & (a.h: <5)`, A := `/(?<h>\d)/`, identity(x) := `/${[(=) = x]}/`)
+Through the call, by path: WHOLE `3` HOLDS, `7` FAILS / SEARCHED `7 3` `3`@2 / FIND-ALL `3 7 4` [`3`@0, `4`@4] (`identity([a = A]) & (identity.a.h: <5)`, A := `/(?<h>\d)/`, identity(x) := `/${[(=) = x]}/`)
+A sent label through the macro's name: modes: a compile error (`A(x:) & (A.x: 5)`, A(l:) := `/(?<:${l}>\d+)/`: not offered for now; `[c = A(x:)] & (c.x: 5)` alike).
 A read inside an argument, bare: modes: a compile error (`B(A & (h: "3"))`, A := `/(?<h>\d)/`, B(rx) := `/${rx}xx/`: `h` is not written in the caller's text; label-reference).
 A read inside an argument, with its source: WHOLE `3xx` HOLDS, `7xx` FAILS / SEARCHED `7xx 3xx` `3xx`@4 / FIND-ALL `3xx 7xx` [`3xx`@0] (`B(A & (A.h: "3"))`, A := `/(?<h>\d)/`, B(rx) := `/${rx}xx/`)
 A binding alone: WHOLE `3` HOLDS, `7` FAILS / SEARCHED `7 3` `3`@2 / FIND-ALL `3 7 4` [`3`@0, `4`@4] (`identity(A) & (identity.h: <5)`, A := `/(?<h>\d)/`, identity(x) := `/${[(=) = x]}/`)
 A binding in parentheses: modes: a compile error (`identity((A)) & (identity.h: <5)`, A := `/(?<h>\d)/`, identity(x) := `/${[(=) = x]}/`: the argument's own text writes no label, A used alone in it).
 A named list on a spot: modes: a compile error (`N(A) & (N.h: <5)`, A := `/(?<h>\d)/`, N(rx) := `/${[(=h) = rx]}/`: a parameter exports nothing the definition can see, so the list names no exported label).
+
+### A caller's own label under a closing body   [core/labels/export/closed-own]   open closing-own-label 2026-11-23
+Does a body that closes its argument's spot (`[_ = rx]`) hide a part label or an in-place group the caller writes inside the argument?
+needs: core/labels/export/arguments
+see: core/labels/export core/operators/bindings/label-in-argument core/labels/paths/closed-argument
+- The definition today: two ruled sentences meet. The caller's label "is the caller's own, set where the body
+  places the template" (core/labels/export/arguments); "`[_ = A]` makes none of A's labels visible anywhere
+  outside A" (core/labels/export, statement 7). The backdoor is ruled for a sent label only
+  (core/operators/bindings/label-in-argument). Until he answers, a read of such a label is a compile error naming
+  this question; nothing is applied.
+- Candidate (a): it passes, as a sent label does. The manager's leaning: the record put the caller's own label on
+  the argument as working "without the body's cooperation", the proposal he answered yes (argument-label).
+- Candidate (b): it is hidden like the rest of the argument's labels.
+- A condition written inside the argument reads the argument's labels either way (the line "Inside the argument").
+Today: modes: a compile error (`B([a = A]) & (a.h: <5)`, A := `/(?<h>\d)/`, B(rx) := `/${[_ = rx]}xx/`: open closing-own-label; `B(/(?<g>\d)/) & (g: <5)` alike).
+Candidate (a) of closing-own-label: WHOLE `3xx` HOLDS, `7xx` FAILS / SEARCHED `7xx 3xx` `3xx`@4 / FIND-ALL `3xx 7xx 4xx` [`3xx`@0, `4xx`@8] (`B([a = A]) & (a.h: <5)`, A := `/(?<h>\d)/`, B(rx) := `/${[_ = rx]}xx/`)
+Candidate (a) of closing-own-label, an in-place group: WHOLE `3xx` HOLDS, `7xx` FAILS / SEARCHED `7xx 3xx` `3xx`@4 / FIND-ALL `3xx 7xx 4xx` [`3xx`@0, `4xx`@8] (`B(/(?<g>\d)/) & (g: <5)`, B(rx) := `/${[_ = rx]}xx/`)
+Candidate (b) of closing-own-label: modes: a compile error (`B([a = A]) & (a.h: <5)`, A := `/(?<h>\d)/`, B(rx) := `/${[_ = rx]}xx/`: `h` is not visible through `a`; `B(/(?<g>\d)/) & (g: <5)` alike).
+Inside the argument: WHOLE `3xx` HOLDS, `7xx` FAILS / SEARCHED `7xx 3xx` `3xx`@4 / FIND-ALL `3xx 7xx 4xx` [`3xx`@0, `4xx`@8] (`B([a = A] & (a.h: <5))`, A := `/(?<h>\d)/`, B(rx) := `/${[_ = rx]}xx/`)
+A sent label: WHOLE `"3"xx` HOLDS, `"7"xx` FAILS / SEARCHED `"7"xx "3"xx` `"3"xx`@6 / FIND-ALL `"3"xx "7"xx` [`"3"xx`@0] (`B(S(x:)) & (x: <5)`, B(rx) := `/${[_ = rx]}xx/`, S(l:) := `/"(?<:${l}>\d)"/`)
 
 ### Part labels and paths   [core/labels/paths]   ruled 2026-11-22
 A part label `[x = A]` names part A; `x.h` is the label h as part A exports it, and a part label mentioned more than once names its last mention where the reference is written.
@@ -945,31 +971,63 @@ A value with no label: WHOLE `x` HOLDS / SEARCHED `ax` `x`@1 / FIND-ALL `x x` [`
 A joint entry with a value: WHOLE `3+4=7` HOLDS, `7+8=1` FAILS, `1+2=34` FAILS / SEARCHED `7+8=1 2+2=4` `2+2=4`@6 / FIND-ALL `1+1=2 9+9=1 5+4=12` [`1+1=2`@0, `5+4=1`@12] (`/(?<a>\d)\+(?<b>\d)=(?<c>\d+)/ & ((($a + $b), c): (<10, /\d/))`)
 
 ### The optional entry operator   [core/conditions/form/optional-entry]   ruled 2026-11-23
-An entry written with `?:` (`(h ?: S)`) holds when its left part has no value or its value is in S; with `:` the left part must have a value in S.
+An entry written with `?:` on a label (`(h ?: S)`) holds when h is absent or its value is in S; with `:` h must be present and in S.
 needs: core/conditions/form core/conditions/form/value-left
 see: core/conditions/two-valued core/conditions/defaults core/conditions/match-so-far lib/structural/capture core/diagnostics/warnings core/spellings/placeholders
 - His words: "optional-label: yes."; on where the mark sits: "Before the colon: then perhaps it's an alternative
   operator to the colon like :  ?:  rather than a separate operator. I like that because then we aren't using ? For
   two different meanings".
-- Ruled: the mark is the entry's, before the colon. The second entry operator `?:` is his lean, a placeholder; `?`
-  stays regex's optional and nothing else.
-- Nothing about the left part changes (the manager's reading (a)): a joint holds when a part has no value (the line
-  "A joint left part"), a value when it is nothing (the line "A value left part") (readings, run). One part of a
-  joint gets its witness by a default (core/conditions/defaults).
-- `h+`, `h*` and `(a?, b)` are not forms: there is no mark on a label to generalise (the manager's reading (b)).
+- Ruled: the mark is the entry's, before the colon (his answer on the place, taken as the ruling, told to him so he
+  can object). The second entry operator `?:` is his lean, a placeholder; `?` stays regex's optional and nothing else.
+- The edges of the statement he answered stand: `?:` on a joint entry's left part, on a value left of `:`, and inside
+  a group question are compile errors for now (the lines below; open: core/conditions/form/optional-edges).
+- Special form or general case: his flag, open (core/conditions/form/optional-general).
+- `h+`, `h*` and `(a?, b)` are compile errors for now (the manager's reading (b); his flag asks it).
 - `NOT (h ?: S)` is h present and outside S, the answers of `(h: !S)` (reading (c); the line "Under `NOT`").
 - A default with it (`(h = v ?: S)`) can never be used and draws `pcrec.default.unused` (reading (d)); `0` is never
   absent, so `?:` on it draws the same warning (core/conditions/match-so-far).
 - `?:` is one token: a postfix `?` on a value before a colon needs parentheses; rx text's `(?:` is untouched (reading (e)).
 - In a search the pattern may drop an optional group so the entry passes (`5,1` reports `5,`): regex's behaviour
   (a reading, run).
+- On a loop whose body can match empty, PCRE's trailing empty pass leaves the label unset, so `?:` never rejects
+  there and an "if present" request returns unset (run through libpcre2; the line "A loop that can match empty").
 - The capture request with it: `(h ?: capture("h"))` (lib/structural/capture).
 The entry `?:`: WHOLE `x` HOLDS, `3x` HOLDS, `7x` FAILS / SEARCHED `7x x` `x`@1 / FIND-ALL `7x 3x x` [`x`@1, `3x`@3, `x`@6] (`/(?<h>\d)?x/ & (h ?: <5)`)
 The plain entry: WHOLE `x` FAILS, `3x` HOLDS, `7x` FAILS / SEARCHED `7x x` FAILS / FIND-ALL `7x 3x x` [`3x`@3] (`/(?<h>\d)?x/ & (h: <5)`)
 The default inside the set: WHOLE `x` HOLDS, `3x` HOLDS, `7x` FAILS / SEARCHED `7x x` `x`@1 / FIND-ALL `7x 3x x` [`x`@1, `3x`@3, `x`@6] (`/(?<h>\d)?x/ & (h = "0": <5)`)
 Under `NOT`: WHOLE `x` FAILS, `3x` FAILS, `7x` HOLDS / SEARCHED `7x x` `7x`@0 / FIND-ALL `7x 3x x` [`7x`@0] (`/(?<h>\d)?x/ & NOT (h ?: <5)`)
-A joint left part: WHOLE `6,1` HOLDS, `5,3` HOLDS, `5,1` FAILS, `,1` HOLDS, `,9` HOLDS, `5,` HOLDS, `2,` HOLDS, `,` HOLDS / SEARCHED `5,1 ,1 6,0` `5,`@0 / FIND-ALL `5,1 5,4 ,1 2, 7,` [`5,`@0, `5,4`@4, `,1`@8, `2,`@11, `7,`@14] (`/(?<a>\d)?,(?<b>\d)?/ & ((a, b) ?: >= (5, 3))`)
-A value left part: WHOLE `3,4` HOLDS, `6,7` FAILS, `,4` HOLDS, `3,` HOLDS / SEARCHED `6,7 3,` `6,`@0 / FIND-ALL `6,7 3,4 ,4` [`6,`@0, `3,4`@4, `,4`@8] (`/(?<a>\d)?,(?<b>\d)?/ & (($a + $b) ?: <10)`)
+A loop that can match empty: WHOLE `x` HOLDS, `3x` HOLDS, `7x` HOLDS, `73x` HOLDS / SEARCHED `7x 3x` `7x`@0 / FIND-ALL `7x 3x x` [`7x`@0, `3x`@3, `x`@6] (`/(?:(?<h>\d)?)*x/ & (h ?: <5)`; with `:` WHOLE `x` FAILS, `3x` HOLDS, `7x` FAILS, `73x` HOLDS)
+A joint left part: modes: a compile error for now (`/(?<a>\d)?,(?<b>\d)?/ & ((a, b) ?: >= (5, 3))`).
+A value left part: modes: a compile error for now (`/(?<a>\d)?,(?<b>\d)?/ & (($a + $b) ?: <10)`).
+Inside a group question: modes: a compile error for now (`/(?<h>\d);(?:(?<h>\d);)*/ & some((h ?: "7"))`).
+
+### The edges of the optional entry   [core/conditions/form/optional-edges]   open optional-entry-edges 2026-11-23
+Is `?:` legal on a joint left part and on a value left of `:`, and what does it mean there? For now both are compile errors.
+needs: core/conditions/form/optional-entry
+see: core/conditions/form core/conditions/form/value-left core/values/tuples
+- The definition today: the statement he answered with "optional-label: yes." made `?` on a joint entry's label, on
+  a value left of `:` and inside a group question compile errors for now; his answer on the place left the joint and
+  value cases unruled.
+- Candidate (a): keep the compile errors.
+- Candidate (b): nothing about the left part changes: a joint holds when a part has no value, a value when it is
+  nothing (the manager's reading (a) on optional-place). Its cost: it breaks the ruled identity
+  `(h: A, m: B)` = `((h, m): (A, B))` for `?:`, on `,9` (the joint holds, the record of the same entries fails).
+Candidate (b) of optional-entry-edges, a joint left part: WHOLE `6,1` HOLDS, `5,3` HOLDS, `5,1` FAILS, `,1` HOLDS, `,9` HOLDS, `5,` HOLDS, `2,` HOLDS, `,` HOLDS / SEARCHED `5,1 ,1 6,0` `5,`@0 / FIND-ALL `5,1 5,4 ,1 2, 7,` [`5,`@0, `5,4`@4, `,1`@8, `2,`@11, `7,`@14] (`/(?<a>\d)?,(?<b>\d)?/ & ((a, b) ?: >= (5, 3))`)
+Candidate (b) of optional-entry-edges, the joint: WHOLE `,9` HOLDS, `5,3` HOLDS, `,3` HOLDS, `5,9` FAILS / SEARCHED `5,9 ,9` `5,`@0 / FIND-ALL `5,9 ,9 5,3` [`5,`@0, `,9`@4, `5,3`@7] (`/(?<a>\d)?,(?<b>\d)?/ & ((a, b) ?: ("5", "3"))`)
+The record of the same entries: WHOLE `,9` FAILS, `5,3` HOLDS, `,3` HOLDS, `5,9` FAILS / SEARCHED `5,9 ,9` `5,`@0 / FIND-ALL `5,9 ,9 5,3` [`5,`@0, `,`@4, `5,3`@7] (`/(?<a>\d)?,(?<b>\d)?/ & (a ?: "5", b ?: "3")`)
+Candidate (b) of optional-entry-edges, a value left part: WHOLE `3,4` HOLDS, `6,7` FAILS, `,4` HOLDS, `3,` HOLDS / SEARCHED `6,7 3,` `6,`@0 / FIND-ALL `6,7 3,4 ,4` [`6,`@0, `3,4`@4, `,4`@8] (`/(?<a>\d)?,(?<b>\d)?/ & (($a + $b) ?: <10)`)
+
+### Special form or general case   [core/conditions/form/optional-general]   open optional-label-general 2026-11-23
+Is the optional entry a special form, or the general case of an expression left of `:`? His flag; nothing is ruled.
+needs: core/conditions/form/optional-entry
+see: core/conditions/form/value-left core/conditions/form/optional-edges parked/ideas/optional-arguments
+- His flag: "flag an item to see if this is a special form or general."
+- Its standing state, his two leans: "I think the ? In conditions is a special case, but I'm trying to figure out
+  how special."; and the operator spelling: "then perhaps it's an alternative operator to the colon like :  ?:
+  rather than a separate operator".
+- The manager's thought (b) on optional-place, not ruled: with `?:` there is no mark on a label to generalise, so
+  `h+` / `h*` do not arise and `(a?, b)` is not a form.
+modes: n/a (a question about the form; the runs are the optional entry's and its edges')
 
 ### A record inside a group question   [core/conditions/form/record-in-some]   open record-in-some 2026-11-22
 Inside a group question, is a record of several plain entries still the product of its entries, `some((h: "5", m: "3"))` = `some(((h, m): ("5", "3")))`?
@@ -1898,14 +1956,15 @@ see: core/modules/leave-out core/operators/bindings/call-forms parked/ideas/empt
 - His words: "i agree that _ should be the unspecified label- it also comments on your meaning."; "we currently don't
   have overloading so a macro defined for 3 args needs three args. they can be omitted by row(,"level", ...) if we
   choose to allow that but not omitted under current macro call rules regardless of labels."
-- In the body `_` follows forms already ruled: `[l = B]` is `[_ = B]`, `(?<:${l}>...)` a plain group, so nothing
-  is exported (the manager's reading (a); the line "The unspecified label"). Two `_` never collide (reading (b)).
-- A body that places its label parameter and then reads it, passed `_`, reads its own placement under a private
-  name (the lane's reading; the second line); a body that reads without placing is refused at its definition
+- In the body `_` follows forms already ruled: `[l = B]` is `[_ = B]`, `(?<:${l}>...)` a plain non-capturing
+  group, so nothing is exported (the manager's reading (a); the line "The unspecified label"). Two `_` never
+  collide (reading (b)).
+- A body that reads its label parameter, called with `_`, is a compile error at the call: there is nothing to read
+  (the manager's reading (c); the second line); a body that reads without placing is refused at its definition
   (core/operators/bindings/label-kinds).
 - The empty argument position `row(,"level", ..)` is his idea, not ruled (parked/ideas/empty-argument).
 The unspecified label: WHOLE `3!` HOLDS, `7!` HOLDS / SEARCHED `x3!` `3!`@1 / FIND-ALL `3! 7!` [`3!`@0, `7!`@3] (`A(_:) SEQ "!"`, A(l:) := `/(?<:${l}>\d)/`)
-A body placing then reading its label, passed `_`: WHOLE `3` HOLDS, `7` FAILS / SEARCHED `7 3` `3`@2 / FIND-ALL `3 7 4` [`3`@0, `4`@4] (`C(_:)`, C(l:) := `/(?<:${l}>\d)/ & (l: <5)`)
+A body placing then reading its label, passed `_`: modes: a compile error (`C(_:)`, C(l:) := `/(?<:${l}>\d)/ & (l: <5)`: the body reads `l` and `_` names nothing to read).
 
 ### A label parameter with a default   [core/operators/bindings/label-default]   ruled 2026-11-23
 A label parameter may be an optional (keyword) parameter under the existing call rule; passed by name it is written `l = x:`, his spelling lean.
@@ -1913,10 +1972,12 @@ needs: core/operators/bindings/label-variables core/operators/bindings/label-omi
 see: core/spellings/placeholders
 - His words: "label-parameter-default: yes you could use a label in an optional parameter. i lean towards ..., l =
   ts:) ... spelling for consistency and l: ts looks like a condition".
-- The default is the author's to declare in the head (`A2(l = _:)`, a placeholder; the manager's reading): his
-  words rule the optionality, not which default.
+- The default is the author's to declare in the head (`A2(l = _:)`, a placeholder); for now it is `_` only (the
+  manager's reading): a default naming a label would make a label the caller's text never wrote
+  (core/labels/paths/label-reference). His words rule the optionality, not which default.
 Passed by name: WHOLE `5` HOLDS, `55` FAILS, `7` FAILS / SEARCHED `7 5` `5`@2 / FIND-ALL `5 7 56 15` [`5`@0, `5`@4, `5`@8] (`A2(l = x:) & (x: 5)`, A2(l = _:) := `/(?<:${l}>\d+)/`)
 Left out, the default `_`: WHOLE `5` HOLDS, `55` HOLDS, `x` FAILS / SEARCHED `x5` `5`@1 / FIND-ALL `5 7` [`5`@0, `7`@2] (`A2()`, A2(l = _:) := `/(?<:${l}>\d+)/`)
+A default naming a label: modes: a compile error (`A2() & (ts: 5)`, A2(l = ts:) := `/(?<:${l}>\d+)/`: for now the head default is `_` only).
 
 ### One label mark, one meaning   [core/operators/bindings/label-kinds]   ruled 2026-11-23
 The label mark is the setting kind only: a call names one new label; a body reading a label parameter it never places is a compile error at its definition; the reference kind is for natives.
