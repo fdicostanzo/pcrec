@@ -1,0 +1,90 @@
+#!/usr/bin/env bash
+# 710-kit-u6time (key kit-u6time): the R-47 U6 C6/C6c TIMING on the dev box (Zen 4; CPU 15, SMT sibling read from sysfs).
+# Written from docs/dev/lanes/bsu6fix_report.md "WINDOW REQUEST" (lane u6time, 2026-11-23). PREPARED, NOT QUEUED.
+# Phases in ONE job (one log): PREPARE (compiles, reach control, pool proofs, then a no-clock dry rehearsal),
+# QUIET (the slot Waiter, 600 s as job 710's run), TIME (compiles nothing), then the c6decide read-back.
+# CLEARANCE GATE (binding): --ready exits 75 unless $CLEARED exists with ONE line
+#     start=YYYY-MM-DDTHH:MM stop=YYYY-MM-DDTHH:MM [evening=ok]
+# and start <= now and now + EST <= stop. 20:00-01:00 is refused unless the line carries evening=ok. Only the kit manager
+# writes that file, after Frank's clearance. The time stage's --stop-at is that stop=.
+# CLEARED may be overridden by env U6TIME_CLEARED ONLY for a --ready drill (the real run ignores it).
+set -u
+export LC_ALL=C
+P=${PCREC_TMPDIR:-/var/tmp/pcrec-$(id -un)}
+S=$P/scratch/u6time
+W=/home/pcrec/projects/pcrec/worktrees/u6time
+TREE_SHA=b291a2f7c
+CLEARED=/home/pcrec/projects/pcrec/worktrees/.mgr/u6time.cleared
+[ "${1:-}" = --ready ] && CLEARED=${U6TIME_CLEARED:-$CLEARED}
+CARDS=$W/memfn/tests/span_forms/cards.py
+RUNDIR=$S/run
+SLOTDIR=$W/docs/design/memfn/span_cards/slot
+WAITQUIET=$P/scratch/memfn/fcards/jobs/waitquiet.py
+CPU_PIN=15
+SIB=$(tr ',' '\n' < /sys/devices/system/cpu/cpu$CPU_PIN/topology/thread_siblings_list | grep -vx "$CPU_PIN" | head -1)
+EST=1400 CAP=3600
+export TMPDIR=$S/tmp
+tree_ok() {
+    [ "$(git -C "$W" rev-parse HEAD)" = "$(git -C "$W" rev-parse "$TREE_SHA^{commit}")" ] || { echo "u6time: $W HEAD is not $TREE_SHA" >&2; return 1; }
+    [ -z "$(git -C "$W" status --porcelain --untracked-files=no -- . ':!docs/dev/lanes/u6time*' ':!docs/dev/artifact_size_log.tsv')" ] || { echo "u6time: tracked changes in $W" >&2; return 1; }
+    [ -x "$W/build/pcrec-harness" ] && [ -f "$CARDS" ] || { echo "u6time: $W is not built (make -j16)" >&2; return 1; }
+    [ "$SIB" = 7 ] || { echo "u6time: SMT sibling of CPU $CPU_PIN reads '$SIB', expected 7" >&2; return 1; }
+}
+epoch() { date -d "${1/T/ }" +%s; }
+gate() {    # prints the reason and returns 75 unless cleared; on success sets STOP_EPOCH
+    [ -f "$CLEARED" ] || { echo "not cleared: no $CLEARED"; return 75; }
+    local line start stop now ev
+    line=$(head -1 "$CLEARED")
+    [[ $line =~ ^start=([0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2})\ stop=([0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2})(\ evening=ok)?$ ]] \
+        || { echo "not cleared: $CLEARED line is not 'start=YYYY-MM-DDTHH:MM stop=YYYY-MM-DDTHH:MM [evening=ok]'"; return 75; }
+    start=$(epoch "${BASH_REMATCH[1]}") && stop=$(epoch "${BASH_REMATCH[2]}") || { echo "not cleared: unparsable times"; return 75; }
+    ev=${BASH_REMATCH[3]}; now=$(date +%s)
+    [ "$start" -le "$now" ] || { echo "not cleared: window starts ${BASH_REMATCH[1]}, later than now"; return 75; }
+    [ $((now + EST)) -le "$stop" ] || { echo "not cleared: now + est ${EST} s passes the window's stop ${BASH_REMATCH[2]}"; return 75; }
+    if [ -z "$ev" ]; then
+        local t te
+        t=$((10#$(date +%H%M)))
+        { [ "$t" -lt 2000 ] && [ "$t" -ge 100 ]; } || { echo "not cleared: 20:00-01:00 and the window does not say evening=ok (now $t)"; return 75; }
+        te=$((10#$(date -d "@$((now + EST))" +%H%M)))
+        { [ "$te" -lt 2000 ] && [ "$te" -ge 100 ]; } || { echo "not cleared: now + est reaches 20:00 and the window does not say evening=ok"; return 75; }
+    fi
+    STOP_EPOCH=$stop; return 0
+}
+case "${1:-}" in
+    --dry-run)
+        tree_ok || exit 1
+        [ -f "$WAITQUIET" ] && [ -f "$SLOTDIR/run.py" ] || { echo "u6time: waitquiet.py or the slot's run.py missing" >&2; exit 1; }
+        echo "would run in $W (HEAD $TREE_SHA): prepare (cards.py time $RUNDIR --prepare --cards C6,C6c, JOBS=12; then --dry --dry-model tie must print 'clock calls 0' and 'DONE rc=0'); quiet wait 600 s (slot Waiter); CPU=$CPU_PIN (sibling $SIB) nice -n 5 cards.py time $RUNDIR --cap $CAP --job-start <epoch> --stop-at <the clearance's stop=>; c6decide read-back"
+        echo "boxqueue: not-before 2026-11-23T00:00"; echo "boxqueue: cap $CAP"; echo "boxqueue: patience none"; echo "boxqueue: est $EST"
+        echo "boxqueue: idle-ok"
+        echo 'boxqueue: expect done=1 lines=^cards: time: DONE rc=0$'
+        echo 'boxqueue: expect truncated=0 lines=^cards: time: TRUNCATED$'
+        echo 'boxqueue: expect verdict=3 lines=^C6c? [a-z-]+: (TRUNCATED: )?(NO LOSS|LOSS|VOID|INCONCLUSIVE)'
+        exit 0 ;;
+    --ready)
+        gate; rc=$?; [ $rc -eq 0 ] || exit $rc
+        tree_ok >&2 || exit 77
+        exit 0 ;;
+esac
+JOB_START=$(date +%s)
+gate || { echo "u6time: DONE rc=75 (the gate closed at start)"; exit 1; }
+tree_ok || { echo "u6time: DONE rc=1"; exit 1; }
+echo "u6time: tree $(git -C "$W" rev-parse HEAD), CPU $CPU_PIN sibling $SIB, window stop $(date -d "@$STOP_EPOCH" +%FT%T), job start $JOB_START"
+mkdir -p "$TMPDIR" || exit 1
+[ -e "$RUNDIR" ] && { echo "u6time: $RUNDIR exists (a rundir is one run)"; exit 1; }
+CARDS_RUN() { ( cd "$W" && "$@" ); }
+echo "u6time: PREPARE"
+CARDS_RUN env JOBS=12 python3 -I -B memfn/tests/span_forms/cards.py time "$RUNDIR" --prepare --cards C6,C6c || { echo "u6time: prepare failed"; exit 1; }
+CARDS_RUN python3 -I -B memfn/tests/span_forms/cards.py time "$RUNDIR" --dry --dry-model tie > "$S/dry_tie.log" 2>&1; drc=$?
+tail -3 "$S/dry_tie.log"
+{ [ $drc -eq 0 ] && grep -q 'clock calls 0' "$S/dry_tie.log" && grep -q '^cards: time: DONE rc=0$' "$S/dry_tie.log"; } || { echo "u6time: the no-clock rehearsal failed (rc $drc)"; exit 1; }
+echo "u6time: QUIET"
+SLOT_TREE="$W" python3 -I "$WAITQUIET" "$SLOTDIR" "$RUNDIR" || { echo "u6time: the quiet wait failed"; exit 5; }
+gate || { echo "u6time: after the quiet wait the gate closed"; exit 1; }
+echo "u6time: TIME"
+CARDS_RUN env CPU=$CPU_PIN nice -n 5 python3 -I -B memfn/tests/span_forms/cards.py time "$RUNDIR" --cap "$CAP" --job-start "$JOB_START" --stop-at "$STOP_EPOCH"
+rc=$?
+res=$(ls -t "$RUNDIR"/results_c6_*.tsv 2>/dev/null | head -1)
+echo "u6time: c6decide read-back of $res (time rc=$rc)"
+[ -n "$res" ] && CARDS_RUN python3 -I -B memfn/tests/span_forms/cards.py c6decide "$res"
+exit $rc
