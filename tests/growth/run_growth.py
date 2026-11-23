@@ -60,7 +60,12 @@ ROOT = os.path.dirname(os.path.dirname(HERE))
 # above every depth family.
 LADDER = [2 << 20, 8 << 20, 32 << 20, 128 << 20]
 
-WALL_S, CPU_S, RSS = 180, 180, "3g"
+# TIME BOUNDS (owner ruling growth-time-bound, 2026-11-21): a cell's time bound is CPU SECONDS (user+sys of the compile's
+# process tree, scripts/watchdog -c), so a loaded box or a slow runner cannot turn a correct cell red; the WALL bound is only a
+# HANG GUARD (a process that sleeps or blocks burns no CPU).  A red names which bound fired.  Values and where they come from:
+# BOUNDS_BASIS below (measured, never guessed).  The OCCASIONAL tier (--tier occasional) has its own, generous pair.
+CPU_S, WALL_S, RSS = 60, 600, "3g"
+OCC_CPU_S, OCC_WALL_S = 1800, 7200
 # A LIMIT cell's matcher runs on each of these subjects (no match, a one-byte, a longer
 # one); each run must exit 0 or 1.  Fixed, not per-cell: the verdict is "it runs", not the answer.
 SUBJECTS = ("", "a", "abcabc")
@@ -179,6 +184,10 @@ class Cell:
             sys.exit("run_growth: cell %s: a limit cell names the limit it sits just before" % cid)
         if kind == "stability" and (not expect or any(not a.startswith("refuse:") for a in expect.split(","))):
             sys.exit("run_growth: cell %s: a stability cell's expect is refuse:SUBSTR (the limit's text), got %r" % (cid, expect))
+        # OCCASIONAL tier (owner ruling growth-time-bound (3), 2026-11-21): the cells that stay costly by nature, the named
+        # compile-only exceptions (limit-cell-matcher-cost: the NFA-state / VM-node edges with the size limits lifted).
+        # Not in the default tier or the cloud shards; `--tier occasional` runs them with the generous bounds.
+        self.occasional = bool(self.norun)
         self.stack, self.raise_, self.features, self.engine = stack, raise_, features, engine
         self.expect, self.limit = expect, limit_name
         # red: "ID:KIND" -> the known issue and the one failure kind it takes
@@ -196,6 +205,22 @@ class Cell:
                 self.refusals.append(alt[7:])
 
 
+def read_axes():
+    ax = {"K": [], "Q": [], "P": [], "C": []}
+    for row in tsv(os.path.join(HERE, "matrix_axes.tsv"), {"K": 3, "Q": 3, "P": 4, "C": 4}):
+        ax[row[0]].append(tuple(row[1:]))
+    return ax
+
+
+def matrix_parts(kn, kopen, q, ppre, ppost, calts, core, cn):
+    """The matrix cell's nest() pieces: (pre, op, core, cl); the one place the product is spelled."""
+    a, b = calts.split(",")
+    op = kopen + ppre.replace("{A}", a).replace("{B}", b)
+    cl = ppost.replace("{B}", b) + ")" + q
+    # a `\1` core needs a group 1: the kinds that capture nothing get one in front
+    return ("(a)" if cn == "bref" and kn not in CAPTURING else ""), op, core, cl
+
+
 def build_cells(budget, depth):
     cells = []
     # --- DEPTH: the shared table, at depth and depth + 1 --------------------
@@ -211,20 +236,14 @@ def build_cells(budget, depth):
     # plus_edges.tsv: cid, edge E (the deepest `+` nest that compiles), the lower limit that refuses E + 1, its text,
     # then the limit (and text) that refuses the @250 cell
     plus_edges = {r[0]: (int(r[1]), r[2], r[3], r[4], r[5]) for r in tsv(os.path.join(HERE, "plus_edges.tsv"), 6)}
-    ax = {"K": [], "Q": [], "P": [], "C": []}
-    for row in tsv(os.path.join(HERE, "matrix_axes.tsv"), {"K": 3, "Q": 3, "P": 4, "C": 4}):
-        ax[row[0]].append(tuple(row[1:]))
+    ax = read_axes()
     for kn, kopen in ax["K"]:
         for qn, q in ax["Q"]:
             for pn, ppre, ppost in ax["P"]:
                 for cn, calts, core in ax["C"]:
                     if kn == "lookbehind" and cn == "bref":
                         continue    # PCRE2 refuses a backreference inside a lookbehind: no cell can compile
-                    a, b = calts.split(",")
-                    op = kopen + ppre.replace("{A}", a).replace("{B}", b)
-                    cl = ppost.replace("{B}", b) + ")" + q
-                    # a `\1` core needs a group 1: the kinds that capture nothing get one in front
-                    pre = "(a)" if cn == "bref" and kn not in CAPTURING else ""
+                    pre, op, core, cl = matrix_parts(kn, kopen, q, ppre, ppost, calts, core, cn)
                     cid = "%s.%s.%s.%s" % (kn, qn, pn, cn)
                     for d in (depth, depth + 1):
                         pat = nest(pre, op, core, cl, "", d)    # nest() repeats `cl` once per level
@@ -373,13 +392,18 @@ class Runner:
         self.libtotals = {}    # cell id -> SUM of its library-mode compiles' wall seconds
         self.totals = {}       # cell id -> SUM of every CLI-stage run's wall seconds (the cell's cost; --units)
         self.pat_id = {}       # patfile -> cell id
+        self.gcc_cpus = {}     # cell id -> CPU seconds scripts/watchdog saw for the gcc build of the cell's matcher
+        self.cpus = {}         # cell id -> the largest compile CPU seconds (user+sys, the driver's own getrusage) of an uncapped run
 
     def patfile(self, cell):
-        p = os.path.join(self.work, re.sub(r"[^A-Za-z0-9_.@-]", "_", cell.id) + ".pat")
-        self.pat_id[p] = cell.id
+        return self.patfile_raw(cell.id, cell.pattern)
+
+    def patfile_raw(self, cid, pattern):
+        p = os.path.join(self.work, re.sub(r"[^A-Za-z0-9_.@-]", "_", cid) + ".pat")
+        self.pat_id[p] = cid
         if not os.path.exists(p):
             with open(p, "w", encoding="utf-8") as f:
-                f.write(cell.pattern)
+                f.write(pattern)
         return p
 
     def one(self, cell, cap):
@@ -392,49 +416,67 @@ class Runner:
         self.totals[cell.id] = self.totals.get(cell.id, 0) + w
         return r
 
+    def drive(self, pf, cap, stack, raise_, features, engine, csrc=None):
+        """ONE compile through scripts/watchdog and growth_driver.  -> (kind, text, cpu seconds or None); a TIMEOUT
+        names the bound that fired (CPU or the WALL hang guard)."""
+        cmd = [self.wd, "-s", str(WALL_S), "-c", str(CPU_S), "-m", RSS, "-i", "0.1",
+               "-S", "growth", "-L", os.path.join(self.work, "watchdog.log"), "--",
+               self.drv, "one", str(cap), str(stack), str(raise_),
+               features or "-", str(engine), pf] + ([csrc] if csrc else [])
+        r = subprocess.run(cmd, capture_output=True, text=True, errors="replace")
+        rc = r.returncode
+        if rc == 123:
+            return "TIMEOUT", "CPU bound: over %d CPU seconds (watchdog -c): a timeout is a crash" % CPU_S, None
+        if rc == 124:
+            return "TIMEOUT", "WALL hang guard: over %d s elapsed (watchdog -s), under the CPU bound: a hang or a starved box" % WALL_S, None
+        if rc == 122:
+            return "RUNAWAY", "tree RSS over %s: runaway memory" % RSS, None
+        if rc >= 128 or rc < 0:
+            return "CRASH", "killed by signal %d" % (rc - 128 if rc > 0 else -rc), None
+        m = re.search(r"^rc=(-?\d+) hw=(\d+)(?: cpu=([\d.]+))? msg=(.*)$", r.stdout, re.M)
+        if rc != 0 or not m:
+            return "ERROR", "driver rc=%d %s" % (rc, (r.stderr or r.stdout).strip()[:120]), None
+        cpu = float(m.group(3)) if m.group(3) else None
+        if m.group(1) == "0":
+            return "compiled", "hw=%s" % m.group(2), cpu
+        if m.group(1) == "-9":   # the thread never started: the compile never ran
+            return "ERROR", m.group(4), cpu
+        return "refused", m.group(4), cpu
+
     def one_(self, cell, cap):
         pf = self.patfile(cell)
         # a LIMIT cell's uncapped run also emits the artifact's C (with a main()) so its
         # matcher can be built and run: "compiles AND its matcher runs"
         csrc = pf + ".c" if (cell.kind == "limit" and cell.expect == "compile" and cap == 0) else None
-        cmd = [self.wd, "-s", str(WALL_S), "-c", str(CPU_S), "-m", RSS, "-i", "0.1",
-               "-S", "growth", "-L", os.path.join(self.work, "watchdog.log"), "--",
-               self.drv, "one", str(cap), str(cell.stack), str(cell.raise_),
-               cell.features or "-", str(cell.engine), pf] + ([csrc] if csrc else [])
-        r = subprocess.run(cmd, capture_output=True, text=True, errors="replace")
-        rc = r.returncode
-        if rc in (123, 124):    # 124 wall, 123 CPU (scripts/watchdog)
-            return "TIMEOUT", "wall/CPU limit (%ds): a timeout is a crash" % WALL_S
-        if rc == 122:
-            return "RUNAWAY", "tree RSS over %s: runaway memory" % RSS
-        if rc >= 128 or rc < 0:
-            return "CRASH", "killed by signal %d" % (rc - 128 if rc > 0 else -rc)
-        m = re.search(r"^rc=(-?\d+) hw=(\d+) msg=(.*)$", r.stdout, re.M)
-        if rc != 0 or not m:
-            return "ERROR", "driver rc=%d %s" % (rc, (r.stderr or r.stdout).strip()[:120])
-        if m.group(1) == "0":
-            if csrc:
-                bad = self.matcher(csrc)
-                if bad:
-                    return bad
-            return "compiled", "hw=%s" % m.group(2)
-        if m.group(1) == "-9":   # the thread never started: the compile never ran
-            return "ERROR", m.group(3)
-        return "refused", m.group(3)
+        kind, text, cpu = self.drive(pf, cap, cell.stack, cell.raise_, cell.features, cell.engine, csrc)
+        if cpu is not None and cap == 0 and cpu > self.cpus.get(cell.id, 0):
+            self.cpus[cell.id] = cpu
+        if kind == "compiled" and csrc:
+            bad = self.matcher(csrc, cell.id)
+            if bad:
+                return bad
+        return kind, text
 
-
-    def matcher(self, csrc):
+    def matcher(self, csrc, cid=""):
         """Build the cell's emitted C and run it on SUBJECTS: each run must exit 0 (match) or
         1 (no match), the generated main()'s contract; a crash, a give-up (3) or any other exit
         fails.  -> None, or an outcome (kind, text) with kind BUILD or MATCHER (or TIMEOUT)."""
         exe = csrc[:-2] + ".exe"
         cc = os.environ.get("CC", "gcc")
+        wlog = csrc + ".wd.log"     # this build's own watchdog line: its `cpu=` is the number the CPU bound judged
         b = subprocess.run([self.wd, "-s", str(WALL_S), "-c", str(CPU_S), "-m", RSS, "-S", "growth-cc",
-                            "-L", os.path.join(self.work, "watchdog.log"), "--",
+                            "-L", wlog, "--",
                             cc, "-O0", "-std=gnu11", "-w", "-o", exe, csrc, "-lm"],
                            capture_output=True, text=True, errors="replace")
+        try:
+            m = re.search(r" cpu=([\d.]+) ", open(wlog).read())
+            if m and cid:
+                self.gcc_cpus[cid] = float(m.group(1))
+        except OSError:
+            pass
         if b.returncode in (122, 123, 124):
-            return "TIMEOUT", "gcc on the emitted C over its wall/CPU/RSS bound (rc=%d)" % b.returncode
+            return "TIMEOUT", "gcc on the emitted C over its %s (rc=%d)" % (
+                {123: "CPU bound (%d s)" % CPU_S, 124: "WALL hang guard (%d s)" % WALL_S}.get(b.returncode, "RSS bound (%s)" % RSS), b.returncode)
         if b.returncode != 0:
             return "BUILD", "the emitted C did not build: " + (b.stderr or b.stdout).strip()[:160]
         for subj in SUBJECTS:
@@ -442,7 +484,7 @@ class Runner:
                                 os.path.join(self.work, "watchdog.log"), "--", exe, subj],
                                capture_output=True, text=True, errors="replace")
             if r.returncode in (122, 123, 124):
-                return "TIMEOUT", "matcher on %r over its bound (rc=%d)" % (subj, r.returncode)
+                return "TIMEOUT", "matcher on %r over its fixed 60 s CPU/wall bound (rc=%d)" % (subj, r.returncode)
             if r.returncode not in (0, 1):
                 return "MATCHER", "matcher on %r exited %d (0 = match, 1 = no match): %s" % (
                     subj, r.returncode, (r.stdout or r.stderr).strip()[:80])
@@ -642,10 +684,119 @@ def write_units(path, rn):
             f.write("%s\t%.2f\n" % (k, have[k]))
 
 
+# ---- PER-DOUBLING REPORT (owner ruling growth-doubling-report, 2026-11-22) ------------------------------------
+# For each growth AXIS (a family at sizes that double), the compile CPU of every size and its ratio to the half-size
+# neighbour: about x2 is linear, about x4 quadratic.  A ratio over DOUBLING_RATIO whose larger point costs at least
+# DOUBLING_MIN_CPU CPU seconds is a REPORT line (a superlinear compile step surfaces by measurement: the K159 class),
+# never a red.  DOUBLING_RATIO 3.0 is x2^1.58, midway between linear and quadratic; DOUBLING_MIN_CPU 0.25 s keeps the
+# timer's noise (a few ms) under 2% of the larger point.  A point that crashes, times out or runs away IS a FAIL (a timeout
+# is a crash), as in the sweep.  The nested-`+` axes double the PATTERN per level (the body is replicated), so their
+# neighbour is the previous depth; the spine and depth axes double n.
+DOUBLING_RATIO, DOUBLING_MIN_CPU = 3.0, 0.25
+DOUBLING_START = 500             # the first n of a spine axis (n, 2n, 4n ... up to the limit cell's n)
+DOUBLING_RED_TOP = 4000          # an axis whose cells.tsv row carries a `red` stops here: K148/K150 start near n=8000
+DOUBLING_DEPTHS = (16, 32, 64, 128)    # + the depth limit: the matrix depth axes
+DOUBLING_PLUS_FIRST = 5          # the first nest depth of a nested-`+` axis, up to its edge E (the pattern doubles per level)
+DOUBLING_QUANTS = ("none", "star", "plus", "poss")   # the matrix quantifiers whose depth axis is reported (every construct kind each)
+# the position.core rows per quantifier: `+` first and sole (its nest edge E is bisected per row); the others first and last
+# (poss.last.lit@250 is the sweep's costliest default-tier compile: 27 s CPU, measured by this lane)
+DOUBLING_ROWS = {"plus": ("first.lit", "sole.lit")}
+DOUBLING_ROWS_OTHER = ("first.lit", "last.lit")
+
+
+def doubling_axes(budget, depth):
+    """-> [(axis name, [(size, expected growth of the size, pattern, stack, raise)])] in a fixed order."""
+    axes = []
+    for (cid, fam, pre, unit, sep, mid, unit2, post, n, stack, rz, kind, exp, lim, pair, red) in \
+            tsv(os.path.join(HERE, "cells.tsv"), 16):
+        if kind != "limit" or "," in n or not unit:
+            continue
+        top = min(int(n), DOUBLING_RED_TOP) if red else int(n)
+        sizes, k = [], DOUBLING_START
+        while k <= top:
+            sizes.append(k)
+            k *= 2
+        if len(sizes) >= 3:
+            axes.append(("%s/%s" % (fam, cid), [(k, spine(pre, unit, sep, mid, unit2, post, k), budget if stack == "budget" else 0, int(rz))
+                                              for k in sizes]))
+    ax = read_axes()
+    plus_edges = {r[0]: int(r[1]) for r in tsv(os.path.join(HERE, "plus_edges.tsv"), 6)}
+    for qn, qsym in ((q[0], q[1]) for q in ax["Q"]):
+        if qn not in DOUBLING_QUANTS:
+            continue
+        for kn, kopen in ax["K"]:
+            for pn, ppre, ppost in ax["P"]:
+                for cn, calts, core in ax["C"]:
+                    if "%s.%s" % (pn, cn) not in DOUBLING_ROWS.get(qn, DOUBLING_ROWS_OTHER):
+                        continue
+                    pre, op, core2, cl = matrix_parts(kn, kopen, qsym, ppre, ppost, calts, core, cn)
+                    cid = "%s.%s.%s.%s" % (kn, qn, pn, cn)
+                    if qn == "plus":
+                        sizes = list(range(DOUBLING_PLUS_FIRST, plus_edges[cid] + 1))
+                    else:
+                        sizes = list(DOUBLING_DEPTHS) + [depth]
+                    pts = [(d, nest(pre, op, core2, cl, "", d), budget, 1) for d in sizes]
+                    axes.append(("matrix/%s" % cid, pts))
+    return axes
+
+
+def doubling_report(rn, budget, depth, jobs, only=""):
+    """Run every axis point once (compile CPU from the driver), print the table and the REPORT lines.  -> FAIL count."""
+    axes = doubling_axes(budget, depth)
+    if only:
+        keep = [a for a in axes if any(o in a[0] for o in only.split(","))]
+        if not keep:
+            sys.exit("run_growth: --doubling-only %r names no axis (axes: %s ...)" % (only, ", ".join(a[0] for a in axes[:6])))
+        axes = keep
+    pts = [(ai, pi) for ai, (_, pl) in enumerate(axes) for pi in range(len(pl))]
+
+    def run(t):
+        ai, pi = t
+        name, pl = axes[ai]
+        size, pat, stack, rz = pl[pi]
+        pf = rn.patfile_raw("dbl_%s_%d" % (name, size), pat)
+        return rn.drive(pf, 0, stack, rz, "all", 0)
+
+    with cf.ThreadPoolExecutor(jobs) as ex:
+        res = list(ex.map(run, pts))
+    nfail, rep_lines = 0, []
+    print("== per-doubling CPU report: %d axes, %d points; ratio = CPU / CPU of the half-size neighbour "
+          "(~x2 linear, ~x4 quadratic); REPORT when > x%.1f and the larger point >= %.2f CPU s ==" % (len(axes), len(pts), DOUBLING_RATIO, DOUBLING_MIN_CPU))
+    print("axis\tsize\tcpu_s\tratio\toutcome")
+    k = 0
+    for name, pl in axes:
+        prev = None
+        for size, pat, stack, rz in pl:
+            kind, text, cpu = res[k]; k += 1
+            if kind in ("CRASH", "TIMEOUT", "RUNAWAY", "ERROR"):
+                nfail += 1
+                print("FAIL: %s size %d: %s: %s" % (name, size, kind, text))
+                prev = None
+                continue
+            ratio = (cpu / prev[1]) if (prev and prev[1] > 0 and cpu is not None) else None
+            print("%s\t%d\t%s\t%s\t%s" % (name, size, "%.3f" % cpu if cpu is not None else "-",
+                                          "x%.2f" % ratio if ratio else "-", kind))
+            if ratio and ratio > DOUBLING_RATIO and cpu >= DOUBLING_MIN_CPU:
+                rep_lines.append("REPORT: superlinear step on %s at size %d: x%.2f of size %d (%.2f s vs %.2f s CPU; threshold x%.1f at >= %.2f s)"
+                                 % (name, size, ratio, prev[0], cpu, prev[1], DOUBLING_RATIO, DOUBLING_MIN_CPU))
+            if cpu is not None:
+                prev = (size, cpu)
+    for l in rep_lines:
+        print(l)
+    print("per-doubling report: %d points, %d REPORT line(s), %d failed point(s)" % (len(pts), len(rep_lines), nfail))
+    return nfail
+
+
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--only", default="")
-    ap.add_argument("--jobs", type=int, default=0)
+    ap.add_argument("-j", "--jobs", type=int, default=0, help="cells run at once (default nproc/2: a cell can hold GBs; ordered output; -j 1 is the serial control)")
+    ap.add_argument("--tier", choices=("default", "occasional", "all"), default=os.environ.get("GROWTH_TIER", "default"),
+                    help="default = every cell but the OCCASIONAL ones (the cloud shards' tier); occasional = the named compile-only "
+                         "exceptions with the generous bounds (docs: tests/growth/CLAUDE.md); env GROWTH_TIER")
+    ap.add_argument("--cells", default="", metavar="ID[,ID]", help="only these cell ids (after the tier and shard selection)")
+    ap.add_argument("--doubling", action="store_true", help="the per-doubling CPU report (REPORT lines, never a red), then exit")
+    ap.add_argument("--doubling-only", default="", metavar="SUBSTR[,SUBSTR]", help="with --doubling: only the axes whose name contains one of these")
     ap.add_argument("--no-ladder", action="store_true")
     ap.add_argument("--list", action="store_true")
     ap.add_argument("--lib", action="store_true")
@@ -678,8 +829,12 @@ def main():
         print("# %d pairs, %d unpaired cells, %d limit cells, %d stability cells" % (
             len(pairs), len(unpaired), sum(c.kind == "limit" for c in cells), sum(c.kind == "stability" for c in cells)))
         return 0
+    if a.tier != "all":
+        cells = [c for c in cells if c.occasional == (a.tier == "occasional")]
     if a.shard_check:
         return 1 if shard_check(cells, a.table) else 0
+    if a.shard and a.tier == "occasional":
+        sys.exit("run_growth: --shard and --tier occasional do not combine: the cloud table covers the default tier only")
     if a.shard:
         cells = shard_cells(cells, a.shard, a.table)
         print("shard %s: %d of the sweep's cells (table %s)" % (a.shard, len(cells), os.path.relpath(a.table, ROOT)))
@@ -691,6 +846,11 @@ def main():
         if keep - known:
             sys.exit("run_growth: --only names no family: %s (families: %s)" % (",".join(sorted(keep - known)), ",".join(sorted(known))))
         cells = [c for c in cells if c.family in keep]
+    if a.cells:
+        want = set(a.cells.split(","))
+        if want - {c.id for c in cells}:
+            sys.exit("run_growth: --cells names no cell in this tier: %s" % ",".join(sorted(want - {c.id for c in cells})))
+        cells = [c for c in cells if c.id in want]
     if not cells:
         sys.exit("run_growth: no cells selected")
     if a.list:
@@ -699,7 +859,7 @@ def main():
             fams[c.family] = fams.get(c.family, 0) + 1
         for c in cells:
             print("%s\t%s\t%s\t%s" % (c.id, c.kind, c.expect, c.red))
-        print("# compile-only exceptions: %d (%s)" % (sum(bool(c.norun) for c in cells),
+        print("# compile-only exceptions in this tier: %d (%s)" % (sum(bool(c.norun) for c in cells),
               ", ".join("%s: %s" % (n, NORUN_EXCEPTIONS[n]) for n in sorted(NORUN_EXCEPTIONS))))
         print("# %d cells (%d limit, %d stability): %s" % (len(cells), sum(c.kind == "limit" for c in cells),
               sum(c.kind == "stability" for c in cells), ", ".join("%s %d" % kv for kv in sorted(fams.items()))))
@@ -717,6 +877,16 @@ def main():
         print("FAIL: could not build growth_driver.c:\n" + b.stderr[:800])
         return 1
     rn = Runner(work, drv, os.path.join(ROOT, "scripts", "watchdog"))
+    global CPU_S, WALL_S
+    if a.tier == "occasional":
+        CPU_S, WALL_S = OCC_CPU_S, OCC_WALL_S
+    print("growth: tier %s; time bounds: CPU %d s (watchdog -c), WALL hang guard %d s (watchdog -s); basis: BOUNDS_BASIS in run_growth.py"
+          % (a.tier, CPU_S, WALL_S))
+    if a.doubling:
+        jb = a.jobs or max(1, (os.cpu_count() or 4) // 2)
+        nf = doubling_report(rn, budget, depth, jb, a.doubling_only)
+        subprocess.run(["rm", "-rf", "--", work])
+        return 1 if nf else 0
     if a.selftest:
         return selftest(rn, budget, depth)
     ladder = [] if a.no_ladder else LADDER
@@ -774,6 +944,13 @@ def main():
     if a.units:
         write_units(a.units, rn)
     print("walls file %s: %d cells" % (walls_path(), len(rn.walls)))
+    # the CPU the bounds judge: compile CPU (the driver's own rusage) and gcc CPU (watchdog's tree sample), the slowest cells
+    cost = sorted(((rn.cpus.get(i, 0.0) + rn.gcc_cpus.get(i, 0.0), i) for i in set(rn.cpus) | set(rn.gcc_cpus)), reverse=True)
+    if cost:
+        print("slowest cells by uncapped CPU (compile + gcc matcher build), bound %d s: %s" % (
+            CPU_S, "; ".join("%s %.1f s (compile %.1f, gcc %.1f)" % (i, c, rn.cpus.get(i, 0), rn.gcc_cpus.get(i, 0)) for c, i in cost[:5])))
+        print("CPU bound headroom: slowest cell used %.1f s of %d s (%.0f%%); max compile %.1f s, max gcc %.1f s" % (
+            cost[0][0], CPU_S, 100.0 * cost[0][0] / CPU_S, max(rn.cpus.values(), default=0), max(rn.gcc_cpus.values(), default=0)))
     print("== Growth sweep ==")
     for f, (p, fl, rd, fx) in sorted(fam.items()):
         print("family %-8s runs passed %d  failed %d  known-red %d  fixed-red %d" % (f, p, fl, rd, fx))
@@ -818,8 +995,8 @@ def selftest(rn, budget, depth):
 
 
 def repro(cell, cap):
-    return ("pattern %d bytes; scripts/watchdog -s %d -m %s -- growth_driver one %d %d %d %s %d <patfile> (run_growth.py --only %s --keep)"
-            % (len(cell.pattern), WALL_S, RSS, cap, cell.stack, cell.raise_, cell.features or "-", cell.engine, cell.family))
+    return ("pattern %d bytes; scripts/watchdog -s %d -c %d -m %s -- growth_driver one %d %d %d %s %d <patfile> (run_growth.py --only %s --keep)"
+            % (len(cell.pattern), WALL_S, CPU_S, RSS, cap, cell.stack, cell.raise_, cell.features or "-", cell.engine, cell.family))
 
 
 if __name__ == "__main__":

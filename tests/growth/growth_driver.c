@@ -6,8 +6,9 @@
  *       ONE compile, then exit. With CSRC_OUT the artifact is compiled with a
  *       main() (PCREC_EMIT_MAIN) and its C source written there, for the
  *       runner to build and run (a LIMIT cell's matcher). Prints `rc=<0|-1> hw=<bytes> msg=<diag>` and
- *       exits 0; a crash kills the process before the line, which is what
- *       the runner reads.
+ *       exits 0 (the line also carries ` cpu=<seconds>` after hw: the process's own
+ *       user+sys CPU, all threads; the runner's per-doubling report reads it); a crash
+ *       kills the process before the line, which is what the runner reads.
  *   growth_driver lib CONTROL_OUT SERIES_FILE
  *       LIBRARY MODE: ONE process compiles a whole series of cells, refusals
  *       and memory-capped failures included, to see whether a series in one
@@ -196,8 +197,14 @@ static int run_job(struct job *j, size_t want, size_t *hw)
 
 static void job_report(const char *lead, struct job *j, size_t hw, int started, double wall)
 {
-    char w[32] = "";   /* `one` mode (wall < 0) keeps the line the runner parses */
+    char w[48] = "";   /* `one` mode (wall < 0) carries the process's CPU seconds (user+sys, all threads) */
     if (wall >= 0) snprintf(w, sizeof w, " wall=%.2f", wall);
+    else {
+        struct rusage ru;
+        if (getrusage(RUSAGE_SELF, &ru) == 0)
+            snprintf(w, sizeof w, " cpu=%.3f", (double)(ru.ru_utime.tv_sec + ru.ru_stime.tv_sec) +
+                     (double)(ru.ru_utime.tv_usec + ru.ru_stime.tv_usec) / 1e6);
+    }
     if (!started) printf("%src=-9 hw=0%s msg=could not start the thread (the cap is below what a thread needs)\n", lead, w);
     else printf("%src=%d hw=%zu%s msg=%s\n", lead, j->rc, hw, w, j->rc ? j->err.msg : "");
     fflush(stdout);
