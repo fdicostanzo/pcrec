@@ -1058,3 +1058,21 @@ wake.md says (read the draft WHOLE first; A4 is a ruled-words finding: read his 
   ASKED: unspecified-rule; WAITING: repeat-head. None of the call-forms material is folded (a later fold).
 - LESSON (his): a lone underscore VANISHES in his chat UI: fenced code blocks or the word (memory saved).
 - Queue additions from r86: closing-own-label, capture-in-set, optional-entry-edges.
+
+## 2026-11-23 — predfix86 delivered and merged; P-26 done: to main; six more rulings for the next fold
+
+- Lane predfix86 (one STOP on A2, answered as R2; R1 = closing-own-label) delivered: MERGED; lint 8,163 / 0;
+  plan-lint green; model 29 / 0, 36 plants caught. Review r86 FILED. P-26 `done:` posted, main told (asked for
+  the next review number, topic predfold1123b). Lane stopped; nothing in flight.
+- RULED since the fold's cut (record only; the NEXT FOLD): count-unspecified; unspecified-rule ("yes and
+  elegant"); call-forms (one head per name, four lines); repeat-head (head (i)); closing-own-label (folded by
+  predfix86 as R1; its `rulings:` items owed); binding-as-label (his four conditions; REVERSES argument-default's
+  error and the labelled-spot legal lines; answers spot-read-name). Also label-hole-full (folded by predfix86).
+- For the next fold's brief (r86 A1/A8 lesson): QUOTE each ruling's asked statement with its edges; do not
+  summarise. Pieces: call-forms, bindings (positional / named, defaults), lib/rx/repeat (one head), lib/modifiers/
+  padded (the width form renamed), core/holes/count (unspecified bounds), a piece for the unspecified mark,
+  binding-prefix / argument-default / closed-argument / call-prefix / arguments (the shorthand's four conditions
+  and the table), export statement 7's rulings item, the parked compile-time conditional, G1's ownership table if
+  label-doors is ruled.
+- ASKED, waiting: label-doors (the four-line general rule). Queue: capture-in-set; optional-entry-edges (stays as
+  ruled unless he wants it); the three flags questions; a map written in place; a user macro taking a macro.
