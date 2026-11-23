@@ -8653,3 +8653,22 @@ the third @40.
 Put to him as the restated slug argument-export: a caller's label on a spot that holds the caller's in-place
 argument reads that argument by the inside rules, as a part label over an expression does; the manager's leaning
 yes.
+
+### 2026-11-23 OWNER, on argument-export restated: "this is a confusing one"; he wants yes and wants it to make sense; asks the JSON example's current state
+tags: core/labels/paths/argument-default core/labels/paths core/operators/bindings/label-variables lib/json/members lib/structural/capture
+
+HIS WORDS, whole: "this is a confusing one. i want to say yes because i want that to work but i want also to make
+sure it makes sense. so your saying things must work the way we have defined them? whats the current state of
+the json example given your current understanding and a yes to this issue?"
+
+Class: DISCUSSION; a LEAN toward yes, explicitly conditional ("i want also to make sure it makes sense"); NOT a
+ruling. Two questions to the manager: whether the claim is that the existing definitions already give the
+answer; and the JSON example's current state under a yes.
+The manager's answer (told to him): (1) yes in this sense: the two rules are in the documents (a label over an
+expression reads inside by the inside rules; an argument written in place is the caller's text); what is NEW and
+the manager's is the step that a label parameter's spot counts as "a label over the caller's expression": the
+label parameter itself is his tentative direction, so this is a reading of how they combine, not something
+already defined. (2) the example as written to him, with each line's standing (ruled / his lean / the manager's
+reading / unbuilt); one consequence found while writing it: read from OUTSIDE `line` (`line.ts.year`) the year
+is not exported (isodate is used alone in line's text: default-export), so the inner reads and the capture
+requests are written INSIDE `line` (his "early capture is no crime"), or the whole search is one definition.
