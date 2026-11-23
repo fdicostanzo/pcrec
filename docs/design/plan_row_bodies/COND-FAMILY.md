@@ -9697,3 +9697,38 @@ new sentence in the count position: an unspecified lower bound is 0, an unspecif
 both unspecified is `{0,}`. That sentence is the "different semantics for repeat holes" of his remark: a rule
 the count position does not have today, proposed, not ruled. The runs of `repeat(D, _, _)` in the two entries
 above (`(?:\d){0,}`) are of that sentence, applied by the model, not of text substitution.
+
+### 2026-11-23 OWNER RULING — count-unspecified: "I agree the count semantics should work that way"; and the bigger question: do the argument rules force positions to be defined "meet me half way"
+tags: core/holes/count core/holes/insert core/operators/bindings/call-forms core/principles/positions-own-rules core/principles/conservative-first lib/rx/repeat
+
+Asked whether the one new sentence of the count position is acceptable, with head (i) (an unspecified lower
+bound is 0, an unspecified upper bound is no maximum; both unspecified is `{0,}`). HIS WORDS, whole:
+
+"I agree the count semantics should work that way and that solves this issue. The bigger decision was if the
+arguments rules we are discussing get in the way or otherwise require us to define things like repeat holes in a
+"meet me half way" fashion."
+
+Class: a RULING on the count position ("I agree the count semantics should work that way"): an unspecified lower
+bound is 0, an unspecified upper bound is no maximum, by meaning, never the empty text (slug count-unspecified,
+the manager's name). "that solves this issue": the `{,}` objection is closed. NOT ruled by these words: the
+repeat head ((i) or his conditional one), call-forms itself. And a QUESTION he names "the bigger decision"
+(DISCUSSION): whether the argument rules under discussion get in the way of the position rules, or force each
+position to bend toward them.
+The manager's answer (told to him; a view, marked):
+- What crosses from the argument rules into a position is ONE thing, the unspecified mark; a head, a record,
+  defaults and names are settled before the body is read and touch no position.
+- The mark has ONE rule, not a table of favours: the construct with that part NOT WRITTEN, in the meaning the
+  construct already has without it. Regex already has the forms: `{3,}` (no upper bound), `{,5}` (no lower
+  bound; libpcre2 10.46 run above), a group with no name, an option group with no letters (the option hole's
+  ruled `""`). The count position's both-empty case is the one place regex's own form is missing (`{,}` is
+  literal text), and the ruled sentence fills it the only natural way.
+- Where a construct has NO form without the part (an operand of arithmetic, a backreference's name, a range
+  end), the mark is a compile error. Nothing is invented to accommodate it.
+- So no position bends; and no table needs defining now: a position gets its line when an example needs the mark
+  there (conservative now, relax later). Today's lines: a label (ruled), an option (ruled as `""`), a count
+  bound (ruled today).
+- The risk he names is real in one form: giving the mark a meaning chosen for convenience per position (the
+  play-out's "a set: no constraint", "a pattern in a sequence: the empty pattern" were of that kind). Those lines
+  are WITHDRAWN from the play-out until an example asks for one; each would then be argued from "the construct
+  without the part".
+Put to him as slug unspecified-rule.
