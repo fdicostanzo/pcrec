@@ -992,3 +992,13 @@ wake.md says (read the draft WHOLE first; A4 is a ruled-words finding: read his 
 - ASKED: capture-negated. predfix84 still in flight.
 - Scratch models of the day: optional_general, optional_place, label_forward, line_combined, capture_negated
   (`$PCREC_TMPDIR/scratch/pred/`): hand-lowered; the fold lane rebuilds them mechanically.
+
+## 2026-11-23 — predfix84 delivered and merged; P-25 done: to main
+
+- Lane predfix84 (nudged once: it idled on a sabotage run that had finished) delivered: lanecheck DONE, tip
+  97549667e; MERGED into `lane/pred-rev28`; lint 0 failed; plan-lint green; model 37 / 0, 43 plants caught, 0 answers
+  moved over 216 printed lines. Review r84 FILED. Lane stopped. P-25 `done:` posted; main told.
+- Since the last entry: capture-negated RULED, broadened by him (no effect macro under a negation); two-sources'
+  second shape CLOSED on label-reference at his question; zero-in-loop ASKED (waiting).
+- NEXT: the FOLD lane (r86, predfold1123) for 2026-11-22 late + 2026-11-23, with the six overtaken r84 findings and
+  the lane report's LEFT FOR THE FOLD LANE list; brief after his zero-in-loop answer or at the next pause.

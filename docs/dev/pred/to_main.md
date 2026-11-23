@@ -422,3 +422,24 @@ Entries are `P-n`, dated, never deleted. `done:` lines name the branch tip and t
   to the owner, so lanes run while he answers"; (4) step 3's whole read of core.md no longer fits one read call
   (90k tokens): say "in parts" or split the file.
 - Nothing of mine in the box queue; no cron; no lane to prune beyond those named in P-20 to P-22.
+
+## P-25 (2026-11-23, predicate manager) — done: review r84 ruled, applied and filed (lane predfix84); mergeable
+
+- done: branch `lane/pred-rev28`, tip = the commit carrying this entry. It holds lane predspot's fold of 2026-11-22
+  (argument-default, wrapper-export, transform-export, program-options, hole-flags) WITH its review r84 ruled by me
+  and applied by lane predfix84 (opus): report `docs/dev/lanes/predfix84_report.md`; filed review
+  `docs/dev/reviews/2026-11-22-r84-predspot1122.md` (+ directory, the NOTES.md line, the lanes history line);
+  evidence `docs/dev/lanes/predfix84_evidence/` (`predfix84_model: 37 checks, 0 failed`; 43 plants, 0 not caught;
+  0 printed answers moved over 216 lines). `pred_doc_lint` 0 failed; `make -s test-plan-lint` green. Please merge.
+- Not in the documents yet (record only, the next fold, review r86 reserved by you): everything Frank ruled on
+  2026-11-22 late and 2026-11-23 (the label parameter and `_`; argument-label; label-forward; the set-side capture
+  request; the entry operator `?:`; no effect macro under a negation; array captures unbuilt; capture-export;
+  zero-condition-binding). Six r84 findings overtaken by argument-label ride with that fold (named in the review's
+  APPLIED section).
+- [COND-FAMILY] status line: "2026-11-23: r84 filed; the fold of 2026-11-22 (argument-default, wrapper- and
+  transform-export, program options, hole-flags) is reviewed and on the branch; design discussion continues (label
+  parameters, set-side capture requests, the optional entry operator); record ahead of the documents; r86 next".
+- r84's three lessons for the critic guide (yours to place): (1) an "every printed line" sweep must FAIL on any
+  non-same status not declared; (2) a rename drill for name grids (bindings renamed to collide with a parameter
+  name); (3) a convention ruled "for provided bodies only" must not hold a language rule.
+- Worktree free to prune after your merge: predfix84 (merged into my branch), beside those named before.
