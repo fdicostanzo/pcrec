@@ -8594,3 +8594,28 @@ match-API matter of pcrec proper, with a matching cost): its meaning can be ackn
 under construction; a line for main; (d) the seam stays: one literal alone returns PCRE's carried value, the
 same group requested in a composed program returns the label; the manager's leaning moves from capture-as-pcre
 to this alternative for reason (a).
+
+### 2026-11-23 OWNER RULING — array-capture: yes (`capture(x)` the label, `capture(@x)` the array, unbuilt); capture-as-pcre dropped; capture-loop-value closed as the label
+tags: lib/structural/capture lib/structural/capture/add-on core/labels/labels-vs-captures core/labels/labels-vs-captures/array-vs-passes core/labels/export/capture-export core/diagnostics/under-construction
+
+ASKED AS A RULING (the statement put to him: `capture(x)` is the label; `capture(@x)` is the array, its build
+under construction; capture-as-pcre is dropped; "say "array-capture: yes" and I'll record it as ruled, with
+capture-loop-value closed as the label"). HIS WORDS, whole:
+
+"array-capture: yes and i think it was a plan item to allow array captures in the future. unbuilt as you say. so
+then capture-as-pcre: as last label ?"
+
+Class: a RULING: array-capture: yes, "unbuilt as you say" (under construction). With it, by the statement he
+answered: capture-as-pcre (his own "perhaps" of the same hour) is DROPPED; capture-twice (a) STANDS;
+capture-loop-value is CLOSED as (a), the label. A RECOLLECTION ("i think it was a plan item"), CHECKED against
+the plan: confirmed, two rows: [CAPTURE-ARRAY] (filed 2026-10-13, Frank: a repeated capture group records every
+iteration; opt-in per group) and [ARRAY-CAPTURE] (filed 2026-11-09, Frank: "array capture for (X){M, N} perhaps
+using special syntax. Cap N become N capture groups. No unbounded"). And a QUESTION seeking confirmation ("so
+then capture-as-pcre: as last label ?"): answered yes by the manager, with the precise statement: `capture(x)`
+gives the caller the LABEL as a plain read at the end of the match gives it: among several spots the last
+mention; after a loop the last pass's OWN value, unset where that pass set nothing (`3;;`: unset, not `3`); the
+earlier `3` is in the array.
+The manager's readings (marked): (a) `capture(@x)` is a client of the two plan rows; [ARRAY-CAPTURE]'s "No
+unbounded" is his constraint on that row, and the array of settings of a `+` loop is unbounded: a point for the
+build, noted to main, not a predicate ruling; (b) the seam stands and is to be stated: a one-literal program
+returns PCRE's carried value, a requested capture in a composed program the label.
