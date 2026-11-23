@@ -1082,7 +1082,9 @@ by: core/principles/composed-at-point core/principles/binding-fixed
   a hole, his example `${A & (0: 5)}` ("the 0: is bound to A only"), and as a sequence operand (a reading; the line
   "As a sequence operand", the same answers as the hole spelling `/\d${/\d/ & (0: /\d/)}/`).
 - An expression written in place (an argument, a hole's content) belongs to the definition it is written in (a
-  reading): the argument below is the caller's, so its `0` includes the caller's `\d`.
+  reading): the argument below is the caller's, so its `0` includes the caller's `\d`. A condition passed as an
+  argument and placed by the body beside `&` reads the left operand's match as its `0` (the manager's reading, by
+  core/principles/operand-world); placed in a sequence or a hole, the match so far of the definition it is written in.
 - Every hole case (a condition alone in a hole, `${A & (0: S)}`) is core/holes/bare-condition's.
 - His words: "All other labels are completed at the condition. 0 is not. $0 is provisional. Later labels or
   captures can replace entirely but 0 grows."; ruled: "zero-open: yes all 4".
@@ -1099,6 +1101,8 @@ see: core/holes/bare-condition core/labels/labels-vs-captures/array-vs-passes co
 WHOLE `73` HOLDS, `37` FAILS / SEARCHED `373` `73`@1 / FIND-ALL `73 77 37` [`73`@0, `77`@3] (`/\d/ SEQ (0: /7/) SEQ /\d/`)
 As a sequence operand: WHOLE `12` HOLDS / SEARCHED `x12` `12`@1 / FIND-ALL `12 34 5` [`12`@0, `34`@3] (`/\d/ SEQ (/\d/ & (0: /\d/))`)
 An argument: WHOLE `5xx` HOLDS, `xx` FAILS / SEARCHED `a5xx` `5xx`@1 / FIND-ALL `5xx 55xx` [`5xx`@0, `5xx`@5] (`/\d/ SEQ B((0: /\d/))`, B(rx) := `/${rx}xx/`)
+An argument placed beside `&`: WHOLE `ax` HOLDS, `ay` FAILS / SEARCHED `ay ax` `ax`@3 / FIND-ALL `ax ay ax` [`ax`@0, `ax`@6] (`/a/ SEQ A((0: /x/), /\w/)`, A(c, B) := `B & c`)
+An argument placed in a sequence: WHOLE `ax` HOLDS, `ay` FAILS / SEARCHED `ay ax` `ax`@3 / FIND-ALL `ax ay ax` [`ax`@0, `ax`@6] (`/a/ SEQ A2((0: /ax/), /\w/)`, A2(c, B) := `/${B}${c}/`)
 Two reads on one path: WHOLE `34` HOLDS, `35` FAILS, `44` FAILS / SEARCHED `x34 35` `34`@1 / FIND-ALL `34 35 34` [`34`@0, `34`@6] (`/\d${(0: "3")}\d${(0: "34")}/`)
 A group question on `0`: modes: a compile error (`/(?<d>\d)+/ & some((0: "1"))`: `0` has no settings, so no array).
 An index on `0`: modes: a compile error (`/(?<d>\d)+/ & (0[1]: "1")`: `0` has no settings).
@@ -1228,7 +1232,7 @@ Beside a negation: WHOLE `x` FAILS, `3x` HOLDS, `7x` FAILS / SEARCHED `7x 3x` `3
 
 ## Values   [core/values]
 
-### Reading a label   [core/values/reads]   ruled 2026-11-22
+### Reading a label   [core/values/reads]   ruled 2026-11-23
 `$y` reads the label, everywhere, holes included; a read is a one-string rx known at match time.
 needs: core/labels/labels-vs-captures core/labels/backreferences core/conditions/pass-start-read
 see: core/holes/value core/diagnostics/dollar-form core/values/one-type core/holes/bare-condition/labels

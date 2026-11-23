@@ -339,11 +339,14 @@ defined: language
 - Labels the test sets are visible after the call through it (`when.h`), set on the then branch and unset on the
   else branch, a failed test setting nothing (a reading); each spot carries the list (lib/convention/argument-labels),
   the guard's `NOT peek(test)` none (a negation's labels are never visible). A read written in then of a label the
-  test sets is a read of another argument's template: a compile error (a reading; core/labels/paths/argument-default).
+  caller writes in the test is legal: the label is the caller's own (core/labels/export/arguments; the line "A read
+  in then", on a user macro of the same shape). `when(A, (A.h: ..))` is legal by closed-argument's condition: the
+  test's spot carries the list, so `h` is visible through the call (a reading; core/labels/paths/closed-argument).
   A name test and then both hold is one label, the last mention (the manager's answer on wrapper-export; run on a user macro of
   the same shape: lib/convention/argument-labels' line "Two arguments").
 - `//` stands for the owner's `null`, "nothing required"; `when`, `then`, `else` are placeholder spellings.
 WHOLE `12` HOLDS, `1` FAILS / SEARCHED `x123` `x`@0 / FIND-ALL `12 x 123 1x 7` [`12`@0, `x`@3, `12`@5, `x`@10] (`when(peek(/\d/), /\d\d/, else = /\w/)` is `(?=\d)\d\d|(?!\d)\w`)
+A read in then: WHOLE `3` HOLDS, `7` FAILS / SEARCHED `7 3` `3`@2 / FIND-ALL `3 7 4` [`3`@0, `4`@4] (`W(/(?<h>\d)/, (h: <5))`, W(a, b) := `[(=) = a] SEQ [(=) = b]`; `W(A, (A.h: <5))` with A := `/(?<h>\d)/` the same answers)
 
 ### The test of `when`   [lib/control/when-test]   ruled 2026-11-18
 A condition or a `peek(A)` as the test consumes nothing and then starts where the test stands; a bare pattern as the test is consumed and then continues after it.
@@ -789,7 +792,8 @@ see: lib/structural/capture/add-on core/filters/negation/effects core/conditions
 module: ?
 defined: ?
 - His words: "optional-label: yes." answered the statement that the request's shape is `(h: capture("h"))`, the
-  label required, `(h ?: capture("h"))`, if present, and `rx & capture("name")`, the stretch; the shape was his
+  label required, `(h?: capture("h"))` (written `(h ?: ..)` here, his later lean), if present, and
+  `rx & capture("name")`, the stretch; the shape was his
   proposal: "would it be better to isodate & (isodate.year: capture("year"))".
 - A capture is made only where the program asks for one (core/labels/export/capture-export); a named group in a
   part makes none.
@@ -801,11 +805,15 @@ defined: ?
   written; whether a request with no name gives the last step is not stated).
 - Requested twice: the same-label-twice rules (the last mention in a sequence, the branch taken across `|`, a
   compile error across `&`).
-- After a loop the caller gets the label as a plain read gives it: the last pass's own value, unset where that pass
-  set nothing; every pass is the array request (lib/structural/capture/add-on).
-- On `0` only where `0` is complete, `rx & capture("name")` or a hole written last; on an open `0` a compile error
-  for now (core/conditions/match-so-far). Under `NOT` or `!`: core/filters/negation/effects.
-- A one-literal program returns PCRE's own captures; a request in a composed program gives the label (a reading).
+- After a loop the caller gets the label (array-capture), as a plain read gives it: the last pass's own value,
+  unset where that pass set nothing (the manager's answer); every pass is the array request (lib/structural/capture/add-on).
+- On `0` only where `0` is complete, `rx & capture("name")` or a hole written last (the manager's reading (a) of
+  zero-open); on an open `0` a compile error for now (core/conditions/match-so-far). Under `NOT` or `!`:
+  core/filters/negation/effects.
+- A one-literal program (a program that is exactly one literal) returns PCRE's own captures; any request makes the
+  requested name follow the label rules, so a request after a loop gives the label (a reading; the line "After a loop").
+- Inside a set operator, with a value left of `:` or inside a group question: a compile error for now (the
+  conservative reading; open, lib/structural/capture/in-set).
 Requires the label: WHOLE `x` FAILS, `3x` HOLDS (h = `3`) / SEARCHED `x 3x` `3x`@2 / FIND-ALL `x 3x x` [`3x`@2] (`/(?<h>\d)?x/ & (h: capture("h"))`)
 If present: WHOLE `x` HOLDS (h unset), `3x` HOLDS (h = `3`) / SEARCHED `x 3x` `x`@0 / FIND-ALL `x 3x x` [`x`@0, `3x`@2, `x`@5] (`/(?<h>\d)?x/ & (h ?: capture("h"))`)
 The stretch: WHOLE `12` HOLDS, `x` FAILS / SEARCHED `x12` `12`@1 / FIND-ALL `1 22` [`1`@0, `22`@2] (`/\d+/ & capture("n")`)
@@ -813,6 +821,22 @@ Requested twice, the last mention: WHOLE `7,5` HOLDS (d = `5`), `7` FAILS / SEAR
 Through the label's path: WHOLE `2025-01-02` HOLDS (year = `2025`) / SEARCHED `x 2025-01-02` `2025-01-02`@2 / FIND-ALL `2025-01-02 1999-12-31` [`2025-01-02`@0, `1999-12-31`@11] (`isodate & (isodate.year: capture("year"))`, isodate := `[year = /\d{4}/] SEQ "-" SEQ [month = /\d\d/] SEQ "-" SEQ [day = /\d\d/]`)
 A request on an open `0`: modes: a compile error (`/\d${(0: capture("n"))}x/`: pattern text follows the hole, so `0` is open there; for now).
 A request on `0` written last: WHOLE `12` HOLDS, `x` FAILS / SEARCHED `a12` `12`@1 / FIND-ALL `1 22` [`1`@0, `22`@2] (`/\d+${(0: capture("n"))}/`)
+After a loop: WHOLE `3;;` HOLDS (h unset), `3;` HOLDS (h = `3`), `3;4;` HOLDS (h = `4`) / SEARCHED `3;; 3;` `3;;`@0 / FIND-ALL `3; ;` [`3;`@0, `;`@3] (`/(?:(?<h>\d)?;)+/ & (h ?: capture("h"))`)
+
+### A capture request inside a set   [lib/structural/capture/in-set]   open capture-in-set 2026-11-23
+Is a capture request legal inside a set operator (`|`, `&` right of `:`), with a value left of `:`, or inside a group question? For now a compile error.
+needs: lib/structural/capture
+see: core/filters/negation/effects core/conditions/form/optional-edges
+module: ?
+defined: ?
+- The definition today (the conservative reading, marked): a compile error for now; no rule says which path of a
+  set union makes the request.
+- Candidate (a): keep the compile error.
+- Candidate (b): the request is made where the entry holds on the accepting path; as a set it is `anything`, so a
+  union with it accepts every value (the lines below; what the caller receives is not modelled).
+Inside a union: modes: a compile error (`/(?<h>\d)?x/ & (h: "3" | capture("h"))`; `(h: <5 & capture("h"))`, `($a: capture("h"))` and `some((h: capture("h")))` alike: for now).
+Candidate (b) of capture-in-set, a union: WHOLE `3x` HOLDS, `5x` HOLDS, `x` FAILS / SEARCHED `5x 3x` `5x`@0 / FIND-ALL `3x 5x x` [`3x`@0, `5x`@3] (`/(?<h>\d)?x/ & (h: "3" | capture("h"))`)
+Candidate (b) of capture-in-set, an intersection: WHOLE `3x` HOLDS, `5x` FAILS, `x` FAILS / SEARCHED `5x 3x` `3x`@3 / FIND-ALL `3x 5x x` [`3x`@0] (`/(?<h>\d)?x/ & (h: <5 & capture("h"))`)
 
 ### Making a label a capture   [lib/structural/capture/add-on]   under-construction 2026-11-23
 A label is made the caller's capture after the fact by the request (lib/structural/capture); the request for every setting of a looped label, the array request, is ruled and unbuilt.
