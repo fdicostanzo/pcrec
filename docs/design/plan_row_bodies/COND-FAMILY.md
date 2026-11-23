@@ -9176,3 +9176,19 @@ The manager's readings (marked; for the fold to test):
   negation: `when(test, then)` is `(test SEQ then) | (NOT peek(test) SEQ else)`, so a test that carries a capture
   request reaches the guard's `NOT peek(test)`. Candidates: the rule refuses it (written where the body puts it);
   or the guard copy drops the request (labels under a negation are never visible already). Slug effect-in-guard.
+
+### 2026-11-23 MANAGER — two notes after capture-negated (the guard edge taken literally; the array request's placeholder); no owner words
+tags: lib/structural/capture lib/control/when core/filters/negation core/labels/labels-vs-captures/array-vs-passes core/spellings/placeholders
+
+- effect-in-guard is NOT asked: his words cover it as written ("any effect macro cannot be under negation"), and
+  the conservative reading costs nothing: a `when` test that carries a capture request reaches the body's
+  `NOT peek(test)` and is a compile error (the manager's reading, marked; relaxing it later changes no answer).
+  The way to write it with forms that exist: the test without the request, the request after the call through the
+  call's name (lib/control/when: "Labels the test sets are visible after the call through it (`when.h`)"), with
+  the `?:` operator since the else branch leaves the label unset: `when(/(?<d>\d)/, ..) & (when.d ?: capture("d"))`.
+  Told to him in one line.
+- The array request in the set-side shape is NOT asked either (array captures are unbuilt; "all" as a group
+  question was retired on 2026-11-16, "all-question: retire", and "all" is the condition on the item, 2026-11-17,
+  so no general set is proposed right of an array). The fold writes his own spelling of 2026-11-23 moved to the
+  left part, as a PLACEHOLDER and a reading, under construction: `(@x.year ?: capture("years"))`, an array left
+  part taking only a capture request for now.
