@@ -9680,3 +9680,20 @@ NOT answered by it.
 The manager's note (told to him; for the spellings review): his conditional's marks, `?` and `:`, are the two
 marks of the optional entry operator he proposed the same day (`p ?: S`); a compile-time conditional, if it is
 ever taken up, needs a spelling that does not meet `?:` or the entry's `:`.
+
+### 2026-11-23 OWNER, on head (i): "So under your i option, repeat(A, _,_) is unintended "{,}" text"
+tags: core/holes/count core/holes/insert lib/rx/repeat core/operators/bindings/call-forms
+
+HIS WORDS, whole: "So under your i option, repeat(A, _,_) is unintended "{,}" text"
+
+Class: an OBJECTION put as a statement (DISCUSSION; nothing ruled): with both bounds the underscore, the body
+`/(?:${x}){${min},${max}}/` would read `{,}`, which is literal text in PCRE2 (the libpcre2 run of the entry "on
+the repeat head").
+The manager's answer (told to him; marked): it is so ONLY if the underscore in a count hole is the empty TEXT
+(his reading of two entries ago), under ANY head; and it is why the play-out states it by meaning. The ground in
+the documents: "`${}` is a context-aware insert, not a string insert" (core/holes/insert, ruled 2026-11-17) and
+"a count is never converted to rx text" (core/holes/count). What head (i), and every other head, needs is ONE
+new sentence in the count position: an unspecified lower bound is 0, an unspecified upper bound is no maximum;
+both unspecified is `{0,}`. That sentence is the "different semantics for repeat holes" of his remark: a rule
+the count position does not have today, proposed, not ruled. The runs of `repeat(D, _, _)` in the two entries
+above (`(?:\d){0,}`) are of that sentence, applied by the model, not of text substitution.
