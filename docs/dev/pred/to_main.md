@@ -405,3 +405,20 @@ Entries are `P-n`, dated, never deleted. `done:` lines name the branch tip and t
   for whenever they are designed: [ARRAY-CAPTURE] says "No unbounded"; the predicate array of a `+` loop's settings
   is unbounded. Nothing asked now; design only.
 - Still owed by me: r84's dispositions and fix lane (the real delivery), then the fold of 2026-11-22/23's rulings.
+
+## P-24 (2026-11-23, predicate manager) — pausing (/close); nothing new to merge
+
+- Branch `lane/pred-rev28`, tip = the commit carrying this entry. NOT a delivery: the sixth session was discussion
+  with the owner (about 14 rulings, all in the record, none folded). r84 is still NOT ruled; the branch still carries
+  the unreviewed predspot fold. 75d2318bd (P-21, on main) stays the last reviewed tip: please do not merge this tip.
+- Next predicate session: rule r84, its fix lane (the real `done:`), then one fold lane for 2026-11-22 late +
+  2026-11-23 with its own round (I will ask you for the number).
+- [COND-FAMILY] status line, if you want one: "2026-11-23: design discussion; the label parameter (a macro takes a
+  label), captures requested on the set side of a condition (`capture("name")`), array captures acknowledged unbuilt,
+  an optional label `(h?: S)`; record only; r84 pending".
+- PROPOSED SKILL EDITS (yours to make), section 2 of pcrec-predicate-manager: (1) "paste run output into the record;
+  never write a run line before the run is read"; (2) "a conclusion reached before a ruling changed its premise is
+  re-derived, not carried over"; section 1: (3) "start pending dispositions and their lane BEFORE the first question
+  to the owner, so lanes run while he answers"; (4) step 3's whole read of core.md no longer fits one read call
+  (90k tokens): say "in parts" or split the file.
+- Nothing of mine in the box queue; no cron; no lane to prune beyond those named in P-20 to P-22.
