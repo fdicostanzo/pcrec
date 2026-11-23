@@ -277,7 +277,7 @@ needs: core/model/match core/patterns/sequence
 - Between conditions `c | d` is this same `|`: an alternation of two zero-width tests at one place.
 - Entering an alternation resets the labels inside it (core/labels/one-rule).
 see: core/filters/and core/labels/one-rule core/arrays/lift
-WHOLE `25` HOLDS (l = `2`), `7` FAILS / SEARCHED `25` `25`@0 (l = `2`) / FIND-ALL `25 13` [`25`@0, `13`@3] (`[ab = (B | A)] & (ab.l: <20)`, A := `/(?<l>\d)\d/`, B := `/(?<l>\d\d)/`)
+WHOLE `25` HOLDS (l = `2`), `7` FAILS / SEARCHED `25` `25`@0 / FIND-ALL `25 13` [`25`@0, `13`@3] (`[ab = (B | A)] & (ab.l: <20)`, A := `/(?<l>\d)\d/`, B := `/(?<l>\d\d)/`)
 
 ### Postfix quantifier operators   [core/patterns/quantifiers]   ruled 2026-11-17
 Nine postfix operators `+ +? ++ * *? *+ ? ?? ?+` are regex's quantifiers on the operand before them; counts in braces are `repeat`; binary `+` is addition.
@@ -1178,6 +1178,7 @@ see: lib/structural/capture lib/control/when core/operators/statements core/diag
   `when(/(?<d>\d)/, ..) & (when.d ?: capture("d"))`.
 - A request inside a group question (`some((h: capture("h")))`) is not in his words: the manager's proposal, a
   compile error for now, not ruled.
+In `when`'s test: modes: a compile error (`when(/(?<d>\d)/ & (d: capture("d")), /x/)`: the test reaches the guard's `NOT peek(test)`; the manager's reading).
 Under `NOT`: modes: a compile error (`/(?<h>\d)?x/ & NOT (h: capture("h"))`: an effect under negation).
 Under `!`: modes: a compile error (`/(?<h>\d)?x/ & (h: !capture("h"))`: an effect under negation).
 Beside a negation: WHOLE `x` FAILS, `3x` HOLDS, `7x` FAILS / SEARCHED `7x 3x` `3x`@3 / FIND-ALL `7x 3x x` [`3x`@3] (`/(?<h>\d)?x/ & (h: capture("h")) & NOT (h: >= 5)`)

@@ -883,9 +883,6 @@ def sweep_one(line, a, pt, tail):                            # noqa: F811
         return "CRASH", type(e).__name__
 
 
-if os.environ.get("PREDFOLD_PROBE"):
-    exec(open(os.environ["PREDFOLD_PROBE"]).read())          # noqa: S102  (a scratch probe; never in a committed run)
-    sys.exit(0)
 # ================================================================== the checks
 RESULTS = []
 
@@ -1258,11 +1255,25 @@ FOLD[0] = False
 OLD_TF = sw_table84(OLDF)
 FOLD[0] = True
 NEW_TF = sw_table84(NOWS)
+J_ = "a JSON sketch line: its bodies (`row`, `value`, `string`, ...) are in the line's prose, not its tail; READINGS runs it with them (JSONL)"
 DECLF = {                     # (file, program) -> (status, reason): a line this engine does not reproduce (new here)
+    ("library.md", 'row(v:, "v") & (v: "ok" | <5)'): ("REFUSED", J_),
+    ("library.md", 'row(lo:, "lo") & row(hi:, "hi") & (lo: <$hi)'): ("REFUSED", J_),
+    ("library.md", 'row(x:, "a" | "b") & (x: <5)'): ("REFUSED", J_),
 }
 DECL_RULEF = [                # first match, as predfix84's DECL_RULE (new rows here)
 ]
 MOVEDF = {                    # program -> why its printed answer or legality moves: a ruling of the range
+    "[ab = B | A] & (ab.l: <20)": "re-spelled `[ab = (B | A)]` (the label set binds tighter than `|`, the manager's "
+                                  "syntax reading); the old spelling printed at core/operators/precedence",
+    "/\\d${c}x/": "zero-condition-binding ruled an error: the lines (a) and (c) to `rejected:`",
+    'capture("d", /\\d+/)': "optional-label's statement replaced the two-argument wrapper by `rx & capture(\"name\")`",
+    "/(?<h>\\d)/ SEQ A & (h: <5)": "two-sources' second shape closed on label-reference: the line (a) to `rejected:`, "
+                                    "the answers of (b) printed bare",
+    "[h = rx.digit] SEQ ((h: <5))?": "predfix84's engine crashed on it (TypeError); this model runs it as printed: no "
+                                     "printed answer moves",
+    '/(?<h>\\d)?x/ & (h = "x": !<5)': "predfix84's engine refused a default in an entry; this model runs it as printed: "
+                                       "no printed answer moves",
 }
 if sf("s14") and MOVEDF:
     MOVEDF.pop(next(iter(MOVEDF)))
@@ -1395,10 +1406,43 @@ print("== QUOTES: every owner sentence this lane quotes occurs in the record and
 RECORD2 = subprocess.run(["git", "-C", W, "show", "lane/pred-rev28:docs/design/plan_row_bodies/COND-FAMILY.md"],
                          capture_output=True, text=True).stdout       # R1: zero-open is recorded there (read only)
 QQF = [
+    'optional-label: yes.',
+    'capture-negated: broaden to any effect macro cannot be under negation.',
+    'binding-fixed: yes.',
+    'label-kinds: yes, one mark meaning.',
+    'Label forward: yes.',
+    "I think it's better to say it's an error and reconsider later.",
+    "it has to be (b) or it's unusable because you couldn't put 0: in a loop.",
+    'i agree that _ should be the unspecified label- it also comments on your meaning.',
+    'label-parameter-default: yes you could use a label in an optional parameter.',
+    'sending the unbound label is ok and!',
+    'capture-name: a',
+    'capture-twice: (a).',
+    'argument label: yes.',
 ]
 QQ2 = [                       # R1's entries, recorded on the manager's branch after the cut
+    "All other labels are completed at the condition. 0 is not. $0 is provisional. Later labels or captures can "
+    "replace entirely but 0 grows.",
+    "zero-open: yes all 4",
 ]
 TTF = [
+    "2026-11-23 OWNER RULING — argument-label: yes (a label the caller writes inside an argument is the caller's own); and: these mechanisms ease his concern about the default hiding",
+    '2026-11-23 OWNER RULING — optional-label: yes (`(h?: S)` holds when h is absent or in S); and a FLAG: is it a special form or the general case of an expression left of `:`',
+    '2026-11-22 OWNER RULING — zero-condition-binding: an error, to be reconsidered later (`c := (0: 5)` bound alone)',
+    '2026-11-23 OWNER RULING — capture-negated: broadened: "any effect macro cannot be under negation"',
+    '2026-11-23 OWNER RULING — zero-in-loop: (b) (from the definition\'s start); and a stated position, "not a ruling": the behaviour defined in a binding should not change due to how it is used',
+    "2026-11-23 OWNER RULING — binding-fixed: yes (what a binding's conditions read never depends on where it is used)",
+    '2026-11-23 OWNER RULING — label-kinds: yes, one mark, one meaning; the reference kind is for natives, off limits for users for now',
+    '2026-11-23 OWNER RULING — label-parameter-default: yes (a label may be an optional parameter); his spelling lean `l = ts:`',
+    '2026-11-23 OWNER RULING — label-parameter-omitted: `_` is the unspecified label; and: no argument is omitted under the current call rules; label arguments are not special by position or requirement',
+    '2026-11-23 OWNER RULING — label-in-argument: sending an unbound label inside an argument is ok, and `_` on the outer spot does not affect it ("an accepted backdoor"); second thoughts on a label SET in an argument, to re-examine',
+    '2026-11-23 OWNER RULING — label-forward: yes (a body may pass its label parameter on to another macro); two questions (a filter over combined rows at the line; several keys in one row)',
+    '2026-11-23 OWNER RULING — array-capture: yes (`capture(x)` the label, `capture(@x)` the array, unbuilt); capture-as-pcre dropped; capture-loop-value closed as the label',
+    "2026-11-23 OWNER RULING — capture-name: a (the label's last step, with an optional rename)",
+    '2026-11-23 OWNER RULING — capture-twice: (a) (the same-label-twice rules); and an OBSERVATION: two kinds of label reference, one that sets a new group, one that refers to a group that exists',
+    '2026-11-23 OWNER, on approach 1 (a macro takes a label): "lets tentatively work with it"; label-parameter-twice "seems" answered by the same-label-twice rules',
+    '2026-11-22 OWNER RULING — capture-export, in two parts: 1 no (a named group in a part of a composed program is not a capture by default); 2 yes (the program-level `capture(path)` asks for one); explicit and implicit captures',
+    '2026-11-23 OWNER, on two-sources (second shape): "isn\'t the A.h not visible bare?"',
 ]
 if sf("s17"):
     QQF[0] = QQF[0] + " (altered)"
