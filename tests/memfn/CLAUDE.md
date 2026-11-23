@@ -74,6 +74,7 @@ pcrec's checks on the search-code kit (`memfn/`, D146/D147;
 - **span_pins.py** — U4: the 22 T-table pin cells and SPAN-SEED's V-site census (byte + utf8), run inside C18 (docstring).
 - **span_ksource.py** — §10.1's k source, one reader for span_pins.py and g2_vspan.py; its predicate controls.
 - **span_vector_identity.py** — U2's identity gate (§10.2 G-4); a delivery step, heavy, args in NOTES.md.
+- **g1_span_vector.py** — U6 G1 dry.
 
 ## Maintaining it
 
