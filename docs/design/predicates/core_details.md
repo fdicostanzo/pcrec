@@ -1177,7 +1177,7 @@ history:
 slugs: optional-label optional-place optional-label-general
 rulings:
 - 2026-11-23 "optional-label: yes. flag an item to see if this is a special form or general. eg. (h+: blah) might work but has no meaning as it takes the last form. all the other greedies, *, etc basically devolve to the same ?. you suggested that the left of the : in a condition is an expression which i agree with so i am wondering if this is just a logical extension of that or not" (record: "2026-11-23 OWNER RULING — optional-label: yes (`(h?: S)` holds when h is absent or in S); and a FLAG: is it a special form or the general case of an expression left of `:`"); ruled: `(h?: S)` holds when h is absent or in S, as a general entry form; the FLAG filed as optional-label-general.
-- 2026-11-23 "Before the colon: then perhaps it's an alternative operator to the colon like :  ?:  rather than a separate operator. I like that because then we aren't using ? For two different meanings" (record: "2026-11-23 OWNER, on optional-place: "Before the colon"; and a proposal: an alternative operator to the colon, `:` and `?:`"); the place ruled (the reading taken, told to him so he can object); the operator form `?:` his LEAN ("perhaps"; "I like that"), not ruled; not ruled either, the record says: the joint and value cases, `(a?, b)`, `h+` / `h*`.
+- 2026-11-23 "Before the colon: then perhaps it's an alternative operator to the colon like :  ?:  rather than a separate operator. I like that because then we aren't using ? For two different meanings" (record: "2026-11-23 OWNER, on optional-place: "Before the colon"; and a proposal: an alternative operator to the colon, `:` and `?:`"); the place ruled (the reading taken, told to him so he can object); the operator form `?:` his LEAN (his "perhaps", and "I like that" too), not ruled; not ruled either, the record says: the joint and value cases, `(a?, b)`, `h+` / `h*`.
 - 2026-11-23 "I think the ? In conditions is a special case, but I'm trying to figure out how special." (record: "2026-11-23 OWNER, on optional-label-general: the `?` in conditions "is a special case"; where it sits; `?` for optional macro arguments; a value left of `:` with no label"); a LEAN on optional-label-general, DISCUSSION; the manager's thought (b) on optional-place: his `?:` closes optional-label-general as "special, and not a quantifier".
 rejected:
 - the mark on the label, `(h?: S)` (the shape ruled as optional-label) — by his lean on optional-place ("then we aren't using ? For two different meanings") — the earlier spelling goes to history; the meaning is the same.
@@ -2321,17 +2321,86 @@ history:
 - 2026-11-23 (lane predfix84, review r84 D7; record "2026-11-23 MANAGER — review r84 (predspot1122): the dispositions, ruled with the 2026-11-23 rulings in hand; no owner words"): the condition-argument reading's premise "`when`'s body names no label" restated: the body writes export lists, which pass labels outward and give a condition written in the caller nothing to resolve against inside the body.
 
 ## core/operators/bindings/label-variables — Macro variables: a parameter that is a label
-slugs:
+slugs: label-parameter-twice
 rulings:
 - 2026-11-22 "bound-condition: the form A := (x: blah) has to be illegal. x has no references in the binding. further A := /x/ & (y: blah) is also illegal as y has no target. this is the only read consistent with the earlier binding decisions. this is my read. please respond. alternatives: 1. macro variables A(x:) := (x: < 2100) 2. macro types B(d & isodate) := B(year: < 2100) (spellings tbd)" (record: "2026-11-22 OWNER, on bound-condition: "the form A := (x: blah) has to be illegal"; his read, a response asked for; two alternatives"); alternative 1, "macro variables", his spelling a placeholder, "spellings tbd"
 - 2026-11-22 "cound-condition: mostly confirmed. i leave the c := (0: 5) open" (record: "2026-11-22 OWNER RULING — bound-condition: "mostly confirmed"; `c := (0: 5)` left open"); "Both alternatives are marked under construction: directions acknowledged, spellings open" was on the confirmed list
+- 2026-11-23 (class: DIRECTION) "lets tentatively work with it. it seems like label-paramter-twice is answered by standard same label twice rules" (record: "2026-11-23 OWNER, on approach 1 (a macro takes a label): "lets tentatively work with it"; label-parameter-twice "seems" answered by the same-label-twice rules"); approach 1 taken as a working direction, not a ruling; label-parameter-twice answered by the same-label-twice rules, as his "seems" says.
+- 2026-11-23 (class: PROPOSAL) "1. label binding in macros. this means a macro can take a label and, maybe, a label can be pre-defined as a symbol. A(l:,B) := [l = B] or A(l:) := /(?<:${l}>\d)/ then A(x:) & (x: 5)." (record: "2026-11-23 OWNER, two other approaches to a label named by a macro's caller: (1) label binding in macros; (2) conditions allow expressions for the reference"); the body SETS the label; the pre-defined symbol parked (parked/ideas/label-symbol).
 rejected:
 readings:
-- the body names the parameter, so the label has its target at the call (the manager's reading of the direction) — UNTESTED (nothing defined).
+- the body names the parameter, so the label has its target at the call (the manager's reading of the direction) — SUPPORTED as run (docs/dev/lanes/predfold1123_evidence/ predfold1123_model.py LABELPARAM: `A(x:) & (x: 5)`, A(l:) := `/(?<:${l}>\d+)/`, the record's run reproduced).
 - his earlier words "we note that l is a label variable" (record "2026-11-21 OWNER RULING — bare-nested-scope, case 1: a compile error at inner; and a question on a label variable") are the same direction — a reading.
-evidence: none (under construction).
+- label-parameter-twice: placed twice, the plain read the last mention, a group question both, the index in order; across `&` the ambiguous reference — SUPPORTED as run (docs/dev/lanes/predfold1123_evidence/ predfold1123_model.py READINGS, LPRULES).
+evidence: docs/dev/lanes/predfold1123_evidence/ predfold1123_model.py LABELPARAM, LPRULES, READINGS.
 history:
 - 2026-11-22 (lane predbound, bound-condition ruled): a new under-construction piece; the older idea stays parked (parked/ideas/label-parameter), pointing here.
+- 2026-11-23 (lane predfold1123, the fold of 2026-11-22 late and 2026-11-23; records "2026-11-23 OWNER, on approach 1 (a macro takes a label): "lets tentatively work with it"; label-parameter-twice "seems" answered by the same-label-twice rules", "2026-11-23 OWNER, two other approaches to a label named by a macro's caller: (1) label binding in macros; (2) conditions allow expressions for the reference"): statement until then: "His first alternative to a condition bound alone: a macro parameter marked as a label, `A(x:) := (x: < 2100)` (his spelling, \"spellings tbd\"); the direction is acknowledged, nothing is defined."; status date 2026-11-22 to 2026-11-23, still under construction (his "tentatively"); the ruled parts split into the sibling pieces label-omitted, label-default, label-kinds, label-in-argument, label-forward; `A(x:) := (x: < 2100)` (a body reading a label it never places) is the reference kind (label-kinds). The lines "Placed once" .. are this lane's runs.
+
+## core/operators/bindings/label-omitted — The unspecified label
+slugs: label-parameter-omitted
+rulings:
+- 2026-11-23 "i agree that _ should be the unspecified label- it also comments on your meaning. we currently don't have overloading so a macro defined for 3 args needs three args. they can be omitted by row(,"level", ...) if we choose to allow that but not omitted under current macro call rules regardless of labels. label args are not special by position or requirement. in theory, one could have 2 label args." (record: "2026-11-23 OWNER RULING — label-parameter-omitted: `_` is the unspecified label; and: no argument is omitted under the current call rules; label arguments are not special by position or requirement")
+rejected:
+- omitting a label argument (`row("level", ..)` for a three-parameter `row`) — by owner ruling — "not omitted under current macro call rules regardless of labels".
+readings:
+- (a) `_` in the body follows forms already ruled; nothing exported — SUPPORTED as run (docs/dev/lanes/predfold1123_evidence/ predfold1123_model.py LABELPARAM, READINGS: the line "The unspecified label").
+- (b) two `_` never collide — SUPPORTED as run (docs/dev/lanes/predfold1123_evidence/ predfold1123_model.py LPRULES).
+- (the lane's) a body that places then reads its parameter, passed `_`, reads its own placement under a private name — SUPPORTED as modelled (docs/dev/lanes/predfold1123_evidence/ predfold1123_model.py LPRULES, the second line); a lane reading, not asked.
+evidence: docs/dev/lanes/predfold1123_evidence/ predfold1123_model.py LABELPARAM, LPRULES, READINGS.
+history:
+- 2026-11-23 (lane predfold1123, the fold of 2026-11-22 late and 2026-11-23; record "2026-11-23 OWNER RULING — label-parameter-omitted: `_` is the unspecified label; and: no argument is omitted under the current call rules; label arguments are not special by position or requirement"): a new piece, split from core/operators/bindings/label-variables.
+
+## core/operators/bindings/label-default — A label parameter with a default
+slugs: label-parameter-default
+rulings:
+- 2026-11-23 "label-parameter-default: yes you could use a label in an optional parameter. i lean towards ..., l = ts:) ... spelling for consistency and l: ts looks like a condition" (record: "2026-11-23 OWNER RULING — label-parameter-default: yes (a label may be an optional parameter); his spelling lean `l = ts:`"); the optionality ruled; the spelling `l = ts:` his lean, a placeholder.
+rejected:
+- the spelling `l: ts` — by his lean — "l: ts looks like a condition".
+readings:
+- the default is the author's, declared in the head — UNTESTABLE (which default is not in his words; the model runs `A2(l = _:)` as a placeholder, docs/dev/lanes/predfold1123_evidence/ predfold1123_model.py LPRULES).
+evidence: docs/dev/lanes/predfold1123_evidence/ predfold1123_model.py LPRULES.
+history:
+- 2026-11-23 (lane predfold1123, the fold of 2026-11-22 late and 2026-11-23; record "2026-11-23 OWNER RULING — label-parameter-default: yes (a label may be an optional parameter); his spelling lean `l = ts:`"): a new piece, split from core/operators/bindings/label-variables.
+
+## core/operators/bindings/label-kinds — One label mark, one meaning
+slugs: label-kinds
+rulings:
+- 2026-11-23 "label-kinds: yes, one mark meaning. the reference kind can be used by natives but stays off limits for users until we see a valid, safe set of rules for it." (record: "2026-11-23 OWNER RULING — label-kinds: yes, one mark, one meaning; the reference kind is for natives, off limits for users for now")
+rejected:
+- a reference kind for users (a parameter naming a caller's existing label) — by owner ruling — "stays off limits for users until we see a valid, safe set of rules for it" (parked/ideas/reference-kind).
+readings:
+- (a) reading a parameter never placed is refused at the definition — SUPPORTED as run (docs/dev/lanes/predfold1123_evidence/ predfold1123_model.py READINGS, LPRULES).
+- (b) `x.d:` at a call is refused (one new name, never a path) — SUPPORTED as run (docs/dev/lanes/predfold1123_evidence/ predfold1123_model.py READINGS).
+evidence: docs/dev/lanes/predfold1123_evidence/ predfold1123_model.py LPRULES, READINGS.
+history:
+- 2026-11-23 (lane predfold1123, the fold of 2026-11-22 late and 2026-11-23; record "2026-11-23 OWNER RULING — label-kinds: yes, one mark, one meaning; the reference kind is for natives, off limits for users for now"): a new piece, split from core/operators/bindings/label-variables.
+
+## core/operators/bindings/label-in-argument — A label sent inside an argument
+slugs: label-in-argument
+rulings:
+- 2026-11-23 "for this issue, sending the unbound label is ok and! i would say it wouldn't be affected by the _ as it becomes an accepted backdoor into the inner pattern- which is almost the whole point." (record: "2026-11-23 OWNER RULING — label-in-argument: sending an unbound label inside an argument is ok, and `_` on the outer spot does not affect it ("an accepted backdoor"); second thoughts on a label SET in an argument, to re-examine")
+rejected:
+- `_` on the outer spot closing a label sent inside — by owner ruling — "it wouldn't be affected by the _".
+readings:
+- (b) placed once, twice or never: set once, the same-label-twice rules, the never-pass warning — SUPPORTED as run for once and twice (docs/dev/lanes/predfold1123_evidence/ predfold1123_model.py LABELPARAM); the warning not modelled.
+- (c) the backdoor passes `[_ = rx]`, a `_` part label and a body using the argument alone — SUPPORTED as run (docs/dev/lanes/predfold1123_evidence/ predfold1123_model.py READINGS); the last case the natural extension, to confirm.
+evidence: docs/dev/lanes/predfold1123_evidence/ predfold1123_model.py LABELPARAM, READINGS.
+history:
+- 2026-11-23 (lane predfold1123, the fold of 2026-11-22 late and 2026-11-23; record "2026-11-23 OWNER RULING — label-in-argument: sending an unbound label inside an argument is ok, and `_` on the outer spot does not affect it ("an accepted backdoor"); second thoughts on a label SET in an argument, to re-examine"): a new piece, split from core/operators/bindings/label-variables.
+
+## core/operators/bindings/label-forward — A label parameter passed on
+slugs: label-forward string-label
+rulings:
+- 2026-11-23 "Label forward: yes. Most of this could be achieved using the row third argument." (record: "2026-11-23 OWNER RULING — label-forward: yes (a body may pass its label parameter on to another macro); two questions (a filter over combined rows at the line; several keys in one row)")
+- 2026-11-23 (class: DIRECTION) his string-label words, the row's label set to the unquoted portion, "we'd need to send it to through to the string binding" (record: "2026-11-23 OWNER, on string-label: the row's label argument is set to the unquoted portion; "we'd need to send it to through to the string binding""); the use that asked for forwarding.
+rejected:
+readings:
+- across `|`, the branch taken sets the label — SUPPORTED as run (docs/dev/lanes/predfold1123_evidence/ predfold1123_model.py READINGS).
+- once / in sequence the last mention / across `&` ambiguous — SUPPORTED as run (docs/dev/lanes/predfold1123_evidence/ predfold1123_model.py LABELPARAM).
+evidence: docs/dev/lanes/predfold1123_evidence/ predfold1123_model.py LABELPARAM, READINGS.
+history:
+- 2026-11-23 (lane predfold1123, the fold of 2026-11-22 late and 2026-11-23; record "2026-11-23 OWNER RULING — label-forward: yes (a body may pass its label parameter on to another macro); two questions (a filter over combined rows at the line; several keys in one row)"): a new piece, split from core/operators/bindings/label-variables.
 
 ## core/operators/bindings/macro-types — Macro types: a parameter restricted to a pattern
 slugs:

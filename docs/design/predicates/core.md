@@ -1673,8 +1673,8 @@ see: core/spellings/condition-parentheses
 - At the very start of a definition it tests the empty match so far (`/${(0: rx.digit)}/` never holds).
 - `rx.digit` (lib/rx/classes) stands where the owner wrote a bare `digit`, which no piece provides.
 - A condition bound to a name of its own, or a macro's body, that names a label no pattern in its binding holds is
-  a compile error at the binding (core/holes/bare-condition/bound-condition); one naming only `0` is open
-  (core/holes/bare-condition/zero-binding).
+  a compile error at the binding (core/holes/bare-condition/bound-condition); one naming only `0` is a compile
+  error for now (core/holes/bare-condition/zero-binding).
 WHOLE `7x` HOLDS, `77x` FAILS / SEARCHED `a7x` `7x`@1 / FIND-ALL `7x 12x 8x` [`7x`@0, `2x`@4, `8x`@7] (`/\d${(0: rx.digit)}x/`)
 
 ### Labels a bare condition reads   [core/holes/bare-condition/labels]   ruled 2026-11-21
@@ -1715,7 +1715,7 @@ see: core/labels/flow core/operators/bindings/label-variables core/holes/bare-co
   (`inner(c) := /x${c}/`, `inner((h: <5))`); a label variable is under construction
   (core/operators/bindings/label-variables). A condition or computed value bound alone that names a label its
   binding does not hold is the same compile error (core/holes/bare-condition/bound-condition); one naming only `0`
-  is open (core/holes/bare-condition/zero-binding).
+  is a compile error for now (core/holes/bare-condition/zero-binding).
 - VALUES: a read inside a piece, a group question and `h[k]` included (array-in-piece), sees the piece's own
   settings only, unset before its own group the first time, the
   previous pass of a loop written inside it ("i meant b"). So the same rx written as one definition and composed
@@ -1733,7 +1733,7 @@ see: core/labels/flow core/operators/bindings/label-variables core/holes/bare-co
   3. `B(rx) := /${[dd = rx]}xx/ & (dd: <100)` "would be correct".
 - Readings (the manager's): a piece is a binding or a macro body, and what is written inside ONE definition
   (literals, operands, holes, an `&` operand's hole) is one piece; an argument is the caller's text and reads the
-  caller's labels; two uses of one piece are two pieces (to be confirmed), so a user's loop around a piece makes
+  caller's labels; two uses of one piece are two pieces (core/principles/binding-fixed), so a user's loop around a piece makes
   each pass a fresh use and `B SEQ ";"` looped twice agrees with it written out (the lines "A user's loop",
   "Written out"; inside one definition the loop reads its previous pass, "One definition" with the loop).
 Match so far: WHOLE `3x` FAILS, `7x` FAILS / SEARCHED `a3x` FAILS / FIND-ALL `3x 7x` [] (`/(?<h>\d)${inner}/`, inner := `/x${(0: /\dx/)}/`)
@@ -1768,27 +1768,31 @@ see: core/conditions/pass-start-read core/values/computed-labels lib/counting/co
 - The general form (a reading, the manager's, in the shape of his words "has no target"): every label a binding's
   body names has its target in that binding, so a SET that reads a label, `lim := <(10 - $b)`, bound alone is the
   same compile error (the line "A set that reads a label").
-- A condition naming only `0` bound alone (`c := (0: 5)`): left open by him (core/holes/bare-condition/zero-binding).
-- His two alternatives are under construction, spellings open: macro variables, `A(x:) := (x: < 2100)`
-  (core/operators/bindings/label-variables); macro types, `B(d & isodate) := (year: < 2100)`
+- A condition naming only `0` bound alone (`c := (0: 5)`): a compile error for now (core/holes/bare-condition/zero-binding).
+- His two alternatives: macro variables, `A(x:) := (x: < 2100)`, a body reading a label it never places, is the
+  reference kind, off limits for users (core/operators/bindings/label-kinds; the label parameter itself is his
+  tentative direction, label-variables); macro types, `B(d & isodate) := (year: < 2100)`, under construction
   (core/operators/bindings/macro-types).
 Written in place: WHOLE `7` HOLDS, `3` FAILS / SEARCHED `x3 7` `7`@3 / FIND-ALL `7 3 9 66` [`7`@0, `9`@4, `6`@6, `6`@7] (`/(?<h>\d)/ & (h: >5)`; bound alone, `/(?<h>\d)/ & late` with late := `(h: >5)` is a compile error at `late`)
 A set bound alone: WHOLE `7` HOLDS, `3` FAILS / SEARCHED `x3 7` `7`@3 / FIND-ALL `7 3 9 66` [`7`@0, `9`@4, `6`@6, `6`@7] (`/(?<h>\d)/ & (h: late)`, late := `>5`)
 A set that reads a label, bound alone: modes: a compile error at `lim` (`/(?<b>\d)(?<h>\d)/ & (h: lim)`, lim := `<(10 - $b)`); written in place, `(h: <(10 - $b))`, it is legal.
 A binding that holds its label: WHOLE `2001` HOLDS, `1999` FAILS / SEARCHED `x1999 2024` `2024`@6 / FIND-ALL `2024 1999 2000` [`2024`@0, `2000`@10] (`year`, year := `/(?<_v>\d{4})/ & (_v: >= 2000)`)
 
-### A condition on `0` bound to a name of its own   [core/holes/bare-condition/zero-binding]   open zero-condition-binding 2026-11-22
-A condition naming only `0`, bound alone (`c := (0: 5)`): is it read where it is used (a), a compile error at its binding like a condition naming a label (b), or sealed and legal, its own `0` (c)?
+### A condition on `0` bound to a name of its own   [core/holes/bare-condition/zero-binding]   ruled 2026-11-22
+A condition naming only `0`, bound alone (`c := (0: 5)`), is a compile error at its binding, for now; written in place, or passed as an argument, it is legal.
 needs: core/holes/bare-condition/bound-condition core/conditions/match-so-far
+by: core/principles/conservative-first
 see: core/holes/bare-condition
-- His words: "i leave the c := (0: 5) open". Neither answer is applied; the manager's list had put it with the
-  refused forms ("likewise").
+- His words: "(0: 5) could be applied to any pattern. All patterns have match 0. It could be rewritten to (like)
+  /.*/ & (0: 5). That's why I wasn't sure of it. I think it's better to say it's an error and reconsider later."
+- The error is at the binding, bound-condition's compile error (the manager's reading (a)); written in place or
+  passed as an argument it is unchanged, the caller's text (reading (b)).
+- To reconsider when (reading (c)): a program needs a reusable test on the whole match that a set bound alone
+  (`five := 5`, then `(0: five)`) cannot write, or macro variables are designed.
 - His two examples of `0` written in place, "bound-condition: A := /\d${(0: 5)}/ binds the literal to 5. A := /\d/
   C := /.${A & (0: 5)}/ the 0: is bound to A only", agree with what is ruled and do not reach this case.
-- Under (b) the program below is a compile error at `c`; under (c), sealed and legal, `c`'s own `0` is empty and
-  the program never matches (the second line).
-(a) where it is used: WHOLE `7x` HOLDS, `77x` FAILS / SEARCHED `a7x` `7x`@1 / FIND-ALL `7x 12x 8x` [`7x`@0, `2x`@4, `8x`@7] (`/\d${c}x/`, c := `(0: rx.digit)`)
-(c) sealed, its own `0`: WHOLE `7x` FAILS, `77x` FAILS / SEARCHED `a7x` FAILS / FIND-ALL `7x 12x 8x` [] (the same program)
+Bound alone: modes: a compile error (`c`, c := `(0: 5)`: a condition on `0` bound alone).
+Written in place: WHOLE `5` HOLDS, `7` FAILS / SEARCHED `x5` `5`@1 / FIND-ALL `5 7 5` [`5`@0, `5`@4] (`/\d/ & (0: 5)`)
 His first example: WHOLE `5` HOLDS, `7` FAILS / SEARCHED `x75` `5`@2 / FIND-ALL `5 7 55` [`5`@0, `5`@4, `5`@5] (`A := /\d${(0: 5)}/`)
 His second example: WHOLE `x5` HOLDS, `x7` FAILS, `55` HOLDS / SEARCHED `a7 b5` `b5`@3 / FIND-ALL `x5 y7 55` [`x5`@0, ` 5`@5] (`C := /.${A & (0: 5)}/`, A := `/\d/`)
 
@@ -1813,7 +1817,7 @@ WHOLE `a${x}b` HOLDS, `ab` FAILS / SEARCHED `-a${x}b` `a${x}b`@1 / FIND-ALL `a${
 ## Operators   [core/operators]
 
 ### Precedence   [core/operators/precedence]   reading 2026-11-19
-Tightest first: field, call and index; postfix quantifiers; prefix `!`, `NOT` and comparisons; `* %`; `+ -`; the sequence operator; `&`; `|`; then the entry marks and `:=`.
+Tightest first: field, call and index; postfix quantifiers; prefix `!`, `NOT` and comparisons; `* %`; `+ -`; the sequence operator; `&`; the label set; `|`; the entry marks; `:=`.
 needs: core/patterns/sequence core/patterns/quantifiers core/filters/and core/values/arithmetic
 | level | operator | fix, associativity | ground |
 |---|---|---|---|
@@ -1824,16 +1828,21 @@ needs: core/patterns/sequence core/patterns/quantifiers core/filters/and core/va
 | 5 | `+ -` on numbers | binary, left | a reading |
 | 6 | the sequence operator | binary, n-ary | tighter than `&` and `|`: ruled (core/patterns/sequence) |
 | 7 | `&` | binary, a chain; the left side decides | ruled (core/filters/and) |
-| 8 | `|` | binary, n-ary | ruled |
-| 9 | `=` then `:` inside an entry | `p = v: S` is `(p = v): S` | a reading |
+| 8 | the label set `x = E` | inside `[ ]` or directly in `${ }` only | the manager's syntax reading |
+| 9 | `|` | binary, n-ary | ruled |
+| 10 | `=` then `:` inside an entry | `p = v: S` is `(p = v): S` | a reading |
 | statement | `:=` | a statement ends before `NAME :=` | a reading |
 - After `+` or `*`, a token that can begin an operand makes it binary; otherwise it is postfix (a reading). The
   sequence mark cannot begin an operand, so `A+ SEQ B` is unambiguous.
 - A `(` or `[` is a call or an index only after an operand; after an operator it begins an operand (a reading).
-- Inside an entry (`[ ... ]`, a call, a condition) `&` and `|` bind tighter than `=` and `:`, so
-  `(x: <200 | >900)` holds ONE entry.
+- Inside a call or a condition `&` and `|` bind tighter than `=` and `:`, so `(x: <200 | >900)` holds ONE entry.
+  Inside `[ ]` the label set binds looser than `&`, tighter than `|`: `[a = A | b = B]` is two labelled entries, and
+  `[ab = (B | A)]` labels the alternation (the line "The label set beside `|`"; the manager's syntax reading on his
+  "the precedence needs clarifying hence []"). `,` also separates entries there, loosest: `[a, b, c]` is
+  `a | b | c` (his "a macro that takes a,b,c and turns it into an array"; a reading).
 - Inside `/.../` none of this applies: rx text has PCRE's meaning, a hole `${...}` excepted.
 WHOLE `2` HOLDS, `x2` FAILS / SEARCHED `x2` `2`@1 / FIND-ALL `x1 2 x2` [`x1`@0, `2`@3, `2`@6] (`"x" SEQ "1" | "2"` is `(?:x1)|2`)
+The label set beside `|`: WHOLE `25` FAILS, `13` HOLDS / SEARCHED `25` FAILS / FIND-ALL `25 13` [`13`@3] (`[ab = B | A] & (ab.l: <20)`, A := `/(?<l>\d)\d/`, B := `/(?<l>\d\d)/`)
 
 ### Bindings and macros   [core/operators/bindings]   ruled 2026-11-22
 `name := expression` binds a name to whatever the expression is, an rx or a macro; `m(p1, p2) := body` makes a macro, and a call is the macro applied to one record.
@@ -1847,7 +1856,8 @@ see: core/modules/call-shorthand core/holes/bare-condition core/filters/negation
 - NO PARTIAL APPLICATION: a call binds every required parameter or is a compile error naming the missing one. A
   SECTION, `(& f)`, is the one way to leave the operand open; sections start with `&` only and compose.
 - Typed parameters are not in the first build: a definition head declares names and, as `name = default`, the
-  defaults of optional settings (the `=` form a reading); a `:` in a head is a compile error (a reading).
+  defaults of optional settings (the `=` form a reading); a `:` in a head marks a label parameter
+  (core/operators/bindings/label-variables), any other `:` there is a compile error (a reading).
 - No alphabetic operators or statement keywords: a word is always a NAME (a function, a label, a binding); the
   placeholder `NOT` is the one exception (core/filters/negation).
 - A RECORD (the parentheses of a call or a condition) is never a value: it is laid against fields only; a tuple is
@@ -1860,15 +1870,92 @@ see: core/modules/call-shorthand core/holes/bare-condition core/filters/negation
   (core/holes/bare-condition).
 WHOLE `1,2` HOLDS / SEARCHED `x1,2` `1,2`@1 / FIND-ALL `1,2 3,3` [`1,2`@0, `3,3`@4] (`pair(p) := /${p},${p}/`, `pair(/\d/)` is `(?:\d),(?:\d)`)
 
-### Macro variables: a parameter that is a label   [core/operators/bindings/label-variables]   under-construction 2026-11-22
-His first alternative to a condition bound alone: a macro parameter marked as a label, `A(x:) := (x: < 2100)` (his spelling, "spellings tbd"); the direction is acknowledged, nothing is defined.
+### Macro variables: a parameter that is a label   [core/operators/bindings/label-variables]   under-construction 2026-11-23
+A macro parameter marked as a label, `A(l:)`, takes a new label name from the caller (`A(x:)`), placed where the body places it: his tentative direction; the ruled parts are the pieces below.
 needs: core/operators/bindings core/holes/bare-condition/bound-condition
-see: parked/ideas/label-parameter core/holes/bare-condition/nested-scope
-- His words: "alternatives: 1. macro variables A(x:) := (x: < 2100)".
-- The reading of the direction (the manager's): the body names the parameter, so the label has its target at the
-  call; his earlier way of saying it, "we note that l is a label variable" (bare-nested-scope, case 1).
-- Not defined: the spelling of the head, what a call passes (a label name, a path), and whether a label parameter
-  may also be read with `$`.
+see: parked/ideas/label-parameter core/holes/bare-condition/nested-scope core/labels/one-rule lib/json/members
+- His words: "lets tentatively work with it. it seems like label-paramter-twice is answered by standard same label
+  twice rules" (approach 1, the label parameter; a working direction, not a ruling).
+- A body `A(l:) := /(?<:${l}>\d+)/` places the label the call names; the name is the caller's own, written in the
+  caller's text (`A(x:) & (x: 5)`, his example).
+- Placed twice it follows the rules for a label mentioned twice: the plain read the last mention, a group question
+  both settings, the index in order; across `&` the ambiguous reference (readings, run; the lines below).
+- "label args are not special by position or requirement. in theory, one could have 2 label args."
+- His first alternative to a condition bound alone, `A(x:) := (x: < 2100)`, reads a label it never places: the
+  reference kind, off limits for users (core/operators/bindings/label-kinds).
+- Not defined: whether a body may read its label parameter with `$`.
+His example: WHOLE `5` HOLDS, `55` FAILS, `7` FAILS / SEARCHED `7 5` `5`@2 / FIND-ALL `5 7 56 15` [`5`@0, `5`@4, `5`@8] (`A(x:) & (x: 5)`, A(l:) := `/(?<:${l}>\d+)/`)
+Placed twice, the plain read: WHOLE `7,5` HOLDS, `5,7` FAILS, `5,5` HOLDS / SEARCHED `5,7 7,5` `7,5`@4 / FIND-ALL `7,5 5,7 1,5 5,5` [`7,5`@0, `1,5`@8, `5,5`@12] (`A(x:) SEQ "," SEQ A(x:) & (x: 5)`, A(l:) := `/(?<:${l}>\d+)/`)
+Placed twice, a group question: WHOLE `7,5` HOLDS, `5,7` HOLDS, `7,7` FAILS / SEARCHED `7,7 5,7` `5,7`@4 / FIND-ALL `7,5 5,7 1,2 5,5` [`7,5`@0, `5,7`@4, `5,5`@12] (`A(x:) SEQ "," SEQ A(x:) & some((x: "5"))`, A(l:) := `/(?<:${l}>\d+)/`)
+Placed twice, the index: WHOLE `7,5` FAILS, `5,7` HOLDS / SEARCHED `7,5 5,7` `5,7`@4 / FIND-ALL `7,5 5,7 1,5 5,5` [`5,7`@4, `5,5`@12] (`A(x:) SEQ "," SEQ A(x:) & (x[1]: 5)`, A(l:) := `/(?<:${l}>\d+)/`)
+Across `&`: modes: a compile error (`A(x:) & A(x:) & (x: 5)`, A(l:) := `/(?<:${l}>\d+)/`: both sides set x, an ambiguous reference (core/labels/flow)).
+
+### The unspecified label   [core/operators/bindings/label-omitted]   ruled 2026-11-23
+At a call `_` is the unspecified label (`row(_:, "level", ..)`); no argument is omitted under the current call rules, labels or not.
+needs: core/operators/bindings/label-variables
+see: core/modules/leave-out core/operators/bindings/call-forms parked/ideas/empty-argument
+- His words: "i agree that _ should be the unspecified label- it also comments on your meaning."; "we currently don't
+  have overloading so a macro defined for 3 args needs three args. they can be omitted by row(,"level", ...) if we
+  choose to allow that but not omitted under current macro call rules regardless of labels."
+- In the body `_` follows forms already ruled: `[l = B]` is `[_ = B]`, `(?<:${l}>...)` a plain group, so nothing
+  is exported (the manager's reading (a); the line "The unspecified label"). Two `_` never collide (reading (b)).
+- A body that places its label parameter and then reads it, passed `_`, reads its own placement under a private
+  name (the lane's reading; the second line); a body that reads without placing is refused at its definition
+  (core/operators/bindings/label-kinds).
+- The empty argument position `row(,"level", ..)` is his idea, not ruled (parked/ideas/empty-argument).
+The unspecified label: WHOLE `3!` HOLDS, `7!` HOLDS / SEARCHED `x3!` `3!`@1 / FIND-ALL `3! 7!` [`3!`@0, `7!`@3] (`A(_:) SEQ "!"`, A(l:) := `/(?<:${l}>\d)/`)
+A body placing then reading its label, passed `_`: WHOLE `3` HOLDS, `7` FAILS / SEARCHED `7 3` `3`@2 / FIND-ALL `3 7 4` [`3`@0, `4`@4] (`C(_:)`, C(l:) := `/(?<:${l}>\d)/ & (l: <5)`)
+
+### A label parameter with a default   [core/operators/bindings/label-default]   ruled 2026-11-23
+A label parameter may be an optional (keyword) parameter under the existing call rule; passed by name it is written `l = x:`, his spelling lean.
+needs: core/operators/bindings/label-variables core/operators/bindings/label-omitted
+see: core/spellings/placeholders
+- His words: "label-parameter-default: yes you could use a label in an optional parameter. i lean towards ..., l =
+  ts:) ... spelling for consistency and l: ts looks like a condition".
+- The default is the author's to declare in the head (`A2(l = _:)`, a placeholder; the manager's reading): his
+  words rule the optionality, not which default.
+Passed by name: WHOLE `5` HOLDS, `55` FAILS, `7` FAILS / SEARCHED `7 5` `5`@2 / FIND-ALL `5 7 56 15` [`5`@0, `5`@4, `5`@8] (`A2(l = x:) & (x: 5)`, A2(l = _:) := `/(?<:${l}>\d+)/`)
+Left out, the default `_`: WHOLE `5` HOLDS, `55` HOLDS, `x` FAILS / SEARCHED `x5` `5`@1 / FIND-ALL `5 7` [`5`@0, `7`@2] (`A2()`, A2(l = _:) := `/(?<:${l}>\d+)/`)
+
+### One label mark, one meaning   [core/operators/bindings/label-kinds]   ruled 2026-11-23
+The label mark is the setting kind only: a call names one new label; a body reading a label parameter it never places is a compile error at its definition; the reference kind is for natives.
+needs: core/operators/bindings/label-variables
+see: core/holes/bare-condition/nested-scope core/holes/bare-condition/bound-condition lib/structural/capture parked/ideas/reference-kind
+- His words: "label-kinds: yes, one mark meaning. the reference kind can be used by natives but stays off limits
+  for users until we see a valid, safe set of rules for it."
+- A marked argument at a call is ONE new name, never a path: `x.d:` is a compile error (the manager's reading (b)).
+- A body may read its own label parameter after placing it (the third line).
+- To test a caller's label in a body, pass the condition: `A(c, B) := B & c`, `A((x: 5), /\w/)`.
+- The capture request names its label on the left of an entry (lib/structural/capture), so it takes no reference.
+The reference kind in a user macro: modes: a compile error (`A(x:, /\w/)`, A(a:, B) := `B & (a: 5)`: A reads a label it never places, off limits for users).
+A path as a marked argument: modes: a compile error (`A(x.d:)`, A(l:) := `/(?<:${l}>\d)/`: a marked argument is one new name).
+A body reading its own label after placing it: WHOLE `3` HOLDS, `7` FAILS / SEARCHED `7 3` `3`@2 / FIND-ALL `3 7 4` [`3`@0, `4`@4] (`C(x:)`, C(l:) := `/(?<:${l}>\d)/ & (l: <5)`)
+
+### A label sent inside an argument   [core/operators/bindings/label-in-argument]   ruled 2026-11-23
+A caller may send a label parameter inside an in-place argument (`W(_:, S(body:))`): the name is the caller's own, read bare, and `_` on the outer spot does not close it.
+needs: core/operators/bindings/label-variables core/operators/bindings/label-omitted
+see: core/labels/export/arguments core/labels/paths/argument-default lib/json/members
+- His words: "for this issue, sending the unbound label is ok and! i would say it wouldn't be affected by the _ as it
+  becomes an accepted backdoor into the inner pattern- which is almost the whole point."
+- Placed once, twice or never by the receiving body: set once, the same-label-twice rules, the never-pass warning
+  (the manager's reading (b)).
+- The backdoor passes `[_ = rx]`, a `_` part label and a body that uses the argument alone (reading (c), the last
+  the natural extension, to confirm; the second line).
+- His clarification: argument-default's template rule "was when we set a label like B(a=B), not when we sent an
+  unbound label".
+Sent inside the argument, `_` on the outer spot: WHOLE `<"3">` HOLDS, `<"7">` FAILS / SEARCHED `<"7"> <"3">` `<"3">`@6 / FIND-ALL `<"3"> <"7"> <"4">` [`<"3">`@0, `<"4">`@12] (`W(_:, S(body:)) & (body: <5)`, W(l:, v) := `/<${[l = v]}>/`, S(l:) := `/"(?<:${l}>\d)"/`)
+The outer body using the argument alone: WHOLE `<"3">` HOLDS, `<"7">` FAILS / SEARCHED `<"7"> <"3">` `<"3">`@6 / FIND-ALL `<"3"> <"7"> <"4">` [`<"3">`@0, `<"4">`@12] (`W3(S(body:)) & (body: <5)`, W3(v) := `/<${v}>/`, S(l:) := `/"(?<:${l}>\d)"/`)
+
+### A label parameter passed on   [core/operators/bindings/label-forward]   ruled 2026-11-23
+A body may pass its label parameter on to another macro's label parameter; that places it, and the usual rules apply wherever it lands.
+needs: core/operators/bindings/label-variables
+see: core/labels/one-rule core/labels/flow lib/json/members
+- His words: "Label forward: yes. Most of this could be achieved using the row third argument."
+- Once, set once; several times in sequence, the last mention; across `|`, the branch taken; across `&`, an
+  ambiguous read, a compile error; never, the never-pass warning (the statement put to him).
+- Its use: the JSON sketch, the label on the data (lib/json/members).
+Passed on: WHOLE `<3>` HOLDS, `<7>` FAILS / SEARCHED `<7> <3>` `<3>`@4 / FIND-ALL `<3> <7> <4>` [`<3>`@0, `<4>`@8] (`B(x:) & (x: <5)`, B(l:) := `/<${A(l:)}>/`, A(l:) := `/(?<:${l}>\d)/`)
+Passed on across `|`: WHOLE `3` HOLDS (x = `3`), `e3` HOLDS (x = `3`), `e7` FAILS / SEARCHED `e7 3` `3`@3 / FIND-ALL `3 e7 e4` [`3`@0, `e4`@5] (`V(x:) & (x: <5)`, V(l:) := `A(l:) | E(l:)`, A(l:) := `/(?<:${l}>\d)/`, E(l:) := `/e(?<:${l}>\d)/`)
 
 ### Macro types: a parameter restricted to a pattern   [core/operators/bindings/macro-types]   under-construction 2026-11-22
 His second alternative: a parameter restricted to a pattern, `B(d & isodate) := (year: < 2100)` (his spelling, "spellings tbd"), so the body may name the pattern's labels; nothing is defined.
