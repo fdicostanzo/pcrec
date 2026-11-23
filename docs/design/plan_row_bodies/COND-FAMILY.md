@@ -9667,3 +9667,16 @@ The manager's findings (told to him; marked):
   string (`min & 0`) or whether an argument is specified (`min ? .. : ..`). The language has the test (emptiness
   of a compile-time set: `@assert.some`) but no expression that chooses on it. A candidate basic component;
   nothing defined; to park with a trigger unless he wants it now.
+
+### 2026-11-23 OWNER, on his own repeat sketch: "With proper ?: spelling And different semantics for repeat holes...lol"
+tags: core/spellings/placeholders core/conditions/form core/holes/count core/operators/bindings/call-forms
+
+HIS WORDS, whole: "With proper ?: spelling
+And different semantics for repeat holes...lol"
+
+Class: a REMARK on his own sketch, in jest (DISCUSSION; nothing ruled): the sketch stands only with a proper
+spelling of its conditional and with other semantics for a count hole than the documents have. repeat-head is
+NOT answered by it.
+The manager's note (told to him; for the spellings review): his conditional's marks, `?` and `:`, are the two
+marks of the optional entry operator he proposed the same day (`p ?: S`); a compile-time conditional, if it is
+ever taken up, needs a spelling that does not meet `?:` or the entry's `:`.
