@@ -9311,3 +9311,36 @@ the one head; what changes for a user: "at least 3" is `repeat(x, 3, max = _)`, 
 NOT covered by absence alone (hand-worked): `padded(rx, n)`'s width form is an alternation of two filtered
 copies; with n unspecified it does not reduce to the no-width body `/0*${rx}/` (it becomes `rx | 0*rx`, another
 order), so `padded` would keep two names or a compile-time test of "is it specified".
+
+### 2026-11-23 OWNER, an example after `0` first in a pass: a list whose length is given by a digit before it; "I don't know what goes in the count()"
+tags: lib/counting/count core/conditions/form/value-left core/labels/labels-vs-captures/array-vs-passes core/conditions/pass-start-read core/holes/value/other-positions core/values/comparisons parked/ideas/match-is-rx-unlocks
+
+Said while call-forms was waiting (not answered by these words). HIS WORDS, whole:
+
+"((0: !contains("7")) SEQ /\d/ SEQ ";")+ how about [c = digit ] ((count() <= $c) SEQ /\d/ SEQ ";")+ but I don't
+know what goes in the count()"
+
+Class: an EXAMPLE with a QUESTION (DISCUSSION; nothing ruled): a digit `c`, then a loop of items with a test at
+the START of each pass comparing a count with `$c`; what `count()` takes. Spellings his placeholders (`digit`;
+the juxtaposition after `[c = digit ]` read as the sequence operator; `(count() <= $c)` read as a value left of
+`:` with a comparison set).
+The manager's answer (told to him; readings of the rules as they stand, marked):
+- `count` takes a condition and counts the settings of its label that meet it (lib/counting/count), so the item
+  gets a label and the count asks for any value: `count((it: anything))`; as a test it is a value left of `:`
+  (count-in-set, ruled): `(count((it: anything)): < $c)`. The whole program:
+  `[c = /\d/] SEQ ((count((it: anything)): < $c) SEQ [it = /\d/] SEQ ";")+`.
+- What it reads inside the loop: the settings made so far on the path ("as they stand where it is read (composed
+  at that point: a reading)", core/labels/labels-vs-captures). Written FIRST in the pass it counts the items
+  before this one, so the comparison is `<`, not `<=` (with `<=` one item too many is admitted, and `0` admits one).
+- RUN (a path model, `$PCREC_TMPDIR/scratch/pred/count_prefixed.py`; output pasted):
+  the test FIRST, `<= $c`: WHOLE `23;4;` HOLDS, `23;4;5;` HOLDS, `23;` HOLDS, `13;` HOLDS, `13;4;` HOLDS, `03;`
+  HOLDS / SEARCHED `23;4;5;` `23;4;5;`@0 / FIND-ALL `23;4;5; 13;4; 03;` [`23;4;5;`@0, `13;4;`@8, `03;`@14]
+  the test FIRST, `< $c`: WHOLE `23;4;` HOLDS, `23;4;5;` FAILS, `23;` HOLDS, `13;` HOLDS, `13;4;` FAILS, `03;`
+  FAILS / SEARCHED `23;4;5;` `23;4;`@0 / FIND-ALL `23;4;5; 13;4; 03;` [`23;4;`@0, `13;`@8]
+  the test AFTER the item, `<= $c`: the same answers as the line above in every mode.
+- These say "at most c items" (`23;` HOLDS). "Exactly c" adds one test after the loop: `(count((it: anything)):
+  == $c)` (hand-worked, not run).
+- It is the length-prefixed field: the direct spelling, a count hole fed by a read (`rx.repeat(item, $c)`), is
+  under construction (core/holes/value/other-positions: "A count from a read is known only at match time; the
+  counted repeat over it is not built"); his form says the same with a condition, and it is the trigger U6 of
+  parked/ideas/match-is-rx-unlocks ("a user program needing a length-prefixed field").
