@@ -1025,3 +1025,20 @@ wake.md says (read the draft WHOLE first; A4 is a ruled-words finding: read his 
   unspecified `_` / open kept apart; array = lift, tuple = positions, map = names; a user macro taking a macro,
   with its termination cost. Runs: `$PCREC_TMPDIR/scratch/pred/call_forms.py`. He "will be back later to go over".
 - IN FLIGHT: lane predfold1123 (R1 pending in its file). r86 round to launch at its delivery.
+
+## 2026-11-23 — predfold1123 delivered and merged; critic round r86 launched
+
+- Lane predfold1123 delivered (lanecheck DONE; R1 zero-open applied): MERGED (026090af8); lint 7,902 / 0;
+  plan-lint green; model 18 / 0, 24 plants caught. Folded: every ruling from 2026-11-22 late through zero-open.
+  Answers changed are listed in its report (two-sources' line; five programs legal again under argument-label;
+  `c := (0: 5)` an error; the two-argument capture wrapper to rejected). Lane stopped.
+- Its note for after the review: zero-open's two record entries were not in its worktree, so four pieces cite them
+  in history lines only (match-so-far, reads, warnings, capture) and core/values/reads keeps its 2026-11-22 date:
+  the r86 fix lane turns them into rulings items.
+- Owner questions the lane left, by slug: label-set-precedence (`[a = A | b = B]`), question-request,
+  effect-in-guard, array-request-spelling, label-parameter-dollar (optional-label-general is closed by his `?:`
+  lean: check how the lane wrote it).
+- LAUNCHED: coordinator `crit-predfold1123` (opus, background), review r86, subject frozen at 026090af8, scope
+  014ebc42f..026090af8, round dir `$PCREC_TMPDIR/scratch/crit-predfold1123/`. NOT a delivery to main until r86 is
+  ruled and its fix lane lands.
+- WAITING ON HIM: the call-forms play-out (he said he would be back to go over it).
