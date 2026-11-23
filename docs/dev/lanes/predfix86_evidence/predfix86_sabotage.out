@@ -1,0 +1,109 @@
+s1 -> CONTROL (the control's python `re` for `identity(A)` widened to `\d!?`): caught
+   last line: predfix86_model: 29 checks, 1 failed (CONTROL)
+   its FAIL line: FAIL CONTROL: differing (WHOLE, SEARCHED, FIND-ALL): `"ab" | "a"` (0, 0, 0); `identity(A)` against `\d` (2, 10, 14) over 40 texts; a label-only group around a negated class against python `re` (0, 0, 0) over 85 texts; a caller's own label under a closing body against `<[0-4]>` (0, 0, 0) over 40 text
+s2 -> CLOSE (`_` on a part-label spot lowered as a plain group again (predfold1123's B1 defect)): caught
+   last line: predfix86_model: 29 checks, 2 failed (CLOSE, EXPAND)
+   its FAIL line: FAIL CLOSE: `W(_:, A) & (A.h: ..)` refused False (None), bare `h` refused True; a condition inside a closed argument reads (`3xx`/`7xx`): a part label [True, False], an in-place group [True, False]; the backdoor (a sent label through `_`) passes [True, False]
+s3 -> CLOSE (`[_ = A]` erases A's groups again (a condition inside the argument reads nothing)): caught
+   last line: predfix86_model: 29 checks, 5 failed (CONTROL, CLOSE, CLOSEOWN, SWEEP, DOC)
+   its FAIL line: FAIL CLOSE: `W(_:, A) & (A.h: ..)` refused True (path `A.h`: `A` is neither written nor a binding used in this definition), bare `h` refused True; a condition inside a closed argument reads (`3xx`/`7xx`): a part label [False, False], an in-place group [False, False]; the backdoor (a sent label throu
+s4 -> CLOSE (the backdoor shut: a sent label under a closing spot is closed like the rest): caught
+   last line: predfix86_model: 29 checks, 5 failed (LABELPARAM, CLOSE, CLOSEOWN, SWEEP, DOC)
+   its FAIL line: FAIL CLOSE: `W(_:, A) & (A.h: ..)` refused True (path `A.h`: `A` is neither written nor a binding used in this definition), bare `h` refused True; a condition inside a closed argument reads (`3xx`/`7xx`): a part label [True, False], an in-place group [True, False]; the backdoor (a sent label through
+s5 -> CLOSEOWN (a caller's own label under a closing body closed with the door (R1's ruling undone)): caught
+   last line: predfix86_model: 29 checks, 4 failed (CONTROL, CLOSEOWN, SWEEP, DOC)
+   its FAIL line: FAIL CLOSEOWN: the caller's own label under a closing body (`3xx`/`7xx` or `<3>`/`<7>`): [('a part label', None), ('an in-place group', None), ('a sent label', [True, False]), ('a part label, `_p`', None), ('a part label, `_` to a label parameter', None), ('an in-place group, `_` to a label paramete
+s6 -> EDGES (the edges off: a joint `?:` accepted): caught
+   last line: predfix86_model: 29 checks, 1 failed (EDGES)
+   its FAIL line: FAIL EDGES: refused for now: a joint left part False, a value left part True, inside a group question True; the candidate lines run True; the joint candidate's cost (`,9`: the joint HOLDS, the record's entries FAIL) True
+s7 -> EDGES (a value left of `?:` accepted): caught
+   last line: predfix86_model: 29 checks, 1 failed (EDGES)
+   its FAIL line: FAIL EDGES: refused for now: a joint left part True, a value left part False, inside a group question True; the candidate lines run True; the joint candidate's cost (`,9`: the joint HOLDS, the record's entries FAIL) True
+s8 -> EDGES (`?:` inside a group question accepted): caught
+   last line: predfix86_model: 29 checks, 1 failed (EDGES)
+   its FAIL line: FAIL EDGES: refused for now: a joint left part True, a value left part True, inside a group question False; the candidate lines run True; the joint candidate's cost (`,9`: the joint HOLDS, the record's entries FAIL) True
+s9 -> LPRULES (a body reading its label passed `_` reads a private name again (the lane's reading)): caught
+   last line: predfix86_model: 29 checks, 2 failed (LPRULES, READINGS)
+   its FAIL line: FAIL LPRULES: refused: a body placing then reading `_` False (None); a named head default True (`A2`: a label parameter's head default names the label `ts`; for now the default is `_` only (a compile error, the manager's reading on label-parameter-default: a default naming a label would make a label
+s10 -> CONDARG (a condition argument laid beside `&` no longer expanded in place): caught
+   last line: predfix86_model: 29 checks, 3 failed (CONDARG, SWEEP, DOC)
+   its FAIL line: FAIL CONDARG: beside `&` (`0` the left operand's match) [False, False]; in a sequence (`0` the match so far) [True, False]; label-kinds' advised `A((h: <5), /(?<h>\d)/)` on `3`/`7` [False, False]
+s11 -> CONDARG (beside `&`, the condition's `0` read as the caller's prefix): caught
+   last line: predfix86_model: 29 checks, 3 failed (CONDARG, SWEEP, DOC)
+   its FAIL line: FAIL CONDARG: beside `&` (`0` the left operand's match) None; in a sequence (`0` the match so far) [True, False]; label-kinds' advised `A((h: <5), /(?<h>\d)/)` on `3`/`7` None
+s12 -> NEVER (a never-placed caller label refused again): caught
+   last line: predfix86_model: 29 checks, 1 failed (NEVER)
+   its FAIL line: FAIL NEVER: legal False, `xx` None, warnings []
+s13 -> ZEROOPEN (a request on `0` in a hole last in its literal but not in its definition accepted): caught
+   last line: predfix86_model: 29 checks, 1 failed (ZEROOPEN)
+   its FAIL line: FAIL ZEROOPEN: two reads on one path True; refused: a group question True, an index True, a request on an open `0` True, last in its literal but not its definition False, beside `&` then followed False (no crash); written last legal True; `$0` against python `re` `(\w+)\1` True
+s14 -> ZEROBIND (a `NOT` condition on `0` bound alone accepted): caught
+   last line: predfix86_model: 29 checks, 1 failed (ZEROBIND)
+   its FAIL line: FAIL ZEROBIND: refused: `(0: 5)` True, `NOT (0: 5)` False, `((0: 5))` False (no crash); written in place legal True
+s15 -> CAPSET (a request inside a set union accepted): caught
+   last line: predfix86_model: 29 checks, 1 failed (CAPSET)
+   its FAIL line: FAIL CAPSET: refused for now: inside a union False (None), an intersection, a value left part, a group question [False, False, False]; candidate (b): a union [True, True, False], an intersection [True, False, False]
+s16 -> LPRULES (a named head default for a label parameter accepted): caught
+   last line: predfix86_model: 29 checks, 1 failed (LPRULES)
+   its FAIL line: FAIL LPRULES: refused: a body placing then reading `_` True (C(_:): the body reads its label parameter `l` and `_` names nothing to read (a compile error at the call, the manager's reading (c) of label-parameter-omitted)); a named head default False (None); the reference kind at the definition True;
+s17 -> CALLNAME (a sent label read through the macro's name accepted): caught
+   last line: predfix86_model: 29 checks, 1 failed (CALLNAME)
+   its FAIL line: FAIL CALLNAME: refused: `A.x` False (path `A.x`: `A` is neither written nor a binding used in this definition), `c.x` False; `identity.a.h` by path [True, False], the same answers as `a.h` bare True
+s18 -> NULLPASS (the per-pass marker dropped: the label read as PCRE's carried capture): caught
+   last line: predfix86_model: 29 checks, 3 failed (NULLPASS, SWEEP, DOC)
+   its FAIL line: FAIL NULLPASS: `?:` on `x`/`3x`/`7x`/`73x`: [True, True, False, True] (never rejects: the trailing empty pass leaves h unset); `:` [False, True, False, True]
+s19 -> EXPAND (the expansion drill's written-out form of `_` on a spot is a plain group): caught
+   last line: predfix86_model: 29 checks, 1 failed (EXPAND)
+   its FAIL line: FAIL EXPAND: 9 sugar forms against their written-out expansions, legality and every mode over 9 texts; differing: ['W(_:, A) & (A.h: <5)']
+s20 -> OPTENTRY (`?:` reads an absent left part as failing (the plain `:`)): caught
+   last line: predfix86_model: 29 checks, 6 failed (EXPAND, OPTENTRY, EDGES, CAPTURE, SWEEP, DOC)
+   its FAIL line: FAIL OPTENTRY: `(h ?: <5)` on `x`/`3x`/`7x`: [False, True, False]; the plain entry [False, True, False]; `?:` and the default inside the set alike over 40 texts; `NOT (h ?: <5)` [True, False, True]
+s21 -> NEGATION (a request under `NOT` accepted): caught
+   last line: predfix86_model: 29 checks, 1 failed (NEGATION)
+   its FAIL line: FAIL NEGATION: `NOT (h: capture(..))` refused False, `(h: !capture(..))` refused False; a request beside a negation legal True; a request in `when`'s test refused False
+s22 -> ZEROLOOP (the loop's body run alone (`0` read from the pass's start, as candidate (a))): caught
+   last line: predfix86_model: 29 checks, 1 failed (ZEROLOOP)
+   its FAIL line: FAIL ZEROLOOP: `((0: !contains("7")) SEQ /\d/ SEQ ";")+` on `3;4;`/`3;7;`/`7;3;`/`3;7;4;`: None (the record's run: HOLDS, HOLDS, FAILS, FAILS)
+s23 -> READINGS (a reading's engine arm moved: the last fitting JSON member read as the first): caught
+   last line: predfix86_model: 29 checks, 1 failed (READINGS)
+   its FAIL line: FAIL READINGS: 6 readings run, each against the documents' printed claim: DISAGREE ["label-forward q2: several keys, the LAST fitting member in the object's order"]
+s24 -> SWEEP (one declared moved answer removed): caught
+   last line: predfix86_model: 29 checks, 1 failed (SWEEP)
+   its FAIL line: FAIL SWEEP: 274 printed lines now (DIFF 9, REFUSED 59, same 218, unparsed 1), 263 at the starting commit under predfold1123's engine; undeclared 0; moved or gone and not declared 1; declared moves 0; added 12; stale declarations 0
+s25 -> SUCCESSOR (one declared red removed): caught
+   last line: predfix86_model: 29 checks, 1 failed (SUCCESSOR)
+   its FAIL line: FAIL SUCCESSOR: 12 earlier models re-run one at a time (predfold1123 and predfix84 light: their SUCCESSOR is this list), each last line read; every red declared superseded with an unchanged FAIL line: [('predfold1123', 'DOC', 'UNDECLARED')]
+s26 -> QUOTES (an owner sentence in the documents altered (a word dropped)): caught
+   last line: predfix86_model: 29 checks, 1 failed (QUOTES)
+   its FAIL line: FAIL QUOTES: 22 quoted sentences in the record and the documents, missing: none; 3 of R1's in the record at 13fc8aa85 and the documents, missing: ["you can't go through A to get inside"]; 10 record titles cited whole, not a title or not cited: none; R1's title at 13fc8aa85: found
+s27 -> DOC (a formatted line altered): caught
+   last line: predfix86_model: 29 checks, 1 failed (DOC)
+   its FAIL line: FAIL DOC: 86 lines, each in its own piece; missing: 1
+s28 -> DOC (a line looked for under another piece's tag (the tag ignored no longer)): caught
+   last line: predfix86_model: 29 checks, 1 failed (DOC)
+   its FAIL line: FAIL DOC: 86 lines, each in its own piece; missing: 1
+s29 -> WHEN (the then-read of a label the caller writes in the test refused (the withdrawn reading (b))): caught
+   last line: predfix86_model: 29 checks, 3 failed (WHEN, SWEEP, DOC)
+   its FAIL line: FAIL WHEN: the then-read legal False; through the source the same answers True
+s30 -> ARGLABEL (ARGLABEL off: a label written in an argument is the template's again): caught
+   last line: predfix86_model: 29 checks, 9 failed (CONTROL, ARGLABEL, LABELPARAM, CLOSEOWN, EXPAND, CALLNAME, ARGSHAPES, SWEEP, DOC)
+   its FAIL line: FAIL ARGLABEL: legal and the caller's own: `B([f = ..])` False, placed twice (the last mention) False, an in-place group read bare False, `B([a = A]) & (a.d: ..)` False, `B([d = isodate])` False, the read inside the argument True, `rx.repeat([a = rx.digit], ..)` then `a` False, `hits(/a(?<g>x)?/)` t
+s31 -> LABELPARAM (LABELPARAM writes the body's parameter name, not the caller's, on the spot): caught
+   last line: predfix86_model: 29 checks, 8 failed (LABELPARAM, LPRULES, CLOSE, CLOSEOWN, EXPAND, READINGS, SWEEP, DOC)
+   its FAIL line: FAIL LABELPARAM: his example and the twice-placed reads legal with the record's answers False; across `&` refused False; `_`, the default, a body reading its own placed label, passed on (twice, across `|`), sent inside an argument, a caller's label on the spot: all legal False
+s32 -> PRINCIPLE (the user's loop lowered as one definition looped (the binding's entry no longer clears)): caught
+   last line: predfix86_model: 29 checks, 1 failed (PRINCIPLE)
+   its FAIL line: FAIL PRINCIPLE: over 121 texts, every mode: a user's loop and the written-out uses agree False; one definition looped differs True
+s33 -> ARGSHAPES (the label set read tighter than `|` no longer): caught
+   last line: predfix86_model: 29 checks, 1 failed (ARGSHAPES)
+   its FAIL line: FAIL ARGSHAPES: list body True; bare read inside refused True; with its source True; atomic over an expression True; `identity((A))` exports nothing True; `identity(A)` exports `h` True; a named list on a spot refused True; the label set tighter than `|` False
+s34 -> NULLABLE (a nullable loop added to the programs run): caught
+   last line: predfix86_model: 29 checks, 1 failed (NULLABLE)
+   its FAIL line: FAIL NULLABLE: 546 programs run by the checks above (SWEEP's included), walked node by node: 1 with a loop whose body can match empty: [('/(?:(?<d>\\d)*)+/', ())]
+s36 -> LPRULES (a label-only group with a partial label-parameter name accepted): caught
+   last line: predfix86_model: 29 checks, 1 failed (LPRULES)
+   its FAIL line: FAIL LPRULES: refused: a body placing then reading `_` True (C(_:): the body reads its label parameter `l` and `_` names nothing to read (a compile error at the call, the manager's reading (c) of label-parameter-omitted)); a named head default True (`A2`: a label parameter's head default names the l
+s35 -> QUOTES (R1's record read at the lane's starting commit, before closing-own-label (the pin moved)): caught
+   last line: predfix86_model: 29 checks, 1 failed (QUOTES)
+   its FAIL line: FAIL QUOTES: 22 quoted sentences in the record and the documents, missing: none; 3 of R1's in the record at 13fc8aa85 and the documents, missing: ["you can't go through A to get inside", "It's closing that door but there may be other doors.", 'So I agree with your lean.']; 10 record titles cited who
+predfix86_sabotage: 36 plants, 0 not caught (each plant turned its target check FAIL, no traceback)

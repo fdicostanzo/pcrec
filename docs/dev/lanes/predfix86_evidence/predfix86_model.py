@@ -772,11 +772,20 @@ def check(name, ok, detail=""):                              # noqa: F811
 
 
 def run(expr, binds=()):
-    """(the program, None) or (None, the refusal)."""
+    """(the program, None) or (None, the refusal); a crash (a plant may cause one) is a refusal naming it."""
     try:
         return prog(expr, list(binds)), None
     except CompileError as e:
         return None, str(e)
+    except Exception as e:                                   # noqa: BLE001
+        return None, "CRASH %s: %s" % (type(e).__name__, e)
+
+
+def lab_at(Pg, t, n):
+    """The label n on WHOLE t, or "no match"."""
+    if Pg is None or not Pg.whole(t):
+        return "no match"
+    return label_of(whole_state(Pg, t), n)
 
 
 def bt(binds):                                               # noqa: F811
@@ -837,7 +846,8 @@ B_CL = "B(rx) := /${[_ = rx]}xx/"
 A1 = "A(l:) := /(?<:${l}>\\d+)/"
 A_ONE = "A(l:) := /(?<:${l}>\\d)/"
 W_ = "W(l:, v) := /<${[l = v]}>/"
-W4_ = "W4(v) := /<${(v)}>/" if sx("s19") else "W4(v) := /<${[_ = v]}>/"
+W4_ = "W4(v) := /<${[_ = v]}>/"
+W5_ = "W5(l:, v) := /<${(v)}>/" if sx("s19") else "W5(l:, v) := /<${[_ = v]}>/"   # `_` on the spot, written out
 S_ = "S(l:) := /\"(?<:${l}>\\d)\"/"
 IDN = "identity(x) := /${[(=) = x]}/"
 H_ = "/(?<h>\\d)?x/"
@@ -849,8 +859,8 @@ c2 = ndiff(answers(prog("identity(A)", ["A := /(?<d>\\d)/", IDN]), QD), answers(
 QJ = pop('a"\\x', 3)
 c3 = ndiff(answers(prog('/"(?<:s>(?:[^"\\\\]|\\\\.)*)"/'), QJ), answers(Re(r'"(?:[^"\\]|\\.)*"'), QJ))
 QW = pop("<3>", 3)
-c4 = ndiff(answers(prog("W4([a = A]) & (a.h: <5)", [W4_ if not sx("s19") else "W4(v) := /<${[_ = v]}>/", A_H]), QW),
-           answers(Re(r"<[0-4]>"), QW))
+P_c4c = run("W4([a = A]) & (a.h: <5)", ["W4(v) := /<${[_ = v]}>/", A_H])[0]
+c4 = ndiff(answers(P_c4c, QW), answers(Re(r"<[0-4]>"), QW)) if P_c4c is not None else "refused"
 check("CONTROL", (c1, c2, c3, c4) == ((0, 0, 0),) * 4, "differing (WHOLE, SEARCHED, FIND-ALL): `\"ab\" | \"a\"` %s; "
       "`identity(A)` against `\\d` %s over %d texts; a label-only group around a negated class against python `re` "
       "%s over %d texts; a caller's own label under a closing body against `<[0-4]>` %s over %d texts"
@@ -992,10 +1002,11 @@ print("== EXPAND (the expansion drill, review r86 lesson 1): each sugar form aga
       "expansion; legality and answers agree")
 QX = ['<3>', '<7>', '<"3">', '<"7">', '3!', '7!', '5', '55', 'x']
 DRILL = [   # (sugar, its binds, the written-out form, its binds, the documented expansion)
-    ("W(_:, A) & (A.h: <5)", [W_, A_H], "W4(A) & (A.h: <5)", [W4_, A_H], "`_` on a spot is `[_ = v]` (label-omitted (a))"),
-    ("W(_:, [a = A]) & (a.h: <5)", [W_, A_H], "W4([a = A]) & (a.h: <5)", [W4_, A_H], "the same, a caller's own label"),
-    ("W(_:, /(?<g>\\d)/) & (g: <5)", [W_], "W4(/(?<g>\\d)/) & (g: <5)", [W4_], "the same, an in-place group"),
-    ("W(_:, S(body:)) & (body: <5)", [W_, S_], "W4(S(body:)) & (body: <5)", [W4_, S_], "the same, a sent label"),
+    ("W(_:, A) & (A.h: <5)", [W_, A_H], "W5(y:, A) & (A.h: <5)", [W5_, A_H], "`_` on a spot is `[_ = v]` (label-omitted (a))"),
+    ("W(_:, [a = A]) & (a.h: <5)", [W_, A_H], "W5(y:, [a = A]) & (a.h: <5)", [W5_, A_H], "the same, a caller's own label"),
+    ("W(_:, /(?<g>\\d)/) & (g: <5)", [W_], "W5(y:, /(?<g>\\d)/) & (g: <5)", [W5_], "the same, an in-place group"),
+    ("W(_:, S(body:)) & (body: <5)", [W_, S_], "W5(y:, S(body:)) & (body: <5)", [W5_, S_], "the same, a sent label"),
+    ("W(_:, [a = A]) & (a.h: <5)", [W_, A_H], "W4([a = A]) & (a.h: <5)", [W4_, A_H], "the same through a plain macro"),
     ('A(_:) SEQ "!"', [A_ONE], '/(?:\\d)/ SEQ "!"', [], "`(?<:${l}>..)` with `_` a plain non-capturing group"),
     ("A(x:) & (x: 5)", [A1], "/(?<:x>\\d+)/ & (x: 5)", [], "the caller's name on the spot"),
     ("A2()", [A2], "A2(l = _:)", [A2], "a left-out label parameter is its default `_`"),
@@ -1074,13 +1085,11 @@ P_c6 = pl("After a loop", '/(?:(?<h>\\d)?;)+/ & (h ?: capture("h"))', [], ["3;;"
           CAP_T, ann=["h"])
 re_h = re.fullmatch(r"(?:(?P<h>\d)?;)+", "3;;").group("h")
 c_ok = (wh_(P_c1, ["x", "3x"]) == [False, True] and P_c2 is not None and P_c2.whole("x") and P_c3 is not None and
-        P_c4 is not None and label_of(whole_state(P_c4, "7,5"), "d") == "5" and P_c5 is not None and
-        P_c6 is not None and label_of(whole_state(P_c6, "3;;"), "h") is None and re_h == "3")
+        lab_at(P_c4, "7,5", "d") == "5" and P_c5 is not None and lab_at(P_c6, "3;;", "h") is None and re_h == "3")
 check("CAPTURE", c_ok, "`(h: capture(\"h\"))` on `x`/`3x` %s; `(h ?: ..)` on `x` %s; `rx & capture(\"n\")` runs %s; "
       "requested twice, d = %r; through a path %s; after a loop on `3;;` h = %r (python `re`'s carried capture: %r)"
       % (wh_(P_c1, ["x", "3x"]), P_c2.whole("x") if P_c2 else None, P_c3 is not None,
-         label_of(whole_state(P_c4, "7,5"), "d") if P_c4 else None, P_c5 is not None,
-         label_of(whole_state(P_c6, "3;;"), "h") if P_c6 else "refused", re_h))
+         lab_at(P_c4, "7,5", "d"), P_c5 is not None, lab_at(P_c6, "3;;", "h"), re_h))
 
 print("== CAPSET (A13, capture-in-set OPEN): the conservative reading refuses; the candidate (b) lines run")
 CST = "lib/structural/capture/in-set"
@@ -1418,13 +1427,13 @@ SUPERSEDEDX = {               # model -> {red: (digest of its FAIL line or trace
     'predfold1123': {
         'DOC': ('30b0b3154c99', 'this lane rewrote four lines it formats, each by an r86 disposition (`C(_:)` refused, A2; the joint and value left parts compile errors for now, A1; "Bound alone" names `NOT` and `((..))`, B5); LPRULES, EDGES, ZEROBIND and DOC here'),
         'NULLABLE': ('3cb11f7daa34', 'its SWEEP runs the new nullable-loop line (A7) through its engine, which EVID-4 says it cannot; NULLPASS and SWEEP here run it through libpcre2'),
-        'SWEEP': ('cf52e1c700a0', "SWEEP here: the four lines are this lane's r86 lines (A3/R1 closing-own-label, A9 by path, A7 the nullable loop, A5 beside `&`), which its engine refuses or answers otherwise; CLOSEOWN, CALLNAME, NULLPASS, CONDARG here"),
+        'SWEEP': ('dc064aa89b32', "SWEEP here: the five lines are this lane's r86 lines (A3/R1 closing-own-label, A9 by path, A7 the nullable loop, A5 beside `&`, R2's json q1 with a named label), which its engine refuses or answers otherwise; CLOSEOWN, CALLNAME, NULLPASS, CONDARG, READINGS here"),
     },
     'predfix84': {
         'CONVENTION': ('6ec984243fdd', "as predfold1123 declared: the request has no body placing an argument (optional-label's statement), so `capture` left the covered list; ARGSHAPES here"),
         'DOC': ('1ab4ce1d8fd7', 'as predfold1123 declared: this fold rewrote lines it looks for (argument-label, two-sources, zero-binding, the request); SWEEP and DOC here'),
         'GRID': ('ff2c086f1de3', "as predfold1123 declared: ARGLABEL and ARGSHAPES here: argument-default's readings (a), (b) withdrawn by argument-label; the sentences it looks for rewritten"),
-        'SWEEP': ('ab42d3cfc3f9', "SWEEP here: the r86 lines (closing-own-label, the edges' candidates, the arguments beside `&`, the nullable loop) its engine does not read; each moved line declared there"),
+        'SWEEP': ('984981dd8662', "SWEEP here: the r86 lines (closing-own-label, the edges' candidates, the arguments beside `&`, the nullable loop) its engine does not read; each moved line declared there"),
     },
     'predspot': {
         'CONVENTION': ('6ec984243fdd', "as predfold1123 declared: the request has no body placing an argument (optional-label's statement), so `capture` left the covered list; ARGSHAPES here"),
@@ -1432,14 +1441,14 @@ SUPERSEDEDX = {               # model -> {red: (digest of its FAIL line or trace
         'FSWEEP': ('1a3772525ee0', 'the same six flag lines predfix84 declared, at line numbers this lane moved; SWEEP here'),
         'GRID': ('656ac2487a85', "as predfold1123 declared: ARGLABEL and ARGSHAPES here: argument-default's readings (a), (b) withdrawn by argument-label; the sentences it looks for rewritten"),
         'SUCCESSOR': ('3b691e065f6a', 'SUCCESSOR here: it re-runs the same models, each red declared in this table'),
-        'SWEEP': ('66e0f08bb99a', 'SWEEP here: the r86 lines its engine does not read; each moved line declared there'),
+        'SWEEP': ('825d6736d879', 'SWEEP here: the r86 lines its engine does not read; each moved line declared there'),
     },
     'predfix83': {
         'AWAITS': ('2b8a870671e7', 'as predfix84 declared: AWAITS here: argument-default is ruled, so no line awaits it (0 marked lines)'),
         'DOC': ('05476f118e2f', "as predfix84 declared: predspot's fold rewrote the texts it looks for (argument-default ruled; the bodies restated) and SWEEP here (each gone line RESPELLED, ERROR NOW or DROPPED) and DOC here"),
         'MARKS': ('378686a20835', "as predfold1123 declared: this fold rewrote the texts its marks look for (argument-default, two-sources, call-prefix, capture-export ruled); the pieces' history lines here"),
         'SUCCESSOR': ('0c38628fa5e1', 'SUCCESSOR here: it re-runs the same models, each red declared in this table'),
-        'SWEEP': ('05d4ced5069e', 'SWEEP here: the r86 lines its engine does not read; each moved line declared there'),
+        'SWEEP': ('1a90686a09c6', 'SWEEP here: the r86 lines its engine does not read; each moved line declared there'),
         'UNMARKED': ('e4ca427dc5ca', 'as predfold1123 declared (argument-label made legal the lines its error engine refuses), at line numbers this lane moved; ARGLABEL and SWEEP here'),
     },
     'preddef': {
@@ -1459,7 +1468,7 @@ SUPERSEDEDX = {               # model -> {red: (digest of its FAIL line or trace
         'DOC': ('ee72c84698ec', "as predfix84 declared: predspot's fold rewrote the texts it looks for (argument-default ruled; the bodies restated) and ARGNAME and TWOSPOT here (call-prefix's lines re-spelled) and SWEEP"),
         'MARKS': ('bcf1e6378404', "closed-argument re-dated `ruled 2026-11-23` by closing-own-label (R1 of this lane's rulings file); its MARKS looks for the older date; CLOSEOWN here"),
         'PREDREF': ('bdc1a3daaa39', 'as predfix84 declared: SUCCESSOR here: predref is now a traceback (below), so its expected red is gone'),
-        'SCAN': ('12a7c08271ef', "as predfold1123 declared (the label parameter's lines read a label its scan does not know), with this lane's lines (`W(_:, A)`, `A(x:) & (A.x: 5)`, `A2() & (ts: 5)`); LABELPARAM, LPRULES, CALLNAME and SWEEP here"),
+        'SCAN': ('f1f330a86ca2', "as predfold1123 declared (the label parameter's lines read a label its scan does not know), with this lane's lines (`W(_:, A)`, `A(x:) & (A.x: 5)`, `A2() & (ts: 5)`); LABELPARAM, LPRULES, CALLNAME and SWEEP here"),
     },
     'predref': {
         'TRACEBACK': ('654619d66d03', "as predfix84 declared: SPOT and PLACES here: the provided bodies now write the export list on their spot (`atomic(X) := /(?>${[(=) = X]})/`, transform-export), which predref's lowerer, older than export-list, cannot read"),
@@ -1573,10 +1582,9 @@ TTX = [
     '2026-11-23 OWNER RULING — label-hole-full: a pure label\'s name hole must be whole; a capture\'s name may be partial, "but again, the label portion is lost"; and a sketch of the repeat head with a conditional default',
 ]
 TTR1 = ['2026-11-23 OWNER RULING — closing-own-label: "I agree with your lean" (a caller\'s own label is not closed); the export statement closes ONE door: "there may be other doors"']
-if sx("s26"):
-    NOWS = dict(NOWS)
-    NOWS["core.md"] = NOWS["core.md"].replace("you can't go through A to get inside", "you can't go through A inside")
 ALLNOWX = "\n".join(NOWS.values())
+if sx("s26"):                                                # the plant: one owner sentence altered in the documents
+    ALLNOWX = ws(ALLNOWX).replace(ws("you can't go through A to get inside"), ws("you can't go through A inside"))
 q_missX = [q for q in QQX if ws(q) not in RECORD_WS or ws(q) not in ws(ALLNOWX)]
 q_missR1 = [q for q in QQR1 if ws(q) not in ws(RECORD_R1) or ws(q) not in ws(ALLNOWX)]
 
