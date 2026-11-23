@@ -8296,3 +8296,20 @@ ruled; slugs his to cite), for `k` in `row(k, v)`, used as key text (`"${k}"`) a
 - k-case: the label name is the string as written; names are case-sensitive; an `i` in force does not fold the
   name (proposal).
 - k-part-of-name: a hole may form part of a name (`(?<:f_${k}>...)`; in the documents for the ruled name hole).
+
+### 2026-11-23 OWNER, on k-underscore: "_t" doesn't work; and the general point: a label provided as a string is not "textually defined"
+tags: core/holes/name core/labels/paths/label-reference core/labels/export core/labels/label-only-group core/principles/label-names-spot
+
+HIS WORDS, whole: "1. "_t" doesn't work because its a string in the binding. but isn't that true of any label
+provided as string? its not "textually defined""
+
+Class: an OBSERVATION and a QUESTION (DISCUSSION); nothing ruled. The manager's answer (told to him): yes, it is
+true of every label named through a hole, the RULED group-name hole included (`/(?<${n}>\d)x/`, n := "d",
+core/holes/name): the documents do not say whose label it is. label-reference says "a bare name is a label the
+definition itself writes"; a hole-named label is written by NO definition's text: the body writes `${k}`, the
+caller writes a string. The manager's proposal (not ruled), put to him as slug hole-named-label: such a label
+belongs to the definition whose literal holds the group (the spot, label-names-spot); it is read only with a
+source, from outside (`row.ts`, `r.ts`: the reader writes the name there); the owning body cannot read it bare
+(its text does not write the name) and has no other way (no hole in the expression language; a backreference's
+name takes no hole). Then a `_` name through a hole is a label nothing can read: proposed a compile error
+(replacing the proposal k-underscore's warning).
