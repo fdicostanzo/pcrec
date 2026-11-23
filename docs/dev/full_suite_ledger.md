@@ -495,3 +495,4 @@ The first green cloud full suite: every landing up to and including e43603862 is
 - 2026-11-22 dca22c35e minor — merge lane/memfn-k1108 3e62406e2 (R-47 U4, block-span checks only: G2-V with guard pages, 22 pin cells, span_ksource, C18 amendment, routing V leg, FLOORS 74/105, sabotage rows S3525/S3526/S3530-S3536; one edit outside memfn/: tests/compound/run_lever_fence.sh ALLOW; no abi event)
 - 2026-11-22 9b36e5685 none — merge lane/pred-rev28 75d2318bd (predicate default-export + export-list, review r83; docs only)
 - RUN 2026-11-22 b204ffd8c CLOUD suite (suite-b204ffd): test, axes, ubsan, asan, mech, recidentity ALL GREEN on b204ffd8c (first try), covering L3 (abi 112), U2, U3, U4, K159
+- 2026-11-23 f27256133 minor — merge lane/memfn-k1108 6465df2c7 (R-47 U5: measurement cards C6/C6c, formhash span fold; no emitted byte, no abi event; kit 750 test + 751 mech GREEN at 26ef32ad5)
