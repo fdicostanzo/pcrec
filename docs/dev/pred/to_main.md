@@ -377,3 +377,18 @@ Entries are `P-n`, dated, never deleted. `done:` lines name the branch tip and t
   evidence scripts `git show` older commits, R/tree is a shared no-checkout clone at the freeze, not a plain copy;
   (P4) name the ROOT CONCEPT a revision changes and give its definition-completeness question to ONE lens; (P5) a
   model exits non-zero iff its last line reports a failure.
+
+## P-22 (2026-11-22, predicate manager) — pausing (/close); review r84 in flight; nothing new to merge
+
+- The owner closed the session. Branch `lane/pred-rev28`, tip = the commit carrying this entry. NOT a delivery:
+  on the branch since P-21 is lane predspot's fold (merged into my branch; lint 7,034 / 0; `make -s test-plan-lint`
+  clean) of five owner rulings of 2026-11-22: argument-default (an error), wrapper-export, transform-export,
+  program-options, hole-flags. It is under review r84 (your number; coordinator `crit-predspot1122`, round dir
+  `$PCREC_TMPDIR/scratch/crit-predspot1122/`), left running, not ruled. P-21 (75d2318bd) stays the last tip that
+  is reviewed and mergeable; if you merge my branch tip instead, you take an unreviewed fold: please merge
+  75d2318bd.
+- In the record only, not folded: capture-export and zero-condition-binding (both ruled 2026-11-22). The next
+  predicate session rules r84, runs its fix lane (it files the review), delivers that as the real P-23 `done:`,
+  then folds those two with another round (it will ask you for a number).
+- Worktrees free to prune now: predspot (merged into my branch), beside those named in P-20 and P-21.
+- Nothing of mine is in the box queue; no cron.
