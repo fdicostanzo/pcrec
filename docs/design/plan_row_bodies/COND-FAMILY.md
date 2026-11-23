@@ -8541,3 +8541,29 @@ answer). With capture-twice (a): two requests of one last step, not renamed, giv
 The manager's readings (marked): (a) a rename to a string that is no legal capture name is a compile error at
 the request; (b) two requests RENAMED to one name follow capture-twice as well; (c) an unset label gives the
 caller an unset capture (regex's own behaviour for a group that did not take part), not asked.
+
+### 2026-11-23 OWNER, reconsidering "the last mention" for requested captures: "perhaps it should define all labels as capture then the rules for multi capture hold"
+tags: lib/structural/capture core/labels/labels-vs-captures core/labels/export/caller-ambiguous core/labels/export/capture-export core/principles/regex-default
+
+Said after capture-loop-value was put to him (not answered by these words directly), about the consequence of
+capture-twice (a) the manager had printed under capture-name ("the caller then gets the last mention"). HIS
+WORDS, whole:
+
+"capture-name: i noticed a comment late about accepting the last reference. perhaps it should define all labels
+as capture then the rules for multi capture hold. that way alternations, captures followed by loops, etc can be
+specified as they can now"
+
+Class: a PROPOSAL ("perhaps"), reconsidering capture-twice (a) of the same day; NOT a ruling; capture-twice (a)
+stands in the record until he rules on the proposal. The reading taken (the manager's, told to him to confirm):
+a request for a capture name makes EVERY group that carries the label a capture under that one name, and the
+caller's value then follows regex's own rules for several groups of one name and for groups in loops ("the rules
+for multi capture", "as they can now"), not the label rules.
+Where the two part, from runs already made: `[l = A] SEQ "," SEQ [r = A]` on `7,5`: the label rules give the
+caller `5` (the last mention); PCRE's rule for two groups of one name gives `7` (core/labels/labels-vs-captures:
+"PCRE's FIRST SET group in pattern order, not the last set (run, libpcre2)"). The loop `/(?:(?<h>\d)?;)+/` on
+`3;;`: the label unset, PCRE's carried `3` (run, python `re`, today). An alternation: the branch taken under
+both.
+The manager's readings (marked): (a) it would REPLACE capture-twice (a) and answer capture-loop-value as (b),
+PCRE's carried value; (b) it removes the seam the manager flagged (one group returning one value as a one-literal
+program and another once composed): "The CAPTURE is regex's" is already the core's sentence; (c) across `&`,
+which PCRE does not have, "pattern order" would be left then right, his left-decides; not stated by him.
