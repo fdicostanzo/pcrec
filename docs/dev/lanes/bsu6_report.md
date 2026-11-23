@@ -154,7 +154,21 @@ All outside 18:15-01:00 (02:25-02:45 local), box lock free at each start (`scrip
   --all`: within limits.
 - The queued jobs' `--dry-run` and `--ready`, shown below after queueing.
 
-JOB_OUTPUT_PLACEHOLDER
+Queued at 02:47 with `scripts/boxqueue add` (each dry-run again at enqueue, accepted). Dry-run output (identical to the queued copies):
+
+    752-kit-bsu6-axes --dry-run:
+      would run in worktrees/bsu6: make -j16 all && make test-axes
+      boxqueue: cap 28800 / patience none / not-before 2026-11-23T01:00 / est 19700
+      boxqueue: expect none reason=make test-axes is exec'd, so its rc is the job's rc; ...
+    753-kit-bsu6-reach --dry-run (after VALIDATE_ONLY field validation passed):
+      would run in worktrees/bsu6: make -s -j16 all && REACH_ONLY=1 bash tests/mech/run_sabotage_matrix.sh
+      boxqueue: cap 3600 / patience none / not-before 2026-11-23T01:00 / est 900
+      boxqueue: expect none reason=the matrix is exec'd, ...
+
+`--ready` once, at 02:4x (inside the allowed hours): axes rc 0; reach rc 1 "no job kit-bsu6-axes in the queue" before the axes job was
+queued (it is a dependency gate; the reach job is held until the axes job ends). The clock gates were drilled with a faked `date` (axes:
+00:30 rc 75, 00:59 rc 75, 01:00 rc 0, 10:00 rc 0, 14:30 rc 0, 14:31 rc 75, 18:15 rc 75, 19:00 rc 75; reach: 00:30 and 18:15 rc 75). The axes
+job is expected to START NOW (box free, gate open); the reach job follows it.
 
 ## OWED RUNS
 
