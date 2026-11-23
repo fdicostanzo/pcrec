@@ -9874,3 +9874,35 @@ Class: a RULING: head (i) (the reading taken of "your lean": the leaning as put 
 5. His conditional head is not taken; a compile-time conditional in an expression stays an idea (to park, with
 the trigger "the first default or body that cannot be written without it"; its `?` `:` spelling meets the
 optional entry operator: the spellings review).
+
+### 2026-11-23 OWNER RULING — closing-own-label: "I agree with your lean" (a caller's own label is not closed); the export statement closes ONE door: "there may be other doors"
+tags: core/labels/export core/labels/export/arguments core/labels/paths/closed-argument core/operators/bindings/label-variables core/labels/paths/label-reference core/principles/label-names-spot
+
+ASKED AS A RULING (slug closing-own-label: `B([a = A]) & (a.h: <5)`, B(rx) := `/${[_ = rx]}xx/`, A :=
+`/(?<h>\d)/`: (a) passes: the caller's own label is not closed (WHOLE `3xx` HOLDS, `7xx` FAILS / SEARCHED
+`7xx 3xx` `3xx`@4 / FIND-ALL `3xx 7xx 4xx` [`3xx`@0, `4xx`@8], hand-lowered, python `re`, run the same turn);
+(b) closed, a compile error at `a.h`; the manager's leaning (a), stated as "a name belongs to the text that
+writes it; a body's blank mark hides what the argument's own definition holds, never a name the caller wrote in
+the caller's text"). HIS WORDS, whole:
+
+"closing-own-label: the export statement should say that you can't go through A to get inside. Strictly that A
+doesn't make them visible through it. It's closing that door but there may be other doors. So I agree with your
+lean. Please restate general rule"
+
+Class: a RULING: (a) ("So I agree with your lean"): a label the caller writes inside an argument is not closed
+by a body that closes the spot. A CORRECTION of the export statement's wording, his: `[_ = A]` means "you can't
+go through A to get inside"; "Strictly that A doesn't make them visible through it"; "It's closing that door but
+there may be other doors" (statement 7 today says "makes none of A's labels visible anywhere outside A": too
+wide). And a REQUEST: restate the general rule (the restatement below is the manager's wording, put back to him;
+NOT ruled until he answers).
+
+The manager's restatement (told to him; marked):
+1. A label is OWNED by the text that writes its name; in the definition that writes it, it is read bare.
+2. Any other label is reached through a DOOR: a path through a part's name or label (`A.h`, `c.d`, `B.p.d`).
+3. Each part decides which of ITS doors are open: a labelled spot (open through that label), an export list
+   (open under the part's own names), a part used alone (open inside its definition, not exported), the blank
+   mark `[_ = A]` or a `_` part label (closed).
+4. Closing a door closes that door only: a label keeps every other way to it, and its owner always reads it.
+The two doors on one program (the first line run this turn; the second the printed line "Closed by the macro" of
+core/labels/paths/closed-argument): `B([a = A]) & (a.h: <5)`: the answers above; `B(A) & (A.h: <5)`, the same B:
+a compile error (the door through A is the one B closed).
