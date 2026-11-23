@@ -82,6 +82,9 @@ PLANTSF = [   # (plant, its target check, what it plants)
     ("s16", "SUCCESSOR", "one declared red removed"),
     ("s17", "QUOTES", "an owner sentence altered"),
     ("s18", "DOC", "a formatted line altered"),
+    ("s19", "ARGLABEL", "TWOSRC off: a bare name the caller writes in place reads the body's group (the last mention)"),
+    ("s20", "ZEROOPEN", "zero-open off: a group question, an index and a request on an open `0` accepted"),
+    ("s21", "ARGSHAPES", "a part label written on an argument not widened to the caller (groups only)"),
 ]
 HEAVYF = {"SUCCESSOR"}
 if "all" in SABF:                                            # the plant runner: each plant alone, a subprocess each
@@ -337,6 +340,28 @@ def negation_check(t):
         if "capture(" in t[a:b] or "capture(@" in t[a:b]:
             raise CompileError("a capture request under a negation (`%s`): an effect macro cannot be under negation "
                                "(a compile error, capture-negated)" % t[mm.start():b].strip())
+
+
+WARNS = []                    # (warning name, the text that draws it) of the last program lowered
+
+
+def zero_open(t):
+    """ZEROOPEN (zero-open, ruled; R1): `0` is the one name read open. (2) no settings: a group question or an
+    index on `0` is a compile error; (4) a capture request on an OPEN `0` (in a hole with pattern text after it in
+    its literal) is a compile error for now; (1) never absent: a default or `?:` on `0` draws pcrec.default.unused."""
+    if sf("s20"):
+        return
+    if re.search(r"\b(?:some|count|every|occurs\.\w+)\(\(0(?:\[\d+\])?[: ]", t):
+        raise CompileError("a group question on `0`: `0` has no settings, so no array (a compile error, zero-open)")
+    if re.search(r"\(0\[\d+\]: ", t):
+        raise CompileError("an index on `0`: `0` has no settings (a compile error, zero-open)")
+    for mm in re.finditer(r"\$\{\(0: [^}]*capture\(", t):
+        j = t.index("}", mm.end())                           # a request's text holds no brace
+        if j + 1 < len(t) and t[j + 1] != "/":
+            raise CompileError("a capture request on an open `0` (pattern text follows the hole): a compile error for "
+                               "now (zero-open)")
+    for mm in re.finditer(r"\(0 (?:\?: |= )", t):
+        WARNS.append(("pcrec.default.unused", t[mm.start():mm.start() + 12]))
 
 
 def opt_entries(t):
@@ -652,9 +677,11 @@ def fold_text(expr, binds):
         h, _, body = b.partition(" := ")
         body = lp_expand(body)
         negation_check(body)
+        zero_open(body)
         out_b.append(h + " := " + amp_capture(opt_entries(body)))
     expr = lp_expand(expr)
     negation_check(expr)
+    zero_open(expr)
     return two_sources(amp_capture(opt_entries(expr)), out_b), out_b
 
 
@@ -662,27 +689,37 @@ CALLER_OWN = [set()]
 _Prog84 = Prog
 
 
-class Prog(_Prog84):                                         # noqa: F811
+LDEPTH = [0]
+_lower84 = lower
+
+
+def lower(expr, ctx):                                        # noqa: F811
     """ARGLABEL: a name the CALLER writes in an argument's text (a group of an in-place literal, a part label, a
     sent label) is the caller's own (argument-label), set where the body places the template. predspot's TEMPLATE
-    move puts it in the argument's scope (`top~aN`), so an export list on the spot still finds it; here it is ALSO
-    put in the caller's scope. A bare read of it stays bounded by label-reference (written in the caller's text)."""
-    def __init__(self, text):
-        if FOLD[0] and not sf("s2") and CALLER_OWN[0]:
-            def add(ps):
-                out = []
-                for bs, sc in ps:
-                    if "." not in bs and bs in CALLER_OWN[0] and "top" not in sc and \
-                            any(re.fullmatch(r"top~a\d+", x) for x in sc):
-                        sc = sc + ["top"]
-                    out.append((bs, sc))
-                return out
-            text = map_groups(text, add)
-        _Prog84.__init__(self, text)
+    move puts it in the argument's scope (`top~aN`), so an export list on the spot still finds it; at the end of
+    the top-level lowering it is ALSO put in the caller's scope. A bare read of it stays bounded by label-reference
+    (written in the caller's text). LIMIT: the top-level program only (a binding's own arguments are not widened)."""
+    LDEPTH[0] += 1
+    try:
+        t = _lower84(expr, ctx)
+    finally:
+        LDEPTH[0] -= 1
+    if LDEPTH[0] == 0 and FOLD[0] and not sf("s2") and CALLER_OWN[0] and ctx.cur == "top":
+        def add(ps):
+            out = []
+            for bs, sc in ps:
+                if (bs.split(".")[0] if not sf("s21") else bs) in CALLER_OWN[0] and "top" not in sc and \
+                        any(re.fullmatch(r"top~a\d+", x) for x in sc):
+                    sc = sc + ["top"]
+                out.append((bs, sc))
+            return out
+        t = map_groups(t, add)
+    return t
 
 
 def prog(expr, binds=(), **opts):                            # noqa: F811
     del CAPREQ[:]
+    del WARNS[:]
     if not FOLD[0]:
         SABS.discard("s2")
         SABS.discard("s4")
@@ -748,7 +785,7 @@ def bt(binds):                                               # noqa: F811
     return "".join(", %s := `%s`" % tuple(b.split(" := ", 1)) for b in binds)
 
 
-def pl(label, expr, binds, wh, sr, fa, tag, tail="", ann=None):
+def pl(label, expr, binds, wh, sr, fa, tag, tail="", ann=None, bdesc=None):
     """A printed three-mode line, formatted from the run; `ann` names labels shown on WHOLE texts that hold."""
     Pg, err = run(expr, binds)
     if Pg is None:
@@ -762,9 +799,10 @@ def pl(label, expr, binds, wh, sr, fa, tag, tail="", ann=None):
                 vs = ", ".join(("%s = `%s`" % (n, label_of(st, n))) if label_of(st, n) is not None else "%s unset" % n
                                for n in ann)
                 w = w.replace("`%s` HOLDS" % t, "`%s` HOLDS (%s)" % (t, vs), 1)
-    L_ = "%s%s (`%s`%s)%s" % ((label + ": ") if label else "", w, expr, bt(binds), tail)
+    L_ = "%s%s (`%s`%s)%s" % ((label + ": ") if label else "", w, expr, bt(binds) if bdesc is None else bdesc, tail)
     if tag:
         doc_line(L_, tag)
+        print("   LINE [%s] %s" % (tag, L_))
     else:
         print("   RUN %s" % L_)
     return Pg
@@ -773,7 +811,9 @@ def pl(label, expr, binds, wh, sr, fa, tag, tail="", ann=None):
 def rl(label, expr, binds, key, reason, tag):
     """A printed refusal line; the refusal's message must name `key`."""
     Pg, err = run(expr, binds)
-    doc_line("%s: modes: a compile error (`%s`%s: %s)" % (label, expr, bt(binds), reason), tag)
+    L_ = "%s: modes: a compile error (`%s`%s: %s)." % (label, expr, bt(binds), reason)
+    doc_line(L_, tag)
+    print("   LINE [%s] %s\n      (refusal: %s)" % (tag, L_, err))
     return err is not None and key in err, err
 
 
@@ -788,30 +828,31 @@ check("CONTROL", (c1, c2, c3) == ((0, 0, 0),) * 3, "differing (WHOLE, SEARCHED, 
       "`identity(A)` against `\\d` %s over %d texts; a label-only group around a negated class against python `re` "
       "%s over %d texts" % (c1, c2, len(QD), c3, len(QJ)))
 
+ARGT = "core/labels/export/arguments"
 A_D = "A := /(?<d>\\d)/"
 ISO = 'isodate := [year = /\\d{4}/] SEQ "-" SEQ [month = /\\d\\d/] SEQ "-" SEQ [day = /\\d\\d/]'
 B_XX = "B(rx) := /${rx}xx/"
 print("== ARGLABEL (argument-label, ruled): a label the caller writes in an argument is its own; the ruled error stands")
 P_al1 = pl("A part label written on the argument", "B([f = /\\d/]) & (f: <5)", [B_XX], ["3xx", "7xx"], "7xx 3xx",
-           "3xx 7xx 4xx", "core/labels/export")
+           "3xx 7xx 4xx", ARGT)
 P_al2 = pl("Placed twice, the last mention", "pair([f = /\\d/]) & (f: <5)", ["pair(p) := /${p},${p}/"], ["7,3", "3,7"],
-           "3,7 7,3", "7,3 3,7 1,2", "core/labels/export")
-P_al3 = pl("A group of an in-place literal", "B(/(?<d>\\d)/) & (d: <5)", ["B(rx) := /${rx}-(?<d>\\d)/"],
+           "3,7 7,3", "7,3 3,7 1,2", ARGT)
+P_al3 = pl("The first shape, read bare", "B(/(?<d>\\d)/) & (d: <5)", ["B(rx) := /${rx}-(?<d>\\d)/"],
            ["7-3", "3-7"], "7-3 3-7", "7-3 3-7 1-2 9-9", "core/labels/paths/two-sources")
-P_al4 = pl("Written on the argument", "B([a = A]) & (a.d: <100)", ["A := [d = rx.digits]", B_XX],
+P_al4 = pl("A label written on the argument", "B([a = A]) & (a.d: <100)", ["A := [d = rx.digits]", B_XX],
            ["42xx", "100xx", "042xx"], "x100xx 42xx", "100xx 42xx 7xx 300xx", "core/labels/paths/argument-default")
 P_al5 = pl("His isodate argument", "B([d = isodate]) & (d.year: 2000)", [B_XX, ISO],
            ["2000-01-02xx", "2001-01-02xx"], "1999-12-31xx 2000-03-04xx", "2000-01-02xx 2001-01-02xx 2000-12-31xx",
-           "core/labels/export")
+           ARGT)
 P_al6 = pl("The read inside the argument", "B(isodate & (isodate.year: 2000))", [B_XX, ISO],
            ["2000-01-02xx", "2001-01-02xx"], "1999-12-31xx 2000-03-04xx", "2000-01-02xx 2001-01-02xx 2000-12-31xx",
-           "core/labels/export")
+           ARGT)
 ok_e, r_e = rl("The body using its argument alone", "B(A) & (A.d: <5)", [A_D, B_XX], "argument-default",
-               "the ruled error stands, `d` is written in A's text and the caller's text gives A no spot",
-               "core/labels/export")
+               "`d` is written in A's text, not the caller's, and B uses A alone; argument-default",
+               ARGT)
 P_rep = pl("A label written on the argument", "rx.repeat([a = rx.digit], min = 1) & (a: <5)", [], ["3", "73", "37"],
            "7 3", "37 73 4", "lib/rx/repeat", ann=["a"])
-P_hit = pl("A group written in the argument, read bare", 'hits(/a(?<g>x)?/) & (g: "x")', [], ["ax", "a", "axa"],
+P_hit = pl("Bare, the caller's own", 'hits(/a(?<g>x)?/) & (g: "x")', [], ["ax", "a", "axa"],
            "a ax", "a ax ax", "lib/search/hits")
 al_ok = (P_al1 is not None and P_al1.whole("3xx") and not P_al1.whole("7xx") and P_al2 is not None and
          P_al2.whole("7,3") and not P_al2.whole("3,7") and P_al3 is not None and P_al3.whole("3-7") and
@@ -836,33 +877,33 @@ P_lp4 = pl("Placed twice, the index", 'A(x:) SEQ "," SEQ A(x:) & (x[1]: 5)', [A1
 ok_lp5, r_lp5 = rl("Across `&`", "A(x:) & A(x:) & (x: 5)", [A1], "ambiguous", "both sides set x, an ambiguous "
                    "reference (core/labels/flow)", LPT)
 A_ONE = "A(l:) := /(?<:${l}>\\d)/"
-P_om = pl("The unspecified label", 'A(_:) SEQ "!"', [A_ONE], ["3!", "7!"], "x3!", "3! 7!", LPT + "/omitted")
+P_om = pl("The unspecified label", 'A(_:) SEQ "!"', [A_ONE], ["3!", "7!"], "x3!", "3! 7!", "core/operators/bindings/label-omitted")
 P_om2 = pl("A body placing then reading its label, passed `_`", "C(_:)", ["C(l:) := /(?<:${l}>\\d)/ & (l: <5)"],
-           ["3", "7"], "7 3", "3 7 4", LPT + "/omitted")
+           ["3", "7"], "7 3", "3 7 4", "core/operators/bindings/label-omitted")
 ok_om2 = P_om2 is not None and P_om2.whole("3") and not P_om2.whole("7")
 r_om2 = "the body reads its own placement; nothing is exported"
 A2 = "A2(l = _:) := /(?<:${l}>\\d+)/"
-P_df1 = pl("Passed by name", "A2(l = x:) & (x: 5)", [A2], ["5", "55", "7"], "7 5", "5 7 56 15", LPT + "/default")
-P_df2 = pl("Left out, the default `_`", "A2()", [A2], ["5", "55", "x"], "x5", "5 7", LPT + "/default")
+P_df1 = pl("Passed by name", "A2(l = x:) & (x: 5)", [A2], ["5", "55", "7"], "7 5", "5 7 56 15", "core/operators/bindings/label-default")
+P_df2 = pl("Left out, the default `_`", "A2()", [A2], ["5", "55", "x"], "x5", "5 7", "core/operators/bindings/label-default")
 ok_k1, r_k1 = rl("The reference kind in a user macro", "A(x:, /\\w/)", ["A(a:, B) := B & (a: 5)"], "reference kind",
-                 "A reads a label it never places, off limits for users", LPT + "/kinds")
+                 "A reads a label it never places, off limits for users", "core/operators/bindings/label-kinds")
 ok_k2, r_k2 = rl("A path as a marked argument", "A(x.d:)", [A_ONE], "ONE new name", "a marked argument is one new name",
-                 LPT + "/kinds")
+                 "core/operators/bindings/label-kinds")
 P_k3 = pl("A body reading its own label after placing it", "C(x:)", ["C(l:) := /(?<:${l}>\\d)/ & (l: <5)"],
-          ["3", "7"], "7 3", "3 7 4", LPT + "/kinds")
+          ["3", "7"], "7 3", "3 7 4", "core/operators/bindings/label-kinds")
 P_fw = pl("Passed on", "B(x:) & (x: <5)", ["B(l:) := /<${A(l:)}>/", A_ONE], ["<3>", "<7>"], "<7> <3>", "<3> <7> <4>",
-          LPT + "/forward")
+          "core/operators/bindings/label-forward")
 P_fw2 = pl("Passed on across `|`", "V(x:) & (x: <5)", ["V(l:) := A(l:) | E(l:)", A_ONE, "E(l:) := /e(?<:${l}>\\d)/"],
-           ["3", "e3", "e7"], "e7 3", "3 e7 e4", LPT + "/forward", ann=["x"])
+           ["3", "e3", "e7"], "e7 3", "3 e7 e4", "core/operators/bindings/label-forward", ann=["x"])
 W_ = "W(l:, v) := /<${[l = v]}>/"
 S_ = "S(l:) := /\"(?<:${l}>\\d)\"/"
 P_ia = pl("Sent inside the argument, `_` on the outer spot", "W(_:, S(body:)) & (body: <5)", [W_, S_],
-          ['<"3">', '<"7">'], '<"7"> <"3">', '<"3"> <"7"> <"4">', LPT + "/in-argument")
+          ['<"3">', '<"7">'], '<"7"> <"3">', '<"3"> <"7"> <"4">', "core/operators/bindings/label-in-argument")
 P_ia2 = pl("The outer body using the argument alone", "W3(S(body:)) & (body: <5)", ["W3(v) := /<${v}>/", S_],
-           ['<"3">', '<"7">'], '<"7"> <"3">', '<"3"> <"7"> <"4">', LPT + "/in-argument")
-P_ae = pl("A caller's label on the spot reads the in-place argument", "R(x:, isodate) & (x.year: 2000)",
+           ['<"3">', '<"7">'], '<"7"> <"3">', '<"3"> <"7"> <"4">', "core/operators/bindings/label-in-argument")
+P_ae = pl("A caller's label on the spot", "R(x:, isodate) & (x.year: 2000)",
           ["R(l:, v) := /${[l = v]}xx/", ISO], ["2000-01-02xx", "2001-01-02xx"], "1999-12-31xx 2000-03-04xx",
-          "2000-01-02xx 2001-01-02xx 2000-12-31xx", "core/labels/export")
+          "2000-01-02xx 2001-01-02xx 2000-12-31xx", ARGT)
 lp_ok = (all(x is not None for x in (P_lp1, P_lp2, P_lp3, P_lp4, P_om, P_df1, P_df2, P_k3, P_fw, P_fw2, P_ia, P_ia2,
                                      P_ae)) and ok_lp5 and P_lp1.whole("5") and not P_lp1.whole("55") and
          P_lp2.whole("7,5") and not P_lp2.whole("5,7") and P_fw.whole("<3>") and not P_fw.whole("<7>") and
@@ -956,6 +997,41 @@ if sf("s12"):
 check("PRINCIPLE", same_uw and diff_1, "over %d texts, every mode: a user's loop and the written-out uses agree %s; one "
       "definition looped differs %s (its conditions read its own previous pass)" % (len(QP), same_uw, diff_1))
 
+print("== ZEROOPEN (zero-open, ruled; rulings file R1): `0` is the one name read open")
+MSF = "core/conditions/match-so-far"
+P_zo1 = pl("Two reads on one path", '/\\d${(0: "3")}\\d${(0: "34")}/', [], ["34", "35", "44"], "x34 35", "34 35 34", MSF)
+ok_zo2, r_zo2 = rl("A group question on `0`", '/(?<d>\\d)+/ & some((0: "1"))', [], "zero-open",
+                   "`0` has no settings, so no array", MSF)
+ok_zo3, r_zo3 = rl("An index on `0`", '/(?<d>\\d)+/ & (0[1]: "1")', [], "zero-open", "`0` has no settings", MSF)
+ok_zo4, r_zo4 = rl("A request on an open `0`", '/\\d${(0: capture("n"))}x/', [], "zero-open",
+                   "pattern text follows the hole, so `0` is open there; for now", "lib/structural/capture")
+P_zo5 = pl("A request on `0` written last", '/\\d+${(0: capture("n"))}/', [], ["12", "x"], "a12", "1 22",
+           "lib/structural/capture")
+Pz6, _ = run('/\\d+/ & (0 ?: <5)')
+w6 = list(WARNS)
+check("ZEROOPEN", ok_zo2 and ok_zo3 and ok_zo4 and P_zo1 is not None and P_zo5 is not None and
+      [w[0] for w in w6] == ["pcrec.default.unused"],
+      "two reads of `0` on one path, the later extending the earlier, run %s; refused: a group question on `0` %s, an "
+      "index %s, a request on an open `0` %s; a request written last legal %s (the manager's reading (a) of "
+      "\"complete\", as modelled); `?:` on `0` draws %s" % (P_zo1 is not None, ok_zo2, ok_zo3, ok_zo4, P_zo5 is not None,
+                                                         [w[0] for w in w6]))
+
+print("== ARGSHAPES (review r84 A7): each shape of \"what an argument exports\" under argument-label")
+A_H = "A := /(?<h>\\d)/"
+IDN = "identity(x) := /${[(=) = x]}/"
+P_as1 = pl("A part label on an argument of a list body", "identity([a = A]) & (a.h: <5)", [A_H, IDN], ["3", "7"],
+           "7 3", "3 7 4", ARGT)
+ok_as2, r_as2 = rl("A read inside an argument, bare", 'B(A & (h: "3"))', [A_H, B_XX], "label-reference",
+                   "`h` is not written in the caller's text; label-reference", ARGT)
+P_as3 = pl("A read inside an argument, with its source", 'B(A & (A.h: "3"))', [A_H, B_XX], ["3xx", "7xx"],
+           "7xx 3xx", "3xx 7xx", ARGT)
+P_as4 = pl("A part label over an expression in an argument", "atomic([ab = (B | A)]) & (ab.l: <20)",
+           ["A := /(?<l>\\d)\\d/", "B := /(?<l>\\d\\d)/"], ["25", "13"], "25", "25 13", "core/patterns/atomic")
+check("ARGSHAPES", P_as1 is not None and ok_as2 and P_as3 is not None and P_as4 is not None,
+      "`identity([a = A])` then `a.h` legal %s; a bare read inside an argument of a label its text does not write "
+      "refused %s; with its source legal %s; `atomic([ab = (B | A)])` then `ab.l` legal %s" %
+      (P_as1 is not None, ok_as2, P_as3 is not None, P_as4 is not None))
+
 JSONL = ['ws := /[ ]*/', 'string(l:) := /"(?<:${l}>(?:[^"\\\\]|\\\\.)*)"/',
          'number(l:) := /(?<:${l}>-?\\d+(?:\\.\\d+)?)/', 'literal(l:) := /(?<:${l}>true|false|null)/',
          'value(l:) := string(l:) | number(l:) | literal(l:)',
@@ -963,19 +1039,19 @@ JSONL = ['ws := /[ ]*/', 'string(l:) := /"(?<:${l}>(?:[^"\\\\]|\\\\.)*)"/',
          'row(l:, k, f = anything) := /\\{(?:${member_any},)*${ws}"${k}"${ws}:${ws}${value(l:) & (l: f)}${ws}'
          '(?:,${member_any})*\\}/']
 print("== READINGS: the manager's readings of the range that a run decides (the report lists every reading)")
-P_tw = pl("(b) the group written here, read bare", "/(?<h>\\d)/ SEQ A & (h: <5)", ["A := /,(?<h>\\d)/"],
+P_tw = pl("The second shape, read bare", "/(?<h>\\d)/ SEQ A & (h: <5)", ["A := /,(?<h>\\d)/"],
           ["1,7", "7,1"], "7,1 1,7", "1,7 7,1 1,2 9,9", "core/labels/paths/two-sources")
 P_vl = pl("A value with no label", '/x/ & ("Frank": /F.*/)', [], ["x"], "ax", "x x", "core/conditions/form/value-left")
 P_jl = pl("The label on the data", 'row(v:, "v") & (v: "ok" | <5)', JSONL,
           ['{"v":"ok"}', '{"v":3}', '{"v":7}', '{"v":"no"}', '{"v":true}', '{"v":"3"}'], '{"v":7} {"v":"ok"} {"v":3}',
-          '{"v":"ok"} {"v":7} {"v":3} {"v":"no"} {"v":"3"}', None)
+          '{"v":"ok"} {"v":7} {"v":3} {"v":"no"} {"v":"3"}', "lib/json/members", bdesc=", the sketch above")
 P_jc = pl("A filter over two rows at the line", 'row(lo:, "lo") & row(hi:, "hi") & (lo: <$hi)', JSONL,
           ['{"lo":3,"hi":7}', '{"hi":7,"lo":3}', '{"lo":7,"hi":3}', '{"lo":3}', '{"lo":"3","hi":"7"}',
            '{"lo":3,"x":true,"hi":7}'], '{"lo":7,"hi":3} {"hi":9,"lo":8}',
-          '{"lo":3,"hi":7} {"lo":7,"hi":3} {"lo":3} {"hi":2,"lo":1}', None)
+          '{"lo":3,"hi":7} {"lo":7,"hi":3} {"lo":3} {"hi":2,"lo":1}', "lib/json/members", bdesc=", the sketch above")
 P_jk = pl("Several keys", 'row(x:, "a" | "b") & (x: <5)', JSONL,
           ['{"a":3}', '{"b":3}', '{"a":7,"b":3}', '{"a":3,"b":7}', '{"a":7,"b":8}', '{"c":3}'],
-          '{"a":7,"b":8} {"a":3,"b":7}', '{"a":3} {"c":1} {"a":7,"b":8} {"b":4,"a":9}', None, ann=["x"])
+          '{"a":7,"b":8} {"a":3,"b":7}', '{"a":3} {"c":1} {"a":7,"b":8} {"b":4,"a":9}', "lib/json/members", ann=["x"], bdesc=", the sketch above")
 P_jk2 = prog('row(x:, "a" | "b")', JSONL)
 P_mA = prog('row(_:, "msg", contains("timeout"))', JSONL)
 P_mB = prog('row(_x:, "msg") & (_x: contains("timeout"))', JSONL)
@@ -1094,3 +1170,109 @@ check("SWEEP", OLD_TF and not swf_bad and not swf_moved and not swf_gone and not
       "and not declared %d; declared moves %d; added %d; stale declarations %d" %
       (len(NEW_TF), ", ".join("%s %d" % kv for kv in sorted(cntF.items())), len(OLD_TF), len(swf_bad),
        len(swf_moved) + len(swf_gone), len(MOVEDF), len(swf_new), len(staleF)))
+
+print("== NULLABLE: EVID-4's known limit: no program the checks ran has a loop whose body can match empty")
+exec(compile(_src84[_src84.index("def nullable(n):"):_src84.index("checked = list(RUN)")], P84, "exec"),
+     globals())                                              # noqa: S102  predfix84's walker, verbatim
+_nullable84 = nullable
+
+
+def nullable(n):                                             # noqa: F811
+    return False if n[0] == "ncls" else _nullable84(n)      # a negated class is one character, as a class
+
+
+checkedF = list(RUN)
+if sf("s15"):
+    checkedF.append(("/(?:(?<d>\\d)*)+/", (), prog("/(?:(?<d>\\d)*)+/").node))
+nlF = [(e, b) for e, b, nd in checkedF if loops_nullable(nd, [])]
+check("NULLABLE", not nlF, "%d programs run by the checks above (SWEEP's included), walked node by node: %d with a loop "
+      "whose body can match empty%s" % (len(checkedF), len(nlF), (": %s" % nlF[:4]) if nlF else ""))
+
+print("== SUCCESSOR: every earlier in-force model re-run; its LAST LINE read; each red declared superseded, with the "
+      "digest of the red's own FAIL line (a red whose content changes under an unchanged name fails here)")
+LANESF = os.path.normpath(os.path.join(HEREF, ".."))
+FOLDW = "this lane's fold rewrote the texts it looks for (argument-label, the label parameter, the optional entry, " \
+        "the capture request, zero-in-loop, zero-condition-binding: the rulings of 2026-11-22 late and 2026-11-23); "
+SUPERSEDEDF = {               # model -> {red: (digest of its FAIL line or traceback line, "superseded by ...")}
+}
+MODELSF = ["predfix84", "predspot", "predfix83", "preddef", "predfix82", "predcall", "predref", "predbound",
+           "predfix77", "predarr", "predscope"]
+if sf("s16") and SUPERSEDEDF:
+    k0 = next(iter(SUPERSEDEDF))
+    SUPERSEDEDF[k0].pop(next(iter(SUPERSEDEDF[k0])), None)
+succF_bad, succF_n = [], 0
+if not LIGHTF:
+    for mname in MODELSF:
+        env = {k: v for k, v in os.environ.items() if not k.endswith("_SABOTAGE") and not k.endswith("_ENGINE")
+               and not k.endswith("_PROBE")}
+        if mname == "predfix84":
+            env["PREDFIX84_LIGHT"] = "1"                     # its own SUCCESSOR re-runs the ten below: run once, here
+        out = subprocess.run([sys.executable, "-I", "-B", os.path.join(LANESF, mname + "_evidence", mname + "_model.py")],
+                             stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True, env=env, timeout=3600).stdout
+        succF_n += 1
+        lines_ = out.rstrip("\n").split("\n")
+        last = lines_[-1]
+        mm = re.match(r"%s_model: (\d+) checks, (\d+) failed(?: \(([^)]*)\))?$" % mname, last)
+        reds = {}
+        if mm:
+            for r in [x.strip() for x in (mm.group(3) or "").split(",") if x.strip()]:
+                reds[r] = next((l_ for l_ in lines_ if l_.startswith("FAIL %s:" % r) or
+                                re.match(r"%s\s+FAIL\b" % re.escape(r), l_)), "")
+        else:
+            reds["TRACEBACK"] = last
+        decl = SUPERSEDEDF.get(mname, {})
+        print("   %-10s last line: %s" % (mname, last[:160]))
+        for r, fline in sorted(reds.items()):
+            dg = hashlib.sha256(fline.encode()).hexdigest()[:12]
+            d = decl.get(r)
+            if d is None:
+                succF_bad.append((mname, r, "UNDECLARED"))
+                print("      %s [%s] UNDECLARED: %s" % (r, dg, fline[:400]))
+            elif d[0] != dg:
+                succF_bad.append((mname, r, "CONTENT CHANGED"))
+                print("      %s [%s, declared %s] CONTENT CHANGED: %s" % (r, dg, d[0], fline[:400]))
+            else:
+                print("      %s [%s]: superseded by %s" % (r, dg, d[1]))
+                print("         its FAIL line: %s" % fline[:240])
+        gone = sorted(set(decl) - set(reds))
+        if gone:
+            succF_bad.append((mname, "GREEN", gone))
+            print("      declared but green now: %s" % gone)
+check("SUCCESSOR", LIGHTF or (succF_n == len(MODELSF) and not succF_bad),
+      "%d earlier models re-run one at a time (predfix84 light: its SUCCESSOR is this list), each last line read; every "
+      "red declared superseded with an unchanged FAIL line: %s" % (succF_n, "yes" if not succF_bad else succF_bad))
+
+print("== QUOTES: every owner sentence this lane quotes occurs in the record and the documents; every cited title is one")
+RECORD2 = subprocess.run(["git", "-C", W, "show", "lane/pred-rev28:docs/design/plan_row_bodies/COND-FAMILY.md"],
+                         capture_output=True, text=True).stdout       # R1: zero-open is recorded there (read only)
+QQF = [
+]
+QQ2 = [                       # R1's entries, recorded on the manager's branch after the cut
+]
+TTF = [
+]
+if sf("s17"):
+    QQF[0] = QQF[0] + " (altered)"
+ALLNOWF = "\n".join(NOWS.values())
+q_missF = [q for q in QQF if ws(q) not in RECORD_WS or ws(q) not in ws(ALLNOWF)]
+q_miss2 = [q for q in QQ2 if ws(q) not in ws(RECORD2) or ws(q) not in ws(ALLNOWF)]
+headsF = set(ws(re.sub(r"^(### |\*\*)", "", l_)) for l_ in RECORD.split("\n") if l_.startswith(("### ", "**")))
+t_missF = [t_ for t_ in TTF if ws(t_) not in headsF or ws(t_) not in ws(ALLNOWF)]
+check("QUOTES", QQF and not q_missF and not q_miss2 and not t_missF,
+      "%d quoted sentences in the record and the documents, missing: %s; %d of R1's in the manager's branch record and "
+      "the documents, missing: %s; %d record titles cited whole, not a title or not cited: %s" %
+      (len(QQF), q_missF or "none", len(QQ2), q_miss2 or "none", len(TTF), t_missF or "none"))
+
+print("== DOC: every line this model formats for a piece occurs verbatim in the documents")
+DLNF = list(LINES)
+if sf("s18") and DLNF:
+    DLNF[0] = (DLNF[0][0], DLNF[0][1].replace("WHOLE `", "WHOLE `x", 1))
+d_missF = [(t_, L) for t_, L in DLNF if ws(L) not in ws(ALLNOWF)]
+for t_, L in d_missF:
+    print("   MISSING [%s] %s" % (t_, L))
+check("DOC", DLNF and not d_missF, "%d lines; missing: %d" % (len(DLNF), len(d_missF)))
+
+failedF = [n for n, ok in RESULTS if not ok]
+print("predfold1123_model: %d checks, %d failed%s" % (len(RESULTS), len(failedF),
+                                                    (" (%s)" % ", ".join(failedF)) if failedF else ""))
+sys.exit(1 if failedF else 0)
