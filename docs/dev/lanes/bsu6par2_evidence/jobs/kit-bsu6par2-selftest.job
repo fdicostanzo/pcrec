@@ -1,0 +1,45 @@
+#!/usr/bin/env bash
+# kit-bsu6par2-selftest: the FULL `cards.py selftest` at nproc workers on worktrees/bsu6par2 (r87 fixes: one fork per unit,
+# longest-first submission from selftest_unit_costs.tsv, dead-worker failure), then its IDENTITY against job 757's SERIAL
+# log (lane bsu6fix3 c8116f8cb). Non-timing. Prints its wall beside job 758's 780 s (779 s measured, same -j16).
+# Red (rc 1) on: the selftest's own rc != 0, the reference not complete, or ANY line differing after the ONE named
+# exception is masked in both logs: the (r44 E) row's `draws [..] / [..]` suffix (os.urandom run ids).
+set -u
+P=/var/tmp/pcrec-pcrec
+S=$P/scratch/bsu6par2
+W=/home/pcrec/projects/pcrec/worktrees/bsu6par2
+REF=$P/scratch/bsu6fix3/selftest_full.log
+LOG=$S/selftest_par.log
+export TMPDIR=$S/tmp PCREC_TMPDIR=$S/tmp PCREC_TREE=$W PARPOOL_TIMES=$S/unit_times.tsv
+case "${1:-}" in
+    --dry-run)
+        [ -f "$W/memfn/tests/span_forms/cards.py" ] && [ -f "$W/memfn/tests/parpool.py" ] || { echo "no cards.py / parpool.py in $W" >&2; exit 1; }
+        [ -f "$REF" ] || { echo "no reference log $REF (job 757's)" >&2; exit 1; }
+        echo "would run in $W: python3 -I memfn/tests/span_forms/cards.py selftest -j $(nproc) > $LOG; then diff it against $REF (the (r44 E) draws masked)"
+        echo "boxqueue: cap 1800"; echo "boxqueue: patience none"; echo "boxqueue: not-before 2026-11-23T01:00"; echo "boxqueue: est 900"
+        echo "boxqueue: expect none reason=the job's rc is the selftest's rc AND the identity diff's (rc 1 on any unexplained difference); verdict lines IDENTITY: in the job log"
+        exit 0 ;;
+    --ready)
+        t=$(date +%H%M); t=$((10#$t)); if [ $t -lt 100 ] || [ $t -ge 1745 ]; then echo "start only 01:00-17:45, so the 30 min cap cannot reach 18:15 (now $t)"; exit 75; fi
+        exit 0 ;;
+esac
+mkdir -p "$TMPDIR" "$S"
+rm -f "$PARPOOL_TIMES"
+start=$(date +%s)
+python3 -I "$W/memfn/tests/span_forms/cards.py" selftest -j "$(nproc)" > "$LOG" 2>&1; rc=$?
+wall=$(( $(date +%s) - start ))
+echo "SELFTEST rc=$rc wall=$wall s workers=$(nproc) log=$LOG; job 758 (same -j16, FIFO pool): 780 s"
+mask() { sed -E 's/^((ok  |FAIL) \(r44 E\) .*); draws \[[0-9, ]*\] \/ \[[0-9, ]*\]$/\1; draws <MASKED: os.urandom run ids>/' "$1"; }
+red=0
+tail -1 "$REF" | grep -qE '^selftest: [0-9]+ checks, [0-9]+ failed$' || { echo "IDENTITY: RED: the reference $REF has no trailer (incomplete)"; red=1; }
+masked=$(mask "$LOG" | grep -c 'draws <MASKED')
+if diff <(mask "$REF") <(mask "$LOG") > "$S/identity.diff"; then
+    echo "IDENTITY: byte-identical to job 757's serial log after masking $masked (r44 E) draws line(s) ($(wc -l < "$LOG") lines)"
+else
+    echo "IDENTITY: RED: $(grep -c '^[<>]' "$S/identity.diff") differing line(s); first:"; head -20 "$S/identity.diff"; red=1
+fi
+[ "$masked" -eq 1 ] || { echo "IDENTITY: RED: expected exactly 1 masked (r44 E) line, got $masked"; red=1; }
+tail -1 "$LOG"
+[ -s "$PARPOOL_TIMES" ] && { echo "UNITS: $(wc -l < "$PARPOOL_TIMES") timed; top 8 by seconds:"; sort -t$'\t' -k2,2 -rn "$PARPOOL_TIMES" | head -8; awk -F'\t' '{s+=$2} END {printf "UNITS: sum %.0f s\n", s}' "$PARPOOL_TIMES"; }
+[ $rc -eq 0 ] && [ $red -eq 0 ] && { echo "JOB: GREEN"; exit 0; }
+echo "JOB: RED (selftest rc $rc, identity red $red)"; exit 1

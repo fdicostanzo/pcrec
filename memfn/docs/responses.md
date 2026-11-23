@@ -3740,3 +3740,26 @@ Reports: docs/dev/lanes/forms*_report.md, formsfixl_report.md, formsfixm_report.
   - 750 kit-u5tip-test GREEN (make test, 2671 s);
   - 751 kit-u5tip-mech GREEN (18 rows, U2-U5: unexpected 0, undetected 0, unreached 0, anomalies 0).
   Commits after 26ef32ad5 are kit docs only (journal, wake, this ledger). U5 is ready to land.
+
+- **done (partial): R-47 unit U6, everything except the timing run** (2026-11-23, kit). Branch lane/memfn-k1108 @ 7e9df99e3, the merge of lane/bsu6fix3 c8116f8cb (lanes bsu6, bsu6t, bsu6fix, bsu6fix2, bsu6fix3).
+  - **ABI:** no event. No emitted byte moves (the bumps landed at U2/U3/L3), and all 149 readers of 112 were checked.
+  - **Product code:** none changed. NOTHING TIMED, apart from the 2-cell probe disclosed on 11-23 (cost bound only).
+  - **G1** (§9.4): the new tests/memfn/g1_span_vector.py builds the manifest from a pcrec-side artifact diff, both layers: 28 movers per layer, 3 real + 25 SPAN-SEED. Bins (window,10-99) and (scan,10-99) are UNREACHED, so [BSPAN-G1-TIMING]'s trigger (8 real per bin) is not met.
+  - **The C6/C6c timer:** `cards.py time` (with a --prepare split) plus the record-only reader `c6decide`, implementing c6_rule.md. rule_710's CPU-quiet control is ported once; C1-C5 are unchanged.
+  - **Review:** r80 (docs/dev/reviews/2026-11-23-r80-memfn-bsu6.md), ruled FIX FIRST and fixed.
+  - **Validation:**
+    - 752 make test-axes GREEN (27356 s).
+    - 753 REACH_ONLY: 702 reached, 16 declared, 1 unreached (S1761, [PIN-MSG-DEPTH], since fixed on main).
+    - bsu6fix2/3 in-lane: c6selftest 95/0, the 81-mutant gate 79 killed + 2 argued equivalent, DRY clock calls 0 with an identical round trip, g1 cases ok, strict, memfn-arch.
+    - 757 full cards.py selftest 222/0.
+    - make strict ok at the merge.
+  - **OWED:** the C6/C6c TIMING in a window you clear with Frank, on each bench box including Zen 1 (WINDOW REQUEST: docs/dev/lanes/bsu6fix_report.md). The form stays CANDIDATE until then.
+  - **In flight (owner ruling 11-23, parallelism):** lane bsu6par runs the selftest on an nproc pool, byte-identical to serial; it merges as its own step.
+
+- **done: R-47 U6 addendum, the parallel cards.py selftest** (2026-11-23, kit; owner ruling of 11-23 on test parallelism). Branch lane/memfn-k1108 @ 7c40305d8 (merge of lane/bsu6par2 on lane/bsu6par).
+  - **What:** memfn/tests/parpool.py, an ordered fork pool any runner may reuse. -j N, with -j 1 the serial path; one fork per unit; output in list order; `needs` with a transitive closure; a dead worker fails at once and names its unit; longest-first submission from a committed, dated cost table.
+  - cards.py selftest is 218 units, default nproc. No check, seed or printed text changed.
+  - **Review:** r87 (docs/dev/reviews/2026-11-23-r87-memfn-bsu6par.md), ruled FIX FIRST and fixed.
+  - **Validation:** 759 at -j16: 222/0 in 667 s, against 757's serial 5615 s, and a masked diff identical to 757 (one named urandom line). make strict ok at the merge.
+  - No product code, no abi event.
+  - **Filed, not built:** mutb.py (one unit per mutant) and run_g2_win.sh (split by head).

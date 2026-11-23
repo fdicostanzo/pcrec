@@ -62,3 +62,7 @@ SIMD family targets (unit U2): the space renders once per target (x86-64-v3, x86
 ## check_targets.sh
 
 `check_targets.sh` — NOT G2: the kit's CPU TARGET TABLE CHECK (unit K0, R-36; its header): targets.def (facts) and targets_c.def (C spellings) through the preprocessor, held to gcc's own `-march` (floor plus needs vs `-march=<name>`, the whole `-dM` set), the structural rules, every facts field a token list (no emitter text), one C spelling per family, and the host `#if` chain to the guard column under four preprocessor targets, and (unit U2) LEVEL ADMISSION: for each host-family target and level, the table admits it iff gcc -march=<target> supplies every need (`-m<need>` adds no macro); FEATURES COMPLETE: over the check's own token->macro vocabulary, a target lists exactly what `-march=<name>` enables; `LEVELS_DEF` points it at another levels table. Run at `make` (warns), `make strict` and `make test-memfn-targets` (fail); `TARGETS_DEF` points it at another table (hand plants). Exit 0 ok, 1 mismatch, 2 could not run.
+
+## Lane reports (moved from CLAUDE.md, lane bsu6par, 2026-11-23, for size)
+
+`G2U_REPORT.md`, `G2X_REPORT.md` (interim, superseded), `G2M4_REPORT.md` (ABI 6, R-7), `G2M6_REPORT.md` (ABI 8 strided ADVANCE), `G2M7_REPORT.md` (ABI 7 MISMATCH), `G2ROWS_REPORT.md` — lane reports.

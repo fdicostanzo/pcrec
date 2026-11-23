@@ -1,57 +1,49 @@
 # memfn kit — wake-up brief
 
-Updated 2026-11-22 19:40 by the kit session IN FLIGHT. Main (pcrec-main) is up.
+Updated 2026-11-23 14:46 by the kit session IN FLIGHT. Main (pcrec-main) is up.
 
 ## Who you are
 The kit manager (`/pcrec-memfn-manager`). The ledger and journal branch is worktrees/memfn on lane/memfn-k1108.
-- Heartbeat cron: 17,47.
+- Heartbeat cron: 17,47 (4b59ad8c).
 - Waiting list: worktrees/.mgr/waiting_on.kit.
 - Queue verdicts: only via `scripts/monread kit --wait` (run_in_background).
-- Lane watching: `scripts/lanewatch --follow NAME`, ONE name per call. It exits DONE at once if the lane's lanecheck already passed.
+- Lanes: `scripts/lanewatch --follow NAME`, one name per call.
+- Review numbers: ASK MAIN before launching a round (r86 collided, 11-23).
 
 ## Read in order
 1. This file.
-2. memfn/docs/journal.md, the 2026-11-22 entries.
-3. docs/design/memfn/block_span.md (§8, §10, §14, and §18's r78/r79 dispositions).
-4. docs/dev/reviews/2026-11-22-r78-memfn-bsu4.md and r79-memfn-bsu5.md (MANAGER RULING at the top of each).
+2. memfn/docs/journal.md, the 2026-11-23 entries.
+3. docs/dev/reviews/2026-11-23-r80-memfn-bsu6.md and r87-memfn-bsu6par.md (MANAGER RULING at the top).
+4. docs/design/memfn/block_span.md §14, c6_rule.md (frozen).
 
 ## CURRENT STATE: R-47 / D201, the block span at the SIMD layer
-- **U1-U4 are LANDED on main** (U3 at abi 111; L3 at 112; U4 merge 7af611f1e, pushed). Main is merged into the kit branch at 26ef32ad5 (critics.md conflict unioned; make strict ok).
-- **U5 is DELIVERED** ([responses] done (partial) 6a0633259). It is the merge 988ddf804 of lane/bsu5fix2 412afe9f5: r79 fixed; 746/747 GREEN at de36c27c9; 749 full selftest GREEN (222/0) at 412afe9f5.
-  - **Tip validation is queued on the detached worktree u5tip @ 26ef32ad5.** Both jobs declare not-before 2026-11-23T01:00 and carry a 01:00-18:15 clock gate:
-    - 750 kit-u5tip-test (log /var/tmp/pcrec-pcrec/scratch/u5tip/maketest.log);
-    - 751 kit-u5tip-mech (18 U2-U5 rows).
-  - When both are GREEN: SendMessage main "U5 at 26ef32ad5", and main lands it in the morning. On a RED: a triage lane.
-  - [FH-INTRIN] is filed on main (r79 F15).
-  - Main's cloud full suite on b204ffd8c runs tonight (cloud only).
-- **Then U6 (review r80):**
-  - the abi package at the landing base, if any byte moves (U4/U5 moved none);
-  - make test-axes;
-  - REACH_ONLY;
-  - G1's manifest + dry run;
-  - **C6/C6c TIMING in a window main clears with Frank, on every bench box including Zen 1** (ubuntubudu). V stays CANDIDATE until then.
-  - Open points for U6's reader are labelled in c6_rule.md.
-- **After R-47 completes:** tell main, so [KIT-ARCH-STEP] stage 2 can be chartered. Frank's verbatim ruling is in the journal: one overall arch review of the kit's sections, refactors filed and smaller ones favoured; then arch notes + arch rounds before every new kit feature.
-- **Owner rulings of 11-22, verbatim in the journal:**
-  - D202 add. 1: the cover width is a table per kind; each site states the proof it needs (range vs candidate); the follow-up on the obligation.
-  - D202 add. 2: "the width is your call within the above"; the table and score are IDEAS only.
-  - "dense-not-target: close".
-  - d3-repin-permission granted; lanes may re-pin; the kit ruled YES on the span_seed rows.
-- **Sabotage ids:** S3540 and S3542-S3545 are bsu4fix's (S3541 is main's). S3546-S3549 are bsu5's, S3550-S3554 bsu5fix's; the next free id is S3555. Ledger: worktrees/.mgr/sabotage_ids.txt.
-- **Prunable once landed (scripts/wtprune):** bsu3, bsu3fix, bsu4g, bsu4p, bsu4, bsu4fix, u4tip, bsu5, bsu5fix, bsu5fix2, u5tip (after 751).
-- **OWED (older):**
-  - the g2 win-family triage lane;
-  - re-sync the rampfix 712 harness;
-  - the cards.py not-warm chunking defect;
-  - gatebudget, mfcal and mfind decisions;
-  - r46 PLAN/DOC, r24 SR-1..4, ADQ-3-3, the mfind witness.
-  - r78 PLAN: PINS-7's table/TSV and G2V-4. r79 PLAN: F15, intrinsic rename invariance in mf_form_hash; file it to main.
+- **U1-U5 are LANDED on main.**
+- **U6 is DELIVERED minus timing**:
+  - [responses] 866235918;
+  - kit merge 7e9df99e3 of lane/bsu6fix3 c8116f8cb;
+  - 757 full selftest 222/0; 752 test-axes GREEN; 753 reach ok except S1761 ([PIN-MSG-DEPTH], fixed on main 91cc16215).
+  - Main merged U6 locally (4a989690c), cloud test running, pushes after green.
+- **TIMING owed**:
+  - Main asked Frank (u6-timing-window) for the dev box, leaning 01:00-01:30 tonight.
+  - ubuntubudu is UNREACHABLE; main asked Frank if it is off.
+  - When cleared: build the timing job from docs/dev/lanes/bsu6fix_report.md "WINDOW REQUEST" (prepare + dry rehearsal, quiet, time; gated to the window), and show main its --dry-run.
+  - Read the verdict with `cards.py c6decide`. V stays CANDIDATE until then.
+- **Parallel selftest (owner ruling 11-23, verbatim in the journal)**:
+  - lane/bsu6par 2061e7e98 adds memfn/tests/parpool.py and 218 selftest units; 758 -j16 GREEN in 780 s vs 5615 s serial, identical to 757 apart from the masked line.
+  - r87 ruled FIX FIRST: dead worker, --units closure, subset label, maxtasksperchild=1, longest-first from 758's profile.
+  - Lane **bsu6par2** (sonnet, worktrees/bsu6par2) is applying them; it owes one selftest job. GREEN -> merge lane/bsu6par2 into the kit branch, then deliver to main as an R-47 U6 addendum.
+- **Filed, not built** (bsu6par survey): mutb.py per-mutant parpool units (27 min serial); split run_g2_win.sh by head (288 s critical path).
+- **After R-47 completes** (timing verdict in): tell main, so [KIT-ARCH-STEP] stage 2 can be chartered (Frank's ruling is verbatim in the 11-22 journal).
+- **Sabotage ids:** the next free id is S3570 (worktrees/.mgr/sabotage_ids.txt).
+- **Prunable** (scripts/wtprune, after main pushes U6): bsu3*, bsu4*, u4tip, bsu5*, u5tip, bsu6, bsu6t, bsu6fix, bsu6fix2, bsu6fix3; bsu6par/bsu6par2 after their merge.
+- **Merge main** into the kit branch at the next quiet point: it picks up pinmsg.
+- **OWED (older)**: the g2 win-family triage; the rampfix 712 harness re-sync; cards.py not-warm chunking; gatebudget/mfcal/mfind decisions; r46 PLAN/DOC, r24 SR-1..4, ADQ-3-3, the mfind witness; r78 PLAN (PINS-7, G2V-4); r80 PLAN FIDELITY-6/7 (in ideas.md).
 
-## Lessons (2026-11-22)
-Lane briefs carry these, and they are in the skill's §4:
-- An in-lane run longer than a few seconds checks boxlock for a TIMING holder first.
-- A `--harness=` lever use needs its run_lever_fence.sh ALLOW row in the same commit.
-- Cancelling a half-branch's validation hides its reds; the combined tip must run everything.
+## Lessons (2026-11-22/23)
+- A lock bypass (PCREC_BOXLOCK=0) is never mine to grant.
+- Settle scope before briefing; addenda to running lanes get missed (the bsu6 probe breach).
 - Lanes idle on background runs: tell them to poll in the foreground.
-- A lane's SendMessage to pcrec-memfn fails: brief "team-lead".
-- Owner words go into the journal VERBATIM, and the kit's phrases are never filed as his.
+- A check that runs only in the slow suite hides drift: put drills in the quick self-test (J2, bsu6fix3).
+- Ask main for review numbers.
+- Long or repeated test runners get a parallelism review (owner, 11-23).
+- Owner words go into the journal VERBATIM.
