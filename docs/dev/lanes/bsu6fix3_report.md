@@ -80,8 +80,34 @@ Commit 83db51f47 (`memfn/tests/span_forms/cards.py` only):
 
 ## IN-LANE RUNS
 
-PENDING
+All on the tip's cards.py (83db51f47; later commits touch only docs/evidence), each compiling step under
+`scripts/boxlock run --label bsu6fix3`, TMPDIR `$PCREC_TMPDIR/scratch/bsu6fix3/tmp`, logs in `$PCREC_TMPDIR/scratch/bsu6fix3/`.
+
+| run | file / command | result |
+|---|---|---|
+| J2 drill, direct | `python3 -I bsu6fix3_evidence/j2drill.py memfn/tests/span_forms/cards.py` (calls `selftest_j2`) | `ok (r38 J2) ... 200 launches over 40 arm cells (40 rows, 0 not ok): every round of 10 holds each arm once: True; the drills' order: True`, `j2drill: 0 failed`, rc 0 (`j2drill.out`) |
+| J2 drill, planted stale stub | `j2drill.py ... --plant-stale-stub` | `FAIL ... 0 launches ... (40 rows, 40 not ok: void ... takes 3 positional arguments but 4 were given)`, rc 1 |
+| launch plan, 412afe9f5 vs tip | `bsu6fix3_evidence/j2plan.py` | 200/200 launches, plan same, output 4712 bytes same (sha 94efdfe5fed0216f), `j2plan: SAME` (also 412afe9f5 vs 9986aca43: SAME; `j2plan_412_vs_9986.out`) |
+| c6selftest | `inlane.sh selftest` (`python3 -I cards.py c6selftest RUNDIR`) | `c6selftest: 95 rows, 0 failed` (94 before + the J2 row), rc 0 |
+| CONTROL: c6selftest with 9986aca43's stub | tip's span_forms copy, the stub reverted (`plant_stale/`), same RUNDIR (`control_c6selftest_stale.log`) | `FAIL c6selftest: (r38 J2) ... 0 launches ... 40 not ok: void ... takes 3 positional arguments but 4 were given`; `c6selftest: 95 rows, 1 failed`, rc 1 |
+| mutants | `inlane.sh mutants` (`bsu6fix3_evidence/mutb.py`, bsu6fix2's re-aimed, paths only) | `TOTALS: 81 mutants, 79 KILLED, 2 SURVIVED, 0 NOT-APPLIED`; the survivors R13, X6 are bsu6fix2's argued-equivalent pair, unchanged |
+| dryfull | `inlane.sh dryfull` (prepare + `time --dry`, synthetic launches) | 92 cells, 84 pools; `DRY: 1573 synthetic launches, clock calls 0, timed execs refused 0`; C6 on / C6c off-clang / off-os NO LOSS; `c6decide rc=0`; `ROUND TRIP: identical (41 lines)` |
+| g1 | `inlane.sh g1` (bsu6fix2's case setup copied, wrap.sh re-aimed) | base ok; wrap ok (red by design: deny-fail only); crlf ok |
+| make strict | `inlane.sh strict` | rc 0 |
+| test-memfn-arch | `inlane.sh arch` | `checks failed: 0`, rc 0 |
+| consolidated | `bsu6fix3_evidence/inlane.sh all` | `INLANE ALL DONE rc=0` (`inlane_all.log`) |
+
+Not run in-lane, per the brief: the full 90-minute `cards.py selftest` (OWED).
 
 ## OWED RUNS
 
-PENDING
+- `757-kit-bsu6fix3-selftest`: QUEUED (`scripts/boxqueue add`, "queued ... cap 7200, patience none, expect none"; status
+  `pending: 757-kit-bsu6fix3-selftest`). Script `docs/dev/lanes/bsu6fix3_evidence/jobs/selftest`, modelled on bsu6fix2's.
+  - `--dry-run`: `would run in worktrees/bsu6fix3: TMPDIR=/var/tmp/pcrec-pcrec/scratch/b6f3 python3 -I
+    memfn/tests/span_forms/cards.py selftest > /var/tmp/pcrec-pcrec/scratch/bsu6fix3/selftest_full.log`; cap 7200,
+    patience none, not-before 2026-11-23T01:00, est 5400, expect none; rc 0.
+  - `--ready`: 75 unless 01:00 <= now < 16:30 (a 2 h cap cannot reach 18:15); read 0 at queue time (~12:40).
+  - VERDICT: the job's rc (cards.py is exec'd) and the trailer of `/var/tmp/pcrec-pcrec/scratch/bsu6fix3/selftest_full.log`,
+    which must read `selftest: 222 checks, 0 failed` (the J2 line: `ok   (r38 J2) time_cells interleaves the arms in rounds
+    200 launches over 40 arm cells (40 rows, 0 not ok) ...`). The check count is unchanged: J2 is still one row.
+  - The job runs the worktree's cards.py as committed at 83db51f47; nothing after it touches cards.py.
