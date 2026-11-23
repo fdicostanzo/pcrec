@@ -962,3 +962,20 @@ wake.md says (read the draft WHOLE first; A4 is a ruled-words finding: read his 
 
 - Nothing in flight. wake.md rewritten; owner.md current; the record holds every word of the day. r84 NOT ruled;
   nothing of 2026-11-22 late or 2026-11-23 folded. P-24 posted; main told.
+
+## 2026-11-23 — seventh session: wake; r84 ruled; lane predfix84 launched
+
+- Registered; wake.md, the channel (nothing after M-2), core.md / library.md / parked.md WHOLE (in parts), the record
+  from "label-name-hole as first put" to the end, r84's draft whole. main merged cleanly; lint 7,185 / 0; plan-lint green.
+- r84 RULED (record entry "2026-11-23 MANAGER — review r84 (predspot1122)"): the flags group and the evidence fixes
+  to FIX lane predfix84; A4, A7, C3, C4, C5, D2 OVERTAKEN by argument-label and handed to the fold lane; repeat-label
+  not asked (the record answers it); four owner questions queued (options-position, option-hole-explicit,
+  options-reach-constants, spot-read-name).
+- LAUNCHED: lane predfix84 (opus, worktree `worktrees/predfix84`, cut at 2d6270c10; deliver + empty rulings file
+  written first; `lanewatch --follow` armed). Main told; review number r86 reserved for the fold (predfold1123).
+- Found while preparing the first question: an optional mark on the label (`m?`) existed on 2026-11-16 and was
+  DROPPED by him the same day ("drop-mark: YES"); its meaning then was "some value the label could have had" (not a
+  test of one row). The mark ruled on 2026-11-23 is a one-row test (absent or in S). Parked pieces that say "there
+  is no optional mark" (default-set, empty-value, macro-warning) move at the fold. To tell him.
+- ASKED: optional-label-general, with the run `$PCREC_TMPDIR/scratch/pred/optional_general.py`. Waiting on him;
+  predfix84 in flight.
