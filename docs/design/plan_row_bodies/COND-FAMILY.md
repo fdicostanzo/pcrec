@@ -9064,3 +9064,46 @@ the record, no new run):
 - (f) The macro-head idea of the previous entry (`max?`) would then be a different use of `?` from the entry
   operator: "closer, not the same" gets a little further apart; noted for when call-forms is taken up.
 - (g) The capture request: `(h ?: capture("h"))`.
+
+### 2026-11-23 OWNER, on string-label: the row's label argument is set to the unquoted portion; "we'd need to send it to through to the string binding"
+tags: core/operators/bindings/label-variables lib/json/members core/labels/one-rule core/patterns/alternation core/principles/language-over-macros
+
+Asked **string-label** (what he meant on 2026-11-23 by "we could thread the label to string to get the unlabeled
+portion"; two guesses offered: the row's own label goes inward; something on `string` itself). HIS WORDS, whole:
+
+"String label: i liked your example but what i had in mind was that the row() label arg would be set to the
+unquoted portion of the string. Then all three value types would point directly at the data without json forms
+around it. In order to do that, i was saying we'd need to send it to through to the string binding."
+
+Class: a CLARIFICATION of his own remark (DISCUSSION; a design intent for the JSON library, not a language
+ruling): the label given to `row` is set on the DATA (for a string, the text inside the quotes), so that "all
+three value types would point directly at the data without json forms around it"; the means: the label is sent
+on from `row` "through to the string binding". "unlabeled" of 2026-11-23 was "unquoted" (confirmed by "the
+unquoted portion"). His "i liked your example" is about the manager's `json.string(body:)` sketch (a label sent
+by the caller inside an argument, ruled legal as label-in-argument); it was not what he meant.
+
+The manager's reading (marked; told to him): the LANGUAGE point in it is one a ruling does not yet state: a body
+passing its own label parameter ON to another macro's label parameter (`row`'s body calling `string(l:)`). The
+manager's sketch of the library under it (placeholders; the library's shape is his "not too deeply into any one
+macro"):
+    string(l:)  := /"(?<:${l}>(?:[^"\\]|\\.)*)"/
+    number(l:)  := /(?<:${l}>-?\d+(?:\.\d+)?)/
+    literal(l:) := /(?<:${l}>true|false|null)/
+    value(l:)   := string(l:) | number(l:) | literal(l:)
+    row(l:, k, f = anything) := /\{(?:${member_any},)*${ws}"${k}"${ws}:${ws}${value(l:) & (l: f)}${ws}(?:,${member_any})*\}/
+    json.row(msg:, "msg", contains("timeout"))      json.row(n:, "count", <5) & (n: >2)
+The label is then placed three times across a `|` (the branch taken sets it: one-rule), and the third argument is
+a filter on the DATA, read by the body after it places the label ("a body may read its own label parameter after
+placing it", in the label-kinds statement he ruled).
+
+RUN (python `re`, HAND-LOWERED and simplified: the object reduced to its one member `v`;
+`$PCREC_TMPDIR/scratch/pred/label_forward.py`; the program `json.row(v:, "v") & (v: "ok" | <5)`; output pasted):
+- the label on the data: WHOLE `{"v":"ok"}` HOLDS, `{"v":3}` HOLDS, `{"v":7}` FAILS, `{"v":"no"}` FAILS,
+  `{"v":true}` FAILS, `{"v":"3"}` HOLDS / SEARCHED `{"v":7} {"v":"ok"} {"v":3}` `{"v":"ok"}`@8 (v = `ok`) /
+  FIND-ALL `{"v":"ok"} {"v":7} {"v":3} {"v":"no"} {"v":"3"}` [`{"v":"ok"}`@0, `{"v":3}`@19, `{"v":"3"}`@38]
+- the label on the raw value (json.string as it stands): WHOLE `{"v":"ok"}` FAILS, `{"v":3}` HOLDS, `{"v":7}`
+  FAILS, `{"v":"no"}` FAILS, `{"v":true}` FAILS, `{"v":"3"}` FAILS / SEARCHED the same subject `{"v":3}`@19
+  (v = `3`) / FIND-ALL the same subject [`{"v":3}`@19]
+A consequence the run shows: on the data the string `"3"` and the number `3` read alike (`{"v":"3"}` HOLDS under
+`<5`); telling them apart needs the type.
+Put to him as slug label-forward.
