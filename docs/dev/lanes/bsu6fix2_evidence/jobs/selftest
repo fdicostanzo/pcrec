@@ -1,0 +1,24 @@
+#!/usr/bin/env bash
+# kit-bsu6fix2-selftest: the FULL `cards.py selftest` (~90 min) on worktrees/bsu6fix2 (lane bsu6fix2's owed run), non-timing.
+# Modelled on bsu6fix's jobs/selftest (itself on 750-kit-u5tip-test). Cap 7200 > 3600: one selftest cannot be split. Short
+# TMPDIR scratch/b6f2 (the brief). Verdict: cards.py's rc (exec'd) and the log's own trailer in scratch/bsu6fix2/selftest_full.log.
+set -u
+P=/var/tmp/pcrec-pcrec
+S=$P/scratch/bsu6fix2
+W=/home/pcrec/projects/pcrec/worktrees/bsu6fix2
+LOG=$S/selftest_full.log
+export TMPDIR=$P/scratch/b6f2 PCREC_TMPDIR=$P/scratch/b6f2 PCREC_TREE=$W
+case "${1:-}" in
+    --dry-run)
+        [ -f "$W/memfn/tests/span_forms/cards.py" ] && [ -x "$W/build/pcrec" ] || { echo "no cards.py / build/pcrec in $W" >&2; exit 1; }
+        echo "would run in $W: TMPDIR=$TMPDIR python3 -I memfn/tests/span_forms/cards.py selftest > $LOG"
+        echo "boxqueue: cap 7200"; echo "boxqueue: patience none"; echo "boxqueue: not-before 2026-11-24T01:00"; echo "boxqueue: est 5400"
+        echo "boxqueue: expect none reason=cards.py selftest is exec'd, so its rc is the job's rc; the verdict is its trailer in $LOG"
+        exit 0 ;;
+    --ready)
+        t=$(date +%H%M); t=$((10#$t)); if [ $t -lt 100 ] || [ $t -ge 1800 ]; then echo "evening hold: start only 01:00-18:00 (now $t)"; exit 75; fi
+        exit 0 ;;
+esac
+mkdir -p "$TMPDIR" "$S"
+exec > "$LOG" 2>&1
+exec python3 -I "$W/memfn/tests/span_forms/cards.py" selftest
