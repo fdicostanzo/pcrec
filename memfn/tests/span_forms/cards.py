@@ -111,7 +111,7 @@ Env: PCREC_TREE (default: this file's tree), FROZEN (the frozen tree's build dir
 the tree's build/), WIDTH_FLAG (default `--window-search-width=4095`; `none` on a tree without
 main's width option), CPU (taskset core, default 15), LAUNCHES (default 5), JOBS.
 """
-import functools, hashlib, json, math, os, random, re, resource, statistics, subprocess, sys, threading, time
+import functools, hashlib, json, math, os, random, re, resource, shutil, statistics, subprocess, sys, threading, time
 from concurrent.futures import ThreadPoolExecutor
 
 HERE = os.path.dirname(os.path.abspath(__file__))
@@ -6147,9 +6147,17 @@ def cmd_c6selftest(args):
         row(rc == 2 and "prepared under harness" in err.getvalue(), "TIME refuses a manifest of another harness (exit %s)" % rc)
         os.remove(os.path.join(d2, C6_PREPARED))
     global COMPILE_OK
+    # the witness's premise ("never built") must hold by construction, never by the RUNDIR's history (lane bsu6fix2: a
+    # mutant that let `time` compile built this exe into the shared bin/, and every later c6selftest on that RUNDIR read
+    # the gate as broken): its own bin/, emptied on every run; the artifact cache stays shared
+    d3 = sub("nobuild")
+    if os.path.islink(os.path.join(d3, "bin")):
+        os.remove(os.path.join(d3, "bin"))
+    shutil.rmtree(os.path.join(d3, "bin"), ignore_errors=True)
+    os.makedirs(os.path.join(d3, "bin"))
     COMPILE_OK = False
     try:
-        build_cell(d2, "c6_hex32", "V", "on", 0, 1 + 7)       # a pool round never built: the gate refuses it
+        build_cell(d3, "c6_hex32", "V", "on", 0, 1 + 7)       # a pool round never built: the gate refuses it
         refused = False
     except SystemExit as e:
         refused = e.code == 2
