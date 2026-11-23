@@ -8268,3 +8268,31 @@ Class: a QUESTION (DISCUSSION); nothing ruled. The manager's answer (told to him
 the label-only group on the value's spot (`(?<:${k}>...)`). The body itself never READS that label: the name is
 only for the caller. Without the name hole the body writes a fixed name (`(?<:val>...)`) and each caller renames
 (`[(ts = val) = json.row("ts", ..)]`).
+
+### 2026-11-23 OWNER, on label-name-hole: "what are the proposed restrictions on k here? lets establish those now or they will come back as questions"
+tags: core/holes/name core/holes/pattern core/holes/value core/labels/label-only-group core/labels/export lib/json/members
+
+HIS WORDS, whole: "what are the proposed restrictions on k here? lets establish those now or they will come back
+as questions"
+
+Class: a REQUEST for the proposed restrictions; nothing ruled. The manager's PROPOSAL (each line a proposal, none
+ruled; slugs his to cite), for `k` in `row(k, v)`, used as key text (`"${k}"`) and as a label name
+(`(?<:${k}>...)`):
+- k-one-string: one string known at compile time. Already in the documents for the name position: an array is a
+  compile error (RULED, name-hole 2026-11-18); zero values and a `$` read are compile errors (readings). An rx
+  argument (`/t[sz]/`) is refused in the name position even where it denotes one string (proposal: a quoted
+  string only).
+- k-name-decides: the name position's rule governs the call: `row(["ts", "time"], v)` is a compile error though
+  the key-text position alone would take the array as an alternation (proposal).
+- k-legal-name: the string must be a legal group name by PCRE's rule; `"user-id"`, `"2fa"` are compile errors
+  reported at the CALL, naming the argument (proposal; run, python `re`: `user-id`, `2fa` rejected; `ts`, `_id`,
+  `Ts` accepted). No mangling of an illegal key into a legal name.
+- k-underscore: a name beginning with `_` is a private label as anywhere (`row("_id", v)` exports nothing);
+  proposal: no special case, with a warning at the call.
+- k-collision: a name the body also writes is the same label, the last mention (one-rule), no error (proposal:
+  as written).
+- k-text-literal: in the key-text position the string is literal text, never pattern (`"a.c"` matches only
+  `a.c`; run), under core/holes/value (a reading of which hole kind a string constant is).
+- k-case: the label name is the string as written; names are case-sensitive; an `i` in force does not fold the
+  name (proposal).
+- k-part-of-name: a hole may form part of a name (`(?<:f_${k}>...)`; in the documents for the ruled name hole).
