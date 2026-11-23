@@ -1027,10 +1027,18 @@ today (§16 item 1, re-checked at `d255d94a3`). Lane L3 is taking 109 → 110,
 so this build is likely **111**. The build lane re-greps at its landing
 base.
 
+[U6, review r80 G1-7] AS BUILT: the abi package was done by the units that
+moved bytes, at their own landings: **110 at U2, 111 at U3, 112 at L3**
+(`docs/dev/history/abi_changelog.md`). U6 moves no emitted byte (its diff
+touches no `src/`, `memfn/src/`, `memfn/include/`, `lib/` or `cli/` file),
+so it carries **no bump**: it verifies that every reader agrees at 112 and
+bumps only if a byte moved (D76/D94: a bump follows an emitted-byte move).
+
 ### 9.2 The re-pins, readers found by grep at the landing base
 
-The command: `git grep -n -w <N> -- src tests docs/spec docs/testing.md
-memfn`, and **review every hit by hand, unfiltered** (215 hits at 109 on
+The command (run by each byte-moving unit at its landing; at U6 a check that
+the readers agree, §9.1): `git grep -n -w <N> -- src tests docs/spec
+docs/testing.md memfn`, and **review every hit by hand, unfiltered** (215 hits at 109 on
 lane/bspan4's base, §16 item 1). A filter such as `| grep -i abi` drops a
 reader: `match_api.md` §6¶17 ("It is `109` on every artifact pcrec emits
 today") does not say "abi" on its line (the D94 failure mode). The readers
@@ -1110,7 +1118,19 @@ not move.
   corpus less `tests/memfn/span_seed.rxt` (excluded by path), plus the
   bench. SPAN-SEED is printed SEPARATELY as G1's floor witness (its 28 V
   sites at width 32 must appear as movers, so the manifest is not
-  empty-blind, K35).
+  empty-blind, K35). [U6, review r80 G1-5] As built, the tool counts
+  movers by distinct PATTERN (an artifact with two V sites counts once),
+  and its witness is a NONEMPTY test: the per-site counts (28 at width 32,
+  20 at 4095) are the pins in `tests/axes`, which hold the blind spot.
+- **Length** [U6, review r80 G1-4]: the READ EXTENT of the default
+  artifact's added lines, 1 + the largest `_c + N` offset in them (it reads
+  32 for `[0-9a-f]{32}`, 33 for `\b[0-9a-f]{32}\b`, whose boundary test reads
+  one byte past), not the repeat width; 0 when no added line carries an
+  offset. A binning label only.
+- **Every compiled cell is counted** by its outcome (review r80 G1-1): moved,
+  same, both-fail, and the three that can hide a mover (default-fail,
+  deny-fail, timeout), in the manifest's meta line; the dry run fails on
+  any of the three.
 - **No timing window is booked.** The real population is 3 movers, so
   every bin is UNREACHED at both layers. The build delivers the manifest
   and the dry run (counts printed, UNREACHED printed). Trigger to time: a
@@ -1548,7 +1568,7 @@ are built (lane bsu2) and fixed (lane bsu2fix, r75); U3 onward is next.
 | **U3** | The `w32` level block: §4.1's text bracketed by V's own writer (lane order, the K ≥ 16 assert), the selector's replaced call, the include bit on the art, the form token, the guarded bound and `simd_bounds.tsv`, the `limits.md`/`tuning.md`/`registry.md` hunks. [rev4.1, R71-4] **C18's head family (`SELECTOR`, `HELPER`), the `_b` name form and the -O0 rule with control (1)** (§10.2), so `test-memfn-simdfloor` reads U3's text green. [rev4.1, R71-5] A V witness (`[0-9a-f]{17}`) added to `simd_guarded_check.py`'s NAMED, `simd-form-named` re-pinned 8 → 9, so the new `simd_bounds.tsv` row has a reader that is not the every-10th sample. F2 recorded before anything else | yes (SIMD-on) |
 | **U4** | G2-V (unit, whole, with guard pages at both ends), the 20 T-table pin cells (22 after r78's two T-deny cells), SPAN-SEED's per-check wiring and floors (§10.1; G1's exclusion is U6's, the identity gate's floors are U2's mover counts, r78 C18WIRE-5), sabotage rows (a)-(f) with reach, **the rest of the C18 amendment** (its NAMED three span witnesses, x86-64-v3 only (R71-1), the floors, controls (2)-(4)), the routing leg, `DIFFER_PINS` floors (U2's rows, SIMD-off only: r78 C18WIRE-5), C18's `FLOORS` re-pin | no |
 | **U5** | Card C6 (its patterns, widths, A/A arm and rule clauses as §8 states; CANDIDATE) + `kit-grid@8` + the formhash SHAPE, renderer and entry; `cards.py plan`/`dry` green, with no timing; the U5 re-checks. [U5, r79] Also: card **C6c** (§8: SIMD-off under clang -O2 and gcc -Os, the layer table's rows), the committed rule file `c6_rule.md` with `rule_710.md`, the verdict reader and its drills (`cards.py c6selftest`), the reach build (`dry`), H64.b's own pool and the re-time's fresh pool; formhash's SPAN shape folded into WINDOW with three `span-vector` instances (b16, b32, off) | no |
-| **U6** | The abi package at the landing base (§9.2, the unfiltered grep), `make test` async, `make test-axes`, REACH_ONLY. Then G1's manifest and dry run (no timing window, §9.4); C6's timing owed to main's window, on each bench box (§8) | — |
+| **U6** | NO abi event (review r80 G1-7: the bumps landed at U2 110, U3 111 and L3 112, §9.1; U6 moves no byte): the readers checked to agree at the landing base (§9.2, the unfiltered grep), `make test` async, `make test-axes`, REACH_ONLY. Then G1's manifest and dry run (no timing window, §9.4); C6's timing owed to main's window, on each bench box (§8) | — |
 
 The design rounds (r68, r69) preceded this revision; a light re-check
 follows it. The code round precedes the landing (Frank 2026-11-15). U2 and

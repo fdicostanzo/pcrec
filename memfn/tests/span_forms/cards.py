@@ -15,8 +15,8 @@
 identity check; and CARD C6 `span_vector` (+ C6c, the SIMD-off layer under clang -O2 and gcc -Os; R-47 U5,
 block_span.md §8, kit-grid@8: V against `--memfn=no-span-vector` on one binary, patterns, widths and regimes
 declared below, THE RULE the committed c6_rule.md beside this file (review r79); `plan` and
-`dry [--cards C6,C6c]` read it, `c6selftest [RUNDIR]` drills its verdict, NO command times it: its
-timing is U6's, owed to a window main clears, on every bench box that runs V; UNMEASURED) (docs/design/memfn/r45_reply.md rev 11 §3 "The cards", "The head `h` and the
+`dry [--cards C6,C6c]` read it, `c6selftest [RUNDIR]` drills its verdict, `time` (U6) times it and
+`c6decide` reads its record; a timing is owed to a window main clears, on every bench box that runs V; UNMEASURED) (docs/design/memfn/r45_reply.md rev 11 §3 "The cards", "The head `h` and the
 default", "The head lever and its identity check"; cards kit-grid@7 in
 memfn/data/cards/kit-grid.tsv).
 
@@ -72,6 +72,34 @@ THE NIGHT (r45_reply rev 11 §3 "the night order"; each step a command, RUNDIR o
                            r44: the interaction and noisy-loser drills, each with its control;
                            r45: heterogeneous noise under layout, the POOL_SIZE refusal);
                            --rev11 / --rev12 run those rows alone
+  time RUNDIR --prepare [--cards C6,C6c] [--patterns P,..] [--plant pool-overlap|reach-dead]
+                           C6/C6c's TIMER, stage 1 (r80 FIDELITY-5: a job stage BEFORE the job's quiet wait): the C6 text
+                           check, the reach build (N/A; REACH CONTROL), every pool BUILT and PROVED (the first pass's and
+                           the re-time's fresh pool, arm_pool), each alone and every C6_DISJOINT pair LAYOUT-DISJOINT on its
+                           built descriptors (r80 ruling (c); else REFUSED), the form hash -> RUNDIR/c6_prepared.json.
+                           --patterns: a DRY's partial population. --plant: a control's plant, which must be REFUSED
+                           (exit 2); a plant that passes exits 1 and writes no manifest
+  time RUNDIR --cap SECONDS --job-start EPOCH [--stop-at EPOCH]
+                           stage 2, the TIMING (R-47 U6; c6_rule.md, every clause). COMPILES NOTHING (a missing build is
+                           refused); reads the manifest (refused under another harness, rule or binary, or partial): the
+                           record's head (`#c6` header with the harness sha, the population with its span calls, every
+                           proved pool's exe ids), the CPU-QUIET CONTROL's sample (rule_710.md, ported here), the first
+                           pass (time_cells: rounds of one launch per arm, each on its arm's own pool, the draw and the
+                           exe recorded; a void launch re-timed up to 2 more times; a launch handed an exe outside its
+                           proved pool is a WiringFault, exit 2), the RE-TIME of every reading WIN/LOSS and A/A non-TIE
+                           (all three arms, fresh layout-disjoint pool, fresh draws), no cell started at or after the
+                           WINDOW's deadline min(STOP_AT, job start + cap - 600 s) (NOT-RUN), `#end`; then c6decide on the
+                           file. Exit 0, 1 a gate failed, 2 refused, 4 TRUNCATED (a first-pass cell or a re-time not
+                           started; the verdict prefixed "TRUNCATED: ").
+  time RUNDIR --dry [--dry-model tie|exercise|gatefail] [--deadline EPOCH|+SECONDS]
+                           the same with NO launch: the clock and any taskset exec or exec whose effective environment holds
+                           CARD_TIME raise (dry_guard), the readings are DRY_MODELS' synthetic values keyed on the exe
+                           handed (its pool's pass and arm), the wall simulated from this command's start
+  c6decide RESULTS         THE VERDICT (c6_rule.md VERDICT and REPORTED) from a `time` record alone; refuses a missing
+                           or stale `#c6` header, a record without `#end`, an unknown line, a cell without its first-pass
+                           rows, rows outside the population, a re-time set that the first pass does not owe (or owed and
+                           lacks, or holds 1-2 of 3 rows), a launch whose exe is not in its recorded pool, and a re-time
+                           that ran a first-pass exe
   identity H [PATTERNS]    step 3: the lever at H on the FROZEN pcrec-harness against the
                            REBUILT build/pcrec, byte for byte, both encodings, both layers,
                            over the card patterns, the census covers (read from the sweep's own
@@ -83,7 +111,7 @@ Env: PCREC_TREE (default: this file's tree), FROZEN (the frozen tree's build dir
 the tree's build/), WIDTH_FLAG (default `--window-search-width=4095`; `none` on a tree without
 main's width option), CPU (taskset core, default 15), LAUNCHES (default 5), JOBS.
 """
-import functools, hashlib, json, math, os, random, re, statistics, subprocess, sys, threading
+import functools, hashlib, json, math, os, random, re, resource, shutil, statistics, subprocess, sys, threading, time
 from concurrent.futures import ThreadPoolExecutor
 
 HERE = os.path.dirname(os.path.abspath(__file__))
@@ -260,8 +288,22 @@ def align_variants_of(layer):
 # times H64's text, but V vs H64 compares two pools, so the A/A arm compares two pools too (salted; c6_rule.md A/A). The
 # AA card's aa.b keeps aa's pool (r41 L9, unchanged). RETIME_SALT: a re-time builds a FRESH pool (c6_rule.md RE-TIME), four
 # new layouts per text, never the first pass's.
+# LAYOUT-DISJOINT POOLS (review r80 FIDELITY-1, the kit manager's ruling (c)): "new" is stated in pool_proof's OWN layout
+# descriptor (each hot loop's 64-B phase, 32-B phase, relative layout), which depends only on (prelude mod 64, alignment
+# variant), i.e. on the pool's (16-B class, alignment) pairs. A pool of class draw r holds the pairs {(r,0), (r+1,0), (r+2,1),
+# (r+3,1)} (PHASE_ORDER, ALIGN_VARIANTS); the pool at r + 2 holds exactly the other four. So POOL_SHIFT moves a pool's r by 2
+# per "must differ" step from the text's own r: H64.b's first pass (its own A/A pool) is H64's complement, a re-time is its
+# own first pass's complement (and H64.b's re-time is then H64's re-time's complement). The prelude's upper bits (the
+# multiple of 64) come from the salted hash as before. `time --prepare` PROVES the disjointness on the built descriptors
+# (pool_disjoint_refusal) and refuses a pool that is not.
 POOL_SALT = {"H64.b": "aa"}
 RETIME_SALT = "retime"
+REDRAW_MAX = 64        # a re-time pool's prelude redraws (exe identity, below) before the pool is REFUSED (r80 CHECKS-9)
+# TEST-ONLY plants (`time --prepare --plant NAME`; empty otherwise, and a manifest prepared under one is refused by
+# `time`): `pool-overlap` draws H64.b's first-pass pool WITHOUT its shift (the r79 scheme: H64's four layouts), which the
+# disjointness proof must refuse; `reach-dead` reads one hit-dense cell's span calls as 0, which REACH CONTROL must refuse.
+PLANTS = ("pool-overlap", "reach-dead")
+PLANT = set()
 
 
 def pool_salt(arm, retime=0):
@@ -270,18 +312,46 @@ def pool_salt(arm, retime=0):
     return "|".join(x for x in parts if x)
 
 
-def pool_variants(textkey, aligns=ALIGN_VARIANTS, salt=""):
+def pool_shift(arm, retime=0):
+    """The class shift of arm `arm`'s pool at re-time round `retime`: 2 for its own A/A pool (POOL_SALT), 2 for a re-time,
+    mod 4 (LAYOUT-DISJOINT POOLS above)."""
+    own = arm in POOL_SALT and "pool-overlap" not in PLANT
+    return 2 * (int(own) + int(bool(retime))) % 4
+
+
+def pool_variants(textkey, aligns=ALIGN_VARIANTS, salt="", shift=0):
     """The pool of the TEXT `textkey` (the hash of its TU): [(v, prelude bytes, compile flags)], drawn
     from the text's hash (one text, one pool, every night: the draws are the night's); `aligns` the
-    layer compiler's alignment variants; `salt` (pool_salt) draws ANOTHER pool of the same text."""
+    layer compiler's alignment variants; `salt` (pool_salt) draws ANOTHER pool of the same text: its preludes' upper bits;
+    its class draw r is the TEXT's (the unsalted hash's) plus `shift` (pool_shift), so salt "" and shift 0 are the r41 pool."""
     hd = hashlib.sha256(("pool|%s" % textkey + ("|" + salt if salt else "")).encode()).digest()
-    r = hd[0] % 4
+    r = (hashlib.sha256(("pool|%s" % textkey).encode()).digest()[0] + shift) % 4
     out = []
     for v in range(POOL_SIZE):
         hi = hd[1 + v % 31] % (PRELUDE_STEPS // 4)
         j = 4 * hi + (r + PHASE_ORDER[v % 4]) % 4
         out.append((v, 16 * j, aligns[v % 2]))
     return out
+
+
+def arm_pool(key, layer, arm, retime=0):
+    """The pool arm `arm` draws for text `key` at `layer` (pool_variants under the arm's salt and shift), at re-time round
+    `retime`. A RE-TIME pool is FOUR NEW LAYOUTS (c6_rule.md RE-TIME: "never the first pass's"; layout-disjoint by its
+    shift) and FOUR NEW EXES: its shift can give it the (class, alignment) pairs of ANOTHER arm's first-pass pool of the same
+    text (H64.b's re-time takes H64's first-pass layouts), where a variant with the same prelude would be the SAME exe
+    (build_cell's cache name is the text, prelude and flags); so the salted draw is redrawn (`|redraw<t>`) until no variant
+    repeats a (prelude, flags) of any first-pass pool of the text, at most REDRAW_MAX times, then REFUSED."""
+    aligns = align_variants_of(layer)
+    if not retime:
+        return pool_variants(key, aligns, pool_salt(arm), pool_shift(arm))
+    first = {(pre, tuple(fl)) for a in ("V",) + tuple(POOL_SALT)
+             for _v, pre, fl in pool_variants(key, aligns, pool_salt(a), pool_shift(a))}
+    for t in range(REDRAW_MAX):
+        pool = pool_variants(key, aligns, pool_salt(arm, retime) + ("|redraw%d" % t if t else ""), pool_shift(arm, retime))
+        if not any((pre, tuple(fl)) in first for _v, pre, fl in pool):
+            return pool
+    raise SystemExit2("cards: the re-time pool of %s %s %s repeats a first-pass exe after %d redraws: REFUSED" % (
+        key, layer, arm, REDRAW_MAX))
 
 
 def launch_variant(rid, cell, r):
@@ -434,7 +504,7 @@ CARDS = [
     ("C6c", C6_REAL, ["V", "H64", "H64.b"], REGIMES, ["off-clang", "off-os"], "time"),
 ]
 CARD_PATS = {c[0]: c[1] for c in CARDS}
-C6_CARDS = ("C6", "C6c")                # C6's timing is U6's, in a window main clears: no step of `run` reads it
+C6_CARDS = ("C6", "C6c")                # timed by `time` (U6), in a window main clears: no step of `run` reads it
 STEP1 = ("C1", "C2", "C5", "AA")       # `run`: before h* exists
 STEP2B = ("C3", "C4")                   # `c3 H`: after the rule froze h* (rev 7, F4)
 
@@ -650,6 +720,18 @@ def _h(*parts):
 SIZE_CAP = ["--max-emit-code-bytes=4000000"]
 
 
+# `time` REFUSES TO COMPILE (r80 FIDELITY-5, ruling (b)): every text, reach build, pool exe and the form-hash driver is built
+# by `time --prepare`, a job stage of its own BEFORE the job's quiet wait; `time` clears COMPILE_OK, and a build any path
+# would then start is refused loudly instead (a compile burst between the quiet wait and the QUIET SAMPLE).
+COMPILE_OK = True
+
+
+def compile_gate(what):
+    """Refuses (SystemExit2) a build `what` while COMPILE_OK is clear (`time` after `--prepare`)."""
+    if not COMPILE_OK:
+        raise SystemExit2("cards: time refuses to compile (%s is not built): run `time RUNDIR --prepare` first" % what)
+
+
 def artifact(rundir, pat, arm, layer, size=False):
     """The cell's artifact (pcrec-level compile on the frozen binary), cached by its inputs."""
     binp, fl = arm_flags(arm)
@@ -660,6 +742,7 @@ def artifact(rundir, pat, arm, layer, size=False):
     os.makedirs(d, exist_ok=True)
     c = os.path.join(d, "a_%s.c" % _h(" ".join(args), open(binp, "rb").read()))
     if not os.path.exists(c):
+        compile_gate("the artifact %s %s %s" % (pat, arm, layer))
         r = subprocess.run(args, capture_output=True, timeout=600)
         if r.returncode:
             raise RuntimeError("pcrec refused %s %s %s: %s" % (pat, arm, layer,
@@ -794,6 +877,7 @@ def c6_reach(rundir, pat, layer, regime, n):
     key = _h(tu_src, cc_ident(cc_of(layer)), opt_of(layer))
     exe = os.path.join(rundir, "reach", "r_%s" % key)
     if not os.path.exists(exe):
+        compile_gate("the reach build %s %s" % (pat, layer))
         os.makedirs(os.path.dirname(exe), exist_ok=True)
         tu = _tmp(exe) + ".c"
         open(tu, "w", encoding="latin-1").write(tu_src)
@@ -804,7 +888,8 @@ def c6_reach(rundir, pat, layer, regime, n):
         os.replace(_tmp(exe), exe)
         os.replace(tu, exe + ".c")
     sp, k, s = subj_file(rundir, pat, regime, n)
-    t = subprocess.run([exe, sp, str(REGIME_CODE.get(regime, 0)), k, s], capture_output=True, text=True, timeout=900)
+    t = subprocess.run([exe, sp, str(REGIME_CODE.get(regime, 0)), k, s], capture_output=True, text=True, timeout=900,
+                       env=untimed_env())
     got = re.search(r"REACH ([0-9]+)", t.stderr)
     if t.returncode or not got:
         raise RuntimeError("reach %s %s %s: rc %d %s" % (pat, regime, layer, t.returncode, (t.stdout + t.stderr).strip()[-300:]))
@@ -843,12 +928,13 @@ def build_cell(rundir, pat, arm, layer, v=0, retime=0):
     never re-used). The pool is the arm's (pool_salt: H64.b its own) at re-time round `retime`."""
     a, src, key = text_key(rundir, pat, arm, layer)
     cc = cc_of(layer)
-    _v, pre, fl = pool_variants(key, align_variants_of(layer), pool_salt(arm, retime))[v]
+    _v, pre, fl = arm_pool(key, layer, arm, retime)[v]
     fl = [opt_of(layer)] + fl
     vk = variant_key(key, pre, fl, cc)
     exe = os.path.join(rundir, "bin", "x_%s_v%d_%s" % (key, v, vk))
     if os.path.exists(exe):
         return exe, a
+    compile_gate("the pool exe %s %s %s v%d retime %d" % (pat, arm, layer, v, retime))
     os.makedirs(os.path.dirname(exe), exist_ok=True)
     obj = exe + ".o"
     tu = _tmp(obj) + ".src"
@@ -901,13 +987,14 @@ def layout_of(exe):
     return at, tuple(sorted(heads))
 
 
-def pool_proof(rundir, pat, arm, layer):
+def pool_proof(rundir, pat, arm, layer, retime=0):
     """The pool's proof (rev 12, RULED r41 L9): every variant built; {v: (64-B phase of each hot
     loop in offset order, the 32-B phases, relative layout)}; and the refusal text when the variants share ONE 64-B
-    phase set or ONE relative layout (the pool would not move what a head's body moves), else None."""
+    phase set or ONE relative layout (the pool would not move what a head's body moves), else None. `retime`: the
+    re-time round's pool (C6's `time` proves its fresh pools too)."""
     lay = {}
     for v in range(POOL_SIZE):
-        exe, _a = build_cell(rundir, pat, arm, layer, v)
+        exe, _a = build_cell(rundir, pat, arm, layer, v, retime)
         lo = layout_of(exe)
         if lo is None:
             return lay, "%s %s %s v%d: no %s_search symbol" % (pat, arm, layer, v, PREFIX)
@@ -950,6 +1037,26 @@ def pool_refusal(lay):
     return "; ".join(why) or None
 
 
+# The pool pairs of ONE (pattern, layer) that must be LAYOUT-DISJOINT (r80 FIDELITY-1, ruling (c)): the A/A arm's pool vs
+# H64's in each pass (r79 F2: the A/A moves the same layout axis as V vs H64), and every re-time pool vs its own first pass.
+C6_DISJOINT = ((("H64", 0), ("H64.b", 0)), (("H64", 1), ("H64.b", 1)),
+               (("V", 0), ("V", 1)), (("H64", 0), ("H64", 1)), (("H64.b", 0), ("H64.b", 1)))
+
+
+def pool_disjoint_refusal(lays):
+    """`lays` {(arm, retime): {v: built layout descriptor (pool_proof's)}} of ONE (pattern, layer) -> the refusal text when a
+    C6_DISJOINT pair shares a built layout, or is not both present, else None."""
+    why = []
+    for x, y in C6_DISJOINT:
+        if x not in lays or y not in lays:
+            why.append("%s/%d vs %s/%d: a pool was not proved" % (x + y))
+            continue
+        common = set(lays[x].values()) & set(lays[y].values())
+        if common:
+            why.append("%s/%d and %s/%d share %d built layout(s) %s" % (x + y + (len(common), sorted(common)[0])))
+    return "; ".join(why) or None
+
+
 def subj_file(rundir, pat, regime, n):
     p = os.path.join(rundir, "subj", "%s.%s.%d" % (pat, regime, n))
     if not os.path.exists(p):
@@ -983,8 +1090,14 @@ def size_record(rundir, pat, arm, layer):
     return os.path.getsize(a), float(secs), int(rss), text
 
 
+def untimed_env():
+    """The environment of an UNTIMED exec (a gate, a reach pass): the process's own LESS CARD_TIME (r80 CHECKS-5: an inherited
+    CARD_TIME turned every gate exec into a timed run, and DRY's guard read only an explicit `env=`)."""
+    return {k: v for k, v in os.environ.items() if k != "CARD_TIME"}
+
+
 def _exec(argv, cell, env=None):
-    t = subprocess.run(argv, capture_output=True, text=True, timeout=900, env=env)
+    t = subprocess.run(argv, capture_output=True, text=True, timeout=900, env=untimed_env() if env is None else env)
     if t.returncode == 1 and t.stdout.startswith("GATE FAIL"):
         raise GateFail("cell %s: %s" % ("|".join(cell), t.stdout.strip()))
     if t.returncode:
@@ -1015,12 +1128,14 @@ def run_cell(rundir, cell, n):
 HEADER = "#card\tpattern\tarm\tregime\tlayer\tstatus\tmedian_ns_per_B\tspread\tlaunches\tmethod\tvariants\n"
 
 
-def row_line(cell, status, launches=None, note="", variants=None):
+def row_line(cell, status, launches=None, note="", variants=None, exes=None):
+    """One results row. `exes` (C6 only, r80 FIDELITY-2): the IDENTITY of the exe each launch ran (exe_id), in launch
+    order, as a 12th column; C1-C5 rows have 11."""
     if launches:
         med, spr = statistics.median(launches), max(launches) - min(launches)
-        return "\t".join(cell) + "\t%s\t%.6f\t%.6f\t%s\t%s\t%s\n" % (
+        return "\t".join(cell) + "\t%s\t%.6f\t%.6f\t%s\t%s\t%s%s\n" % (
             status, med, spr, ",".join("%.6f" % v for v in launches), method_of(cell[3]),
-            ",".join(map(str, variants)) if variants else "-")
+            ",".join(map(str, variants)) if variants else "-", "" if exes is None else "\t" + ",".join(exes))
     return "\t".join(cell) + "\t%s\t-\t-\t%s\t%s\n" % (status, note.replace("\t", " ").replace("\n", " ")[:300] or "-",
                                                        method_of(cell[3]))
 
@@ -1033,14 +1148,24 @@ def read_rows(path):
     for ln in open(path):
         if ln.startswith("#") or not ln.strip():
             continue
-        f = ln.rstrip("\n").split("\t")
-        key = tuple(f[:5])
-        st = f[5]
-        launches = [float(x) for x in f[8].split(",")] if st == "ok" else []
-        out[key] = {"status": st, "med": float(f[6]) if st == "ok" else None, "launches": launches,
-                    "method": f[9], "note": f[8] if st != "ok" else "",
-                    "variants": [int(x) for x in f[10].split(",")] if len(f) > 10 and f[10] != "-" else []}
+        key, row = row_of(ln.rstrip("\n").split("\t"))
+        out[key] = row
     return out
+
+
+def row_of(f):
+    """One results row's fields `f` (row_line's columns) -> (cell key, row dict)."""
+    st = f[5]
+    launches = [float(x) for x in f[8].split(",")] if st == "ok" else []
+    return tuple(f[:5]), {"status": st, "med": float(f[6]) if st == "ok" else None, "launches": launches,
+                          "method": f[9], "note": f[8] if st != "ok" else "",
+                          "variants": [int(x) for x in f[10].split(",")] if len(f) > 10 and f[10] != "-" else [],
+                          "exes": f[11].split(",") if len(f) > 11 and f[11] else None}
+
+
+def exe_id(exe):
+    """An exe's IDENTITY: its cache name's variant key (build_cell: text, prelude, flags, compiler), 16 hex."""
+    return os.path.basename(exe).rsplit("_", 1)[1]
 
 
 # ---- THE LAUNCH ORDER (rev 10, RULED r38 J2): interleaved within a cell --------------------
@@ -1081,35 +1206,61 @@ def launch_order(cl, interleave=True):
     return out
 
 
-def prepare_cell(rundir, cell, n):
+def prepare_cell(rundir, cell, n, retime=0):
     """The gate run (untimed) of one arm cell on EVERY variant of its pool (rev 12, r41 L9); returns
-    the timed argv of each variant [v]. Raises GateFail on a wrong answer, anything else on a void."""
+    the timed argv of each variant [v]. Raises GateFail on a wrong answer, anything else on a void.
+    `retime`: the pool of that re-time round (pool_salt; C6's fresh re-time pool), 0 the first pass's."""
     _card, pat, _arm, regime, _layer = cell
     sp, k, s = subj_file(rundir, pat, regime, n)
     code = str(REGIME_CODE.get(regime, 0))
     out = []
     for v in range(POOL_SIZE):
-        exe, _a = build_cell(rundir, pat, cell[2], cell[4], v)
+        exe, _a = build_cell(rundir, pat, cell[2], cell[4], v, retime)
         _exec([exe, sp, code, k, s], cell)
         out.append(["taskset", "-c", CPU, exe, sp, code, k, s])
     return out
 
 
-def time_cells(rundir, cl, path, with_approx=True):
+def timed_launch(argv, cell, env):
+    """ONE timed launch (THE CLOCK CALL): the exe under CARD_TIME, its `TIME <ns/B>` reading."""
+    return float(_exec(argv, cell, env).split()[1])
+
+
+def time_cells(rundir, cl, path, with_approx=True, retime=0, launch=None, stop=None, prefix="", salt=None, c6=False):
+    """Times the arm cells `cl` into `path` (appended), cell by cell in ROUNDS (rev 10, J2), each launch on a variant drawn
+    from its arm's pool (rev 12, r41 L9). C1-C5 call it with the defaults. C6's timer (`time`, U6) passes: `retime` (the
+    re-time round's FRESH pool, pool_salt), `launch(argv, cell, env)` -> ns/B, or None when the launch stayed VOID under
+    the CPU-quiet control after its re-times (the arm falls short; default `timed_launch`), `stop()` -> True once no new
+    cell may start (the WINDOW: the cell's rows read `notrun`), `prefix` (a leading field on every row: C6's pass) and
+    `salt` (the launch draws' salt; default the results file's name, so a re-run draws afresh) and `c6` (C6's record: each
+    row carries the exe identity of every launch, r80 FIDELITY-2; and a GATE FAIL at a TIMED launch is the row's `gatefail`,
+    never a void, r80 FIDELITY-4: "a gate failed: red whatever it reads". C1-C5 keep their void: their rule reads rows
+    as it was written)."""
+    launch = launch or timed_launch
     env = dict(os.environ, CARD_TIME="1")
     with open(path, "a") as f:
         if os.path.getsize(path) == 0:
             f.write(HEADER)
         rid = run_id(rundir, create=True)
         for _key, cs in cell_groups(cl):
-            argv, launches, out, drawn = {}, {}, {}, {}
+            if stop is not None and stop():
+                for c in cs:        # the window closed: no new cell starts (c6_rule.md WINDOW; 710's). A cell VOID BY
+                    # METHOD never starts at all (c6_rule.md N/A: "never timed"), so the window cannot cut it: it keeps
+                    # its `method` row (lane bsu6fix2: it read `notrun`, so a window closing after the last timed cell
+                    # marked the record TRUNCATED with every timed cell run)
+                    f.write(prefix + (row_line(c, "method", note="void by method: " + APPROX[c[3]])
+                                      if c[3] in APPROX and not with_approx else
+                                      row_line(c, "notrun", note="not started: the window's deadline passed")))
+                f.flush()
+                continue
+            argv, launches, out, drawn, ran = {}, {}, {}, {}, {}
             for c in cs:
                 if c[3] in APPROX and not with_approx:
                     out[c] = row_line(c, "method", note="void by method: " + APPROX[c[3]])
                     continue
                 try:
-                    argv[c] = prepare_cell(rundir, c, SUBJECT_N)
-                    launches[c], drawn[c] = [], []
+                    argv[c] = prepare_cell(rundir, c, SUBJECT_N, retime)
+                    launches[c], drawn[c], ran[c] = [], [], []
                 except GateFail as e:
                     out[c] = row_line(c, "gatefail", note=str(e))
                 except Exception as e:      # noqa: BLE001 -- a void, re-run once (F7)
@@ -1120,14 +1271,23 @@ def time_cells(rundir, cl, path, with_approx=True):
                         continue
                     # the layout draw (rev 12, r41 L9), salted by the results file: a re-run or the
                     # confirm draws afresh, never step 1's sequence again
-                    v = launch_variant("%s|%s" % (rid, os.path.basename(path)), c, r)
+                    v = launch_variant("%s|%s" % (rid, os.path.basename(path) if salt is None else salt), c, r)
                     try:
-                        launches[c].append(float(_exec(argv[c][v], c, env).split()[1]))
-                        drawn[c].append(v)
+                        x = launch(argv[c][v], c, env)
+                        if x is not None:
+                            launches[c].append(x)
+                            drawn[c].append(v)
+                            if c6:
+                                ran[c].append(exe_id(argv[c][v][3]))
+                    except GateFail as e:
+                        out[c] = row_line(c, "gatefail" if c6 else "void", note=str(e))
                     except Exception as e:      # noqa: BLE001 -- the arm is void, re-run once (F7)
                         out[c] = row_line(c, "void", note=str(e))
             for c in cs:
-                f.write(out[c] if c in out else row_line(c, "ok", launches[c], variants=drawn[c]))
+                if c not in out and not launches[c]:
+                    out[c] = row_line(c, "void", note="no valid launch (every launch VOID under the CPU-quiet control)")
+                f.write(prefix + (out[c] if c in out else row_line(c, "ok", launches[c], variants=drawn[c],
+                                                                    exes=ran[c] if c6 else None)))
             f.flush()
 
 
@@ -1192,16 +1352,33 @@ def c6_cmp(a, b):
     return "WIN" if a[0] < b[0] / (1 + floor) else "LOSS" if a[0] > b[0] * (1 + floor) else "TIE"
 
 
-def _standing(first, again):
-    """RE-TIME: a first-pass verdict and its re-time's (None: not run) -> (standing verdict, note)."""
+SINGLE = "single pass"      # the note tag of a non-TIE that STANDS on one pass (re-time noisy or NOT-RUN; r80 RULE-2)
+
+
+def _standing(first, again, aa=False):
+    """RE-TIME: a first-pass verdict and its re-time's (None: not run) -> (standing verdict, note). A re-time NOISE or
+    NOT-RUN: a reading LOSS stands, a reading WIN is a TIE, an A/A non-TIE (`aa`: WIN or LOSS) stands; a non-TIE that stands
+    so carries the SINGLE tag (c6_rule.md RE-TIME: "listed so")."""
     if first in ("TIE", "NOISE"):
         return first, ""
     if again == first:
         return first, "repeated"
     if again in (None, "NOISE"):
-        return ("LOSS", "re-time %s" % ("NOT-RUN" if again is None else "noisy")) if first == "LOSS" else (
-            "TIE", "%s not repeated (re-time %s)" % (first, "NOT-RUN" if again is None else "noisy"))
+        how = "re-time %s" % ("NOT-RUN" if again is None else "noisy")
+        if first == "LOSS" or aa:
+            return first, "%s (%s)" % (SINGLE, how)
+        return "TIE", "%s not repeated (%s)" % (first, how)
     return "TIE", "%s not repeated" % first
+
+
+def c6_pass(arms):
+    """One pass's two comparisons (reading V vs H64, A/A H64.b vs H64) over its arm launches {V, H64, H64.b: launches|None}:
+    an arm short of LAUNCHES valid launches makes BOTH of the cell's comparisons INCONCLUSIVE-NOISE (c6_rule.md CPU-QUIET
+    CONTROL; r80 RULE-1: not only the comparison that holds it)."""
+    a = {k: c6_arm(arms.get(k)) for k in ("V", "H64", "H64.b")}
+    if any(x is None for x in a.values()):
+        return "NOISE", "NOISE"
+    return c6_cmp(a["V"], a["H64"]), c6_cmp(a["H64.b"], a["H64"])
 
 
 def c6_cell(cell):
@@ -1211,12 +1388,11 @@ def c6_cell(cell):
         return "N/A", "N/A", []
     if not cell.get("run", True):
         return "NOT-RUN", "NOT-RUN", []
-    arm = {a: c6_arm(cell["arms"].get(a)) for a in ("V", "H64", "H64.b")}
+    rd1, aa1 = c6_pass(cell["arms"])
     rt = cell.get("retime")
-    rarm = {a: c6_arm(rt.get(a)) for a in ("V", "H64", "H64.b")} if rt else None
-    rd, rn = _standing(c6_cmp(arm["V"], arm["H64"]), rarm and c6_cmp(rarm["V"], rarm["H64"]))
-    aa1 = c6_cmp(arm["H64.b"], arm["H64"])
-    aa, an = _standing(aa1, rarm and c6_cmp(rarm["H64.b"], rarm["H64"]))
+    rd2, aa2 = c6_pass(rt) if rt else (None, None)
+    rd, rn = _standing(rd1, rd2)
+    aa, an = _standing(aa1, aa2, aa=True)
     notes = [x for x in (rn and "reading " + rn, an and "A/A " + an) if x]
     if aa in ("WIN", "LOSS"):
         rd = "HARNESS"
@@ -1254,14 +1430,14 @@ def c6_decide(cells):
             v = "INCONCLUSIVE-%s" % max(("HARNESS", "NOISE", "NOT-RUN"), key=lambda w: (cause[w], -("HARNESS", "NOISE", "NOT-RUN").index(w)))
         else:
             v = "NO LOSS"
-        if cause["NOT-RUN"]:
+        if cause["NOT-RUN"] or any(c.get("retime_notrun") for c in cs):     # a re-time cut by the window too (r80 RULE-4)
             v = "TRUNCATED: " + v
         wtl = {w: sum(1 for r in readable if r[1] == w) for w in ("WIN", "TIE", "LOSS")}
         out[g] = {"verdict": v, "rate": rate, "aa_readable": len(aar), "aa_standing": len(aas), "aa_single": single,
                   "population": len(pop), "readable": len(readable), "wtl": wtl, "loss": [r[0] for r in loss],
                   "na": [r[0] for r in rows if r[1] == "N/A"], "harness": [r[0] for r in pop if r[1] == "HARNESS"],
                   "noise": [r[0] for r in pop if r[1] == "NOISE"], "notrun": [r[0] for r in pop if r[1] == "NOT-RUN"],
-                  "notes": [(r[0], n) for r in rows for n in r[3]]}
+                  "notes": [(r[0], n) for r in rows for n in r[3]], "rows": rows}
     return out
 
 
@@ -1279,12 +1455,18 @@ def c6_verdict_lines(dec):
 
 
 # THE RECORD's header (c6_rule.md RECORD): the first line of every C6/C6c results file. The format is fixed here; the
-# writer that fills it (the form hash, the binary, the run id) is U6's timer.
-C6_HEADER_KEYS = ("rule", "rule710", "form", "binary", "widths", "run")
+# writer that fills it (the form hash, the binary, the run id) is U6's timer, `time` (cmd_time).
+# `harness` (r80 FIDELITY-3): the sha-256 of THIS FILE (16 hex): the DRIVER, the LAYER table (the level: cc.on and cc.off-os
+# hash one gcc), the pool scheme and the control's constants live here and in no other field. A field the rule's RECORD list
+# does not name: the rule's block is untouched (its sha unmoved), the reader checks it is present and prints it, and refuses
+# nothing on its value (a record stays readable by a later harness; the attribution is the field).
+C6_HEADER_KEYS = ("rule", "rule710", "harness", "form", "binary", "widths", "run")
+HARNESS_SHA = hashlib.sha256(open(os.path.abspath(__file__), "rb").read()).hexdigest()[:16]
 
 
-def c6_header(form_hash, binary_sha, layers, run):
-    return "#c6\t" + "\t".join(["rule=%s" % C6_RULE_SHA, "rule710=%s" % rule_sha(C6_RULE_710_FILE), "form=%s" % form_hash,
+def c6_header(form_hash, binary_sha, layers, run, harness=None):
+    return "#c6\t" + "\t".join(["rule=%s" % C6_RULE_SHA, "rule710=%s" % rule_sha(C6_RULE_710_FILE),
+                                "harness=%s" % (HARNESS_SHA if harness is None else harness), "form=%s" % form_hash,
                                 "binary=%s" % binary_sha]
                                + ["cc.%s=%s" % (ly, hashlib.sha256(cc_ident(cc_of(ly)).encode()).hexdigest()[:16])
                                   for ly in layers]
@@ -1304,6 +1486,738 @@ def c6_header_check(line):
         return "recorded under rule %s / %s, the live files are %s / %s" % (
             f["rule"], f["rule710"], C6_RULE_SHA, rule_sha(C6_RULE_710_FILE))
     return None
+# ---- THE CPU-QUIET CONTROL (rule_710.md "CPU-QUIET CONTROL", which c6_rule.md applies UNCHANGED) ---------------------
+# The in-tree copy of job 710's control (ported from 710's harness, scratch/memfn/blockconfirm/confirm.py `quiet_sample` /
+# `timed_pass_a` / `void_reason`, which is untracked; lane bsu6t, R-47 U6). The timed process is pinned (taskset, CPU) and
+# nothing isolates the pin or its SMT sibling; so: a QUIET SAMPLE before the first timed cell (QC_SECS 1-s /proc/stat
+# samples of the sibling and the pin, nothing of ours running, then QC_CAL_REPS launches of ONE calibration exe), the
+# thresholds from that sample only, and per timed launch the sibling's busy fraction (observed over >= OBS_MIN s) and the
+# involuntary context switches of the timed child (getrusage RUSAGE_CHILDREN delta: launches are serial). A VOID launch is
+# re-timed up to QC_RETIMES more times on the same variant; an arm still short of LAUNCHES valid launches reads None
+# (c6_arm), so both of its cell's comparisons are INCONCLUSIVE-NOISE (c6_rule.md CPU-QUIET CONTROL).
+QC_SECS = 60           # the quiet sample's 1-s samples (rule_710.md: "60 s")
+QC_CAL_REPS = 10       # the calibration exe's launches ("10 repeats")
+QC_RETIMES = 2         # a void launch is re-timed up to this many more times ("up to 2 more times")
+CPU7_CAP = 0.20        # CPU7_MAX = min(20 %, max(5 %, 2 x the sample's max 1-s busy fraction of the sibling))
+CPU7_LOW = 0.05
+OBS_MIN = 0.1          # the sibling's busy fraction is read over at least 100 ms (/proc/stat moves in 10 ms ticks)
+
+
+def smt_sibling(cpu):
+    """The pin's SMT sibling from sysfs (thread_siblings_list), as a string; None when the pin has none (or several)."""
+    try:
+        txt = open("/sys/devices/system/cpu/cpu%s/topology/thread_siblings_list" % cpu).read().strip()
+    except OSError:
+        return None
+    ids = []
+    for part in txt.split(","):
+        lo, _, hi = part.partition("-")
+        ids += [str(x) for x in range(int(lo), int(hi or lo) + 1)]
+    ids = [x for x in ids if x != str(cpu)]
+    return ids[0] if len(ids) == 1 else None
+
+
+def read_stat(cpu):
+    """(total jiffies, idle + iowait jiffies) of CPU `cpu` from /proc/stat."""
+    for ln in open("/proc/stat"):
+        f = ln.split()
+        if f[0] == "cpu" + str(cpu):
+            v = [int(x) for x in f[1:9]]
+            return sum(v), v[3] + v[4]
+    raise RuntimeError("no cpu%s line in /proc/stat" % cpu)
+
+
+def busy_between(s0, s1):
+    dt = s1[0] - s0[0]
+    return (1.0 - (s1[1] - s0[1]) / dt) if dt > 0 else 0.0
+
+
+class RealProbe:
+    """The box: the clock (`timed_launch`, pinned by prepare_cell's taskset argv), /proc/stat and getrusage."""
+
+    def __init__(self, cpu):
+        self.cpu, self.sib = str(cpu), smt_sibling(cpu)
+        if self.sib is None:
+            raise SystemExit2("cards: time: CPU %s has no single SMT sibling in sysfs: the CPU-quiet control cannot run "
+                              "(set CPU= to a core with one sibling)" % cpu)
+        self._prev = None
+
+    def wall(self):
+        return time.time()
+
+    def second(self):
+        """One 1-s quiet sample: (sibling busy, pin busy) over the second."""
+        if self._prev is None:
+            self._prev = (read_stat(self.sib), read_stat(self.cpu))
+        time.sleep(1)
+        now = (read_stat(self.sib), read_stat(self.cpu))
+        b = (busy_between(self._prev[0], now[0]), busy_between(self._prev[1], now[1]))
+        self._prev = now
+        return b
+
+    def measure(self, argv, cell, env):
+        """One timed launch with the control's two readings: (ns/B, sibling busy, nivcsw, seconds)."""
+        s0, n0, t0 = read_stat(self.sib), resource.getrusage(resource.RUSAGE_CHILDREN).ru_nivcsw, time.monotonic()
+        ns = timed_launch(argv, cell, env)          # THE CLOCK CALL (a module-level lookup: DRY's guard replaces it)
+        t1, n1 = time.monotonic(), resource.getrusage(resource.RUSAGE_CHILDREN).ru_nivcsw
+        if t1 - t0 < OBS_MIN:
+            time.sleep(OBS_MIN - (t1 - t0))
+        return ns, busy_between(s0, read_stat(self.sib)), n1 - n0, t1 - t0
+
+
+class QuietControl:
+    """The control's logic over a probe (RealProbe, or DRY's DryProbe: the same code either way)."""
+
+    def __init__(self, probe, sample_path, voids_path):
+        self.probe, self.sample_path, self.voids_path = probe, sample_path, voids_path
+        self.qc, self.voids = None, 0
+        open(voids_path, "w").write("pass\tcard\tpattern\tarm\tregime\tlayer\tattempt\tcpu7_busy\tnivcsw\tsecs\treason\tns_b\n")
+        self.pass_ = "-"
+
+    def sample(self, cal_argv, cal_cell, env):
+        """The QUIET SAMPLE and its thresholds (rule_710.md); written to sample_path. Returns the threshold dict."""
+        rows = ["kind\tidx\tcpu7_busy\tpin_busy\tnivcsw\tsecs"]
+        b7 = []
+        for i in range(QC_SECS):
+            a, b = self.probe.second()
+            b7.append(a)
+            rows.append("sample\t%d\t%.4f\t%.4f\t\t1" % (i, a, b))
+        cal = []
+        for i in range(QC_CAL_REPS):
+            _ns, busy, niv, secs = self.probe.measure(cal_argv, cal_cell, env)
+            cal.append((busy, niv, secs))
+            rows.append("calib\t%d\t%.4f\t\t%d\t%.3f" % (i, busy, niv, secs))
+        raw = max(CPU7_LOW, 2 * max(b7))
+        self.qc = {"cpu7_max": min(CPU7_CAP, raw), "cpu7_capped": raw > CPU7_CAP, "sample_cpu7_max_busy": max(b7),
+                   "nivcsw_max": max(2, 2 * max(c[1] for c in cal)), "t_cal": statistics.mean(c[2] for c in cal),
+                   "cal_cell": "/".join(cal_cell), "cpu": getattr(self.probe, "cpu", "-"), "sibling": getattr(self.probe, "sib", "-")}
+        rows.append("threshold\tCPU7_MAX\t%.4f\t\t\t" % self.qc["cpu7_max"])
+        rows.append("threshold\tNIVCSW_MAX\t\t\t%d\t%.3f" % (self.qc["nivcsw_max"], self.qc["t_cal"]))
+        open(self.sample_path, "w").write("\n".join(rows) + "\n")
+        return self.qc
+
+    def void_reason(self, busy7, nivcsw, secs):
+        why = []
+        if busy7 > self.qc["cpu7_max"]:
+            why.append("cpu7 busy %.3f > %.3f" % (busy7, self.qc["cpu7_max"]))
+        lim = self.qc["nivcsw_max"] * max(1.0, secs / self.qc["t_cal"])
+        if nivcsw > lim:
+            why.append("nivcsw %d > %.1f" % (nivcsw, lim))
+        return "; ".join(why) or None
+
+    def launch(self, argv, cell, env):
+        """time_cells' `launch`: ns/B of the first valid of 1 + QC_RETIMES attempts (same variant), else None."""
+        for attempt in range(1 + QC_RETIMES):
+            ns, busy7, niv, secs = self.probe.measure(argv, cell, env)
+            why = self.void_reason(busy7, niv, secs)
+            if why is None:
+                return ns
+            self.voids += 1
+            open(self.voids_path, "a").write("%s\t%s\t%d\t%.4f\t%d\t%.3f\t%s\t%.6f\n" % (
+                self.pass_, "\t".join(cell), attempt, busy7, niv, secs, why, ns))
+        return None
+
+
+# ---- DRY (no clock): the timer end to end with every launch SYNTHETIC ----------------------------------------------
+class ClockCalled(BaseException):
+    """DRY's loud failure: a timed launch was attempted. A BaseException, so no `except Exception` (time_cells' void
+    path) can swallow it."""
+
+
+DRY_LAUNCH_S = 0.06    # DRY's simulated wall per launch (UNMEASURED; the deadline drill reads it, no rule does)
+# DRY's models: {regime: {(pass, arm): factor}} over a 1.0 base with +-1 % jitter, plus the void plants. `exercise` drives
+# every path of the timer: a repeated WIN (hit-dense), a LOSS the re-time does not repeat (miss-heavy), an A/A non-TIE the
+# re-time does not repeat (random), voided launches the control re-times (near-miss: the first launch of each exe in a pass), and an
+# arm whose every attempt is void (near-miss-in, V: short, NOISE). `tie` is all 1.0.
+DRY_MODELS = {
+    "tie": {},
+    "exercise": {"hit-dense": {("first", "V"): 0.5, ("retime", "V"): 0.5},
+                 "miss-heavy": {("first", "V"): 1.3},
+                 "random": {("first", "H64.b"): 1.3}},
+}
+DRY_VOID = {"exercise": {"near-miss": ("first-launch-per-exe", None), NMI: ("every-attempt", "V")}}
+# `gatefail` (r80 FIDELITY-4's drill): `exercise`, and the first timed launch of V at a hit-dense cell answers WRONG (the
+# DRIVER's in-launch gate): the row must read `gatefail` and the run exit 1.
+DRY_MODELS["gatefail"] = DRY_MODELS["exercise"]
+DRY_VOID["gatefail"] = DRY_VOID["exercise"]
+DRY_GATEFAIL = {"gatefail": ("hit-dense", "V")}
+
+
+class DryProbe:
+    """A synthetic probe: the clock never runs (each launch's value is the model's), the quiet sample reads a quiet box, and
+    the wall is SIMULATED (QC sample 1 s a sample, DRY_LAUNCH_S a launch) so a deadline truncates deterministically."""
+
+    def __init__(self, model, t0, qc_ref, pool_of):
+        self.model, self.voidm, self.t, self.qcr = DRY_MODELS[model], DRY_VOID.get(model, {}), float(t0), qc_ref
+        self.gf, self.gf_done = DRY_GATEFAIL.get(model), False
+        self.pool_of = pool_of      # {exe path: (pattern, arm, layer, retime)}: the proved pools (r80 FIDELITY-2)
+        self.cpu, self.sib = "dry", "dry"
+        self.n, self.att = 0, {}
+
+    def wall(self):
+        return self.t
+
+    def second(self):
+        self.t += 1.0
+        return 0.01, 0.0
+
+    def measure(self, argv, cell, env):
+        """A synthetic reading keyed on the exe it is HANDED (r80 FIDELITY-2 / CHECKS-3; lesson: never on the cell label):
+        the pass and the arm whose model value it reads are the exe's proved pool's, so an exe of the wrong pool or arm reads
+        that pool's value, not the cell's."""
+        exe = argv[3] if argv[:1] == ["taskset"] else argv[0]
+        if not os.path.exists(exe):
+            raise RuntimeError("DRY: the cell's exe %s was never built" % exe)
+        if exe not in self.pool_of:
+            raise RuntimeError("DRY: the exe %s is in no proved pool" % exe)
+        self.n += 1
+        self.t += DRY_LAUNCH_S
+        q = self.qcr()
+        _pat, arm, _ly, rt = self.pool_of[exe]
+        pass_ = ("first", "retime")[rt] if q else "cal"
+        k = (pass_, exe)
+        a = self.att[k] = self.att.get(k, -1) + 1      # this exe's attempt counter in this pass
+        if q and self.gf and not self.gf_done and (cell[3], arm) == self.gf and pass_ == "first":
+            self.gf_done = True
+            raise GateFail("cell %s: GATE FAIL (DRY plant: a wrong answer at a timed launch)" % "|".join(cell))
+        f = self.model.get(cell[3], {}).get((pass_, arm), 1.0)
+        j = 1 + (int(hashlib.sha256(("%s|%s|%d" % (pass_, exe, self.n)).encode()).hexdigest(), 16) % 201 - 100) / 1e4
+        busy = 0.01
+        vk = self.voidm.get(cell[3])
+        if vk and pass_ != "cal" and (vk[1] is None or vk[1] == arm):
+            if vk[0] == "every-attempt" or (vk[0] == "first-launch-per-exe" and a == 0):
+                busy = 0.9
+        return f * j, busy, 0, DRY_LAUNCH_S
+
+
+def dry_guard():
+    """DRY's proof that no launch runs: `timed_launch` (the clock call) and any subprocess run under `taskset` or with
+    CARD_TIME in its EFFECTIVE environment (its `env=`, else the inherited one) raise ClockCalled. Returns (uninstall,
+    counter)."""
+    seen = {"clock": 0, "subprocess": 0}
+    real_run, real_launch = subprocess.run, globals()["timed_launch"]
+
+    def no_clock(argv, cell, env):
+        seen["clock"] += 1
+        raise ClockCalled("DRY: the clock was called (timed_launch %s, cell %s)" % (argv, "/".join(cell)))
+
+    def guarded(argv, *a, **kw):
+        env = kw.get("env")
+        env = os.environ if env is None else env       # the EFFECTIVE environment: an inherited CARD_TIME too (r80 CHECKS-5)
+        if (isinstance(argv, (list, tuple)) and argv[:1] == ["taskset"]) or "CARD_TIME" in env:
+            seen["subprocess"] += 1
+            raise ClockCalled("DRY: a timed exec was attempted: %s" % (argv,))
+        return real_run(argv, *a, **kw)
+    globals()["timed_launch"], subprocess.run = no_clock, guarded
+
+    def uninstall():
+        globals()["timed_launch"], subprocess.run = real_launch, real_run
+    return uninstall, seen
+
+
+# ---- THE RECORD (c6_rule.md RECORD) and its reader ---------------------------------------------------------------
+# results_c6_<run>.tsv: line 1 the `#c6` header (c6_header); `#run` (launches, deadline, dry); `#qc` (the thresholds);
+# `#pass` + HEADER's columns; `cell` lines (card pattern regime layer calls: the WHOLE population with its reach count,
+# written before any timing); `first` / `retime` rows (row_line's columns behind the pass); `#end` last (a file without
+# it is a run that died: refused). A re-time row set exists exactly for the cells the first pass owes one (its rows
+# `notrun` when the window closed first); the reader refuses a record where that does not hold.
+C6_END = "#end"
+
+
+def c6_record_head(path, header, run, keys_calls, pools=()):
+    """The record's head (written before any timing): the `#c6` header, the `#run` fields, the column line, a `cell`
+    line per population cell with its span calls, and a `pool` line per proved pool (pattern arm layer retime, its four
+    exe ids: r80 FIDELITY-2, the reader checks every launch against them). `run`: [(key, value)]."""
+    with open(path, "w") as f:
+        f.write(header + "\n")
+        f.write("#run\t%s\n" % "\t".join("%s=%s" % kv for kv in run))
+        f.write("#pass\t" + HEADER[1:-1] + "\texes\n")
+        for k, n in keys_calls:
+            f.write("cell\t%s\t%d\n" % ("\t".join(k), n))
+        for (pat, arm, layer, rt), ids in pools:
+            f.write("pool\t%s\t%s\t%s\t%d\t%s\n" % (pat, arm, layer, rt, ",".join(ids)))
+
+
+def c6_record_end(path, fields):
+    """The record's last line, `#end` (a record without it is refused: the run died)."""
+    with open(path, "a") as f:
+        f.write("%s\t%s\n" % (C6_END, "\t".join("%s=%s" % kv for kv in fields)))
+
+
+def c6_owes(arms):
+    """Whether a first pass's arm readings {V, H64, H64.b: launches|None} owe a re-time (c6_rule.md RE-TIME): a reading
+    WIN or LOSS, or an A/A non-TIE."""
+    return any(x in ("WIN", "LOSS") for x in c6_pass(arms))
+
+
+def c6_read(path):
+    """A C6 record -> (cells for c6_decide, info) or raises SystemExit2 with the refusal. info: header fields, run fields,
+    gate failures, re-time NOT-RUN cells, the DRY flag, the approx (void by method) rows."""
+    ln = open(path).read().split("\n")
+    why = c6_header_check(ln[0] if ln else "")
+    if why:
+        raise SystemExit2("cards: c6decide: %s: REFUSED: %s" % (path, why))
+    if C6_END not in [x.split("\t")[0] for x in ln if x]:
+        raise SystemExit2("cards: c6decide: %s: REFUSED: no %s line (the run died before it finished)" % (path, C6_END))
+    head = dict(x.split("=", 1) for x in ln[0].split("\t")[1:] if "=" in x)
+    info = {"header": head, "run": {}, "gatefail": [], "retime_notrun": [], "dry": False, "approx": 0, "qc": {}}
+    cells, rows, pools = {}, {"first": {}, "retime": {}}, {}
+    for x in ln[1:]:
+        if not x:
+            continue
+        f = x.split("\t")
+        if f[0] in ("#run", "#qc", C6_END):
+            info[{"#run": "run", "#qc": "qc", C6_END: "end"}[f[0]]] = dict(y.split("=", 1) for y in f[1:] if "=" in y)
+        elif f[0] == "cell":
+            cells[tuple(f[1:5])] = int(f[5])
+        elif f[0] == "pool":
+            pools[(f[1], f[2], f[3], int(f[4]))] = f[5].split(",")
+        elif f[0] in rows:
+            key, r = row_of(f[1:])
+            rows[f[0]][key] = r
+        elif not f[0].startswith("#"):
+            raise SystemExit2("cards: c6decide: %s: REFUSED: an unknown line %r" % (path, x[:80]))
+    info["dry"] = info["run"].get("dry") == "1"
+    if int(info["run"].get("launches", -1)) != LAUNCHES:
+        raise SystemExit2("cards: c6decide: %s: REFUSED: recorded at LAUNCHES=%s, read at %d" % (
+            path, info["run"].get("launches"), LAUNCHES))
+    out = []
+    for ck, calls in cells.items():
+        card, pat, regime, layer = ck
+        if regime in APPROX:
+            info["approx"] += 1
+            continue
+        c = {"key": ck, "calls": calls}
+        if calls:
+            first = {a: rows["first"].get((card, pat, a, regime, layer)) for a in ("V", "H64", "H64.b")}
+            if any(r is None for r in first.values()):
+                raise SystemExit2("cards: c6decide: %s: REFUSED: cell %s calls the span and has no first-pass row for %s" % (
+                    path, "/".join(ck), [a for a, r in first.items() if r is None]))
+            info["gatefail"] += ["%s %s: %s" % ("/".join(ck), a, r["note"]) for a, r in first.items() if r["status"] == "gatefail"]
+            c["run"] = not any(r["status"] == "notrun" for r in first.values())
+            c["arms"] = {a: (r["launches"] or None) if r["status"] == "ok" else None for a, r in first.items()}
+            again = {a: rows["retime"].get((card, pat, a, regime, layer)) for a in ("V", "H64", "H64.b")}
+            have = [r for r in again.values() if r is not None]
+            owed = c["run"] and c6_owes(c["arms"])
+            if bool(have) != owed or (have and len(have) != 3):
+                raise SystemExit2("cards: c6decide: %s: REFUSED: cell %s %s and the record holds %d re-time rows" % (
+                    path, "/".join(ck), "owes a re-time" if owed else "owes no re-time", len(have)))
+            # THE EXES (r80 FIDELITY-2): every timed launch names its exe, a member of the proved pool of its (pattern, arm,
+            # layer, pass); a re-time never runs an exe of the cell's first pass (c6_rule.md RE-TIME: "never the first pass's")
+            used = {}
+            for rt, rs in ((0, first), (1, again if have else {})):
+                for a, r in rs.items():
+                    if r["status"] != "ok":
+                        continue
+                    pool = pools.get((pat, a, layer, rt))
+                    if r["exes"] is None or len(r["exes"]) != len(r["launches"]) or pool is None or \
+                            any(x not in pool for x in r["exes"]):
+                        raise SystemExit2("cards: c6decide: %s: REFUSED: cell %s arm %s (%s): its launches' exes %s are not "
+                                          "members of a recorded pool" % (path, "/".join(ck), a, ("first", "re-time")[rt],
+                                                                          r["exes"]))
+                    used.setdefault(rt, set()).update(r["exes"])
+            if used.get(0, set()) & used.get(1, set()):
+                raise SystemExit2("cards: c6decide: %s: REFUSED: cell %s's re-time ran first-pass exes %s" % (
+                    path, "/".join(ck), sorted(used[0] & used[1])))
+            if have:
+                info["gatefail"] += ["%s %s (re-time): %s" % ("/".join(ck), a, r["note"])
+                                     for a, r in again.items() if r["status"] == "gatefail"]
+                if any(r["status"] == "notrun" for r in have):
+                    info["retime_notrun"].append(ck)
+                    c["retime_notrun"] = True
+                else:
+                    c["retime"] = {a: (r["launches"] or None) if r["status"] == "ok" else None for a, r in again.items()}
+        out.append(c)
+    # the `#end` status cross-checked against the rows (r80 CHECKS-10: a field with no reader is a field nobody checks)
+    nrows = sum(1 for p in rows for r in rows[p].values() if r["status"] == "notrun")
+    want = "truncated" if nrows else "complete"
+    if info.get("end", {}).get("status") != want:
+        raise SystemExit2("cards: c6decide: %s: REFUSED: #end says status %s, the rows say %s (%d NOT-RUN rows)" % (
+            path, info.get("end", {}).get("status"), want, nrows))
+    stray = [k for p in rows for k in rows[p] if (k[0], k[1], k[3], k[4]) not in cells]
+    if stray:
+        raise SystemExit2("cards: c6decide: %s: REFUSED: %d rows of cells outside the record's population (%s)" % (
+            path, len(stray), "/".join(stray[0])))
+    return out, info
+
+
+def c6_report(dec, info):
+    """THE REPORTED lines (c6_rule.md REPORTED) of a decided record."""
+    out = []
+    if info["dry"]:
+        out.append("DRY RECORD: every reading is SYNTHETIC (no clock ran): NOT A TIMING, NOT A VERDICT")
+    out += c6_verdict_lines(dec)
+    for (card, layer), d in sorted(dec.items()):
+        tag = "%s %s" % (card, layer)
+        out.append("%s: A/A single-pass rate %s (%d of %d)" % (tag, "%.3f" % (d["aa_single"] / d["aa_readable"])
+                                                              if d["aa_readable"] else "-", d["aa_single"], d["aa_readable"]))
+        for i, name in ((1, "pattern"), (2, "regime")):
+            by = {}
+            for key, rd, _aa, _n in d["rows"]:
+                if rd in ("WIN", "TIE", "LOSS"):
+                    by.setdefault(key[i], {"WIN": 0, "TIE": 0, "LOSS": 0})[rd] += 1
+            out.append("%s: W/T/L per %s: %s" % (tag, name, ", ".join("%s %d/%d/%d" % (k, v["WIN"], v["TIE"], v["LOSS"])
+                                                                         for k, v in sorted(by.items())) or "none"))
+        fmt = lambda ks: " ".join("/".join(k[1:3]) for k in ks) or "none"
+        out.append("%s: N/A (0 span calls): %s" % (tag, fmt(d["na"])))
+        one = {key for key, n in d["notes"] if n.startswith("reading ") and SINGLE in n}
+        out.append("%s: LOSS (standing): %s" % (tag, " ".join("/".join(k[1:3]) + (" (%s)" % SINGLE if k in one else "")
+                                                              for k in d["loss"]) or "none"))
+        for name, k in (("INCONCLUSIVE-NOISE", "noise"), ("INCONCLUSIVE-HARNESS", "harness"), ("NOT-RUN", "notrun")):
+            out.append("%s: %s: %s" % (tag, name, fmt(d[k])))
+        out.append("%s: standing WINs (information; a WIN gates nothing): %s" % (
+            tag, fmt([key for key, rd, _a, _n in d["rows"] if rd == "WIN"])))
+        out.append("%s: not repeated: %s" % (tag, "; ".join("%s %s" % ("/".join(key[1:3]), n) for key, n in d["notes"]
+                                                             if "not repeated" in n) or "none"))
+        # r80 RULE-2: a non-TIE that STANDS on ONE pass (its re-time noisy or NOT-RUN) is listed so, the LOSS that blocks a
+        # level on one pass first
+        out.append("%s: standing on a single pass (re-time noisy or NOT-RUN): %s" % (tag, "; ".join(
+            "%s %s" % ("/".join(key[1:3]), n) for key, n in d["notes"] if SINGLE in n) or "none"))
+        rtn = [k for k in info["retime_notrun"] if (k[0], k[3]) == (card, layer)]
+        out.append("%s: re-time NOT-RUN (the window closed; RE-TIME: a reading LOSS stands, a WIN counts as a TIE, an A/A "
+                   "non-TIE stands): %s" % (tag, fmt(rtn)))
+    out.append("approx (VOID BY METHOD, never timed): %d cells" % info["approx"])
+    if any(d["verdict"].startswith("TRUNCATED: ") for d in dec.values()):
+        out.append("TRUNCATED: a first-pass cell or a re-time was not started (the window closed)")
+    for g in info["gatefail"]:
+        out.append("GATE FAIL %s" % g)
+    return out
+
+
+def cmd_c6decide(args):
+    """c6decide RESULTS: THE VERDICT from a C6/C6c record alone. Exit 0 read; 1 a gate failed (a wrong answer: the run is
+    red whatever it reads); 2 refused; 4 TRUNCATED (a cell of either pass not started)."""
+    (path,), _opt = parse_args("c6decide", args)
+    cells_, info = c6_read(path)
+    dec = c6_decide(cells_)
+    for x in c6_report(dec, info):
+        print(x)
+    if info["gatefail"]:
+        return 1
+    return 4 if any(d["notrun"] for d in dec.values()) or info["retime_notrun"] else 0
+
+
+def c6_form_hash(rundir):
+    """mf_form_hash("span-vector") of the FROZEN build's kit: tests/memfn/arm_fixtures.c linked against BUILD's
+    libpcrec.a (its `--hash` FORM line)."""
+    fx = os.path.join(rundir, "fx", "arm_fixtures")
+    compile_gate("the form-hash driver")
+    os.makedirs(os.path.dirname(fx), exist_ok=True)
+    r = subprocess.run([CC, "-std=gnu11", "-O1", "-I" + os.path.join(TREE, "memfn", "include"),
+                        os.path.join(TREE, "tests", "memfn", "arm_fixtures.c"), os.path.join(BUILD, "libpcrec.a"),
+                        "-o", _tmp(fx)], capture_output=True, text=True, timeout=600)
+    if r.returncode:
+        raise SystemExit2("cards: time: the form-hash driver does not build: %s" % r.stderr[-300:])
+    os.replace(_tmp(fx), fx)
+    for x in subprocess.run([fx, "--hash"], capture_output=True, text=True, timeout=120).stdout.splitlines():
+        f = x.split("\t")
+        if f[:2] == ["FORM", "span-vector"] and f[2] == "0":
+            return f[3]
+    raise SystemExit2("cards: time: arm_fixtures --hash printed no FORM line for span-vector")
+
+
+C6_PREPARED = "c6_prepared.json"
+JOB_MARGIN_S = 600      # 710's WINDOW margin: the deadline is min(STOP_AT, the job's start + its cap - 600 s)
+
+
+class WiringFault(BaseException):
+    """`time`'s loud failure: a launch was handed an exe that is not a member of the proved pool of its (pattern, arm,
+    layer, pass) (r80 FIDELITY-2). A BaseException, so time_cells' `except Exception` (a void) cannot swallow it."""
+
+
+def c6_reach_refusal(keys, calls):
+    """REACH CONTROL (the reach build's own control): a hit-dense cell that calls the span 0 times. The text, or None."""
+    dead = sorted({(k[1], k[3]) for k in keys if k[2] == "hit-dense" and calls[k] == 0})
+    return "REACH CONTROL: hit-dense calls the span 0 times at %s" % dead if dead else None
+
+
+def proofs_refusal(proofs, lays):
+    """The pool refusals of a prepare: `proofs` [pool_proof's refusal text or None], `lays` {(pattern, layer): {(arm,
+    retime): {v: descriptor}}} -> [failure lines] (each pool alone, then every C6_DISJOINT pair, ruling (c))."""
+    bad = [w for w in proofs if w]
+    for (pat, ly), lay in sorted(lays.items()):
+        why = pool_disjoint_refusal(lay)
+        if why:
+            bad.append("POOL REFUSED %s %s: NOT LAYOUT-DISJOINT: %s" % (pat, ly, why))
+    return bad
+
+
+def c6_population(sel, patterns):
+    """The C6/C6c cell list of the cards `sel`, limited to `patterns` (a DRY's partial population) when given."""
+    pop = cells(cards=sel)
+    if patterns:
+        pop = [c for c in pop if c[1] in patterns]
+        if not pop:
+            raise SystemExit2("cards: time: --patterns %s selects no cell" % ",".join(patterns))
+    return pop
+
+
+def c6_deadline(opt, dry, t_start):
+    """THE WINDOW's deadline (c6_rule.md WINDOW, 710's: min(STOP_AT, the job's start + its cap - 600 s); r80 RULE-3): a
+    timing takes --cap SECONDS and --job-start EPOCH (the job's own start, BEFORE its prepare stage and quiet wait) and an
+    optional --stop-at EPOCH, and computes the min itself; it refuses to run without them. --deadline EPOCH|+SECONDS is a
+    DRY drill's only (+S from this command's start, the DRY clock's origin). -> (epoch or None, how)."""
+    cap, js, sa, dl = (opt.get(k) for k in ("--cap", "--job-start", "--stop-at", "--deadline"))
+    if dl is not None:
+        if not dry:
+            raise SystemExit2("cards: time: --deadline is a DRY drill's; a timing takes --cap SECONDS --job-start EPOCH "
+                              "[--stop-at EPOCH] (WINDOW: min(STOP_AT, start + cap - %d s))" % JOB_MARGIN_S)
+        if cap or js or sa:
+            raise SystemExit2("cards: time: --deadline or --cap/--job-start/--stop-at, not both")
+        return (t_start + float(dl[1:]) if dl.startswith("+") else float(dl)), "--deadline %s" % dl
+    if cap is None or js is None:
+        if sa is not None or cap is not None or js is not None:
+            raise SystemExit2("cards: time: --cap and --job-start go together")
+        if dry:
+            return None, "none (DRY)"
+        raise SystemExit2("cards: time: a timing needs its WINDOW: --cap SECONDS --job-start EPOCH [--stop-at EPOCH] "
+                          "(min(STOP_AT, start + cap - %d s); c6_rule.md WINDOW)" % JOB_MARGIN_S)
+    d = float(js) + float(cap) - JOB_MARGIN_S
+    how = "job-start %s + cap %s - %d" % (js, cap, JOB_MARGIN_S)
+    if sa is not None:
+        d, how = min(d, float(sa)), "min(stop-at %s, %s)" % (sa, how)
+    if not dry and d <= t_start:
+        raise SystemExit2("cards: time: the window's deadline %d (%s) is not after now %d: no cell could start" % (
+            d, how, t_start))
+    return d, how
+
+
+def cmd_time(args):
+    """time RUNDIR --prepare [--cards C6,C6c] [--patterns P,..] [--plant NAME,..]
+    time RUNDIR --cap SECONDS --job-start EPOCH [--stop-at EPOCH]
+    time RUNDIR --dry [--dry-model tie|exercise|gatefail] [--deadline EPOCH|+SECONDS | --cap S --job-start E [--stop-at E]]:
+    C6/C6c's TIMER (c6_rule.md; R-47 U6). See the module docstring's `time`."""
+    (rundir,), opt = parse_args("time", args, nflags=("--dry", "--prepare"),
+                                vflags=("--cards", "--deadline", "--cap", "--job-start", "--stop-at", "--dry-model",
+                                        "--patterns", "--plant"))
+    t_start = time.time()
+    if "CARD_TIME" in os.environ:       # r80 CHECKS-5: the timed path's env is built explicitly; never inherited
+        print("cards: time: CARD_TIME was set in the inherited environment: removed for this run")
+        del os.environ["CARD_TIME"]
+    if rule_sha(C6_RULE_710_FILE) != C6_RULE_710_RECORDED:
+        raise SystemExit2("cards: time: rule_710.md's sha %s is not job 710's %s" % (rule_sha(C6_RULE_710_FILE), C6_RULE_710_RECORDED))
+    if "--prepare" in opt:
+        bad = [o for o in ("--dry", "--deadline", "--cap", "--job-start", "--stop-at", "--dry-model") if o in opt]
+        if bad:
+            raise SystemExit2("cards: time: --prepare builds and proves; it takes no %s" % " ".join(bad))
+        sel = opt.get("--cards", ",".join(C6_CARDS)).split(",")
+        if not sel or any(c not in C6_CARDS for c in sel):
+            raise SystemExit2("cards: time: --cards takes C6 and/or C6c (got %s)" % opt.get("--cards"))
+        plants = opt["--plant"].split(",") if "--plant" in opt else []
+        if any(p not in PLANTS for p in plants):
+            raise SystemExit2("cards: time: --plant is one of %s" % ",".join(PLANTS))
+        return c6_prepare(rundir, sel, opt["--patterns"].split(",") if "--patterns" in opt else None, plants)
+    bad = [o for o in ("--cards", "--patterns", "--plant") if o in opt]
+    if bad:
+        raise SystemExit2("cards: time: %s belong to --prepare (`time` times the prepared population)" % " ".join(bad))
+    dry = "--dry" in opt
+    if not dry and "--dry-model" in opt:
+        raise SystemExit2("cards: time: --dry-model is DRY's")
+    model = opt.get("--dry-model", "exercise")
+    if model not in DRY_MODELS:
+        raise SystemExit2("cards: time: --dry-model is one of %s" % ",".join(sorted(DRY_MODELS)))
+    deadline, how = c6_deadline(opt, dry, t_start)
+    global COMPILE_OK
+    uninstall, seen = dry_guard() if dry else (lambda: None, None)
+    COMPILE_OK = False
+    try:
+        return _time(rundir, dry, model, seen, t_start, deadline, how)
+    except WiringFault as e:
+        raise SystemExit2("cards: time: REFUSED (no #end: the record is void): %s" % e)
+    finally:
+        COMPILE_OK = True
+        uninstall()
+
+
+def c6_prepare(rundir, sel, patterns, plants):
+    """`time --prepare` (r80 FIDELITY-5, ruling (b)): the job stage BEFORE the quiet wait that builds and proves
+    everything `time` will run: the C6 text check, the reach build's span calls (N/A; REACH CONTROL), every pool the run can
+    time (the first pass's and the re-time's of every timed arm cell), each proved alone and every C6_DISJOINT pair proved
+    LAYOUT-DISJOINT on its BUILT descriptors (ruling (c)), and the form hash. Writes RUNDIR/c6_prepared.json, the manifest
+    `time` reads. A plant (`--plant`) must be REFUSED: a planted prepare that passes exits 1 and writes no manifest."""
+    global PLANT
+    PLANT = set(plants)
+    os.makedirs(rundir, exist_ok=True)
+    pop = c6_population(sel, patterns)
+    jobs = int(os.environ.get("JOBS", "4"))
+    # 1. the texts: C6's deny and reach check (as `dry`), refused on any failure
+    cbad, cn = check_c6(rundir, pop)
+    print("cards: time: prepare: C6 deny and reach check: %d (pattern, layer) pairs, failures %d" % (cn, len(cbad)))
+    if cbad:
+        for b in cbad:
+            print("FAIL", b)
+        raise SystemExit2("cards: time: the C6 text check failed; no timing")
+    # 2. N/A (c6_rule.md): the reach build's span calls, one UNTIMED instrumented pass per cell over the timed subject
+    keys = list(dict.fromkeys((c[0], c[1], c[3], c[4]) for c in pop))
+    with ThreadPoolExecutor(max_workers=jobs) as ex:
+        calls = dict(zip(keys, ex.map(lambda k: c6_reach(rundir, k[1], k[3], k[2], SUBJECT_N), keys)))
+    if "reach-dead" in PLANT:
+        k = next(k for k in keys if k[2] == "hit-dense")
+        print("cards: time: PLANT reach-dead: %s's span calls read as 0 (were %d)" % ("/".join(k), calls[k]))
+        calls[k] = 0
+    why = c6_reach_refusal(keys, calls)
+    if why:
+        raise SystemExit2("cards: time: " + why)
+    timed = [c for c in pop if calls[(c[0], c[1], c[3], c[4])] and c[3] not in APPROX]
+    # 3. every pool the run can time, BUILT and PROVED before the quiet wait: each alone, then LAYOUT-DISJOINT
+    texts = sorted({(c[1], c[2], c[4], rt) for c in timed for rt in (0, 1)})
+    if "pool-overlap" in PLANT:
+        print("cards: time: PLANT pool-overlap: H64.b's first-pass pool drawn without its shift (H64's layouts)")
+    with ThreadPoolExecutor(max_workers=jobs) as ex:
+        proofs = list(ex.map(lambda t: pool_proof(rundir, t[0], t[1], t[2], t[3]), texts))
+    lays = {}
+    for (pat, arm, ly, rt), (lay, _w) in zip(texts, proofs):
+        lays.setdefault((pat, ly), {})[(arm, rt)] = lay
+    bad = proofs_refusal([w for _l, w in proofs], lays)
+    print("cards: time: prepare: %d pools built and proved (first pass and re-time, %d exes) over %d (pattern, layer) "
+          "texts, %d layout-disjoint pairs checked, refused %d" % (len(texts), len(texts) * POOL_SIZE, len(lays),
+                                                                    len(lays) * len(C6_DISJOINT), len(bad)))
+    if bad:
+        for w in bad:
+            print("FAIL", w)
+        raise SystemExit2("cards: time: a pool was refused; no timing")
+    if PLANT:
+        print("cards: time: prepare: PLANT %s NOT REFUSED: the control did not fire" % ",".join(sorted(PLANT)))
+        return 1
+    # 4. the form hash; the manifest
+    man = {"harness": HARNESS_SHA, "rule": C6_RULE_SHA, "binary": hashlib.sha256(open(PCREC, "rb").read()).hexdigest()[:16],
+           "form": c6_form_hash(rundir), "cards": sel, "patterns": patterns, "keys": [list(k) + [calls[k]] for k in keys],
+           "pools": [{"pat": t[0], "arm": t[1], "layer": t[2], "retime": t[3],
+                      "exes": [exe_id(build_cell(rundir, t[0], t[1], t[2], v, t[3])[0]) for v in range(POOL_SIZE)],
+                      "layouts": [list(map(list, lay[v][:2])) + [list(lay[v][2])] for v in range(POOL_SIZE)]}
+                     for t, (lay, _w) in zip(texts, proofs)]}
+    p = os.path.join(rundir, C6_PREPARED)
+    json.dump(man, open(_tmp(p), "w"), indent=1)
+    os.replace(_tmp(p), p)
+    print("cards: time: prepared %s: %d cells (%d timed arm cells), %d pools, harness %s; `time` compiles nothing" % (
+        p, len(keys), len(timed), len(texts), HARNESS_SHA))
+    return 0
+
+
+def c6_load_prepared(rundir, dry):
+    """The manifest `time --prepare` wrote, checked against THIS harness, rule and binary (and, for a timing, the whole
+    population and no plant). -> the manifest dict, or SystemExit2."""
+    p = os.path.join(rundir, C6_PREPARED)
+    if not os.path.exists(p):
+        raise SystemExit2("cards: time: %s is missing: run `time RUNDIR --prepare` first (a job stage before the quiet "
+                          "wait; `time` compiles nothing)" % p)
+    man = json.load(open(p))
+    live = {"harness": HARNESS_SHA, "rule": C6_RULE_SHA, "binary": hashlib.sha256(open(PCREC, "rb").read()).hexdigest()[:16]}
+    for k, v in live.items():
+        if man.get(k) != v:
+            raise SystemExit2("cards: time: %s was prepared under %s %s, the live one is %s: prepare again" % (
+                p, k, man.get(k), v))
+    if not dry and man.get("patterns"):
+        raise SystemExit2("cards: time: %s is a PARTIAL population (--patterns %s): a DRY's only" % (
+            p, ",".join(man["patterns"])))
+    return man
+
+
+def _time(rundir, dry, model, seen, t_start, deadline, how):
+    man = c6_load_prepared(rundir, dry)
+    pop = c6_population(man["cards"], man["patterns"])
+    keys = list(dict.fromkeys((c[0], c[1], c[3], c[4]) for c in pop))
+    calls = {tuple(k[:4]): k[4] for k in man["keys"]}
+    if list(calls) != keys:
+        raise SystemExit2("cards: time: the manifest's population is not this harness's (%d vs %d cells)" % (
+            len(calls), len(keys)))
+    timed = [c for c in pop if calls[(c[0], c[1], c[3], c[4])] and c[3] not in APPROX]
+    approx = [c for c in pop if c[3] in APPROX]
+    # the proved pools: every exe present (nothing is built: COMPILE_OK is clear) and the one the manifest names
+    pool_of, pools = {}, []
+    for pl in man["pools"]:
+        t = (pl["pat"], pl["arm"], pl["layer"], pl["retime"])
+        for v in range(POOL_SIZE):
+            exe, _a = build_cell(rundir, t[0], t[1], t[2], v, t[3])
+            if exe_id(exe) != pl["exes"][v]:
+                raise SystemExit2("cards: time: pool %s v%d is %s, the manifest proved %s" % (t, v, exe_id(exe), pl["exes"][v]))
+            pool_of[exe] = t
+        pools.append((t, pl["exes"]))
+    need = {(c[1], c[2], c[4], rt) for c in timed for rt in (0, 1)}
+    if need - {t for t, _i in pools}:
+        raise SystemExit2("cards: time: the manifest lacks the pools %s" % sorted(need - {t for t, _i in pools}))
+    # the record's head, before any timing: the header, the run, the population with its reach counts, the pools
+    rid = start_timing(rundir)
+    path = os.path.join(rundir, "results_c6_%s.tsv" % rid)
+    if os.path.exists(path):
+        raise SystemExit2("cards: time: %s exists" % path)
+    layers = sorted({c[4] for c in pop})
+    c6_record_head(path, c6_header(man["form"], man["binary"], layers, rid),
+                   [("launches", LAUNCHES), ("pool", POOL_SIZE), ("cpu", CPU),
+                    ("deadline", "-" if deadline is None else "%d" % deadline), ("window", how.replace(" ", "_")),
+                    ("dry", int(dry))] + ([("model", model)] if dry else [])
+                   + [("cards", ",".join(man["cards"])), ("subject", SUBJECT_N)],
+                   [(k, calls[k]) for k in keys], pools)
+    print("cards: time: run %s -> %s; population %d cells (%d N/A, %d void by method), %d timed arm cells, %d first-pass "
+          "launches; deadline %s (%s)%s" % (
+              rid, path, len(keys), sum(1 for k in keys if not calls[k] and k[2] not in APPROX),
+              len({(c[0], c[1], c[3], c[4]) for c in approx}), len(timed), len(timed) * LAUNCHES,
+              "-" if deadline is None else "%d" % deadline, how, "; DRY (model %s): no clock" % model if dry else ""))
+    # the quiet sample (calibration: H64 of the first timed cell, variant 0 of its first-pass pool), then the passes
+    qref = {}
+    probe = DryProbe(model, t_start, lambda: qref.get("q"), pool_of) if dry else RealProbe(CPU)
+    q = QuietControl(probe, os.path.join(rundir, "quiet_sample_c6_%s.tsv" % rid), os.path.join(rundir, "voids_c6_%s.tsv" % rid))
+    qref["q"] = None
+    if not timed:
+        raise SystemExit2("cards: time: no cell calls the span: nothing to time")
+    cal = next(c for c in timed if c[2] == "H64")
+    qc = q.sample(prepare_cell(rundir, cal, SUBJECT_N)[0], cal, dict(os.environ, CARD_TIME="1"))
+    qref["q"] = q
+    with open(path, "a") as f:
+        f.write("#qc\tcpu7_max=%.4f\tcapped=%d\tsample_max=%.4f\tnivcsw_max=%d\tt_cal=%.4f\tcal=%s\tsibling=%s\n" % (
+            qc["cpu7_max"], qc["cpu7_capped"], qc["sample_cpu7_max_busy"], qc["nivcsw_max"], qc["t_cal"], qc["cal_cell"],
+            qc["sibling"]))
+    if qc["cpu7_capped"]:
+        print("cards: time: QUIET SAMPLE BUSY: CPU7_MAX capped at 20 %% (sample max %.1f %%)" % (100 * qc["sample_cpu7_max_busy"]))
+    print("cards: time: quiet sample: CPU7_MAX %.3f, NIVCSW_MAX %d per %.3f s launch (calibration %s)" % (
+        qc["cpu7_max"], qc["nivcsw_max"], qc["t_cal"], qc["cal_cell"]))
+    stop = (lambda: probe.wall() >= deadline) if deadline is not None else None
+
+    def launch(argv, cell, env):
+        """q.launch behind the WIRING CONTROL (r80 FIDELITY-2): the exe is a member of the proved pool of the cell's
+        (pattern, arm, layer) at THIS pass (the re-time's fresh pool in the re-time), else WiringFault."""
+        want = (cell[1], cell[2], cell[4], {"first": 0, "retime": 1}[q.pass_])
+        if pool_of.get(argv[3]) != want:
+            raise WiringFault("launch of %s in the %s pass ran %s, a member of %s, not of the proved pool %s" % (
+                "/".join(cell), q.pass_, os.path.basename(argv[3]), pool_of.get(argv[3]), want))
+        return q.launch(argv, cell, env)
+    q.pass_ = "first"
+    time_cells(rundir, timed + approx, path, with_approx=False, launch=launch, stop=stop, prefix="first\t", salt="first",
+               c6=True)
+    first = {}
+    for x in open(path):
+        if x.startswith("first\t"):
+            key, r = row_of(x.rstrip("\n").split("\t")[1:])
+            first[key] = r
+    owed = []
+    for k in keys:
+        if not calls[k] or k[2] in APPROX:
+            continue
+        rs = {a: first.get((k[0], k[1], a, k[2], k[3])) for a in ("V", "H64", "H64.b")}
+        if all(r and r["status"] != "notrun" for r in rs.values()) and c6_owes(
+                {a: (r["launches"] or None) if r["status"] == "ok" else None for a, r in rs.items()}):
+            owed.append(k)
+    q.pass_ = "retime"
+    time_cells(rundir, [c for c in timed if (c[0], c[1], c[3], c[4]) in owed], path, with_approx=False, retime=1,
+               launch=launch, stop=stop, prefix="retime\t", salt="retime", c6=True)
+    nr = {p: sum(1 for x in open(path) if x.startswith(p + "\t") and x.split("\t")[6] == "notrun") for p in ("first", "retime")}
+    c6_record_end(path, [("status", "truncated" if nr["first"] or nr["retime"] else "complete"),
+                         ("notrun_first", nr["first"]), ("notrun_retime", nr["retime"]), ("owed", len(owed)),
+                         ("void_launches", q.voids), ("wall", round((probe.wall() if dry else time.time()) - t_start))])
+    print("cards: time: first pass done, %d cells owe a re-time (fresh pools), %d void launches; arm rows NOT-RUN: first %d, "
+          "re-time %d" % (len(owed), q.voids, nr["first"], nr["retime"]))
+    if dry:
+        print("cards: time: DRY: %d synthetic launches, clock calls %d, timed execs refused %d" % (
+            probe.n, seen["clock"], seen["subprocess"]))
+    # the verdict, read back from the record alone
+    print("cards: time: the record read back (c6decide %s):" % path)
+    rc = cmd_c6decide([path])
+    if nr["first"] or nr["retime"]:
+        print("cards: time: TRUNCATED")
+    print("cards: time: DONE rc=%d" % rc)
+    return rc
+
+
 # What C6 settles (block_span.md §8): c6_rule.md CLAIM. The SIMD-off layer's wrapper under gcc -O2 is not timed (r68 F-14:
 # U2b's census is its record); C6c times it under clang -O2 and gcc -Os, where the census said the machine code differs.
 
@@ -1377,7 +2291,7 @@ def cmd_plan(args):
     print("# timing order (rev 10, r38 J2): the cells above grouped by (card, pattern, regime, layer), each timed in "
           "%d ROUNDS of one launch per arm (`launch_order`): run %d cells, %d timed launches" % (
               LAUNCHES, len(cell_groups(s1_read)), len(launch_order(s1_read))))
-    # C6 (R-47 U5): its own block; no step of `run` reads it (its timing is U6's)
+    # C6 (R-47 U5): its own block; no step of `run` reads it (`time` times it, U6)
     for card in C6_CARDS:
         cc = cells(cards=(card,))
         rd = [c for c in cc if c[3] not in APPROX]
@@ -4028,6 +4942,44 @@ def selftest_rev11(check):
              sum(1 for s, _l, _n in res if s), all(l for _s, l, _n in res), [n for _s, _l, n in res], nst, len(placed)))
 
 
+def selftest_j2(check):
+    """J2 (r38): `time_cells` times in ROUNDS (stubbed execution, no clock): each run of n launches holds every arm of the
+    cell once, the order is the one the drills place their steps in, and EVERY row reads ok. Run by the full `selftest`
+    and by `c6selftest` (lane bsu6fix3: U6's time_cells passes `prepare_cell` a 4th argument, `retime`; this drill's
+    3-argument stub raised TypeError on every cell, time_cells' broad except turned each into a VOID row, and the drill read
+    "0 launches" -- seen only by the 90-minute selftest, so c6selftest, which every time_cells change runs, runs it too).
+    The stubs take the real functions' parameters; a row that is not ok prints its note, so a stub that no longer fits
+    the call names itself."""
+    import tempfile
+    calls = []
+    real_p, real_e = prepare_cell, _exec
+    globals()["prepare_cell"] = lambda _rd, c, _n, _retime=0: list(c)
+    globals()["_exec"] = lambda argv, c, env=None: calls.append(tuple(c)) or "t %d\n" % (len(calls) + 1)
+    try:
+        cl = [c for c in cells(cards=("C1",)) if c[1] == "hex24" and c[3] in ("hit-dense", "near-miss")]
+        import pwd
+        troot = os.environ.get("PCREC_TMPDIR") or "/var/tmp/pcrec-%s" % pwd.getpwuid(os.getuid()).pw_name
+        os.makedirs(troot, exist_ok=True)
+        with tempfile.TemporaryDirectory(dir=troot) as td:      # the temp root, never /tmp
+            out = os.path.join(td, "r.tsv")
+            open(out, "w").close()
+            time_cells(td, cl, out)
+            rows = [ln.rstrip("\n").split("\t") for ln in open(out) if not ln.startswith("#")]
+    finally:
+        globals()["prepare_cell"], globals()["_exec"] = real_p, real_e
+    nrows = len(rows)
+    notok = [r for r in rows if r[5] != "ok"]
+    n_arm = len(GRID) + 1       # I and the finite heads (rev 12: no layout twin arm)
+    rounds = [calls[i:i + n_arm] for i in range(0, len(calls), n_arm)]
+    rr = bool(rounds) and all(len(set(r)) == n_arm and len({(c[0], c[1], c[3], c[4]) for c in r}) == 1 for r in rounds)
+    same_order = [c for c, _i in launch_order(cl)] == calls
+    check("(r38 J2) time_cells interleaves the arms in rounds", rr and same_order and nrows == len(cl) and not notok
+          and len(calls) == LAUNCHES * len(cl),
+          "%d launches over %d arm cells (%d rows, %d not ok%s): every round of %d holds each arm once: %s; the drills' "
+          "order: %s" % (len(calls), len(cl), nrows, len(notok), (": %s %s" % (notok[0][5], notok[0][8])) if notok else "",
+                         n_arm, rr, same_order))
+
+
 def cmd_selftest(args):
     parse_args("selftest", args, nflags=("--rev11", "--rev12"), npos=0)
     if "--rev12" in args and "--rev11" not in args:       # rev 12's rows alone (a development aid)
@@ -4452,33 +5404,7 @@ def cmd_selftest(args):
               % (nv / NOISE_TRIALS, statistics.mean(NOISE_LAST["confirm"]), sum(1 for x in NOISE_LAST["confirm"] if x)))
     selftest_rev11(check)
     selftest_rev12(check)
-    # J2: `time_cells` times in ROUNDS (stubbed execution, no clock): each run of n launches holds
-    # every arm of the cell once, and the order is the one the drills place their steps in
-    import tempfile
-    calls = []
-    real_p, real_e = prepare_cell, _exec
-    globals()["prepare_cell"] = lambda _rd, c, _n: list(c)
-    globals()["_exec"] = lambda argv, c, env=None: calls.append(tuple(c)) or "t %d\n" % (len(calls) + 1)
-    try:
-        cl = [c for c in cells(cards=("C1",)) if c[1] == "hex24" and c[3] in ("hit-dense", "near-miss")]
-        import pwd
-        troot = os.environ.get("PCREC_TMPDIR") or "/var/tmp/pcrec-%s" % pwd.getpwuid(os.getuid()).pw_name
-        os.makedirs(troot, exist_ok=True)
-        with tempfile.TemporaryDirectory(dir=troot) as td:      # the temp root, never /tmp
-            out = os.path.join(td, "r.tsv")
-            open(out, "w").close()
-            time_cells(td, cl, out)
-            nrows = sum(1 for ln in open(out) if not ln.startswith("#"))
-    finally:
-        globals()["prepare_cell"], globals()["_exec"] = real_p, real_e
-    n_arm = len(GRID) + 1       # I and the finite heads (rev 12: no layout twin arm)
-    rounds = [calls[i:i + n_arm] for i in range(0, len(calls), n_arm)]
-    rr = all(len(set(r)) == n_arm and len({(c[0], c[1], c[3], c[4]) for c in r}) == 1 for r in rounds)
-    same_order = [c for c, _i in launch_order(cl)] == calls
-    check("(r38 J2) time_cells interleaves the arms in rounds", rr and same_order and nrows == len(cl)
-          and len(calls) == LAUNCHES * len(cl),
-          "%d launches over %d arm cells (%d rows): every round of %d holds each arm once: %s; the drills' order: %s"
-          % (len(calls), len(cl), nrows, n_arm, rr, same_order))
+    selftest_j2(check)
     # J7: the identity reach per SOURCE: a movers file that moves nothing fails though a card moves
     rs = (source_reach_refusal(24, {"cards": 1, "census": 0, "movers": 0}, has_movers=True),
           source_reach_refusal(24, {"cards": 1, "census": 0, "movers": 2}, has_movers=True),
@@ -4688,6 +5614,9 @@ def cmd_c6selftest(args):
         "c6_rule.md's block sha %s, computed from the file" % C6_RULE_SHA)
     row(C6_CONST == {"FLOOR_MIN": 0.15, "SPREAD_MAX": 0.30, "AA_VOID_MAX": 0.05, "READABLE_MIN": 0.5},
         "the rule's CONSTANTS clause parses to %s" % C6_CONST)
+    # C1-C5's rounds through the time_cells C6 shares (selftest's J2 drill; lane bsu6fix3: it ran only in the 90-minute
+    # selftest, so U6's time_cells change broke it unseen)
+    selftest_j2(lambda name, ok, line: row(ok, "%s: %s" % (name, line)))
     # ---- the VERDICT drills: constructed outcomes, LAUNCHES launches an arm
     J = [1.00, 1.01, 0.99, 1.02, 0.98]          # 2 % launch noise, deterministic
 
@@ -4727,10 +5656,28 @@ def cmd_c6selftest(args):
          "TRUNCATED: INCONCLUSIVE-NOT-RUN"),
         ("WINDOW: 4 of 40 cells NOT-RUN, the rest clean", base[:36] + [cell(50 + i, run=False) for i in range(4)],
          "TRUNCATED: NO LOSS"),
+        # r80 RULE-1 (c6_rule.md CPU-QUIET CONTROL: a short arm makes BOTH of its cell's comparisons NOISE)
+        ("CPU-QUIET: H64.b void (no valid launch) beside a repeated V LOSS: the cell is NOISE, not a LOSS",
+         base[1:] + [dict(cell(99, v=1.3, rt=(1.3, 1.0, 1.0)), arms={"V": L(1.3), "H64": L(1.0), "H64.b": None})],
+         "NO LOSS"),
+        ("CPU-QUIET: H64.b short (4 valid launches) beside a repeated V LOSS: the cell is NOISE, not a LOSS",
+         base[1:] + [dict(cell(99, v=1.3, rt=(1.3, 1.0, 1.0)), arms={"V": L(1.3), "H64": L(1.0), "H64.b": L(1.0)[:4]})],
+         "NO LOSS"),
+        ("CPU-QUIET: 4 cells with V void leave their A/A unread: 2 standing A/A non-TIE of 38 A/A-readable is VOID "
+         "(counting those 4 would read 2 of 42 = 0.048)",
+         base[:36] + [cell(80 + i, hb=1.3, rt=(1.0, 1.0, 1.3)) for i in range(2)]
+         + [dict(cell(90 + i), arms={"V": None, "H64": L(1.0), "H64.b": L(1.0)}) for i in range(4)],
+         "VOID (A/A FAILED: rate 0.053 > 0.050)"),
+        ("CPU-QUIET: a re-time with V void leaves a first-pass A/A non-TIE STANDING (both re-time comparisons NOISE): "
+         "HARNESS, the box reads on", base[1:] + [dict(cell(99, hb=1.3), retime={"V": None, "H64": L(1.0), "H64.b": L(1.3)})],
+         "NO LOSS"),
     ]
     for what, cs, want in drills:
         got, d = verdict(cs)
         row(got == want, "VERDICT drill %s: reads %r (want %r); A/A rate %s" % (what, got, want, d["rate"]))
+    _g, d = verdict(drills[-1][1])
+    row(len(d["harness"]) == 1 and d["aa_readable"] == 40, "VERDICT drill the re-time V void: its cell is the one HARNESS "
+        "(%d), A/A-readable %d of 40" % (len(d["harness"]), d["aa_readable"]))
     # the old unit's contrast (MEAS-3): the whole-range spread hides the same 25 % LOSS as a TIE
     old = [1.25, 1.26, 1.24, 1.25, 2.5]
     ofl = max(0.15, (max(old) - min(old)) / statistics.median(old))
@@ -4740,6 +5687,550 @@ def cmd_c6selftest(args):
     row(c6_header_check(h) is None, "RECORD: a header written now passes the check")
     row(c6_header_check(h.replace(C6_RULE_SHA, "f" * 16)) is not None, "RECORD: a header of another rule sha is refused")
     row(c6_header_check("#card\tpattern") is not None, "RECORD: a file with no #c6 header is refused")
+    # ---- THE TIMER'S RECORD through its READER (U6): constructed records over C6/C6c's real population, written by the
+    # timer's own head/end writers and row_line, read by the reader alone (no timing, no exe). Each drill is read through
+    # cmd_c6decide ITSELF (r80 CHECKS-7: never a recomputed exit code), its stdout captured
+    import contextlib, io
+    dd = os.path.join(rundir, "c6drill")
+    os.makedirs(dd, exist_ok=True)
+    pop = cells(cards=C6_CARDS)
+    pkeys = list(dict.fromkeys((c[0], c[1], c[3], c[4]) for c in pop))
+    # the named N/A cuts (c6_rule.md N/A: near-miss at the window sites with k <= 32), the dry's reach reading
+    cut = {k for k in pkeys if k[2] == "near-miss" and C6_SITE[k[1]][0] == "window" and C6_SITE[k[1]][1] <= 32}
+
+    def pool_ids(pat, arm, layer, rt):
+        return [hashlib.sha256(("drill|%s|%s|%s|%d|%d" % (pat, arm, layer, rt, v)).encode()).hexdigest()[:16]
+                for v in range(POOL_SIZE)]
+    dpools = [((p, a, ly, rt), pool_ids(p, a, ly, rt)) for p, ly in sorted({(k[1], k[3]) for k in pkeys})
+              for a in ("V", "H64", "H64.b") for rt in (0, 1)]
+
+    def record(name, spec, end=True, header=None, launches=None, extra=(), exes=None, pools=None):
+        """spec(key) -> (calls, first {arm: factor | None (void) | 'short' | 'notrun' | 'gatefail' | 'absent' | [launches]},
+        retime {arm: ..} | 'notrun' | None). `extra`: lines appended before `#end`. `exes(key, arm, rt, ids)`: the exe ids
+        a row records (default: its pool's, by variant). `pools`: the record's pool lines (default dpools)."""
+        path = os.path.join(dd, name + ".tsv")
+        pl = dpools if pools is None else pools
+        pmap = dict(pl)
+        specs = {k: spec(k) for k in pkeys}
+        c6_record_head(path, header or c6_header("0" * 16, "1" * 16, sorted({k[3] for k in pkeys}), "drill-" + name),
+                       [("launches", LAUNCHES if launches is None else launches), ("dry", 0)],
+                       [(k, specs[k][0]) for k in pkeys], pl)
+
+        def arm_row(pfx, k, a, x, rt):
+            c = (k[0], k[1], a, k[2], k[3])
+            if k[2] in APPROX:
+                return pfx + row_line(c, "method", note="void by method")
+            if x == "absent":
+                return ""
+            if x in ("notrun", "gatefail"):
+                return pfx + row_line(c, x, note="drill")
+            if x is None:
+                return pfx + row_line(c, "void", note="drill: no valid launch")
+            ls = L(1.0)[:3] if x == "short" else (x if isinstance(x, list) else L(x))
+            vs = [i % POOL_SIZE for i in range(len(ls))]
+            ids = pmap[(k[1], a, k[3], rt)]
+            ex = [ids[v] for v in vs] if exes is None else exes(k, a, rt, [ids[v] for v in vs])
+            return pfx + row_line(c, "ok", ls, variants=vs, exes=ex)
+        nr = 0
+        with open(path, "a") as f:
+            for k in pkeys:
+                calls, first, again = specs[k]
+                if not calls:
+                    continue
+                for a in ("V", "H64", "H64.b"):
+                    x = arm_row("first\t", k, a, first.get(a, 1.0), 0)
+                    nr += "\tnotrun\t" in x
+                    f.write(x)
+                if again is not None and k[2] not in APPROX:
+                    for a in ("V", "H64", "H64.b"):
+                        x = arm_row("retime\t", k, a, "notrun" if again == "notrun" else again.get(a, 1.0), 1)
+                        nr += "\tnotrun\t" in x
+                        f.write(x)
+            for x in extra:
+                f.write(x + "\n")
+        if end:
+            c6_record_end(path, [("status", end if isinstance(end, str) else "truncated" if nr else "complete")])
+        return path
+
+    def decide(path):
+        """cmd_c6decide on `path`: (exit code, stdout)."""
+        buf = io.StringIO()
+        with contextlib.redirect_stdout(buf):
+            try:
+                rc = cmd_c6decide([path])
+            except SystemExit as e:
+                rc = e.code
+        return rc, buf.getvalue()
+
+    def tie(k):
+        return (0 if k in cut else 1000), {}, None
+
+    def owe(first):
+        return c6_owes({a: (None if first.get(a, 1.0) in (None, "short", "notrun", "gatefail") else L(first.get(a, 1.0)))
+                        for a in ("V", "H64", "H64.b")})
+
+    def mk(f):
+        """spec from f(key) -> (first, retime-if-owed): the re-time set written exactly where the first pass owes one."""
+        def spec(k):
+            calls = 0 if k in cut else 1000
+            first, again = f(k)
+            return calls, first, (again if owe(first) and "notrun" not in first.values() else None)
+        return spec
+    timed_keys = [k for k in pkeys if k not in cut and k[2] not in APPROX]
+    nm = {g: sum(1 for k in timed_keys if (k[0], k[3]) == g) for g in {(k[0], k[3]) for k in timed_keys}}
+    late = set()                                              # the window closed after 40 % of each (card, layer)'s cells
+    for g in nm:
+        gk = [k for k in timed_keys if (k[0], k[3]) == g]
+        late |= set(gk[len(gk) * 2 // 5:])
+    aa3 = {g: [k for k in timed_keys if (k[0], k[3]) == g][:3] for g in nm}
+    k0 = timed_keys[0]
+    g0 = (k0[0], k0[3])
+    tag0 = "/".join(k0[1:3])
+    rdrills = [
+        ("design: V WINs (repeated) at hit-dense, TIE elsewhere (block_span.md §8 on 710's CONFIRMED table)",
+         mk(lambda k: (({"V": 0.5}, {"V": 0.5}) if k[2] == "hit-dense" else ({}, None))),
+         {g: "NO LOSS" for g in nm}, 0, []),
+        ("all-TIE", mk(lambda k: ({}, None)), {g: "NO LOSS" for g in nm}, 0, []),
+        ("a high A/A rate (3 standing A/A non-TIE cells per (card, layer), rate > 0.05) VOIDS each box",
+         mk(lambda k: (({"H64.b": 1.3}, {"H64.b": 1.3}) if k in aa3[(k[0], k[3])] else ({}, None))),
+         {g: "VOID (A/A FAILED: rate %.3f > 0.050)" % (3 / n) for g, n in nm.items()}, 0, []),
+        ("all-unreadable (every arm short of LAUNCHES valid launches): no readable A/A, VOID",
+         mk(lambda k: ({"V": "short", "H64": "short", "H64.b": "short"}, None)), {g: "VOID (A/A UNREAD)" for g in nm}, 0, []),
+        ("every V arm short: BOTH of each cell's comparisons NOISE (c6_rule.md CPU-QUIET CONTROL; r80 RULE-1), so no A/A is "
+         "readable: VOID (A/A UNREAD)", mk(lambda k: ({"V": "short"}, None)), {g: "VOID (A/A UNREAD)" for g in nm}, 0, []),
+        ("truncated: 60 % of the cells NOT-RUN (first pass)",
+         mk(lambda k: (({"V": "notrun", "H64": "notrun", "H64.b": "notrun"}, None) if k in late else ({}, None))),
+         {g: "TRUNCATED: INCONCLUSIVE-NOT-RUN" for g in nm}, 4, [r"^TRUNCATED: a first-pass cell or a re-time"]),
+        ("a reading LOSS the re-time repeats", mk(lambda k: (({"V": 1.3}, {"V": 1.3}) if k == k0 else ({}, None))),
+         {g: ("LOSS" if g == g0 else "NO LOSS") for g in nm}, 0,
+         [r"^%s %s: LOSS \(standing\): %s$" % (g0[0], g0[1], re.escape(tag0))]),
+        ("a reading LOSS the re-time does not repeat (a TIE, listed)",
+         mk(lambda k: (({"V": 1.3}, {}) if k == k0 else ({}, None))), {g: "NO LOSS" for g in nm}, 0,
+         [r"^%s %s: not repeated: %s reading LOSS not repeated$" % (g0[0], g0[1], re.escape(tag0))]),
+        ("truncated re-time: a reading LOSS whose re-time did not start STANDS, listed single-pass; the verdict is "
+         "prefixed TRUNCATED (r80 RULE-4) and the reader exits 4",
+         mk(lambda k: (({"V": 1.3}, "notrun") if k == k0 else ({}, None))),
+         {g: ("TRUNCATED: LOSS" if g == g0 else "NO LOSS") for g in nm}, 4,
+         [r"^%s %s: LOSS \(standing\): %s \(single pass\)$" % (g0[0], g0[1], re.escape(tag0)),
+          r"^%s %s: re-time NOT-RUN .*: %s$" % (g0[0], g0[1], re.escape(tag0))]),
+        ("a reading LOSS standing on a NOISY re-time (its V short) is listed single-pass (r80 RULE-2)",
+         mk(lambda k: (({"V": 1.3}, {"V": "short"}) if k == k0 else ({}, None))),
+         {g: ("LOSS" if g == g0 else "NO LOSS") for g in nm}, 0,
+         [r"^%s %s: LOSS \(standing\): %s \(single pass\)$" % (g0[0], g0[1], re.escape(tag0)),
+          r"^%s %s: standing on a single pass .*: %s reading single pass \(re-time noisy\)$" % (g0[0], g0[1], re.escape(tag0))]),
+        ("an A/A non-TIE standing on a NOISY re-time makes its cell HARNESS, listed single-pass (r80 RULE-2)",
+         mk(lambda k: (({"H64.b": 1.3}, {"H64.b": "short"}) if k == k0 else ({}, None))),
+         {g: "NO LOSS" for g in nm}, 0,
+         [r"^%s %s: INCONCLUSIVE-HARNESS: %s$" % (g0[0], g0[1], re.escape(tag0)),
+          r"^%s %s: standing on a single pass .*: %s A/A single pass \(re-time noisy\)$" % (g0[0], g0[1], re.escape(tag0))]),
+        ("an A/A WIN (H64.b faster) standing on a NOISY re-time STANDS too (RE-TIME: an A/A non-TIE stands): HARNESS",
+         mk(lambda k: (({"H64.b": 0.7}, {"V": "short"}) if k == k0 else ({}, None))),
+         {g: "NO LOSS" for g in nm}, 0, [r"^%s %s: INCONCLUSIVE-HARNESS: %s$" % (g0[0], g0[1], re.escape(tag0))]),
+        ("a GATE FAIL in a first-pass row: the arm is unread (both comparisons NOISE), the run is RED, exit 1 (r80 CHECKS-1)",
+         mk(lambda k: ({"V": "gatefail"}, None) if k == k0 else ({}, None)),
+         {g: "NO LOSS" for g in nm}, 1, [r"^GATE FAIL %s V: drill$" % re.escape("/".join(k0))]),
+        ("a GATE FAIL in a re-time row: exit 1 (r80 CHECKS-1)",
+         mk(lambda k: (({"V": 1.3}, {"H64": "gatefail"}) if k == k0 else ({}, None))),
+         {g: ("LOSS" if g == g0 else "NO LOSS") for g in nm}, 1,
+         [r"^GATE FAIL %s H64 \(re-time\): drill$" % re.escape("/".join(k0))]),
+    ]
+    for i, (what, spec, want, wrc, lines) in enumerate(rdrills):
+        path = record("drill%d" % i, spec)
+        cs, info = c6_read(path)
+        dec = c6_decide(cs)
+        got = {g: dec[g]["verdict"] for g in dec}
+        rc, txt = decide(path)
+        miss = [p for p in lines if not re.search(p, txt, re.M)]
+        row(got == want and rc == wrc and not miss, "RECORD drill %s: reads %s, exit %d (want %s, exit %d)%s" % (
+            what, sorted(got.items()), rc, sorted(want.items()), wrc, "; MISSING lines %s" % miss if miss else ""))
+        if i == 0:      # the design's WINs are the re-time's: a reader that dropped the re-time would read them as TIEs
+            hd = {g: sum(1 for k in timed_keys if (k[0], k[3]) == g and k[2] == "hit-dense") for g in nm}
+            row(all(dec[g]["wtl"]["WIN"] == hd[g] and len(dec[g]["notes"]) == hd[g] for g in nm),
+                "RECORD drill design: the standing WINs are the hit-dense cells, each 'repeated' (%s)" % sorted(
+                    (g, dec[g]["wtl"]["WIN"], hd[g]) for g in nm))
+    # one cell per (card, layer, regime) N/A: listed with its count, excluded from every count
+    one = {}
+    for k in timed_keys:
+        one.setdefault((k[0], k[3], k[2]), k)
+    na1 = set(one.values())
+    path = record("na_per_regime", lambda k: (0 if k in cut or k in na1 else 1000, {}, None))
+    cs, info = c6_read(path)
+    dec = c6_decide(cs)
+    okna = all(set(dec[g]["na"]) == {k for k in cut | na1 if (k[0], k[3]) == g} and dec[g]["population"] ==
+               nm[g] - sum(1 for k in na1 if (k[0], k[3]) == g) and dec[g]["verdict"] == "NO LOSS" for g in nm)
+    row(okna, "RECORD drill one N/A cell per regime per (card, layer) (%d cells + the %d named cuts): listed N/A, out of the "
+              "population, NO LOSS: %s" % (len(na1), len(cut), sorted((g, d["verdict"], len(d["na"]), d["population"])
+                                                                       for g, d in dec.items())))
+    # the reader's refusals (each beside the clean records above, which it reads), each through cmd_c6decide: exit 2
+    loss0 = lambda k: (0 if k in cut else 1000, {"V": 1.3} if k == k0 else {}, {"V": 1.3} if k == k0 else None)
+    refusals = [
+        ("no #end line (the run died)", record("noend", tie, end=False)),
+        ("a header of another rule sha", record("oldrule", tie, header=c6_header("0" * 16, "1" * 16, ["on"], "x").replace(
+            C6_RULE_SHA, "f" * 16))),
+        ("a header without the harness field", record("noharness", tie, header=re.sub(
+            r"\tharness=[0-9a-f]+", "", c6_header("0" * 16, "1" * 16, ["on"], "x")))),
+        ("recorded at another LAUNCHES", record("launches", tie, launches=LAUNCHES + 2)),
+        ("a re-time the first pass owes, absent", record("owedmissing", lambda k: (
+            0 if k in cut else 1000, {"V": 1.3} if k == k0 else {}, None))),
+        ("a re-time the first pass does not owe, present", record("notowed", lambda k: (
+            0 if k in cut else 1000, {}, {} if k == k0 else None))),
+        ("an unknown line (r80 CHECKS-2)", record("unknown", tie, extra=["bogus\tline"])),
+        ("a cell that calls the span with no first-pass row for an arm (r80 CHECKS-2)", record("nofirst", lambda k: (
+            0 if k in cut else 1000, {"H64.b": "absent"} if k == k0 else {}, None))),
+        ("an owed re-time holding 2 of its 3 rows (r80 CHECKS-2)", record("rt2of3", lambda k: (
+            0 if k in cut else 1000, {"V": 1.3} if k == k0 else {}, {"V": 1.3, "H64.b": "absent"} if k == k0 else None))),
+        ("rows of a cell outside the record's population (r80 CHECKS-2)", record("stray", tie, extra=[
+            "first\t" + row_line(("C6", "c6_nosuch", a, "random", "on"), "ok", L(1.0), variants=[0] * LAUNCHES,
+                                 exes=["0" * 16] * LAUNCHES).rstrip("\n") for a in ("V", "H64", "H64.b")])),
+        ("a first-pass NOT-RUN cell carrying re-time rows (it owes none; r80 CHECKS-2)", record("notrunrt", lambda k: (
+            0 if k in cut else 1000, {"V": "notrun", "H64": "notrun", "H64.b": "notrun"} if k == k0 else {},
+            {} if k == k0 else None))),
+        ("a re-time that ran FIRST-PASS exes (c6_rule.md RE-TIME: never the first pass's; r80 FIDELITY-2)",
+         record("rtreuse", loss0, pools=[(t, pool_ids(t[0], t[1], t[2], 0) if t == (k0[1], "V", k0[3], 1) else ids)
+                                         for t, ids in dpools])),
+        ("a launch whose exe is in no recorded pool (r80 FIDELITY-2)",
+         record("strangerexe", loss0, exes=lambda k, a, rt, ids: ["f" * 16] + ids[1:] if k == k0 and a == "V" else ids)),
+        ("an ok row without its exe identities (r80 FIDELITY-2)",
+         record("noexes", tie, extra=[], exes=lambda k, a, rt, ids: ids if k != k0 else None)),
+        ("an #end status the rows contradict (complete over NOT-RUN rows; r80 CHECKS-10)", record("endlies", mk(
+            lambda k: (({"V": "notrun", "H64": "notrun", "H64.b": "notrun"}, None) if k in late else ({}, None))),
+            end="complete")),
+    ]
+    # each refusal must be for ITS OWN reason (lane bsu6fix2: the no-#end refusal dropped, the #end cross-check still
+    # refused that record with exit 2, so an exit-code-only row could not see the clause go): the reason's text, by record
+    why = {"noend": r"no #end line", "oldrule": r"recorded under rule f{16}", "noharness": r"the header lacks harness",
+           "launches": r"recorded at LAUNCHES=%d" % (LAUNCHES + 2),
+           "owedmissing": r"owes a re-time and the record holds 0 re-time rows",
+           "notowed": r"owes no re-time and the record holds 3 re-time rows", "unknown": r"an unknown line 'bogus",
+           "nofirst": r"has no first-pass row for \['H64\.b'\]",
+           "rt2of3": r"owes a re-time and the record holds 2 re-time rows",
+           "stray": r"rows of cells outside the record's population \(C6/c6_nosuch",
+           "notrunrt": r"owes no re-time and the record holds 3 re-time rows",
+           "rtreuse": r"re-time ran first-pass exes", "strangerexe": r"exes \['f{16}', .* are not members of a recorded pool",
+           "noexes": r"exes None are not members of a recorded pool",
+           "endlies": r"#end says status complete, the rows say truncated"}
+    for what, path in refusals:
+        err = io.StringIO()
+        with contextlib.redirect_stderr(err):
+            rc, txt = decide(path)
+        want = why[os.path.basename(path)[:-4]]
+        row(rc == 2 and re.search(want, err.getvalue()), "RECORD refusal %s: exit %s (want 2, refused: /%s/)" % (what, rc, want))
+    # ---- THE CPU-QUIET CONTROL (rule_710.md; R-1 (c)): a stubbed probe, stubbed counters, no clock
+    class StubProbe:
+        def __init__(self, busy, niv=0, secs=lambda i: 0.06, sample=0.01):
+            self.busy, self.niv, self.secs, self.sample, self.n, self.cpu, self.sib = busy, niv, secs, sample, 0, "s", "s"
+
+        def second(self):
+            return self.sample, 0.0
+
+        def measure(self, argv, cell, env):
+            self.n += 1
+            b = self.busy(self.n) if callable(self.busy) else self.busy
+            return 1.0, b, self.niv(self.n) if callable(self.niv) else self.niv, self.secs(self.n)
+    cell0 = ("C6", "p", "V", "random", "on")
+    qd = os.path.join(dd, "qc")
+    os.makedirs(qd, exist_ok=True)
+
+    def qcon(probe):
+        qc = QuietControl(probe, os.path.join(qd, "sample.tsv"), os.path.join(qd, "voids.tsv"))
+        qc.sample(["stub"], cell0, {})
+        qc.pass_ = "drill"
+        return qc
+    q = qcon(StubProbe(0.01))
+    row(abs(q.qc["cpu7_max"] - CPU7_LOW) < 1e-12 and q.qc["nivcsw_max"] == 2 and not q.qc["cpu7_capped"],
+        "QUIET thresholds from a quiet stubbed sample: CPU7_MAX %.3f (the 5 %% floor), NIVCSW_MAX %d" % (
+            q.qc["cpu7_max"], q.qc["nivcsw_max"]))
+    qb = qcon(StubProbe(0.01, sample=0.15))
+    row(abs(qb.qc["cpu7_max"] - CPU7_CAP) < 1e-12 and qb.qc["cpu7_capped"],
+        "QUIET thresholds from a busy sample (15 %%): CPU7_MAX capped at %.2f, flagged" % qb.qc["cpu7_max"])
+    p = StubProbe(lambda i: 0.9 if i == QC_CAL_REPS + 1 else 0.01)      # the first launch after the calibration is noisy
+    q = qcon(p)
+    x = q.launch(["stub"], cell0, {})
+    row(x == 1.0 and q.voids == 1 and p.n == QC_CAL_REPS + 2,
+        "QUIET a noisy launch (sibling 90 %% busy) is VOID and re-timed once: value %s, voids %d, launches %d" % (
+            x, q.voids, p.n - QC_CAL_REPS))
+    p = StubProbe(0.01, niv=lambda i: 0 if i <= QC_CAL_REPS else 50)       # every timed launch preempted
+    q = qcon(p)
+    x = q.launch(["stub"], cell0, {})
+    row(x is None and q.voids == 1 + QC_RETIMES and p.n - QC_CAL_REPS == 1 + QC_RETIMES,
+        "QUIET a launch void on every attempt (nivcsw 50 > 2) is re-timed up to %d more times, then counts as SHORT (None):"
+        " voids %d, launches %d" % (QC_RETIMES, q.voids, p.n - QC_CAL_REPS))
+    # (secs, switches, want): the limit scales with the launch's length (0.5 s, 0.06 s), never BELOW NIVCSW_MAX (a 0.03 s
+    # launch, half the calibration: r80 CHECKS-6, the floor max(1, T / T_CAL)), and a count ON the limit is valid (`>`)
+    for secs, niv, want in ((0.5, 3, 1.0), (0.06, 3, None), (0.03, 2, 1.0), (0.06, 2, 1.0)):
+        p = StubProbe(0.01, niv=lambda i, n=niv: 1 if i <= QC_CAL_REPS else n,
+                      secs=lambda i, s=secs: 0.06 if i <= QC_CAL_REPS else s)
+        q = qcon(p)
+        got = q.launch(["stub"], cell0, {})
+        row(got == want, "QUIET the nivcsw limit: %d switches in a %.2f s launch vs NIVCSW_MAX %d per %.2f s reads %s" % (
+            niv, secs, q.qc["nivcsw_max"], q.qc["t_cal"], "valid" if got else "VOID"))
+    p = StubProbe(lambda i: 0.01 if i <= QC_CAL_REPS else CPU7_LOW)      # the sibling busy exactly AT CPU7_MAX
+    q = qcon(p)
+    got = q.launch(["stub"], cell0, {})
+    row(got == 1.0 and q.voids == 0, "QUIET a sibling busy exactly at CPU7_MAX %.3f is valid (`>`): %s" % (
+        q.qc["cpu7_max"], "valid" if got else "VOID"))
+    short = c6_cell({"key": ("C6", "p", "random", "on"), "calls": 1, "arms": {"V": L(1.0)[:LAUNCHES - 1], "H64": L(1.0),
+                                                                               "H64.b": L(1.0)}})
+    row(short[0] == "NOISE" and short[1] == "AA-NOISE", "QUIET an arm short of LAUNCHES valid launches: BOTH of its cell's "
+                                                        "comparisons are NOISE (r80 RULE-1) (%s, %s)" % short[:2])
+    # ---- DRY's guard (no clock): the clock call and a timed exec raise ClockCalled, which no `except Exception` swallows
+    un, seen = dry_guard()
+    hit = []
+    old_ct = os.environ.pop("CARD_TIME", None)
+
+    def inherited():
+        os.environ["CARD_TIME"] = "1"
+        try:
+            subprocess.run(["true"])
+        finally:
+            del os.environ["CARD_TIME"]
+
+    def untimed_with_inherited():
+        os.environ["CARD_TIME"] = "1"
+        try:
+            return subprocess.run(["true"], env=untimed_env()).returncode == 0
+        finally:
+            del os.environ["CARD_TIME"]
+    try:
+        for what, fn in (("timed_launch", lambda: timed_launch(["true"], cell0, {})),
+                         ("a taskset exec", lambda: subprocess.run(["taskset", "-c", "0", "true"])),
+                         ("a CARD_TIME exec", lambda: subprocess.run(["true"], env={"CARD_TIME": "1"})),
+                         ("an exec INHERITING CARD_TIME (r80 CHECKS-5)", inherited)):
+            try:
+                fn()
+            except ClockCalled:
+                hit.append(what)
+        plain = subprocess.run(["true"]).returncode == 0
+        gate = untimed_with_inherited()
+    finally:
+        un()
+        if old_ct is not None:
+            os.environ["CARD_TIME"] = old_ct
+    row(len(hit) == 4 and plain and gate and not issubclass(ClockCalled, Exception) and seen["clock"] == 1
+        and seen["subprocess"] == 3, "DRY guard: %s raise ClockCalled (a BaseException); an untimed exec runs, an untimed "
+        "exec (untimed_env) runs under an inherited CARD_TIME" % ", ".join(hit))
+    # ---- the pools (arm_pool; r80 FIDELITY-1, ruling (c)): V's and H64's first pass are the r41 pool (C1-C5's every arm);
+    # every C6_DISJOINT pair is disjoint in its (16-B class, alignment) pairs, the parameters pool_proof's layout descriptor
+    # depends on (`time --prepare` proves it again on the BUILT descriptors); a re-time never repeats a first-pass exe
+    same0 = all(arm_pool("t%d" % i, ly, a) == pool_variants("t%d" % i, align_variants_of(ly))
+                for i in range(300) for ly in LAYER for a in ("V", "H64", "I", "aa", "aa.b", "h8"))
+
+    def cls(pool):
+        return {(pre // 16 % 4, tuple(fl)) for _v, pre, fl in pool}
+    overlap, clash, redrawn = 0, 0, 0
+    for i in range(2000):
+        for ly in ("on", "off-clang", "off-os"):
+            pl = {(a, rt): arm_pool("t%d" % i, ly, a, rt) for a in ("V", "H64", "H64.b") for rt in (0, 1)}
+            overlap += sum(bool(cls(pl[x]) & cls(pl[y])) for x, y in C6_DISJOINT)
+            fp = {(pre, tuple(fl)) for (a, rt), p in pl.items() if not rt for _v, pre, fl in p}
+            for a in ("V", "H64", "H64.b"):
+                clash += sum(1 for _v, pre, fl in pl[(a, 1)] if (pre, tuple(fl)) in fp)
+                redrawn += pl[(a, 1)] != pool_variants("t%d" % i, align_variants_of(ly), pool_salt(a, 1), pool_shift(a, 1))
+    row(same0 and overlap == 0 and clash == 0 and redrawn > 0,
+        "POOLS: retime 0 of V, H64 (and C1-C5's arms) is the r41 pool (300 texts x every layer); over 2000 texts x 3 layers "
+        "every C6_DISJOINT pair shares no (class, alignment) (%d overlaps), no re-time variant repeats a first-pass exe (%d "
+        "clashes), %d re-time draws redrawn" % (overlap, clash, redrawn))
+    PLANT.add("pool-overlap")
+    try:
+        po = sum(cls(arm_pool("t%d" % i, "on", "H64.b")) == cls(arm_pool("t%d" % i, "on", "H64")) for i in range(100))
+    finally:
+        PLANT.discard("pool-overlap")
+    row(po == 100, "POOLS: the plant pool-overlap gives H64.b H64's (class, alignment) pairs at %d of 100 texts" % po)
+    global REDRAW_MAX
+    rm, REDRAW_MAX = REDRAW_MAX, 0
+    try:
+        arm_pool("t0", "on", "V", 1)
+        bounded = False
+    except SystemExit as e:
+        bounded = e.code == 2
+    finally:
+        REDRAW_MAX = rm
+    row(bounded, "POOLS: a re-time pool that cannot be drawn within REDRAW_MAX redraws is REFUSED (exit 2), never a loop "
+                 "(r80 CHECKS-9)")
+    # ---- the prepare's controls on constructed inputs (r80 CHECKS-4): REACH CONTROL, a refused pool, the disjointness
+    kk = [("C6", "p", "hit-dense", "on"), ("C6", "p", "near-miss", "on")]
+    row(c6_reach_refusal(kk, {kk[0]: 0, kk[1]: 5}) and not c6_reach_refusal(kk, {kk[0]: 5, kk[1]: 0}),
+        "REACH CONTROL: a hit-dense cell with 0 span calls is refused; a near-miss cell with 0 is N/A, not refused")
+    lay_a = {v: ((v,), (v,), (v % 2,)) for v in range(4)}
+    lay_b = {v: ((v + 16,), (v,), (v % 2,)) for v in range(4)}
+    good = {(a, rt): (lay_a if (a == "H64") == (rt == 0) else lay_b) for a in ("V", "H64", "H64.b") for rt in (0, 1)}
+    good[("V", 0)], good[("V", 1)] = lay_a, lay_b
+    bad_aa = {**good, ("H64.b", 0): lay_a}
+    bad_rt = {**good, ("V", 1): {0: lay_a[0], 1: lay_b[1], 2: lay_b[2], 3: lay_b[3]}}
+    miss = {k: v for k, v in good.items() if k != ("H64.b", 1)}
+    row(not proofs_refusal([None], {("p", "on"): good}) and proofs_refusal(["POOL REFUSED x"], {("p", "on"): good})
+        and all(proofs_refusal([None], {("p", "on"): x}) for x in (bad_aa, bad_rt, miss)),
+        "POOL DISJOINTNESS: clean pools pass; a refused pool, H64.b on H64's layouts, a re-time sharing one first-pass layout "
+        "and an unproved pool are each refused")
+    # ---- THE TIMER END TO END, DRY (r80: CHECKS-3/4/5/7, FIDELITY-2/4/5, RULE-3/4): `time --prepare` and `time --dry`
+    # in-process over C6 c6_hex32 (a window site: hit-dense, near-miss-in, miss-heavy, random timed; the exercise model's
+    # voids are deterministic there), in sub-rundirs sharing RUNDIR's build caches (~20 compiles on a fresh RUNDIR)
+    def sub(name):
+        d = os.path.join(dd, name)
+        os.makedirs(d, exist_ok=True)
+        for x in ("art", "bin", "reach", "subj", "fx", "obj"):
+            os.makedirs(os.path.join(rundir, x), exist_ok=True)
+            if not os.path.lexists(os.path.join(d, x)):
+                os.symlink(os.path.abspath(os.path.join(rundir, x)), os.path.join(d, x))
+        return d
+
+    def run_time(argv, env_card_time=False):
+        """cmd_time(argv) in-process: (exit code, stdout)."""
+        buf = io.StringIO()
+        if env_card_time:
+            os.environ["CARD_TIME"] = "1"
+        with contextlib.redirect_stdout(buf):
+            try:
+                rc = cmd_time(argv)
+            except SystemExit as e:
+                rc = e.code
+            finally:
+                os.environ.pop("CARD_TIME", None)
+                PLANT.clear()
+        return rc, buf.getvalue()
+    hx = ["--cards", "C6", "--patterns", "c6_hex32"]
+    for plant, want in (("reach-dead", r"REACH CONTROL"), ("pool-overlap", r"NOT LAYOUT-DISJOINT")):
+        d = sub("plant_" + plant)
+        err = io.StringIO()
+        with contextlib.redirect_stderr(err):
+            rc, txt = run_time([d, "--prepare", "--plant", plant] + hx)
+        row(rc == 2 and re.search(want, txt + err.getvalue()) and not os.path.exists(os.path.join(d, C6_PREPARED)),
+            "PREPARE plant %s: REFUSED (exit %s, %s), no manifest" % (plant, rc, want))
+    d = sub("dry")
+    rc, txt = run_time([d, "--prepare"] + hx)
+    row(rc == 0 and os.path.exists(os.path.join(d, C6_PREPARED)), "PREPARE C6 c6_hex32: exit %s, the manifest written" % rc)
+    man = json.load(open(os.path.join(d, C6_PREPARED))) if rc == 0 else {"pools": []}
+    lays = {}
+    for pl in man["pools"]:
+        lays.setdefault((pl["pat"], pl["layer"]), {})[(pl["arm"], pl["retime"])] = {
+            v: tuple(tuple(x) for x in pl["layouts"][v]) for v in range(POOL_SIZE)}
+    row(lays and not proofs_refusal([], lays), "PREPARE: the manifest's BUILT layouts are layout-disjoint over %d pools" % len(
+        man["pools"]))
+    rc, txt = run_time([d, "--dry"], env_card_time=True)
+    rec = re.search(r"-> (\S+results_c6_\S+\.tsv)", txt)
+    rec = rec.group(1) if rec else None
+    rc2, txt2 = decide(rec) if rec else (None, "")
+    row(rc == 0 and "CARD_TIME was set in the inherited environment: removed" in txt and
+        "clock calls 0, timed execs refused 0" in txt and txt2 and txt2 in txt and rc2 == 0,
+        "DRY exercise (CARD_TIME preset): exit %s, clock calls 0, the record round-trips through c6decide (exit %s)" % (rc, rc2))
+    a1, nret, own = 0, 0, set()
+    if rec:
+        for x in open(rec):
+            f = x.rstrip("\n").split("\t")
+            if f[0] == "first" and f[6] == "ok":
+                a1 += len(f[9].split(","))
+            if f[0] == "retime":
+                nret += 1
+        a1 += sum(1 for x in open(rec.replace("results_c6_", "voids_c6_")) if x.startswith("first\t"))
+    row(nret >= 6, "DRY exercise: %d re-time rows (the owed cells' three arms), first-pass attempts %d" % (nret, a1))
+    dl = 1.0 * QC_SECS + DRY_LAUNCH_S * (QC_CAL_REPS + a1) - DRY_LAUNCH_S / 2
+    rc, txt = run_time([d, "--dry", "--deadline", "+%.3f" % dl])
+    rec = re.search(r"-> (\S+results_c6_\S+\.tsv)", txt)
+    rows_ = [x.split("\t") for x in open(rec.group(1))] if rec else []
+    fnr = sum(1 for f in rows_ if f[0] == "first" and f[6] == "notrun")
+    rnr = [f[6] for f in rows_ if f[0] == "retime"]
+    # the VOID BY METHOD cells come after the last timed cell: the window, closed by then, must leave them `method` (they
+    # never start; lane bsu6fix2)
+    meth = [f[6] for f in rows_ if f[0] == "first" and f[4] in APPROX]
+    row(rc == 4 and fnr == 0 and rnr and all(x == "notrun" for x in rnr) and meth and all(x == "method" for x in meth)
+        and re.search(r"^C6 on: TRUNCATED: ", txt, re.M),
+        "DRY WINDOW: a deadline (+%.2f s) inside the first pass's last launch: first pass complete (%d NOT-RUN rows; its %d "
+        "void-by-method rows read method), every re-time row NOT-RUN (%d), the verdict TRUNCATED (r80 RULE-4), exit %s" % (
+            dl, fnr, sum(x == "method" for x in meth), len(rnr), rc))
+    rc, txt = run_time([d, "--dry", "--dry-model", "gatefail"])
+    row(rc == 1 and re.search(r"^GATE FAIL C6/c6_hex32/hit-dense/on V: ", txt, re.M),
+        "DRY gatefail: a wrong answer at a TIMED launch is the row's gatefail and the run is RED (exit %s; r80 FIDELITY-4)" % rc)
+    orig = globals()["prepare_cell"]
+    globals()["prepare_cell"] = lambda rd, c, n, retime=0: orig(rd, c, n, 0)
+    try:
+        err = io.StringIO()
+        with contextlib.redirect_stderr(err):
+            rc, txt = run_time([d, "--dry"])
+    finally:
+        globals()["prepare_cell"] = orig
+    row(rc == 2 and "REFUSED" in err.getvalue() and "the retime pass ran" in err.getvalue(),
+        "DRY plant: the re-time handed the FIRST pass's exes is a WiringFault, REFUSED (exit %s; r80 FIDELITY-2)" % rc)
+    r710 = os.path.join(dd, "rule_710_moved.md")
+    open(r710, "w").write(open(C6_RULE_710_FILE).read().replace("CLAIM (amended", "CLAIM (moved, amended", 1))
+    old710 = globals()["C6_RULE_710_FILE"]
+    globals()["C6_RULE_710_FILE"] = r710
+    try:
+        err = io.StringIO()
+        with contextlib.redirect_stderr(err):
+            rc, _t = run_time([d, "--dry"])
+    finally:
+        globals()["C6_RULE_710_FILE"] = old710
+    row(rc == 2 and "is not job 710's" in err.getvalue(), "TIME refuses a rule_710.md whose sha is not job 710's (exit %s; "
+                                                         "the read-back cannot: it hashes the same moved file)" % rc)
+    d2 = sub("noprep")
+    err = io.StringIO()
+    with contextlib.redirect_stderr(err):
+        rc, _t = run_time([d2, "--dry"])
+        rc_t, _t = run_time([d, "--cap", "3600"])
+        rc_d, _t = run_time([d, "--deadline", "+60"])
+    row(rc == 2 and rc_t == 2 and rc_d == 2, "TIME refusals: no manifest (exit %s), a timing without --job-start (%s), a "
+                                             "timing with a DRY's --deadline (%s)" % (rc, rc_t, rc_d))
+    # THE WINDOW's own computation (c6_rule.md WINDOW; r80 RULE-3), called directly: a timing with NO window flag refused
+    # (through `time` it would reach a real probe, so never driven that way here), the deadline min(stop_at, start + cap
+    # - JOB_MARGIN_S) either way round, a DRY with none has none (lane bsu6fix2: no row reached the no-window refusal)
+    now = time.time()
+    win = []
+    for opt, dry, want in (({}, False, "needs its WINDOW"), ({"--cap": "3600", "--job-start": "%d" % (now - 100)}, False,
+                                                           now - 100 + 3600 - JOB_MARGIN_S),
+                           ({"--cap": "3600", "--job-start": "%d" % (now - 100), "--stop-at": "%d" % (now + 50)}, False,
+                            now + 50), ({}, True, None)):
+        err = io.StringIO()
+        try:
+            with contextlib.redirect_stderr(err):
+                got = c6_deadline(opt, dry, now)[0]
+        except SystemExit as e:
+            got = "refused %s: %s" % (e.code, err.getvalue().strip())
+        ok = (isinstance(want, str) and isinstance(got, str) and got.startswith("refused 2") and want in got) or \
+             (not isinstance(want, str) and got == (want if want is None else float(int(want))))
+        win.append((sorted(opt), dry, ok))
+    row(all(ok for _o, _d, ok in win), "WINDOW computed (c6_deadline): no window flag on a timing REFUSED, start + cap - %d, "
+        "min with --stop-at, a DRY without one has none: %s" % (JOB_MARGIN_S, win))
+    # DRY's probe reads the model of the exe's PROVED pool, never of the cell it is labelled with (r80 FIDELITY-2): called
+    # directly, past the wiring control (which refuses such a launch before the probe sees it, so `time` cannot show the
+    # probe's own keying; lane bsu6fix2): a first-pass V exe launched as H64 reads V's miss-heavy factor (1.3, not H64's
+    # 1.0), and a RE-TIME V exe launched while the control's pass says first reads the re-time's (1.0, not 1.3)
+    fake = {k: os.path.join(dd, "probe_%s" % k) for k in ("first", "retime")}
+    for f in fake.values():
+        open(f, "w").close()
+
+    class _Q:
+        pass_ = "first"
+    pr = DryProbe("exercise", 0.0, lambda: _Q, {fake["first"]: ("c6_hex32", "V", "on", 0),
+                                                fake["retime"]: ("c6_hex32", "V", "on", 1)})
+    f1 = pr.measure([fake["first"]], ("C6", "c6_hex32", "H64", "miss-heavy", "on"), {})[0]
+    f2 = pr.measure([fake["retime"]], ("C6", "c6_hex32", "V", "miss-heavy", "on"), {})[0]
+    row(abs(f1 - 1.3) < 0.02 and abs(f2 - 1.0) < 0.02, "DRY probe keyed on the exe's proved pool: a first-pass V exe "
+        "labelled H64 reads %.3f (want 1.3), a re-time V exe in a 'first' pass reads %.3f (want 1.0)" % (f1, f2))
+    if man["pools"]:
+        m2 = dict(man, harness="0" * 16)
+        open(os.path.join(d2, C6_PREPARED), "w").write(json.dumps(m2))
+        with contextlib.redirect_stderr(err):
+            rc, _t = run_time([d2, "--dry"])
+        row(rc == 2 and "prepared under harness" in err.getvalue(), "TIME refuses a manifest of another harness (exit %s)" % rc)
+        os.remove(os.path.join(d2, C6_PREPARED))
+    global COMPILE_OK
+    # the witness's premise ("never built") must hold by construction, never by the RUNDIR's history (lane bsu6fix2: a
+    # mutant that let `time` compile built this exe into the shared bin/, and every later c6selftest on that RUNDIR read
+    # the gate as broken): its own bin/, emptied on every run; the artifact cache stays shared
+    d3 = sub("nobuild")
+    if os.path.islink(os.path.join(d3, "bin")):
+        os.remove(os.path.join(d3, "bin"))
+    shutil.rmtree(os.path.join(d3, "bin"), ignore_errors=True)
+    os.makedirs(os.path.join(d3, "bin"))
+    COMPILE_OK = False
+    try:
+        build_cell(d3, "c6_hex32", "V", "on", 0, 1 + 7)       # a pool round never built: the gate refuses it
+        refused = False
+    except SystemExit as e:
+        refused = e.code == 2
+    finally:
+        COMPILE_OK = True
+    row(refused, "TIME refuses to compile: a build with COMPILE_OK clear exits 2 (r80 FIDELITY-5)")
     # ---- check_c6's plants (on RUNDIR's artifacts: `dry`'s, or built here)
     if True:
         os.makedirs(rundir, exist_ok=True)
@@ -4779,7 +6270,8 @@ def main():
     # leaves its finished rows in a redirected log; block buffering left U5's 3000 s run an empty file
     sys.stdout.reconfigure(line_buffering=True)
     cmds = {"plan": cmd_plan, "dry": cmd_dry, "run": cmd_run, "rerun": cmd_rerun, "rule": cmd_rule,
-            "c3": cmd_c3, "selftest": cmd_selftest, "identity": cmd_identity, "c6selftest": cmd_c6selftest}
+            "c3": cmd_c3, "selftest": cmd_selftest, "identity": cmd_identity, "c6selftest": cmd_c6selftest,
+            "time": cmd_time, "c6decide": cmd_c6decide}
     if len(sys.argv) < 2 or sys.argv[1] not in cmds:
         print(__doc__)
         return 2
