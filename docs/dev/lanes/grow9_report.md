@@ -59,5 +59,5 @@ The runner already used a `ThreadPoolExecutor` over independent cells with `ex.m
 ## STATE AT HANDOFF
 
 Branch lane/grow9 (tip in the cloudrun line of the handback). Rulings applied: none (file empty). Scratch: /var/tmp/pcrec-pcrec/scratch/grow9/ (logs dbl_full.log, occ_full.log, worst*.log, q_j*.log). Left alone: stale `growth-*` dirs in /var/tmp/pcrec-pcrec (not all mine).
-OWED: the FULL default sweep in the cloud, `scripts/cloudrun --owner main --kind growth --name grow9`, branch `cloud/main/growth/grow9` (key `grow9`); it prints the first cloud `CPU:` lines and the per-doubling report on the last shard (76/76), the data to re-derive the 300 s bound. Not run locally: the full default CLI sweep and the ASan library stage.
+OWED: none (box queue); cloud growth run cloud/main/growth/grow9 dispatched, verdict read by the manager. The run prints the first cloud `CPU:` lines and the per-doubling report on the last shard (76/76), the data to re-derive the 300 s bound. Not run locally: the full default CLI sweep and the ASan library stage.
 Open for the owner: `occasional-tier-contents` (above); filing the possessive/star and character-spine findings.
