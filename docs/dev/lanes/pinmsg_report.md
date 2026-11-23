@@ -15,4 +15,5 @@ S1760 and S1761 read UNREACHED at a deep scratch path because their REACH probe'
 All runs under `scripts/boxlock run --label pinmsg`.
 
 ## STATE AT HANDOFF
-Complete; nothing owed. Rulings file empty (no entries applied). Branch lane/pinmsg committed.
+OWED: none
+Complete. Rulings file empty (no entries applied). Branch lane/pinmsg committed.
