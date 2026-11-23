@@ -361,7 +361,7 @@ Written in place: WHOLE `7` HOLDS, `7;1` HOLDS, `1;7` HOLDS, `1;2` FAILS / SEARC
 ### The array of settings, not the loop's passes   [core/labels/labels-vs-captures/array-vs-passes]   ruled 2026-11-22
 The group questions (`some`, `count`, `occurs`) and the index `h[k]` read the array of a name's settings: every setting, in order, the one outside the loop included.
 needs: core/labels/labels-vs-captures
-see: lib/counting/some lib/counting/count lib/counting/occurs core/conditions/form core/values/tuples parked/ideas/user-doc-traps
+see: lib/counting/some lib/counting/count lib/counting/occurs core/conditions/form core/values/tuples parked/ideas/user-doc-traps core/conditions/match-so-far
 - "they chose to use the same labels and therefore that has to have a meaning": a setting outside the loop wanted
   apart is given a label of its own. `h[k]` is the k-th setting (the line "Two depths").
 - The label and the array are two reads of one name: a reset acts on the label only, so after
@@ -933,13 +933,43 @@ see: core/values/reads core/values/computed-labels lib/counting/count core/value
   a value"); a default (`h = v`) stays a label form (a reading, the manager's answer to his question); inside a
   group question a joint entry stays refused.
 - His observation, "it suggests $h could go there which is also new": the `$h` form, the line below (a reading).
+- A value reads zero or more labels; with none (`("Frank": S)`, his "silly but useful for generated code") it is
+  fixed at compile time and draws `pcrec.test.always` or `pcrec.test.never` (the manager's reading (d), not ruled).
 WHOLE `7,1,7,` HOLDS, `7,1,` FAILS / SEARCHED `7,7,7,` `7,7,`@0 / FIND-ALL `7,7,7, 1,7,7,` [`7,7,`@0, `1,7,7,`@7] (`/(?:(?<d>\d),)+/ & (count((d: "7")): ==2)`)
 WHOLE `3+4` HOLDS, `7+8` FAILS / SEARCHED `7+8 2+2` `2+2`@4 / FIND-ALL `1+1 9+9 5+4` [`1+1`@0, `5+4`@8] (`/(?<a>\d)\+(?<b>\d)/ & (($a + $b): <10)`)
 Nothing fails the entry: WHOLE `7` HOLDS, `3` FAILS / SEARCHED `x3 7` `7`@3 / FIND-ALL `3 7 5 1` [`7`@2, `5`@4] (`/(?<a>\d)/ & (($a - 5): >= 0)`: `3 - 5` is nothing)
 NOT holds on nothing: WHOLE `7` FAILS, `3` HOLDS / SEARCHED `x3 7` `3`@1 / FIND-ALL `3 7 5 1` [`3`@0, `1`@6] (`/(?<a>\d)/ & NOT (($a - 5): >= 0)`)
 A read on the left: WHOLE `3x` HOLDS, `x` FAILS, `7x` FAILS / SEARCHED `7x 3x` `3x`@3 / FIND-ALL `3x x 7x` [`3x`@0] (`/(?<h>\d)?x/ & ($h: <5)`, as `(h: <5)`)
 Inside a group question: modes: a compile error (`/(?<h>\d);(?:(?<h>\d);)*/ & some(($h: "7"))`; `count((($a + $b): <10))` alike).
+A value with no label: WHOLE `x` HOLDS / SEARCHED `ax` `x`@1 / FIND-ALL `x x` [`x`@0, `x`@2] (`/x/ & ("Frank": /F.*/)`)
 A joint entry with a value: WHOLE `3+4=7` HOLDS, `7+8=1` FAILS, `1+2=34` FAILS / SEARCHED `7+8=1 2+2=4` `2+2=4`@6 / FIND-ALL `1+1=2 9+9=1 5+4=12` [`1+1=2`@0, `5+4=1`@12] (`/(?<a>\d)\+(?<b>\d)=(?<c>\d+)/ & ((($a + $b), c): (<10, /\d/))`)
+
+### The optional entry operator   [core/conditions/form/optional-entry]   ruled 2026-11-23
+An entry written with `?:` (`(h ?: S)`) holds when its left part has no value or its value is in S; with `:` the left part must have a value in S.
+needs: core/conditions/form core/conditions/form/value-left
+see: core/conditions/two-valued core/conditions/defaults core/conditions/match-so-far lib/structural/capture core/diagnostics/warnings core/spellings/placeholders
+- His words: "optional-label: yes."; on where the mark sits: "Before the colon: then perhaps it's an alternative
+  operator to the colon like :  ?:  rather than a separate operator. I like that because then we aren't using ? For
+  two different meanings".
+- Ruled: the mark is the entry's, before the colon. The second entry operator `?:` is his lean, a placeholder; `?`
+  stays regex's optional and nothing else.
+- Nothing about the left part changes (the manager's reading (a)): a joint holds when a part has no value (the line
+  "A joint left part"), a value when it is nothing (the line "A value left part") (readings, run). One part of a
+  joint gets its witness by a default (core/conditions/defaults).
+- `h+`, `h*` and `(a?, b)` are not forms: there is no mark on a label to generalise (the manager's reading (b)).
+- `NOT (h ?: S)` is h present and outside S, the answers of `(h: !S)` (reading (c); the line "Under `NOT`").
+- A default with it (`(h = v ?: S)`) can never be used and draws `pcrec.default.unused` (reading (d)); `0` is never
+  absent, so `?:` on it draws the same warning (core/conditions/match-so-far).
+- `?:` is one token: a postfix `?` on a value before a colon needs parentheses; rx text's `(?:` is untouched (reading (e)).
+- In a search the pattern may drop an optional group so the entry passes (`5,1` reports `5,`): regex's behaviour
+  (a reading, run).
+- The capture request with it: `(h ?: capture("h"))` (lib/structural/capture).
+The entry `?:`: WHOLE `x` HOLDS, `3x` HOLDS, `7x` FAILS / SEARCHED `7x x` `x`@1 / FIND-ALL `7x 3x x` [`x`@1, `3x`@3, `x`@6] (`/(?<h>\d)?x/ & (h ?: <5)`)
+The plain entry: WHOLE `x` FAILS, `3x` HOLDS, `7x` FAILS / SEARCHED `7x x` FAILS / FIND-ALL `7x 3x x` [`3x`@3] (`/(?<h>\d)?x/ & (h: <5)`)
+The default inside the set: WHOLE `x` HOLDS, `3x` HOLDS, `7x` FAILS / SEARCHED `7x x` `x`@1 / FIND-ALL `7x 3x x` [`x`@1, `3x`@3, `x`@6] (`/(?<h>\d)?x/ & (h = "0": <5)`)
+Under `NOT`: WHOLE `x` FAILS, `3x` FAILS, `7x` HOLDS / SEARCHED `7x x` `7x`@0 / FIND-ALL `7x 3x x` [`7x`@0] (`/(?<h>\d)?x/ & NOT (h ?: <5)`)
+A joint left part: WHOLE `6,1` HOLDS, `5,3` HOLDS, `5,1` FAILS, `,1` HOLDS, `,9` HOLDS, `5,` HOLDS, `2,` HOLDS, `,` HOLDS / SEARCHED `5,1 ,1 6,0` `5,`@0 / FIND-ALL `5,1 5,4 ,1 2, 7,` [`5,`@0, `5,4`@4, `,1`@8, `2,`@11, `7,`@14] (`/(?<a>\d)?,(?<b>\d)?/ & ((a, b) ?: >= (5, 3))`)
+A value left part: WHOLE `3,4` HOLDS, `6,7` FAILS, `,4` HOLDS, `3,` HOLDS / SEARCHED `6,7 3,` `6,`@0 / FIND-ALL `6,7 3,4 ,4` [`6,`@0, `3,4`@4, `,4`@8] (`/(?<a>\d)?,(?<b>\d)?/ & (($a + $b) ?: <10)`)
 
 ### A record inside a group question   [core/conditions/form/record-in-some]   open record-in-some 2026-11-22
 Inside a group question, is a record of several plain entries still the product of its entries, `some((h: "5", m: "3"))` = `some(((h, m): ("5", "3")))`?
@@ -994,10 +1024,10 @@ needs: core/conditions/quantified core/conditions/in-sequence
 WHOLE `7` HOLDS / SEARCHED `x7` `7`@1 / FIND-ALL `7 3` [`7`@0, `3`@2] ((b), `[h = rx.digit] SEQ ((h: <5))?`; under (a) a compile error)
 WHOLE `7` FAILS, `3` HOLDS / SEARCHED `x7` FAILS / FIND-ALL `7 3` [`3`@2] (unquantified, `[h = rx.digit] SEQ (h: <5)`)
 
-### The match so far   [core/conditions/match-so-far]   ruled 2026-11-21
-`0` in a condition names the match so far: the text the definition the condition is written in has matched from its start to the condition's point.
+### The match so far   [core/conditions/match-so-far]   ruled 2026-11-23
+`0` in a condition names the match so far, the one name read open: the text its definition has matched from its start to the condition's point; it grows along the path.
 needs: core/conditions/in-sequence core/labels/numbers
-by: core/principles/composed-at-point
+by: core/principles/composed-at-point core/principles/binding-fixed
 - This piece decides what `0` denotes, everywhere. After a complete pattern (`A & (0: S)`) the match so far is the
   entire match; a condition written last in a sequence reads the entire match.
 - Within one definition `0` spans all its literals and operands, as composed at the point it is used: the first
@@ -1011,18 +1041,38 @@ by: core/principles/composed-at-point
 - An expression written in place (an argument, a hole's content) belongs to the definition it is written in (a
   reading): the argument below is the caller's, so its `0` includes the caller's `\d`.
 - Every hole case (a condition alone in a hole, `${A & (0: S)}`) is core/holes/bare-condition's.
-- Inside a loop body: core/conditions/match-so-far/in-loop (open).
-see: core/holes/bare-condition
+- His words: "All other labels are completed at the condition. 0 is not. $0 is provisional. Later labels or
+  captures can replace entirely but 0 grows."; ruled: "zero-open: yes all 4".
+- Every other label is read COMPLETE ("A group's close sets its name", core/labels/one-rule); `0` is read OPEN: two
+  reads on one path differ, the later extending the earlier (the line "Two reads on one path").
+- Two cases, one name: joined by `&`, `0` is the left operand's match, COMPLETE; in a sequence or a hole it is the
+  open prefix. "Complete" is the `&` case and a condition written last in its definition (the manager's reading (a)).
+- Never absent: a default or the optional entry on `0` never applies and draws `pcrec.default.unused` (reading (b)).
+- No settings, so no array: a group question or an index on `0` is a compile error (the lines below).
+- `$0` is legal and reads the prefix at the point of the read (core/values/reads).
+- A capture request on `0` only where `0` is complete; on an open `0` a compile error for now (lib/structural/capture).
+- Inside a loop body: core/conditions/match-so-far/in-loop.
+see: core/holes/bare-condition core/labels/labels-vs-captures/array-vs-passes core/conditions/form/optional-entry
 WHOLE `73` HOLDS, `37` FAILS / SEARCHED `373` `73`@1 / FIND-ALL `73 77 37` [`73`@0, `77`@3] (`/\d/ SEQ (0: /7/) SEQ /\d/`)
 As a sequence operand: WHOLE `12` HOLDS / SEARCHED `x12` `12`@1 / FIND-ALL `12 34 5` [`12`@0, `34`@3] (`/\d/ SEQ (/\d/ & (0: /\d/))`)
 An argument: WHOLE `5xx` HOLDS, `xx` FAILS / SEARCHED `a5xx` `5xx`@1 / FIND-ALL `5xx 55xx` [`5xx`@0, `5xx`@5] (`/\d/ SEQ B((0: /\d/))`, B(rx) := `/${rx}xx/`)
+Two reads on one path: WHOLE `34` HOLDS, `35` FAILS, `44` FAILS / SEARCHED `x34 35` `34`@1 / FIND-ALL `34 35 34` [`34`@0, `34`@6] (`/\d${(0: "3")}\d${(0: "34")}/`)
+A group question on `0`: modes: a compile error (`/(?<d>\d)+/ & some((0: "1"))`: `0` has no settings, so no array).
+An index on `0`: modes: a compile error (`/(?<d>\d)+/ & (0[1]: "1")`: `0` has no settings).
 
-### The match so far inside a loop   [core/conditions/match-so-far/in-loop]   open zero-in-loop 2026-11-19
-Inside a loop body, does `0` read the match so far from the start of the definition it is written in or from the start of the current pass?
+### The match so far inside a loop   [core/conditions/match-so-far/in-loop]   ruled 2026-11-23
+Inside a loop body `0` reads the match so far from the start of the definition it is written in, every earlier pass included; a per-pass test is a label on the part.
 needs: core/conditions/match-so-far core/patterns/quantifiers
-- The reading today: from the definition's start (the earlier passes included). The candidates part on `3;4;`:
-  (a) the pass's own match so far; (b) the match so far from the definition's start.
-WHOLE `3;4;` HOLDS / SEARCHED `3;4;` `3;4;`@0 / FIND-ALL `3;4; 5;` [`3;4;`@0, `5;`@5] ((a) the pass's own match so far)
+by: core/principles/binding-fixed
+- His words: "zero-in-loop: it has to be (b) or it's unusable because you couldn't put 0: in a loop. I'd even
+  disagree with your alternative spelling for (b) being (a)."
+- Written first in a pass, `0` reads everything the definition matched before that point, all the earlier passes,
+  empty in the first; not the previous pass alone (a reading, run: the line "`0` first in the pass").
+- The per-item test is a label on the part (his picture of `0`, "after the fact": `[prefix = (/\d/)] seq (prefix:
+  /\d/)`); the line "The per-item test, a label on the part".
+- A piece looped by its user measures only itself: each use is a piece of its own (core/principles/binding-fixed).
+`0` first in the pass: WHOLE `3;4;` HOLDS, `3;7;` HOLDS, `7;3;` FAILS, `3;7;4;` FAILS / SEARCHED `3;7;4;` `3;7;`@0 / FIND-ALL `3;7;4; 7;7; 1;2;` [`3;7;`@0, `4;`@4, `7;`@7, `7;`@9, `1;2;`@12] (`((0: !contains("7")) SEQ /\d/ SEQ ";")+`)
+The per-item test, a label on the part: WHOLE `3;4;` HOLDS, `3;7;` FAILS, `7;3;` FAILS / SEARCHED `7;3;4;` `3;4;`@2 / FIND-ALL `3;7;4; 7;7; 1;2;` [`3;`@0, `4;`@4, `1;2;`@12] (`([d = /\d/] SEQ (d: !"7") SEQ ";")+`)
 WHOLE `3;4;` FAILS / SEARCHED `3;4;` `3;`@0 / FIND-ALL `3;4; 5;` [`3;`@0, `4;`@2, `5;`@5] ((b) the match so far from the definition's start)
 - The program: `(/\d/ SEQ (0: /\d/) SEQ ";")+`.
 
@@ -1044,6 +1094,8 @@ needs: core/conditions/two-valued
 - A default outside the test's set reads exactly as no default at every polarity.
 - "Present and not under 5" is `(h: !<5)`, or a default chosen outside the set: `(h = "x": !<5)`.
 - A default's regex model is PCRE's conditional group on the label, `(?(<h>)test-h|test-v)` (a model, not the mechanism).
+- The entry's own way to hold on an absent label is `?:` (core/conditions/form/optional-entry); a default written
+  with it, or on `0` (never absent: core/conditions/match-so-far), can never be used: `pcrec.default.unused`.
 WHOLE `x` HOLDS, `3x` FAILS, `7x` HOLDS / SEARCHED `3x x` `x`@1 / FIND-ALL `7x 3x x` [`7x`@0, `x`@4, `x`@6] (`/(?<h>\d)?x/ & (h = "x": !<5)`)
 
 ## Filters   [core/filters]
@@ -1099,7 +1151,7 @@ WHOLE `123` HOLDS, `812` FAILS / SEARCHED `7 8 12` `12`@4 / FIND-ALL `12 7 8 93`
 `!X` is the complement of a pattern or set; `NOT c` on a condition holds exactly when c fails, a negative lookahead at its point.
 needs: core/filters/complement core/conditions/two-valued core/patterns/lookaround
 by: core/principles/regex-default
-see: lib/control/peek lib/control/when lib/control/when-test/not
+see: lib/control/peek lib/control/when lib/control/when-test/not core/filters/negation/effects
 - `!X` (core/filters/complement) is filter-only, on a pattern or a set; `(h: !<5)` is h present and outside `<5`.
 - `NOT c`, c a condition, holds exactly when c fails, an absent label included (core/conditions/two-valued).
 - `NOT T`, T a zero-width pattern (a lookahead, a `peek(A)`): PCRE's negative lookahead, so `NOT peek(A)` is
@@ -1110,6 +1162,25 @@ see: lib/control/peek lib/control/when lib/control/when-test/not
 - `NOT` is a placeholder spelling and the one exception to "no alphabetic operators" (core/operators/bindings; a
   reading). On a condition the record also wrote `!`; the documents write `NOT` there (a reading).
 WHOLE `7` HOLDS, `7x` FAILS / SEARCHED `7x 8` `8`@3 / FIND-ALL `1x 2 3x4` [`2`@3, `4`@7] (`/\d/ SEQ NOT peek(/x/)` is `\d(?!x)`)
+
+### An effect under negation   [core/filters/negation/effects]   ruled 2026-11-23
+An effect (a form whose meaning is more than which texts it accepts; today the capture request) cannot stand under a negation, `NOT` or `!`, at any depth: a compile error.
+needs: core/filters/negation
+see: lib/structural/capture lib/control/when core/operators/statements core/diagnostics/errors
+- His words: "capture-negated: broaden to any effect macro cannot be under negation."; "cannot" is read as a
+  compile error (the refusal of the candidate put, generalised).
+- The effects today: the capture request (`capture("name")`; the array request, unbuilt) inside an expression; the
+  `@` statements are effects too but stand alone, never under a negation (the manager's reading (a)).
+- "Under negation": inside the operand of `NOT` (a condition, a peek) or of `!` (a set, a pattern), at any depth
+  (reading (b)).
+- A provided body that lays an argument under a negation too is judged where it puts it: a request in `when`'s test
+  reaches the guard's `NOT peek(test)`, a compile error (the manager's reading; effect-in-guard). Written instead:
+  `when(/(?<d>\d)/, ..) & (when.d ?: capture("d"))`.
+- A request inside a group question (`some((h: capture("h")))`) is not in his words: the manager's proposal, a
+  compile error for now, not ruled.
+Under `NOT`: modes: a compile error (`/(?<h>\d)?x/ & NOT (h: capture("h"))`: an effect under negation).
+Under `!`: modes: a compile error (`/(?<h>\d)?x/ & (h: !capture("h"))`: an effect under negation).
+Beside a negation: WHOLE `x` FAILS, `3x` HOLDS, `7x` FAILS / SEARCHED `7x 3x` `3x`@3 / FIND-ALL `7x 3x x` [`3x`@3] (`/(?<h>\d)?x/ & (h: capture("h")) & NOT (h: >= 5)`)
 
 ## Values   [core/values]
 
@@ -1122,6 +1193,8 @@ see: core/holes/value core/diagnostics/dollar-form core/values/one-type core/hol
 - A read yields at most one string: the label's text when it is set; when it is unset, the rx that never matches.
 - A read is an rx (core/values/one-type): every operation on rx applies to it, at match time. `$x & <5` is x's text
   when x < 5 and nothing otherwise; the form draws a warning (core/diagnostics/dollar-form).
+- `$0` reads the match so far at the point of the read, the open prefix (core/conditions/match-so-far); in a
+  value hole it is literal text, as any read there (the manager's reading (c); the line "`$0` in a value hole").
 - PCRE's capture (its value for the name: core/labels/labels-vs-captures) is `\k<y>` inside rx text; where a `$` reads, the form
   that reads the capture is still to be spelled (core/spellings/placeholders).
 - A `$` read resolves in the namespace at the point it is written: in an `&` operand, the chain's labels; in a
@@ -1134,6 +1207,7 @@ see: core/holes/value core/diagnostics/dollar-form core/values/one-type core/hol
   difference (a reading; core/holes/bare-condition/labels).
 - The array form (every setting of the name, in order) is its own spelling; in a hole it is not defined
   (parked/ideas/array-in-hole).
+`$0` in a value hole: WHOLE `abab` HOLDS, `aba` FAILS, `aa` HOLDS / SEARCHED `xabab` `abab`@1 / FIND-ALL `abab cc d` [`abab`@0, `cc`@5] (`/\w+${$0}/`)
 WHOLE `3-3;-3;` FAILS / SEARCHED `3-3;-3;` `3-3;`@0 / FIND-ALL `3-3;-3; 7-7;` [`3-3;`@0, ``@4, ``@5, ``@6, ``@7, `7-7;`@8, ``@12] (`/(?:(?<y>\d)?-${$y};)*/`)
 
 ### One type: a match is an rx   [core/values/one-type]   ruled 2026-11-18

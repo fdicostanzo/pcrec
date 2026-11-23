@@ -87,6 +87,7 @@ PLANTSF = [   # (plant, its target check, what it plants)
     ("s21", "ARGSHAPES", "a part label written on an argument not widened to the caller (groups only)"),
     ("s22", "ARGSHAPES", "the label set read tighter than `|` no longer: `[ab = B | A]` labels the whole alternation"),
     ("s23", "ZEROOPEN", "`$0` read as nothing (the hole dropped)"),
+    ("s24", "NEGATION", "`when`'s guard not judged: a test carrying a request accepted"),
 ]
 HEAVYF = {"SUCCESSOR"}
 if "all" in SABF:                                            # the plant runner: each plant alone, a subprocess each
@@ -332,10 +333,50 @@ def _scan(t, i):
     return j
 
 
+def _top_args(t, i):
+    """The arguments of the call whose `(` is at i, split at top-level commas, and the index after its `)`."""
+    out, depth, k, st = [], 0, i, i + 1
+    while k < len(t):
+        c = t[k]
+        if c == "/" and t[k - 1] in " ([=|,&{":
+            k = t.index("/", k + 1)
+            while t[k - 1] == "\\":
+                k = t.index("/", k + 1)
+        elif c == '"':
+            k = t.index('"', k + 1)
+        elif c in "([{":
+            depth += 1
+        elif c in ")]}":
+            depth -= 1
+            if depth == 0:
+                out.append(t[st:k].strip())
+                return out, k + 1
+        elif c == "," and depth == 1:
+            out.append(t[st:k].strip())
+            st = k + 1
+        k += 1
+    raise CompileError("unclosed call")
+
+
+WHEN_BODY = re.search(r"`when\(test, then, else = //\) := (.*?)`: else", NOWS["library.md"]).group(1)
+
+
 def negation_check(t):
-    """CAPTURE: a request under `NOT` or `!` (any depth of the operand) is a compile error (capture-negated)."""
+    """CAPTURE: a request under `NOT` or `!` (any depth of the operand) is a compile error (capture-negated).
+    GUARD (effect-in-guard, the manager's reading, marked): a provided body that lays an argument under a negation
+    as well is judged where the body puts it: `when`'s body, READ FROM library.md, is laid out with the call's test,
+    so a test carrying a request meets the guard's `NOT peek(test)`."""
     if sf("s9"):
         return
+    if WHEN_BODY and not sf("s24"):
+        for mm in re.finditer(r"\bwhen\(", t):
+            args, _ = _top_args(t, mm.end() - 1)
+            if args and "capture(" in args[0]:
+                body = WHEN_BODY.replace("peek(test)", "peek(%s)" % args[0])
+                try:
+                    negation_check(body)
+                except CompileError as e:
+                    raise CompileError("in `when`'s guard: %s (effect-in-guard, the manager's reading)" % e)
     for mm in re.finditer(r"(?<![\w!])NOT |!(?!=)", t):
         a = mm.end()
         b = _scan(t, a)
@@ -1044,8 +1085,11 @@ ok_n1, r_n1 = rl("Under `NOT`", H_ + ' & NOT (h: capture("h"))', [], "capture-ne
 ok_n2, r_n2 = rl("Under `!`", H_ + ' & (h: !capture("h"))', [], "capture-negated", "an effect under negation", NEG_T)
 P_n3 = pl("Beside a negation", H_ + ' & (h: capture("h")) & NOT (h: >= 5)', [], ["x", "3x", "7x"], "7x 3x",
           "7x 3x x", NEG_T)
-check("NEGATION", ok_n1 and ok_n2 and P_n3 is not None, "`NOT (h: capture(..))` refused %s, `(h: !capture(..))` "
-      "refused %s (%s); a request beside a negation legal %s" % (ok_n1, ok_n2, r_n2, P_n3 is not None))
+ok_n4, r_n4 = rl("In `when`'s test", 'when(/(?<d>\\d)/ & (d: capture("d")), /x/)', [], "effect-in-guard",
+                 "the test reaches the guard's `NOT peek(test)`; the manager's reading", NEG_T)
+check("NEGATION", ok_n1 and ok_n2 and P_n3 is not None and ok_n4, "`NOT (h: capture(..))` refused %s, "
+      "`(h: !capture(..))` refused %s (%s); a request beside a negation legal %s; a request in `when`'s test refused "
+      "through the body read from library.md %s" % (ok_n1, ok_n2, r_n2, P_n3 is not None, ok_n4))
 
 print("== ZEROLOOP (zero-in-loop (b)): `0` in a loop reads from the definition's start")
 ZL_T = "core/conditions/match-so-far/in-loop"
@@ -1119,8 +1163,8 @@ P_as6 = pl("A binding alone", "identity(A) & (identity.h: <5)", [A_H, IDN], ["3"
 ok_as7, r_as7 = rl("A named list on a spot", "N(A) & (N.h: <5)", [A_H, "N(rx) := /${[(=h) = rx]}/"], "export-list",
                    "a parameter exports nothing the definition can see, so the list names no exported label", ARGT)
 LS_B = ["A := /(?<l>\\d)\\d/", "B := /(?<l>\\d\\d)/"]
-P_ls1 = pl("The label set, the alternation in parentheses", "[ab = (B | A)] & (ab.l: <20)", LS_B, ["25", "13"], "25",
-           "25 13", "core/patterns/alternation")
+P_ls1 = pl("", "[ab = (B | A)] & (ab.l: <20)", LS_B, ["25", "7"], "25", "25 13", "core/patterns/alternation",
+           ann=["l"])
 P_ls2 = pl("The label set beside `|`", "[ab = B | A] & (ab.l: <20)", LS_B, ["25", "13"], "25", "25 13",
            "core/operators/precedence")
 ls_differ = P_ls1 is not None and P_ls2 is not None and \
