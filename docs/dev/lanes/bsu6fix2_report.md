@@ -236,11 +236,23 @@ Its stage lines:
 
 ## OWED RUNS
 
-- **`NNN-kit-bsu6fix2-selftest`** (key `kit-bsu6fix2-selftest`).
+- **QUEUED: `756-kit-bsu6fix2-selftest`** (key `kit-bsu6fix2-selftest`), at 10:54 with the box free; the runner is live.
   - Body: the full `cards.py selftest` on this tree, exec'd. Job script `bsu6fix2_evidence/jobs/selftest`.
-  - Settings: cap 7200, est 5400, `boxqueue: not-before 2026-11-24T01:00`, `expect none`.
+  - Settings: cap 7200, est 5400, `boxqueue: not-before 2026-11-23T01:00`, `expect none`.
   - `--ready` returns 75 unless 01:00 <= now < 18:00.
   - TMPDIR and PCREC_TMPDIR are `$PCREC_TMPDIR/scratch/b6f2`.
 - **Log:** `$PCREC_TMPDIR/scratch/bsu6fix2/selftest_full.log`.
 - **The reader checks:** the job's rc 0 and the log's trailer with 0 failed.
-- QUEUED-AT-END
+- **Its `--dry-run`** (rc 0):
+  ```
+  would run in /home/pcrec/projects/pcrec/worktrees/bsu6fix2: TMPDIR=/var/tmp/pcrec-pcrec/scratch/b6f2 python3 -I memfn/tests/span_forms/cards.py selftest > /var/tmp/pcrec-pcrec/scratch/bsu6fix2/selftest_full.log
+  boxqueue: cap 7200
+  boxqueue: patience none
+  boxqueue: not-before 2026-11-23T01:00
+  boxqueue: est 5400
+  boxqueue: expect none reason=cards.py selftest is exec'd, so its rc is the job's rc; the verdict is its trailer in /var/tmp/pcrec-pcrec/scratch/bsu6fix2/selftest_full.log
+  ```
+- **Its `--ready`** at 10:54 is rc 0 (inside 01:00-18:00); outside that window it prints "evening hold" and returns 75.
+- **Queue history.** The job was first queued by mistake as `7-kit-...` (prio 7) and as not-before 2026-11-24; both copies
+  were cancelled by me before they ran.
+- **Unlike bsu6fix's 755**, it has no `after` gate: the in-lane run it would have waited on is done.

@@ -12,7 +12,7 @@ case "${1:-}" in
     --dry-run)
         [ -f "$W/memfn/tests/span_forms/cards.py" ] && [ -x "$W/build/pcrec" ] || { echo "no cards.py / build/pcrec in $W" >&2; exit 1; }
         echo "would run in $W: TMPDIR=$TMPDIR python3 -I memfn/tests/span_forms/cards.py selftest > $LOG"
-        echo "boxqueue: cap 7200"; echo "boxqueue: patience none"; echo "boxqueue: not-before 2026-11-24T01:00"; echo "boxqueue: est 5400"
+        echo "boxqueue: cap 7200"; echo "boxqueue: patience none"; echo "boxqueue: not-before 2026-11-23T01:00"; echo "boxqueue: est 5400"
         echo "boxqueue: expect none reason=cards.py selftest is exec'd, so its rc is the job's rc; the verdict is its trailer in $LOG"
         exit 0 ;;
     --ready)
