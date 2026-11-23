@@ -8868,3 +8868,13 @@ RUN (a path model, `$PCREC_TMPDIR/scratch/pred/optional_label.py`; `/(?<h>\d)?x/
 (SEARCHED and FIND-ALL agree for the first three because the pattern itself backs off the digit: `7x` fails and
 the `x` alone at 1 matches with h absent; the plain form parts from them only WHOLE on `x`.)
 Put to him as slug optional-label.
+
+### 2026-11-23 MANAGER — CORRECTION to the entry above (the plain row and the note under the run lines were written before the run was read)
+tags: core/conditions/defaults core/conditions/form
+
+In the entry "OWNER, on capture-optional: he likes the defaults way", the line for `(h: <5)`, plain, and the
+parenthesised note after the four lines are WRONG and are withdrawn. The run's output (the same script) is:
+- `(h: <5)`, plain: WHOLE `x` FAILS, `3x` HOLDS, `7x` FAILS / SEARCHED `7x x` FAILS / FIND-ALL `7x 3x x` [`3x`@3]
+The other three lines are as the run printed them. So the plain form parts from `(h?: <5)` in every mode: a
+stretch whose h is absent (`x`) is rejected by the plain form and kept by the optional one. Not told to the owner
+in the wrong form: the answer given to him used the run's output.
