@@ -150,6 +150,8 @@ def parse_value(v, ctx):                                     # noqa: F811
         mm = re.fullmatch(r"OPT\{(.*)\}", v, re.S)
         if mm:
             return ("opt", parse_value(mm.group(1), ctx))
+        if v == "anything":                                  # lib/sets/anything: any text
+            return ("anyv",)
         mm = re.fullmatch(r'capture\("(\w+)"\)', v)
         if mm:
             CAPREQ.append(mm.group(1))
@@ -157,6 +159,11 @@ def parse_value(v, ctx):                                     # noqa: F811
         parts = split_top(v, " & ")
         if len(parts) > 1 and any(re.fullmatch(r'capture\("\w+"\)', x) for x in parts):
             return ("all", [parse_value(x, ctx) for x in parts])
+        if v.startswith("(") and strip_parens(v) != v and not is_cond(v):
+            return parse_value(strip_parens(v), ctx)
+        alts = split_top(v, " | ")
+        if len(alts) > 1:                                    # a union of sets (an array of sets is an alternation)
+            return ("any", [parse_value(x, ctx) for x in alts])
         if v.startswith("!") and not v.startswith("!="):     # a complement right of `:` (core/filters/complement)
             return ("not", parse_value(v[1:], ctx))
         call = parse_call(v)
@@ -170,6 +177,10 @@ def val_ok(v, val, lab):                                     # noqa: F811
         return True if (v is None and not sf("s7")) else val_ok(v, val[1], lab)
     if val[0] == "cap":
         return v is not None or sf("s8")
+    if val[0] == "anyv":
+        return v is not None
+    if val[0] == "any":
+        return any(val_ok(v, x, lab) for x in val[1])
     if val[0] == "not":
         return v is not None and not val_ok(v, val[1], lab)
     return P84F["val_ok"](v, val, lab)
@@ -198,11 +209,50 @@ def relocate(text, outer, a, b, keep_reads):                  # noqa: F811
             out.append((bs, sc))
         return out
     text = map_groups(text, mv)
+
+    def walk(x):
+        if isinstance(x, str):
+            mm = SCOPE_STR.match(x)
+            if mm and set(mm.group(2).split(",")) & outer:
+                return "%s@%s" % (mm.group(1), ",".join(y + tag if y in outer else y for y in mm.group(2).split(",")))
+            return x
+        if isinstance(x, tuple):
+            return tuple(walk(y) for y in x)
+        if isinstance(x, list):
+            return [walk(y) for y in x]
+        return x
+    if keep_reads:                                           # a read written inside the argument moves with it
+        for n in node_refs(text):
+            if n in NODES and NODES[n][0] != "setv":
+                NODES[n] = walk(NODES[n])
+        for i in range(a, b):
+            sc, nm = NAMED[i]
+            if sc in outer:
+                NAMED[i] = (sc + tag, nm)
     ARG_OWN[tag] = set(outer)
     return text
 
 
-P84F["is_cond"] = is_cond
+P84F.update(is_cond=is_cond, close_hole=close_hole, p_class=p_class)
+
+
+def close_hole(rx, i):                                       # noqa: F811
+    """A hole's close, with an rx literal nested in the hole skipped whole (a `"` inside it is regex text)."""
+    if not FOLD[0]:
+        return P84F["close_hole"](rx, i)
+    j = _end_hole(rx, i + 1)
+    if j >= len(rx) or rx[j] != "}":
+        raise CompileError("unclosed hole")
+    return j
+
+
+def p_class(p):                                              # noqa: F811
+    """A negated class `[^...]` (the loaded parser read `^` as a member)."""
+    if FOLD[0] and p.peek() == "^":
+        p.take()
+        n = P84F["p_class"](p)
+        return ("ncls", n[1])
+    return P84F["p_class"](p)
 
 
 def is_cond(x):                                              # noqa: F811
@@ -235,8 +285,8 @@ def lower_cond(text, ctx, zero_key=None):                    # noqa: F811
         left, right = split_colon(es[0])
         right = right.strip()
         mm = re.fullmatch(r"OPT\{(.*)\}", right, re.S)
-        if mm and left.startswith("(") and strip_parens(left) != left:
-            comps = [c.strip() for c in split_top(left[1:-1], ",")]
+        comps = [c.strip() for c in split_top(left[1:-1], ",")] if left.startswith("(") else []
+        if mm and strip_parens(left) != left and len(comps) > 1:
             r = P84F["lower_cond"]("(%s: %s)" % (left, mm.group(1)), ctx, zero_key)
             n = int(re.fullmatch(r"\$\{#(\d+)\}", r).group(1))
             return node_ref(("optj", neg, NODES[n], ["%s@%s" % (c, ctx.cur) for c in comps]))
@@ -244,6 +294,8 @@ def lower_cond(text, ctx, zero_key=None):                    # noqa: F811
 
 
 def m(node, s, pos, st, k):                                  # noqa: F811
+    if node[0] == "ncls":
+        return k(pos + 1, st) if pos < len(s) and s[pos] not in node[1] else None
     if node[0] == "optj":
         _, neg, inner, keys = node
         if any(st.lab.get(x) is None for x in keys) and not sf("s7"):
@@ -360,6 +412,12 @@ def _sub_labels(t, lmap, pmap):
             out.append(t[i:j + 1])
             i = j + 1
             continue
+        mb = re.match(r"\[(\w+) = ", t[i:])
+        if mb and lmap.get(mb.group(1)) == "_" and not sf("s6"):   # `_` on the spot: no name, the spot a group
+            j = _close_br(t, i)
+            out.append("(" + _sub_labels(t[i + mb.end():j], lmap, pmap) + ")")
+            i = j + 1
+            continue
         mm = re.match(r"[A-Za-z_]\w*", t[i:])
         if mm and (i == 0 or t[i - 1] not in "\\." and not t[i - 1].isalnum() and t[i - 1] != "_"):
             name = mm.group(0)
@@ -367,7 +425,9 @@ def _sub_labels(t, lmap, pmap):
             if name in lmap:
                 out.append(lmap[name])
             elif name in pmap and t[i - 1:i] != "$" and not re.match(r"\s*:(?!=)|\s+=\s(?!=)", after):
-                out.append("(%s)" % pmap[name])
+                a_ = pmap[name]
+                simple = not any(len(split_top(a_, op)) > 1 for op in (" | ", " & ", " SEQ ", ", "))
+                out.append(a_ if simple else "(%s)" % a_)
             else:
                 out.append(name)
             i += len(name)
@@ -379,6 +439,26 @@ def _sub_labels(t, lmap, pmap):
         out.append(c)
         i += 1
     return "".join(out)
+
+
+def _close_br(t, i):
+    depth, j = 0, i
+    while j < len(t):
+        c = t[j]
+        if c == "/":
+            j = _end_rx(t, j) + 1
+            continue
+        if c == '"':
+            j = t.index('"', j + 1) + 1
+            continue
+        if c in "([{":
+            depth += 1
+        elif c in ")]}":
+            depth -= 1
+            if depth == 0:
+                return j
+        j += 1
+    raise CompileError("unclosed part label")
 
 
 def _sub_rx(lit, lmap, pmap):
