@@ -881,3 +881,14 @@ labelled spot); none of the printed flag lines (all four had an explicit `(?i)`)
 general. Subject FROZEN until the draft. NEXT: rule r84; ONE opus fix lane (files the review; ALSO the spelling
 notes: label set, `${=rx}`, `[ab = (B | A)]`, the comma form, the third small form `A(rx) := /${=rx}/`); merge;
 P-22. THEN a fold lane for capture-export and zero-condition-binding with its own round (ask main for a number).
+
+## 2026-11-22 (close) — /close at the owner's word: "Let's discuss these pain points next time."
+
+After the predspot merge and the r84 launch: RULED capture-export (two parts) and zero-condition-binding (an
+error for now), both RECORD ONLY; his reading of `[a = A]` and of arrays (spelling notes); his question
+`A(rx) := /${=rx}/` (legal: a label on the spot); and the JSONL EXERCISE he asked for (library updated, a search
+built, values returned for fields not searched on, run on a hand-lowered model; seven findings; record entry
+"2026-11-22 MANAGER — the JSONL capture exercise he asked for"). He closes with: discuss the pain points next
+time. wake.md REWRITTEN from scratch (the pain points first). IN FLIGHT AT THIS ENTRY: critic round r84
+(coordinator `crit-predspot1122`), NOT interrupted; the next line of this journal says whether its draft had
+arrived when the session closed.
