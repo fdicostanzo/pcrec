@@ -480,15 +480,15 @@ see: core/labels/backreferences core/labels/export/flat-read-outside core/labels
    writes, a label an export list it writes takes; none beginning with `_`) and, through a public part label, the
    labels that part exports, by path (`pub.a.h`, each step passed by the previous one, a member's metadata alike)
    and by name (`pub.h`) (readings; run: the lines "Statement 3"). A part used alone exports nothing, through a hole
-   and the sequence operator alike, nor a part under a `_` part label or `[_ = A]` (the caller's own label inside:
-   open, core/labels/export/closed-own); a read from outside of a label only such a part holds is a compile error (the manager's reading (c), run: the line "Used alone, from outside").
+   and the sequence operator alike, nor, through it, a part under a `_` part label or `[_ = A]` (that door is
+   closed; other doors stay, statement 7); a read from outside of a label only such a part holds is a compile error (the manager's reading (c), run: the line "Used alone, from outside").
    A call exports what its body exports. A passed label is referenced with its source and read as labels are inside
    (core/labels/paths/label-reference). `pub := [a = A] SEQ "!"` shows `a`, `h`; `/${A}!/`, `A SEQ "!"` none.
 4. A part label only disambiguates; it gives no access to anything private.
 5. The caller's captures are those the program asks for (lib/structural/capture): a named group in a part of a
    composed program is no capture by default (core/labels/export/capture-export); one literal stays plain PCRE (a reading).
 6. A part label beginning with `_` (`[_a = A]`) is an ordinary part label inside its binding and exports nothing outside it.
-7. `[_ = A]` makes none of A's labels visible anywhere outside A; A matches as before (a sent label: label-in-argument; the caller's own: closed-own).
+7. `[_ = A]` does not make A's labels visible through A, his words: "you can't go through A to get inside"; "It's closing that door but there may be other doors" (a sent label, a label the caller writes: core/labels/export/arguments). A matches as before.
 - His analogy, the four forms ("[a = A ] is making the labels from A public to local and later bindings"):
   | the form | his word | exported to the bindings that use it | the local name |
   |---|---|---|---|
@@ -604,8 +604,11 @@ see: core/labels/paths/argument-default core/labels/paths/two-sources core/label
 - A caller's label on a spot that holds the caller's in-place argument reads that argument by the inside rules
   (argument-export, the reading taken of his "this aligns with my understanding"; the line "A caller's label on the spot").
 - His ruled error stands: `B(A) & (A.d: ..)`, B using A alone: `d` is written in A's text, not the caller's.
-- Under a body that closes the spot (`[_ = rx]`), a part label or an in-place group the caller writes: open
-  (core/labels/export/closed-own); a sent label passes (core/operators/bindings/label-in-argument).
+- A body that closes the spot (`[_ = rx]`) does not close it: his words, "So I agree with your lean" (a part label,
+  an in-place group, a sent label; the line "The caller's own label, under a closing body" of
+  core/labels/paths/closed-argument). The general rule, the manager's restatement put to the owner: a label is
+  owned by the text that writes its name and read bare there; any other is reached through a door (a path through
+  a part's name or label); each part decides which of its doors are open; closing a door closes that door only.
 - What a call exports of its argument, by shape:
   | the shape | the caller reads | ground |
   |---|---|---|
@@ -631,26 +634,6 @@ A read inside an argument, with its source: WHOLE `3xx` HOLDS, `7xx` FAILS / SEA
 A binding alone: WHOLE `3` HOLDS, `7` FAILS / SEARCHED `7 3` `3`@2 / FIND-ALL `3 7 4` [`3`@0, `4`@4] (`identity(A) & (identity.h: <5)`, A := `/(?<h>\d)/`, identity(x) := `/${[(=) = x]}/`)
 A binding in parentheses: modes: a compile error (`identity((A)) & (identity.h: <5)`, A := `/(?<h>\d)/`, identity(x) := `/${[(=) = x]}/`: the argument's own text writes no label, A used alone in it).
 A named list on a spot: modes: a compile error (`N(A) & (N.h: <5)`, A := `/(?<h>\d)/`, N(rx) := `/${[(=h) = rx]}/`: a parameter exports nothing the definition can see, so the list names no exported label).
-
-### A caller's own label under a closing body   [core/labels/export/closed-own]   open closing-own-label 2026-11-23
-Does a body that closes its argument's spot (`[_ = rx]`) hide a part label or an in-place group the caller writes inside the argument?
-needs: core/labels/export/arguments
-see: core/labels/export core/operators/bindings/label-in-argument core/labels/paths/closed-argument
-- The definition today: two ruled sentences meet. The caller's label "is the caller's own, set where the body
-  places the template" (core/labels/export/arguments); "`[_ = A]` makes none of A's labels visible anywhere
-  outside A" (core/labels/export, statement 7). The backdoor is ruled for a sent label only
-  (core/operators/bindings/label-in-argument). Until he answers, a read of such a label is a compile error naming
-  this question; nothing is applied.
-- Candidate (a): it passes, as a sent label does. The manager's leaning: the record put the caller's own label on
-  the argument as working "without the body's cooperation", the proposal he answered yes (argument-label).
-- Candidate (b): it is hidden like the rest of the argument's labels.
-- A condition written inside the argument reads the argument's labels either way (the line "Inside the argument").
-Today: modes: a compile error (`B([a = A]) & (a.h: <5)`, A := `/(?<h>\d)/`, B(rx) := `/${[_ = rx]}xx/`: open closing-own-label; `B(/(?<g>\d)/) & (g: <5)` alike).
-Candidate (a) of closing-own-label: WHOLE `3xx` HOLDS, `7xx` FAILS / SEARCHED `7xx 3xx` `3xx`@4 / FIND-ALL `3xx 7xx 4xx` [`3xx`@0, `4xx`@8] (`B([a = A]) & (a.h: <5)`, A := `/(?<h>\d)/`, B(rx) := `/${[_ = rx]}xx/`)
-Candidate (a) of closing-own-label, an in-place group: WHOLE `3xx` HOLDS, `7xx` FAILS / SEARCHED `7xx 3xx` `3xx`@4 / FIND-ALL `3xx 7xx 4xx` [`3xx`@0, `4xx`@8] (`B(/(?<g>\d)/) & (g: <5)`, B(rx) := `/${[_ = rx]}xx/`)
-Candidate (b) of closing-own-label: modes: a compile error (`B([a = A]) & (a.h: <5)`, A := `/(?<h>\d)/`, B(rx) := `/${[_ = rx]}xx/`: `h` is not visible through `a`; `B(/(?<g>\d)/) & (g: <5)` alike).
-Inside the argument: WHOLE `3xx` HOLDS, `7xx` FAILS / SEARCHED `7xx 3xx` `3xx`@4 / FIND-ALL `3xx 7xx 4xx` [`3xx`@0, `4xx`@8] (`B([a = A] & (a.h: <5))`, A := `/(?<h>\d)/`, B(rx) := `/${[_ = rx]}xx/`)
-A sent label: WHOLE `"3"xx` HOLDS, `"7"xx` FAILS / SEARCHED `"7"xx "3"xx` `"3"xx`@6 / FIND-ALL `"3"xx "7"xx` [`"3"xx`@0] (`B(S(x:)) & (x: <5)`, B(rx) := `/${[_ = rx]}xx/`, S(l:) := `/"(?<:${l}>\d)"/`)
 
 ### Part labels and paths   [core/labels/paths]   ruled 2026-11-22
 A part label `[x = A]` names part A; `x.h` is the label h as part A exports it, and a part label mentioned more than once names its last mention where the reference is written.
@@ -784,7 +767,7 @@ Called twice, a plain read: modes: a compile error (`occurrences(/\d/) SEQ ";" S
 By the macro's name, the body writing no `d`: modes: a compile error (`B(A) & (B.d: <5)`, A := `/(?<d>\d)/`, B(rx) := `/${rx}xx/`; `[c = B(A)] & (c.d: <5)` alike: the argument is used alone in the body, so the call exports no `d`).
 A part label named like the macro: WHOLE `a1b3` HOLDS, `a3b9` HOLDS, `a12` HOLDS / SEARCHED `x9 3` `x9 3`@0 / FIND-ALL `a3 b9 c1` [`a3 b9 c1`@0] (`[hits = occurrences(/\d+/)] & hits(/\d/) & (hits.hit: <5)`); the part label wins, with the hide-label warning
 
-### When a macro closes its argument's labels   [core/labels/paths/closed-argument]   ruled 2026-11-22
+### When a macro closes its argument's labels   [core/labels/paths/closed-argument]   ruled 2026-11-23
 For an argument that is a binding, the caller's `A.d` is legal exactly where `d` is visible through the call; where the macro closes the argument's labels it is a compile error.
 needs: core/labels/paths/call-prefix core/labels/export
 - His words: "closed-arguments: a", on the statement put to him: "`A.d` is legal in the caller exactly where `d` is
@@ -792,8 +775,9 @@ needs: core/labels/paths/call-prefix core/labels/export
   compile error."
 - His reason, from his words before: "what would A.d mean if d no longer was visible?" (the rest of them, "[ c =
   B(A) ] does not allow c.A", is in core/labels/paths).
-- `[_ = A]` makes none of A's labels visible anywhere outside A (core/labels/export statement 7), so
-  `B(rx) := /${[_ = rx]}xx/` closes them: where and whether A's `d` is set is then B's own business.
+- `[_ = A]` does not make A's labels visible through A (core/labels/export statement 7), so
+  `B(rx) := /${[_ = rx]}xx/` closes the door through A: where and whether A's `d` is set is then B's own business.
+  A label the caller writes inside the argument keeps its own door (core/labels/export/arguments).
 - WHICH spots make `d` visible through the call is the manager's reading on his ruling: where the body labels the
   spot (`[p = rx]`, his example 3's `[dd = rx]`) or passes the labels on (the export list,
   lib/convention/argument-labels); a `_` part label or `[_ = rx]` closes it; a body using the argument alone passes
@@ -807,6 +791,7 @@ needs: core/labels/paths/call-prefix core/labels/export
 Visible through the call: WHOLE `7-3` FAILS, `3-7` HOLDS, `3-3` HOLDS / SEARCHED `7-3 3-7` `3-7`@4 / FIND-ALL `7-3 3-7 1-2 9-9` [`3-7`@4, `1-2`@8] (`B(A) & (A.d: <5)`, A := `/(?<d>\d)/`, B(rx) := `/${[p = rx]}-(?<d>\d)/`)
 Used alone by the body: modes: a compile error (`B(A) & (A.d: <5)`, A := `/(?<d>\d)/`, B(rx) := `/${rx}-(?<d>\d)/`: argument-default).
 Closed by the macro: modes: a compile error (`B(A) & (A.d: <5)`, A := `/(?<d>\d)/`, B(rx) := `/${[_ = rx]}xx/`; `[c = B(A)] & (c.d: <5)` alike: no `d` is exported, a compile error by the reading in core/labels/paths, a label not visible through its source).
+The caller's own label, under a closing body: WHOLE `3xx` HOLDS, `7xx` FAILS / SEARCHED `7xx 3xx` `3xx`@4 / FIND-ALL `3xx 7xx 4xx` [`3xx`@0, `4xx`@8] (`B([a = A]) & (a.h: <5)`, A := `/(?<h>\d)/`, B(rx) := `/${[_ = rx]}xx/`)
 Closed by a `_` part label: modes: a compile error (`B(A) & (A.d: <5)`, A := `/(?<d>\d)/`, B(rx) := `/${[_p = rx]}xx/`; `c.d` and `B.d` alike; inside its binding a `_` part label is an ordinary one: the line "Statement 6", core/labels/export).
 Candidate (b) of spot-read-name: WHOLE `7-3` FAILS, `3-7` HOLDS, `3-3` HOLDS / SEARCHED `7-3 3-7` `3-7`@4 / FIND-ALL `7-3 3-7 1-2 9-9` [`3-7`@4, `1-2`@8] (`B(A) & (B.p.d: <5)`, A := `/(?<d>\d)/`, B(rx) := `/${[p = rx]}-(?<d>\d)/`)
 

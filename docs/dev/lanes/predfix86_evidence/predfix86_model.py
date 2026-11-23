@@ -12,9 +12,10 @@
 #             such a condition failed every text). A label SENT inside the argument (a marked argument `x:` the
 #             caller writes) passes the closing spot: the backdoor (label-in-argument, ruled), modelled as an
 #             exemption for the caller's sent names only.
-#   CLOSEOWN  (A3) a part label or an in-place group the CALLER writes inside an argument that a body closes
-#             (`[_ = rx]`, `[_p = rx]`): OPEN (closing-own-label). The engine refuses a read of it naming the open
-#             slug; CAND["closeown"] = "pass" | "hide" runs the two candidates' lines.
+#   CLOSEOWN  (A3; R1 of the rulings file: closing-own-label RULED pass) a part label or an in-place group the
+#             CALLER writes inside an argument that a body closes (`[_ = rx]`, `[_p = rx]`) is not closed: the read
+#             passes, as a sent label's does; the read through the argument's name (`B(A) & (A.d: ..)`) stays a
+#             compile error naming the closed door.
 #   EDGES     (A1) optional-label's conservative edges: `?:` on a joint left part, on a value left of `:`, inside a
 #             group question is a compile error for now; CAND["edges"] = "candidate" runs the candidate lines of the
 #             open optional-entry-edges (predfold1123's lowering: a joint holds when a part has no value).
@@ -151,7 +152,7 @@ P1123F = dict(prog=prog, lower_atom=lower_atom, lower=lower, lp_expand=lp_expand
 if sx("s30"):
     SABF.add("s2")                                           # predfold1123's own ARGLABEL switch
 X86 = [True]
-CAND = {"edges": "error", "closeown": "open", "capset": "error"}
+CAND = {"edges": "error", "capset": "error"}
 
 
 def x_on():
@@ -500,14 +501,13 @@ def fold_text(expr, binds):                                  # noqa: F811
 
 
 # ---- CLOSE, CLOSEOWN: the top-level post-pass
-OPENHIDE = set()
 
 
 def lower(expr, ctx):                                        # noqa: F811
-    """predfold1123's ARGLABEL widening, with CLOSE and CLOSEOWN: a SENT name under a closing spot is the
-    caller's (the backdoor); a caller's own part label or in-place group under a closing spot (its part string
-    closed) is the open closing-own-label: widened under candidate "pass", never under "hide" or "open" (the read
-    is then refused naming the slug)."""
+    """predfold1123's ARGLABEL widening, with CLOSE and CLOSEOWN: a closing spot (`[_ = ..]`) drops the parts of
+    the argument's groups visible around it (the door through the argument); a SENT name passes (the backdoor,
+    label-in-argument) and a caller's own part label or in-place group passes too (closing-own-label, ruled: "It's
+    closing that door but there may be other doors")."""
     if not x_on():
         return P1123F["lower"](expr, ctx)
     LDEPTH[0] += 1
@@ -516,11 +516,20 @@ def lower(expr, ctx):                                        # noqa: F811
     finally:
         LDEPTH[0] -= 1
     if LDEPTH[0] == 0 and ctx.cur == "top":
+        INS = set()                                          # names whose OWN group lies inside a closing spot
+
+        def ins(ps):
+            for bs, sc in ps:
+                if "." not in bs and any(x in CLOSE_OUTER for x in sc):
+                    INS.add(bs)
+            return ps
+        map_groups(t, ins)
+
         def add(ps):
             out = []
+            mks = set(x for _, sc_ in ps for x in sc_ if x in CLOSE_OUTER)   # the group lies inside a closing spot:
+            shut = set().union(*[CLOSE_OUTER[k] for k in mks]) | mks if mks else set()  # every part of it is shut
             for bs, sc in ps:
-                mks = [x for x in sc if x in CLOSE_OUTER]
-                shut = set().union(*[CLOSE_OUTER[k] for k in mks]) | set(mks) if mks else set()
                 head = bs.split(".")[0]
                 if shut and not (head in SENT and not sx("s4")):
                     # a shut scope X keeps only its argument scopes X~aN (predfix83's ARGOWN widening, done here
@@ -535,12 +544,9 @@ def lower(expr, ctx):                                        # noqa: F811
                 key = "%s@%s" % (bs, ",".join(sc))
                 if head in SENT and "." not in bs and "top" not in sc and not sx("s4"):
                     sc = sc + ["top"]
-                elif head in CALLER_OWN[0] and not sf("s2") and "top" not in sc and any(re.fullmatch(r"top~a\d+", x) for x in sc):
-                    if (key in CLOSED_PARTS or bs in CLOSEDX) and not sx("s5"):
-                        if CAND["closeown"] == "pass":
-                            sc = sc + ["top"]
-                        elif CAND["closeown"] == "open":
-                            OPENHIDE.add(head)
+                elif head in CALLER_OWN[0] and (not shut or head in INS) and not sf("s2") and "top" not in sc and any(re.fullmatch(r"top~a\d+", x) for x in sc):
+                    if (key in CLOSED_PARTS or bs in CLOSEDX) and sx("s5"):
+                        pass                                 # the plant: the closing door hides the caller's own
                     else:
                         sc = sc + ["top"]
                 out.append((bs, sc))
@@ -597,17 +603,18 @@ def _never_retry(expr, binds, opts, err):
 def prog(expr, binds=(), **opts):                            # noqa: F811
     if not x_on():
         return P1123F["prog"](expr, binds, **opts)
-    OPENHIDE.clear()
     CLOSEDX.clear()
     CLOSE_OUTER.clear()
     del WARNS[:]
     try:
         Pg = P1123F["prog"](expr, binds, **opts)
     except CompileError as e:
-        hid = [n for n in OPENHIDE if re.search(r"\b%s\b" % n, str(e))]
-        if hid:
-            raise CompileError("`%s`: a label the caller writes inside an argument the body closes: open "
-                               "closing-own-label (no answer applied)" % hid[0])
+        mm = re.match(r"`(\w+)\.(\w+)`: a label of an argument, which is a template", str(e))
+        if mm and any(b_ == mm.group(2) or b_.startswith(mm.group(1) + ".") for b_ in CLOSEDX):
+            raise CompileError("`%s.%s`: the body closes the door through `%s` (`[_ = ..]`): no `%s` is visible "
+                               "through it (a compile error, core/labels/export statement 7, "
+                               "core/labels/paths/closed-argument)" % (mm.group(1), mm.group(2), mm.group(1),
+                                                                      mm.group(2)))
         w0 = list(WARNS)
         Pg = _never_retry(expr, binds, opts, str(e))
         if Pg is None:
@@ -625,9 +632,6 @@ def sweep_one(line, a, pt, tail):                            # noqa: F811
             CAND["edges"] = "candidate"
         if "of capture-in-set" in lab:
             CAND["capset"] = "candidate"
-        mm = re.search(r"Candidate \((\w)\) of closing-own-label", lab)
-        if mm:
-            CAND["closeown"] = {"a": "pass", "b": "hide"}[mm.group(1)]
     try:
         return P1123F["sweep_one"](line, a, pt, tail)
     finally:
