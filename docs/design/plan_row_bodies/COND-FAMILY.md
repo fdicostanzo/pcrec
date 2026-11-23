@@ -8523,3 +8523,21 @@ The manager's readings (marked; for the fold to test): (a) a body that reads a l
 is a compile error at the definition; (b) a marked argument at a call is ONE new name, never a path (`l.d:` is a
 compile error); (c) `capture` takes a reference: `capture(l.d)`, no mark; (d) the group questions and conditions
 are unchanged (their labels are written in the caller's text).
+
+### 2026-11-23 OWNER RULING — capture-name: a (the label's last step, with an optional rename)
+tags: lib/structural/capture lib/structural/capture/add-on core/labels/export/capture-export core/diagnostics/warnings
+
+ASKED AS A RULING (slug capture-name: the caller's name for a requested capture: (a) the last step, with an
+optional rename, `capture(l.d)` gives `d`, `capture(l.d, name = "first")` gives `first`, the name a string; (b) a
+name always required; (c) the whole path is the name; the manager's leaning (a), adding a warning when two
+requests end in one last step and neither is renamed). HIS WORDS, whole:
+
+"capture-name: a"
+
+Class: a RULING: (a). The reading taken: the candidate as lettered (the last step; an optional rename by a
+string; the keyword spelling `name =` a placeholder). The warning the manager added beside the leaning was not
+part of the lettered candidate: NOT ruled; kept as the manager's proposal (a structural warning, moving no
+answer). With capture-twice (a): two requests of one last step, not renamed, give the caller the last mention.
+The manager's readings (marked): (a) a rename to a string that is no legal capture name is a compile error at
+the request; (b) two requests RENAMED to one name follow capture-twice as well; (c) an unset label gives the
+caller an unset capture (regex's own behaviour for a group that did not take part), not asked.
