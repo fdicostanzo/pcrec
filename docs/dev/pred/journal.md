@@ -947,3 +947,13 @@ wake.md says (read the draft WHOLE first; A4 is a ruled-words finding: read his 
 - NOT DONE: r84 dispositions; nothing of 2026-11-22 (late) or 2026-11-23 is folded. The fold is now a LANE (many
   pieces: label-variables, name hole, argument-default, two-sources, closed-argument, capture, capture/add-on,
   capture-export, caller-ambiguous, labels-vs-captures, zero-binding, lib/json sketch, parked empty position).
+
+## 2026-11-23 — the capture shape moved to the set side; optional-label ruled
+
+- His proposal `(isodate.year: capture("year"))`; capture-absent; his `capture("h")?`; his `(h?: capture("h"))`.
+- RULED: optional-label (`(h?: S)` holds when h is absent or in S). The capture shape is now set-side
+  (`capture("name")` = `anything` with a request); it REPLACES the morning's `capture(path)` operand (his lean) and
+  the `name =` keyword of capture-name (a). capture-twice (a) and array-capture carry over.
+- FLAG filed at his word: optional-label-general (special form or general; `(h+: blah)`).
+- MY ERROR: one run line and a note were written into the record before the run was read; corrected by an appended
+  correction entry the same turn; the owner was shown the run's output only. Rule: paste run output, never pre-write it.

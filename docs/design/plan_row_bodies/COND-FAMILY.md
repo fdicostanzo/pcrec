@@ -8878,3 +8878,33 @@ parenthesised note after the four lines are WRONG and are withdrawn. The run's o
 The other three lines are as the run printed them. So the plain form parts from `(h?: <5)` in every mode: a
 stretch whose h is absent (`x`) is rejected by the plain form and kept by the optional one. Not told to the owner
 in the wrong form: the answer given to him used the run's output.
+
+### 2026-11-23 OWNER RULING — optional-label: yes (`(h?: S)` holds when h is absent or in S); and a FLAG: is it a special form or the general case of an expression left of `:`
+tags: core/conditions/form core/conditions/defaults core/conditions/form/value-left core/conditions/two-valued lib/structural/capture core/patterns/quantifiers
+
+ASKED AS A RULING (slug optional-label: `(h?: S)` holds when h is absent or in S, as a general entry form; the
+conservative edges proposed: `?` on a joint entry's label, on a value left of `:`, inside a group question are
+compile errors for now; if yes, the capture shape is `(h: capture("h"))`, `(h?: capture("h"))`, `rx &
+capture("name")`, replacing the `capture(path)` operand and its `name =` keyword; the manager's leaning yes). HIS
+WORDS, whole:
+
+"optional-label: yes. flag an item to see if this is a special form or general. eg. (h+: blah) might work but
+has no meaning as it takes the last form. all the other greedies, *, etc basically devolve to the same ?. you
+suggested that the left of the : in a condition is an expression which i agree with so i am wondering if this is
+just a logical extension of that or not"
+
+Class: a RULING: optional-label: yes. By the statement he answered, the capture request's shape is the set-side
+`capture("name")` (requires the label), `(h?: capture("name"))` (if present), `rx & capture("name")` (the
+stretch); the `capture(path)` operand of capture-place (his lean of the morning) and the `name =` keyword of
+capture-name (a) are REPLACED; capture-twice (a) and array-capture carry over (the array request's spelling
+under the new shape is not stated). And a FLAG he asks to be filed, an open item, slug optional-label-general:
+whether `h?` is a special form or the general case, the left of `:` being an expression (value-left, which he
+recalls and agrees with: "which i agree with"); his observations: `(h+: blah)` "might work but has no meaning as
+it takes the last form"; "all the other greedies, *, etc basically devolve to the same ?".
+The manager's first note on the flag (marked; from the rules, hand-worked, no run): under value-left as written,
+left of `:` a bare name or path is a LABEL and any other expression is a VALUE. Read as a value, `$h?` is regex's
+optional of the read: h's text, or the EMPTY text when h is unset ("an optional around it is skipped"), and the
+entry then tests the empty text: `($h?: <5)` on an absent h FAILS (the empty text is no numeral), where the ruled
+`(h?: <5)` HOLDS. So the two part unless the set holds the empty text: as the rules stand `h?` is a form of its
+own on the LABEL, not the value expression `$h?`. To examine: whether the general reading should be made to
+agree, and what `h+` / `h*` denote (his "the last form"; as values, `$h+` is repetition of h's text).
