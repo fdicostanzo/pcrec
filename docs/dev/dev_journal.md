@@ -28634,3 +28634,5 @@ Next
 - 17:25 u4land DONE (lane/u4land b9704a5b4, merge dca22c35e; checks only, abi 112; strict/plan-lint/build clean). Cloud test + mech on 25bbe01c6 (proven). Main ff after both green.
 - 17:35 r84 assigned to the predicate manager (P-22 fold). P-21 (lane/pred-rev28 75d2318bd, docs) to merge AFTER U4 ff's main. Next free review r85.
 - 18:20 Kit delivered R-47 U5 partial (lane/memfn-k1108 6a0633259: cards C6/C6c + formhash span fold; no emitted byte; r79 fixed; 746/747/749 GREEN). Order: U4 lands -> kit merges main + tip test/mech -> I land U5. U6 = C6/C6c TIMING: needs a Frank-cleared window (ask when kit sends length).
+- 18:50 Predicate manager PAUSED (Frank's /close): merge P-21 = 75d2318bd (NOT branch tip 2a67e7f63, which holds the unreviewed r84 fold; coordinator crit-predspot1122 left running). One append-only conflict (lanes index) expected; merge after U4. predspot free to prune.
+- 19:35 U4 LANDED (merge 7af611f1e; cloud test + mech GREEN on 25bbe01c6). P-21 merged (9b36e5685, docs; lanes-index conflict kept both sides). strict + plan-lint green.
