@@ -8672,3 +8672,34 @@ already defined. (2) the example as written to him, with each line's standing (r
 reading / unbuilt); one consequence found while writing it: read from OUTSIDE `line` (`line.ts.year`) the year
 is not exported (isodate is used alone in line's text: default-export), so the inner reads and the capture
 requests are written INSIDE `line` (his "early capture is no crime"), or the whole search is one definition.
+
+### 2026-11-23 OWNER, on the JSON picture: "this aligns with my understanding"; three follow-ups (a condition on `_x`; the quotes; threading the label to string)
+tags: core/labels/paths/argument-default core/operators/bindings/label-variables core/labels/export lib/json/members lib/modifiers/quoted lib/search/contains
+
+Asked whether the JSON picture under a yes to argument-export makes sense as a whole. HIS WORDS, whole:
+
+"this aligns with my understanding. 1. if i were to add a condition to json.row(_x:, "msg", json.string) & (_x:
+contains("timeout") would that also work the same? 2. the string _x matched would have quotes around it ? 3. we
+could thread the label to string to get the unlabeled portion"
+
+Class: an AGREEMENT with the picture ("this aligns with my understanding"). The reading taken, told to him so he
+can object: argument-export is answered YES (a caller's label on a spot holding the caller's in-place argument
+reads that argument by the inside rules), his earlier "i want to say yes" having waited on the picture making
+sense. Then two QUESTIONS and an IDEA (DISCUSSION): "unlabeled" in 3 is read as "unquoted" (the text inside the
+quotes; phone autocorrect), told to him.
+The manager's answers (told to him):
+1. Yes, the same answers. RUN (python `re`; `$PCREC_TMPDIR/scratch/pred/msg_two_forms.py`; form A the filter
+   inside the argument, `json.row(_:, "msg", json.string & contains("timeout"))`; form B `json.row(_x:, "msg",
+   json.string) & (_x: contains("timeout"))`, the row's paths enumerated in PCRE's order, the last `msg` member
+   first): WHOLE `{"msg":"db timeout"}` HOLDS, `{"msg":"ok"}` FAILS, `{"msg":"timeout a","msg":"ok"}` HOLDS (x =
+   `"timeout a"`), `{"msg":"ok","msg":"x timeout"}` HOLDS, `{"a":1,"msg":"t\"q timeout"}` HOLDS / SEARCHED (the
+   five as one subject) the first @0 / FIND-ALL @0, @34, @65, @96: A and B identical in every mode. `_x` is the
+   caller's private label, readable in the definition that writes it. The one difference is where the rejection
+   happens (inside the spot, or after the chain's patterns), not what survives.
+2. Yes: `json.string` includes its quotes, so `_x` is `"db timeout"` with them (the raw reading; finding 6 of the
+   exercise). `contains` is unaffected.
+3. A provided form taking a label for the inside, e.g. `string(l:) := /"(?<:${l}>(?:[^"\\]|\\.)*)"/` (the
+   manager's sketch), used in place: `json.row(_:, "msg", json.string(body:))`. It raises the question put to
+   him as slug label-in-argument: a label parameter passed INSIDE an in-place argument. It meets the manager's
+   reading (a) of argument-default ("a part label written ON an argument at a call labels a template": a compile
+   error), which a yes would narrow or withdraw.
