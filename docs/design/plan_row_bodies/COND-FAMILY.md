@@ -9266,3 +9266,22 @@ The manager's answers (told to him; marked):
   outside rejects (core/model/match); a loop or branching around it resetting its labels for the OUTSIDE reader
   (core/labels/one-rule).
 Put to him as slug binding-fixed.
+
+### 2026-11-23 OWNER RULING — binding-fixed: yes (what a binding's conditions read never depends on where it is used)
+tags: core/principles core/holes/bare-condition/nested-scope core/conditions/match-so-far core/labels/labels-vs-captures/array-vs-passes core/labels/flow core/holes/flags core/principles/composed-at-point
+
+ASKED AS A RULING (slug binding-fixed, the statement put to him: "What a binding's conditions read (its labels,
+its `0`, its arrays) never depends on where the binding is used. What its regex text matches follows regex at its
+edges."; shown with the printed lines "A user's loop" and "One definition, looped" of
+core/holes/bare-condition/nested-scope and the list of places where use changes what the regex text matches; the
+manager's leaning yes). HIS WORDS, whole:
+
+"binding-fixed: yes."
+
+Class: a RULING: the statement as put is a PRINCIPLE of the language (his own position of the entry above, "the
+behavior defined in a binding should not change due to how it's used", now ruled in the form put to him). It
+CONFIRMS the manager's reading "two uses of one piece are two pieces" (the lines "A user's loop", "Written out").
+The manager's readings (marked; for the fold to test): (a) "a binding" covers a macro body (a piece is a binding
+or a macro body: the standing reading); (b) the list of what follows regex at the edges is the five items of the
+entry above (an explicit `i` at a hole; an edge assertion; `^` / `$` in a filter role; which path is reported; an
+outside loop or branching resetting its labels for the outside reader), a list to check, not ruled as closed.
