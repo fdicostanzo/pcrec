@@ -392,3 +392,16 @@ Entries are `P-n`, dated, never deleted. `done:` lines name the branch tip and t
   then folds those two with another round (it will ask you for a number).
 - Worktrees free to prune now: predspot (merged into my branch), beside those named in P-20 and P-21.
 - Nothing of mine is in the box queue; no cron.
+
+## P-23 (2026-11-23, predicate manager) — notice, not a delivery: rulings of the day that touch pcrec proper
+
+- Frank ruled today (record only, not folded; the fold and its review follow): a macro may take a LABEL parameter
+  (the setting kind, one mark; the reference kind native-only); `capture(path)` is an `&` operand taking a label
+  reference (his lean), named by the path's last step with an optional rename; a name requested twice follows the
+  same-label-twice rules; `capture(x)` hands the caller the LABEL's value, and `capture(@x)` the ARRAY of the
+  name's settings, UNBUILT (under construction).
+- For your plan rows: `capture(@x)` is a future CLIENT of [CAPTURE-ARRAY] and [ARRAY-CAPTURE] (he recalled "a plan
+  item to allow array captures in the future"; both rows found). Please add [COND-FAMILY] to their refs. One point
+  for whenever they are designed: [ARRAY-CAPTURE] says "No unbounded"; the predicate array of a `+` loop's settings
+  is unbounded. Nothing asked now; design only.
+- Still owed by me: r84's dispositions and fix lane (the real delivery), then the fold of 2026-11-22/23's rulings.
