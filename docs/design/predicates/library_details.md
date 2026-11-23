@@ -19,6 +19,7 @@ readings:
 evidence: docs/dev/lanes/predspot_evidence/ predspot_model.py CONVENTION, SPOT, PLACES, TWOSPOT, USERMACRO.
 history:
 - 2026-11-22 (lane predspot, wrapper-export and transform-export folded): a new section lib/convention and its one piece; the convention stated once here, each provided body restated with the list on its spot and pointing at it.
+- 2026-11-23 (lane predfix84, review r84 A5, D6; record "2026-11-23 MANAGER — review r84 (predspot1122): the dispositions, ruled with the 2026-11-23 rulings in hand; no owner words"): the covered list gains prefix_in, suffix_in and slice_in, their S laid into a hole as quoted's (the pattern side of an `&`, placed; a reading): this CORRECTS the exemption list the manager gave with wrapper-export ("the set arguments (`between`, `prefix_in`, ...)"), `prefix_in` leaving it (A5). The filter-only exemption marked "none today" (D6). No printed match moves (labels only; docs/dev/lanes/predfix84_evidence/ predfix84_model.py SWEEP).
 
 ## lib/builtin/enumerate — Enumerate
 was: core/arrays/enumerate (2026-11-19, a call-form name: the owner, "all macros "x()" should be in the library document"; the manager's ruling R-1 of lane preddoc4)
@@ -165,12 +166,12 @@ history:
 - 2026-11-19 (lane preddoc6, review r60 EFFECTS): a new piece; the selector rule stays stated in core/diagnostics/warnings, this piece is the name.
 
 ## lib/builtin/options — @options, @options.strict
-slugs: program-options
+slugs: program-options options-position options-reach-constants
 rulings:
 - 2026-11-17 "polarity-rule: warning for both. Warnings are errors given some strictness setting eg @config.strict()" (record: "2026-11-17 OWNER RULING — polarity-rule"); (2) warnings become errors under a strictness setting declared in the source
 - 2026-11-17 ""One reading of mine: the setting covers...": @options.strict(/no-fail/)" (record: "2026-11-17 OWNER RULING — polarity-rule"); the ADDENDUM, same evening: strictness is SELECTIVE, a pattern over warning names; it corrects the manager's reading "the setting covers every warning"
 - 2026-11-22 "program-options: yes." (record: "2026-11-22 OWNER RULING — program-options: yes; and a PROPOSAL: `i` keeps inheriting, with a "weak" value the program sets"); as put to him: "the lexical file scope above, starting with `m`, `s`, `n`, `x`; never across an import; a literal's own flags win"; the scope: the setting applies to literals written after the statement, in the same file; an inserted literal carries its own file's defaults into a hole.
-- 2026-11-22 (class: IDEA) "Using predicate language it's going to be more likely to use () in a literal to mean no capturing group." (record: "2026-11-22 OWNER IDEA — program-scoped options: `@options()` setting flags (m, s, n, ...) for the literals of the bindings that follow"); his observation 1, quoted for `n`.
+- 2026-11-22 (class: OBSERVATION) "Using predicate language it's going to be more likely to use () in a literal to mean no capturing group." (record: "2026-11-22 OWNER IDEA — program-scoped options: `@options()` setting flags (m, s, n, ...) for the literals of the bindings that follow"); his observation 1, quoted for `n` (the class word corrected from IDEA, review r84 C7).
 - 2026-11-22 "hole-flags: yes to all. What i like about the i weak behavior is that it's consistent to the other program level settings that only affect literals in program scope." (record: "2026-11-22 OWNER RULING — hole-flags: yes to all (weak values do not propagate; only an explicit `i` is inherited at a hole; `m` and `s` are no longer inherited)"); the weak `i` is a program option of its file, never explicit.
 rejected:
 - the strictness setting covering every warning by default (the manager's reading) — by owner ruling — the polarity-rule addendum (`@options.strict(/no-fail/)`).
@@ -179,11 +180,14 @@ readings:
 - `@config.strict()` and `@options.strict(...)` are one setting under two placeholder spellings (D193 add. 4) — the manager's reading.
 - (d) the program options and the weak `i` are one table, lexical, the file's own literals, from the statement on — SUPPORTED as run (docs/dev/lanes/predspot_evidence/ predspot_model.py LEXICAL; the weak `i` shown at the top of a file only: whether it may be set lower is not ruled).
 - (the lane's, at the brief) a file is a program file or a library file; a library keeps its own options — SUPPORTED as run (docs/dev/lanes/predspot_evidence/ predspot_model.py LIBFILE, the lines "A library keeps its own options", "Never across an import").
+- (review r84 A1, A6 (5)) open options-position: may `@options(..)` stand below a binding of its file, appear more than once, or turn a flag off (`@options(-s)`)? Both candidates run on the review's witness (a := `/./`, then `@options(s)`, then `/x${a}y/`): (a) allowed, from the statement on, (b) only at the top of a file, a compile error (docs/dev/lanes/predfix84_evidence/ predfix84_model.py OPENFLAGS); no answer applied. The flag engine's `@options(-i)` (it clears a flag) has no sentence until then.
+- (review r84 A6 (3)) open options-reach-constants: do program options reach a string constant (`"ab"` under `@options(i)`) and an argument literal a library body places (`atomic(/a.b/)` under `@options(s)`)? Both candidates run (docs/dev/lanes/predfix84_evidence/ predfix84_model.py OPENFLAGS); no answer applied.
 evidence: docs/dev/lanes/predspot_evidence/ predspot_model.py LEXICAL, LIBFILE, FLAGGRID (lane predspot).
 history:
 - 2026-11-17: polarity-rule and its addendum.
 - 2026-11-19 (lane preddoc6, review r60 EFFECTS): a new piece; `@options.strict` was stated only in core/diagnostics/warnings.
 - 2026-11-22 (lane predspot, program-options folded; record "2026-11-22 OWNER RULING — program-options: yes; and a PROPOSAL: `i` keeps inheriting, with a "weak" value the program sets"): ruled 2026-11-17 re-dated 2026-11-22; heading "@options.strict" to "@options, @options.strict". Statement until then: "`@options.strict(sel)` makes the warnings whose names the selector `sel` matches into errors: strictness is selective, never every warning by default."; `defined:` until then "native (a compile-time effect on the compiler's diagnostics)"; "modes: n/a (a compile-time effect; no matching involved)" replaced by two run lines; four bullets added (program options, the weak `i`, his `n`, what is not ruled).
+- 2026-11-23 (lane predfix84, review r84 A1, A6, C6, C7; record "2026-11-23 MANAGER — review r84 (predspot1122): the dispositions, ruled with the 2026-11-23 rulings in hand; no owner words"): the not-ruled bullet until then: "Not ruled: the spelling, and whether it may appear more than once; whether `i` may be set weakly insensitive only at the top of a file; options beyond the four (`xx`, `J`, `U`, the `&`-in-rx switch: the idea's list)." Now the open line options-position (A1, A6 (5)), with both candidates' lines, and the open line options-reach-constants (A6 (3)), with both candidates' lines; the rest of the list kept; slugs added; the class word of his point 1 (C7); "(hole-flags)" cited as hole-flags' "yes to all" (C6).
 
 ## lib/modifiers/padded — padded
 was: lib/modifiers/unpadded (2026-11-19, a piece that only said the name is not provided; its content is a rejected line here (review r59 READ-13))
@@ -271,6 +275,7 @@ history:
 - 2026-11-22 (lane predfix77, review r77 A7; record "2026-11-22 MANAGER — review r77 (predfold1121): dispositions ruled (no owner words)"): the standing reading's "every mode except two" was false since flags-in-filter (sides first); the third exception, the warning's behaviour and two lines added; the candidates read "those three".
 - 2026-11-22 (lane predspot, wrapper-export / transform-export folded; record "2026-11-22 OWNER RULING — transform-export: yes (a provided body that places its argument passes its labels on); and two definitions he writes: `hide`, `identity`"): open any-case-body re-dated 2026-11-22. Statement until then: "Does the body `any_case(rx) := /(?i:${rx})/` define `any_case`, or does it stay native (a string equal, up to letter case, to a member of rx)?"; the candidate body gains the list (the convention covers a provided body; any_case stays native for now, so the list is on the candidate only); a bullet added. The candidate's printed lines re-run in the flag engine (predspot_model.py FSWEEP, EXPLICIT).
 - 2026-11-22 (lane predspot, hole-flags folded; record "2026-11-22 OWNER RULING — hole-flags: yes to all (weak values do not propagate; only an explicit `i` is inherited at a hole; `m` and `s` are no longer inherited)"): a bullet added (the body's flag is explicit); the line "The candidate body"'s tail `/(?i:${rx})/` to `/(?i:${[(=) = rx]})/`.
+- 2026-11-23 (lane predfix84, review r84 D7; record "2026-11-23 MANAGER — review r84 (predspot1122): the dispositions, ruled with the 2026-11-23 rulings in hand; no owner words"): `needs:` gains lib/convention/argument-labels, which its candidate body and its bullet cite, as every other body given the list.
 
 ## lib/modifiers/limited — limited
 slugs:
@@ -311,6 +316,7 @@ history:
 - 2026-11-22 (lane predfix82, review r82 GENERAL-8; record "2026-11-22 MANAGER — review r82 (predfold1122): dispositions ruled; two corrections of record entries (no owner words)"): `needs:` core/values/computed-labels dropped (value-left already named).
 - 2026-11-22 (lane preddef, default-export folded; record "2026-11-22 OWNER RULING — default-export: protected"): the bullet until then: "The name is ruled; the body is a reading. The label `ch` is visible in the result; a part label, it makes no capture (pure-label), so the caller receives none." Now: the body uses `chars` alone, so a call exports no `ch` (a consequence of the manager's reading (e) of default-export, a call exporting what its body writes; cited as "reading (h)", a letter the record does not have, until review r83 D6; SUPPORTED as run: preddef_model.py LIBRARY); `chars` itself exports `ch`.
 - 2026-11-22 (lane predfix83, review r83 D6; record "2026-11-22 MANAGER — review r83 (preddef1122): dispositions ruled; one correction; idiom-confirm closed on default-export (no owner words)"): the history's "the manager's reading (h)" corrected to the letter the record has, (e).
+- 2026-11-23 (lane predfix84, review r84 D6; record "2026-11-23 MANAGER — review r84 (predspot1122): the dispositions, ruled with the 2026-11-23 rulings in hand; no owner words"): a clause: S, the set the count is tested against, is not placed, so no labels pass on (an exemption of lib/convention/argument-labels, said in the piece as the convention's "unless its piece says otherwise" asks).
 
 ## lib/modifiers/month-numbered — month_numbered
 slugs:
@@ -334,6 +340,7 @@ history:
 2026-11-22 (lane predbound, R-3, label-reference ruled): `mname.index` re-spelled `months.mname.index` (the part label reached through the binding); the answers do not move (predbound FIVE).
 - 2026-11-22 (lane predfix82, review r82 GENERAL-8; record "2026-11-22 MANAGER — review r82 (predfold1122): dispositions ruled; two corrections of record entries (no owner words)"): `needs:` core/values/computed-labels retargeted to core/conditions/form/value-left.
 - 2026-11-22 (lane predfix83, review r83 D5; record "2026-11-22 MANAGER — review r83 (preddef1122): dispositions ruled; one correction; idiom-confirm closed on default-export (no owner words)"): the bullet until then: "The name is ruled; the body is a reading. The label `mname` is visible in the result; `[mname = ...]` makes no capture (pure-label)." (the unfixed sibling of length's corrected sentence). Now: the call exports no `mname`; `months` exports it.
+- 2026-11-23 (lane predfix84, review r84 D6; record "2026-11-23 MANAGER — review r84 (predspot1122): the dispositions, ruled with the 2026-11-23 rulings in hand; no owner words"): a clause: S, the set the index is tested against, is not placed, so no labels pass on (an exemption of lib/convention/argument-labels, said in the piece as the convention's "unless its piece says otherwise" asks).
 
 ## lib/control/peek — peek
 was: core/conditional/peek (2026-11-19, the owner: core document macros are defined in the library unless primitive; since refined the same day: every call-form name is a library piece, the "primitive" designation withdrawn)
@@ -376,7 +383,7 @@ rejected:
 - `then` optional, `when(x, else = z)` legal (his spelling lean) — by owner ruling — `then` is required.
 - the definition `x & (NOT c | p)` as THE definition — by owner ruling — it is the guarded form's special case for a condition test and condition branches (the draft R.1.10 (6)).
 readings:
-- the body `when(test, then, else = //) := (test SEQ then) | (NOT peek(test) SEQ else)` reproduces every ruled example, in the peek form and the consumed form, with a condition test and with NOT — SUPPORTED (preddoc2 PARTS W1, WT, WD, WN, WC, WV, W8; each against the draft's printed answers, the semantic model and a sabotage).
+- the body `when(test, then, else = //) := (test SEQ then) | (NOT peek(test) SEQ else)` reproduces every ruled example, in the peek form and the consumed form, with a condition test and with NOT — SUPPORTED (preddoc2 PARTS W1, WT, WD, WN, WC, WV, W8; each against the draft's printed answers, the semantic model and a sabotage). That is the body before wrapper-export; the ruled body writes `[(=) = test]`, `[(=) = then]`, `[(=) = else]`, which move no match, so these runs stand for matching. `when`'s label sentences are not run on `when` itself (no model reads its body: predspot's header, "Not modelled ...: `when`"); they rest on a user macro of the same shape (lib/convention/argument-labels' line "Two arguments") (review r84 D7).
 - the signature makes `then` required and refuses `when(x)` and `when(x, else = z)` "syntactically" — SUPPORTED as RULE-AS-CODE (preddoc2 PART WS; sabotage s6 caught); passing parameters BY NAME is the draft's reading (the ONE INPUT RULE).
 - `//` (his `null`) is "nothing required", not a new value — the manager's reading, UNTESTED (a reading of words).
 - the test is evaluated once per branch in principle (a cost statement) — NOT RUNNABLE.
@@ -389,6 +396,7 @@ history:
 - 2026-11-19 (lane preddoc4): `needs: core/filters/negation` (the body's `NOT peek(test)` is legal by that piece) and `see: lib/control/when-test` (review r59 NEGATION, READ-17).
 - 2026-11-22 (lane predfix83, review r83 A8; record "2026-11-22 MANAGER — review r83 (preddef1122): dispositions ruled; one correction; idiom-confirm closed on default-export (no owner words)"): the bullet "Labels the test sets are visible in then" gains its dependence on argument-default: then reads the test's labels across two arguments the body uses alone, legal under (local), refused under (error) by the reading of argument-default (a read inside an argument beside its OWN group only stays legal).
 - 2026-11-22 (lane predspot, wrapper-export folded; record "2026-11-22 OWNER RULING — wrapper-export: agree (a) (the provided wrappers pass their argument's labels on); and a question: do transforms in general"): ruled 2026-11-18 re-dated 2026-11-22. Statement until then: "The conditional is the guarded form, `when(test, then, else = //) := (test SEQ then) | (NOT peek(test) SEQ else)`: else is never tried where the test holds."; the labels bullet until then: "Labels the test sets are visible in then; in the else branch they are unset, a failed test setting nothing (a reading, run). Then reads the test's labels across two arguments the body uses alone (awaits argument-default, core/labels/paths/argument-default)." The read in then of the test's labels is now a reading refused by argument-default (a template's label); `when` is not modelled (its guard `NOT peek(test)`), the shape run on a user macro `W(a, b)`.
+- 2026-11-23 (lane predfix84, review r84 D7; record "2026-11-23 MANAGER — review r84 (predspot1122): the dispositions, ruled with the 2026-11-23 rulings in hand; no owner words"): the body reading marked: its runs are of the pre-list body, valid for matching; the label sentences rest on a user macro of the same shape.
 
 ## lib/control/when-test — The test of `when`
 was: core/conditional/test (2026-11-19, the owner: core document macros are defined in the library unless primitive; since refined the same day: every call-form name is a library piece, the "primitive" designation withdrawn)
@@ -402,12 +410,13 @@ rejected:
 - a value read as the test as its own case (holds when non-empty) — by owner ruling — value-test (one rule, no special case).
 readings:
 - the three kinds are when's ONE body read per kind (a condition and a peek are zero width; a bare pattern is consumed by `test SEQ then`) — SUPPORTED (preddoc2 PARTS WT, WC, WV).
-- labels the test sets are visible in then; unset in else (the draft R.1.10 (5)(b)) — SUPPORTED for a peek (PART PE); the else side as run by rev 26.1's PART COND.
+- labels the test sets are visible in then; unset in else (the draft R.1.10 (5)(b)) — SUPPORTED for a peek (PART PE); the else side as run by rev 26.1's PART COND. SUPERSEDED (review r84 D7): lib/control/when now reads them through the call (`when.h`); a read written in then of a label the test sets is a compile error there (a reading).
 - a filter-only rx as the test — NOT STATED by any ruling.
 evidence: preddoc2 PARTS WT, WC, WV; the draft R.1.0's TEST row and R.1.10 (3)-(5).
 history:
 - 2026-11-18: when-test, when-peek; 2026-11-18 evening value-test.
 - 2026-11-19: moved to the library with `when` (lane preddoc2); the warning stays a core diagnostic, core/diagnostics/consuming-test.
+- 2026-11-23 (lane predfix84, review r84 D7; record "2026-11-23 MANAGER — review r84 (predspot1122): the dispositions, ruled with the 2026-11-23 rulings in hand; no owner words"): the bullet until then: "These are when's body read per kind of test: `test SEQ then` consumes what the test consumes." Now the ruled body's `[(=) = test] SEQ [(=) = then]`, the list moving no match; the label reading marked.
 
 ## lib/control/when-test/not — NOT on a bare pattern test
 slugs: not-test
@@ -529,6 +538,7 @@ readings:
 - `contains(/err$/)` also accepts a value ending `err` and a newline (PCRE's `$`; `\z` for the exact end) — SUPPORTED (PART SW).
 - a CANDIDATE body, not the definition: `contains(x) := occurrences(x, min = 1)` (the draft's LEAN, §2.6, §8: chosen so x's labels read as the leftmost hit) — the same set as the ruled gap body, 0 / 0 / 0 of 121 texts (`ab` over `abx`, length <= 4) in all three modes; only the labels differ (the hit, and which occurrence x's labels read) — SUPPORTED (preddoc3c PART SWocc). Its printed run: `occurrences("ab", min = 1)` WHOLE `xabx` HOLDS, `ba` FAILS / SEARCHED `x ab` `x ab`@0 / FIND-ALL `ab ab` [`ab ab`@0].
 - the same candidate also equals `occurrences(x) & some((hit: /(?s).*/))` (the draft; as printed before label-reference, today `some((occurrences.hit: /(?s).*/))`) — UNTESTED here.
+- (review r84 D5) `contains.n` reads the LAST occurrence: the leading gap is greedy, so the argument starts as far right as it can (`contains(/(?<n>\d)/)` on `a1b2`: `2`), as endsWith states its own — SUPPORTED as run (docs/dev/lanes/predfix84_evidence/ predfix84_model.py CONTAINS, the line "The last occurrence"); libpcre2 gives n = `2` (review r84 V11).
 evidence: preddoc3c PART SW, PART SWocc; docs/dev/lanes/predspot_evidence/ predspot_model.py SWEEP (lane predspot).
 history:
 - 2026-11-14/15: the `contains` family; the record's body (11-15); the draft kept `occurrences(x, min = 1)` (its reading above).
@@ -536,6 +546,7 @@ history:
 - 2026-11-15 (rev 9-12): the draft kept the occurrences spelling against the record's text, "the same sets".
 - 2026-11-19 (lane preddoc6, review r60 COLD-10): the sub-piece "contains as occurrences" (`reading`, "`contains(x)` is written `occurrences(x, min = 1)`: the same set, and x's labels read leftmost, as a hit") merged back here as a candidate reading: the base had two present-tense definitions of one name.
 - 2026-11-22 (lane predspot, wrapper-export / transform-export folded; record "2026-11-22 OWNER RULING — transform-export: yes (a provided body that places its argument passes its labels on); and two definitions he writes: `hide`, `identity`"): ruled 2026-11-15 re-dated 2026-11-22. Statement until then: "`contains(s)` is the plain gap body `/(?s:.*)(?:${s})(?s:.*)/`: no anchors of its own; in a filter role it accepts a value holding s."; a bullet added.
+- 2026-11-23 (lane predfix84, review r84 D5; record "2026-11-23 MANAGER — review r84 (predspot1122): the dispositions, ruled with the 2026-11-23 rulings in hand; no owner words"): the label bullet gains which occurrence `contains.n` reads, with the line "The last occurrence".
 
 ## lib/search/starts-with — startsWith
 slugs:
@@ -631,6 +642,7 @@ evidence: preddoc3c PART BE.
 history:
 - 2026-11-14: a standard library set; 2026-11-15: the string-set confirmation; rev 20: tuple atoms.
 - 2026-11-19 (lane preddoc3c): converted.
+- 2026-11-23 (lane predfix84, review r84 D6; record "2026-11-23 MANAGER — review r84 (predspot1122): the dispositions, ruled with the 2026-11-23 rulings in hand; no owner words"): a clause: its arguments are values compared, not placed, so no labels pass on (an exemption of lib/convention/argument-labels, said in the piece as the convention's "unless its piece says otherwise" asks).
 
 ## lib/sets/prefix-in — prefix_in, suffix_in, slice_in
 slugs:
@@ -640,10 +652,12 @@ rejected:
 readings:
 - the body `/${S & /(?s:.){${n}}/}(?s:.*)/` (the draft's LEAN, rev 15): `prefix_in(2, /abc|xy/)` holds on `xyz`, not on `abc`; `prefix_in(2, "Columbus")` never holds — SUPPORTED (preddoc3c PART PI; sabotage s19, the image in its place, caught).
 - out of range: the draft §13 O14, open; characters per the encoding mode.
+- (review r84 A5, a reading, correcting the manager's exemption list of wrapper-export) S is laid into a hole as quoted's argument is (the pattern side of the `&`, placed), so its labels pass on by the list: `prefix_in(3, /(?<a>ab)c|xy/) & (prefix_in.a: "ab")` holds on `abcz` — SUPPORTED as run (docs/dev/lanes/predfix84_evidence/ predfix84_model.py PREFIXIN, the line "S's labels, through the call"); libpcre2 sets the group in that position (review r84 V11).
 evidence: preddoc3c PART PI.
 history:
 - 2026-11-15 (rev 15): `left/right/mid` with a body; 2026-11-18 (rev 27.1): renamed.
 - 2026-11-19 (lane preddoc3c): converted.
+- 2026-11-23 (lane predfix84, review r84 A5; record "2026-11-23 MANAGER — review r84 (predspot1122): the dispositions, ruled with the 2026-11-23 rulings in hand; no owner words"): statement until then: "`prefix_in(n, S)` accepts a text whose first n characters are a member of S: `/${S & /(?s:.){${n}}/}(?s:.*)/`." Now the body writes the list on S, `[(=) = S]`; needs gains lib/convention/argument-labels; a bullet and the line "S's labels, through the call". The printed line `prefix_in(2, /abc|xy/)` stands (the list moves no match).
 
 ## lib/counting/some — some
 slugs: all-question some-own
@@ -897,6 +911,7 @@ evidence: preddoc3c PART RC; `docs/design/rx_module.md` §2 (the note is SUPERSE
 history:
 - 2026-11-17: the rx module proposed (his), the one repeat construct agreed.
 - 2026-11-19 (lane preddoc3c): converted.
+- 2026-11-23 (lane predfix84, review r84 D6; record "2026-11-23 MANAGER — review r84 (predspot1122): the dispositions, ruled with the 2026-11-23 rulings in hand; no owner words"): a clause: `rx.none_of(S)`'s S stands under a complement, so no labels pass on (an exemption of lib/convention/argument-labels, said in the piece as the convention's "unless its piece says otherwise" asks).
 
 ## lib/rx/repeat — rx.repeat
 was: core/patterns/repeat (2026-11-19, a library definition over count holes; the "core holds primitives only" rule of that morning was withdrawn the same day: every call-form name is a library piece)

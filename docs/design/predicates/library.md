@@ -27,9 +27,10 @@ module: ?
 - What an argument exports (a reading, run: the line "An expression exports what its text writes"): a binding or a
   call exports what it exports; any other argument what its own text writes, a part used alone in it nothing.
 - Covered, each piece restating its body with the list on its spot: peek, atomic, when, list_of, padded, quoted,
-  anchored, any_case (its candidate body), contains, startsWith, endsWith, rx.repeat, capture.
-- "Places" leaves out (the manager's answer on wrapper-export, put to him with transform-export): an argument used only as a filter (the right side of `&` in a body)
-  or under a complement (a complement's labels are never visible), the set arguments (`between`, `prefix_in`, the S
+  anchored, any_case (its candidate body), contains, startsWith, endsWith, rx.repeat, capture; and prefix_in,
+  suffix_in, slice_in, whose S a body lays into a hole as quoted's (a reading).
+- "Places" leaves out (the manager's answer on wrapper-export, put to him with transform-export): an argument used only as a filter (the right side of `&` in a body;
+  none today) or under a complement (a complement's labels are never visible), the set arguments (`between`, the S
   of `length` and `month_numbered`), the natives with no body.
 - A spot the body labels exports through that label instead (the manager's reading (d)): `hits` and `occurrences` keep
   the label-only `hit` around their argument and do not also write `(=)`; the caller reads `hits.hit.g`.
@@ -175,7 +176,7 @@ defined: native (compile-time effects: how a file's literals are read; the compi
   file, from the statement on: `m`, `s`, `n`, `x` and the weak `i`; never across an import (a library file keeps its
   own options); a flag a literal writes for itself wins; an inserted literal carries its own file's defaults into a
   hole (core/holes/flags). The spelling is a placeholder (his `@options()`).
-- The weak `i` (hole-flags): a file with no option is weakly case-sensitive, `@options(i)` makes it weakly
+- The weak `i` (hole-flags' "yes to all"): a file with no option is weakly case-sensitive, `@options(i)` makes it weakly
   insensitive; a weak value is set only by a program option, and a program option is never explicit. The options
   and the weak `i` are ONE lexical table (the manager's reading (d)); a file is a program file or a library file,
   each with its own (a reading, run).
@@ -233,7 +234,7 @@ WHOLE `"ab"` HOLDS, `"ba"` FAILS / SEARCHED `x "ab"` `"ab"`@2 / FIND-ALL `"a" "b
 
 ### any_case   [lib/modifiers/any-case]   open any-case-body 2026-11-22
 Does the body `any_case(rx) := /(?i:${[(=) = rx]})/` define `any_case`, or does it stay native (a string equal, up to letter case, to a member of rx)?
-needs: core/holes/flags core/filters/and
+needs: core/holes/flags core/filters/and lib/convention/argument-labels
 module: ?
 defined: native (for now, by the owner's ruling; whether the body defines it is the open question)
 - Today (ruled): `any_case` is native for now; a more fundamental basis is a follow-up.
@@ -242,7 +243,7 @@ defined: native (for now, by the owner's ruling; whether the body defines it is 
   sides differ only in case (`any_case(/[a-z]x/ & /[A-Z]x/)`: the sides take the flag first, core/holes/flags/in-filter,
   so the body matches 16 of 820 texts over `aAbBxXzZ7` to length 3, the native none; the lines below).
 - The candidate body carries the export list on its spot (lib/convention/argument-labels); the list moves no match.
-- Its `(?i:..)` is EXPLICIT, so it passes the hole under hole-flags (the manager's reading (a)): its lines stand.
+- Its `(?i:..)` is EXPLICIT, so it passes the hole under hole-flags' "yes to all" (the manager's reading (a)): its lines stand.
 - In the body the `pcrec.flags.filter` warning fires on that third argument: the hole is the library's, the
   warning the caller's to read (a reading).
 - Candidates: (a) the body is the definition, those three its stated behaviour; (b) the native definition stays,
@@ -271,7 +272,8 @@ defined: language
   written in the body's own text, it is referenced with its source, `chars.ch` (core/labels/paths/label-reference).
 - The name is ruled; the body is a reading. The body uses `chars` alone, so a call exports no `ch`: `length.ch`
   and `length.chars.ch` are compile errors (default-export, core/labels/export; a reading, run); `chars` itself
-  exports `ch`, a part label its text writes (`chars.ch`). A part label makes no capture (pure-label).
+  exports `ch`, a part label its text writes (`chars.ch`). A part label makes no capture (pure-label). S is a set
+  the count is tested against, not placed in the match: its labels do not pass on (lib/convention/argument-labels).
 - His `length($y)`, the length of a read's one string (an image), is the different function `strlen`.
 WHOLE `abc` HOLDS, `ab` FAILS / SEARCHED `abcd` `abc`@0 / FIND-ALL `abcdefg` [`abc`@0, `def`@3] (`length(==3)` as a program: `chars & (count((chars.ch: /(?s:.)/)): ==3)`)
 
@@ -287,7 +289,8 @@ defined: language
   bound alone is a compile error: core/holes/bare-condition/bound-condition).
 - The name is ruled; the body is a reading. The body uses `months` alone, so a call exports no `mname`:
   `month_numbered.mname` is a compile error (default-export, core/labels/export; a reading); `months` itself exports
-  `mname`, a part label its text writes. `[mname = ...]` makes no capture (pure-label).
+  `mname`, a part label its text writes. `[mname = ...]` makes no capture (pure-label). S is a set the index is
+  tested against, not placed in the match: its labels do not pass on (lib/convention/argument-labels).
 WHOLE `Jun` HOLDS, `Jul` FAILS / SEARCHED `Dec Feb` `Feb`@4 / FIND-ALL `Mar Oct Apr` [`Mar`@0, `Apr`@8] (`month_numbered(between(1, 6))`)
 
 ## Control   [lib/control]
@@ -334,7 +337,8 @@ A condition or a `peek(A)` as the test consumes nothing and then starts where th
 needs: lib/control/when
 module: ?
 defined: language
-- These are when's body read per kind of test: `test SEQ then` consumes what the test consumes. The else guard,
+- These are when's body read per kind of test: `[(=) = test] SEQ [(=) = then]` consumes what the test consumes (the
+  list moves no match). The else guard,
   `NOT peek(test)`, is "the test cannot match here" for every kind.
 - A bare pattern A: `when(A, B, else = C)` is `AB|(?!A)C`, a sequence, not an `&` over a stretch.
 - The compiler warns that a bare pattern test consumes (core/diagnostics/consuming-test): the body cannot see that
@@ -509,11 +513,12 @@ defined: language
   `/\d\d/ & padded(between(1, 12))` or `/\d{1,2}/ & between(1, 12)`.
 - Its bounds may be tuples (dictionary order, every component read).
 - `between` as `>= lo & <= hi` is a reading; "inclusive" and the two-digit example are ruled.
+- Its arguments are values compared, not placed in the match: no labels pass on (lib/convention/argument-labels).
 WHOLE `12` HOLDS, `05` FAILS / SEARCHED `x05 11` `11`@4 / FIND-ALL `10 3 12 13` [`10`@0, `12`@5] (`/\d\d/ & between(1, 12)`)
 
 ### prefix_in, suffix_in, slice_in   [lib/sets/prefix-in]   reading 2026-11-19
-`prefix_in(n, S)` accepts a text whose first n characters are a member of S: `/${S & /(?s:.){${n}}/}(?s:.*)/`.
-needs: core/holes/pattern core/holes/count core/filters/and
+`prefix_in(n, S)` accepts a text whose first n characters are a member of S: `/${[(=) = S] & /(?s:.){${n}}/}(?s:.*)/`.
+needs: core/holes/pattern core/holes/count core/filters/and lib/convention/argument-labels
 module: ?
 defined: language
 - `suffix_in(n, S)` and `slice_in(i, n, S)` alike; positions are characters per the encoding mode (bytes or characters, open as for `left`); out of range is
@@ -724,7 +729,8 @@ module: rx
 defined: language
 - `rx.digit := /\d/`; `rx.word_char`, `rx.space`, `rx.any`, `rx.any_but_newline` are `\w`, `\s`, `(?s:.)`, `.`.
 - `rx.letter`: `[[:alpha:]]`, following the program's UCP setting (PCRE's Unicode-property mode for classes) as a literal does.
-- `rx.range(a, b) := /[${a}-${b}]/` (range ends are a typed position); `rx.none_of(S)` is `rx.any & !S`.
+- `rx.range(a, b) := /[${a}-${b}]/` (range ends are a typed position); `rx.none_of(S)` is `rx.any & !S`, S under a
+  complement passing no labels on (lib/convention/argument-labels).
 - `rx.any_of` over an array is the array itself; over a string it needs a split into characters, not in the language.
 - The plurals: `rx.digits := rx.repeat(rx.digit, min = 1)` is `\d+` (0 / 0 / 0 of 63 texts differ).
 - The names are placeholders.
