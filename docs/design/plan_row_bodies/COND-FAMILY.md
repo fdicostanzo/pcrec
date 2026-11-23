@@ -9906,3 +9906,30 @@ The manager's restatement (told to him; marked):
 The two doors on one program (the first line run this turn; the second the printed line "Closed by the macro" of
 core/labels/paths/closed-argument): `B([a = A]) & (a.h: <5)`: the answers above; `B(A) & (A.h: <5)`, the same B:
 a compile error (the door through A is the one B closed).
+
+### 2026-11-23 OWNER, on the door example: "B(A) & (A.h: <5): this is actually an error regardless I believe. B.h might be closer to the mark but unless B exported, it's door is closed"
+tags: core/labels/paths/closed-argument core/labels/paths/call-prefix core/labels/paths/argument-default core/labels/export/arguments core/principles/label-names-spot core/labels/export
+
+Said on the manager's restated general rule (slug label-doors, not answered by these words). HIS WORDS, whole:
+
+"B(A)       & (A.h: <5): this is actually an error regardless I believe. B.h might be closer to the mark but
+unless B exported, it's door is closed"
+
+Class: a CORRECTION of the manager's example, stated as a BELIEF ("I believe"); NOT a ruling by these words. His
+point: the caller's `A.h` for a call `B(A)` is an error WHATEVER the body does; the door, if any, is B's (`B.h`),
+open only where B exports.
+CHECKED AGAINST THE RECORD (a belief is checked, not taken): it agrees with his principle of 2026-11-22
+(label-names-spot: "The label is not to the regex abstractly, it's to the spot in the pattern where the regex is
+being inserted."; "It's not a piece of the pattern. It's a template of the rx that might be placed into the
+pattern.") and with argument-default ("for me this is an error"). It does NOT agree with two earlier entries of
+2026-11-22: call-prefix case 2, his lean "i'd say A.d is legal there", and closed-argument, RULED (a) on the
+statement "`A.d` is legal in the caller exactly where `d` is visible through the call, and it reads `d` as it
+reaches the caller. Where B closes the argument, `A.d` is a compile error." The documents therefore print
+`B(A) & (A.d: <5)` as LEGAL where the body labels the spot (B(rx) := `/${[p = rx]}-(?<d>\d)/`: WHOLE `7-3` FAILS,
+`3-7` HOLDS, `3-3` HOLDS / SEARCHED `7-3 3-7` `3-7`@4 / FIND-ALL `7-3 3-7 1-2 9-9` [`3-7`@4, `1-2`@8]). It is the
+open spot-read-name of review r84 (C4), which the manager had queued low.
+The manager's answer (told to him; marked): his belief is the cleaner rule and follows from his own principle:
+an argument is not a part of the CALLER's pattern, so the caller has no door through the argument's name; the
+doors are the body's (`B.p.d` through a spot it labels, `B.d` where it lists). The restated rule's line 2 is
+corrected accordingly ("a part placed in YOUR OWN definition"). Because it reverses a ruled answer, it is put to
+him as a ruling: slug spot-read-name.
