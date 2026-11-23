@@ -10034,3 +10034,17 @@ label is set twice, the same-label-twice rules; never: the never-pass warning; (
 labels are chains of only labels") is his statement of the general form, to be written as such.
 NOT sent to the running fix lane predfix86 (a reversed design is a fresh lane's): the next fold takes it with
 call-forms, unspecified-rule, count-unspecified and repeat-head.
+
+### 2026-11-23 MANAGER — a consequence found by lane predfix86: a body that reads its label parameter cannot be called with the blank label; no owner words
+tags: core/operators/bindings/label-variables lib/json/members core/operators/bindings/call-forms
+
+The fix lane stopped on review r86's A2: with the manager's reading (c) of label-parameter-omitted restored (a
+body that reads its label parameter, called with `_`, is a compile error at the call), two printed examples are
+refused by its engine: `row(_:, "msg", contains("timeout"))` and `row(_:, "level")`, for the label-forward
+sketch's `row(l:, k, f = anything)`, whose body reads `l` in `(l: f)`. RULED by the manager (R2 in the lane's
+rulings file): the reading STANDS; it now also follows from unspecified-rule (ruled the same day): a condition
+entry whose label is "not written" is not a construct, so the call is a compile error. The examples are
+re-spelled with a named label (the lane's run: legal, the two forms agree); the cost is stated in the piece (the
+caller passes a name, a private `_x:` if it wants none exported). The JSON sketch is the manager's, under
+construction: that its filter-taking `row` refuses the blank label is a point of the LIBRARY's design, told to
+the owner, not asked as a language question.
