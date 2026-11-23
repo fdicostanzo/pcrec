@@ -8739,3 +8739,30 @@ never-pass warning; (c) the backdoor passes `[_ = rx]` and a `_` part label alik
 body declines to NAME the spot, and the sent label needs no name from it; whether it also passes a body that
 uses the argument ALONE (no label on the spot at all) is the natural extension: taken as yes (the backdoor does
 not depend on the outer body's cooperation), to confirm.
+
+### 2026-11-23 MANAGER — the re-examination he asked for: a label SET in an argument (`B(A)` with `A := [f = "frank"]` against `B([f = "frank"])`); no owner words
+tags: core/labels/paths/argument-default core/labels/paths/two-sources core/labels/paths/closed-argument core/operators/bindings/label-variables core/principles/label-names-spot core/principles/meaning-not-spelling
+
+What was ruled on 2026-11-22 (his words): the caller's read `A.d` for `B(A)` whose body uses its argument alone
+is an error; "A parameter like rx in a call B(rx) cannot be labeled because it's not being placed into the
+pattern." What was the MANAGER'S reading, not his ruling: (a) a part label written ON an argument at a call
+(`B([a = A]) & (a.d: ..)`) is a compile error; (b) a group written in an in-place argument is not the caller's to
+read bare (`B(/(?<d>\d)/) & (d: <5)`).
+The issues behind the error, as discussed then: the template may be placed once, twice, in a loop or a branch,
+or never, and the caller cannot see which from the call; the body may close the argument on purpose
+(closed-argument); a read by the argument's name names no spot in the caller's own text.
+What today's rulings change: (1) argument-export (yes): a caller's label on a spot reads the caller's in-place
+argument by the inside rules; (2) label-in-argument (ruled): an unbound label sent inside an argument is the
+caller's, read bare, through `_` as well. With (2), `lab(l:, x) := [l = x]` makes `B(lab(f:, "frank"))` legal,
+and it is `B([f = "frank"])` by expansion: refusing the second refuses a spelling (meaning-not-spelling).
+The manager's proposal put to him (slug argument-label; readings (a) and (b) to be WITHDRAWN on a yes): a label
+the caller WRITES in its own text inside an argument (a part label, a group of an in-place literal, a sent
+label) is the caller's own label, set where the body places the template: once, set once; twice, the
+same-label-twice rules; never, the never-pass warning. His ruled error STANDS: `B(A) & (A.f: ..)` with A :=
+`[f = "frank"]`: `f` is written in A's text, not the caller's, and the caller's text gives A no spot. So the
+difference between his two programs is whose text writes the label. The way out of the error is then the
+caller's own label on the argument (`B([a = A]) & (a.f: ..)`), without the body's cooperation.
+RUN (python `re`): `B([f = /\d/]) & (f: <5)`, B(rx) := `/${rx}xx/`: WHOLE `3xx` HOLDS, `7xx` FAILS / SEARCHED
+`7xx 3xx` `3xx`@4 / FIND-ALL `3xx 7xx 4xx` [`3xx`@0, `4xx`@8]. Placed twice, `pair([f = /\d/]) & (f: <5)`,
+pair(p) := `/${p},${p}/` (the last mention): WHOLE `7,3` HOLDS, `3,7` FAILS / SEARCHED `3,7 7,3` `7,3`@4 /
+FIND-ALL `7,3 3,7 1,2` [`7,3`@0, `1,2`@8].
