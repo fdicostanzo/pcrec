@@ -9543,3 +9543,33 @@ open call-forms closes as (b); tuple-parts (open) gains a second client.
 WHAT IS LEFT FOR HIM: the interleaving rule (6); whether `_` may be passed to ANY parameter or only to one whose
 head allows it (the play-out assumes any, as his `repeat(X, _, 5)` does); a map written in place (8); a user
 macro taking a macro (9, 11) and which of the two termination rules (12).
+
+### 2026-11-23 OWNER, on the call-forms play-out: `repeat(A)` could be `A*`; "I'm not understanding the distinction between unset and _ ... Is it only whether the arg takes a default?"
+tags: core/operators/bindings/call-forms core/operators/bindings lib/rx/repeat core/holes/count
+
+HIS WORDS, whole: "Comments: 1. repeat(A) could be A*.
+2. I'm not understanding the distinction between unset and _ in your examples. Is it only whether the arg takes a
+default?"
+
+Class: two COMMENTS on the play-out (DISCUSSION; nothing ruled): a SUGGESTION (`repeat(A)` with no count "could
+be" `A*`) and a QUESTION on the play-out's "omitted" (his "unset") against `_`.
+The manager's answers (told to him; a proposal, marked):
+1. It falls out of the same head with one more default: `repeat(x, min = _, max = min)`. With no count both
+   bounds are unspecified, so both are left out: `{0,}`, which is `*`.
+2. Yes, that is the whole distinction. OMITTED: the caller writes nothing and the head's default is used (a
+   compile error if there is none). `_`: the caller writes "nothing here" and the default is NOT used. They
+   differ only where the default is something other than `_` (here `max = min`: `repeat(A, 3)` is exactly 3,
+   `repeat(A, 3, _)` is 3 or more); where the default IS `_` (his `max?`) they are the same call. If the two were
+   merged (`_` = "use the default"), "no maximum" and "exactly n by one argument" could not both come from one
+   head: his ruled "one argument exact" would have to be written `repeat(A, 3, 3)`.
+RUN (python `re`; the head's defaults applied by a four-line function; output pasted):
+- `repeat(rx.digit)` is `(?:\d){0,}`: WHOLE `` HOLDS, `12` HOLDS, `123` HOLDS, `123456` HOLDS / SEARCHED
+  `x1234567` ``@0 / FIND-ALL `1234567 12` [`1234567`@0, ``@7, `12`@8, ``@10]
+- `repeat(rx.digit, 3)` is `(?:\d){3,3}`: WHOLE `` FAILS, `12` FAILS, `123` HOLDS, `123456` FAILS / SEARCHED
+  `x1234567` `123`@1 / FIND-ALL `1234567 12` [`123`@0, `456`@3]
+- `repeat(rx.digit, 3, _)` is `(?:\d){3,}`: WHOLE `` FAILS, `12` FAILS, `123` HOLDS, `123456` HOLDS / SEARCHED
+  `x1234567` `1234567`@1 / FIND-ALL `1234567 12` [`1234567`@0]
+- `repeat(rx.digit, _, 5)` is `(?:\d){0,5}`: WHOLE `` HOLDS, `12` HOLDS, `123` HOLDS, `123456` FAILS / SEARCHED
+  `x1234567` ``@0 / FIND-ALL `1234567 12` [`12345`@0, `67`@5, ``@7, `12`@8, ``@10]
+- `repeat(rx.digit, 2, 5)` is `(?:\d){2,5}`: WHOLE `` FAILS, `12` HOLDS, `123` HOLDS, `123456` FAILS / SEARCHED
+  `x1234567` `12345`@1 / FIND-ALL `1234567 12` [`12345`@0, `67`@5, `12`@8]
