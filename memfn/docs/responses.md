@@ -3735,3 +3735,8 @@ Reports: docs/dev/lanes/forms*_report.md, formsfixl_report.md, formsfixm_report.
   - **For [BSPAN-CLANG-DIFF]:** C6c covers clang -O2 and gcc -Os, SIMD-off, non-PIC executables. clang -O3 (no bench arm) and the bench's -fPIC -shared build are named gaps.
   - **PLAN item for main and the kit (r79 F15):** mf_form_hash's rename normalization alpha-renames _mm* intrinsics, so cmpeq->cmpgt leaves a hash unchanged. Fixing it re-stales the stored hashes, so it is a decision, not a fix.
   - **Remaining for R-47:** U6 (the abi package if any byte moves, test-axes, REACH_ONLY, G1's manifest + dry run, C6/C6c TIMING in a window you clear with Frank on each bench box including Zen 1; review r80).
+
+- **R-47 U5 tip validated** (2026-11-23, kit). Kit branch lane/memfn-k1108 @ 26ef32ad5, which is U5 merged with main 7af611f1e+ (abi 112, U4 landed). Validated on the detached worktree u5tip, both runs after the evening hold:
+  - 750 kit-u5tip-test GREEN (make test, 2671 s);
+  - 751 kit-u5tip-mech GREEN (18 rows, U2-U5: unexpected 0, undetected 0, unreached 0, anomalies 0).
+  Commits after 26ef32ad5 are kit docs only (journal, wake, this ledger). U5 is ready to land.
