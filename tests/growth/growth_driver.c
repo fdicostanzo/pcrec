@@ -16,7 +16,7 @@
  *       exit reports a leak). SERIES_FILE has one TAB-separated line per cell:
  *       CAP STACK RAISE FEATURES ENGINE PATFILE [BOUND_S]. BOUND_S is that
  *       cell's own CPU-time bound in seconds (0 or absent = none; the process's
- *       user+sys, ITIMER_PROF; a wall guard of 10x it is only a hang guard): a
+ *       user+sys, ITIMER_PROF; a wall guard of 10x it, capped at 2400 s, is only a hang guard): a
  *       compile still running when it expires is a FAIL (a timeout is a
  *       crash): the handler prints `cell <n> TIMEOUT cpu-bound=<s> wall-guard=<s> pat=<file>`
  *       (`wall-guard=.. cpu-bound=..` when the guard fired) and exits 123 (124),
@@ -225,6 +225,10 @@ static double now_s(void)
  * only a hang guard (a blocked process burns no CPU).  Each line is prebuilt (async-signal-safe: write() only) when the
  * timers are armed; the exit is 123 for the CPU bound, 124 for the wall guard (scripts/watchdog's codes). */
 #define WALL_FACTOR 10
+/* the guard never sits past the cloud shard job's 2700 s kill (tests/ci/cloud_kinds.tsv `growth`, 45 min): the floor bound 300 x 10
+ * = 3000 s did (r89 R89-5), so a hang was cut by the job with no cell named.  2400 s names the cell 300 s before the cut. */
+#define WALL_CAP 2400u
+static unsigned wall_of(unsigned bound) { unsigned w = bound * WALL_FACTOR; return w > WALL_CAP ? WALL_CAP : w; }
 static char cpu_line[8400], wall_line[8400];
 static size_t cpu_len, wall_len;
 static void on_cpu(int sig)
@@ -245,13 +249,13 @@ static size_t clip(int k) { return k < 0 ? 0 : (size_t)k < sizeof cpu_line ? (si
 static void arm_bound(int n, unsigned bound, const char *pat)
 {
     if (!bound) return;
-    cpu_len = clip(snprintf(cpu_line, sizeof cpu_line, "cell %d TIMEOUT cpu-bound=%u wall-guard=%u pat=%s\n", n, bound, bound * WALL_FACTOR, pat));
-    wall_len = clip(snprintf(wall_line, sizeof wall_line, "cell %d TIMEOUT wall-guard=%u cpu-bound=%u pat=%s\n", n, bound * WALL_FACTOR, bound, pat));
+    cpu_len = clip(snprintf(cpu_line, sizeof cpu_line, "cell %d TIMEOUT cpu-bound=%u wall-guard=%u pat=%s\n", n, bound, wall_of(bound), pat));
+    wall_len = clip(snprintf(wall_line, sizeof wall_line, "cell %d TIMEOUT wall-guard=%u cpu-bound=%u pat=%s\n", n, wall_of(bound), bound, pat));
     signal(SIGPROF, on_cpu);
     signal(SIGALRM, on_wall);
     struct itimerval it = {{0, 0}, {bound, 0}};
     setitimer(ITIMER_PROF, &it, NULL);
-    alarm(bound * WALL_FACTOR);
+    alarm(wall_of(bound));
 }
 static void disarm_bound(void)
 {

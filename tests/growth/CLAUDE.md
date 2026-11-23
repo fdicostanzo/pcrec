@@ -103,9 +103,9 @@ the exit, not the answer. Opt-in: `make test-growth` (long, NOT in
 ## Cloud (kind `growth`, [GROWTH-CLOUD])
 
 `tests/ci/cloud_kinds.tsv` row `growth`: each shard runs `run_growth.sh` with `GROWTH_SHARD=K/N`, so BOTH stages (CLI, then
-the plain and ASan+LSan library passes) run for ITS OWN cells only; a library cell's bound comes from the CLI wall the same
-runner just measured, no walls file crosses shards. The ASan pass sits INSIDE each shard (one row, and the bound above needs
-the CLI walls of the same shard); the cost is a per-shard `build-asan/` build (`GROWTH_MAKE_J`). The partition is the declared
+the plain and ASan+LSan library passes) run for ITS OWN cells only; a library cell's bound comes from the CLI compile CPU the same
+runner just measured, no CPU file crosses shards. The ASan pass sits INSIDE each shard (one row, and the bound above needs
+the CLI compile CPU of the same shard); the cost is a per-shard `build-asan/` build (`GROWTH_MAKE_J`). The partition is the declared
 `tests/ci/cloud_growth_shards.tsv` (generated: `cloud_units_plan.py growth`, LPT over a cell's measured runner seconds, class
 defaults labelled ESTIMATE until a run measures them; `make cloud-reweight KIND=growth`); `run_growth.py --shard-check` proves
 every cell is in exactly one shard. `make test-growth` (no `GROWTH_*` env) is unchanged.

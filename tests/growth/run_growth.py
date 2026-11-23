@@ -39,13 +39,16 @@ Modes:  run_growth.py [--only FAMILY[,FAMILY]] [--jobs N] [--no-ladder]
 Exit 0 iff no FAIL and no FIXED-RED, and at least one cell was selected.
 """
 import argparse
+import atexit
 import concurrent.futures as cf
 import hashlib
+import math
 import os
 import re
 import subprocess
 import sys
 import tempfile
+import threading
 import time
 
 HERE = os.path.dirname(os.path.abspath(__file__))
@@ -62,7 +65,8 @@ LADDER = [2 << 20, 8 << 20, 32 << 20, 128 << 20]
 
 # TIME BOUNDS (owner ruling growth-time-bound, 2026-11-21): a cell's time bound is CPU SECONDS (user+sys of the compile's
 # process tree, scripts/watchdog -c; the library stage's in-process bound is ITIMER_PROF), so a loaded box or a slow
-# runner cannot turn a correct cell red; the WALL bound is only a HANG GUARD (a process that blocks burns no CPU).  A red
+# runner is largely (not wholly: CPU inflates up to ~1.9x under contention, r89 CPU-1) unable to turn a correct cell red;
+# the margin is the derivation in BOUNDS_BASIS; the WALL bound is only a HANG GUARD (a process that blocks burns no CPU).  A red
 # names which bound fired ("CPU bound" / "WALL hang guard").  BOUNDS_BASIS says where each value comes from; re-derive
 # them from the sweep's own `CPU:` lines (the slowest cells and the headroom) when a cell approaches them.
 CPU_S, WALL_S, RSS = 300, 1500, "3g"
@@ -73,18 +77,33 @@ CPU_S 300 (default tier, each compile and each matcher build): MEASURED on the d
   -j2, 45 s CPU at -j8 where the cores share caches; `atomic.star.last.lit@250` 33.7 s at -j8; `spine/named@65535` 25 s); gcc on the
   limit cells' matchers costs at most 1.4 s CPU.  The cloud runners (4 cores, slower per core) are NOT measured against this box:
   the ratio is unknown until the first cloud run of this harness prints its own `CPU:` lines (the slowest cells and the headroom
-  against this bound); 300 s is 6.7x this box's worst under load and 11x its worst alone, a margin meant to absorb that
-  unknown, and is to be RE-DERIVED from those cloud lines.  A superlinear step does not hide under it: the per-doubling
-  report (--doubling) is what catches those.
+  against this bound); 300 s is 6.7x this box's worst under load and 11x its worst alone.  D45's rule, written out: quiet worst
+  (27.5 s) x ~2 for contention (CPU inflates up to ~1.9x under load, measured by review r89; this lane's own 27.5 vs 45 s is
+  1.64x) x the unknown cloud-per-core ratio x headroom = 300 s; the cloud factor is the open term and the figure is to be
+  RE-DERIVED from the first cloud `CPU:` lines.  `CPU` of a gcc build is watchdog's sampled tree sum (about cc1 alone: true tree
+  CPU read 0.66 s where watchdog read 0.58 s), and the `CPU:` headroom line adds a cell's compile CPU to its gcc CPU although each
+  is bounded alone: read headroom per bound (compile max, gcc max), not the sum.  A superlinear step does not hide under it: the
+  per-doubling report (--doubling) is what catches those.
 WALL_S 1500 (default tier hang guard): below the cloud shard job's 45 min (2700 s) kill, so the guard names the cell before the job
   is cut (shard 31 of run 44940630891 was cut at the job limit with no cell named), and 5x the CPU bound for a box at one fifth
-  of a core.  It never decides a cell's verdict by speed: a process that burns CPU is judged by CPU_S.
-OCC_CPU_S 3600 / OCC_WALL_S 14400 (occasional tier): the tier's cells are compile-only today (all 107 measured 2026-11-23: the
-  slowest, spine/named@65535, 25 s CPU); the figure is for the cost the ruling named, gcc -O0 on 22 to 119 MB of emitted C
-  (about 10 min and 3.4 GB measured by lane grow4/grow5), at 6x that, and 4x for the wall.
+  of a core.  It never decides a cell's verdict by speed: a process that burns CPU is judged by CPU_S.  It names a cell only if
+  the hung run STARTS in the job's first ~1200 s (2700 - 1500 s of guard); a hang that starts later is cut by the job first.
+MATCHER_CPU_S 60 / MATCHER_WALL_S 600 (each run of a limit cell's built matcher, on SUBJECTS of at most 6 bytes): the matcher
+  is generated code over a 6-byte subject; MEASURED worst CPU of a run over the default-tier limit cells is in MATCHER_MEASURED
+  below (filled from this lane's sweep); 60 s CPU is that x its margin, and the wall guard is the hang-guard multiple (10x) of the
+  CPU bound, as everywhere else: wall = CPU was NOT a hang guard (a loaded box reads wall >= CPU, so the wall fired first).
+OCC_CPU_S 3600 / OCC_WALL_S 14400 (occasional tier, EMPTY today: owner ruling growth-time-bound (3) read by the manager 2026-11-23,
+  r89 R89-11: the 107 compile-only cells measured at most 25 s CPU, so none stays costly and all run in the default tier,
+  where each is bounded by CPU_S): reserved for a cell MEASURED costly (OCCASIONAL_COSTLY).  Its figure was derived for work that
+  tier does not do today (gcc -O0 on 22 to 119 MB of emitted C, about 10 min and 3.4 GB measured by lane grow4/grow5, at 6x that,
+  4x for the wall): a compile-only cell never builds a matcher, so re-derive it from the first cell placed there.
 LIB_FLOOR_S 300 / LIB_MARGIN 20 (library stage, unchanged from lane grow2: the sanitizer build's slowdown), now applied to the
-  cell's CLI-stage compile CPU rather than its wall; the wall guard there is 10x the bound.
+  cell's CLI-stage compile CPU rather than its wall; the wall guard there is 10x the bound, capped at LIB_WALL_CAP_S (growth_driver.c
+  WALL_CAP) = 2400 s: the floor bound 300 x 10 = 3000 s sat PAST the cloud job's 2700 s kill (r89 R89-5), so a hang was never named.
+  The library progress is streamed (a `begin` line per cell, library mode prints it as the cell starts), so a cut job still names
+  the cell it was on.
 """
+MATCHER_CPU_S, MATCHER_WALL_S = 60, 600
 # A LIMIT cell's matcher runs on each of these subjects (no match, a one-byte, a longer
 # one); each run must exit 0 or 1.  Fixed, not per-cell: the verdict is "it runs", not the answer.
 SUBJECTS = ("", "a", "abcabc")
@@ -177,6 +196,9 @@ def spine(pre, unit, sep, mid, unit2, post, n):
 K157_CELLS = {"ncgroup.star.first.bref", "group.star.last.lit", "named.star.last.lit", "inline.star.first.bref"}
 K157_RED = "K157:MATCHER"
 
+# Cell ids MEASURED costly by nature (the ruling's "stay costly after the fix"); each needs a measured figure in its comment.
+OCCASIONAL_COSTLY = frozenset()
+
 KINDS = ("stability", "limit")      # a closed set; every cell declares one, there is no default
 
 
@@ -204,10 +226,10 @@ class Cell:
             sys.exit("run_growth: cell %s: a limit cell names the limit it sits just before" % cid)
         if kind == "stability" and (not expect or any(not a.startswith("refuse:") for a in expect.split(","))):
             sys.exit("run_growth: cell %s: a stability cell's expect is refuse:SUBSTR (the limit's text), got %r" % (cid, expect))
-        # OCCASIONAL tier (owner ruling growth-time-bound (3), 2026-11-21): the cells that stay costly by nature, the named
-        # compile-only exceptions (limit-cell-matcher-cost: the NFA-state / VM-node edges with the size limits lifted).
-        # Not in the default tier or the cloud shards; `--tier occasional` runs them with the generous bounds.
-        self.occasional = bool(self.norun)
+        # OCCASIONAL tier (owner ruling growth-time-bound (3), 2026-11-21): cells MEASURED costly by nature (OCCASIONAL_COSTLY),
+        # not in the default tier or the cloud shards; `--tier occasional` runs them with the generous bounds.  EMPTY today:
+        # the 107 compile-only cells measured <= 25 s CPU after K159, so they do not qualify (r89 R89-11, ruled 2026-11-23).
+        self.occasional = cid in OCCASIONAL_COSTLY
         self.stack, self.raise_, self.features, self.engine = stack, raise_, features, engine
         self.expect, self.limit = expect, limit_name
         # red: "ID:KIND" -> the known issue and the one failure kind it takes
@@ -411,6 +433,7 @@ class Runner:
         self.libtotals = {}    # cell id -> SUM of its library-mode compiles' wall seconds
         self.totals = {}       # cell id -> SUM of every CLI-stage run's wall seconds (the cell's cost; --units)
         self.pat_id = {}       # patfile -> cell id
+        self.run_cpus = {}     # cell id -> the largest CPU seconds of a run of its built matcher (watchdog's sample)
         self.gcc_cpus = {}     # cell id -> CPU seconds scripts/watchdog saw for the gcc build of the cell's matcher
         self.cpus = {}         # cell id -> the largest compile CPU seconds (user+sys, the driver's own getrusage) of an uncapped run
 
@@ -497,11 +520,19 @@ class Runner:
         if b.returncode != 0:
             return "BUILD", "the emitted C did not build: " + (b.stderr or b.stdout).strip()[:160]
         for subj in SUBJECTS:
-            r = subprocess.run([self.wd, "-s", "60", "-c", "60", "-m", "1g", "-S", "growth-run", "-L",
-                                os.path.join(self.work, "watchdog.log"), "--", exe, subj],
+            mlog = csrc + ".run.log"
+            r = subprocess.run([self.wd, "-s", str(MATCHER_WALL_S), "-c", str(MATCHER_CPU_S), "-m", "1g", "-S", "growth-run", "-L",
+                                mlog, "--", exe, subj],
                                capture_output=True, text=True, errors="replace")
+            try:
+                m = re.search(r" cpu=([\d.]+) ", open(mlog).read())
+                if m and cid:
+                    self.run_cpus[cid] = max(self.run_cpus.get(cid, 0), float(m.group(1)))
+            except OSError:
+                pass
             if r.returncode in (122, 123, 124):
-                return "TIMEOUT", "matcher on %r over its fixed 60 s CPU/wall bound (rc=%d)" % (subj, r.returncode)
+                return "TIMEOUT", "matcher on %r over its %s (rc=%d)" % (subj, {
+                    123: "CPU bound (%d s)" % MATCHER_CPU_S, 124: "WALL hang guard (%d s)" % MATCHER_WALL_S}.get(r.returncode, "RSS bound"), r.returncode)
             if r.returncode not in (0, 1):
                 return "MATCHER", "matcher on %r exited %d (0 = match, 1 = no match): %s" % (
                     subj, r.returncode, (r.stdout or r.stderr).strip()[:80])
@@ -539,6 +570,20 @@ def ladder_ok(cell, kind, text):
     if text.startswith("internal error:"):
         return False
     return kind == "refused" and ("out of memory" in text or any(r in text for r in cell.refusals))
+
+
+DEAD = threading.Event()      # set by the first worker that dies: the queued cells are skipped, the pool ends promptly
+
+
+def safe_job(rn, cell, ladder):
+    """job() that cannot raise: an exception becomes a result the ordered loop prints as `FAIL: <cell>: worker died` (r89 R89-2)."""
+    if DEAD.is_set():
+        return cell, None, 0
+    try:
+        return job(rn, cell, ladder)
+    except Exception as e:
+        DEAD.set()
+        return cell, "%s: %s" % (type(e).__name__, e), 0
 
 
 def job(rn, cell, ladder):
@@ -616,18 +661,30 @@ def lib_mode(rn, cells, ladder):
     # the driver's progress goes to a LOG that is readable while it runs (a
     # captured pipe showed nothing for 50 minutes on the first run)
     plog = os.path.join(rn.work, "lib-progress.log")        # this run's own work dir (r74 FIXES-1)
-    with open(plog, "w") as pf:
-        r = subprocess.run([rn.wd, "-s", "28800", "-c", "28800", "-m", "6g", "-i", "0.5", "-S", "growth-lib",
-                            "-L", os.path.join(rn.work, "watchdog.log"), "--", lib_drv, "lib", ctl, series],
-                           stdout=pf, stderr=subprocess.PIPE, text=True, errors="replace", env=env)
-    r.stdout = open(plog, errors="replace").read()
+    elog = os.path.join(rn.work, "lib-stderr.log")
+    shown = None
+    with open(plog, "w") as pf, open(elog, "w") as ef:
+        p = subprocess.Popen([rn.wd, "-s", "28800", "-c", "28800", "-m", "6g", "-i", "0.5", "-S", "growth-lib",
+                              "-L", os.path.join(rn.work, "watchdog.log"), "--", lib_drv, "lib", ctl, series],
+                             stdout=subprocess.PIPE, stderr=ef, text=True, errors="replace", env=env)
+        # stream the progress: a `begin` line names the cell as it STARTS, so a job cut by its limit still shows the cell it was on (r89 R89-5)
+        for line in p.stdout:
+            pf.write(line)
+            pf.flush()
+            m = re.match(r"begin \d+ bound=\d+ pat=(.*)", line)
+            if m and rn.pat_id.get(m.group(1).strip()) != shown:
+                shown = rn.pat_id.get(m.group(1).strip(), m.group(1).strip())
+                print("library mode: begin cell %s" % shown, flush=True)
+        p.wait()
+    r = argparse.Namespace(returncode=p.returncode, stdout=open(plog, errors="replace").read(),
+                           stderr=open(elog, errors="replace").read())
     print("library mode: progress log " + plog)
     bad = []
     to = [l for l in r.stdout.splitlines() if re.match(r"cell \d+ TIMEOUT ", l)]
     for l in to:
         m = re.match(r"cell (\d+) TIMEOUT (cpu-bound|wall-guard)=(\d+) (?:cpu-bound|wall-guard)=(\d+) pat=(.*)", l)
         bad.append("TIMEOUT (a timeout is a crash): series line %s, cell %s, the %s fired at %ss (its CPU bound is %ss: "
-                   "CLI compile CPU x%d, floor %ds; the wall guard is 10x that); series stopped there. progress line: %s"
+                   "CLI compile CPU x%d, floor %ds; the wall guard is 10x that, capped at 2400 s); series stopped there. progress line: %s"
                    % (m.group(1), rn.pat_id.get(m.group(5), m.group(5)),
                       "CPU BOUND" if m.group(2) == "cpu-bound" else "WALL HANG GUARD", m.group(3),
                       m.group(3) if m.group(2) == "cpu-bound" else m.group(4), LIB_MARGIN, LIB_FLOOR_S, l))
@@ -708,7 +765,10 @@ def write_units(path, rn):
 # neighbour: about x2 is linear, about x4 quadratic.  A ratio over DOUBLING_RATIO whose larger point costs at least
 # DOUBLING_MIN_CPU CPU seconds is a REPORT line (a superlinear compile step surfaces by measurement: the K159 class),
 # never a red.  DOUBLING_RATIO 3.0 is x2^1.58, midway between linear and quadratic; DOUBLING_MIN_CPU 0.25 s keeps the
-# timer's noise (a few ms) under 2% of the larger point.  A point that crashes, times out or runs away IS a FAIL (a timeout
+# timer's own noise (a few ms) under 2% of the larger point.  The DOMINANT noise is contention, not the timer: one compile read
+# 1.86..3.40 s CPU inside one 8-wide batch (review r89 CPU-2), and -j1 vs -j2 flipped ratios near x3.0 (spine/z_cls 2000: x3.32 vs
+# x3.08).  So the report runs SERIAL by default (-j 1; --jobs N overrides, DOUBLING_JOBS in run_growth.sh) and a REPORT line near
+# the threshold is a pointer to look, never a verdict: re-run it at -j 1.  REPORT lines are the one output that is not -j-identical.  A point that crashes, times out or runs away IS a FAIL (a timeout
 # is a crash), as in the sweep.  The nested-`+` axes double the PATTERN per level (the body is replicated), so their
 # neighbour is the previous depth; the spine and depth axes double n.
 DOUBLING_RATIO, DOUBLING_MIN_CPU = 3.0, 0.25
@@ -769,37 +829,54 @@ def doubling_report(rn, budget, depth, jobs, only=""):
         axes = keep
     pts = [(ai, pi) for ai, (_, pl) in enumerate(axes) for pi in range(len(pl))]
 
+    dead = threading.Event()
+
     def run(t):
         ai, pi = t
         name, pl = axes[ai]
         size, pat, stack, rz = pl[pi]
-        pf = rn.patfile_raw("dbl_%s_%d" % (name, size), pat)
-        return rn.drive(pf, 0, stack, rz, "all", 0)
+        if dead.is_set():
+            return "ERROR", "not run: another worker died", None
+        try:
+            pf = rn.patfile_raw("dbl_%s_%d" % (name, size), pat)
+            return rn.drive(pf, 0, stack, rz, "all", 0)
+        except Exception as e:     # r89 R89-2: name the point, fail promptly (queued points are skipped)
+            dead.set()
+            return "ERROR", "worker died: %s: %s" % (type(e).__name__, e), None
 
     with cf.ThreadPoolExecutor(jobs) as ex:
         res = list(ex.map(run, pts))
     nfail, rep_lines = 0, []
-    print("== per-doubling CPU report: %d axes, %d points; ratio = CPU / CPU of the half-size neighbour "
-          "(~x2 linear, ~x4 quadratic); REPORT when > x%.1f and the larger point >= %.2f CPU s ==" % (len(axes), len(pts), DOUBLING_RATIO, DOUBLING_MIN_CPU))
+    print("== per-doubling CPU report: %d axes, %d points; ratio = CPU / CPU of the half-size neighbour, per doubling "
+          "(~x2 linear, ~x4 quadratic; a step that is not a doubling is normalised by log2 of its size ratio); REPORT when > x%.1f and the larger point >= %.2f CPU s ==" % (len(axes), len(pts), DOUBLING_RATIO, DOUBLING_MIN_CPU))
     print("axis\tsize\tcpu_s\tratio\toutcome")
     k = 0
     for name, pl in axes:
         prev = None
         for size, pat, stack, rz in pl:
             kind, text, cpu = res[k]; k += 1
-            if kind in ("CRASH", "TIMEOUT", "RUNAWAY", "ERROR"):
+            if kind in ("CRASH", "TIMEOUT", "RUNAWAY", "ERROR", "refused"):
+                # a REFUSED point is a FAIL too: every axis point sits at or under its family's compiling edge, so a refusal
+                # is a limit firing early, and a ratio across it means nothing (r89 R89-14)
                 nfail += 1
                 print("FAIL: %s size %d: %s: %s" % (name, size, kind, text))
                 prev = None
                 continue
-            ratio = (cpu / prev[1]) if (prev and prev[1] > 0 and cpu is not None) else None
+            if cpu is None:
+                prev = None     # no CPU figure (an old driver): never pair the next point with a 4x neighbour
+                print("%s\t%d\t-\t-\t%s" % (name, size, kind))
+                continue
+            # the ratio is normalised to a size doubling: ratio^(1/log2(size ratio)), so a x1.95 step (128 -> 250 depth) reads as a doubling
+            ratio = None
+            if prev and prev[1] > 0:
+                lg = math.log2(size / prev[0]) if size >= 1.5 * prev[0] else 1.0    # nested-`+` levels (n, n+1) double the pattern: raw
+                ratio = (cpu / prev[1]) ** (1.0 / lg) if cpu > 0 else None
             print("%s\t%d\t%s\t%s\t%s" % (name, size, "%.3f" % cpu if cpu is not None else "-",
                                           "x%.2f" % ratio if ratio else "-", kind))
             if ratio and ratio > DOUBLING_RATIO and cpu >= DOUBLING_MIN_CPU:
                 rep_lines.append("REPORT: superlinear step on %s at size %d: x%.2f of size %d (%.2f s vs %.2f s CPU; threshold x%.1f at >= %.2f s)"
                                  % (name, size, ratio, prev[0], cpu, prev[1], DOUBLING_RATIO, DOUBLING_MIN_CPU))
-            if cpu is not None:
-                prev = (size, cpu)
+            prev = (size, cpu)
     for l in rep_lines:
         print(l)
     print("per-doubling report: %d points, %d REPORT line(s), %d failed point(s)" % (len(pts), len(rep_lines), nfail))
@@ -891,6 +968,8 @@ def main():
     base = tmp_base()
     os.makedirs(base, exist_ok=True)
     work = tempfile.mkdtemp(prefix="growth-", dir=base)
+    if not a.keep:      # whatever ends the run (an exception, sys.exit, a dead worker) removes the work dir (r89 R89-2)
+        atexit.register(lambda: subprocess.run(["rm", "-rf", "--", work]))
     drv = os.path.join(work, "growth_driver")
     cc = os.environ.get("CC", "gcc")
     libp = os.environ.get("LIBPCREC", os.path.join(ROOT, "build", "libpcrec.a"))
@@ -906,7 +985,7 @@ def main():
     print("growth: tier %s; time bounds: CPU %d s (watchdog -c), WALL hang guard %d s (watchdog -s); basis: BOUNDS_BASIS in run_growth.py (--bounds)"
           % (a.tier, CPU_S, WALL_S))
     if a.doubling:
-        jb = a.jobs or max(1, (os.cpu_count() or 4) // 2)
+        jb = a.jobs or 1      # a measurement: serial by default (DOUBLING_RATIO's comment)
         nf = doubling_report(rn, budget, depth, jb, a.doubling_only)
         subprocess.run(["rm", "-rf", "--", work])
         return 1 if nf else 0
@@ -922,8 +1001,14 @@ def main():
     npass = nfail = nred = nfixed = nskip = 0
     fam = {}
     with cf.ThreadPoolExecutor(jobs) as ex:
-        for cell, res, skipped in ex.map(lambda c: job(rn, c, ladder), cells):
+        for cell, res, skipped in ex.map(lambda c: safe_job(rn, c, ladder), cells):
             st = fam.setdefault(cell.family, [0, 0, 0, 0])
+            if res is None:     # skipped after a worker died: not run, not counted as a pass
+                continue
+            if isinstance(res, str):
+                nfail += 1; st[1] += 1
+                print("FAIL: %s: worker died: %s" % (cell.id, res))
+                continue
             nskip += skipped
             if ladder and skipped == len(ladder):
                 # a ladder cell with no rung runs nothing of the ladder: a green that tested nothing (learnings 3)
@@ -972,8 +1057,10 @@ def main():
     if cost:
         print("CPU: slowest cells by uncapped CPU (compile + gcc matcher build), bound %d s: %s" % (
             CPU_S, "; ".join("%s %.1f s (compile %.1f, gcc %.1f)" % (i, c, rn.cpus.get(i, 0), rn.gcc_cpus.get(i, 0)) for c, i in cost[:5])))
-        print("CPU: bound headroom: slowest cell used %.1f s of %d s (%.0f%%); max compile %.1f s, max gcc %.1f s" % (
-            cost[0][0], CPU_S, 100.0 * cost[0][0] / CPU_S, max(rn.cpus.values(), default=0), max(rn.gcc_cpus.values(), default=0)))
+        mc, mg, mr = max(rn.cpus.values(), default=0), max(rn.gcc_cpus.values(), default=0), max(rn.run_cpus.values(), default=0)
+        print("CPU: bound headroom, per bound (each is applied to one process tree alone): compile max %.1f of %d s (%.0f%%); "
+              "gcc build max %.1f of %d s (%.0f%%); matcher run max %.2f of %d s (%.0f%%)" % (
+                  mc, CPU_S, 100.0 * mc / CPU_S, mg, CPU_S, 100.0 * mg / CPU_S, mr, MATCHER_CPU_S, 100.0 * mr / MATCHER_CPU_S))
     print("== Growth sweep ==")
     for f, (p, fl, rd, fx) in sorted(fam.items()):
         print("family %-8s runs passed %d  failed %d  known-red %d  fixed-red %d" % (f, p, fl, rd, fx))

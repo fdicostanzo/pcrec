@@ -12,7 +12,7 @@
 # TIERS: GROWTH_TIER=occasional runs the OCCASIONAL cells only (the named compile-only exceptions, generous CPU/wall bounds),
 #      CLI stage only: no library stage, no doubling report, and never a cloud shard.  Default tier = everything else.
 # CLOUD ([GROWTH-CLOUD], kind `growth`): GROWTH_SHARD=K/N runs only shard K's cells of tests/ci/cloud_growth_shards.tsv, BOTH stages
-# (each library cell's bound comes from this runner's own CLI wall); GROWTH_UNITS=FILE records per-cell seconds;
+# (each library cell's bound comes from this runner's own CLI compile CPU); GROWTH_UNITS=FILE records per-cell seconds;
 # GROWTH_MAKE_J=N builds build-asan/ with make -jN. Unset, this is `make test-growth` exactly as before.
 set -u
 HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
@@ -40,14 +40,15 @@ if [ "${GROWTH_TIER:-default}" = occasional ]; then
     exit $rc
 fi
 # the per-doubling CPU report: an unsharded run, or the last shard of a cloud run
-case "${GROWTH_SHARD:-1/1}" in
-    "${GROWTH_SHARD%%/*}/${GROWTH_SHARD##*/}"|1/1) run_dbl=1 ;;
-    *) run_dbl=0 ;;
-esac
+# run_dbl=1 iff unsharded (unset) or K == N (r89 R89-1: the gate is code; stub-tested over unset, 1/1, K<N, N/N by
+# tests/growth/gate_check.sh under this script's own `set -u`)
+gs=${GROWTH_SHARD:-1/1}
+if [ "${gs%%/*}" = "${gs##*/}" ]; then run_dbl=1; else run_dbl=0; fi
 if [ -n "${ONLY:-}" ] || [ "${SKIP_DOUBLING:-0}" = 1 ]; then run_dbl=0; fi
 if [ "$run_dbl" = 1 ]; then
     echo "== growth: per-doubling CPU report (REPORT lines are not failures) =="
-    python3 -I tests/growth/run_growth.py --doubling "${jobs[@]}" || rc=1
+    # a MEASUREMENT: serial by default (DOUBLING_JOBS overrides), never the sweep's JOBS (run_growth.py DOUBLING_RATIO comment)
+    python3 -I tests/growth/run_growth.py --doubling --jobs "${DOUBLING_JOBS:-1}" || rc=1
 fi
 if [ "${SKIP_LIB:-0}" != 1 ]; then
     echo "== growth: library mode (ONE process), plain build, RLIMIT_DATA caps =="
