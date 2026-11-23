@@ -150,23 +150,26 @@ def dry_chain(cards, tag):
     out = []
     rc, o = cards_run(cards, ["time", d, "--prepare", "--cards", "C6", "--patterns", "c6_dig32"])
     out.append((rc, o))
-    for extra in ([], ["--deadline", "+63.5"], ["--deadline", "+65"]):
-        pin_draws(d)
+    for n, extra in enumerate(([], ["--deadline", "+63.5"], ["--deadline", "+65"])):
+        pin_draws(d, n)
         out.append(cards_run(cards, ["time", d, "--dry"] + extra))
     return out
 
 
-FIXED_RID = "b6f2b6f2b6f2b6f2"
+FIXED_RID = "b6f2b6f2b6f2b6f%d"     # one pinned id per chain step, the same for the base and every mutant
+BASE_RCS = [0, 0, 4, 4]             # prepare, the plain DRY, the two deadline DRYs (TRUNCATED: exit 4)
 
 
-def pin_draws(d):
+def pin_draws(d, n):
     """bsu6fix2: every `time --dry` of the chain draws its launch variants from the SAME run id (RUNDIR/run_id, written
     here; run_id.timed removed so start_timing does not re-mint it). Without it each run drew afresh, the number of
     distinct exes per arm (so the near-miss model's voids, so the simulated wall) varied run to run, and the +63.5 step
     (a deadline INSIDE the first pass) cut at a different launch: a mutant 'killed' there could be noise (R13, X6 were)."""
-    open(os.path.join(d, "run_id"), "w").write(FIXED_RID + "\n")
-    if os.path.exists(os.path.join(d, "run_id.timed")):
-        os.remove(os.path.join(d, "run_id.timed"))
+    rid = FIXED_RID % n
+    open(os.path.join(d, "run_id"), "w").write(rid + "\n")
+    for f in ["run_id.timed"] + ["%s_c6_%s.tsv" % (k, rid) for k in ("results", "voids", "quiet_sample")]:
+        if os.path.exists(os.path.join(d, f)):
+            os.remove(os.path.join(d, f))       # the pinned id's earlier record (`time` refuses an existing one)
 
 
 def main():
@@ -187,7 +190,9 @@ def main():
     again = dry_chain(base_cards, "base2")
     unstable = [n for n, ((r1, o1), (r2, o2)) in enumerate(zip(base, again)) if r1 != r2 or norm(o1) != norm(o2)]
     print("BASE dry chain repeat: %s" % ("identical" if not unstable else "UNSTABLE steps %s" % unstable), flush=True)
-    if unstable:
+    if unstable or [r for r, _o in base] != BASE_RCS:
+        print("BASE dry chain: %s (want rcs %s, repeat identical): the harness cannot judge a dry-chain kill" % (
+            [r for r, _o in base], BASE_RCS), flush=True)
         return 1
     res = {}
     for i, cl, old, new in M:
