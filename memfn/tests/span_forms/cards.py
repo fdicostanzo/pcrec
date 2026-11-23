@@ -4942,6 +4942,44 @@ def selftest_rev11(check):
              sum(1 for s, _l, _n in res if s), all(l for _s, l, _n in res), [n for _s, _l, n in res], nst, len(placed)))
 
 
+def selftest_j2(check):
+    """J2 (r38): `time_cells` times in ROUNDS (stubbed execution, no clock): each run of n launches holds every arm of the
+    cell once, the order is the one the drills place their steps in, and EVERY row reads ok. Run by the full `selftest`
+    and by `c6selftest` (lane bsu6fix3: U6's time_cells passes `prepare_cell` a 4th argument, `retime`; this drill's
+    3-argument stub raised TypeError on every cell, time_cells' broad except turned each into a VOID row, and the drill read
+    "0 launches" -- seen only by the 90-minute selftest, so c6selftest, which every time_cells change runs, runs it too).
+    The stubs take the real functions' parameters; a row that is not ok prints its note, so a stub that no longer fits
+    the call names itself."""
+    import tempfile
+    calls = []
+    real_p, real_e = prepare_cell, _exec
+    globals()["prepare_cell"] = lambda _rd, c, _n, _retime=0: list(c)
+    globals()["_exec"] = lambda argv, c, env=None: calls.append(tuple(c)) or "t %d\n" % (len(calls) + 1)
+    try:
+        cl = [c for c in cells(cards=("C1",)) if c[1] == "hex24" and c[3] in ("hit-dense", "near-miss")]
+        import pwd
+        troot = os.environ.get("PCREC_TMPDIR") or "/var/tmp/pcrec-%s" % pwd.getpwuid(os.getuid()).pw_name
+        os.makedirs(troot, exist_ok=True)
+        with tempfile.TemporaryDirectory(dir=troot) as td:      # the temp root, never /tmp
+            out = os.path.join(td, "r.tsv")
+            open(out, "w").close()
+            time_cells(td, cl, out)
+            rows = [ln.rstrip("\n").split("\t") for ln in open(out) if not ln.startswith("#")]
+    finally:
+        globals()["prepare_cell"], globals()["_exec"] = real_p, real_e
+    nrows = len(rows)
+    notok = [r for r in rows if r[5] != "ok"]
+    n_arm = len(GRID) + 1       # I and the finite heads (rev 12: no layout twin arm)
+    rounds = [calls[i:i + n_arm] for i in range(0, len(calls), n_arm)]
+    rr = bool(rounds) and all(len(set(r)) == n_arm and len({(c[0], c[1], c[3], c[4]) for c in r}) == 1 for r in rounds)
+    same_order = [c for c, _i in launch_order(cl)] == calls
+    check("(r38 J2) time_cells interleaves the arms in rounds", rr and same_order and nrows == len(cl) and not notok
+          and len(calls) == LAUNCHES * len(cl),
+          "%d launches over %d arm cells (%d rows, %d not ok%s): every round of %d holds each arm once: %s; the drills' "
+          "order: %s" % (len(calls), len(cl), nrows, len(notok), (": %s %s" % (notok[0][5], notok[0][8])) if notok else "",
+                         n_arm, rr, same_order))
+
+
 def cmd_selftest(args):
     parse_args("selftest", args, nflags=("--rev11", "--rev12"), npos=0)
     if "--rev12" in args and "--rev11" not in args:       # rev 12's rows alone (a development aid)
@@ -5366,33 +5404,7 @@ def cmd_selftest(args):
               % (nv / NOISE_TRIALS, statistics.mean(NOISE_LAST["confirm"]), sum(1 for x in NOISE_LAST["confirm"] if x)))
     selftest_rev11(check)
     selftest_rev12(check)
-    # J2: `time_cells` times in ROUNDS (stubbed execution, no clock): each run of n launches holds
-    # every arm of the cell once, and the order is the one the drills place their steps in
-    import tempfile
-    calls = []
-    real_p, real_e = prepare_cell, _exec
-    globals()["prepare_cell"] = lambda _rd, c, _n: list(c)
-    globals()["_exec"] = lambda argv, c, env=None: calls.append(tuple(c)) or "t %d\n" % (len(calls) + 1)
-    try:
-        cl = [c for c in cells(cards=("C1",)) if c[1] == "hex24" and c[3] in ("hit-dense", "near-miss")]
-        import pwd
-        troot = os.environ.get("PCREC_TMPDIR") or "/var/tmp/pcrec-%s" % pwd.getpwuid(os.getuid()).pw_name
-        os.makedirs(troot, exist_ok=True)
-        with tempfile.TemporaryDirectory(dir=troot) as td:      # the temp root, never /tmp
-            out = os.path.join(td, "r.tsv")
-            open(out, "w").close()
-            time_cells(td, cl, out)
-            nrows = sum(1 for ln in open(out) if not ln.startswith("#"))
-    finally:
-        globals()["prepare_cell"], globals()["_exec"] = real_p, real_e
-    n_arm = len(GRID) + 1       # I and the finite heads (rev 12: no layout twin arm)
-    rounds = [calls[i:i + n_arm] for i in range(0, len(calls), n_arm)]
-    rr = all(len(set(r)) == n_arm and len({(c[0], c[1], c[3], c[4]) for c in r}) == 1 for r in rounds)
-    same_order = [c for c, _i in launch_order(cl)] == calls
-    check("(r38 J2) time_cells interleaves the arms in rounds", rr and same_order and nrows == len(cl)
-          and len(calls) == LAUNCHES * len(cl),
-          "%d launches over %d arm cells (%d rows): every round of %d holds each arm once: %s; the drills' order: %s"
-          % (len(calls), len(cl), nrows, n_arm, rr, same_order))
+    selftest_j2(check)
     # J7: the identity reach per SOURCE: a movers file that moves nothing fails though a card moves
     rs = (source_reach_refusal(24, {"cards": 1, "census": 0, "movers": 0}, has_movers=True),
           source_reach_refusal(24, {"cards": 1, "census": 0, "movers": 2}, has_movers=True),
@@ -5602,6 +5614,9 @@ def cmd_c6selftest(args):
         "c6_rule.md's block sha %s, computed from the file" % C6_RULE_SHA)
     row(C6_CONST == {"FLOOR_MIN": 0.15, "SPREAD_MAX": 0.30, "AA_VOID_MAX": 0.05, "READABLE_MIN": 0.5},
         "the rule's CONSTANTS clause parses to %s" % C6_CONST)
+    # C1-C5's rounds through the time_cells C6 shares (selftest's J2 drill; lane bsu6fix3: it ran only in the 90-minute
+    # selftest, so U6's time_cells change broke it unseen)
+    selftest_j2(lambda name, ok, line: row(ok, "%s: %s" % (name, line)))
     # ---- the VERDICT drills: constructed outcomes, LAUNCHES launches an arm
     J = [1.00, 1.01, 0.99, 1.02, 0.98]          # 2 % launch noise, deterministic
 
