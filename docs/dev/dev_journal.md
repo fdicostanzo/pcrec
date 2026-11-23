@@ -28636,3 +28636,5 @@ Next
 - 18:20 Kit delivered R-47 U5 partial (lane/memfn-k1108 6a0633259: cards C6/C6c + formhash span fold; no emitted byte; r79 fixed; 746/747/749 GREEN). Order: U4 lands -> kit merges main + tip test/mech -> I land U5. U6 = C6/C6c TIMING: needs a Frank-cleared window (ask when kit sends length).
 - 18:50 Predicate manager PAUSED (Frank's /close): merge P-21 = 75d2318bd (NOT branch tip 2a67e7f63, which holds the unreviewed r84 fold; coordinator crit-predspot1122 left running). One append-only conflict (lanes index) expected; merge after U4. predspot free to prune.
 - 19:35 U4 LANDED (merge 7af611f1e; cloud test + mech GREEN on 25bbe01c6). P-21 merged (9b36e5685, docs; lanes-index conflict kept both sides). strict + plan-lint green.
+- 19:45 Cloud FULL SUITE dispatched on main b204ffd8c (6 kinds, all 6 branches proven by ls-remote). Kit: main merged into its branch (26ef32ad5); 750/751 gated to 01:00; U5 handed ~03:00, lands in the morning.
+- 22:45 CLOUD FULL SUITE ALL GREEN on main b204ffd8c (6 of 6, first try): D177 trigger discharged for L3, U2, U3, U4, K159.
