@@ -1198,45 +1198,66 @@ P_jc = pl("A filter over two rows at the line", 'row(lo:, "lo") & row(hi:, "hi")
 P_jk = pl("Several keys", 'row(x:, "a" | "b") & (x: <5)', JSONL,
           ['{"a":3}', '{"b":3}', '{"a":7,"b":3}', '{"a":3,"b":7}', '{"a":7,"b":8}', '{"c":3}'],
           '{"a":7,"b":8} {"a":3,"b":7}', '{"a":3} {"c":1} {"a":7,"b":8} {"b":4,"a":9}', "lib/json/members", ann=["x"], bdesc=", the sketch above")
-P_jk2 = prog('row(x:, "a" | "b")', JSONL)
-P_mA = prog('row(_:, "msg", contains("timeout"))', JSONL)
-P_mB = prog('row(_x:, "msg") & (_x: contains("timeout"))', JSONL)
+
+
+def prog_or_none(t, binds):
+    """A program the READINGS rows judge; a refusal (a plant may cause one) is a None the row reads as unsupported."""
+    try:
+        return prog(t, binds)
+    except CompileError:
+        return None
+
+
+P_jk2 = prog_or_none('row(x:, "a" | "b")', JSONL)
+P_mA = prog_or_none('row(_:, "msg", contains("timeout"))', JSONL)
+P_mB = prog_or_none('row(_x:, "msg") & (_x: contains("timeout"))', JSONL)
 QM = ['{"msg":"db timeout"}', '{"msg":"ok"}', '{"msg":"timeout a","msg":"ok"}', '{"msg":"ok","msg":"x timeout"}',
       '{"a":1,"msg":"t\\"q timeout"}']
 QMS = " ".join(QM)
-ab_same = [P_mA.whole(t) for t in QM] == [P_mB.whole(t) for t in QM] and \
+ab_same = P_mA is not None and P_mB is not None and [P_mA.whole(t) for t in QM] == [P_mB.whole(t) for t in QM] and \
     (P_mA.search(QMS) or (0, 0))[:2] == (P_mB.search(QMS) or (0, 0))[:2] and P_mA.findall(QMS) == P_mB.findall(QMS)
 RD = [   # (reading, the record's verdict for it, what the run gives)
     ("two-sources second shape: a bare name reads only what the definition writes (candidate (b))", True,
-     P_tw is not None and P_tw.whole("1,7") and not P_tw.whole("7,1")),
+     lambda: P_tw is not None and P_tw.whole("1,7") and not P_tw.whole("7,1")),
     ("label-parameter-twice: the plain read is the last mention; the group question reads both; the index in order",
-     True, [P_lp2.whole("7,5"), P_lp3.whole("5,7"), P_lp4.whole("5,7"), P_lp4.whole("7,5")] == [True, True, True, False]),
-    ("label-parameter-twice across `&`: the ambiguous reference", True, ok_lp5),
-    ("label-parameter-omitted (a): `_` exports nothing (a group of `_` is a plain group)", True, P_om is not None),
+     True, lambda: [P_lp2.whole("7,5"), P_lp3.whole("5,7"), P_lp4.whole("5,7"), P_lp4.whole("7,5")] == [True, True, True, False]),
+    ("label-parameter-twice across `&`: the ambiguous reference", True, lambda: ok_lp5),
+    ("label-parameter-omitted (a): `_` exports nothing (a group of `_` is a plain group)", True, lambda: P_om is not None),
     ("label-kinds (a): reading a parameter never placed is refused at the definition; (b) `l.d:` refused", True,
-     ok_k1 and ok_k2),
+     lambda: ok_k1 and ok_k2),
     ("label-in-argument (c): the backdoor passes `_` and a body using the argument alone", True,
-     P_ia is not None and P_ia2 is not None),
-    ("argument-export: a caller's label on the spot reads the in-place argument (`x.year`)", True, P_ae is not None),
+     lambda: P_ia is not None and P_ia2 is not None),
+    ("argument-export: a caller's label on the spot reads the in-place argument (`x.year`)", True, lambda: P_ae is not None),
     ("optional-label: `NOT (h ?: S)` has the answers of `(h: !S)`", True,
-     [P_o4.whole(t) for t in ("x", "3x", "7x")] == [False, False, True]),
+     lambda: [P_o4.whole(t) for t in ("x", "3x", "7x")] == [False, False, True]),
     ("optional-place (b): the mark lets a search drop an optional group to pass (`5,`@0)", True,
-     P_o5 is not None and (P_o5.search("5,1 ,1 6,0") or (9, 9))[:2] == (0, 2)),
+     lambda: P_o5 is not None and (P_o5.search("5,1 ,1 6,0") or (9, 9))[:2] == (0, 2)),
     ("value-left (d): a value with no label is fixed at compile time (holds everywhere here)", True,
-     P_vl is not None and all(P_vl.whole(t) for t in ("x",))),
-    ("label-forward: across `|` the branch taken sets the label", True, P_fw2 is not None and P_fw2.whole("e3")),
+     lambda: P_vl is not None and all(P_vl.whole(t) for t in ("x",))),
+    ("label-forward: across `|` the branch taken sets the label", True, lambda: P_fw2 is not None and P_fw2.whole("e3")),
     ("label-forward q1: a filter over two rows' labels at the line is an ordinary entry", True,
-     P_jc is not None and P_jc.whole('{"hi":7,"lo":3}') and not P_jc.whole('{"lo":7,"hi":3}')),
+     lambda: P_jc is not None and P_jc.whole('{"hi":7,"lo":3}') and not P_jc.whole('{"lo":7,"hi":3}')),
     ("label-forward q2: several keys, the LAST fitting member in the object's order", True,
-     P_jk2 is not None and label_of(whole_state(P_jk2, '{"a":3,"b":7}'), "x") == "7" and
+     lambda: P_jk2 is not None and label_of(whole_state(P_jk2, '{"a":3,"b":7}'), "x") == "7" and
      label_of(whole_state(P_jk2, '{"b":7,"a":3}'), "x") == "3"),
-    ("JSON picture q1: a filter inside the argument and a test on the label agree in every mode", True, ab_same),
+    ("JSON picture q1: a filter inside the argument and a test on the label agree in every mode", True, lambda: ab_same),
     ("label-forward run: on the data the string \"3\" and the number 3 read alike", True,
-     P_jl is not None and P_jl.whole('{"v":"3"}') and P_jl.whole('{"v":3}')),
+     lambda: P_jl is not None and P_jl.whole('{"v":"3"}') and P_jl.whole('{"v":3}')),
     ("capture-twice: requested twice in sequence, the caller gets the last mention", True,
-     P_c4 is not None and label_of(whole_state(P_c4, "7,5"), "d") == "5"),
-    ("zero-in-loop: `0` first in the pass reads all the earlier passes, not the previous pass alone", True, z_ok),
+     lambda: P_c4 is not None and label_of(whole_state(P_c4, "7,5"), "d") == "5"),
+    ("zero-in-loop: `0` first in the pass reads all the earlier passes, not the previous pass alone", True, lambda: z_ok),
 ]
+
+
+def _verdict(f):
+    """A reading's run, judged; a plant that breaks a program the row reads makes the row unsupported, not a crash."""
+    try:
+        return bool(f())
+    except (CompileError, AttributeError, TypeError):
+        return False
+
+
+RD = [(a, b, _verdict(c)) for a, b, c in RD]
 if sf("s13"):
     RD[0] = (RD[0][0], False, RD[0][2])
 rd_bad = [r[0] for r in RD if r[1] != bool(r[2])]
