@@ -746,11 +746,13 @@ history:
         "name the group"; so is a number on a group whose name is shared. `0` is always the entire match. Added by
         lane predspec26.
     25. A NAME IS PRIVATE WHEN IT STARTS WITH `_`, AND `[_ = A]` HIDES ALL OF A's NAMES (export-rule, ruled
-        2026-11-18). Outside a binding a part's public labels pass through, a hole and the sequence operator alike
-        (hole-export, 2026-11-19); outside `date := [y = year] SEQ "-" SEQ [m = month]`, `date.v` reads the last
-        mention, the month's (ruled 2026-11-21: flat-read-outside; the bare `v` refused since label-reference,
-        2026-11-22): write `date.m.v` to say which. Spellings
-        are placeholders. Added by lane predspec26; restated by lane predfix61.
+        2026-11-18). A PART USED ALONE EXPORTS NOTHING (default-export, ruled 2026-11-22): outside a binding only its
+        own names and what its public part labels pass are seen, a hole and the sequence operator alike; outside
+        `date := [y = year] SEQ "-" SEQ [m = month]`, `date.v` reads the last mention, the month's (flat-read-outside,
+        2026-11-21; the bare `v` refused since label-reference, 2026-11-22): write `date.m.v` to say which; outside
+        `date := year SEQ "-" SEQ month` there is no `v` at all. Spellings are placeholders. Added by lane
+        predspec26; restated by lane predfix61; restated by lane predfix83 (review r83 D9: it taught hole-export's
+        "a part's public labels pass through", reversed for an unlabelled part by default-export).
     26. A PART CANNOT REFER TO A NAME IT DOES NOT DEFINE (free-name, ruled 2026-11-18: "Catastrophic. The rx should
         export the group."). `B := /\k<h>/` used after a part that sets h is a compile error, not a reference to that
         part's h. Added by lane predspec26.
@@ -777,6 +779,7 @@ history:
 - 2026-11-19 (lane predfix61, review r61 F-B, REACH-6): item 25 taught the rule hole-export revised ("a bare `v` an error"); its second sentence until then, verbatim: "Outside a binding a reader sees only its own public labels and its parts' public labels by path: with `date := [y = year] SEQ "-" SEQ [m = month]`, write `m.v`, not `v`." Restated under the reading that stands today (core/labels/export/flat-read-outside).
 - 2026-11-21 (lane predarr, joint-in-some): item 30 appended to the list (the record's reading (b) of that entry); a rulings item for his observation.
 - 2026-11-22 (lane predfix82, review r82 FIXIND-1; record "2026-11-22 MANAGER — review r82 (predfold1122): dispositions ruled; two corrections of record entries (no owner words)"): items 13, 15, 21, 25, 30 restated under binding-prefix, bound-condition and label-reference (details text only).
+- 2026-11-22 (lane predfix83, review r83 D9; record "2026-11-22 MANAGER — review r83 (preddef1122): dispositions ruled; one correction; idiom-confirm closed on default-export (no owner words)"): item 25 restated under default-export (it still taught that a part's public labels pass through a hole and the sequence operator).
 ## parked/ideas/label-hygiene — Label hygiene for libraries
 slugs: 
 rulings:
@@ -803,6 +806,7 @@ history:
 - 2026-11-19 (lane preddoc3c): its trigger and source written into the base piece; the item's text copied here.
 - 2026-11-19 (lane preddoc6, review r60 RULING-5): the gloss names label-flow's revision of the same evening ("across `&`, a name that both sides surface is an AMBIGUOUS REFERENCE and an error where it is referenced (not an error for merely existing: the shared-label ruling so revised)"), which already makes a collision nobody references harmless and so eases this item's problem; the ideas file's "One label name on both sides of `&` is refused" above is that item's text as written before it.
 - 2026-11-22 (lane predfix82, review r82 FIXIND-8, GENERAL-11; record "2026-11-22 MANAGER — review r82 (predfold1122): dispositions ruled; two corrections of record entries (no owner words)"): a bullet: partly overtaken by label-reference, call-prefix, label-only-group and declared-labels. Status date 2026-11-19 to 2026-11-22.
+- 2026-11-22 (lane predfix83, review r83 D11; record "2026-11-22 MANAGER — review r83 (preddef1122): dispositions ruled; one correction; idiom-confirm closed on default-export (no owner words)"): record-directed (the entry "2026-11-22 OWNER, an observation: the textually-visible rule solves a label from a used binding hiding another binding", his words "The textually visible rules solves a problem of a label from a binding reference hiding another binding", which directs the r83 fix lane): a bullet restating what is left of hiding (a reading, the manager's check), with default-export and export-list as the part-grain siblings of declared-labels.
 
 ## parked/ideas/label-parameter — A condition with a label parameter
 slugs: 

@@ -280,6 +280,8 @@ history:
 2026-11-22 (lane predbound, bound-condition and count-in-set ruled): the statement until then, verbatim: "`length(S)` reads the stretch's length: `length(S) := chars & (nchars: S)`, one setting of `ch` per character, their count tested by S."; the helpers bullet until then: "The helpers: `chars := ([ch = /(?s:.)/])*`, `nchars := count((ch: /(?s:.)/))`, a count being a canonical numeral; `nchars` (depends on the open bound-condition: core/holes/bare-condition/bound-condition)."; the readings item "`nchars` is a computed count bound alone ... UNTESTED" replaced by the run; two readings re-worded without `nchars`. The line's program `chars & (nchars: ==3)` became `chars & (count((ch: /(?s:.)/)): ==3)`; the answers do not move. Status date 2026-11-19 to 2026-11-22.
 2026-11-22 (lane predbound, R-3, label-reference ruled): the body's `ch` re-spelled `chars.ch` (statement and line); the answers do not move (predbound FIVE, LABELREF).
 - 2026-11-22 (lane predfix82, review r82 GENERAL-8; record "2026-11-22 MANAGER — review r82 (predfold1122): dispositions ruled; two corrections of record entries (no owner words)"): `needs:` core/values/computed-labels dropped (value-left already named).
+- 2026-11-22 (lane preddef, default-export folded; record "2026-11-22 OWNER RULING — default-export: protected"): the bullet until then: "The name is ruled; the body is a reading. The label `ch` is visible in the result; a part label, it makes no capture (pure-label), so the caller receives none." Now: the body uses `chars` alone, so a call exports no `ch` (a consequence of the manager's reading (e) of default-export, a call exporting what its body writes; cited as "reading (h)", a letter the record does not have, until review r83 D6; SUPPORTED as run: preddef_model.py LIBRARY); `chars` itself exports `ch`.
+- 2026-11-22 (lane predfix83, review r83 D6; record "2026-11-22 MANAGER — review r83 (preddef1122): dispositions ruled; one correction; idiom-confirm closed on default-export (no owner words)"): the history's "the manager's reading (h)" corrected to the letter the record has, (e).
 
 ## lib/modifiers/month-numbered — month_numbered
 slugs:
@@ -290,6 +292,7 @@ rejected:
 readings:
 - the body `months & (months.mname.index: S)` (R-3 spelling; then `months & (mname.index: S)`, and before it `months & (mnum: S)`, `mnum := $mname.index`; 1-based) accepts `Jan` .. `Jun` for `between(1, 6)` — SUPPORTED (preddoc3c PART MN; sabotage s20, 0-based, caught); review r16's emulation, 170 cases, 0 differ, rests on the emulated `.index`.
 - the path written in place gives the printed line unchanged — SUPPORTED (predbound FIVE: the line rebuilt from `month_numbered(between(1, 6))` with the body read from library.md equals the line printed at 1e0384941; WHOLE against the six month names, 0 of 13 texts differ; the index is the matched member's, 1-based, sabotage s17 caught by META).
+- (review r83 D5) the body uses `months` alone, so a call exports no `mname` — a reading of default-export; SUPPORTED as run on its shape (docs/dev/lanes/predfix83_evidence/ predfix83_model.py WITNESS: `mn(S) := months & (months.mname.index: S)`, `mn.mname` refused for not visible; `mn(<= 6)` matches `Jun`, not `Jul`; the provided name itself is not modelled).
 evidence: preddoc3c PART MN. predbound_model.py FIVE, META.
 history:
 - 2026-11-14: named in OWN-1; 2026-11-15 (rev 15): a body.
@@ -301,6 +304,7 @@ history:
 2026-11-22 (lane predbound, bound-condition ruled): the statement until then, verbatim: "`month_numbered(S)` reads a month name as its number: `months & (mnum: S)`, `mnum` the 1-based index of the name matched."; the binding `mnum := $mname.index` (a compile error now) removed, the path `mname.index` written in place; the pure-label bullet's "`mnum` (depends on the open bound-condition: core/holes/bare-condition/bound-condition)." dropped. The answers do not move. Status date 2026-11-19 to 2026-11-22.
 2026-11-22 (lane predbound, R-3, label-reference ruled): `mname.index` re-spelled `months.mname.index` (the part label reached through the binding); the answers do not move (predbound FIVE).
 - 2026-11-22 (lane predfix82, review r82 GENERAL-8; record "2026-11-22 MANAGER — review r82 (predfold1122): dispositions ruled; two corrections of record entries (no owner words)"): `needs:` core/values/computed-labels retargeted to core/conditions/form/value-left.
+- 2026-11-22 (lane predfix83, review r83 D5; record "2026-11-22 MANAGER — review r83 (preddef1122): dispositions ruled; one correction; idiom-confirm closed on default-export (no owner words)"): the bullet until then: "The name is ruled; the body is a reading. The label `mname` is visible in the result; `[mname = ...]` makes no capture (pure-label)." (the unfixed sibling of length's corrected sentence). Now: the call exports no `mname`; `months` exports it.
 
 ## lib/control/peek — peek
 was: core/conditional/peek (2026-11-19, the owner: core document macros are defined in the library unless primitive; since refined the same day: every call-form name is a library piece, the "primitive" designation withdrawn)
@@ -320,6 +324,8 @@ history:
 - 2026-11-18: `peek()` is his placeholder for the transform (when-test), made THE way to test without consuming by when-peek.
 - 2026-11-19: the owner, after reading the pilot: "there is nothing particular about peek() other than its a useful transform"; "there can be a special imported by default set which includes peek()" (record: "2026-11-19 OWNER, after reading the pilot documents (doc-shape)"). Moved to the library with a body (lane preddoc2).
 - 2026-11-19: his aside on importing symbols so a call is not `sys.peek()` (`(left,right) := import("blah", /left|right/)`) is an IDEA to discuss, owner question import-symbols; carried then by the parked piece `parked/import-symbols/import`, deleted the same day by the manager's brief (lane preddoc3c); no piece carries it now.
+- 2026-11-22 (lane preddef, default-export folded; record "2026-11-22 OWNER RULING — default-export: protected"): the bullet until then: "Labels A sets are readable after it, as after any lookahead and through any hole (only A's public labels)." Now: readable by the caller that wrote A, awaits argument-default (the body uses A alone); the line marked.
+- 2026-11-22 (lane predfix83, review r83 D6; record "2026-11-22 MANAGER — review r83 (preddef1122): dispositions ruled; one correction; idiom-confirm closed on default-export (no owner words)"): "the call exports none of them" marked as the manager's reading (e) of default-export.
 
 ## lib/control/when — when
 was: core/conditional/when (2026-11-19, the owner: core document macros are defined in the library unless primitive; since refined the same day: every call-form name is a library piece, the "primitive" designation withdrawn)
@@ -349,6 +355,7 @@ history:
 - 2026-11-18: the guarded form; when-default; when-alone; a single argument an error; `then` required (the draft R.1.10 (1), (2), (8)).
 - 2026-11-19: moved from the core to the library with its body (lane preddoc2; the owner's recommendation 1).
 - 2026-11-19 (lane preddoc4): `needs: core/filters/negation` (the body's `NOT peek(test)` is legal by that piece) and `see: lib/control/when-test` (review r59 NEGATION, READ-17).
+- 2026-11-22 (lane predfix83, review r83 A8; record "2026-11-22 MANAGER — review r83 (preddef1122): dispositions ruled; one correction; idiom-confirm closed on default-export (no owner words)"): the bullet "Labels the test sets are visible in then" gains its dependence on argument-default: then reads the test's labels across two arguments the body uses alone, legal under (local), refused under (error) by the reading of argument-default (a read inside an argument beside its OWN group only stays legal).
 
 ## lib/control/when-test — The test of `when`
 was: core/conditional/test (2026-11-19, the owner: core document macros are defined in the library unless primitive; since refined the same day: every call-form name is a library piece, the "primitive" designation withdrawn)
@@ -439,6 +446,8 @@ history:
 - 2026-11-22 (lane predref, label-reference sweep and helper-captures fold): helper-captures RULED (b) and folded: the body `(?<hit>${x})` to `(?<:hit>${x})` (core/labels/label-only-group); the bullet "A bare condition after it reads the LAST hit's own labels." and the bullet "The body writes `hit` as a group in rx text, so it is a capture the caller receives (a reading of pure-label), against his reason for the add-on: ... Whether a helper's label is a caller capture: an owner question (helper-captures)." replaced by the ruling, his example and the re-choosing sentence; the two lines "Plain read" and "Every hit" added (docs/dev/lanes/predref_evidence/ predref_model.py HITS). Status date 2026-11-21 to 2026-11-22.
 - 2026-11-22 (lane predcall, call-prefix case 1 folded): the bullet "A condition after it reads the LAST hit's own labels, through a label on the call" names the macro's name beside the label (`occurrences(/\d+/) & (occurrences.hit: <5)`, one call; docs/dev/lanes/predcall_evidence/ predcall_model.py CASE1: the same answers as the printed `[hits = occurrences(/\d+/)] & ...` lines). No line moves; his example kept as written.
 - 2026-11-22 (lane predfix82, review r82 GENERAL-7, EXAMPLES-4; record "2026-11-22 MANAGER — review r82 (predfold1122): dispositions ruled; two corrections of record entries (no owner words)"): the bullet "two calls in one chain exposing the same hit label are the ambiguity error, the per-call name its fix; each call reached through a label of its own (`a.hit`, `b.hit`) is not ambiguous (a reading)" restated with call-prefix and binding-prefix.
+- 2026-11-22 (lane preddef, default-export folded; record "2026-11-22 OWNER RULING — default-export: protected"): the argument-group bullet gains: whether the caller reads it awaits argument-default and capture-export.
+- 2026-11-22 (lane predfix83, review r83 A8, D4 (iii); record "2026-11-22 MANAGER — review r83 (preddef1122): dispositions ruled; one correction; idiom-confirm closed on default-export (no owner words)"): the re-split example marked legal under both candidates of argument-default (a read inside the argument beside its own group: the manager's reading, docs/dev/lanes/predfix83_evidence/ predfix83_model.py ARGOWN); the label-only `hit` passing its argument's labels on (`h.hit.n`) joins argument-default as its library face (D4 (iii)).
 
 ## lib/search/hits — hits
 slugs: hits-committed hits-text hits-pass hit-list
@@ -467,6 +476,7 @@ history:
 - 2026-11-22 (lane predfix77, review r77 D4; record "2026-11-22 MANAGER — review r77 (predfold1121): dispositions ruled (no owner words)"): the capture bullet points at the tension and the question helper-captures (lib/search/occurrences).
 - 2026-11-22 (lane predref, label-reference sweep and helper-captures fold): helper-captures folded: the body `(?<hit>${r})` to `(?<:hit>${r})`; the "Every hit under 100" program `hits(/\d+/) & occurs.none((hit: >= 100))` re-spelled `[h = hits(/\d+/)] & occurs.none((h.hit: >= 100))` (label-reference: `hit` is not written in the program; its four prose answers re-run, docs/dev/lanes/predref_evidence/ predref_model.py HITS); the bullet "The body writes `hit` as a group in rx text, so it is a capture as well as a label (a reading of pure-label; the tension with the add-on's reason and the question helper-captures: lib/search/occurrences)." replaced; the two lines "Plain read" and "Every hit" added. Status date 2026-11-17 to 2026-11-22.
 - 2026-11-22 (lane predcall, call-prefix case 1 folded): his second example printed with the record entry's two run lines, "inner test" and "every number" (the base labels "His second example, a test inside the argument" and "Every number tested after the call"), and the sentence "a test inside the argument chooses the hits; a test after the atomic `hits` judges them"; a bullet on reading one call by the macro's name. The first example's lines (lane predref) kept.
+- 2026-11-22 (lane preddef, default-export folded; record "2026-11-22 OWNER RULING — default-export: protected"): the line `hits(/a(?<g>x)?/) & (g: "x")` marked "(awaits argument-default)" (under its candidate "error", `g` is not visible: preddef_model.py AWAITS).
 
 ## lib/search/contains — contains
 was: lib/search/contains/by-occurrences (2026-11-19, merged: a second present-tense definition of `contains` in the base; its body is a reading line here (review r60 COLD-10))
@@ -518,6 +528,7 @@ history:
 - 2026-11-19 (lane preddoc3c): converted; the lazy gap split into its own piece.
 - rev 9-10 (2026-11-15): the lazy gap chosen for how the argument's labels read; rev 12 kept it against the record's `/.*${rx}/`.
 - 2026-11-19 (lane preddoc6, review r60 COLD-10): the sub-piece "endsWith with a lazy gap" (`reading`, "`endsWith(s)` is written with a LAZY gap, `/(?s:.*?)(?:${s})/`, so its argument starts as far LEFT as it can") merged back here as a candidate reading: the base had two present-tense definitions of one name; the ruled body is the definition.
+- 2026-11-22 (lane preddef, default-export folded; record "2026-11-22 OWNER RULING — default-export: protected"): the bullet and line marked "(awaits argument-default)": the caller's read of the argument's `n`.
 
 ## lib/search/anchored — anchored
 slugs: anchored-in-hole
@@ -784,6 +795,8 @@ evidence: preddoc3c PART LO.
 history:
 - 2026-11-17 (rev 24.4): defined as form (a), a proposal; separator-label dissolved.
 - 2026-11-19 (lane preddoc3c): converted.
+- 2026-11-22 (lane preddef, default-export folded; record "2026-11-22 OWNER RULING — default-export: protected"): a bullet: the body uses X alone, so the caller's read of the item's label awaits argument-default; the line marked.
+- 2026-11-22 (lane predfix83, review r83 D6; record "2026-11-22 MANAGER — review r83 (preddef1122): dispositions ruled; one correction; idiom-confirm closed on default-export (no owner words)"): "the call exports none of its labels" marked as the manager's reading (e) of default-export.
 
 ## lib/records/param — param
 slugs:
@@ -867,6 +880,7 @@ history:
 - 2026-11-19 (lane preddoc6, review r60 COLD-9): "The bodies, one per call form" marked a reading and pointed at the open question core/operators/bindings/call-forms (`rx.repeat(rx.digit, 3)` fits two bodies with different answers).
 - 2026-11-19 (lane preddoc6, review r60 RULING-9): the first `was:` line's reason read "the core holds primitives only" as a standing rule; rewritten: it was the rule of that morning, and the owner withdrew the designation the same day ("my "primitive" designation doesn't work", record "2026-11-19 OWNER, refining where provided names live: every `x()` in the library, marked defined in the language or not"); the reason today: every call-form name is a library piece.
 - 2026-11-19 (lane predfix61, review r61 F-M, GENERAL-4): "first hole slowest" points at the lift's loop (core/arrays/lift); no answer moves. Status date 2026-11-17 to 2026-11-19.
+- 2026-11-22 (lane preddef, default-export folded; record "2026-11-22 OWNER RULING — default-export: protected"): the labelled-item bullet until then: "A labelled item, `rx.repeat([a = rx.digit], min = 1)`, is `(?:(?<a>\d))+`: a condition after it reads the last item; a condition inside the item is judged for every item." Now marked: awaits argument-default (the body uses x alone).
 
 ## lib/structural/capture — capture
 slugs:

@@ -215,8 +215,9 @@ defined: language
   `:` (core/conditions/form/value-left). `ch` has its target in the binding: the body USES `chars`, which holds it
   (core/labels/export; a count bound alone is a compile error: core/holes/bare-condition/bound-condition); not
   written in the body's own text, it is referenced with its source, `chars.ch` (core/labels/paths/label-reference).
-- The name is ruled; the body is a reading. The label `ch` is visible in the result; a part label, it makes no
-  capture (pure-label), so the caller receives none.
+- The name is ruled; the body is a reading. The body uses `chars` alone, so a call exports no `ch`: `length.ch`
+  and `length.chars.ch` are compile errors (default-export, core/labels/export; a reading, run); `chars` itself
+  exports `ch`, a part label its text writes (`chars.ch`). A part label makes no capture (pure-label).
 - His `length($y)`, the length of a read's one string (an image), is the different function `strlen`.
 WHOLE `abc` HOLDS, `ab` FAILS / SEARCHED `abcd` `abc`@0 / FIND-ALL `abcdefg` [`abc`@0, `def`@3] (`length(==3)` as a program: `chars & (count((chars.ch: /(?s:.)/)): ==3)`)
 
@@ -230,8 +231,9 @@ defined: language
   the twelve names in calendar order); `months.mname.index` is a label path (the part label `mname` reached through
   `months`, core/labels/paths/label-reference), so the test is written in place (core/values/metadata; a value
   bound alone is a compile error: core/holes/bare-condition/bound-condition).
-- The name is ruled; the body is a reading. The label `mname` is visible in the result; `[mname = ...]` makes no
-  capture (pure-label).
+- The name is ruled; the body is a reading. The body uses `months` alone, so a call exports no `mname`:
+  `month_numbered.mname` is a compile error (default-export, core/labels/export; a reading); `months` itself exports
+  `mname`, a part label its text writes. `[mname = ...]` makes no capture (pure-label).
 WHOLE `Jun` HOLDS, `Jul` FAILS / SEARCHED `Dec Feb` `Feb`@4 / FIND-ALL `Mar Oct Apr` [`Mar`@0, `Apr`@8] (`month_numbered(between(1, 6))`)
 
 ## Control   [lib/control]
@@ -245,11 +247,13 @@ module: ?
 default: yes
 defined: language
 - The body: `peek(A) := /(?=${A})/`. Nothing in it is particular to `peek`: it is a useful transform.
-- Labels A sets are readable after it, as after any lookahead and through any hole (only A's public labels).
+- Labels A sets are readable after it by the caller that wrote A, as after any lookahead (awaits argument-default:
+  the body uses A alone, so by the manager's reading (e) of default-export the call exports none of them,
+  core/labels/paths/argument-default).
 - `NOT peek(A)` is the negative peek, `(?!A)`: "A cannot match here" (core/filters/negation).
 - A condition given as A is zero width already: `peek(c)` tests c where it stands, as c does (a reading).
 - `default: yes`: in the default-imported set, so written bare, not `module.peek` (the owner's lean).
-WHOLE `37` HOLDS (d = `3`), `3` FAILS / SEARCHED `x37` `37`@1 / FIND-ALL `37 4 56` [`37`@0, `56`@5] (`peek(/(?<d>\d)/) SEQ /\d\d/` is `(?=(?:(?<d>\d)))\d\d`)
+WHOLE `37` HOLDS (d = `3`), `3` FAILS / SEARCHED `x37` `37`@1 / FIND-ALL `37 4 56` [`37`@0, `56`@5] (`peek(/(?<d>\d)/) SEQ /\d\d/` is `(?=(?:(?<d>\d)))\d\d`) (awaits argument-default)
 
 ### when   [lib/control/when]   ruled 2026-11-18
 The conditional is the guarded form, `when(test, then, else = //) := (test SEQ then) | (NOT peek(test) SEQ else)`: else is never tried where the test holds.
@@ -263,7 +267,8 @@ defined: language
 - The else-only behaviour is NOT on the test: `when(NOT (h: <5), z)`, `when(NOT peek(x), z)`.
 - What the test may be, and what each kind consumes: lib/control/when-test.
 - Labels the test sets are visible in then; in the else branch they are unset, a failed test setting nothing (a
-  reading, run).
+  reading, run). Then reads the test's labels across two arguments the body uses alone (awaits argument-default,
+  core/labels/paths/argument-default).
 - `//` stands for the owner's `null`, "nothing required"; `when`, `then`, `else` are placeholder spellings.
 WHOLE `12` HOLDS, `1` FAILS / SEARCHED `x123` `x`@0 / FIND-ALL `12 x 123 1x 7` [`12`@0, `x`@3, `12`@5, `x`@10] (`when(peek(/\d/), /\d\d/, else = /\w/)` is `(?=\d)\d\d|(?!\d)\w`)
 
@@ -315,7 +320,8 @@ defined: language
 - A condition inside x after its group reads that hit's own labels; one BEFORE the group reads the previous hit's
   value (it carries). Writing the condition after the label gives the plain search's hits.
 - The hits are re-split whenever a condition rejects: `occurrences(/(?<n>\d+)/ & (n: <100))` on `1234` HOLDS with
-  the hits `12`, `34`.
+  the hits `12`, `34` (a read inside the argument beside its own group: legal under both candidates of
+  argument-default, the manager's reading, run).
 - A nullable argument draws a warning. Its hits (a reading of the ruled premise): the plain search's hits up
   to and including the first empty hit, which ends the loop; the first `min` hits are always taken and may be
   empty (`occurrences(/\d*/)` on `1a`: [`1`@0, ``@1]).
@@ -326,7 +332,9 @@ defined: language
   the argument (the lines below).
 - His ruling: "occurences et al should only set labels not captures unless they are so declared." The body's `hit`
   is the label-only group (core/labels/label-only-group): no caller capture. A group written in the ARGUMENT is the
-  caller's own text and stays a capture (`occurrences(/(?<n>\d+)/)`: n). How a helper declares a capture is not
+  caller's own text and stays a capture (`occurrences(/(?<n>\d+)/)`: n); whether the caller reads it awaits
+  argument-default and capture-export (the body uses x alone; core/labels/paths/argument-default), as does whether the
+  label-only `hit` passes its labels on (`h.hit.n`). How a helper declares a capture is not
   stated (lib/structural/capture/add-on).
 - A call may name its hit label (his spelling `occurrences(x, label = "foo")`, a placeholder: `label` is reserved
   metadata). Called twice in one definition, a plain read through the macro's name is binding-prefix's compile
@@ -361,7 +369,7 @@ defined: language
 - His second example, `[h = hits(/\d+/ & (0: <5))] & (h.hit: 3) & some((h.hit: 4))` (his gloss: "<5 and last hit
   is 3 and some hit is 4"): a test inside the argument chooses the hits; a test after the atomic `hits` judges
   them (a reading, run: `4 9 3` and `43` HOLD with the test inside, FAIL with every number tested after).
-WHOLE `aax` HOLDS (hits [`a`, `ax`]), `axa` FAILS (hits [`ax`, `a`]: the last hit's g unset) / SEARCHED `axa` FAILS / FIND-ALL `aax axa` [] (`hits(/a(?<g>x)?/) & (g: "x")`: the hit list is the whole subject's)
+WHOLE `aax` HOLDS (hits [`a`, `ax`]), `axa` FAILS (hits [`ax`, `a`]: the last hit's g unset) / SEARCHED `axa` FAILS / FIND-ALL `aax axa` [] (`hits(/a(?<g>x)?/) & (g: "x")`: the hit list is the whole subject's) (awaits argument-default)
 Plain read, the last hit: WHOLE `a1b3` HOLDS (hits [`1`, `3`]), `a9b3` HOLDS (hits [`9`, `3`]), `a3b9` FAILS (hits [`3`, `9`]), `a1b22` FAILS (hits [`1`, `22`]), `ab` FAILS (hits []) / SEARCHED `x9 3` `x9 3`@0 / FIND-ALL `a9b3 c7` [] (`[h = hits(/\d+/)] & (h.hit: <5)`)
 Every hit, a group question: WHOLE `a1b3` HOLDS (hits [`1`, `3`]), `a9b3` FAILS (hits [`9`, `3`]), `a3b9` FAILS (hits [`3`, `9`]), `a1b22` FAILS (hits [`1`, `22`]), `ab` HOLDS (hits []) / SEARCHED `x9 3` FAILS / FIND-ALL `a9b3 c7` [] (`[h = hits(/\d+/)] & occurs.none((h.hit: >= 5))`)
 His second example, a test inside the argument: WHOLE `4 3` HOLDS (hits [`4`, `3`]), `3 4` FAILS (hits [`3`, `4`]), `4 9 3` HOLDS (hits [`4`, `3`]), `43` HOLDS (hits [`4`, `3`]), `4 13` HOLDS (hits [`4`, `1`, `3`]), `4 3 9` HOLDS (hits [`4`, `3`]) / SEARCHED `x4 3` `x4 3`@0 / FIND-ALL `4 3 x 4 3` [`4 3 x 4 3`@0] (`[h = hits(/\d+/ & (0: <5))] & (h.hit: 3) & some((h.hit: 4))`)
@@ -393,8 +401,8 @@ needs: core/holes/pattern
 module: ?
 defined: language
 - The gap is greedy as the owner wrote it: the argument starts as far RIGHT as it can (`endsWith(/(?<n>\d+)/)`
-  on `ab123`: n = `3`).
-WHOLE `ab123` HOLDS (3) / SEARCHED `x12 34` `x12 34`@0 / FIND-ALL `a1 b2` [`a1 b2`@0] (`endsWith(/(?<n>\d+)/)` is `(?s:.*)(?:(?<n>\d+))`)
+  on `ab123`: n = `3`; the caller's read of n awaits argument-default).
+WHOLE `ab123` HOLDS (3) / SEARCHED `x12 34` `x12 34`@0 / FIND-ALL `a1 b2` [`a1 b2`@0] (`endsWith(/(?<n>\d+)/)` is `(?s:.*)(?:(?<n>\d+))`) (awaits argument-default)
 
 ### anchored   [lib/search/anchored]   ruled 2026-11-15
 `anchored(s)` is the plain macro `/\A(?:${s})\z/`: s matched whole on its scoped match, with exact ends.
@@ -608,7 +616,9 @@ defined: language
 - One item or more; written this way the label and the array are right at every length (one copy of X before
   the loop would leave the label unset on one item).
 - Its minimum (zero items) is not stated.
-WHOLE `7,3,5` HOLDS (5) / SEARCHED `x7,3` `7,3`@1 / FIND-ALL `1,2 3` [`1,2`@0, `3`@4] (`list_of(/(?<h>\d)/, sep = ",")`)
+- The body uses X alone, so by the manager's reading (e) of default-export the call exports none of its labels;
+  the caller's read of the item's label awaits argument-default (core/labels/paths/argument-default).
+WHOLE `7,3,5` HOLDS (5) / SEARCHED `x7,3` `7,3`@1 / FIND-ALL `1,2 3` [`1,2`@0, `3`@4] (`list_of(/(?<h>\d)/, sep = ",")`) (awaits argument-default)
 
 ### param   [lib/records/param]   reading 2026-11-19
 `param(rx)` is a run-time input: an rx whose string the caller fixes per match, read-only, validated against rx.
@@ -668,7 +678,7 @@ defined: language
 - Several values make the count hole's copies: one copy per combination, first hole slowest (the lift's loop:
   core/arrays/lift), an illegal copy (min above max) removed; one array mentioned twice is independent per mention (`rx.repeat(rx.digit, n, n + 1)`).
 - A labelled item, `rx.repeat([a = rx.digit], min = 1)`, is `(?:(?<a>\d))+`: a condition after it reads the last
-  item; a condition inside the item is judged for every item.
+  item (awaits argument-default: the body uses x alone); a condition inside the item is judged for every item.
 - Plurals are one-line definitions over it: `digits := rx.repeat(rx.digit, min = 1)` is `\d+`.
 - A count in braces is not an operator of the language; inside a regex literal it is regex's own.
 WHOLE `123` HOLDS, `1` FAILS / SEARCHED `12345` `12`@0 / FIND-ALL `12345 6` [`12`@0, `34`@2] (`rx.repeat(rx.digit, min = n, max = n)`, n := [2, 4], is `(?|\d{2,2}|\d{2,4}|\d{4,4})`: the copy (4,2) removed)

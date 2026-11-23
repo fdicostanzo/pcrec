@@ -777,3 +777,76 @@ Lane predfix82 delivered (rulings file empty; all nine of my r82 readings suppor
 moved: 220 lines under the old and the fixed engine) and MERGED: lint 6,428 / 0, its model 22 / 0. Review r82
 filed. P-20 written (done line, status line, seven worktrees to prune, four proposed skill edits). wake.md's State
 rewritten. Owner questions next: two-sources, idiom-confirm.
+
+## 2026-11-22 (late night) — default-export RULED protected; fold lane preddef running
+
+After P-20: his C++ analogy (three of four matched; the default, A alone, was PUBLIC by hole-export); his example
+`B := A & A`, `C := B & (B.a: 9)` ("B.a is always an error"); then RULED "default-export: protected": a part used
+alone is available inside the binding and NOT exported. Reverses hole-export (2026-11-19) and export statement 3
+for an unlabelled part. Lane preddef (opus; `worktrees/preddef`, cut at 0050e019a) RUNNING: rule pieces restated,
+every printed program swept (explicit part labels to export), his analogy as a table, a model implementing the
+protected default with a SUCCESSOR check over all older models. Two NEW owner questions, neither applied:
+argument-default (the caller's own `A.d` for an argument through a bare `${rx}`: his example 1 of the 21st and
+closed-argument against the new default); capture-export (does a capture in rx text deep inside bare-used parts
+still reach the caller). Asked main for a review number (REPLY pending). NEXT: accept and merge preddef; critic
+round with main's number (subject = diff from 30ca2520d); rule; fix lane; P-21.
+
+Main (2026-11-22): review number **r83** is ours for the default-export fold; P-20 (30ca2520d) is merged and pushed on main.
+
+## 2026-11-22 (night, later) — export-list ruled; preddef merged; critic round r83 launched
+
+RULED after default-export: export-list ("Export list: yes": `[(=year) = isodate]`, the named binding list on a
+part label; one form, two targets; his caveat "bindings used to scope labels (A.a: 8)"). AGREED framing (not a
+ruling): two base kinds of name, LABEL and BINDING, with properties; "captures can have no label" (his note: the
+label and capture properties are independent, four cells). His observation: label-reference solves a used
+binding's label hiding a binding. Lane preddef (R-1, R-2 applied) delivered and MERGED: tip 3e58abe9e, lint
+6,645 / 0, its model 22 / 0, 229 printed lines with no answer moved; 5 programs now compile errors, 10 kept
+"(awaits argument-default)". Its own reading, for the round: a labelled part still passes `pub.h` by name.
+LAUNCHED: coordinator `crit-preddef1122` (opus, background), review r83, subject = diff 30ca2520d..3e58abe9e,
+round dir `$PCREC_TMPDIR/scratch/crit-preddef1122/`, with a NAMES lens (the name-resolution table). The subject
+stays FROZEN until the draft. FOR THE r83 FIX LANE (beyond the round's findings): the name table as one piece
+(two kinds, the four-cell label/capture table, his agreement quoted); the hide-label warning's trigger and
+parked/ideas/label-hygiene restated (his observation). Owner questions: argument-default, capture-export,
+two-sources, idiom-confirm.
+
+## 2026-11-22 (night, later still) — program-options and hole-flags RULED (recorded only; subject frozen for r83)
+
+RULED: program-options (yes: a statement sets flags for the literals written after it in the same file; `m`,
+`s`, `n`, `x` first; never across an import; a literal's own flags win) and hole-flags (yes to all: `i` has a
+weak per-file value that does not propagate; at a hole only an EXPLICIT `i` / `-i` is inherited; `m` and `s` no
+longer inherited: reverses the 2026-11-19 list). His reason: consistent with the other program-level settings.
+NOT FOLDED: the documents are frozen for round r83. PLAN: after r83's fix lane merges, ONE opus fold lane
+(predflags) for these two rulings (core/patterns/flags, core/holes/flags and in-filter, lib/builtin/options, the
+warnings row, any_case, the examples resting on an inherited `m`/`s` or a non-explicit `i`), then its own critic
+round (ask main for the number), then delivery.
+
+## 2026-11-22 (very late) — r83 drafted and RULED; fix lane predfix83 running
+
+r83 (five opus lenses incl. the NAMES grid, + verifier): every printed line agrees; no undeclared evidence red.
+Answer-level findings all sat in grid cells no printed line reaches: the evidence engine accepts what the text
+refuses (the `&` ambiguity from outside / through a part label / through an export list; an export list through
+a call; bare `$h`, `h[2]` across `&`); argument-default's question misstated its consequence (FIXED before he is
+asked); two cases decided twice. RULED (record entry "2026-11-22 MANAGER — review r83"): my readings on A4 (an
+outside read sees exported settings only), A5 (a binding's name reaches its unlabelled uses only), D4, D8, the
+cross case; CORRECTION: default-export also narrows label-flow (b) and bare-nested-scope case 2 for the user;
+idiom-confirm CLOSED on default-export (the statement put to him was "available locally as `A.h`"). Coordinator
+stopped. Lane predfix83 (opus; `worktrees/predfix83`, cut at 8619d21f1) RUNNING: the fixes, a successor model
+with the NAME-GRID check, the name table piece, the hide-label / label-hygiene restatement, the review filed as
+docs/dev/reviews/2026-11-22-r83-preddef1122.md. It does NOT fold the flag rulings. NEXT: accept, merge, lint,
+P-21 (done + status + worktrees preddef, predfix83 + the round's skill edits P1-P5), SendMessage main. THEN the
+flags fold (lane predflags + its own round; ask main for the number). Owner questions, in order:
+argument-default (with its library face), capture-export, two-sources; tell him: idiom-confirm closed, the
+correction, and the S1 view (textual ownership as a principle) if he wants it.
+
+## 2026-11-22 (very late, 2) — argument-default, wrapper-export, transform-export RULED (record only)
+
+RULED while predfix83 runs (NOT folded; the documents carry argument-default as open): argument-default: an
+error, with his PRINCIPLE "The label is not to the regex abstractly, it's to the spot in the pattern where the
+regex is being inserted" (an argument is a template); wrapper-export (a) (`peek`, `atomic`, `when`, `list_of`,
+the gap bodies write `[(=) = A]` on the spot); transform-export: yes (the convention for every provided body
+that places its argument); his pair `hide(x) := /${x}/`, `identity(x) := /${[(=) = x]}/` (examples; not ruled
+as provided names). My reading told to him: a label written ON an argument at a call (`B([a = A])`) is a
+compile error; a group inside an in-place argument is not the caller's to read (answers two-sources' first
+shape). THE NEXT FOLD LANE (after predfix83 merges and P-21) carries FIVE rulings: argument-default,
+wrapper-export, transform-export, program-options, hole-flags; then its own critic round (ask main for the
+number). A principle piece for "a label is to the spot" (core/principles; his words; the name mine).

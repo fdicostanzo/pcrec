@@ -7506,3 +7506,501 @@ multiple times in an expression"). So the one-use plain read was an error by his
 today only as a READING (above), until he answers idiom-confirm. The two parts he ruled stand as recorded.
 CORRECTION 2 (review RULING-5): the bound-condition ruling REVISES the named-condition spelling of 2026-11-14
 (`isSmallYear := (year: <2000)`, "a plain DEFINE binding"): not said in the ruling entry; said here.
+
+### 2026-11-22 OWNER, an analogy to validate: the four ways a part is used, as C++ access levels
+tags: core/labels/export core/labels/paths core/labels/paths/label-reference core/labels/export/flat-read-outside
+
+After P-20 was delivered. HIS WORDS, whole:
+
+"Analogy, c++, please validate: [a = A ] is making the labels from A public to local and later bindings. [_a = A ]
+is making the labels from A protected and available locally but not exported to later bindings. [A ] (A alone,
+default) also makes the labels protected but with different access locally. [_ = A] makes the labels private to A
+and not accessible locally to the binding."
+
+Class: an ANALOGY with a REQUEST to validate; nothing asked as a ruling. Validated against core/labels/export as
+it stands (told to him): THREE of the four match what is ruled: `[a = A]` (statement 3: the part's public labels
+pass out, and are reached locally as `a.h`); `[_a = A]` (statement 6: "an ordinary part label inside its binding
+and exports nothing outside it"); `[_ = A]` (statement 7: "makes none of A's labels visible anywhere outside A").
+The THIRD does not match: A used alone is PUBLIC today, not protected: hole-export (2026-11-19, "both pass
+through") and statement 3 ("the public labels of every part written or used there pass through, a hole and the
+sequence operator alike"); it differs from `[a = A]` only in the local name (the binding's own, `A.h`, by
+binding-prefix) and in giving later bindings no part-label step. If he MEANS the default to be protected, that is
+a new ruling reversing hole-export for an unlabelled part: put back to him as the question default-export.
+
+### 2026-11-22 OWNER, discussing the analogy: `B := A & A`, `C := B & (B.a: 9)`: "here B.a is always an error"
+tags: core/labels/export core/labels/flow core/labels/export/flat-read-outside core/labels/paths
+
+After the validation of his analogy (the default, A used alone, is public today) and the question default-export.
+HIS WORDS, whole:
+
+"Discussion: A := <label a> B := A & A   C := B & (B.a: 9) here B.a is always an error."
+
+Class: DISCUSSION, an example with his verdict; default-export not answered. CHECKED against the documents (told
+to him; a compile-time verdict, read from the rule text, no matching run): his verdict is what is ruled for the
+PLAIN read: across `&` a name both sides surface is the ambiguous reference, a compile error where it is
+referenced (label-flow, 2026-11-17), and a read from outside follows the inside rules (flat-read-outside,
+2026-11-21), so `(B.a: 9)` in C is an error, and nothing C can write repairs it: the two `A` are inside B. The
+group question is not an error there (`some((B.a: 9))` reads both sides' settings: the documents' line "Across
+`&`, a group question over both sides").
+
+### 2026-11-22 OWNER RULING — default-export: protected (a part used alone is available inside the binding and is not exported)
+tags: core/labels/export core/labels/export/flat-read-outside core/labels/paths core/labels/flow core/holes/labels core/labels/paths/label-reference core/holes/bare-condition/nested-scope
+
+Asked **default-export** ("default-export: protected", or say what else the example was pointing at), after: his
+analogy ("[A ] (A alone, default) also makes the labels protected but with different access locally"); the
+validation that A used alone is PUBLIC today (hole-export, 2026-11-19: "both pass through"; export statement 3);
+what a protected default would say ("a part used bare is available locally as `A.h` but exports nothing. To
+export, the binding writes `[a = A]`, or your shorthand `[=A]`"); and his example `B := A & A`, `C := B & (B.a:
+9)`. HIS WORDS, whole:
+
+"default-export: protected"
+
+Class: a RULING on the slug: a part used alone in a binding (no part label) is PROTECTED: its labels are
+available inside that binding (through the binding's name, `A.h`) and are NOT exported to the bindings that use
+it. It REVERSES hole-export (2026-11-19) and export statement 3 for an unlabelled part, and with them the
+example lines that read a bare-used part's label from outside (`pub := /${A}!/`, then `pub.h`). His analogy of
+the same day is thereby the ruled picture: `[a = A]` public; `[_a = A]` and `A` alone protected (local only),
+differing in the local name; `[_ = A]` private to A.
+
+The manager's readings, for the fold lane to test and mark: (a) "used alone" is a bound name used as a sequence
+operand, in a hole or as an `&` operand without a part label: as `[_A = A]` would behave; (b) what a binding
+EXPORTS: the labels its own text writes (a group in one of its literals, a part label it writes, neither
+beginning with `_`), and through a public part label that part's exported labels (`pub.a.h`); (c) a read from
+outside of a label that only a bare-used part holds (`pub.h`) is a compile error (not visible); (d) his shorthand
+`[=A]` (read as `[A = A]`) is the short way to export a part under its own name; still a placeholder spelling;
+(e) a MACRO CALL exports what its body's text writes; an argument the body uses bare is not exported by the call
+(`B.d`, `c.d`), and his example 3 of 2026-11-21 (`B(rx) := /${[dd = rx]}xx/`) is the way a macro passes an
+argument's labels on; (f) array-in-piece is unchanged: inside the binding a bare-used part's settings are seen.
+NOT STATED by his words, to be asked, neither answer applied: **argument-default**: the caller's own `A.d` for
+an argument (`C := B(A) & (A.d: <100)`, B(rx) := `/${rx}xx/`): he called example 1 legal on 2026-11-21 and ruled
+closed-argument today as "legal exactly where `d` is visible through the call"; under a protected default the
+bare `${rx}` passes nothing through the call, so is `A.d` still the caller's local read of its own part, or an
+error; **capture-export**: export statement 5 gives the caller the CAPTURES visible from the top-level program:
+does a capture written in rx text inside a bare-used part two bindings down still reach the caller (as in PCRE),
+or does it follow the labels.
+
+### 2026-11-22 OWNER, a question after default-export: "can I somehow export some labels but not others. Like year only from isodate"
+tags: core/labels/export core/labels/paths parked/ideas/declared-labels lib/builtin/export
+
+HIS WORDS, whole: "Question, can I somehow export some labels but not others. Like year only from isodate"
+
+Class: a QUESTION; nothing ruled. The manager's answer (told to him; from the rules as ruled, no matching run):
+YES at the grain of a PART or of a group the binding writes: a binding exports the parts it labels and the groups
+it writes without `_`, so `isodate := [year = digits4] SEQ "-" SEQ month SEQ "-" SEQ day` (month and day used
+alone: protected) or `/(?<year>\d{4})-(?<_month>\d\d)-(?<_day>\d\d)/` exports `year` only. NOT today at a finer
+grain: a labelled part passes ALL of that part's exported labels (`[d = A]` gives `d.x` and `d.y`); there is no
+form that re-exports ONE label of a part and keeps the rest. That would be his parked idea of declaring a
+binding's labels (parked/ideas/declared-labels), an export list in the binding's head; `@export(names)` (open
+export-choice) selects among a FILE's names, not a binding's labels.
+
+### 2026-11-22 OWNER PROPOSAL — re-exporting one label of a defined part: `[(=year) = isodate]`
+tags: core/labels/export core/labels/paths core/modules/binding-list core/modules/all-symbols core/modules/leave-out parked/ideas/declared-labels
+
+After the manager's answer (yes at the grain of a part; no form re-exports one label of a part). HIS WORDS, whole:
+
+"I meant if isodate was defined and I wanted to reexport year only. [d = isodate] exports all. How about this:
+[(=year) = isodate]"
+
+Class: a CLARIFICATION of his question (isodate already defined; re-export `year` only) and a PROPOSAL ("How about
+this") of a form; nothing ruled; the spelling his placeholder. The manager's reading of the form (told to him): the
+left side of a part label is the NAMED BINDING LIST he ruled for maps on 2026-11-19 ("`(l = left, =right) := X`
+binds `l` to `X.left` and `right` to `X.right`, on any map; `=left` is `left = left`"), applied to a part: the
+binding takes the listed labels of the part as labels of its own (written in its text, so exported and read bare
+inside it), and nothing else of the part. By the same ruled list: a rename `[(y = year) = isodate]`; all of them
+`[(=) = isodate]` (the old public default, now asked for by name); all but one `[(=, _ = month) = isodate]`.
+NOT STATED: a listed name the binding also writes itself (the manager's lean: the same label, last mention, as
+any two groups of one name); whether the part ALSO gets a path name; a listed label is an alias of the part's
+label (same settings, no new capture: a reading).
+
+### 2026-11-22 OWNER RULING — export-list: yes (a binding list on a part label selects which of the part's labels the binding takes); and a direction to clarify bindings against labels
+tags: core/labels/export core/labels/paths core/modules/binding-list core/modules/all-symbols core/modules/leave-out core/conditions/form
+
+Asked "export-list: yes" to enter his proposal `[(=year) = isodate]` as ruled (the spelling a placeholder), with
+the manager's reading of it (the ruled named binding list applied to a part; the table of forms; three readings).
+HIS WORDS, whole (he typed the slug "Export list"):
+
+"Export list: yes. I will say that the form is the same but one is bindings and one is labels. We should clarify
+either they are the same thing but different targets or note their space."
+
+Class: (1) a RULING on the slug: the form `[(=year) = isodate]` is in the language: the left side of a part
+label may be a named list; the binding takes the listed labels of the part as labels of its own (exported; read
+bare inside it) and nothing else of the part. The spelling stays a placeholder. (2) an OBSERVATION and a
+DIRECTION for the documents: "the form is the same but one is bindings and one is labels. We should clarify
+either they are the same thing but different targets or note their space."
+
+The manager's readings, for the fold lane (R-1 of preddef's rulings file) to state and mark: (a) on his
+direction, the documents say: ONE form, the named list, with TWO targets decided by where it stands: left of
+`:=` it defines BINDING names from a map's members (core/modules/binding-list); left of `=` inside a part label
+it defines LABEL names from a part's exported labels; bindings and labels are two name spaces (a bare name left
+of `:` is a label, on the value side a binding: core/conditions/form), and the hide-label warning is where they
+meet; (b) the same ruled list forms carry over: a rename `[(y = year) = isodate]`, several, all `[(=) =
+isodate]`, all but one `[(=, _ = day) = isodate]`; (c) a listed label is an alias of the part's label: the same
+settings and array, no new capture; (d) a listed name the binding also writes itself is the same label (last
+mention); (e) the list form gives the part no path name; (f) only an EXPORTED label of the part can be listed
+(a `_` label or a label the part keeps protected is a compile error at the list).
+
+### 2026-11-22 OWNER, on the two name spaces: "Agree caveat bindings used to scope labels (A.a: 8)"
+tags: core/modules/binding-list core/labels/paths core/conditions/form core/labels/export
+
+Told the sentence the manager chose for his direction (one form, the named list, with two targets decided by
+where it stands; bindings and labels two name spaces: left of `:` a bare name is a label, on the value side a
+binding). HIS WORDS, whole:
+
+"Agree caveat bindings used to scope labels (A.a: 8)"
+
+Class: an AGREEMENT with the sentence ("they are the same thing with different targets"), and a CAVEAT to it: the
+two name spaces are not sealed from each other: a BINDING's name scopes a label (`(A.a: 8)`: binding-prefix,
+call-prefix, ruled today). The manager's wording for the documents, on his caveat (a reading): left of `:` a
+path's LAST step is a label; its earlier steps are sources, each a binding's name, a macro's name or a part
+label; a bare single name there is a label the definition itself writes.
+
+### 2026-11-22 OWNER, an observation: the textually-visible rule solves a label from a used binding hiding another binding
+tags: core/labels/paths/label-reference core/operators/statements core/diagnostics/warnings parked/ideas/label-hygiene core/modules/all-symbols
+
+HIS WORDS, whole: "The textually visible rules solves a problem of a label from a binding reference hiding another
+binding"
+
+Class: an OBSERVATION; nothing ruled. The manager's check against the documents (told to him; a reading): it
+holds. Before label-reference a used binding's label arrived bare, so it could meet a binding of the same name
+(the rule "a binding that hides a label draws a warning", core/operators/statements, `pcrec.label.hidden`); now
+it arrives only as `B.x`, so the only labels that can meet a binding's name are the ones the definition itself
+writes. What remains of the hide-label warning: a label written in the definition against a binding of the same
+name; and for BINDING names, a library adding a name under `(=) := import(..)` (core/modules/all-symbols). For
+the r83 fix lane: restate the hide-label warning's trigger and parked/ideas/label-hygiene accordingly.
+
+### 2026-11-22 OWNER, a question: the kinds of reference ("binding, label, macro argument, capture group name, ?")
+tags: core/operators/bindings core/labels/paths core/labels/backreferences core/labels/numbers core/modules/map core/values/metadata core/conditions/form
+
+HIS WORDS, whole: "So the types of reference are: binding, label, macro argument, capture group name, ?"
+
+Class: a QUESTION (a list to complete); nothing ruled. The manager's answer (told to him; collected from the
+pieces, a reading as a list): his four, plus: a group NUMBER (and `0`, the match so far); a MODULE MEMBER
+(`m.year`, a field by `.`); a METADATA field of a member (`.index`, `.label`); a parameter NAME at a call
+(`sep = ","`); the provided names reserved in call position and the `@` effects; and, under construction, a
+macro VARIABLE (a label parameter, `x:`) and a typed parameter. A table of these (what introduces each, where
+it may be written, what it resolves against) is proposed for the documents: the name table review r82 asked for.
+
+### 2026-11-22 OWNER, on the kinds of reference: "Nothing missed I see"; can some be COMBINED: a capture group name produces a label; macro arg, typed arg, label arg as variations of one thing
+tags: core/operators/bindings core/labels/labels-vs-captures core/labels/numbers core/modules/map core/values/metadata core/labels/paths
+
+After the manager's table of name kinds. HIS WORDS, whole (two messages; the second corrects a word of the first,
+read for the intended "not 'defined' but 'combined'"):
+
+"Nothing missed I see. but I do wonder if some of these can be defined. Maybe, same thing from a different
+perspective. A capture group name produces a label of the same name? A macro arg, typed arg, label arg, are all
+variations on the same thing. Thoughts?"
+
+"Mont "defined" but "combined""
+
+Class: an ACKNOWLEDGEMENT (the list is complete as far as he sees), and a QUESTION with two IDEAS ("I do wonder";
+"Maybe"; "Thoughts?"): kinds that are one thing seen from two sides. Nothing ruled.
+
+The manager's answer (told to him; a view, built on what is ruled): yes, to TWO base kinds. A LABEL: a name for
+a stretch of the match, known at match time; a group in rx text makes one that is ALSO a capture (ruled
+pure-label: a property, not another kind), the label-only group and a part label make one that is not; a group's
+NUMBER is a second name of the same label (ruled: "two names of one label"); a metadata field is a label the
+language provides on a member. A BINDING: a name for a value, known at compile time; a macro's PARAMETER is a
+binding whose value arrives at the call (his "a binding variable not a label"); a label parameter is a parameter
+whose value is a label's NAME, a typed parameter one whose value is an rx with a stated interface; a module
+member is a binding reached through a module; a provided name is a binding the language supplies. And ONE
+operator between them, ruled 2026-11-15: "`.` has one meaning: a field of the map interface of the thing on its
+left". What must NOT be merged: label with binding (match time against compile time; his caveat: a binding
+scopes a label, by position in a path), and a label's value with its capture's value (they part after a loop).
+
+### 2026-11-22 OWNER, on the two-kind view: "I agree with your interpretation. I note that captures can have no label."
+tags: core/labels/labels-vs-captures core/labels/numbers core/operators/bindings core/modules/map
+
+After the manager's view (two base kinds, label and binding, with properties; `.` the one operator between them;
+label not merged with binding, a label's value not merged with its capture's). HIS WORDS, whole (the message
+before it, "Phones... mont = not", confirmed the reading of his correction):
+
+"I agree with your interpretation. I note that captures can have no label."
+
+Class: an AGREEMENT with the view (not asked as a ruling; recorded as agreed framing for the name table), and a
+NOTE: a capture can have no label. The manager's reading of the note (told to him): an unnamed group `( )` is a
+capture with no NAME; the documents give it its NUMBER as a label only where a number is allowed (core/labels/
+numbers, ruled 2026-11-19: one written literal, or an `&` chain with one pattern operand); everywhere else it is
+a capture with no label at all. So "also a capture" and "is a label" are two independent properties: label and
+capture (a named group in a user's literal); label only (a part label, a label-only group); capture only (an
+unnamed group where numbers are refused); neither (a non-capturing group).
+
+### 2026-11-22 OWNER IDEA — program-scoped options: `@options()` setting flags (m, s, n, ...) for the literals of the bindings that follow
+tags: core/patterns/flags core/holes/flags lib/builtin/options core/labels/numbers core/labels/labels-vs-captures parked/ideas/capability-optins core/principles/rx-owns-flags
+
+After the two-kind framing and his note that captures can have no label. HIS WORDS, whole:
+
+"This discussion gave me an idea wrt this as well as options. 1. Using predicate language it's going to be more
+likely to use () in a literal to mean no capturing group. 2. we have options that set those but they don't
+inherit because it would be higgledy-piggledy. 3. What if some options were program scoped. Like "m s n"+ then
+you did a @options() to set them such that literals were interpreted that way in future bindings. 4. Options m s
+really can't be inherited because they change semantics in confusing ways if you don't control them. 5. other
+options?"
+
+Class: an IDEA ("What if"), with two OBSERVATIONS (1: in the predicate language `()` in a literal will more
+often be meant as no capturing group; 2: the options that say so are not inherited, "because it would be
+higgledy-piggledy"), a POSITION on inheritance (4: "Options m s really can't be inherited because they change
+semantics in confusing ways if you don't control them"; with his 2026-11-21 lean "probably going to rule that
+only i is inherited"; today's ruled list at a hole is still `i`, `m`, `s`, flags-scope 2026-11-19), and a
+QUESTION (5: "other options?"). Nothing ruled. Spellings his placeholders.
+
+The manager's view (told to him; nothing folded; the subject is frozen for review r83): for it. A program-scoped
+option is LEXICAL: a literal's meaning is fixed by where it is WRITTEN, which the reader sees above it, never by
+where it is used: the same stance as "bindings define scope", label-reference and rx-owns-flags, and the opposite
+of inheritance at a hole. What it would need stated: it applies to literals written after the statement in the
+SAME FILE and never reaches into an imported library (a pinned library cannot change meaning by its importer); a
+flag a literal writes for itself still wins; an inserted literal carries its own file's defaults into a hole.
+Candidates beyond `m s n` (his question 5): `x` / `xx` (how the literal's TEXT is read: the clearest case, and
+refused at a hole today); `i` as a default; `J`; `U`; and the non-PCRE settings of the same kind the documents
+already have or park: the `&`-in-rx-text switch (core/patterns/literals: "by a module or option"), the warning
+selectors and strictness, the capability opt-ins. With `n` as a program default the cell "a capture with no
+label" (an unnamed group) mostly empties, and the open number questions (number-in-loop) lose their subject.
+
+### 2026-11-22 OWNER RULING — program-options: yes; and a PROPOSAL: `i` keeps inheriting, with a "weak" value the program sets
+tags: core/patterns/flags core/holes/flags core/holes/flags/in-filter lib/builtin/options core/principles/rx-owns-flags lib/modifiers/any-case
+
+Asked "program-options: yes", put as: "the lexical file scope above, starting with `m`, `s`, `n`, `x`; never
+across an import; a literal's own flags win" (the scope above: the setting applies to literals written after the
+statement, in the same file; an inserted literal carries its own file's defaults into a hole). HIS WORDS, whole:
+
+"program-options: yes.
+Proposal: Keep i inherited for now but this could set the "weak" value for i. By that I mean i has three
+settings: on, off, weak on, weak off. On and off are explicit and set the inheritance from there down the hole:
+Whatever was inherited is ignored. With no program specification, it's weakly case sensitive. Program
+specification can set weakly case insensitive. That will inherit as well but can easily be changed by an
+explicit i setting up the hole. Ask if clarification needed"
+
+Class: (1) a RULING on the slug: program-scoped options exist: a statement (placeholder `@options(..)`) sets
+flags for the literals written after it in the same file; starting with `m`, `s`, `n`, `x`; never across an
+import; a flag a literal writes for itself wins. (2) a PROPOSAL ("Proposal:"; "for now"; "could"): `i` stays
+inherited at a hole, with FOUR values (he writes "three settings" and lists four): on and off, EXPLICIT (written
+in a literal), which "set the inheritance from there down the hole: Whatever was inherited is ignored"; weak on
+and weak off, the DEFAULT: with no program specification "weakly case sensitive"; a program specification "can
+set weakly case insensitive", which "will inherit as well but can easily be changed by an explicit i setting up
+the hole". Not ruled. (3) an INVITATION: "Ask if clarification needed".
+
+The manager's reading of the proposal (told to him): the `i` in force at a point is the NEAREST explicit setting
+on the way up (in the literal, then up through each hole); with no explicit setting on the way, a weak value.
+ONE clarification asked (weak-meets-weak): WHICH weak value, when a program that sets weakly insensitive inserts
+a literal from a library file that sets nothing (or sets its own): (a) the program's weak value flows into the
+library's literal; (b) the library's literal keeps its own file's weak value. RUN (hand-lowered, python `re`;
+program: weak on, `/id-${word}/`, word := `/[a-z]+/` from a library file that sets nothing; outputs pasted):
+(a) the program's weak value flows into the library's literal: WHOLE `id-abc` HOLDS / WHOLE `ID-abc` HOLDS / WHOLE `ID-ABC` HOLDS / SEARCHED `x ID-ABC id-abc` `ID-ABC`@2 / FIND-ALL `id-ab ID-AB Id-ab` [`id-ab`@0, `ID-AB`@6, `Id-ab`@12]
+(b) the library's literal keeps its own file's weak value: WHOLE `id-abc` HOLDS / WHOLE `ID-abc` HOLDS / WHOLE `ID-ABC` FAILS / SEARCHED `x ID-ABC id-abc` `id-abc`@9 / FIND-ALL `id-ab ID-AB Id-ab` [`id-ab`@0, `Id-ab`@12]
+
+### 2026-11-22 OWNER, on weak-meets-weak: "Consider this: weak settings do not propagate."
+tags: core/patterns/flags core/holes/flags lib/builtin/options core/principles/rx-owns-flags
+
+Asked **weak-meets-weak** ((a) the program's weak value flows into a library's literal; (b) the library's
+literal keeps its own file's weak value; the manager's leaning (a), on his words "That will inherit as well").
+HIS WORDS, whole: "Consider this: weak settings do not propagate."
+
+Class: a PROPOSAL to consider ("Consider this"): it changes his own sentence of the entry above ("That will
+inherit as well") to its opposite for the weak values; the answer is (b) in the question's terms. Not yet
+entered as a ruling: put back to him as hole-flags with its consequences.
+
+The manager's view (told to him): agreed, and leaning (a) is WITHDRAWN. With it the picture has no exception: a
+weak value is the file's default for the literals written in that file (a program option like `m`, `s`, `n`,
+`x`: lexical, never across an import, never through a hole); only an EXPLICIT `i` or `-i` written in a literal
+is inherited down a hole, replacing whatever was in force, until a nearer explicit setting. Its answers are the
+(b) line of the entry above (WHOLE `ID-ABC` FAILS for a library `word` under a weakly insensitive program; the
+program writes `/(?i)id-${word}/` to reach it). What his words do not yet say, asked with it: `m` and `s` at a
+hole (ruled inherited on 2026-11-19; his point 4 today: "really can't be inherited").
+
+### 2026-11-22 OWNER RULING — hole-flags: yes to all (weak values do not propagate; only an explicit `i` is inherited at a hole; `m` and `s` are no longer inherited)
+tags: core/patterns/flags core/holes/flags core/holes/flags/in-filter lib/builtin/options core/diagnostics/warnings lib/modifiers/any-case core/principles/rx-owns-flags
+
+Asked **hole-flags** as one ruling in three parts: "1. Weak values do not propagate; they are the file's default
+for its own literals. 2. At a hole, only an explicit `i` or `-i` is inherited. It replaces what was in force. 3.
+`m` and `s` are no longer inherited at a hole. This reverses the list of the 19th, by your point 4. A pattern
+that needs them writes them, or its file sets them as program options."; shown the weak example (program weakly
+insensitive, a library `word := /[a-z]+/`: `/id-${word}/` WHOLE `ID-ABC` FAILS; `/(?i)id-${word}/` HOLDS) and the
+`s` example (`/(?s)a${dot}b/`, dot := `/./`: WHOLE `a\nb` HOLDS today, FAILS when `s` is not inherited). HIS
+WORDS, whole:
+
+"hole-flags: yes to all. What i like about the i weak behavior is that it's consistent to the other program
+level settings that only affect literals in program scope."
+
+Class: a RULING on all three parts, and his REASON for the weak behaviour: "it's consistent to the other program
+level settings that only affect literals in program scope." So: (1) `i` has a WEAK value per file (weakly
+case-sensitive unless a program option sets weakly insensitive), the default of the literals written in that
+file; it does not propagate through a hole or across an import; (2) at a hole only an EXPLICIT `i` or `-i`
+(written in a literal) is inherited; it replaces what was in force, down the hole, until a nearer explicit
+setting; (3) `m` and `s` are not inherited at a hole. It REVISES flags-scope / flags-propagate (2026-11-19:
+"`i`, `m`, `s`") and, with it, the examples of core/holes/flags and core/holes/flags/in-filter that rest on an
+inherited flag (those with an explicit `(?i)` stand); his proposal of four `i` values is thereby ruled in this
+form (on and off explicit; weak on and weak off the file's default).
+
+The manager's readings, for the fold lane to test and mark: (a) "explicit" is a flag written in a literal's
+text (`(?i)`, `(?-i)`, `(?i:..)`, `/.../i`) with PCRE's scope inside that literal; `any_case(rx)`'s body writes
+one; a program option is never explicit; (b) the sides of an `&` inside a hole (flags-in-filter, 2026-11-19)
+inherit by the same rule: an explicit `i` only; the warning `pcrec.flags.filter` keeps its trigger; (c) `x`,
+`xx`, `n`, `U` stay not inherited (as ruled); `J` unchanged; (d) the program options `m`, `s`, `n`, `x` and the
+weak `i` are one table: lexical, the file's own literals, from the statement on; (e) a binding of the SAME file
+inserted in a hole of that file has the same defaults, so nothing visible changes there.
+
+### 2026-11-22 MANAGER — review r83 (preddef1122): dispositions ruled; one correction; idiom-confirm closed on default-export (no owner words)
+tags: core/labels/export core/labels/paths core/labels/flow core/holes/labels core/labels/export/flat-read-outside core/modules/binding-list core/conditions/form lib/search/hits lib/search/occurrences core/diagnostics/errors
+
+Review r83 (design mode; five opus lenses, one of them the NAMES grid, and an opus verifier over the fold of
+default-export and export-list, diff 30ca2520d..3e58abe9e; draft `$PCREC_TMPDIR/scratch/crit-preddef1122/
+review.md`; verifier 13 HOLDS, 2 PARTLY; every printed line re-derived agrees; no undeclared red in the
+evidence). The manager's dispositions, by the draft's ids; every one is the manager's, none an owner ruling:
+
+- A1, A2, A7 (the evidence engine accepts what the text refuses: the `&` ambiguity on a read from outside,
+  through a part label over an `&` chain and through an export list across `&`; an export list through a call
+  whose body uses its argument alone; bare `$h` and `h[2]` across `&`): FIX-NOW in a successor model, with one
+  printed refusal line per shape and the error-table rows.
+- A3: FIX-NOW BEFORE the owner is asked argument-default: "The match is the same under both" corrected (false
+  when a body uses its argument both alone and labelled; the two-use run line printed); the cost of the (error)
+  answer across the provided library stated.
+- A4: FIX-NOW, the manager's reading: a read from OUTSIDE a binding sees its EXPORTED settings only; a source the
+  binding keeps protected does not exist for that read (so it neither supplies a value nor makes an `&`
+  ambiguity); a run line.
+- A5: FIX-NOW, the manager's reading: a binding's own name reaches its UNLABELLED uses only; a labelled use is
+  reached by its label; where a part label written in the definition has the binding's own name, the label wins
+  (with the hide-label warning).
+- A6: FIX-NOW: "a call exports what its body exports (core/labels/export statement 3)".
+- A8: FIX-NOW: the dependents marked and listed under argument-default; the manager's reading: a read written
+  INSIDE an argument beside the argument's own group is the caller's own text, legal under both candidates;
+  closed-argument's reading (a) re-worded as awaiting argument-default.
+- D1, D3, D5, D6, D7, D9, D10, D11, D12, D13, D14, D18: FIX-NOW as proposed (D3: ONE statement in
+  core/labels/export: "an unlabelled use carries the implicit label of the binding's name, protected", the other
+  pieces point at it; D6: every reading printed as a rule is marked, his caveat classed AGREEMENT, the citations
+  of readings "(g)/(h)" corrected to the letters the record has).
+- D2: FIX-NOW, with CORRECTION 1 below.
+- D4: (i) FIX-NOW, a reading: a part label over an EXPRESSION written in the definition reads, inside the
+  definition, the labels visible in that expression by the inside rules, and exports outward only what that
+  expression's own text exports; (ii) FIX-NOW, one sentence: a macro's parameter is not a part whose labels the
+  body may name (ruled 2026-11-21; statement 2 does not license `rx.d`); (iii) the label-only group around an
+  argument (`(?<:hit>${x})`: do `hits` and `occurrences` export their argument's labels as `h.hit.g`) joins the
+  OWNER QUESTION argument-default as its library face; (iv) natives: PLAN (trigger: the first native given a
+  body or an interface).
+- D8: FIX-NOW: the sentence in core/holes/labels marked "(awaits capture-export)"; the top level stated as a
+  reading (at the top nothing is outside: the program's own text and the parts it uses alone are both visible
+  to it).
+- D15, D16: PLAN (the access grid and the one-form table at the next full revision); NOW: `[=A]` added to the
+  table of the ways a part is used; the cross case `(=year) := isodate` and a collision between two lists stated
+  as readings (the cross case a compile error for now; a collision the same label, last mention).
+- D17: RULED BY THE RECORD, see below. E1, E2: FIX-NOW in the successor model. E3: NOTED.
+- S1 (the general form as a principle piece): PLAN: a principle needs his words; told to him as a view.
+- Process: the NAME-GRID check (one cell per spelling x occurrences x read kind, each naming its deciding
+  sentence and a run, undecided cells printed) is ACCEPTED and goes into the successor model in this fix lane;
+  the proposed skill edits go to main.
+
+CORRECTION 1 (review D2): the entry "2026-11-22 OWNER RULING — default-export: protected" names hole-export and
+statement 3 as reversed. It ALSO narrows two earlier rulings it does not name: label-flow (b), 2026-11-17 ("a
+compose and a literal rx have the same label behavior"), and bare-nested-scope case 2, 2026-11-21 (the identity
+"holds for what the user sees"): a binding composed from parts used alone exports nothing, where the same text
+written as one literal exports its groups (`D1 := A SEQ B` against `D2 := /(?<c>\d)(?<c>\d)/`). This is a
+consequence of the ruling, the manager's reading; told to the owner.
+idiom-confirm CLOSED on the record (review D17): the statement put to him before he ruled "default-export:
+protected" was "a part used bare is available locally as `A.h` but exports nothing", and his analogy gives the
+part used alone local access. That IS the one-use plain read through the binding's name; so `isodate &
+(isodate.year: < 2100)` at the top, where isodate is used alone, is ruled legal by default-export, and his
+2026-11-17 point 4 is revised by it. Told to him; not asked again.
+
+### 2026-11-22 OWNER, on argument-default: "would it change if the macro was B([a = A]) then a.d"
+tags: core/labels/paths core/labels/export core/holes/labels core/operators/bindings
+
+Asked **argument-default** (with B(rx) := `/${rx}xx/` using its argument alone, is the caller's `A.d` in `C :=
+B(A) & (A.d: <100)` (local) the caller's own read, legal, or (error) a compile error until the macro passes the
+label on; the two-use table where the candidates give different answers; the manager's leaning (error), with the
+transparent provided macros writing `[(=) = rx]`). HIS WORDS, whole:
+
+"argument-default: would it change if the macro was B([a = A]) then a.d"
+
+Class: a QUESTION on the question (the caller labels the argument at the call: `C := B([a = A]) & (a.d: <100)`);
+nothing answered on the slug. The manager's answer (told to him; from the rules, no matching run): it changes the
+SPELLING, not the question. `a` is a part label C writes, so the letter of label-reference is met ("a part label
+it writes"), and two arguments of one binding become distinguishable (`B([a = A], [b = A])`, `a.d` against
+`b.d`); but the part `[a = A]` is still handed to B, which still uses it alone, so where and whether its `d` is
+set is still B's doing: `a.d` and `A.d` are legal or refused together under either answer, and under
+closed-argument (ruled) both are errors where B closes the argument.
+
+### 2026-11-22 OWNER RULING — argument-default: an error; and his reason: a label is to the SPOT in the pattern, a parameter is a template, not a piece of the pattern
+tags: core/labels/paths core/labels/export core/holes/labels core/operators/bindings core/holes/bare-condition/nested-scope core/principles lib/control/peek lib/search/hits lib/search/occurrences
+
+Asked **argument-default** ((local) the caller's `A.d` in `C := B(A) & (A.d: <100)`, B(rx) := `/${rx}xx/`, is the
+caller's own read; (error) a compile error until the macro passes the label on; and, from his question, a
+middle (labelled): read only through a label the caller writes on the argument, `B([a = A])`, `a.d`). HIS WORDS,
+whole:
+
+"argument-default: for me this is an error. I'm just trying to articulate why it's an error other than form. I
+get that it might not end up in the pattern. I think for me it has to do with whether or not it's definitively
+part of the pattern being constructed or if it's a parameter to it. B(rx) := you can't take a label against rx
+directly. You can take a label to the spot that rx gets laid into the regex. The label is not to the regex
+abstractly, it's to the spot in the pattern where the regex is being inserted. A parameter like rx in a call
+B(rx) cannot be labeled because it's not being placed into the pattern. It's not a piece of the pattern. It's a
+template of the rx that might be placed into the pattern."
+
+Class: (1) a RULING on the slug: (error): the caller's read of an argument's label by the argument's name (`A.d`
+for `B(A)` whose body uses `rx` alone) is a compile error. It REVISES his example 1 of 2026-11-21 ("C := B(A) &
+(d: <100) is legal. C can see d as a flat look into A") and settles call-prefix case 2 and closed-argument's
+"visible through the call" in the strict sense: visible only where the macro's body puts a label on the spot (his
+example 3, `[dd = rx]`) or passes the labels on. (2) his REASON, a PRINCIPLE in his words (stated while "trying
+to articulate why"; recorded as a principle he stated, the name the manager's): "The label is not to the regex
+abstractly, it's to the spot in the pattern where the regex is being inserted."; an argument "is not a piece of
+the pattern. It's a template of the rx that might be placed into the pattern."
+
+The manager's readings, for the fold lane to test and mark: (a) the middle (labelled) is refused by his words:
+"A parameter like rx in a call B(rx) cannot be labeled": a part label written ON an argument at a call (`B([a =
+A])`) labels a template, not a spot: a compile error (the reading taken, told to him); (b) the same for a group
+written in an argument passed in place (`B(/(?<d>\d)/) & (d: <5)`): the caller cannot read `d` by itself; this
+answers the first shape of two-sources (the body's `d` is the only one the caller reaches, as `B.d`); (c) a
+condition written INSIDE the argument beside its own group (`occurrences(/(?<n>\d+)/ & (n: <100))`) travels
+with the template and stays legal; (d) a spot the macro's body labels exports the argument's exported labels
+through that label (`B.dd.d`; export statement 3); the label-only `hit` in `hits` / `occurrences` is such a
+spot (`hits.hit.g`); (e) a binding used alone in a definition IS placed: its name stands for its spot there
+(binding-prefix), which is why one use reads plainly and several are ambiguous; (f) NOT STATED, to be asked
+(wrapper-export): the provided macros that use their argument alone (`peek`, `atomic`, `when`, `list_of`, the
+gap bodies): `peek`'s ruled piece says "Labels A sets are readable after it" (2026-11-18); under this ruling no
+caller spelling reaches them unless the body passes them on.
+
+### 2026-11-22 OWNER RULING — wrapper-export: agree (a) (the provided wrappers pass their argument's labels on); and a question: do transforms in general
+tags: lib/control/peek lib/control/atomic lib/control/when lib/records/list-of lib/search/contains lib/modifiers/padded lib/modifiers/quoted lib/search/anchored lib/rx/repeat core/labels/export/export-list
+
+Asked **wrapper-export** ((a) the provided macros that use their argument alone, `peek`, `atomic`, `when`,
+`list_of` and the gap bodies, pass its labels on by an export list on the spot, `peek(A) := /(?=${[(=) = A]})/`,
+the caller reading `peek.d`; (b) they stay as written and `peek`'s sentence "Labels A sets are readable after
+it" is withdrawn; the manager's leaning (a)). HIS WORDS, whole:
+
+"wrapper-export: agree (a). I was worried you'd say peek() doesn't work. It's just a definition change. Do
+transforms in general then pass their labels on? Padded, etc."
+
+Class: (1) a RULING on the slug, answer (a) ("agree (a)"): those provided bodies write the export list on the
+spot where the argument is placed; `peek`'s ruled sentence of 2026-11-18 stays true, read as `peek.d`. With an
+OBSERVATION ("It's just a definition change"). (2) a QUESTION: "Do transforms in general then pass their labels
+on? Padded, etc.": not ruled; the manager's answer below, put back to him as transform-export.
+
+The manager's answer (told to him; a view): yes, as ONE convention for the provided library: a provided body
+that PLACES its argument in the match passes that argument's labels on, by the export list on each spot, unless
+its piece says otherwise: `padded`, `quoted`, `anchored`, `any_case`, `contains` / `startsWith` / `endsWith`,
+`rx.repeat`, `capture`, beside the four ruled above. Not covered by "places": an argument used only as a
+FILTER or under a complement (a complement's labels are never visible, ruled), the set arguments (`between`,
+`prefix_in`), the natives with no body. Cases to state: two spots of one argument (`list_of`, `padded`'s width
+form: the same names, read by the label rules: last mention, or the branch taken); several arguments (`when`:
+a name two of them hold is one label by the same rules); a looped spot (`rx.repeat`, `occurrences`: the label
+rules of a loop; the array for a group question); `hits` / `occurrences` keep the path through `hit`.
+
+### 2026-11-22 OWNER RULING — transform-export: yes (a provided body that places its argument passes its labels on); and two definitions he writes: `hide`, `identity`
+tags: lib/modifiers/padded lib/modifiers/quoted lib/search/anchored lib/search/contains lib/rx/repeat lib/structural/capture lib/control/peek core/labels/export/export-list core/labels/export parked/ideas/user-doc-traps
+
+Asked "transform-export: yes" for the convention: "A provided body that places its argument in the match passes
+that argument's labels on, by the export list on each spot, unless its piece says otherwise" (covering `peek`,
+`atomic`, `when`, `list_of`, `padded`, `quoted`, `anchored`, `any_case`, the gap bodies, `rx.repeat`, `capture`;
+leaving out an argument used only as a filter or under a complement, set arguments, the natives; the stated
+cases: two spots of one argument, several arguments, a looped spot, `hits` / `occurrences` through `hit`). HIS
+WORDS, whole:
+
+"transform-export: yes.
+hide(x) := /${x}/
+identity(x) := /${[(=) = x]}/"
+
+Class: (1) a RULING on the slug: the convention holds for the provided library ("a convention for provided
+bodies only, so no language rule moves", as put to him). (2) two DEFINITIONS he writes, with no words on them:
+read as the two cases of the day's rulings in their smallest form (the reading taken, told to him): `hide(x) :=
+/${x}/` uses its argument alone, so its call exports none of the argument's labels (default-export;
+argument-default); `identity(x) := /${[(=) = x]}/` passes all of them on (export-list; wrapper-export). Checked
+against the rules as ruled (no matching run: both match exactly what `x` matches; what differs is what the call
+exports): correct. NOT ruled as provided NAMES: whether `hide` and `identity` join the library is his to say;
+they go into the convention's piece as its worked pair and onto the user-documentation list.
