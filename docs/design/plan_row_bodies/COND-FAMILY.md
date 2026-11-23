@@ -8346,3 +8346,40 @@ The manager's readings (each marked, none ruled; told to him):
   name-hole example (`n := "d"`) would be re-spelled; the ruling itself (an array is a compile error) stands.
 - (e) Approach 2 keeps the body naming by string (every k-restriction stays), needs ambiguity-per-name for
   several calls, and meets value-left: left of `:` anything but a name or path is a VALUE today.
+
+### 2026-11-23 OWNER, on approach 1 (a macro takes a label): "lets tentatively work with it"; label-parameter-twice "seems" answered by the same-label-twice rules
+tags: core/operators/bindings/label-variables core/labels/one-rule core/labels/labels-vs-captures/array-vs-passes core/labels/flow lib/json/members
+
+HIS WORDS, whole: "lets tentatively work with it. it seems like label-paramter-twice is answered by standard same
+label twice rules"
+
+Class: a LEAN / working direction ("tentatively"), NOT a ruling: approach 1, the label parameter, is the form the
+discussion works with; and an OBSERVATION ("it seems") that one label placed twice follows the standard rules
+for a label mentioned twice. The piece stays under construction.
+
+The manager's readings, RUN (a path model, `$PCREC_TMPDIR/scratch/pred/label_param_twice.py`; A(l:) :=
+`/(?<:${l}>\d+)/`, the program `A(x:) SEQ "," SEQ A(x:)` with each test), each a reading for the fold to test:
+- the plain read is the last mention: `& (x: 5)`: WHOLE `7,5` HOLDS, `5,7` FAILS, `5,5` HOLDS / SEARCHED
+  `5,7 7,5` `7,5`@4 / FIND-ALL `7,5 5,7 1,5 5,5` [`7,5`@0, `1,5`@8, `5,5`@12]
+- a group question reads both settings: `& some((x: "5"))`: WHOLE `7,5` HOLDS, `5,7` HOLDS, `7,7` FAILS /
+  SEARCHED `7,7 5,7` `5,7`@4 / FIND-ALL `7,5 5,7 1,2 5,5` [`7,5`@0, `5,7`@4, `5,5`@12]
+- the index is in order: `& (x[1]: 5)`: WHOLE `7,5` FAILS, `5,7` HOLDS / SEARCHED `7,5 5,7` `5,7`@4 / FIND-ALL
+  `7,5 5,7 1,5 5,5` [`5,7`@4, `5,5`@12]
+- across `&` (`A(x:) & A(x:) & (x: 5)`) the plain read is the ambiguous reference, a compile error
+  (core/labels/flow), hand-worked from the rule, no run.
+
+The JSONL exercise under approach 1 (the manager's sketch; the same hand-lowered model re-run, the same answers,
+the labels now the caller's own):
+    row(l:, k, v) := /\{(?:${member_any},)*${ws}"${k}"${ws}:${ws}(?<:${l}>${v & value})${ws}(?:,${member_any})*\}/
+    line := json.row(ts:,   "ts",    quoted(tsdate))
+          & json.row(lvl:,  "level", quoted("error"))
+          & json.row(msg:,  "msg",   json.string & contains("timeout"))
+          & json.row(user:, "user",  json.value)
+          & (json.row(host:, "host", json.value) | anything)
+    capture(line.ts)  capture(line.user)  capture(line.host)
+    /^${line}$/m
+What it changes among the exercise's findings (readings): finding 1 (a label named by an argument) and finding 2
+(per-macro ambiguity) do not arise; the four `[(=) = ..]` lists go; a key that is no legal name is no obstacle.
+Left: findings 3 (a label inside an argument: bind and export first), 4 (the optional member), 5 (capture
+details), 6, 7. New questions it raises: must every call pass the label (`lvl:`, `msg:` are never read); a label
+the body never places; a label pre-defined as a symbol.
