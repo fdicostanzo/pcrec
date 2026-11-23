@@ -1,6 +1,6 @@
 # memfn kit — wake-up brief
 
-Updated 2026-11-22 15:15 by the kit session IN FLIGHT. Main (pcrec-main) is up.
+Updated 2026-11-22 19:40 by the kit session IN FLIGHT. Main (pcrec-main) is up.
 
 ## Who you are
 The kit manager (`/pcrec-memfn-manager`). The ledger and journal branch is worktrees/memfn on lane/memfn-k1108.
@@ -16,23 +16,14 @@ The kit manager (`/pcrec-memfn-manager`). The ledger and journal branch is workt
 4. docs/dev/reviews/2026-11-22-r78-memfn-bsu4.md and r79-memfn-bsu5.md (MANAGER RULING at the top of each).
 
 ## CURRENT STATE: R-47 / D201, the block span at the SIMD layer
-- **U1, U2, U2b and U3 are LANDED on main.** U3 landed at abi 111. L3 then lands at 112; main is landing it now.
-- **U4 (checks only) is DELIVERED:** kit branch 3e62406e2, validated at 0eceaaee1 (742/743 GREEN).
-  - Main lands U4 after L3, with a cloud test on the merge, and will tell the kit both landings.
-  - After that, merge main into lane/memfn-k1108: `git merge` ALONE, then make strict.
-- **U5 is built, reviewed (r79, FIX FIRST) and fixed.**
-  - Branch: lane/bsu5fix @ 36548a3a9. It is built on lane/bsu5 28b2da326.
-  - What it holds: card C6 plus the clang/gcc -Os card C6c; kit-grid@8 UNMEASURED; formhash span folded into WINDOW with 3 span-vector instances; c6_rule.md committed (sha 9a2875a6bf089837).
-  - 746 make test is GREEN, and 747 mech (S2930/S2931/S2933) is GREEN.
-  - **748 kit-bsu5fix-selftest is RUNNING** (the full cards.py selftest, ~90 min at the base too, cap 7200). It started 15:12, so expect it around 16:45. Log: /var/tmp/pcrec-pcrec/scratch/bsu5fix/selftest_full.log.
-  - When it is GREEN:
-    1. `git -C worktrees/memfn merge --no-ff lane/bsu5fix`, ALONE;
-    2. make strict;
-    3. if main moved, merge main too, then a tip test + mech job on a DETACHED worktree (the U4 pattern: worktrees/u4tip);
-    4. a [responses] done (partial) R-47 U5 line;
-    5. SendMessage main.
-  - Pass along the [BSPAN-CLANG-DIFF] status for main: C6c covers clang -O2 + gcc -Os, SIMD-off, non-PIC. clang -O3 and -fPIC are named gaps.
-  - The base's ~90-min selftest is pre-existing; the df-cache speedup is NOT built.
+- **U1-U4 are LANDED on main** (U3 at abi 111; L3 at 112; U4 merge 7af611f1e, pushed). Main is merged into the kit branch at 26ef32ad5 (critics.md conflict unioned; make strict ok).
+- **U5 is DELIVERED** ([responses] done (partial) 6a0633259). It is the merge 988ddf804 of lane/bsu5fix2 412afe9f5: r79 fixed; 746/747 GREEN at de36c27c9; 749 full selftest GREEN (222/0) at 412afe9f5.
+  - **Tip validation is queued on the detached worktree u5tip @ 26ef32ad5.** Both jobs declare not-before 2026-11-23T01:00 and carry a 01:00-18:15 clock gate:
+    - 750 kit-u5tip-test (log /var/tmp/pcrec-pcrec/scratch/u5tip/maketest.log);
+    - 751 kit-u5tip-mech (18 U2-U5 rows).
+  - When both are GREEN: SendMessage main "U5 at 26ef32ad5", and main lands it in the morning. On a RED: a triage lane.
+  - [FH-INTRIN] is filed on main (r79 F15).
+  - Main's cloud full suite on b204ffd8c runs tonight (cloud only).
 - **Then U6 (review r80):**
   - the abi package at the landing base, if any byte moves (U4/U5 moved none);
   - make test-axes;
@@ -47,7 +38,7 @@ The kit manager (`/pcrec-memfn-manager`). The ledger and journal branch is workt
   - "dense-not-target: close".
   - d3-repin-permission granted; lanes may re-pin; the kit ruled YES on the span_seed rows.
 - **Sabotage ids:** S3540 and S3542-S3545 are bsu4fix's (S3541 is main's). S3546-S3549 are bsu5's, S3550-S3554 bsu5fix's; the next free id is S3555. Ledger: worktrees/.mgr/sabotage_ids.txt.
-- **Prunable once landed (scripts/wtprune):** bsu3, bsu3fix, bsu4g, bsu4p, bsu4, bsu4fix, u4tip, bsu5, bsu5fix.
+- **Prunable once landed (scripts/wtprune):** bsu3, bsu3fix, bsu4g, bsu4p, bsu4, bsu4fix, u4tip, bsu5, bsu5fix, bsu5fix2, u5tip (after 751).
 - **OWED (older):**
   - the g2 win-family triage lane;
   - re-sync the rampfix 712 harness;
