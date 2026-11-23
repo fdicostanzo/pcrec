@@ -8567,3 +8567,30 @@ The manager's readings (marked): (a) it would REPLACE capture-twice (a) and answ
 PCRE's carried value; (b) it removes the seam the manager flagged (one group returning one value as a one-literal
 program and another once composed): "The CAPTURE is regex's" is already the core's sentence; (c) across `&`,
 which PCRE does not have, "pattern order" would be left then right, his left-decides; not stated by him.
+
+### 2026-11-23 OWNER, an alternative to capture-as-pcre: `capture(@x.year)`, an array capture; "thoughts?"
+tags: lib/structural/capture core/labels/labels-vs-captures core/labels/labels-vs-captures/array-vs-passes core/labels/export/capture-export core/spellings/placeholders
+
+Asked **capture-as-pcre** (requested captures follow PCRE's rules for several groups of one name and for loops,
+replacing capture-twice (a) and closing capture-loop-value as the carried value; the manager's leaning: yes). HIS
+WORDS, whole:
+
+"capture-as-pcre: one alternative is to allow capture(@x.year) specifying arrays to get that behavior. thoughts?"
+
+Class: an ALTERNATIVE for discussion (a PROPOSAL; "thoughts?"); nothing ruled; capture-as-pcre not answered. The
+spelling `@x.year` is his placeholder for the array of a name's settings (the documents' placeholder is
+`x.@a`): for the spellings review.
+RUN (python `re`; `/(?:(?<h>\d)?;)+/`): WHOLE `3;4;;` carried `4`, label unset, array [`3`, `4`]; `3;;` carried
+`3`, label unset, array [`3`]; `3;4;` carried `4`, label `4`, array [`3`, `4`] / SEARCHED `x3;4;;` `3;4;;`@1
+(carried `4`, label unset, array [`3`, `4`]) / FIND-ALL `3;4;; 7; ;` [`3;4;;`@0, `7;`@6 (carried `7`, label `7`,
+array [`7`]), `;`@9 (carried unset, label unset, array [])].
+The manager's thoughts (told to him; marked): (a) it mirrors the two reads the language already has of one name,
+the label and the array (array-vs-passes): `capture(x)` hands the caller what `(x: ..)` reads, `capture(@x)` what
+the group questions and `x[k]` read; no third rule set (PCRE's duplicate-name and carried rules) enters composed
+programs; capture-twice (a) stands and capture-loop-value closes as the label; (b) the array holds MORE than
+PCRE's rules give (every setting, in order); PCRE's carried value is recoverable from it where one group sets the
+name, so nothing is lost; (c) an array capture is a new thing for the ARTIFACT (a list of stretches per name; a
+match-API matter of pcrec proper, with a matching cost): its meaning can be acknowledged and its build left
+under construction; a line for main; (d) the seam stays: one literal alone returns PCRE's carried value, the
+same group requested in a composed program returns the label; the manager's leaning moves from capture-as-pcre
+to this alternative for reason (a).
