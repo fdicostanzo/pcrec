@@ -9933,3 +9933,8 @@ an argument is not a part of the CALLER's pattern, so the caller has no door thr
 doors are the body's (`B.p.d` through a spot it labels, `B.d` where it lists). The restated rule's line 2 is
 corrected accordingly ("a part placed in YOUR OWN definition"). Because it reverses a ruled answer, it is put to
 him as a ruling: slug spot-read-name.
+RUN for spot-read-name (python `re`, hand-lowered; B(rx) := `/${[p = rx]}-(?<d>\d)/`, A := `/(?<d>\d)/`; output
+pasted): `B(A) & (B.p.d: <5)`: WHOLE `7-3` FAILS, `3-7` HOLDS, `3-3` HOLDS / SEARCHED `7-3 3-7` `3-7`@4 /
+FIND-ALL `7-3 3-7 1-2 9-9` [`3-7`@4, `1-2`@8] (the answers the documents print today for `A.d`).
+`B(A) & (B.d: <5)`: WHOLE `7-3` HOLDS, `3-7` FAILS, `3-3` HOLDS / SEARCHED `7-3 3-7` `7-3`@0 / FIND-ALL
+`7-3 3-7 1-2 9-9` [`7-3`@0, `1-2`@8] (the body's own `d`).
