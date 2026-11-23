@@ -10080,3 +10080,26 @@ label-parameter-omitted (2026-11-23: "`[l = B]` with `_` is `[_ = B]`") is WITHD
 unspecified-rule; they differ for the shorthand of binding-as-label: with no label made, the caller's `P.d` is
 legal; with the blank mark made, it is not.
 Main's reply the same hour: P-26 merged; review number r88 reserved for the next fold (predfold1123b).
+
+### 2026-11-23 OWNER, on label-doors: "the only piece left is would the nesting order of the labels matter? By my reading no"
+tags: core/labels/paths core/labels/export core/labels/export/arguments core/principles/label-names-spot core/operators/bindings/label-variables
+
+HIS WORDS, whole: "label-doors: the only piece left is would the nesting order of the labels matter? By my
+reading no"
+
+Class: a QUESTION with his own READING ("By my reading no"); label-doors is otherwise accepted by implication
+("the only piece left"), NOT yet ruled: the reading taken, told to him, is that one yes to the rule with this
+piece added closes it.
+The manager's answer (told to him; marked): agreed for the VALUES in every case (both labels are on the same
+stretch). For PATHS it needs one sentence the documents do not have. Today a path goes "each step passed by the
+previous one" (core/labels/export statement 3), so with `[n = [_x = P]]` the caller's `n.d` would have to pass the
+body's private `_x`, which exports nothing, while with `[_x = [n = P]]` it would not: the order WOULD matter. His
+reading follows from his principle that a label names a SPOT (label-names-spot) and from "there may be other
+doors": labels stacked on one spot, nothing between them, are equal names of that spot; each is its own door to
+what the spot holds; one of them being private or blank closes only itself.
+RUN (python `re`, lowered mechanically, a part label modelled as a named group; P := `/(?<d>\d)\d/`; output
+pasted): `[n = [_x = P]] & (n.d: <5)` is `(?P<n>(?P<_x>(?P<d>\d)\d))`: WHOLE `37` HOLDS, `73` FAILS, `3` FAILS /
+SEARCHED `73 37` `37`@3 / FIND-ALL `37 73 14` [`37`@0, `14`@6]; `[_x = [n = P]] & (n.d: <5)` is
+`(?P<_x>(?P<n>(?P<d>\d)\d))`: the same answers in every mode; n and `_x` equal on every match in both.
+Put to him as the ruling label-doors, five lines (the four, and "labels stacked on one spot are equal names of
+it; their order does not matter").
