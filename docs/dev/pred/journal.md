@@ -892,3 +892,19 @@ built, values returned for fields not searched on, run on a hand-lowered model; 
 time. wake.md REWRITTEN from scratch (the pain points first). IN FLIGHT AT THIS ENTRY: critic round r84
 (coordinator `crit-predspot1122`), NOT interrupted; the next line of this journal says whether its draft had
 arrived when the session closed.
+
+## 2026-11-22 (close, last line) — r84 DRAFTED, NOT RULED; coordinator stopped; session closed
+
+The coordinator handed back after the close paperwork: draft `$PCREC_TMPDIR/scratch/crit-predspot1122/review.md`
+(critic texts + verify.md in `review/`, process in `.coord/process.md`); freeze e6e95a2c5 (the branch moved to
+2a67e7f63 mid-round by record / journal entries only, mapped under its FREEZE NOTES). Its hand-back: evidence
+re-run green (predspot 27 / 0) but SWEEP passes over 9 printed lines the model answers wrongly (B7; the documents
+are right in those rows); answer-level in the documents: A1 (reading (e) false when `@options` comes mid-file), A2
+(a bound `&` in a hole under file options), A3 (the program option `x` revises a 2026-11-14 ruling without naming
+it; "No implicit extended mode" now false), A4 (reading (a) reverses his 2026-11-17 "yes" to
+`rx.repeat([a = rx.digit])`), A5 (`prefix_in` exempted though it places S), A6/A7 (neither root has ONE deciding
+statement; undecided cells listed); in the evidence: B1 (an answer flips when a binding is named like the macro's
+parameter), B2, B3 (label-reference bypassed inside an argument), B5 (grid arms that cannot fail). Proposed
+FIX-NOW: A1-A8, B1-B5, B7, C1-C8, D1-D7; four owner questions proposed (repeat-label, spot-read-name,
+option-hole-explicit / options-reach-constants, options-position). NOT RULED: first act of the next session, as
+wake.md says (read the draft WHOLE first; A4 is a ruled-words finding: read his 2026-11-17 entry before ruling).

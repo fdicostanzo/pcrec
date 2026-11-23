@@ -15,7 +15,9 @@ time."), fifth predicate-manager session. Committed docs win on any disagreement
   FLAG-GRID 128 cells, no disagreement).
 - REVIEW **r84** (number from main; design mode): coordinator `crit-predspot1122`, round dir
   `$PCREC_TMPDIR/scratch/crit-predspot1122/` (`review.md` when drafted; critic texts in `review/`; `.coord/
-  process.md`). See the LAST journal entry for whether the draft had arrived at close; it is NOT RULED.
+  process.md`). The DRAFT ARRIVED at the close (the last journal entry summarises its hand-back: answer-level
+  findings A1-A7 in the documents, B1-B7 in the evidence, four owner questions proposed); it is NOT RULED; the
+  coordinator is stopped.
 - IN THE RECORD ONLY, NOT FOLDED (ruled after the r84 freeze): **capture-export** (a named group in a part of a
   composed program is NOT a capture by default; the program-level `capture(path)` asks for one; explicit captures
   returned from the artifact against implicit ones the language needs); **zero-condition-binding** (`c := (0: 5)`
