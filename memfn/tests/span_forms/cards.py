@@ -1919,7 +1919,7 @@ class WiringFault(BaseException):
     layer, pass) (r80 FIDELITY-2). A BaseException, so time_cells' `except Exception` (a void) cannot swallow it."""
 
 
-def reach_refusal(keys, calls):
+def c6_reach_refusal(keys, calls):
     """REACH CONTROL (the reach build's own control): a hit-dense cell that calls the span 0 times. The text, or None."""
     dead = sorted({(k[1], k[3]) for k in keys if k[2] == "hit-dense" and calls[k] == 0})
     return "REACH CONTROL: hit-dense calls the span 0 times at %s" % dead if dead else None
@@ -2049,7 +2049,7 @@ def c6_prepare(rundir, sel, patterns, plants):
         k = next(k for k in keys if k[2] == "hit-dense")
         print("cards: time: PLANT reach-dead: %s's span calls read as 0 (were %d)" % ("/".join(k), calls[k]))
         calls[k] = 0
-    why = reach_refusal(keys, calls)
+    why = c6_reach_refusal(keys, calls)
     if why:
         raise SystemExit2("cards: time: " + why)
     timed = [c for c in pop if calls[(c[0], c[1], c[3], c[4])] and c[3] not in APPROX]
@@ -6012,14 +6012,14 @@ def cmd_c6selftest(args):
                  "(r80 CHECKS-9)")
     # ---- the prepare's controls on constructed inputs (r80 CHECKS-4): REACH CONTROL, a refused pool, the disjointness
     kk = [("C6", "p", "hit-dense", "on"), ("C6", "p", "near-miss", "on")]
-    row(reach_refusal(kk, {kk[0]: 0, kk[1]: 5}) and not reach_refusal(kk, {kk[0]: 5, kk[1]: 0}),
+    row(c6_reach_refusal(kk, {kk[0]: 0, kk[1]: 5}) and not c6_reach_refusal(kk, {kk[0]: 5, kk[1]: 0}),
         "REACH CONTROL: a hit-dense cell with 0 span calls is refused; a near-miss cell with 0 is N/A, not refused")
     lay_a = {v: ((v,), (v,), (v % 2,)) for v in range(4)}
     lay_b = {v: ((v + 16,), (v,), (v % 2,)) for v in range(4)}
     good = {(a, rt): (lay_a if (a == "H64") == (rt == 0) else lay_b) for a in ("V", "H64", "H64.b") for rt in (0, 1)}
     good[("V", 0)], good[("V", 1)] = lay_a, lay_b
-    bad_aa = dict(good, **{("H64.b", 0): lay_a})
-    bad_rt = dict(good, **{("V", 1): {0: lay_a[0], 1: lay_b[1], 2: lay_b[2], 3: lay_b[3]}})
+    bad_aa = {**good, ("H64.b", 0): lay_a}
+    bad_rt = {**good, ("V", 1): {0: lay_a[0], 1: lay_b[1], 2: lay_b[2], 3: lay_b[3]}}
     miss = {k: v for k, v in good.items() if k != ("H64.b", 1)}
     row(not proofs_refusal([None], {("p", "on"): good}) and proofs_refusal(["POOL REFUSED x"], {("p", "on"): good})
         and all(proofs_refusal([None], {("p", "on"): x}) for x in (bad_aa, bad_rt, miss)),
