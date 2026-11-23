@@ -1354,6 +1354,61 @@ LANESF = os.path.normpath(os.path.join(HEREF, ".."))
 FOLDW = "this lane's fold rewrote the texts it looks for (argument-label, the label parameter, the optional entry, " \
         "the capture request, zero-in-loop, zero-condition-binding: the rulings of 2026-11-22 late and 2026-11-23); "
 SUPERSEDEDF = {               # model -> {red: (digest of its FAIL line or traceback line, "superseded by ...")}
+    'predfix84': {
+        'CONVENTION': ('6ec984243fdd', "the request has no body placing an argument (optional-label's statement), so `capture` left the covered list; ARGSHAPES here"),
+        'DOC': ('1ab4ce1d8fd7', 'this fold rewrote lines it looks for (argument-label, two-sources, zero-binding, the request); SWEEP and DOC here'),
+        'GRID': ('ff2c086f1de3', "ARGLABEL and ARGSHAPES here: argument-default's readings (a), (b) withdrawn by argument-label; the sentences it looks for rewritten"),
+        'SWEEP': ('aa1903f09f09', "SWEEP here: the fold's new lines (the label parameter, `?:`, the request, `$0`) its engine does not read; each moved line declared there"),
+    },
+    'predspot': {
+        'CONVENTION': ('6ec984243fdd', "the request has no body placing an argument (optional-label's statement), so `capture` left the covered list; ARGSHAPES here"),
+        'DOC': ('c35db78094ed', 'this fold rewrote lines it looks for (argument-label, two-sources, zero-binding, the request); SWEEP and DOC here'),
+        'FSWEEP': ('b7fecdad9ee7', "the same six lines predfix84 declared (its OPENFLAGS, PATFLAGS, FSWEEP) at line numbers this fold moved; SWEEP here"),
+        'GRID': ('656ac2487a85', "ARGLABEL and ARGSHAPES here: argument-default's readings (a), (b) withdrawn by argument-label; the sentences it looks for rewritten"),
+        'SUCCESSOR': ('c4d4280f9e2c', 'SUCCESSOR here: it re-runs the same models, each red declared in this table'),
+        'SWEEP': ('a69d9f1ce297', "SWEEP here: the fold's new lines (the label parameter, `?:`, the request, `$0`) its engine does not read; each moved line declared there"),
+    },
+    'predfix83': {
+        'AWAITS': ('2b8a870671e7', 'as predfix84 declared: AWAITS here: argument-default is ruled, so no line awaits it (0 marked lines)'),
+        'DOC': ('05476f118e2f', "as predfix84 declared: predspot's fold rewrote the texts it looks for (argument-default ruled; the bodies restated) and SWEEP here (each gone line RESPELLED, ERROR NOW or DROPPED) and DOC here"),
+        'MARKS': ('378686a20835', "this fold rewrote the texts its marks look for (argument-default, two-sources, call-prefix, capture-export ruled); the pieces' history lines here"),
+        'SUCCESSOR': ('1a82adec20c8', 'SUCCESSOR here: it re-runs the same models, each red declared in this table'),
+        'SWEEP': ('f25fc35c219e', "SWEEP here: the fold's new lines (the label parameter, `?:`, the request, `$0`) its engine does not read; each moved line declared there"),
+        'UNMARKED': ('7cddc8c573f0', 'argument-label made legal the lines its error engine refuses (616-619, 807, ...); ARGLABEL and SWEEP here'),
+    },
+    'preddef': {
+        'AWAITS': ('e8f86816cd7a', "as predfix84 declared: AWAITS here, as predfix83's"),
+        'DOC': ('a80040d59ecb', 'this fold rewrote lines it looks for (argument-label, two-sources, zero-binding, the request); SWEEP and DOC here'),
+        'MARKS': ('78d47e2d3183', "this fold rewrote the texts its marks look for (argument-default, two-sources, call-prefix, capture-export ruled); the pieces' history lines here"),
+        'SUCCESSOR': ('9ce8705eed79', 'as predfix84 declared: SUCCESSOR here'),
+        'UNMARKED': ('aaaf622009ad', 'argument-label made legal the lines its error engine refuses (616-619, 807, ...); ARGLABEL and SWEEP here'),
+    },
+    'predfix82': {
+        'DOC': ('7ba579a211b8', 'this fold rewrote lines it looks for (argument-label, two-sources, zero-binding, the request); SWEEP and DOC here'),
+        'MARKS': ('cadd463ec154', "this fold rewrote the texts its marks look for (argument-default, two-sources, call-prefix, capture-export ruled); the pieces' history lines here"),
+        'REPRINT': ('49e1c7ae12f2', "as predfix84 declared: predspot's fold rewrote the texts it looks for (argument-default ruled; the bodies restated) and SPOT here (example 1 revised; its spot-labelled line) and SWEEP"),
+        'SUCCESSOR': ('7af0ee27f19f', 'as predfix84 declared: SUCCESSOR here'),
+    },
+    'predcall': {
+        'DOC': ('ee72c84698ec', "as predfix84 declared: predspot's fold rewrote the texts it looks for (argument-default ruled; the bodies restated) and ARGNAME and TWOSPOT here (call-prefix's lines re-spelled) and SWEEP"),
+        'PREDREF': ('bdc1a3daaa39', 'as predfix84 declared: SUCCESSOR here: predref is now a traceback (below), so its expected red is gone'),
+        'SCAN': ('677e6eb8490f', "the label parameter's lines (`A(x:) & (x: 5)`, `(?<:${l}>..)`) read a label its scan does not know; LABELPARAM and SWEEP here"),
+    },
+    'predref': {
+        'TRACEBACK': ('654619d66d03', "as predfix84 declared: SPOT and PLACES here: the provided bodies now write the export list on their spot (`atomic(X) := /(?>${[(=) = X]})/`, transform-export), which predref's lowerer, older than export-list, cannot read"),
+    },
+    'predbound': {
+        'TRACEBACK': ('f8b5d917c866', "as predfix84 declared: SPOT and PLACES here, as predref's (its body reader meets `[(=) = x]`)"),
+    },
+    'predfix77': {
+        'TRACEBACK': ('455b59c946bc', "as predfix84 declared: predfix83's SUCCESSOR, which declared it, and predfix82's REPRINT and predbound's checks, unchanged"),
+    },
+    'predarr': {
+        'TRACEBACK': ('ce43d48c7e37', "as predfix84 declared: predfix83's SUCCESSOR, which declared it, and predfix82's REPRINT and predref's HITS, unchanged"),
+    },
+    'predscope': {
+        'TRACEBACK': ('17ab1e47c179', "as predfix84 declared: TWOSPOT here: its reader of rx.repeat's third body expects `${x}`; the body now writes `${[(=) = x]}` (transform-export)"),
+    },
 }
 MODELSF = ["predfix84", "predspot", "predfix83", "preddef", "predfix82", "predcall", "predref", "predbound",
            "predfix77", "predarr", "predscope"]
