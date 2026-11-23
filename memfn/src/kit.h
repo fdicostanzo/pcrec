@@ -1478,6 +1478,13 @@ typedef struct {
     const char *deny;       /* mf_site.opts, NULL none                           */
     const char *lever;      /* a test-only lever on the scratch art (mf_lever),
                                NULL none                                         */
+    uint16_t    k;          /* WINDOW: the site's one span is k + 1 positions
+                               of `bytes`, all core, verify YES: 0 the stop
+                               alone (pair), else ONE STRETCH whose loop tests
+                               k positions (block_span.md §3.1); 0 elsewhere   */
+    uint32_t    ppm;        /* WINDOW: the members' byte rate the art's
+                               byte-rate analysis states (ppm, every other byte
+                               50); 0 states no analysis; 0 elsewhere          */
 } mf_form_entry;
 /* A shape's word (the slot harness's wrapper key), the kit entry that
  * reaches its form, and the C names its text reads and writes (NULL: not

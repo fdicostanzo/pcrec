@@ -76,8 +76,12 @@
  * rows, kindrow.def's NEVER column), listed as `req_whole_run`'s why `dead`.
  * Each meet that narrows a consumed position to one byte puts that byte in
  * the set where it meets (CAT-SET, `rr_cat`), whatever run TOP later
- * chooses, so the set stays a CORE fact. At the walk's exit TOP drops
- * whatever guard is left (reach 0: no candidate row yet).
+ * chooses, so the set stays a CORE fact. At the walk's exit TOP offers the
+ * guards still standing at the root as candidate runs (`rb_top_rows`; span
+ * arms L3: BACK, the left guard joined to the head, a run that begins up to
+ * the declared lookbehind length before the attempt start, its CONSUMED
+ * extent kept beside it) and drops the rest. A lookbehind byte still never
+ * joins the SET, and `req_byte` reads only the run's consumed extent.
  *
  * WHAT THE RUN DECLINES BEYOND THAT, each with its reason rather than a
  * shared "be careful" (reqpos_2b.md §2.4): an alternation contributes only
@@ -306,6 +310,10 @@ typedef struct {
      * so a 20,000-byte literal outside one pays nothing for it */
     unsigned onebyte_max;
     int ahead;
+    /* span_arms L3 (D-11): TOP's BACK row's cap, `ReqWalkParams.lb_bytes` */
+    long long lb_bytes;
+    /* review r65 A: `ReqWalkParams.fwd_reentry`, read by BACK's `displaces` */
+    bool fwd_reentry;
 } RbWalk;
 
 /* How many members the position set `p` has. */
@@ -463,8 +471,11 @@ static int rn_more_info(const RbWalk *w, const RbRun *a, const RbRun *b)
 }
 
 /* What the emitted scan of run `r` costs: the byte-rate mass of the members
- * of its scan position, the one `pcrec_find_run_scan_index` picks (the same
- * estimate the `req_byte` pick reads). 0 for the empty run, which has none. */
+ * of its scan position, the one `pcrec_find_run_scan_index` picks over EVERY
+ * run position, the scan the kit may place on any of them (D191.2). Since
+ * span_arms L3 this is not the `req_byte` pick, which reads only the run's
+ * consumed extent (§14.3 D-4, D-6); the ranking follows the kit's scan. 0 for
+ * the empty run, which has none. */
 static uint32_t rn_scan_mass(const RbWalk *w, const RbRun *r)
 {
     if (r->n == 0) return 0;
@@ -1644,27 +1655,103 @@ static void rb_walk_at(RbWalk *w, const Ast *a, RbVal *acc, RbVal *t)
 /* TOP's candidate rows, a COMBINING table walked in full (`RB_ROW_EACH`): each
  * row whose `when` holds on the root's runs and whose arm is not restored
  * offers a candidate run built from the root's consumed runs and its guards,
+ * with its CONSUMED EXTENT `[lo, hi)` (the positions every match consumes),
  * and the run is the best of the consumed `best` and every candidate by the
- * one run choice (`rn_better`). The default, outside the table, is the
- * consumed `best`. At L1 the table has NO ROWS (reach 0: every guard still
- * standing at the root is dropped); L3 adds BACK (`lg ++ head`), L2 AHEAD
- * (`tail ++ rg`), each under the `look` arm. */
+ * one run choice (`rn_cmp`), its extent kept beside it. The default, outside
+ * the table, is the consumed `best`, extent `[0, n)`. Every guard no row
+ * reads is dropped. L3 adds BACK (`lg ++ head`); L2 adds AHEAD (`tail ++
+ * rg`) and BACK's `++ rg` clause, each under the `look` arm. */
 typedef struct {
     bool (*when)(const RbWalk *w, const RbRuns *root);
-    RbRun (*cand)(const RbWalk *w, const RbRuns *root);
+    RbRun (*cand)(const RbWalk *w, const RbRuns *root, int *lo, int *hi);
+    /* may the candidate, its consumed extent `[lo, hi)`, displace the
+     * consumed `best` at all (before the run choice compares them)? `set` is
+     * the root's necessary set, whose members are the byte landmarks where
+     * no run is stated */
+    bool (*displaces)(const RbWalk *w, const RbRun *best, const RbSet *set,
+                      int lo, int hi);
     unsigned arm;   /* the restored arm (walk_arms.def) that passes it over */
 } RbTopRow;
 
+/* BACK's `when`: a left guard stands at the root and begins no further back
+ * than the declared lookbehind length allows (`lb_bytes`, D-11). */
+static bool rb_top_back_when(const RbWalk *w, const RbRuns *root)
+{
+    return root->lg.n > 0 && root->lg.n <= w->lb_bytes;
+}
+
+/* BACK's candidate (span_arms §14.3 D-4, L3): the left guard joined to the
+ * root's head, `lg ++ head`, which begins `lg.n` bytes BEFORE the attempt
+ * start (its K, `off`, is `-lg.n`). `lg` keeps the positions nearest the
+ * attempt start and `head` sits at 0 in every match, so the two are
+ * adjacent. The consumed extent is the head's part, `[lg.n, n)` after the
+ * join keeps the first `PCREC_MAX_REQ_RUN_SCAN` positions: EMPTY where the
+ * head is empty (`(?<=foo)`) or `lg` fills the stored bound (`(?<=a{32})b`),
+ * a run with no consumed position (D-6). L2's `++ rg` clause is not here. */
+static RbRun rb_top_back(const RbWalk *w, const RbRuns *root, int *lo, int *hi)
+{
+    (void)w;
+    RbRun r = rn_app(root->lg, root->head);
+    r.off = -(long long)root->lg.n;
+    *lo = root->lg.n;
+    *hi = r.n;
+    return r;
+}
+
+/* Does the set state a BYTE LANDMARK at a static bound: some member every
+ * match holds at most a bounded distance in (`RbSet.off`)? Where no run is
+ * stated, the pre-check's needle is a set member (facts_listing §4.1.2¶8b),
+ * and a forward scan's re-entry keeps it exactly where its K is bounded. A
+ * superset of "the picked member is bounded": the pick is a derived choice
+ * this core walk does not read, and the wider answer only keeps BASE more
+ * often (review r66 EMIT-3). */
+static bool rb_set_bounded_landmark(const RbSet *s)
+{
+    for (int b = 0; b < 256; b++)
+        if (rb_has(s, b) && s->off[b] < RB_OFF_UNBOUNDED) return true;
+    return false;
+}
+
+/* BACK's displacement condition (span_arms §14.4 L3, REV 3.3 addendum, review
+ * r65 A, review r66 EMIT-3): a forward scan declines its re-entry at K < 0
+ * (`req_k_reentry_sound`, src/gen/emit_dfa.c), so on a compile that may
+ * re-enter a forward scan (`fwd_reentry`) a BACK run that displaced the
+ * LANDMARK the re-entry keeps traded that re-entry for a start-byte scan, up
+ * to x10 slower than what it displaced. The landmark is the consumed `best`
+ * where one is stated, else a necessary byte. There BACK displaces only
+ * (1) an EMPTY consumed `best` whose set states no byte landmark at a static
+ * bound (`(?<=foo)`; not `(?<=qz)(?:a.|.a)`, whose `a` sits at K 1), or
+ * (2) a `best` that begins at no static bound, by a candidate that keeps a
+ * consumed position. Where no forward re-entry exists the run choice decides. */
+static bool rb_top_back_displaces(const RbWalk *w, const RbRun *best, const RbSet *set,
+                                  int lo, int hi)
+{
+    return !w->fwd_reentry
+        || (best->n == 0 && !rb_set_bounded_landmark(set))
+        || (lo < hi && best->off >= PCREC_W_UNBOUNDED);
+}
+
 static const RbTopRow rb_top_rows[] = {
+    { rb_top_back_when, rb_top_back, rb_top_back_displaces, PCREC_WALK_ARM(LOOK) },
 };
 
-/* The run TOP chooses from the root's runs `root`. */
-static RbRun rb_top(const RbWalk *w, const RbRuns *root)
+/* The run TOP chooses from the root's runs `root` and necessary set `set`,
+ * its consumed extent into `[*lo, *hi)`. */
+static RbRun rb_top(const RbWalk *w, const RbRuns *root, const RbSet *set,
+                    int *lo, int *hi)
 {
     size_t i;
     RbRun best = root->best;
-    RB_ROW_EACH(i, w, rb_top_rows, rb_top_rows[i].when(w, root),
-                best = rn_better(w, best, rb_top_rows[i].cand(w, root)));
+    *lo = 0;
+    *hi = best.n;
+    int clo, chi;   /* a candidate's extent (outside the body: a macro argument) */
+    RbRun cand;
+    RB_ROW_EACH(i, w, rb_top_rows, rb_top_rows[i].when(w, root), {
+        cand = rb_top_rows[i].cand(w, root, &clo, &chi);
+        if (rb_top_rows[i].displaces(w, &root->best, set, clo, chi) && rn_cmp(w, &best, &cand) < 0) {
+            best = cand; *lo = clo; *hi = chi;
+        }
+    });
     return best;
 }
 
@@ -1678,7 +1765,8 @@ static RbRun rb_top(const RbWalk *w, const RbRuns *root)
  * the harness lever (span_arms §3.7) and the byte-rate the run choice's tie
  * rows read. */
 void pcrec_req_walk(Ctx *cx, const Ast *root, const ReqWalkParams *p,
-                    RbSet *set, RbRun *run, PdDesc *pieces, bool *never)
+                    RbSet *set, RbRun *run, int *cons_lo, int *cons_hi,
+                    PdDesc *pieces, bool *never)
 {
     RbWalk *w = pcrec_arena_alloc(&cx->arena, sizeof *w);
     w->cx = cx;
@@ -1688,10 +1776,12 @@ void pcrec_req_walk(Ctx *cx, const Ast *root, const ReqWalkParams *p,
     w->pd = (PdCfg){ &rb_pd_bytes, p->max_pieces, PCREC_MAX_REQ_RUN_SCAN };
     w->onebyte_max = p->onebyte_max;
     w->ahead = 0;
+    w->lb_bytes = p->lb_bytes;
+    w->fwd_reentry = p->fwd_reentry;
     RbVal *v = pcrec_arena_alloc(&cx->arena, sizeof *v);
     rb_walk(w, root, v);
     *set = v->set;
-    *run = rb_top(w, &v->runs);
+    *run = rb_top(w, &v->runs, &v->set, cons_lo, cons_hi);
     *pieces = v->desc;
     *never = v->runs.never;
 }
@@ -1719,13 +1809,21 @@ int pcrec_run_scan_index(const uint32_t *rate, const ReqRun *run, int lo, int hi
 }
 
 /* THE NECESSARY BYTE — the `req_byte` fact — at ONE return: pcrec's own
- * pick over the whole run's positions (`pcrec_run_scan_index`, asked
- * here: the retired `req_run` row's `idx`, review 2026-11-11 r1 k382 F5)
- * where a run of two or more positions is stored and that position is one
- * EXACT byte, and otherwise the set's pick
+ * pick over the run's CONSUMED positions (`pcrec_run_scan_index` over
+ * `pcrec_run_cons`, asked here: the retired `req_run` row's `idx`, review
+ * 2026-11-11 r1 k382 F5) where a run of two or more positions is stored,
+ * its consumed extent is not empty and that position is one EXACT byte, and
+ * otherwise the set's pick
  * (`src/core/findings.c`). -1 exactly when the set is empty. It STAYS
  * pcrec's pick at R-38 K38-2 (span_runs_sheet.md §4.1): the pre-check's own
  * scan position is the kit's reply, and may differ from it.
+ *
+ * span_arms L3 (§14.3 D-6): a run that begins inside a lookbehind holds
+ * bytes no match consumes, so the pick reads only the consumed extent and
+ * `req_byte` stays "a byte every match consumes" (D191.2). An EMPTY extent
+ * (`(?<=foo)`) has no run pick (`pcrec_run_scan_index` answers -1 and never
+ * asks the primitive over zero positions) and falls to the set's pick, as a
+ * pattern with no run does.
  *
  * [OPT-LITSCAN] S4 C3 A WIDER POSITION IS NOT A BYTE ANY MATCH MUST
  * CONTAIN: a match may carry any of its members there, so it falls to the
@@ -1739,7 +1837,10 @@ int pcrec_req_pick(Ctx *cx, const ReqSet *set, const ReqRun *run,
     const uint32_t *rate = pcrec_find_byte_rate(cx);
     *why = pcrec_req_rate_why(cx);
     if (run->whole_len >= 2) {
-        int x = pcrec_run_byte(run, pcrec_run_scan_index(rate, run, 0, run->whole_len));
+        int lo, hi, i;
+        pcrec_run_cons(run, &lo, &hi);
+        i = pcrec_run_scan_index(rate, run, lo, hi);    /* -1: an empty extent */
+        int x = i < 0 ? -1 : pcrec_run_byte(run, i);
         if (x >= 0) return x;
     }
     if (set->rightmost < 0) *why = PF_WHY_NONE;

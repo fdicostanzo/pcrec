@@ -31,8 +31,9 @@ header and calls nothing above `core`.
   `src/enc/*.c`). The row carries: residual ENTRIES, `max_cp`, `onebyte_max`,
   `fold` (NEVER NULL: an empty relation, so no encoding opts out of case
   questions), `restrict_ok`, `advance` text (+ `advance_doc`, its prose, NULL if none; K137), `start_cls` + `start_guard`
-  (NULL both if no position is restricted), and a `sites` table if its span
-  compare is byte-wise. NOTHING in `src/core`, `parse`, `ir`, `opt`, `gen`,
+  (NULL both if no position is restricted), a `sites` table if its span
+  compare is byte-wise, and `max_char_bytes` (its widest character in bytes;
+  span_arms L3's `lb_bytes`). NOTHING in `src/core`, `parse`, `ir`, `opt`, `gen`,
   `cli/`, `lib/` is touched; if a shared file outside this directory must
   change, stop: take it to a design decision (the derailment DD-12 names).
 - Residual text: `$` is the prefix placeholder and `@` begins the one site

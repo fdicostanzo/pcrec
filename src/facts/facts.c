@@ -69,13 +69,15 @@ static const uint32_t walk_arm_facts[PCREC_WALK_ARM_N] = {
 };
 _Static_assert(PCREC_WALK_ARM_N <= 8, "PfWhy.arms is one byte of arm bits");
 
-/* The run record with NO run: no position, length 0, offset 0. THE STATED
+/* The run record with NO run: no position, length 0, offset 0, an empty
+ * consumed extent. THE STATED
  * VALUE both `ReqRun` writers (the deny's empty value and the derivation)
  * start from (span_arms RM-1), so a field added to `ReqRun` is defaulted
  * here once, never silently left unwritten by one of them. */
 static ReqRun pf_req_run_none(void)
 {
-    return (ReqRun){ .pos = { NULL }, .whole_len = 0, .whole_maxoff = 0 };
+    return (ReqRun){ .pos = { NULL }, .whole_len = 0, .whole_maxoff = 0,
+                     .cons_lo = 0, .cons_hi = 0 };
 }
 
 /* `pcrec_bound_of` (facts.h): the saturated `PCREC_W_UNBOUNDED` reading is
@@ -247,13 +249,23 @@ static void pf_derive_req_walk(Ctx *cx)
         /* the encoding descriptor, resolved here once (design §4.2.2
          * carve-out (d)), as `land_char`'s is */
         .onebyte_max = pcrec_enc_by_id(cx->opt->encoding)->onebyte_max,
+        /* span_arms L3 (D-11): the declared lookbehind length, characters
+         * (RM-5's accessor), in the encoding's widest-character bytes */
+        .lb_bytes    = (long long)pcrec_lb_max(cx) *
+                       pcrec_enc_by_id(cx->opt->encoding)->max_char_bytes,
+        /* review r65 A, r66 EMIT-2: a forward scan's re-entry can exist
+         * (the handoff row is not denied, and the engine is not the forced
+         * VM or `-fprefilter` forces that VM a hybrid prefilter) */
+        .fwd_reentry = !pcrec_opt_has(cx->opt, PCREC_NO_REQ_HANDOFF) &&
+                       (cx->opt->engine != PCREC_ENGINE_VM ||
+                        pcrec_opt_has(cx->opt, PCREC_FORCE_PREFILTER)),
     };
     RbSet set;
     RbRun run;
     PdDesc pieces;
     bool never;
-    int bits = 0;
-    pcrec_req_walk(cx, pf->root, &p, &set, &run, &pieces, &never);
+    int bits = 0, cons_lo, cons_hi;
+    pcrec_req_walk(cx, pf->root, &p, &set, &run, &cons_lo, &cons_hi, &pieces, &never);
     for (int i = 0; i < run.n; i++) bits += pcrec_req_info(run.pos[i]);
     if (pf_enter(cx, PF_REQ_SET, false)) {
         memcpy(pf->req_set.bits, set.bits, sizeof set.bits);
@@ -278,8 +290,12 @@ static void pf_derive_req_walk(Ctx *cx)
         if (bits >= PCREC_MIN_REQ_RUN_BITS) {
             memcpy(pf->req_run.pos, run.pos, (size_t)run.n * sizeof run.pos[0]);
             pf->req_run.whole_len = run.n;
-            /* [K82] the walk's bound on where this run begins. */
+            /* [K82] the walk's bound on where this run begins (negative
+             * where it begins inside a lookbehind, span_arms L3) */
             pf->req_run.whole_maxoff = run.off;
+            /* span_arms L3 (D-5): the positions every match consumes */
+            pf->req_run.cons_lo = cons_lo;
+            pf->req_run.cons_hi = cons_hi;
         }
         /* span_arms L1 (D-9): the walk's root NEVER bit is this fact's why
          * `dead`, ahead of the rate rule (facts_listing.md §4.1.3¶1) */

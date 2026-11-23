@@ -7,9 +7,12 @@ LIGHT re-check r71 (done), rev 4.1, **U1 built (lane bsu1), U2 and U2b built
 (lane bsu2), code round r75 (done: FIX FIRST, small), this revision (r75's
 doc items, with U2's fixes)**. **`scalar-check-cut` is ANSWERED: Frank
 2026-11-21, "scalar-check-cut: yes" (D201 add. 4; §2.2). One owner question
-is OPEN: `wrap-clang` (§2.2.1), which the census's compiler scope raises
-[rev4.2, r75 CENSUS-3].** Read §18 (the r75, r71, r69 and r68 dispositions)
-first.
+was OPEN: `wrap-clang` (§2.2.1), which the census's compiler scope raises
+[rev4.2, r75 CENSUS-3]; it is ANSWERED by D201 add. 5 (§2.2.1) [U5, r79
+F11].** Read §18 (the r75, r71, r69 and r68 dispositions) first. **[U5, r79]
+U5 is built (lane bsu5) and fixed (lane bsu5fix, review r79): §8's card,
+its rule file and its `deps`, §2.2.1, §12 and §14's U5 row carry r79's
+hunks, marked `[U5, r79 F-n]`.**
 
 Revision history:
 - rev 1 (2026-11-21, lane bspan): first design, gated on `scalar-wrap`.
@@ -77,6 +80,7 @@ relays R-23 and R-24). Each row names its record.
 | D155 add. 3 (Frank) | "They were more guidelines or goals than hard rules" | D155 add. 3 | main's "What stands" line: "NO `#if`/`#ifdef` in the code the kit emits into a function BODY". The single-call shape is a GUIDELINE; this design rests on the contract (§2) |
 | D155 recollection (Frank, relayed by the kit manager) | "We talked about that being the way we'd organize simd stuff anyway back when you used ifdef macro code" | D201 add. 3 (b), recorded as an OBSERVATION, not a ruling; the verbatim words are the manager's relay | context only: the selector shape is the organization D155 add. 1 Q-R9-10 agreed |
 | D201 add. 4 (`scalar-check-cut`) [rev4.2, r75 SLOT-5] | Frank, verbatim, to the kit: "scalar-check-cut: yes" | D201 add. 4 (the words are in the kit journal, memfn/docs/journal.md) | the cut is accepted: U2b's census replaces the scalar timing; the real bench sites' SIMD-off code must be identical or the build stops, a differing grid shape is REPORTED, `\w{20}` is the floor witness; no T-keep. Arm 1 (wrap everything) stands, arm 2 is dead. The stop rule names no compiler: the census is gcc 15.2 -O2 (§2.1, `wrap-clang`) |
+| D201 add. 5 (`wrap-clang`) [U5, r79 F11] | Frank, verbatim, to the kit: "wrap-clang: a. Policy is inline wrappers where possible so this is a move towards that. The wrapper is a separate fix to an out of policy coding not related to the simd change / That said, do track the clang issue with an item for follow-up to make sure no surprises" | D201 add. 5 (the words are in the kit journal) | U2 ships as built (option a); the clang difference is tracked by plan row [BSPAN-CLANG-DIFF], whose kit-side ride-along is C6c (§8) |
 | R-4, smallest form | "design the SMALLEST form that serves the 710 table. Add no generality beyond what 710 confirmed" (the kit's bspan ruling, main asked for it) | the kit's r69 MANAGER RULING R-4 (docs/dev/reviews/2026-11-21-r69-memfn-bspan3.md, on the kit branch); D201 add. 3 (b) holds a paraphrase ("the smallest form that serves job 710's table, no generality beyond it"), not these words [rev4.2, r75 SLOT-5] | no widths, site kinds or knobs beyond 710's table, the deny row and the card |
 | `scan-scope` | WALK only, not LIBC/PAIR: nothing else was measured (D77) | D201 add. 3 (b), KIT MANAGER | T-vscan holds on finder row **R7w** only. D1w is EXCLUDED ON PURPOSE (F-4; §3.3) |
 | `wrap-deny` | the deny `span-vector` is LIVE at both layers | D201 add. 3 (b), KIT MANAGER | `--memfn=no-span-vector` un-wraps the stretch too, restoring main's bytes at every layer and target |
@@ -335,7 +339,7 @@ gcc -Os on 32 of 32, gcc -O3 and -march=native on 12 of 32 (the -O2 set).
 D201 add. 4's record names no compiler; the owner's premise (add. 2: "the
 function goes inline so it's just code organization?") holds on the real
 sites for gcc at -O1..-O3 only, and the bench builds the pcrec arms with
-clang as well. That is the open owner question `wrap-clang` (§2.2.1). No
+clang as well. That was the owner question `wrap-clang` (§2.2.1; ANSWERED, D201 add. 5). No
 timing is implied: add. 4 cut it.
 
 ### 2.2 OWNER QUESTION `scalar-check-cut` (ANSWERED: yes, D201 add. 4; it replaced `wrap-differs`) [rev4.2, r75 SLOT-5; rev4.1, r71 FREEZE DRIFT; rev4, R-25, R-24]
@@ -428,7 +432,19 @@ whether "measured" still binds after D155 add. 3 is a reading.
 r69 R-24):** the bspan3 and bspan4 lanes lean to outcome 1, the only one
 with no proxy and no forfeited win. The owner decides.
 
-### 2.2.1 OWNER QUESTION `wrap-clang` (OPEN; U2 does not wait on it, it goes to main with the delivery) [rev4.2, r75 CENSUS-3]
+### 2.2.1 OWNER QUESTION `wrap-clang` (ANSWERED: a, D201 add. 5) [rev4.2, r75 CENSUS-3; U5, r79 F11]
+
+**[U5, r79 F11] THE ANSWER.** Frank, 2026-11-21, to the kit, verbatim:
+"wrap-clang: a. Policy is inline wrappers where possible so this is a move
+towards that. The wrapper is a separate fix to an out of policy coding not
+related to the simd change / That said, do track the clang issue with an
+item for follow-up to make sure no surprises" (D201 add. 5). U2 ships as
+built; the clang difference is tracked by plan row [BSPAN-CLANG-DIFF]. Its
+kit-side ride-along is card **C6c** (§8): the 3 real sites' SIMD-off V text
+against the deny, timed under clang -O2 and gcc -Os, the two compiles the
+bench has SIMD-off arms for. clang -O3 (no bench arm) and the bench's
+`-fPIC -shared` build are named gaps (§8). The question as it was put, kept
+as the record:
 
 Add. 2's premise ("the function goes inline so it's just code
 organization?") and add. 4's stop rule ("the real bench sites' SIMD-off
@@ -922,20 +938,69 @@ Written before data:
   arms render today's bytes there, so they are A/A by construction (the
   T-table pins check the flip in text, §10.2).
 - **Regimes.** The cards' six regimes, plus near-miss-in at the window
-  sites.
-- **Which clauses of 710's rule apply.** The cell rule (FLOOR = max(0.15,
-  spread(A), spread(B)); WIN / LOSS / TIE), the re-time, the N/A rule, the
-  CPU-quiet control: apply unchanged. The CONTROL clause (Hspk) does not
-  apply (Hspk's one-level wrapper is not the shipped shape, §2). The S
-  (busy) clause is dropped; no profile arm is declared.
-- **What replaces the A/A line:** an A/A arm, the `no-span-vector` exe
-  timed as both arms on each C6 pattern; its repeated-LOSS-or-WIN rate is
-  printed beside the verdict.
-- **The rule's sha** is recorded with the result.
-- **`deps`.** `kit:form.span-vector=<hash>`: a NEW formhash SHAPE (a window
-  site with one stretch of a stated set and K), its renderer, and one entry
-  (the canonical instance: the hex set, K 40, x86-64-v3), so a later text
-  change stales the row.
+  sites with k + 1 <= 255. **[U5, r79 F12] The cuts, named:** near-miss-in
+  is not built at c6_hex1001 (k 1000): the window shift table caps at 255,
+  so the plain near-miss already calls the span there at failing depths
+  0..745; near-miss at the window sites with k <= 32 calls the span 0 times
+  by construction (the probe lands on each record's miss byte), so those
+  cells are N/A; not-warm and short-subject are VOID BY METHOD (the kit's
+  approximations, not timed). `\b[0-9a-f]{32}\b`'s miss byte is a space
+  (cards.py `C6_MISS`, r79 F4): the default `z` is a word byte, after which
+  the left `\b` fails and the site never reached the span.
+- **THE RULE [U5, r79 F5-F8] is a committed file,
+  `memfn/tests/span_forms/c6_rule.md`**, written before any C6 timing; its
+  sha is the first 16 hex of sha-256 over its fenced block (the bytes job
+  710's sha covers in the committed `rule_710.md`, `6351bff3901e3955`),
+  COMPUTED by cards.py from the files, never typed; **at commit ac807e97a
+  it is `9a2875a6bf089837`** (read from `git show` of the committed file).
+  It fixes, now: the
+  UNIT (an arm's median of its launches, the spread over the middle
+  three of five, so one outlier launch cannot widen the floor; a
+  comparison whose floor exceeds 0.30 is INCONCLUSIVE-NOISE, never a TIE);
+  the RE-TIME (every reading LOSS and WIN and every A/A non-TIE, on a FRESH
+  pool: four new layouts per text); the N/A count (an untimed instrumented
+  build of V, `cards.py dry`'s reach build); the A/A clause below; WINDOW
+  (NOT-RUN cells, the TRUNCATED prefix); a first-match VERDICT per (card,
+  layer, box): INCONCLUSIVE-N/A, VOID, LOSS, INCONCLUSIVE-<cause> (under
+  half the population readable), NO LOSS; the RECORD header (rule sha,
+  710's sha, the form hash, the binary, each layer's compiler identity,
+  the width map, the run id; a file of another rule sha is refused); what
+  is REPORTED; the power the floor has (a per-cell regression below 15 %
+  passes "no standing LOSS"); and each of 710's clauses applied, adapted,
+  replaced or dropped BY NAME. `cards.py c6selftest` drills the verdict on
+  constructed outcomes. The writer that fills the header is U6's timer.
+- **The A/A arm [U5, r79 F2]:** H64.b, the `no-span-vector` text timed as
+  a third arm on each C6 pattern, drawing its OWN layout pool (salted), so
+  it moves the same axes as V vs H64 (text aside). Its standing non-TIE
+  rate over the readable cells is printed beside the verdict; a standing
+  A/A non-TIE makes its cell INCONCLUSIVE-HARNESS, and a rate above 0.05
+  (UNMEASURED DEFAULT) makes the (card, layer)'s verdict on that box VOID.
+- **`deps`.** `kit:form.span-vector=<hash>`: formhash's WINDOW shape with a
+  per-entry `k` (pair is its k 0 case; [U5, r79 F16] the separate SPAN
+  shape is folded in, every other stored hash unchanged) and ONE INSTANCE
+  PER RENDERING THE CARDS TIME [U5, r79 F1]: `b16` (k 31, x86-64-v3: the
+  B = 16 block the 3 real sites and the k 16..31 cells run), `b32` (k 40,
+  x86-64-v3: the B = 32 block) and `off` (k 31, no level: the SIMD-off
+  wrapper and selector C6c times). A change to any rendering moves the
+  id's hash (planted per branch, lane bsu5fix's report). **[U5, r79 F14]
+  It stales on the WHOLE window site's text** (the skip table and the
+  driver loop as well as V's block), the safe side; the scan sites' driver
+  (R7w) is not in it. **[U5, r79 F15] PLAN, not built:** `mf_form_hash`'s
+  rename normalization alpha-renames the `_mm*` intrinsics, so
+  `cmpeq` -> `cmpgt` or `loadu` -> `load` leaves the hash unchanged even
+  inside a covered block (pre-existing, R-MS3; mfind-w16/w32 alike);
+  keeping intrinsic families in `kept[]` re-stales every stored hash that
+  folds one, so it is a decision for main and the kit, filed to main.
+- **C6c, the compiler-axis card [U5, r79 F11, F13]:** the 3 real sites,
+  arms V / H64 / H64.b, the SIMD-off layer under clang -O2 (`off-clang`,
+  its pool's odd alignment variant `CLANG_ALIGN_OFF`, §12) and under gcc
+  -Os (`off-os`), the two SIMD-off compiles of [BSPAN-CLANG-DIFF] the bench
+  has an arm for (pcrec-auto-clang and siblings; pcrec-auto-os). Each layer
+  is a row of cards.py's declared layer table (flags, compiler, level).
+  It settles [BSPAN-CLANG-DIFF]'s "no surprises" follow-up (D201 add. 5),
+  NOT the CANDIDATE gate. **Named gaps:** clang -O3 (no bench arm, no
+  row), and the bench's `-O2 -fPIC -shared` build (every C6c cell is a
+  non-PIC executable).
 
 **What it settles, and the every-box rule [rev4, R-31].** G-3 on the
 shipped text, box by box. **V lands behind the OFF switch (as every SIMD
@@ -943,8 +1008,10 @@ level does) and is labelled CANDIDATE until C6 has run on each bench box
 that runs it** (Zen 4 here; Zen 1, ubuntubudu, AVX2 split into 2x128, via
 main: D144 addendum 4). **A repeated LOSS on any box blocks the level**
 (D155 item 2), not merely a bound. A re-measure may RAISE a lower bound,
-never below the safety floor 16 (§12). The SIMD-off wrapper is not timed
-anywhere (r68 F-14): U2b's census is its record.
+never below the safety floor 16 (§12). The SIMD-off wrapper under gcc -O2
+is not timed (r68 F-14): U2b's census is its record; C6c times it under
+clang -O2 and gcc -Os, where the census said the machine code differs
+[U5, r79 F11].
 
 Rows for main to file in plan.md (§17), NOT build scope: a
 `--harness=span-vector=force` lever (V outside the bounds) and a
@@ -1014,8 +1081,9 @@ addendum).
   is the wrapper), and `("span-loop=force", *)`'s floors (14 per encoding)
   rise. The build lane re-measures both at the unit that first holds V and
   the `.rxt` together (U2) and pins at the measure.
-- `emit_sweep.py`'s `DIFFER_PINS` gains floors for the deny arm at both
-  layers over the corpus (the `.rxt` included).
+- `emit_sweep.py`'s `DIFFER_PINS` gains floors for the deny arm over the
+  corpus (the `.rxt` included), at SIMD-off: its cells carry no SIMD-on
+  base, so the simd layer is `memfn_arm.py`'s (r78 C18WIRE-5).
 - The `.rxt` itself, at U1 (§10.1), moves the corpus-population pins the
   BOILERPLATE delivery bar lists: the rxtsource census, the start-set mover
   manifests (`tests/startset/manifests/`), the axes allowances, the size
@@ -1146,24 +1214,24 @@ fails on a disagreement.
 |---|---|
 | answer identity, default build (G-1) | `make test-corpus`: the `.rxt`'s oracle-verified cases, at the default width 32 and `-fno-memfn-simd` (the wrapped V at 28 sites) |
 | the deny arm's answer identity, both layers (G-1) | `make test-axes`: `run_axes.sh` runs the corpus (the `.rxt` included, with its subjects) under every memfn arm, the `span-vector` deny included, at its default and simd (x86-64-v3) layers; `memfn_arm.py`'s `MEMFN_CLASS` row classifies the deny (§9.3) |
-| the identity gate (G-4) | its corpus enumeration (`emit_sweep.enumerate_corpus`) includes the `.rxt` at width 32; it ALSO compiles the `.rxt`'s 41 patterns (`pcrec --list-source`) at `--window-search-width=4095`; prints its V-site count by the k source above, floored 28 / 31 |
+| the identity gate (G-4) | its corpus enumeration (`emit_sweep.enumerate_corpus`) includes the `.rxt` at width 32; it ALSO compiles the `.rxt`'s 41 patterns (`pcrec --list-source`) at `--window-search-width=4095`; floors its MOVERS, the shipped text's V calls (28 byte / 20 utf8 at width 32, 31 byte at 4095), and does not read the k source. [r78 C18WIRE-5] The k-source count, floored 28 / 31 (byte) and 20 / 21 (utf8), is `tests/memfn/span_pins.py`'s SPAN-SEED census (through `tests/memfn/span_ksource.py`, the one reader), run inside C18 at the SIMD layer |
 | C18 / simdfloor | its corpus population includes the `.rxt`; its `NAMED` list gains the THREE span witnesses (§10.2) [rev4.1, R71-1: rev 4 said two here] with their floor, NAMED at x86-64-v3 ONLY (a per-target column on `NAMED`: x86-64 renders no V mover, so a span witness there prints "NOT a mover" on correct text); `FLOORS` for x86-64-v3 rise by the `.rxt`'s V sites at the default engine (re-pinned at the measure, U4); x86-64 does not move (the selector calls `__body` there, no mover) |
-| `DIFFER_PINS` (`scripts/emit_sweep.py`, a hand-run tier) | floors over the corpus, the `.rxt` included, both layers |
-| G1's population (§9.4) | EXCLUDES the `.rxt` from its bins by path; prints its V count separately as the floor witness |
+| `DIFFER_PINS` (`scripts/emit_sweep.py`, a hand-run tier) | floors over the corpus, the `.rxt` included, at SIMD-OFF only: its keys are (encoding, flag, stream), with no SIMD-on base cell; the rows are U2's. [r78 C18WIRE-5] The simd layer's deny arm is held by `memfn_arm.py`'s `span-vector` DIFFER rows (the `make test-axes` row above) |
+| G1's population (§9.4) | EXCLUDES the `.rxt` from its bins by path; prints its V count separately as the floor witness. [r78 C18WIRE-5] U6's, with G1's manifest (§14): there is no G1 script at U4 to wire |
 | the T-table pins (§10.2) | do NOT read SPAN-SEED: their own literal cell list |
 
 ### 10.2 The checks
 
 | check | subject | control (shares no source with the kit) | population count (K35) |
 |---|---|---|---|
-| **G2-V unit** (new section of `run_g2_win.sh`, x86-64-v3 arts) | every V rendering over a generated space: sets of 1..8 ranges in both polarities, sets with bytes ≥ 0x80, the empty set, a 255-member set, single-byte-removed sets; k at every rung edge (16, 17, 31, 32, 33, 63, 64, 65, 999, 1000) and random interior k | python: `all(re.fullmatch(cls, bytes([b])) for b in window)` with the class written in the TEST, never the kit's set. Windows flush against a `PROT_NONE` page at both ends | per rung, per row: literal floors |
-| **G2-V whole** [rev4, R-14] | `cls{k+1}` and mixed patterns (a literal run plus a stretch, two stretches, a stretch beside a non-core position) compiled at SIMD-on and SIMD-off, find-all, at widths 32 and 4095 | python `re` over the cards' regimes, plus forced near-miss staircases (a failing index at each of 0..k-1, at the first window and after a match), **with every subject flush against a `PROT_NONE` page at BOTH ends** | per site kind: literal floors, counted by §10.1's k source |
-| **T-table pins** [rev4, R-14, R-15, R-16] | the row bounds, the brow column, the order (T-lever, T-force ahead of V) and once-per-site | a literal CELL list in the test, each with its width and flags, read off the rendered text: the count of selector calls `<p>_mf<h>_vs<j>(` in the walk and, at x86-64-v3, the count of `__w32(` calls in the selectors; never off window.c. Every cell's finder row and k checked by the trace (§10.1's k source) | **20 cells over 11 patterns** (below), every one reached (drilled, §16 item 5) |
+| **G2-V unit** (new section of `run_g2_win.sh`, x86-64-v3 arts) | every V rendering over a generated space: sets of 1..8 ranges in both polarities, sets with bytes ≥ 0x80, the empty set, a 255-member set, single-byte-removed sets; k at every rung edge (16, 17, 31, 32, 33, 63, 64, 65, 999, 1000) and random interior k | python: `all(re.fullmatch(cls, bytes([b])) for b in window)` with the class written in the TEST, never the kit's set. Windows flush against a `PROT_NONE` page at both ends. The k source's LO and K are held to the case's own k and row (LO 0 on T-vwin, 1 on T-vscan; r78 G2V-2) | per rung, per row: literal floors. DRIVEN [r78 G2V-1]: calls at each placement, counted flush by address; the staircase windows; each guard page's start-up self-witness (a deliberate read below and past the data must fault in its own guard: GUARD-LOW-LIVE / GUARD-HIGH-LIVE) |
+| **G2-V whole** [rev4, R-14] | `cls{k+1}` and mixed patterns (a literal run plus a stretch, two stretches, a stretch beside a non-core position) compiled at SIMD-on and SIMD-off, find-all, at widths 32 and 4095 | python `re` over the cards' regimes, plus forced near-miss staircases (a failing index at each of 0..k-1, at the first window and after a match), **with every subject flush against a `PROT_NONE` page at BOTH ends** | per site kind: literal floors, counted by §10.1's k source. DRIVEN [r78 G2V-1]: runs per layer (SIMD-on and SIMD-off each), SIMD-on runs of V-site artifacts, runs at each placement counted flush by address, each guard page's self-witness |
+| **T-table pins** [rev4, R-14, R-15, R-16] | the row bounds, the brow column, the order (T-lever, T-force, T-deny ahead of V; T-deny since r78 PLANTSA-2) and once-per-site | a literal CELL list in the test, each with its width and flags, read off the rendered text: the count of selector calls `<p>_mf<h>_vs<j>(` in the walk and, at x86-64-v3, the count of `__w32(` calls in the selectors; never off window.c. Every cell's finder row and k checked by the trace (§10.1's k source) | **22 cells over 11 patterns** (below; 20 at rev 4, + 2 T-deny cells at r78), every one reached (drilled, §16 item 5) |
 | **Identity gate** (G-4) [rev4, R-12] | `--memfn=no-span-vector` artifact on the U2 binary vs the artifact of the lane's MERGE BASE, built once (never "main", which moves); **both arms compiled with the same `-o` basename** in two directories | byte diff of `.c` AND `.h`, both layers, over the corpus (the `.rxt` included) and SPAN-SEED's patterns at 4095. **Mask, declared before data: nine anchored spellings (below), each replacing ONLY its number group.** Nothing else is masked | count printed; 0 differences expected |
 | **C18 / simdfloor, AMENDED** | split across U3 and U4 [rev4.1, R71-4] (below) | its own rules, with their own controls | its per-target SIMD FUNC floor rises, plus the NAMED span witnesses' literal floor |
 | **F2** (delivery check) | §6 | 710's arm sources | 82 routed cells |
 
-**The T-table pin cells [rev4]** (20; x86-64-v3 unless the cell says
+**The T-table pin cells [rev4]** (22; x86-64-v3 unless the cell says
 both layers; [rev4.1, R71-6] "present" = 1 selector CALL SITE and 1
 `__w32` CALL, "absent" = 0 of each, counted by these spellings (the
 definition heads match a bare `vs0(` / `__w32(`, which reads 2/2 on a
@@ -1179,12 +1247,16 @@ walk, and `__w32(rxa_mf1_s, rxa_mf1_c)` in the selector):
 | 13 | `ab[0-9]{26}` | 32 | absent (D1, k 26) | brow: a memchr find |
 | 14 | `[xy][0-9]{26}` | 32 | absent (PAIR, k 26) | brow: PAIR |
 | 15 | `ab[0-9]{26}` `--memfn=no-fd-d1` | 32 | absent (D1w, k 26) | [R-15] brow: D1w, F-4's own fix (the only cell that separates "brow R7w" from "pick WALK") |
-| 16 | `[0-9a-f]{20}[g-z]{20}` | 4095 | exactly one selector call (stretches k 20 and 19, both eligible) | once per site |
+| 16 | `[0-9a-f]{20}[g-z]{20}` | 4095 | exactly one selector call (stretches k 20 and 19, both eligible); the k source reads both, and the call is the FIRST stretch's test (the test after it reads the first stretch's END; r78 PINS-4) | once per site, first eligible stretch |
 | 17-18 | `[0-9a-f]{17}` `--harness=span-head=8` (pcrec-harness) | 32, both layers | 0 selector calls | [R-14] T-lever ahead of V |
 | 19-20 | `[0-9a-f]{17}` `--memfn=span-loop` | 32, both layers | 0 selector calls | [R-14] T-force ahead of V |
+| 21-22 | `[0-9a-f]{17}` `--memfn=no-span-loop` | 32, both layers | 0 selector calls | [r78 PLANTSA-2] T-deny ahead of V (§3); the k source reads this cell without the deny (T-deny's text is all-inline, no loop to read) |
 
 The frame cell `[0-9a-f]{20}[g-z]{20}` at width 32 is gone with the frame
-column (R-15). The pin floor counts CELLS (20), not patterns (11).
+column (R-15). The pin floor counts CELLS (22), not patterns (11); the
+cell ids run 1..22 and no two cells are the same (pattern, width, binary,
+flags, layers) (r78 PINS-3). The text counts are WHOLE-FILE counts of the
+two spellings; where a call sits is the routing leg's check (r78 PINS-8).
 
 **The identity gate's declared mask [rev4, R-12; drilled, §16 item 11].**
 Matched per line over the `.c` and the `.h`; `N` is the group replaced:
@@ -1263,8 +1335,13 @@ output the old check reads wrongly.)
   forwarding the parameters, the helper defined above, no `#if` in a work
   body) is today's code. Its `--selftest` gains V shapes: routed (OFF), one
   call to its level (ON), and five that must be red (selector does work,
-  drops a parameter, helper below, level not defined above, unrouted).
-  Drilled: 7 of 7 controls as expected; on the hand-built OFF and ON texts
+  drops a parameter, helper below, level not defined above, unrouted);
+  [r78 C18WIRE-1/2] plus two more red ones, level defined BELOW (which
+  tells "above" from "absent") and a helper with other parameters (the
+  helper-parameter rule's control; ofsskip's leg gains the same), so 9 V
+  shapes and 15 ofsskip shapes, 24 of 24 as expected at r78's fix;
+  `--selftest` is a flag (no argument runs the same controls).
+  Drilled at rev 4: 7 of 7 controls as expected; on the hand-built OFF and ON texts
   the V leg counts 1 FUNC each and no violation, where today's
   `routing_shape.check` counts 0 (§16 item 10). `run_g2_simd.py`'s HELPER
   (G2's ofsskip family) is out of scope: it reads no V text;
@@ -1289,16 +1366,19 @@ output the old check reads wrongly.)
 | plant | what it breaks | caught by |
 |---|---|---|
 | (a) | a nibble table drops a member (708 `nib_drop`) | G2-V unit |
-| (b) [rev4, R-14] | the final block reads 1 B past (708 `past`). Witness: a **WALK** whose stretch ends at the pattern end, subject flush at the end (`[0-9]{25}`; r69: SEGV, 6855 of 13546 answers differ). On HORS the byte past the stretch is the probe, in bounds, so the plant is benign there | **G2-V whole**, its end guard page |
-| (c) | T-vwin's lower bound becomes 15 | T-table pins cells 1-2, the renderer's K ≥ 16 assert, G2-V whole's start guard page and staircase |
-| (d) | the deny is ignored at SIMD-off | identity gate, over the corpus with the `.rxt` (28 V sites at width 32) |
+| (b) [rev4, R-14] | the final block reads 1 B past (708 `past`). Witness: a **WALK** whose stretch ends at the pattern end, subject flush at the end (`[0-9]{25}`; r69: SEGV, 6855 of 13546 answers differ). On HORS the byte past the stretch is the probe, in bounds, so the OVER-READ is harmless there; the plant is not benign there, though: it is also an answer bug whenever K % B == 0 (byte K - B goes untested; r78 PLANTSB-2), so G2-V whole reds on HORS answers too and G2-V unit by its text pin. The row is an answer-and-guard plant; the guard pages' own proof is G2-V's self-witness (r78 G2V-1) | **G2-V whole**, its end guard page (and its answers) |
+| (c) | T-vwin's lower bound becomes 15 | T-table pins cells 1-2 and the renderer's K ≥ 16 assert: the kit refuses the 15-position stretch, so no artifact exists for a guard page to see. [r78 G2V-3] Run on this plant, G2-V reds only by k-source/text disagreement and the refusal, 0 guard faults; the row needs no g2v arm |
+| (d) | the deny is ignored at SIMD-off | identity gate, over the corpus with the `.rxt` (28 V sites at width 32); at mech tier `memfn_arm.py`'s `span-vector` DIFFER witnesses (the floors only at full population; r78 PLANTSA-1) |
 | (e) [rev4, R-14] | V evaluated before T-lever / T-force | **T-table pin cells 17-20** (lever and force on `[0-9a-f]{17}`, both layers: the plant puts a selector call there). Witness reached: D-hors, k 16 (§16 item 5) |
 | (f) [rev4, R-15] | T-vscan keyed on pick `FF_WALK` instead of brow R7w (rev 2's key) | **T-table pin cell 15** (`ab[0-9]{26} --memfn=no-fd-d1`: D1w, k 26, gains a selector call). Witness reached (§16 item 5) |
 
 No plant guards R-5's `own` condition: no pcrec site reaches it (every
 eligible loop in the census is C-own, §16 item 5), and G2's generator
 declares its tables at file scope, so G2 could not see it either. Its
-population (0) is printed by the k-source census (K35).
+population (0) is printed by the k-source census (K35): span_pins.py's
+`not-own eligible loops`, beside the frame term's (non-E-find sites with an
+in-range loop, 0: unreachable on SPAN-SEED); both terms are failable on
+`tests/memfn/span_ksource.py`'s synthetic controls (r78 PINS-1/PINS-2).
 
 **Re-aims, by the anchor map over EVERY function each unit moves [rev4,
 R-13; lesson r69-2; §16 item 13].** The map: every mech row whose
@@ -1385,6 +1465,9 @@ the default width. This lane runs no sweep.
 | [rev4.1, R71-2] `span-vector`'s `MEMFN_CLASS` corpus floors (about 28 byte / 20 utf8 on `c-default`, 0 on `c-vm`) | MEASURED at U2, pinned at the measure (ruled, §15 Q4) | §9.3 |
 | U2b's padding regex | DECLARED before data; drilled two-sided | §2.1, §16 item 12 |
 | `SWAR_MAX_RANGES` | not shipped (no row reaches SWAR) | §4.4 |
+| [U5, r79 F11] `CLANG_ALIGN_OFF` (C6c's clang pool's odd alignment variant: `-fno-align-functions -mllvm -x86-experimental-pref-innermost-loop-alignment=0`) | UNMEASURED DEFAULT, accepted by `dry`'s pool proof (no pool refused) | cards.py, §8 |
+| [U5, r79 F13] `ALIGN_OS_ON` (C6c's gcc -Os pool's odd alignment variant: `-falign-functions=16 -falign-loops=16 -falign-jumps=16 -falign-labels=16`; -Os aligns nothing, so gcc's alignment-OFF variant rebuilt the default layout and `dry` refused all 9 -Os pools, and at 32 B every odd variant kept 32-B phase 0) | UNMEASURED DEFAULT, accepted by `dry`'s pool proof (0 of 42 pools refused) | cards.py, §8 |
+| [U5, r79 F2, F6] C6's SPREAD_MAX 0.30, AA_VOID_MAX 0.05 | UNMEASURED DEFAULTS, stated in the rule before data; FLOOR_MIN 0.15 and READABLE_MIN 0.5 are 710's | `memfn/tests/span_forms/c6_rule.md`, §8 |
 
 ## 13. The three standing questions
 
@@ -1463,8 +1546,8 @@ are built (lane bsu2) and fixed (lane bsu2fix, r75); U3 onward is next.
 | **U2** | The wrapper (option A): T-vwin, T-vscan; `vs<j>` + `__body` + the selector for eligible stretches at every layer, the selector line through the ONE lifted selector writer (§5; ofsskip's bytes unchanged); the deny row `span-vector` (both layers) with its `MEMFN_CLASS` row, its corpus floors measured and pinned at U2 [rev4.1, R71-2], and `span-loop`'s re-measured axes rows (§9.3). The identity gate against the merge base for the deny arm, with its declared mask. The U2 re-aims, `REACH_ONLY` at U2. The first abi event lands here | yes |
 | **U2b** | **The scalar no-loss check** (§2.1): the machine-code census on the BUILT U2 text, the declared normalizer with its two-sided controls, over the real population, the 160-pattern grid and `\w{501}` at 4095. Identical on the population, or the build stops; the grid's DIFFERS list goes into the report | no |
 | **U3** | The `w32` level block: §4.1's text bracketed by V's own writer (lane order, the K ≥ 16 assert), the selector's replaced call, the include bit on the art, the form token, the guarded bound and `simd_bounds.tsv`, the `limits.md`/`tuning.md`/`registry.md` hunks. [rev4.1, R71-4] **C18's head family (`SELECTOR`, `HELPER`), the `_b` name form and the -O0 rule with control (1)** (§10.2), so `test-memfn-simdfloor` reads U3's text green. [rev4.1, R71-5] A V witness (`[0-9a-f]{17}`) added to `simd_guarded_check.py`'s NAMED, `simd-form-named` re-pinned 8 → 9, so the new `simd_bounds.tsv` row has a reader that is not the every-10th sample. F2 recorded before anything else | yes (SIMD-on) |
-| **U4** | G2-V (unit, whole, with guard pages at both ends), the 20 T-table pin cells, SPAN-SEED's per-check wiring and floors (§10.1), sabotage rows (a)-(f) with reach, **the rest of the C18 amendment** (its NAMED three span witnesses, x86-64-v3 only (R71-1), the floors, controls (2)-(4)), the routing leg, `DIFFER_PINS` floors, C18's `FLOORS` re-pin | no |
-| **U5** | Card C6 (its patterns, widths, A/A arm and rule clauses as §8 states; CANDIDATE) + `kit-grid@8` + the formhash SHAPE, renderer and entry; `cards.py plan`/`dry` green, with no timing; the U5 re-checks | no |
+| **U4** | G2-V (unit, whole, with guard pages at both ends), the 20 T-table pin cells (22 after r78's two T-deny cells), SPAN-SEED's per-check wiring and floors (§10.1; G1's exclusion is U6's, the identity gate's floors are U2's mover counts, r78 C18WIRE-5), sabotage rows (a)-(f) with reach, **the rest of the C18 amendment** (its NAMED three span witnesses, x86-64-v3 only (R71-1), the floors, controls (2)-(4)), the routing leg, `DIFFER_PINS` floors (U2's rows, SIMD-off only: r78 C18WIRE-5), C18's `FLOORS` re-pin | no |
+| **U5** | Card C6 (its patterns, widths, A/A arm and rule clauses as §8 states; CANDIDATE) + `kit-grid@8` + the formhash SHAPE, renderer and entry; `cards.py plan`/`dry` green, with no timing; the U5 re-checks. [U5, r79] Also: card **C6c** (§8: SIMD-off under clang -O2 and gcc -Os, the layer table's rows), the committed rule file `c6_rule.md` with `rule_710.md`, the verdict reader and its drills (`cards.py c6selftest`), the reach build (`dry`), H64.b's own pool and the re-time's fresh pool; formhash's SPAN shape folded into WINDOW with three `span-vector` instances (b16, b32, off) | no |
 | **U6** | The abi package at the landing base (§9.2, the unfiltered grep), `make test` async, `make test-axes`, REACH_ONLY. Then G1's manifest and dry run (no timing window, §9.4); C6's timing owed to main's window, on each bench box (§8) | — |
 
 The design rounds (r68, r69) preceded this revision; a light re-check
@@ -1513,8 +1596,8 @@ Option B instead of arm 2's proxy row is a separate architecture note.
 ## 15. Open questions
 
 1. **`scalar-check-cut`: ANSWERED, yes** (Frank 2026-11-21, D201 add. 4;
-   §2.2) [rev4.2]. **`wrap-clang`: OPEN, the owner's** (§2.2.1, from the
-   census's compiler scope); U2 does not wait on it.
+   §2.2) [rev4.2]. **`wrap-clang`: ANSWERED, a** (D201 add. 5, §2.2.1; its
+   follow-up is [BSPAN-CLANG-DIFF], C6c its kit-side ride-along) [U5, r79 F11].
 2. Owed to main, not blocking: the cover-width timing (`cover_cap.md`
    §11.4 B) decides whether the default window width (32) rises.
 3. **Relays to main [rev4, R-23, R-24, R-29]** (records only; main's to
@@ -1713,7 +1796,7 @@ marked UNMEASURED are estimates the build lane replaces with `git diff
 | card | 1 (C6: 3 real sites + 6 bound cells + F2 DIFFERS, plus an A/A arm; CANDIDATE), 1 `kit-grid@8` row, 1 formhash SHAPE + its renderer + 1 entry |
 | decider census [rev4.1, lane bsu1 R-1] | a surface this note missed (U1): 2 `decider_census.tsv` rows (`wf_stretches` fn, `wf_spanrows` data) answering **T-SPAN**, the header's table list +1, `HITS` +1, `MEMBER_COUNT` +2 |
 | SPAN-SEED | **1 committed `.rxt` (41 patterns, about 950 oracle-verified cases) + its generator**, 1 `tests/memfn/CLAUDE.md` line, the corpus-population pins it moves (§9.3), **wiring into 6 checks** (§10.1's table) with 2 floors (byte) |
-| checks | 1 G2-V unit section, 1 G2-V whole section (with guard pages), **20 pin cells over 11 patterns**, 1 identity gate with a **9-spelling** declared mask, **the C18 amendment** (2 regexes + the `_b` name form, the -O0 rule, 3 named witnesses, 4 control plants), **the routing leg** (a name rule, a head family, 7 selftest shapes), `DIFFER_PINS` floors, C18 `FLOORS` re-pin, the `simd_bounds.tsv` row, G1's diff script and manifest; F2 and the U2b census are delivery steps, not committed tests |
+| checks | 1 G2-V unit section, 1 G2-V whole section (with guard pages), **22 pin cells over 11 patterns** (20 + 2 at r78), 1 identity gate with a **9-spelling** declared mask, **the C18 amendment** (2 regexes + the `_b` name form, the -O0 rule, 3 named witnesses, 4 control plants), **the routing leg** (a name rule, a head family, 7 selftest shapes; 9 since r78), `DIFFER_PINS` floors, C18 `FLOORS` re-pin, the `simd_bounds.tsv` row, G1's diff script and manifest; F2 and the U2b census are delivery steps, not committed tests |
 | mech | **6 new sabotage rows** ((a)-(f)) and 4 C18 control rows; re-aims **U1 5 + 1 re-check + 5 re-proved REACH; U2 1 (+ 1 V witness) + 2 re-proved; U5 2 re-checks; U6 1 (S693)**; 9 conditional re-checks |
 | spec | `registry.md` §6¶8a/8b, `tuning.md` §2.43¶3a/3b/3d, `limits.md` §8.3¶3, `match_api.md` §1 (the K80 guard's 3 lines), §6 (the `abi` row) and §6¶17: **7 hunks**; plus `memfn/docs/trace_format.md` (kit doc) |
 | stamps | the `MEMFN_FORMS` token, the guarded-bytes count |

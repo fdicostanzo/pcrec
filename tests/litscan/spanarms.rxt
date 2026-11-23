@@ -1176,3 +1176,1923 @@ features all
 engine vm
 m "xac" 0 3
 n "xab"
+
+# Unit L3 (span_arms.md rev 3.3 §14.4 L3, BACK; lanes l3feat/l3feat2, 2026-11-20): A
+# REQUIRED RUN MAY BEGIN INSIDE A LOOKBEHIND, before the attempt start. TOP's BACK row
+# joins the root's left guard to its head (`(?<=foo)bar` is `foobar` at K -3); the
+# kit's pre-check scans from max(0, startpos + K), the entry and the VM attempt loop
+# move to the hit less K (signed), an end clamp answers NOMATCH where the hit less K
+# passes the subject's end, and the forward scan's re-entry (`handoff`) is DECLINED at
+# K < 0 (W-L17, R-1). Every block on the default route and under `engine vm`, cells
+# at every start position. Expectations from libpcre2-8 10.46 through
+# tests/litscan/gen_handoff.py's ctypes oracle (`pcre_cells`), byte blocks
+# cross-checked against python3 `re` (the two must agree; `# pcre2-only` where
+# python cannot compile the pattern or the block is utf8), never pcrec's.
+# W-L1 (span_arms §5.7 and §14.4 L3, the kit's witness): the run `foobar` begins 3 bytes before every match (K -3); the kit scans from max(0, startpos - 3), so a search from 2 or 3 finds the run at 0 and the match at 3; a scan from the start offset misses it
+pattern (?<=foo)bar
+features all
+encoding byte
+ms 0 "foobar" 3 6
+ms 1 "foobar" 3 6
+ms 2 "foobar" 3 6
+ms 3 "foobar" 3 6
+ns 4 "foobar"
+ns 5 "foobar"
+ns 6 "foobar"
+ms 0 "xfoobarfoobar" 4 7
+ms 1 "xfoobarfoobar" 4 7
+ms 2 "xfoobarfoobar" 4 7
+ms 3 "xfoobarfoobar" 4 7
+ms 4 "xfoobarfoobar" 4 7
+ms 5 "xfoobarfoobar" 10 13
+ms 6 "xfoobarfoobar" 10 13
+ms 7 "xfoobarfoobar" 10 13
+ms 8 "xfoobarfoobar" 10 13
+ms 9 "xfoobarfoobar" 10 13
+ms 10 "xfoobarfoobar" 10 13
+ns 11 "xfoobarfoobar"
+ns 12 "xfoobarfoobar"
+ns 13 "xfoobarfoobar"
+ms 0 "foobafoobar" 8 11
+ms 1 "foobafoobar" 8 11
+ms 2 "foobafoobar" 8 11
+ms 3 "foobafoobar" 8 11
+ms 4 "foobafoobar" 8 11
+ms 5 "foobafoobar" 8 11
+ms 6 "foobafoobar" 8 11
+ms 7 "foobafoobar" 8 11
+ms 8 "foobafoobar" 8 11
+ns 9 "foobafoobar"
+ns 10 "foobafoobar"
+ns 11 "foobafoobar"
+ns 0 "fobar"
+ns 1 "fobar"
+ns 2 "fobar"
+ns 3 "fobar"
+ns 4 "fobar"
+ns 5 "fobar"
+ns 0 "barfoo"
+ns 1 "barfoo"
+ns 2 "barfoo"
+ns 3 "barfoo"
+ns 4 "barfoo"
+ns 5 "barfoo"
+ns 6 "barfoo"
+
+# W-L1 (span_arms §5.7 and §14.4 L3, the kit's witness): the run `foobar` begins 3 bytes before every match (K -3); the kit scans from max(0, startpos - 3), so a search from 2 or 3 finds the run at 0 and the match at 3; a scan from the start offset misses it [engine vm]
+pattern (?<=foo)bar
+features all
+encoding byte
+engine vm
+ms 0 "foobar" 3 6
+ms 1 "foobar" 3 6
+ms 2 "foobar" 3 6
+ms 3 "foobar" 3 6
+ns 4 "foobar"
+ns 5 "foobar"
+ns 6 "foobar"
+ms 0 "xfoobarfoobar" 4 7
+ms 1 "xfoobarfoobar" 4 7
+ms 2 "xfoobarfoobar" 4 7
+ms 3 "xfoobarfoobar" 4 7
+ms 4 "xfoobarfoobar" 4 7
+ms 5 "xfoobarfoobar" 10 13
+ms 6 "xfoobarfoobar" 10 13
+ms 7 "xfoobarfoobar" 10 13
+ms 8 "xfoobarfoobar" 10 13
+ms 9 "xfoobarfoobar" 10 13
+ms 10 "xfoobarfoobar" 10 13
+ns 11 "xfoobarfoobar"
+ns 12 "xfoobarfoobar"
+ns 13 "xfoobarfoobar"
+ms 0 "foobafoobar" 8 11
+ms 1 "foobafoobar" 8 11
+ms 2 "foobafoobar" 8 11
+ms 3 "foobafoobar" 8 11
+ms 4 "foobafoobar" 8 11
+ms 5 "foobafoobar" 8 11
+ms 6 "foobafoobar" 8 11
+ms 7 "foobafoobar" 8 11
+ms 8 "foobafoobar" 8 11
+ns 9 "foobafoobar"
+ns 10 "foobafoobar"
+ns 11 "foobafoobar"
+ns 0 "fobar"
+ns 1 "fobar"
+ns 2 "fobar"
+ns 3 "fobar"
+ns 4 "fobar"
+ns 5 "fobar"
+ns 0 "barfoo"
+ns 1 "barfoo"
+ns 2 "barfoo"
+ns 3 "barfoo"
+ns 4 "barfoo"
+ns 5 "barfoo"
+ns 6 "barfoo"
+
+# pcre2-only
+# W-L3 (span_arms §5.7, L3): the lookbehind's -1 term is the UNION of its branches, so the run is `bc` at -1; a term taken from the first branch claims `abc` at -2 and deletes `xbc`. Also the hybrid prefilter's first ask (l3feat finding: a neutral `landmark_position = search_from` moved the scan past every match)
+pattern (?<=ab|b)c
+features all
+encoding byte
+ms 0 "xbc" 2 3
+ms 1 "xbc" 2 3
+ms 2 "xbc" 2 3
+ns 3 "xbc"
+ms 0 "abc" 2 3
+ms 1 "abc" 2 3
+ms 2 "abc" 2 3
+ns 3 "abc"
+ns 0 "ac"
+ns 1 "ac"
+ns 2 "ac"
+ms 0 "bcbc" 1 2
+ms 1 "bcbc" 1 2
+ms 2 "bcbc" 3 4
+ms 3 "bcbc" 3 4
+ns 4 "bcbc"
+ns 0 "c"
+ns 1 "c"
+
+# pcre2-only
+# W-L3 (span_arms §5.7, L3): the lookbehind's -1 term is the UNION of its branches, so the run is `bc` at -1; a term taken from the first branch claims `abc` at -2 and deletes `xbc`. Also the hybrid prefilter's first ask (l3feat finding: a neutral `landmark_position = search_from` moved the scan past every match) [engine vm]
+pattern (?<=ab|b)c
+features all
+encoding byte
+engine vm
+ms 0 "xbc" 2 3
+ms 1 "xbc" 2 3
+ms 2 "xbc" 2 3
+ns 3 "xbc"
+ms 0 "abc" 2 3
+ms 1 "abc" 2 3
+ms 2 "abc" 2 3
+ns 3 "abc"
+ns 0 "ac"
+ns 1 "ac"
+ns 2 "ac"
+ms 0 "bcbc" 1 2
+ms 1 "bcbc" 1 2
+ms 2 "bcbc" 3 4
+ms 3 "bcbc" 3 4
+ns 4 "bcbc"
+ns 0 "c"
+ns 1 "c"
+
+# W-L10 (span_arms §5.7, A3, the BACK move): K -2; the body starts at max(startpos, c + 2); rev 1's move (the body at the hit) reports (2,7) from 3, before the start offset
+pattern (?<=ab)ab[a-z]*q
+features all
+encoding byte
+ms 0 "abababq" 2 7
+ms 1 "abababq" 2 7
+ms 2 "abababq" 2 7
+ms 3 "abababq" 4 7
+ms 4 "abababq" 4 7
+ns 5 "abababq"
+ns 6 "abababq"
+ns 7 "abababq"
+ms 0 "ababq" 2 5
+ms 1 "ababq" 2 5
+ms 2 "ababq" 2 5
+ns 3 "ababq"
+ns 4 "ababq"
+ns 5 "ababq"
+ns 0 "xabq"
+ns 1 "xabq"
+ns 2 "xabq"
+ns 3 "xabq"
+ns 4 "xabq"
+ns 0 "abq"
+ns 1 "abq"
+ns 2 "abq"
+ns 3 "abq"
+
+# W-L10 (span_arms §5.7, A3, the BACK move): K -2; the body starts at max(startpos, c + 2); rev 1's move (the body at the hit) reports (2,7) from 3, before the start offset [engine vm]
+pattern (?<=ab)ab[a-z]*q
+features all
+encoding byte
+engine vm
+ms 0 "abababq" 2 7
+ms 1 "abababq" 2 7
+ms 2 "abababq" 2 7
+ms 3 "abababq" 4 7
+ms 4 "abababq" 4 7
+ns 5 "abababq"
+ns 6 "abababq"
+ns 7 "abababq"
+ms 0 "ababq" 2 5
+ms 1 "ababq" 2 5
+ms 2 "ababq" 2 5
+ns 3 "ababq"
+ns 4 "ababq"
+ns 5 "ababq"
+ns 0 "xabq"
+ns 1 "xabq"
+ns 2 "xabq"
+ns 3 "xabq"
+ns 4 "xabq"
+ns 0 "abq"
+ns 1 "abq"
+ns 2 "abq"
+ns 3 "abq"
+
+# W-L13 (span_arms §5.7, A8 entry row at signed K): the VM attempt loop's first attempt at max(startpos, c + 2); today's entry text attempts at the raw hit and answers (2,7) from 3
+pattern (?<=ab)ab[a-z]*q(\w*)\1
+features all
+encoding byte
+ms 0 "abababq" 2 7
+ms 1 "abababq" 2 7
+ms 2 "abababq" 2 7
+ms 3 "abababq" 4 7
+ms 4 "abababq" 4 7
+ns 5 "abababq"
+ns 6 "abababq"
+ns 7 "abababq"
+ms 0 "ababq" 2 5
+ms 1 "ababq" 2 5
+ms 2 "ababq" 2 5
+ns 3 "ababq"
+ns 4 "ababq"
+ns 5 "ababq"
+ms 0 "abababqxx" 2 9
+ms 1 "abababqxx" 2 9
+ms 2 "abababqxx" 2 9
+ms 3 "abababqxx" 4 9
+ms 4 "abababqxx" 4 9
+ns 5 "abababqxx"
+ns 6 "abababqxx"
+ns 7 "abababqxx"
+ns 8 "abababqxx"
+ns 9 "abababqxx"
+
+# W-L13 (span_arms §5.7, A8 entry row at signed K): the VM attempt loop's first attempt at max(startpos, c + 2); today's entry text attempts at the raw hit and answers (2,7) from 3 [engine vm]
+pattern (?<=ab)ab[a-z]*q(\w*)\1
+features all
+encoding byte
+engine vm
+ms 0 "abababq" 2 7
+ms 1 "abababq" 2 7
+ms 2 "abababq" 2 7
+ms 3 "abababq" 4 7
+ms 4 "abababq" 4 7
+ns 5 "abababq"
+ns 6 "abababq"
+ns 7 "abababq"
+ms 0 "ababq" 2 5
+ms 1 "ababq" 2 5
+ms 2 "ababq" 2 5
+ns 3 "ababq"
+ns 4 "ababq"
+ns 5 "ababq"
+ms 0 "abababqxx" 2 9
+ms 1 "abababqxx" 2 9
+ms 2 "abababqxx" 2 9
+ms 3 "abababqxx" 4 9
+ms 4 "abababqxx" 4 9
+ns 5 "abababqxx"
+ns 6 "abababqxx"
+ns 7 "abababqxx"
+ns 8 "abababqxx"
+ns 9 "abababqxx"
+
+# W-L14 (span_arms §5.7, A8 re-entry row): stale only when the kept hit lies more than 2 before the attempt; the unsigned `landmark_position - pos > K` text moves the attempt BACK and re-runs it forever (the gate's timeout reports it)
+pattern (?<=ab)ab(\w)\1
+features all
+encoding byte
+ns 0 "xababab-"
+ns 1 "xababab-"
+ns 2 "xababab-"
+ns 3 "xababab-"
+ns 4 "xababab-"
+ns 5 "xababab-"
+ns 6 "xababab-"
+ns 7 "xababab-"
+ns 8 "xababab-"
+ms 0 "ababcc" 2 6
+ms 1 "ababcc" 2 6
+ms 2 "ababcc" 2 6
+ns 3 "ababcc"
+ns 4 "ababcc"
+ns 5 "ababcc"
+ns 6 "ababcc"
+ns 0 "xabababb"
+ns 1 "xabababb"
+ns 2 "xabababb"
+ns 3 "xabababb"
+ns 4 "xabababb"
+ns 5 "xabababb"
+ns 6 "xabababb"
+ns 7 "xabababb"
+ns 8 "xabababb"
+ns 0 "abab"
+ns 1 "abab"
+ns 2 "abab"
+ns 3 "abab"
+ns 4 "abab"
+
+# W-L14 (span_arms §5.7, A8 re-entry row): stale only when the kept hit lies more than 2 before the attempt; the unsigned `landmark_position - pos > K` text moves the attempt BACK and re-runs it forever (the gate's timeout reports it) [engine vm]
+pattern (?<=ab)ab(\w)\1
+features all
+encoding byte
+engine vm
+ns 0 "xababab-"
+ns 1 "xababab-"
+ns 2 "xababab-"
+ns 3 "xababab-"
+ns 4 "xababab-"
+ns 5 "xababab-"
+ns 6 "xababab-"
+ns 7 "xababab-"
+ns 8 "xababab-"
+ms 0 "ababcc" 2 6
+ms 1 "ababcc" 2 6
+ms 2 "ababcc" 2 6
+ns 3 "ababcc"
+ns 4 "ababcc"
+ns 5 "ababcc"
+ns 6 "ababcc"
+ns 0 "xabababb"
+ns 1 "xabababb"
+ns 2 "xabababb"
+ns 3 "xabababb"
+ns 4 "xabababb"
+ns 5 "xabababb"
+ns 6 "xabababb"
+ns 7 "xabababb"
+ns 8 "xabababb"
+ns 0 "abab"
+ns 1 "abab"
+ns 2 "abab"
+ns 3 "abab"
+ns 4 "abab"
+
+# W-L15 (span_arms §14.4 L3, review r51 READYL3-1): the entry guard is `k != 0 || round.len > 0`; with `k > 0 || ...` kept no move is emitted at K -1 and the attempt starts at the raw hit: (2,5) from 3 where the oracle gives (3,6)
+pattern (?<=a)a(\w)\1
+features all
+encoding byte
+ms 0 "-aaaaaq-b" 2 5
+ms 1 "-aaaaaq-b" 2 5
+ms 2 "-aaaaaq-b" 2 5
+ms 3 "-aaaaaq-b" 3 6
+ns 4 "-aaaaaq-b"
+ns 5 "-aaaaaq-b"
+ns 6 "-aaaaaq-b"
+ns 7 "-aaaaaq-b"
+ns 8 "-aaaaaq-b"
+ns 9 "-aaaaaq-b"
+ns 0 "aaa"
+ns 1 "aaa"
+ns 2 "aaa"
+ns 3 "aaa"
+ns 0 "-aab"
+ns 1 "-aab"
+ns 2 "-aab"
+ns 3 "-aab"
+ns 4 "-aab"
+
+# W-L15 (span_arms §14.4 L3, review r51 READYL3-1): the entry guard is `k != 0 || round.len > 0`; with `k > 0 || ...` kept no move is emitted at K -1 and the attempt starts at the raw hit: (2,5) from 3 where the oracle gives (3,6) [engine vm]
+pattern (?<=a)a(\w)\1
+features all
+encoding byte
+engine vm
+ms 0 "-aaaaaq-b" 2 5
+ms 1 "-aaaaaq-b" 2 5
+ms 2 "-aaaaaq-b" 2 5
+ms 3 "-aaaaaq-b" 3 6
+ns 4 "-aaaaaq-b"
+ns 5 "-aaaaaq-b"
+ns 6 "-aaaaaq-b"
+ns 7 "-aaaaaq-b"
+ns 8 "-aaaaaq-b"
+ns 9 "-aaaaaq-b"
+ns 0 "aaa"
+ns 1 "aaa"
+ns 2 "aaa"
+ns 3 "aaa"
+ns 0 "-aab"
+ns 1 "-aab"
+ns 2 "-aab"
+ns 3 "-aab"
+ns 4 "-aab"
+
+# W-L16 (span_arms §14.4 L3, review r51 READYL3-4, a SAFETY witness, run under make asan too): the kit verifies `Content-` at the run's left end, inside the 16-byte lookbehind; on a subject that ends inside the lookbehind the end clamp answers NOMATCH, where `hit += 16` alone starts past the subject's end
+pattern (?<=Content-Length: )\d
+features all
+encoding byte
+ns 0 "xx Content-Length:"
+ns 1 "xx Content-Length:"
+ns 2 "xx Content-Length:"
+ns 3 "xx Content-Length:"
+ns 4 "xx Content-Length:"
+ns 5 "xx Content-Length:"
+ns 6 "xx Content-Length:"
+ns 7 "xx Content-Length:"
+ns 8 "xx Content-Length:"
+ns 9 "xx Content-Length:"
+ns 10 "xx Content-Length:"
+ns 11 "xx Content-Length:"
+ns 12 "xx Content-Length:"
+ns 13 "xx Content-Length:"
+ns 14 "xx Content-Length:"
+ns 15 "xx Content-Length:"
+ns 16 "xx Content-Length:"
+ns 17 "xx Content-Length:"
+ns 18 "xx Content-Length:"
+ns 0 "Content-Length:"
+ns 1 "Content-Length:"
+ns 2 "Content-Length:"
+ns 3 "Content-Length:"
+ns 4 "Content-Length:"
+ns 5 "Content-Length:"
+ns 6 "Content-Length:"
+ns 7 "Content-Length:"
+ns 8 "Content-Length:"
+ns 9 "Content-Length:"
+ns 10 "Content-Length:"
+ns 11 "Content-Length:"
+ns 12 "Content-Length:"
+ns 13 "Content-Length:"
+ns 14 "Content-Length:"
+ns 15 "Content-Length:"
+ms 0 "Content-Length: 5" 16 17
+ms 1 "Content-Length: 5" 16 17
+ms 2 "Content-Length: 5" 16 17
+ms 3 "Content-Length: 5" 16 17
+ms 4 "Content-Length: 5" 16 17
+ms 5 "Content-Length: 5" 16 17
+ms 6 "Content-Length: 5" 16 17
+ms 7 "Content-Length: 5" 16 17
+ms 8 "Content-Length: 5" 16 17
+ms 9 "Content-Length: 5" 16 17
+ms 10 "Content-Length: 5" 16 17
+ms 11 "Content-Length: 5" 16 17
+ms 12 "Content-Length: 5" 16 17
+ms 13 "Content-Length: 5" 16 17
+ms 14 "Content-Length: 5" 16 17
+ms 15 "Content-Length: 5" 16 17
+ms 16 "Content-Length: 5" 16 17
+ns 17 "Content-Length: 5"
+ns 0 "Content-Length: x"
+ns 1 "Content-Length: x"
+ns 2 "Content-Length: x"
+ns 3 "Content-Length: x"
+ns 4 "Content-Length: x"
+ns 5 "Content-Length: x"
+ns 6 "Content-Length: x"
+ns 7 "Content-Length: x"
+ns 8 "Content-Length: x"
+ns 9 "Content-Length: x"
+ns 10 "Content-Length: x"
+ns 11 "Content-Length: x"
+ns 12 "Content-Length: x"
+ns 13 "Content-Length: x"
+ns 14 "Content-Length: x"
+ns 15 "Content-Length: x"
+ns 16 "Content-Length: x"
+ns 17 "Content-Length: x"
+ns 0 "Content-"
+ns 1 "Content-"
+ns 2 "Content-"
+ns 3 "Content-"
+ns 4 "Content-"
+ns 5 "Content-"
+ns 6 "Content-"
+ns 7 "Content-"
+ns 8 "Content-"
+
+# W-L16 (span_arms §14.4 L3, review r51 READYL3-4, a SAFETY witness, run under make asan too): the kit verifies `Content-` at the run's left end, inside the 16-byte lookbehind; on a subject that ends inside the lookbehind the end clamp answers NOMATCH, where `hit += 16` alone starts past the subject's end [engine vm]
+pattern (?<=Content-Length: )\d
+features all
+encoding byte
+engine vm
+ns 0 "xx Content-Length:"
+ns 1 "xx Content-Length:"
+ns 2 "xx Content-Length:"
+ns 3 "xx Content-Length:"
+ns 4 "xx Content-Length:"
+ns 5 "xx Content-Length:"
+ns 6 "xx Content-Length:"
+ns 7 "xx Content-Length:"
+ns 8 "xx Content-Length:"
+ns 9 "xx Content-Length:"
+ns 10 "xx Content-Length:"
+ns 11 "xx Content-Length:"
+ns 12 "xx Content-Length:"
+ns 13 "xx Content-Length:"
+ns 14 "xx Content-Length:"
+ns 15 "xx Content-Length:"
+ns 16 "xx Content-Length:"
+ns 17 "xx Content-Length:"
+ns 18 "xx Content-Length:"
+ns 0 "Content-Length:"
+ns 1 "Content-Length:"
+ns 2 "Content-Length:"
+ns 3 "Content-Length:"
+ns 4 "Content-Length:"
+ns 5 "Content-Length:"
+ns 6 "Content-Length:"
+ns 7 "Content-Length:"
+ns 8 "Content-Length:"
+ns 9 "Content-Length:"
+ns 10 "Content-Length:"
+ns 11 "Content-Length:"
+ns 12 "Content-Length:"
+ns 13 "Content-Length:"
+ns 14 "Content-Length:"
+ns 15 "Content-Length:"
+ms 0 "Content-Length: 5" 16 17
+ms 1 "Content-Length: 5" 16 17
+ms 2 "Content-Length: 5" 16 17
+ms 3 "Content-Length: 5" 16 17
+ms 4 "Content-Length: 5" 16 17
+ms 5 "Content-Length: 5" 16 17
+ms 6 "Content-Length: 5" 16 17
+ms 7 "Content-Length: 5" 16 17
+ms 8 "Content-Length: 5" 16 17
+ms 9 "Content-Length: 5" 16 17
+ms 10 "Content-Length: 5" 16 17
+ms 11 "Content-Length: 5" 16 17
+ms 12 "Content-Length: 5" 16 17
+ms 13 "Content-Length: 5" 16 17
+ms 14 "Content-Length: 5" 16 17
+ms 15 "Content-Length: 5" 16 17
+ms 16 "Content-Length: 5" 16 17
+ns 17 "Content-Length: 5"
+ns 0 "Content-Length: x"
+ns 1 "Content-Length: x"
+ns 2 "Content-Length: x"
+ns 3 "Content-Length: x"
+ns 4 "Content-Length: x"
+ns 5 "Content-Length: x"
+ns 6 "Content-Length: x"
+ns 7 "Content-Length: x"
+ns 8 "Content-Length: x"
+ns 9 "Content-Length: x"
+ns 10 "Content-Length: x"
+ns 11 "Content-Length: x"
+ns 12 "Content-Length: x"
+ns 13 "Content-Length: x"
+ns 14 "Content-Length: x"
+ns 15 "Content-Length: x"
+ns 16 "Content-Length: x"
+ns 17 "Content-Length: x"
+ns 0 "Content-"
+ns 1 "Content-"
+ns 2 "Content-"
+ns 3 "Content-"
+ns 4 "Content-"
+ns 5 "Content-"
+ns 6 "Content-"
+ns 7 "Content-"
+ns 8 "Content-"
+
+# W-L17 (span_arms §14.4 L3, review r51 READYL3-6): the consumed extent of `foobar` at -6 is EMPTY (`\d*x` gives `head` no byte), so no run pick: `req_byte` the set's `x` (120), the pin states nothing; run under make asan/ubsan too
+pattern (?<=foobar)\d*x
+features all
+encoding byte
+ms 0 "foobarx" 6 7
+ms 1 "foobarx" 6 7
+ms 2 "foobarx" 6 7
+ms 3 "foobarx" 6 7
+ms 4 "foobarx" 6 7
+ms 5 "foobarx" 6 7
+ms 6 "foobarx" 6 7
+ns 7 "foobarx"
+ms 0 "foobar12x" 6 9
+ms 1 "foobar12x" 6 9
+ms 2 "foobar12x" 6 9
+ms 3 "foobar12x" 6 9
+ms 4 "foobar12x" 6 9
+ms 5 "foobar12x" 6 9
+ms 6 "foobar12x" 6 9
+ns 7 "foobar12x"
+ns 8 "foobar12x"
+ns 9 "foobar12x"
+ns 0 "fooba12x"
+ns 1 "fooba12x"
+ns 2 "fooba12x"
+ns 3 "fooba12x"
+ns 4 "fooba12x"
+ns 5 "fooba12x"
+ns 6 "fooba12x"
+ns 7 "fooba12x"
+ns 8 "fooba12x"
+ms 0 "xfoobar9xfoobarx" 7 9
+ms 1 "xfoobar9xfoobarx" 7 9
+ms 2 "xfoobar9xfoobarx" 7 9
+ms 3 "xfoobar9xfoobarx" 7 9
+ms 4 "xfoobar9xfoobarx" 7 9
+ms 5 "xfoobar9xfoobarx" 7 9
+ms 6 "xfoobar9xfoobarx" 7 9
+ms 7 "xfoobar9xfoobarx" 7 9
+ms 8 "xfoobar9xfoobarx" 15 16
+ms 9 "xfoobar9xfoobarx" 15 16
+ms 10 "xfoobar9xfoobarx" 15 16
+ms 11 "xfoobar9xfoobarx" 15 16
+ms 12 "xfoobar9xfoobarx" 15 16
+ms 13 "xfoobar9xfoobarx" 15 16
+ms 14 "xfoobar9xfoobarx" 15 16
+ms 15 "xfoobar9xfoobarx" 15 16
+ns 16 "xfoobar9xfoobarx"
+ns 0 "x"
+ns 1 "x"
+
+# W-L17 (span_arms §14.4 L3, review r51 READYL3-6): the consumed extent of `foobar` at -6 is EMPTY (`\d*x` gives `head` no byte), so no run pick: `req_byte` the set's `x` (120), the pin states nothing; run under make asan/ubsan too [engine vm]
+pattern (?<=foobar)\d*x
+features all
+encoding byte
+engine vm
+ms 0 "foobarx" 6 7
+ms 1 "foobarx" 6 7
+ms 2 "foobarx" 6 7
+ms 3 "foobarx" 6 7
+ms 4 "foobarx" 6 7
+ms 5 "foobarx" 6 7
+ms 6 "foobarx" 6 7
+ns 7 "foobarx"
+ms 0 "foobar12x" 6 9
+ms 1 "foobar12x" 6 9
+ms 2 "foobar12x" 6 9
+ms 3 "foobar12x" 6 9
+ms 4 "foobar12x" 6 9
+ms 5 "foobar12x" 6 9
+ms 6 "foobar12x" 6 9
+ns 7 "foobar12x"
+ns 8 "foobar12x"
+ns 9 "foobar12x"
+ns 0 "fooba12x"
+ns 1 "fooba12x"
+ns 2 "fooba12x"
+ns 3 "fooba12x"
+ns 4 "fooba12x"
+ns 5 "fooba12x"
+ns 6 "fooba12x"
+ns 7 "fooba12x"
+ns 8 "fooba12x"
+ms 0 "xfoobar9xfoobarx" 7 9
+ms 1 "xfoobar9xfoobarx" 7 9
+ms 2 "xfoobar9xfoobarx" 7 9
+ms 3 "xfoobar9xfoobarx" 7 9
+ms 4 "xfoobar9xfoobarx" 7 9
+ms 5 "xfoobar9xfoobarx" 7 9
+ms 6 "xfoobar9xfoobarx" 7 9
+ms 7 "xfoobar9xfoobarx" 7 9
+ms 8 "xfoobar9xfoobarx" 15 16
+ms 9 "xfoobar9xfoobarx" 15 16
+ms 10 "xfoobar9xfoobarx" 15 16
+ms 11 "xfoobar9xfoobarx" 15 16
+ms 12 "xfoobar9xfoobarx" 15 16
+ms 13 "xfoobar9xfoobarx" 15 16
+ms 14 "xfoobar9xfoobarx" 15 16
+ms 15 "xfoobar9xfoobarx" 15 16
+ns 16 "xfoobar9xfoobarx"
+ns 0 "x"
+ns 1 "x"
+
+# W-L18 (span_arms §14.4 L3, review r51 READYL3-6): the run `foo` at -3 consumes nothing: `req_byte` none; on `foo` the match is (3,3)
+pattern (?<=foo)
+features all
+encoding byte
+ms 0 "foo" 3 3
+ms 1 "foo" 3 3
+ms 2 "foo" 3 3
+ms 3 "foo" 3 3
+ms 0 "xfoo" 4 4
+ms 1 "xfoo" 4 4
+ms 2 "xfoo" 4 4
+ms 3 "xfoo" 4 4
+ms 4 "xfoo" 4 4
+ns 0 "fo"
+ns 1 "fo"
+ns 2 "fo"
+ms 0 "foofoo" 3 3
+ms 1 "foofoo" 3 3
+ms 2 "foofoo" 3 3
+ms 3 "foofoo" 3 3
+ms 4 "foofoo" 6 6
+ms 5 "foofoo" 6 6
+ms 6 "foofoo" 6 6
+
+# W-L18 (span_arms §14.4 L3, review r51 READYL3-6): the run `foo` at -3 consumes nothing: `req_byte` none; on `foo` the match is (3,3) [engine vm]
+pattern (?<=foo)
+features all
+encoding byte
+engine vm
+ms 0 "foo" 3 3
+ms 1 "foo" 3 3
+ms 2 "foo" 3 3
+ms 3 "foo" 3 3
+ms 0 "xfoo" 4 4
+ms 1 "xfoo" 4 4
+ms 2 "xfoo" 4 4
+ms 3 "xfoo" 4 4
+ms 4 "xfoo" 4 4
+ns 0 "fo"
+ns 1 "fo"
+ns 2 "fo"
+ms 0 "foofoo" 3 3
+ms 1 "foofoo" 3 3
+ms 2 "foofoo" 3 3
+ms 3 "foofoo" 3 3
+ms 4 "foofoo" 6 6
+ms 5 "foofoo" 6 6
+ms 6 "foofoo" 6 6
+
+# W-L19 (span_arms §14.4 L3, review r51 READYL3-6): a 32-byte lookbehind, the run `a^32` at -32 (the bound) with an empty extent
+pattern (?<=a{32})b
+features all
+encoding byte
+ms 0 "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaab" 32 33
+ms 1 "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaab" 32 33
+ms 2 "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaab" 32 33
+ms 3 "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaab" 32 33
+ms 4 "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaab" 32 33
+ms 5 "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaab" 32 33
+ms 6 "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaab" 32 33
+ms 7 "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaab" 32 33
+ms 8 "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaab" 32 33
+ms 9 "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaab" 32 33
+ms 10 "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaab" 32 33
+ms 11 "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaab" 32 33
+ms 12 "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaab" 32 33
+ms 13 "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaab" 32 33
+ms 14 "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaab" 32 33
+ms 15 "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaab" 32 33
+ms 16 "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaab" 32 33
+ms 17 "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaab" 32 33
+ms 18 "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaab" 32 33
+ms 19 "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaab" 32 33
+ms 20 "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaab" 32 33
+ms 21 "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaab" 32 33
+ms 22 "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaab" 32 33
+ms 23 "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaab" 32 33
+ms 24 "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaab" 32 33
+ms 25 "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaab" 32 33
+ms 26 "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaab" 32 33
+ms 27 "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaab" 32 33
+ms 28 "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaab" 32 33
+ms 29 "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaab" 32 33
+ms 30 "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaab" 32 33
+ms 31 "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaab" 32 33
+ms 32 "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaab" 32 33
+ns 33 "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaab"
+ns 0 "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaab"
+ns 1 "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaab"
+ns 2 "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaab"
+ns 3 "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaab"
+ns 4 "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaab"
+ns 5 "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaab"
+ns 6 "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaab"
+ns 7 "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaab"
+ns 8 "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaab"
+ns 9 "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaab"
+ns 10 "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaab"
+ns 11 "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaab"
+ns 12 "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaab"
+ns 13 "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaab"
+ns 14 "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaab"
+ns 15 "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaab"
+ns 16 "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaab"
+ns 17 "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaab"
+ns 18 "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaab"
+ns 19 "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaab"
+ns 20 "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaab"
+ns 21 "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaab"
+ns 22 "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaab"
+ns 23 "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaab"
+ns 24 "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaab"
+ns 25 "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaab"
+ns 26 "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaab"
+ns 27 "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaab"
+ns 28 "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaab"
+ns 29 "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaab"
+ns 30 "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaab"
+ns 31 "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaab"
+ns 32 "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaab"
+ms 0 "xaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaabb" 33 34
+ms 1 "xaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaabb" 33 34
+ms 2 "xaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaabb" 33 34
+ms 3 "xaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaabb" 33 34
+ms 4 "xaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaabb" 33 34
+ms 5 "xaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaabb" 33 34
+ms 6 "xaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaabb" 33 34
+ms 7 "xaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaabb" 33 34
+ms 8 "xaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaabb" 33 34
+ms 9 "xaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaabb" 33 34
+ms 10 "xaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaabb" 33 34
+ms 11 "xaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaabb" 33 34
+ms 12 "xaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaabb" 33 34
+ms 13 "xaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaabb" 33 34
+ms 14 "xaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaabb" 33 34
+ms 15 "xaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaabb" 33 34
+ms 16 "xaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaabb" 33 34
+ms 17 "xaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaabb" 33 34
+ms 18 "xaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaabb" 33 34
+ms 19 "xaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaabb" 33 34
+ms 20 "xaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaabb" 33 34
+ms 21 "xaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaabb" 33 34
+ms 22 "xaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaabb" 33 34
+ms 23 "xaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaabb" 33 34
+ms 24 "xaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaabb" 33 34
+ms 25 "xaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaabb" 33 34
+ms 26 "xaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaabb" 33 34
+ms 27 "xaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaabb" 33 34
+ms 28 "xaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaabb" 33 34
+ms 29 "xaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaabb" 33 34
+ms 30 "xaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaabb" 33 34
+ms 31 "xaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaabb" 33 34
+ms 32 "xaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaabb" 33 34
+ms 33 "xaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaabb" 33 34
+ns 34 "xaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaabb"
+ns 35 "xaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaabb"
+ns 0 "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+ns 1 "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+ns 2 "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+ns 3 "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+ns 4 "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+ns 5 "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+ns 6 "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+ns 7 "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+ns 8 "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+ns 9 "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+ns 10 "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+ns 11 "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+ns 12 "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+ns 13 "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+ns 14 "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+ns 15 "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+ns 16 "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+ns 17 "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+ns 18 "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+ns 19 "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+ns 20 "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+ns 21 "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+ns 22 "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+ns 23 "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+ns 24 "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+ns 25 "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+ns 26 "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+ns 27 "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+ns 28 "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+ns 29 "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+ns 30 "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+ns 31 "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+ns 32 "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+ns 33 "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+ns 34 "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+ns 35 "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+ns 36 "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+ns 37 "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+ns 38 "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+ns 39 "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+ns 40 "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+
+# W-L19 (span_arms §14.4 L3, review r51 READYL3-6): a 32-byte lookbehind, the run `a^32` at -32 (the bound) with an empty extent [engine vm]
+pattern (?<=a{32})b
+features all
+encoding byte
+engine vm
+ms 0 "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaab" 32 33
+ms 1 "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaab" 32 33
+ms 2 "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaab" 32 33
+ms 3 "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaab" 32 33
+ms 4 "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaab" 32 33
+ms 5 "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaab" 32 33
+ms 6 "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaab" 32 33
+ms 7 "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaab" 32 33
+ms 8 "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaab" 32 33
+ms 9 "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaab" 32 33
+ms 10 "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaab" 32 33
+ms 11 "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaab" 32 33
+ms 12 "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaab" 32 33
+ms 13 "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaab" 32 33
+ms 14 "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaab" 32 33
+ms 15 "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaab" 32 33
+ms 16 "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaab" 32 33
+ms 17 "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaab" 32 33
+ms 18 "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaab" 32 33
+ms 19 "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaab" 32 33
+ms 20 "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaab" 32 33
+ms 21 "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaab" 32 33
+ms 22 "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaab" 32 33
+ms 23 "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaab" 32 33
+ms 24 "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaab" 32 33
+ms 25 "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaab" 32 33
+ms 26 "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaab" 32 33
+ms 27 "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaab" 32 33
+ms 28 "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaab" 32 33
+ms 29 "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaab" 32 33
+ms 30 "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaab" 32 33
+ms 31 "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaab" 32 33
+ms 32 "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaab" 32 33
+ns 33 "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaab"
+ns 0 "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaab"
+ns 1 "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaab"
+ns 2 "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaab"
+ns 3 "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaab"
+ns 4 "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaab"
+ns 5 "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaab"
+ns 6 "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaab"
+ns 7 "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaab"
+ns 8 "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaab"
+ns 9 "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaab"
+ns 10 "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaab"
+ns 11 "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaab"
+ns 12 "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaab"
+ns 13 "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaab"
+ns 14 "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaab"
+ns 15 "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaab"
+ns 16 "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaab"
+ns 17 "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaab"
+ns 18 "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaab"
+ns 19 "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaab"
+ns 20 "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaab"
+ns 21 "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaab"
+ns 22 "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaab"
+ns 23 "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaab"
+ns 24 "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaab"
+ns 25 "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaab"
+ns 26 "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaab"
+ns 27 "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaab"
+ns 28 "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaab"
+ns 29 "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaab"
+ns 30 "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaab"
+ns 31 "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaab"
+ns 32 "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaab"
+ms 0 "xaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaabb" 33 34
+ms 1 "xaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaabb" 33 34
+ms 2 "xaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaabb" 33 34
+ms 3 "xaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaabb" 33 34
+ms 4 "xaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaabb" 33 34
+ms 5 "xaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaabb" 33 34
+ms 6 "xaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaabb" 33 34
+ms 7 "xaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaabb" 33 34
+ms 8 "xaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaabb" 33 34
+ms 9 "xaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaabb" 33 34
+ms 10 "xaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaabb" 33 34
+ms 11 "xaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaabb" 33 34
+ms 12 "xaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaabb" 33 34
+ms 13 "xaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaabb" 33 34
+ms 14 "xaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaabb" 33 34
+ms 15 "xaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaabb" 33 34
+ms 16 "xaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaabb" 33 34
+ms 17 "xaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaabb" 33 34
+ms 18 "xaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaabb" 33 34
+ms 19 "xaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaabb" 33 34
+ms 20 "xaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaabb" 33 34
+ms 21 "xaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaabb" 33 34
+ms 22 "xaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaabb" 33 34
+ms 23 "xaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaabb" 33 34
+ms 24 "xaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaabb" 33 34
+ms 25 "xaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaabb" 33 34
+ms 26 "xaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaabb" 33 34
+ms 27 "xaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaabb" 33 34
+ms 28 "xaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaabb" 33 34
+ms 29 "xaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaabb" 33 34
+ms 30 "xaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaabb" 33 34
+ms 31 "xaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaabb" 33 34
+ms 32 "xaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaabb" 33 34
+ms 33 "xaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaabb" 33 34
+ns 34 "xaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaabb"
+ns 35 "xaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaabb"
+ns 0 "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+ns 1 "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+ns 2 "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+ns 3 "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+ns 4 "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+ns 5 "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+ns 6 "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+ns 7 "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+ns 8 "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+ns 9 "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+ns 10 "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+ns 11 "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+ns 12 "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+ns 13 "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+ns 14 "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+ns 15 "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+ns 16 "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+ns 17 "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+ns 18 "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+ns 19 "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+ns 20 "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+ns 21 "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+ns 22 "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+ns 23 "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+ns 24 "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+ns 25 "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+ns 26 "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+ns 27 "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+ns 28 "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+ns 29 "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+ns 30 "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+ns 31 "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+ns 32 "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+ns 33 "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+ns 34 "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+ns 35 "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+ns 36 "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+ns 37 "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+ns 38 "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+ns 39 "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+ns 40 "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+
+# W-T3a (span_arms §5.7, L3): the run `a^20 b^8 z b^3` at -20, the kit's member `z`; a TOP `++` keeping the LAST positions states `a^12 b^8 z b^11` at -20 (truly -12) and the body starts 8 bytes late: NOMATCH
+pattern (?<=aaaaaaaaaaaaaaaaaaaa)bbbbbbbbzbbbbbbbbbbb
+features all
+encoding byte
+ms 0 "aaaaaaaaaaaaaaaaaaaabbbbbbbbzbbbbbbbbbbb" 20 40
+ms 1 "aaaaaaaaaaaaaaaaaaaabbbbbbbbzbbbbbbbbbbb" 20 40
+ms 2 "aaaaaaaaaaaaaaaaaaaabbbbbbbbzbbbbbbbbbbb" 20 40
+ms 3 "aaaaaaaaaaaaaaaaaaaabbbbbbbbzbbbbbbbbbbb" 20 40
+ms 4 "aaaaaaaaaaaaaaaaaaaabbbbbbbbzbbbbbbbbbbb" 20 40
+ms 5 "aaaaaaaaaaaaaaaaaaaabbbbbbbbzbbbbbbbbbbb" 20 40
+ms 6 "aaaaaaaaaaaaaaaaaaaabbbbbbbbzbbbbbbbbbbb" 20 40
+ms 7 "aaaaaaaaaaaaaaaaaaaabbbbbbbbzbbbbbbbbbbb" 20 40
+ms 8 "aaaaaaaaaaaaaaaaaaaabbbbbbbbzbbbbbbbbbbb" 20 40
+ms 9 "aaaaaaaaaaaaaaaaaaaabbbbbbbbzbbbbbbbbbbb" 20 40
+ms 10 "aaaaaaaaaaaaaaaaaaaabbbbbbbbzbbbbbbbbbbb" 20 40
+ms 11 "aaaaaaaaaaaaaaaaaaaabbbbbbbbzbbbbbbbbbbb" 20 40
+ms 12 "aaaaaaaaaaaaaaaaaaaabbbbbbbbzbbbbbbbbbbb" 20 40
+ms 13 "aaaaaaaaaaaaaaaaaaaabbbbbbbbzbbbbbbbbbbb" 20 40
+ms 14 "aaaaaaaaaaaaaaaaaaaabbbbbbbbzbbbbbbbbbbb" 20 40
+ms 15 "aaaaaaaaaaaaaaaaaaaabbbbbbbbzbbbbbbbbbbb" 20 40
+ms 16 "aaaaaaaaaaaaaaaaaaaabbbbbbbbzbbbbbbbbbbb" 20 40
+ms 17 "aaaaaaaaaaaaaaaaaaaabbbbbbbbzbbbbbbbbbbb" 20 40
+ms 18 "aaaaaaaaaaaaaaaaaaaabbbbbbbbzbbbbbbbbbbb" 20 40
+ms 19 "aaaaaaaaaaaaaaaaaaaabbbbbbbbzbbbbbbbbbbb" 20 40
+ms 20 "aaaaaaaaaaaaaaaaaaaabbbbbbbbzbbbbbbbbbbb" 20 40
+ns 21 "aaaaaaaaaaaaaaaaaaaabbbbbbbbzbbbbbbbbbbb"
+ns 22 "aaaaaaaaaaaaaaaaaaaabbbbbbbbzbbbbbbbbbbb"
+ns 23 "aaaaaaaaaaaaaaaaaaaabbbbbbbbzbbbbbbbbbbb"
+ns 24 "aaaaaaaaaaaaaaaaaaaabbbbbbbbzbbbbbbbbbbb"
+ns 25 "aaaaaaaaaaaaaaaaaaaabbbbbbbbzbbbbbbbbbbb"
+ns 26 "aaaaaaaaaaaaaaaaaaaabbbbbbbbzbbbbbbbbbbb"
+ns 27 "aaaaaaaaaaaaaaaaaaaabbbbbbbbzbbbbbbbbbbb"
+ns 28 "aaaaaaaaaaaaaaaaaaaabbbbbbbbzbbbbbbbbbbb"
+ns 29 "aaaaaaaaaaaaaaaaaaaabbbbbbbbzbbbbbbbbbbb"
+ns 30 "aaaaaaaaaaaaaaaaaaaabbbbbbbbzbbbbbbbbbbb"
+ns 31 "aaaaaaaaaaaaaaaaaaaabbbbbbbbzbbbbbbbbbbb"
+ns 32 "aaaaaaaaaaaaaaaaaaaabbbbbbbbzbbbbbbbbbbb"
+ns 33 "aaaaaaaaaaaaaaaaaaaabbbbbbbbzbbbbbbbbbbb"
+ns 34 "aaaaaaaaaaaaaaaaaaaabbbbbbbbzbbbbbbbbbbb"
+ns 35 "aaaaaaaaaaaaaaaaaaaabbbbbbbbzbbbbbbbbbbb"
+ns 36 "aaaaaaaaaaaaaaaaaaaabbbbbbbbzbbbbbbbbbbb"
+ns 37 "aaaaaaaaaaaaaaaaaaaabbbbbbbbzbbbbbbbbbbb"
+ns 38 "aaaaaaaaaaaaaaaaaaaabbbbbbbbzbbbbbbbbbbb"
+ns 39 "aaaaaaaaaaaaaaaaaaaabbbbbbbbzbbbbbbbbbbb"
+ns 40 "aaaaaaaaaaaaaaaaaaaabbbbbbbbzbbbbbbbbbbb"
+ms 0 "xaaaaaaaaaaaaaaaaaaaabbbbbbbbzbbbbbbbbbbb" 21 41
+ms 1 "xaaaaaaaaaaaaaaaaaaaabbbbbbbbzbbbbbbbbbbb" 21 41
+ms 2 "xaaaaaaaaaaaaaaaaaaaabbbbbbbbzbbbbbbbbbbb" 21 41
+ms 3 "xaaaaaaaaaaaaaaaaaaaabbbbbbbbzbbbbbbbbbbb" 21 41
+ms 4 "xaaaaaaaaaaaaaaaaaaaabbbbbbbbzbbbbbbbbbbb" 21 41
+ms 5 "xaaaaaaaaaaaaaaaaaaaabbbbbbbbzbbbbbbbbbbb" 21 41
+ms 6 "xaaaaaaaaaaaaaaaaaaaabbbbbbbbzbbbbbbbbbbb" 21 41
+ms 7 "xaaaaaaaaaaaaaaaaaaaabbbbbbbbzbbbbbbbbbbb" 21 41
+ms 8 "xaaaaaaaaaaaaaaaaaaaabbbbbbbbzbbbbbbbbbbb" 21 41
+ms 9 "xaaaaaaaaaaaaaaaaaaaabbbbbbbbzbbbbbbbbbbb" 21 41
+ms 10 "xaaaaaaaaaaaaaaaaaaaabbbbbbbbzbbbbbbbbbbb" 21 41
+ms 11 "xaaaaaaaaaaaaaaaaaaaabbbbbbbbzbbbbbbbbbbb" 21 41
+ms 12 "xaaaaaaaaaaaaaaaaaaaabbbbbbbbzbbbbbbbbbbb" 21 41
+ms 13 "xaaaaaaaaaaaaaaaaaaaabbbbbbbbzbbbbbbbbbbb" 21 41
+ms 14 "xaaaaaaaaaaaaaaaaaaaabbbbbbbbzbbbbbbbbbbb" 21 41
+ms 15 "xaaaaaaaaaaaaaaaaaaaabbbbbbbbzbbbbbbbbbbb" 21 41
+ms 16 "xaaaaaaaaaaaaaaaaaaaabbbbbbbbzbbbbbbbbbbb" 21 41
+ms 17 "xaaaaaaaaaaaaaaaaaaaabbbbbbbbzbbbbbbbbbbb" 21 41
+ms 18 "xaaaaaaaaaaaaaaaaaaaabbbbbbbbzbbbbbbbbbbb" 21 41
+ms 19 "xaaaaaaaaaaaaaaaaaaaabbbbbbbbzbbbbbbbbbbb" 21 41
+ms 20 "xaaaaaaaaaaaaaaaaaaaabbbbbbbbzbbbbbbbbbbb" 21 41
+ms 21 "xaaaaaaaaaaaaaaaaaaaabbbbbbbbzbbbbbbbbbbb" 21 41
+ns 22 "xaaaaaaaaaaaaaaaaaaaabbbbbbbbzbbbbbbbbbbb"
+ns 23 "xaaaaaaaaaaaaaaaaaaaabbbbbbbbzbbbbbbbbbbb"
+ns 24 "xaaaaaaaaaaaaaaaaaaaabbbbbbbbzbbbbbbbbbbb"
+ns 25 "xaaaaaaaaaaaaaaaaaaaabbbbbbbbzbbbbbbbbbbb"
+ns 26 "xaaaaaaaaaaaaaaaaaaaabbbbbbbbzbbbbbbbbbbb"
+ns 27 "xaaaaaaaaaaaaaaaaaaaabbbbbbbbzbbbbbbbbbbb"
+ns 28 "xaaaaaaaaaaaaaaaaaaaabbbbbbbbzbbbbbbbbbbb"
+ns 29 "xaaaaaaaaaaaaaaaaaaaabbbbbbbbzbbbbbbbbbbb"
+ns 30 "xaaaaaaaaaaaaaaaaaaaabbbbbbbbzbbbbbbbbbbb"
+ns 31 "xaaaaaaaaaaaaaaaaaaaabbbbbbbbzbbbbbbbbbbb"
+ns 32 "xaaaaaaaaaaaaaaaaaaaabbbbbbbbzbbbbbbbbbbb"
+ns 33 "xaaaaaaaaaaaaaaaaaaaabbbbbbbbzbbbbbbbbbbb"
+ns 34 "xaaaaaaaaaaaaaaaaaaaabbbbbbbbzbbbbbbbbbbb"
+ns 35 "xaaaaaaaaaaaaaaaaaaaabbbbbbbbzbbbbbbbbbbb"
+ns 36 "xaaaaaaaaaaaaaaaaaaaabbbbbbbbzbbbbbbbbbbb"
+ns 37 "xaaaaaaaaaaaaaaaaaaaabbbbbbbbzbbbbbbbbbbb"
+ns 38 "xaaaaaaaaaaaaaaaaaaaabbbbbbbbzbbbbbbbbbbb"
+ns 39 "xaaaaaaaaaaaaaaaaaaaabbbbbbbbzbbbbbbbbbbb"
+ns 40 "xaaaaaaaaaaaaaaaaaaaabbbbbbbbzbbbbbbbbbbb"
+ns 41 "xaaaaaaaaaaaaaaaaaaaabbbbbbbbzbbbbbbbbbbb"
+ns 0 "aaaaaaaaaaaaaaaaaaabbbbbbbbzbbbbbbbbbbb"
+ns 1 "aaaaaaaaaaaaaaaaaaabbbbbbbbzbbbbbbbbbbb"
+ns 2 "aaaaaaaaaaaaaaaaaaabbbbbbbbzbbbbbbbbbbb"
+ns 3 "aaaaaaaaaaaaaaaaaaabbbbbbbbzbbbbbbbbbbb"
+ns 4 "aaaaaaaaaaaaaaaaaaabbbbbbbbzbbbbbbbbbbb"
+ns 5 "aaaaaaaaaaaaaaaaaaabbbbbbbbzbbbbbbbbbbb"
+ns 6 "aaaaaaaaaaaaaaaaaaabbbbbbbbzbbbbbbbbbbb"
+ns 7 "aaaaaaaaaaaaaaaaaaabbbbbbbbzbbbbbbbbbbb"
+ns 8 "aaaaaaaaaaaaaaaaaaabbbbbbbbzbbbbbbbbbbb"
+ns 9 "aaaaaaaaaaaaaaaaaaabbbbbbbbzbbbbbbbbbbb"
+ns 10 "aaaaaaaaaaaaaaaaaaabbbbbbbbzbbbbbbbbbbb"
+ns 11 "aaaaaaaaaaaaaaaaaaabbbbbbbbzbbbbbbbbbbb"
+ns 12 "aaaaaaaaaaaaaaaaaaabbbbbbbbzbbbbbbbbbbb"
+ns 13 "aaaaaaaaaaaaaaaaaaabbbbbbbbzbbbbbbbbbbb"
+ns 14 "aaaaaaaaaaaaaaaaaaabbbbbbbbzbbbbbbbbbbb"
+ns 15 "aaaaaaaaaaaaaaaaaaabbbbbbbbzbbbbbbbbbbb"
+ns 16 "aaaaaaaaaaaaaaaaaaabbbbbbbbzbbbbbbbbbbb"
+ns 17 "aaaaaaaaaaaaaaaaaaabbbbbbbbzbbbbbbbbbbb"
+ns 18 "aaaaaaaaaaaaaaaaaaabbbbbbbbzbbbbbbbbbbb"
+ns 19 "aaaaaaaaaaaaaaaaaaabbbbbbbbzbbbbbbbbbbb"
+ns 20 "aaaaaaaaaaaaaaaaaaabbbbbbbbzbbbbbbbbbbb"
+ns 21 "aaaaaaaaaaaaaaaaaaabbbbbbbbzbbbbbbbbbbb"
+ns 22 "aaaaaaaaaaaaaaaaaaabbbbbbbbzbbbbbbbbbbb"
+ns 23 "aaaaaaaaaaaaaaaaaaabbbbbbbbzbbbbbbbbbbb"
+ns 24 "aaaaaaaaaaaaaaaaaaabbbbbbbbzbbbbbbbbbbb"
+ns 25 "aaaaaaaaaaaaaaaaaaabbbbbbbbzbbbbbbbbbbb"
+ns 26 "aaaaaaaaaaaaaaaaaaabbbbbbbbzbbbbbbbbbbb"
+ns 27 "aaaaaaaaaaaaaaaaaaabbbbbbbbzbbbbbbbbbbb"
+ns 28 "aaaaaaaaaaaaaaaaaaabbbbbbbbzbbbbbbbbbbb"
+ns 29 "aaaaaaaaaaaaaaaaaaabbbbbbbbzbbbbbbbbbbb"
+ns 30 "aaaaaaaaaaaaaaaaaaabbbbbbbbzbbbbbbbbbbb"
+ns 31 "aaaaaaaaaaaaaaaaaaabbbbbbbbzbbbbbbbbbbb"
+ns 32 "aaaaaaaaaaaaaaaaaaabbbbbbbbzbbbbbbbbbbb"
+ns 33 "aaaaaaaaaaaaaaaaaaabbbbbbbbzbbbbbbbbbbb"
+ns 34 "aaaaaaaaaaaaaaaaaaabbbbbbbbzbbbbbbbbbbb"
+ns 35 "aaaaaaaaaaaaaaaaaaabbbbbbbbzbbbbbbbbbbb"
+ns 36 "aaaaaaaaaaaaaaaaaaabbbbbbbbzbbbbbbbbbbb"
+ns 37 "aaaaaaaaaaaaaaaaaaabbbbbbbbzbbbbbbbbbbb"
+ns 38 "aaaaaaaaaaaaaaaaaaabbbbbbbbzbbbbbbbbbbb"
+ns 39 "aaaaaaaaaaaaaaaaaaabbbbbbbbzbbbbbbbbbbb"
+
+# W-T3a (span_arms §5.7, L3): the run `a^20 b^8 z b^3` at -20, the kit's member `z`; a TOP `++` keeping the LAST positions states `a^12 b^8 z b^11` at -20 (truly -12) and the body starts 8 bytes late: NOMATCH [engine vm]
+pattern (?<=aaaaaaaaaaaaaaaaaaaa)bbbbbbbbzbbbbbbbbbbb
+features all
+encoding byte
+engine vm
+ms 0 "aaaaaaaaaaaaaaaaaaaabbbbbbbbzbbbbbbbbbbb" 20 40
+ms 1 "aaaaaaaaaaaaaaaaaaaabbbbbbbbzbbbbbbbbbbb" 20 40
+ms 2 "aaaaaaaaaaaaaaaaaaaabbbbbbbbzbbbbbbbbbbb" 20 40
+ms 3 "aaaaaaaaaaaaaaaaaaaabbbbbbbbzbbbbbbbbbbb" 20 40
+ms 4 "aaaaaaaaaaaaaaaaaaaabbbbbbbbzbbbbbbbbbbb" 20 40
+ms 5 "aaaaaaaaaaaaaaaaaaaabbbbbbbbzbbbbbbbbbbb" 20 40
+ms 6 "aaaaaaaaaaaaaaaaaaaabbbbbbbbzbbbbbbbbbbb" 20 40
+ms 7 "aaaaaaaaaaaaaaaaaaaabbbbbbbbzbbbbbbbbbbb" 20 40
+ms 8 "aaaaaaaaaaaaaaaaaaaabbbbbbbbzbbbbbbbbbbb" 20 40
+ms 9 "aaaaaaaaaaaaaaaaaaaabbbbbbbbzbbbbbbbbbbb" 20 40
+ms 10 "aaaaaaaaaaaaaaaaaaaabbbbbbbbzbbbbbbbbbbb" 20 40
+ms 11 "aaaaaaaaaaaaaaaaaaaabbbbbbbbzbbbbbbbbbbb" 20 40
+ms 12 "aaaaaaaaaaaaaaaaaaaabbbbbbbbzbbbbbbbbbbb" 20 40
+ms 13 "aaaaaaaaaaaaaaaaaaaabbbbbbbbzbbbbbbbbbbb" 20 40
+ms 14 "aaaaaaaaaaaaaaaaaaaabbbbbbbbzbbbbbbbbbbb" 20 40
+ms 15 "aaaaaaaaaaaaaaaaaaaabbbbbbbbzbbbbbbbbbbb" 20 40
+ms 16 "aaaaaaaaaaaaaaaaaaaabbbbbbbbzbbbbbbbbbbb" 20 40
+ms 17 "aaaaaaaaaaaaaaaaaaaabbbbbbbbzbbbbbbbbbbb" 20 40
+ms 18 "aaaaaaaaaaaaaaaaaaaabbbbbbbbzbbbbbbbbbbb" 20 40
+ms 19 "aaaaaaaaaaaaaaaaaaaabbbbbbbbzbbbbbbbbbbb" 20 40
+ms 20 "aaaaaaaaaaaaaaaaaaaabbbbbbbbzbbbbbbbbbbb" 20 40
+ns 21 "aaaaaaaaaaaaaaaaaaaabbbbbbbbzbbbbbbbbbbb"
+ns 22 "aaaaaaaaaaaaaaaaaaaabbbbbbbbzbbbbbbbbbbb"
+ns 23 "aaaaaaaaaaaaaaaaaaaabbbbbbbbzbbbbbbbbbbb"
+ns 24 "aaaaaaaaaaaaaaaaaaaabbbbbbbbzbbbbbbbbbbb"
+ns 25 "aaaaaaaaaaaaaaaaaaaabbbbbbbbzbbbbbbbbbbb"
+ns 26 "aaaaaaaaaaaaaaaaaaaabbbbbbbbzbbbbbbbbbbb"
+ns 27 "aaaaaaaaaaaaaaaaaaaabbbbbbbbzbbbbbbbbbbb"
+ns 28 "aaaaaaaaaaaaaaaaaaaabbbbbbbbzbbbbbbbbbbb"
+ns 29 "aaaaaaaaaaaaaaaaaaaabbbbbbbbzbbbbbbbbbbb"
+ns 30 "aaaaaaaaaaaaaaaaaaaabbbbbbbbzbbbbbbbbbbb"
+ns 31 "aaaaaaaaaaaaaaaaaaaabbbbbbbbzbbbbbbbbbbb"
+ns 32 "aaaaaaaaaaaaaaaaaaaabbbbbbbbzbbbbbbbbbbb"
+ns 33 "aaaaaaaaaaaaaaaaaaaabbbbbbbbzbbbbbbbbbbb"
+ns 34 "aaaaaaaaaaaaaaaaaaaabbbbbbbbzbbbbbbbbbbb"
+ns 35 "aaaaaaaaaaaaaaaaaaaabbbbbbbbzbbbbbbbbbbb"
+ns 36 "aaaaaaaaaaaaaaaaaaaabbbbbbbbzbbbbbbbbbbb"
+ns 37 "aaaaaaaaaaaaaaaaaaaabbbbbbbbzbbbbbbbbbbb"
+ns 38 "aaaaaaaaaaaaaaaaaaaabbbbbbbbzbbbbbbbbbbb"
+ns 39 "aaaaaaaaaaaaaaaaaaaabbbbbbbbzbbbbbbbbbbb"
+ns 40 "aaaaaaaaaaaaaaaaaaaabbbbbbbbzbbbbbbbbbbb"
+ms 0 "xaaaaaaaaaaaaaaaaaaaabbbbbbbbzbbbbbbbbbbb" 21 41
+ms 1 "xaaaaaaaaaaaaaaaaaaaabbbbbbbbzbbbbbbbbbbb" 21 41
+ms 2 "xaaaaaaaaaaaaaaaaaaaabbbbbbbbzbbbbbbbbbbb" 21 41
+ms 3 "xaaaaaaaaaaaaaaaaaaaabbbbbbbbzbbbbbbbbbbb" 21 41
+ms 4 "xaaaaaaaaaaaaaaaaaaaabbbbbbbbzbbbbbbbbbbb" 21 41
+ms 5 "xaaaaaaaaaaaaaaaaaaaabbbbbbbbzbbbbbbbbbbb" 21 41
+ms 6 "xaaaaaaaaaaaaaaaaaaaabbbbbbbbzbbbbbbbbbbb" 21 41
+ms 7 "xaaaaaaaaaaaaaaaaaaaabbbbbbbbzbbbbbbbbbbb" 21 41
+ms 8 "xaaaaaaaaaaaaaaaaaaaabbbbbbbbzbbbbbbbbbbb" 21 41
+ms 9 "xaaaaaaaaaaaaaaaaaaaabbbbbbbbzbbbbbbbbbbb" 21 41
+ms 10 "xaaaaaaaaaaaaaaaaaaaabbbbbbbbzbbbbbbbbbbb" 21 41
+ms 11 "xaaaaaaaaaaaaaaaaaaaabbbbbbbbzbbbbbbbbbbb" 21 41
+ms 12 "xaaaaaaaaaaaaaaaaaaaabbbbbbbbzbbbbbbbbbbb" 21 41
+ms 13 "xaaaaaaaaaaaaaaaaaaaabbbbbbbbzbbbbbbbbbbb" 21 41
+ms 14 "xaaaaaaaaaaaaaaaaaaaabbbbbbbbzbbbbbbbbbbb" 21 41
+ms 15 "xaaaaaaaaaaaaaaaaaaaabbbbbbbbzbbbbbbbbbbb" 21 41
+ms 16 "xaaaaaaaaaaaaaaaaaaaabbbbbbbbzbbbbbbbbbbb" 21 41
+ms 17 "xaaaaaaaaaaaaaaaaaaaabbbbbbbbzbbbbbbbbbbb" 21 41
+ms 18 "xaaaaaaaaaaaaaaaaaaaabbbbbbbbzbbbbbbbbbbb" 21 41
+ms 19 "xaaaaaaaaaaaaaaaaaaaabbbbbbbbzbbbbbbbbbbb" 21 41
+ms 20 "xaaaaaaaaaaaaaaaaaaaabbbbbbbbzbbbbbbbbbbb" 21 41
+ms 21 "xaaaaaaaaaaaaaaaaaaaabbbbbbbbzbbbbbbbbbbb" 21 41
+ns 22 "xaaaaaaaaaaaaaaaaaaaabbbbbbbbzbbbbbbbbbbb"
+ns 23 "xaaaaaaaaaaaaaaaaaaaabbbbbbbbzbbbbbbbbbbb"
+ns 24 "xaaaaaaaaaaaaaaaaaaaabbbbbbbbzbbbbbbbbbbb"
+ns 25 "xaaaaaaaaaaaaaaaaaaaabbbbbbbbzbbbbbbbbbbb"
+ns 26 "xaaaaaaaaaaaaaaaaaaaabbbbbbbbzbbbbbbbbbbb"
+ns 27 "xaaaaaaaaaaaaaaaaaaaabbbbbbbbzbbbbbbbbbbb"
+ns 28 "xaaaaaaaaaaaaaaaaaaaabbbbbbbbzbbbbbbbbbbb"
+ns 29 "xaaaaaaaaaaaaaaaaaaaabbbbbbbbzbbbbbbbbbbb"
+ns 30 "xaaaaaaaaaaaaaaaaaaaabbbbbbbbzbbbbbbbbbbb"
+ns 31 "xaaaaaaaaaaaaaaaaaaaabbbbbbbbzbbbbbbbbbbb"
+ns 32 "xaaaaaaaaaaaaaaaaaaaabbbbbbbbzbbbbbbbbbbb"
+ns 33 "xaaaaaaaaaaaaaaaaaaaabbbbbbbbzbbbbbbbbbbb"
+ns 34 "xaaaaaaaaaaaaaaaaaaaabbbbbbbbzbbbbbbbbbbb"
+ns 35 "xaaaaaaaaaaaaaaaaaaaabbbbbbbbzbbbbbbbbbbb"
+ns 36 "xaaaaaaaaaaaaaaaaaaaabbbbbbbbzbbbbbbbbbbb"
+ns 37 "xaaaaaaaaaaaaaaaaaaaabbbbbbbbzbbbbbbbbbbb"
+ns 38 "xaaaaaaaaaaaaaaaaaaaabbbbbbbbzbbbbbbbbbbb"
+ns 39 "xaaaaaaaaaaaaaaaaaaaabbbbbbbbzbbbbbbbbbbb"
+ns 40 "xaaaaaaaaaaaaaaaaaaaabbbbbbbbzbbbbbbbbbbb"
+ns 41 "xaaaaaaaaaaaaaaaaaaaabbbbbbbbzbbbbbbbbbbb"
+ns 0 "aaaaaaaaaaaaaaaaaaabbbbbbbbzbbbbbbbbbbb"
+ns 1 "aaaaaaaaaaaaaaaaaaabbbbbbbbzbbbbbbbbbbb"
+ns 2 "aaaaaaaaaaaaaaaaaaabbbbbbbbzbbbbbbbbbbb"
+ns 3 "aaaaaaaaaaaaaaaaaaabbbbbbbbzbbbbbbbbbbb"
+ns 4 "aaaaaaaaaaaaaaaaaaabbbbbbbbzbbbbbbbbbbb"
+ns 5 "aaaaaaaaaaaaaaaaaaabbbbbbbbzbbbbbbbbbbb"
+ns 6 "aaaaaaaaaaaaaaaaaaabbbbbbbbzbbbbbbbbbbb"
+ns 7 "aaaaaaaaaaaaaaaaaaabbbbbbbbzbbbbbbbbbbb"
+ns 8 "aaaaaaaaaaaaaaaaaaabbbbbbbbzbbbbbbbbbbb"
+ns 9 "aaaaaaaaaaaaaaaaaaabbbbbbbbzbbbbbbbbbbb"
+ns 10 "aaaaaaaaaaaaaaaaaaabbbbbbbbzbbbbbbbbbbb"
+ns 11 "aaaaaaaaaaaaaaaaaaabbbbbbbbzbbbbbbbbbbb"
+ns 12 "aaaaaaaaaaaaaaaaaaabbbbbbbbzbbbbbbbbbbb"
+ns 13 "aaaaaaaaaaaaaaaaaaabbbbbbbbzbbbbbbbbbbb"
+ns 14 "aaaaaaaaaaaaaaaaaaabbbbbbbbzbbbbbbbbbbb"
+ns 15 "aaaaaaaaaaaaaaaaaaabbbbbbbbzbbbbbbbbbbb"
+ns 16 "aaaaaaaaaaaaaaaaaaabbbbbbbbzbbbbbbbbbbb"
+ns 17 "aaaaaaaaaaaaaaaaaaabbbbbbbbzbbbbbbbbbbb"
+ns 18 "aaaaaaaaaaaaaaaaaaabbbbbbbbzbbbbbbbbbbb"
+ns 19 "aaaaaaaaaaaaaaaaaaabbbbbbbbzbbbbbbbbbbb"
+ns 20 "aaaaaaaaaaaaaaaaaaabbbbbbbbzbbbbbbbbbbb"
+ns 21 "aaaaaaaaaaaaaaaaaaabbbbbbbbzbbbbbbbbbbb"
+ns 22 "aaaaaaaaaaaaaaaaaaabbbbbbbbzbbbbbbbbbbb"
+ns 23 "aaaaaaaaaaaaaaaaaaabbbbbbbbzbbbbbbbbbbb"
+ns 24 "aaaaaaaaaaaaaaaaaaabbbbbbbbzbbbbbbbbbbb"
+ns 25 "aaaaaaaaaaaaaaaaaaabbbbbbbbzbbbbbbbbbbb"
+ns 26 "aaaaaaaaaaaaaaaaaaabbbbbbbbzbbbbbbbbbbb"
+ns 27 "aaaaaaaaaaaaaaaaaaabbbbbbbbzbbbbbbbbbbb"
+ns 28 "aaaaaaaaaaaaaaaaaaabbbbbbbbzbbbbbbbbbbb"
+ns 29 "aaaaaaaaaaaaaaaaaaabbbbbbbbzbbbbbbbbbbb"
+ns 30 "aaaaaaaaaaaaaaaaaaabbbbbbbbzbbbbbbbbbbb"
+ns 31 "aaaaaaaaaaaaaaaaaaabbbbbbbbzbbbbbbbbbbb"
+ns 32 "aaaaaaaaaaaaaaaaaaabbbbbbbbzbbbbbbbbbbb"
+ns 33 "aaaaaaaaaaaaaaaaaaabbbbbbbbzbbbbbbbbbbb"
+ns 34 "aaaaaaaaaaaaaaaaaaabbbbbbbbzbbbbbbbbbbb"
+ns 35 "aaaaaaaaaaaaaaaaaaabbbbbbbbzbbbbbbbbbbb"
+ns 36 "aaaaaaaaaaaaaaaaaaabbbbbbbbzbbbbbbbbbbb"
+ns 37 "aaaaaaaaaaaaaaaaaaabbbbbbbbzbbbbbbbbbbb"
+ns 38 "aaaaaaaaaaaaaaaaaaabbbbbbbbzbbbbbbbbbbb"
+ns 39 "aaaaaaaaaaaaaaaaaaabbbbbbbbzbbbbbbbbbbb"
+
+# pcre2-only
+# span_arms L3 under utf8 (D-11): B counts the lookbehind's BYTES, `é` two and `a` one, K -3
+pattern (?<=éa)bc
+features all
+encoding utf8
+ms 0 "\xc3\xa9abc" 3 5
+ms 2 "\xc3\xa9abc" 3 5
+ms 3 "\xc3\xa9abc" 3 5
+ns 4 "\xc3\xa9abc"
+ns 5 "\xc3\xa9abc"
+ms 0 "x\xc3\xa9abc\xc3\xa9abc" 4 6
+ms 1 "x\xc3\xa9abc\xc3\xa9abc" 4 6
+ms 3 "x\xc3\xa9abc\xc3\xa9abc" 4 6
+ms 4 "x\xc3\xa9abc\xc3\xa9abc" 4 6
+ms 5 "x\xc3\xa9abc\xc3\xa9abc" 9 11
+ms 6 "x\xc3\xa9abc\xc3\xa9abc" 9 11
+ms 8 "x\xc3\xa9abc\xc3\xa9abc" 9 11
+ms 9 "x\xc3\xa9abc\xc3\xa9abc" 9 11
+ns 10 "x\xc3\xa9abc\xc3\xa9abc"
+ns 11 "x\xc3\xa9abc\xc3\xa9abc"
+ns 0 "eabc"
+ns 1 "eabc"
+ns 2 "eabc"
+ns 3 "eabc"
+ns 4 "eabc"
+ns 0 "\xc3\xa9bc"
+ns 2 "\xc3\xa9bc"
+ns 3 "\xc3\xa9bc"
+ns 4 "\xc3\xa9bc"
+ms 0 "\xc3\xa9\xc3\xa9abc" 5 7
+ms 2 "\xc3\xa9\xc3\xa9abc" 5 7
+ms 4 "\xc3\xa9\xc3\xa9abc" 5 7
+ms 5 "\xc3\xa9\xc3\xa9abc" 5 7
+ns 6 "\xc3\xa9\xc3\xa9abc"
+ns 7 "\xc3\xa9\xc3\xa9abc"
+
+# pcre2-only
+# span_arms L3 under utf8 (D-11): B counts the lookbehind's BYTES, `é` two and `a` one, K -3 [engine vm]
+pattern (?<=éa)bc
+features all
+encoding utf8
+engine vm
+ms 0 "\xc3\xa9abc" 3 5
+ms 2 "\xc3\xa9abc" 3 5
+ms 3 "\xc3\xa9abc" 3 5
+ns 4 "\xc3\xa9abc"
+ns 5 "\xc3\xa9abc"
+ms 0 "x\xc3\xa9abc\xc3\xa9abc" 4 6
+ms 1 "x\xc3\xa9abc\xc3\xa9abc" 4 6
+ms 3 "x\xc3\xa9abc\xc3\xa9abc" 4 6
+ms 4 "x\xc3\xa9abc\xc3\xa9abc" 4 6
+ms 5 "x\xc3\xa9abc\xc3\xa9abc" 9 11
+ms 6 "x\xc3\xa9abc\xc3\xa9abc" 9 11
+ms 8 "x\xc3\xa9abc\xc3\xa9abc" 9 11
+ms 9 "x\xc3\xa9abc\xc3\xa9abc" 9 11
+ns 10 "x\xc3\xa9abc\xc3\xa9abc"
+ns 11 "x\xc3\xa9abc\xc3\xa9abc"
+ns 0 "eabc"
+ns 1 "eabc"
+ns 2 "eabc"
+ns 3 "eabc"
+ns 4 "eabc"
+ns 0 "\xc3\xa9bc"
+ns 2 "\xc3\xa9bc"
+ns 3 "\xc3\xa9bc"
+ns 4 "\xc3\xa9bc"
+ms 0 "\xc3\xa9\xc3\xa9abc" 5 7
+ms 2 "\xc3\xa9\xc3\xa9abc" 5 7
+ms 4 "\xc3\xa9\xc3\xa9abc" 5 7
+ms 5 "\xc3\xa9\xc3\xa9abc" 5 7
+ns 6 "\xc3\xa9\xc3\xa9abc"
+ns 7 "\xc3\xa9\xc3\xa9abc"
+
+# span_arms L3, bench 333 (`(?<=\xc3\xa9)x`) under byte: the two-byte lookbehind is two positions, K -2
+pattern (?<=\xc3\xa9)x
+features all
+encoding byte
+ms 0 "\xc3\xa9x" 2 3
+ms 1 "\xc3\xa9x" 2 3
+ms 2 "\xc3\xa9x" 2 3
+ns 3 "\xc3\xa9x"
+ms 0 "x\xc3\xa9xx" 3 4
+ms 1 "x\xc3\xa9xx" 3 4
+ms 2 "x\xc3\xa9xx" 3 4
+ms 3 "x\xc3\xa9xx" 3 4
+ns 4 "x\xc3\xa9xx"
+ns 5 "x\xc3\xa9xx"
+ns 0 "\xc3\x83x"
+ns 1 "\xc3\x83x"
+ns 2 "\xc3\x83x"
+ns 3 "\xc3\x83x"
+
+# span_arms L3, bench 333 (`(?<=\xc3\xa9)x`) under byte: the two-byte lookbehind is two positions, K -2 [engine vm]
+pattern (?<=\xc3\xa9)x
+features all
+encoding byte
+engine vm
+ms 0 "\xc3\xa9x" 2 3
+ms 1 "\xc3\xa9x" 2 3
+ms 2 "\xc3\xa9x" 2 3
+ns 3 "\xc3\xa9x"
+ms 0 "x\xc3\xa9xx" 3 4
+ms 1 "x\xc3\xa9xx" 3 4
+ms 2 "x\xc3\xa9xx" 3 4
+ms 3 "x\xc3\xa9xx" 3 4
+ns 4 "x\xc3\xa9xx"
+ns 5 "x\xc3\xa9xx"
+ns 0 "\xc3\x83x"
+ns 1 "\xc3\x83x"
+ns 2 "\xc3\x83x"
+ns 3 "\xc3\x83x"
+
+# span_arms L3, bench 258 (`(?<=item )done`): the run narrows from `done` to `item done` at K -5
+pattern (?<=item )done
+features all
+encoding byte
+ms 0 "item done" 5 9
+ms 1 "item done" 5 9
+ms 2 "item done" 5 9
+ms 3 "item done" 5 9
+ms 4 "item done" 5 9
+ms 5 "item done" 5 9
+ns 6 "item done"
+ns 7 "item done"
+ns 8 "item done"
+ns 9 "item done"
+ms 0 "x item doneitem done" 7 11
+ms 1 "x item doneitem done" 7 11
+ms 2 "x item doneitem done" 7 11
+ms 3 "x item doneitem done" 7 11
+ms 4 "x item doneitem done" 7 11
+ms 5 "x item doneitem done" 7 11
+ms 6 "x item doneitem done" 7 11
+ms 7 "x item doneitem done" 7 11
+ms 8 "x item doneitem done" 16 20
+ms 9 "x item doneitem done" 16 20
+ms 10 "x item doneitem done" 16 20
+ms 11 "x item doneitem done" 16 20
+ms 12 "x item doneitem done" 16 20
+ms 13 "x item doneitem done" 16 20
+ms 14 "x item doneitem done" 16 20
+ms 15 "x item doneitem done" 16 20
+ms 16 "x item doneitem done" 16 20
+ns 17 "x item doneitem done"
+ns 18 "x item doneitem done"
+ns 19 "x item doneitem done"
+ns 20 "x item doneitem done"
+ns 0 "item  done"
+ns 1 "item  done"
+ns 2 "item  done"
+ns 3 "item  done"
+ns 4 "item  done"
+ns 5 "item  done"
+ns 6 "item  done"
+ns 7 "item  done"
+ns 8 "item  done"
+ns 9 "item  done"
+ns 10 "item  done"
+ns 0 "itemdone"
+ns 1 "itemdone"
+ns 2 "itemdone"
+ns 3 "itemdone"
+ns 4 "itemdone"
+ns 5 "itemdone"
+ns 6 "itemdone"
+ns 7 "itemdone"
+ns 8 "itemdone"
+ns 0 "item don"
+ns 1 "item don"
+ns 2 "item don"
+ns 3 "item don"
+ns 4 "item don"
+ns 5 "item don"
+ns 6 "item don"
+ns 7 "item don"
+ns 8 "item don"
+
+# span_arms L3, bench 258 (`(?<=item )done`): the run narrows from `done` to `item done` at K -5 [engine vm]
+pattern (?<=item )done
+features all
+encoding byte
+engine vm
+ms 0 "item done" 5 9
+ms 1 "item done" 5 9
+ms 2 "item done" 5 9
+ms 3 "item done" 5 9
+ms 4 "item done" 5 9
+ms 5 "item done" 5 9
+ns 6 "item done"
+ns 7 "item done"
+ns 8 "item done"
+ns 9 "item done"
+ms 0 "x item doneitem done" 7 11
+ms 1 "x item doneitem done" 7 11
+ms 2 "x item doneitem done" 7 11
+ms 3 "x item doneitem done" 7 11
+ms 4 "x item doneitem done" 7 11
+ms 5 "x item doneitem done" 7 11
+ms 6 "x item doneitem done" 7 11
+ms 7 "x item doneitem done" 7 11
+ms 8 "x item doneitem done" 16 20
+ms 9 "x item doneitem done" 16 20
+ms 10 "x item doneitem done" 16 20
+ms 11 "x item doneitem done" 16 20
+ms 12 "x item doneitem done" 16 20
+ms 13 "x item doneitem done" 16 20
+ms 14 "x item doneitem done" 16 20
+ms 15 "x item doneitem done" 16 20
+ms 16 "x item doneitem done" 16 20
+ns 17 "x item doneitem done"
+ns 18 "x item doneitem done"
+ns 19 "x item doneitem done"
+ns 20 "x item doneitem done"
+ns 0 "item  done"
+ns 1 "item  done"
+ns 2 "item  done"
+ns 3 "item  done"
+ns 4 "item  done"
+ns 5 "item  done"
+ns 6 "item  done"
+ns 7 "item  done"
+ns 8 "item  done"
+ns 9 "item  done"
+ns 10 "item  done"
+ns 0 "itemdone"
+ns 1 "itemdone"
+ns 2 "itemdone"
+ns 3 "itemdone"
+ns 4 "itemdone"
+ns 5 "itemdone"
+ns 6 "itemdone"
+ns 7 "itemdone"
+ns 8 "itemdone"
+ns 0 "item don"
+ns 1 "item don"
+ns 2 "item don"
+ns 3 "item don"
+ns 4 "item don"
+ns 5 "item don"
+ns 6 "item don"
+ns 7 "item don"
+ns 8 "item don"
+
+# pcre2-only
+# span_arms L3, census note (c): `\K` is zero-width, the run `ab` at -1 holds across it
+pattern (?<=a)\Kb
+features all
+encoding byte
+ms 0 "ab" 1 2
+ms 1 "ab" 1 2
+ns 2 "ab"
+ms 0 "xabab" 2 3
+ms 1 "xabab" 2 3
+ms 2 "xabab" 2 3
+ms 3 "xabab" 4 5
+ms 4 "xabab" 4 5
+ns 5 "xabab"
+ns 0 "b"
+ns 1 "b"
+ms 0 "aab" 2 3
+ms 1 "aab" 2 3
+ms 2 "aab" 2 3
+ns 3 "aab"
+
+# pcre2-only
+# span_arms L3, census note (c): `\K` is zero-width, the run `ab` at -1 holds across it [engine vm]
+pattern (?<=a)\Kb
+features all
+encoding byte
+engine vm
+ms 0 "ab" 1 2
+ms 1 "ab" 1 2
+ns 2 "ab"
+ms 0 "xabab" 2 3
+ms 1 "xabab" 2 3
+ms 2 "xabab" 2 3
+ms 3 "xabab" 4 5
+ms 4 "xabab" 4 5
+ns 5 "xabab"
+ns 0 "b"
+ns 1 "b"
+ms 0 "aab" 2 3
+ms 1 "aab" 2 3
+ms 2 "aab" 2 3
+ns 3 "aab"
+
+# pcre2-only
+# span_arms L3, census note (c): `\G` is zero-width; the run `ab` at -1
+pattern (?<=\Ga)b
+features all
+encoding byte
+ms 0 "ab" 1 2
+ns 1 "ab"
+ns 2 "ab"
+ns 0 "aab"
+ms 1 "aab" 2 3
+ns 2 "aab"
+ns 3 "aab"
+ns 0 "xab"
+ms 1 "xab" 2 3
+ns 2 "xab"
+ns 3 "xab"
+ns 0 "b"
+ns 1 "b"
+
+# pcre2-only
+# span_arms L3, census note (c): `\G` is zero-width; the run `ab` at -1 [engine vm]
+pattern (?<=\Ga)b
+features all
+encoding byte
+engine vm
+ms 0 "ab" 1 2
+ns 1 "ab"
+ns 2 "ab"
+ns 0 "aab"
+ms 1 "aab" 2 3
+ns 2 "aab"
+ns 3 "aab"
+ns 0 "xab"
+ms 1 "xab" 2 3
+ns 2 "xab"
+ns 3 "xab"
+ns 0 "b"
+ns 1 "b"
+
+# span_arms L3 (READYL2-5): `(?<=foo)bar(?=baz)` stays `foobar` at -3 at L3 (the `++ rg` clause is L2's)
+pattern (?<=foo)bar(?=baz)
+features all
+encoding byte
+ms 0 "foobarbaz" 3 6
+ms 1 "foobarbaz" 3 6
+ms 2 "foobarbaz" 3 6
+ms 3 "foobarbaz" 3 6
+ns 4 "foobarbaz"
+ns 5 "foobarbaz"
+ns 6 "foobarbaz"
+ns 7 "foobarbaz"
+ns 8 "foobarbaz"
+ns 9 "foobarbaz"
+ns 0 "foobarbax"
+ns 1 "foobarbax"
+ns 2 "foobarbax"
+ns 3 "foobarbax"
+ns 4 "foobarbax"
+ns 5 "foobarbax"
+ns 6 "foobarbax"
+ns 7 "foobarbax"
+ns 8 "foobarbax"
+ns 9 "foobarbax"
+ms 0 "xfoobarbazfoobarbaz" 4 7
+ms 1 "xfoobarbazfoobarbaz" 4 7
+ms 2 "xfoobarbazfoobarbaz" 4 7
+ms 3 "xfoobarbazfoobarbaz" 4 7
+ms 4 "xfoobarbazfoobarbaz" 4 7
+ms 5 "xfoobarbazfoobarbaz" 13 16
+ms 6 "xfoobarbazfoobarbaz" 13 16
+ms 7 "xfoobarbazfoobarbaz" 13 16
+ms 8 "xfoobarbazfoobarbaz" 13 16
+ms 9 "xfoobarbazfoobarbaz" 13 16
+ms 10 "xfoobarbazfoobarbaz" 13 16
+ms 11 "xfoobarbazfoobarbaz" 13 16
+ms 12 "xfoobarbazfoobarbaz" 13 16
+ms 13 "xfoobarbazfoobarbaz" 13 16
+ns 14 "xfoobarbazfoobarbaz"
+ns 15 "xfoobarbazfoobarbaz"
+ns 16 "xfoobarbazfoobarbaz"
+ns 17 "xfoobarbazfoobarbaz"
+ns 18 "xfoobarbazfoobarbaz"
+ns 19 "xfoobarbazfoobarbaz"
+
+# span_arms L3 (READYL2-5): `(?<=foo)bar(?=baz)` stays `foobar` at -3 at L3 (the `++ rg` clause is L2's) [engine vm]
+pattern (?<=foo)bar(?=baz)
+features all
+encoding byte
+engine vm
+ms 0 "foobarbaz" 3 6
+ms 1 "foobarbaz" 3 6
+ms 2 "foobarbaz" 3 6
+ms 3 "foobarbaz" 3 6
+ns 4 "foobarbaz"
+ns 5 "foobarbaz"
+ns 6 "foobarbaz"
+ns 7 "foobarbaz"
+ns 8 "foobarbaz"
+ns 9 "foobarbaz"
+ns 0 "foobarbax"
+ns 1 "foobarbax"
+ns 2 "foobarbax"
+ns 3 "foobarbax"
+ns 4 "foobarbax"
+ns 5 "foobarbax"
+ns 6 "foobarbax"
+ns 7 "foobarbax"
+ns 8 "foobarbax"
+ns 9 "foobarbax"
+ms 0 "xfoobarbazfoobarbaz" 4 7
+ms 1 "xfoobarbazfoobarbaz" 4 7
+ms 2 "xfoobarbazfoobarbaz" 4 7
+ms 3 "xfoobarbazfoobarbaz" 4 7
+ms 4 "xfoobarbazfoobarbaz" 4 7
+ms 5 "xfoobarbazfoobarbaz" 13 16
+ms 6 "xfoobarbazfoobarbaz" 13 16
+ms 7 "xfoobarbazfoobarbaz" 13 16
+ms 8 "xfoobarbazfoobarbaz" 13 16
+ms 9 "xfoobarbazfoobarbaz" 13 16
+ms 10 "xfoobarbazfoobarbaz" 13 16
+ms 11 "xfoobarbazfoobarbaz" 13 16
+ms 12 "xfoobarbazfoobarbaz" 13 16
+ms 13 "xfoobarbazfoobarbaz" 13 16
+ns 14 "xfoobarbazfoobarbaz"
+ns 15 "xfoobarbazfoobarbaz"
+ns 16 "xfoobarbazfoobarbaz"
+ns 17 "xfoobarbazfoobarbaz"
+ns 18 "xfoobarbazfoobarbaz"
+ns 19 "xfoobarbazfoobarbaz"
+
+# W-D2 at L3 (span_arms §5.7): a dead pattern, now with BACK's run `bc` at -1; it still never matches
+pattern (?<=ab)(?<=cb)c
+features all
+encoding byte
+ns 0 "abc"
+ns 1 "abc"
+ns 2 "abc"
+ns 3 "abc"
+ns 0 "cbc"
+ns 1 "cbc"
+ns 2 "cbc"
+ns 3 "cbc"
+ns 0 "bc"
+ns 1 "bc"
+ns 2 "bc"
+ns 0 "abcbc"
+ns 1 "abcbc"
+ns 2 "abcbc"
+ns 3 "abcbc"
+ns 4 "abcbc"
+ns 5 "abcbc"
+
+# W-D2 at L3 (span_arms §5.7): a dead pattern, now with BACK's run `bc` at -1; it still never matches [engine vm]
+pattern (?<=ab)(?<=cb)c
+features all
+encoding byte
+engine vm
+ns 0 "abc"
+ns 1 "abc"
+ns 2 "abc"
+ns 3 "abc"
+ns 0 "cbc"
+ns 1 "cbc"
+ns 2 "cbc"
+ns 3 "cbc"
+ns 0 "bc"
+ns 1 "bc"
+ns 2 "bc"
+ns 0 "abcbc"
+ns 1 "abcbc"
+ns 2 "abcbc"
+ns 3 "abcbc"
+ns 4 "abcbc"
+ns 5 "abcbc"
+
+# span_arms L3, K -10 (§14.4 L3 hand pin): `(?<=e{10})eeeeeqzx`
+pattern (?<=e{10})eeeeeqzx
+features all
+encoding byte
+ms 0 "eeeeeeeeeeeeeeeqzx" 10 18
+ms 1 "eeeeeeeeeeeeeeeqzx" 10 18
+ms 2 "eeeeeeeeeeeeeeeqzx" 10 18
+ms 3 "eeeeeeeeeeeeeeeqzx" 10 18
+ms 4 "eeeeeeeeeeeeeeeqzx" 10 18
+ms 5 "eeeeeeeeeeeeeeeqzx" 10 18
+ms 6 "eeeeeeeeeeeeeeeqzx" 10 18
+ms 7 "eeeeeeeeeeeeeeeqzx" 10 18
+ms 8 "eeeeeeeeeeeeeeeqzx" 10 18
+ms 9 "eeeeeeeeeeeeeeeqzx" 10 18
+ms 10 "eeeeeeeeeeeeeeeqzx" 10 18
+ns 11 "eeeeeeeeeeeeeeeqzx"
+ns 12 "eeeeeeeeeeeeeeeqzx"
+ns 13 "eeeeeeeeeeeeeeeqzx"
+ns 14 "eeeeeeeeeeeeeeeqzx"
+ns 15 "eeeeeeeeeeeeeeeqzx"
+ns 16 "eeeeeeeeeeeeeeeqzx"
+ns 17 "eeeeeeeeeeeeeeeqzx"
+ns 18 "eeeeeeeeeeeeeeeqzx"
+ns 0 "eeeeeeeeeeeeeeqzx"
+ns 1 "eeeeeeeeeeeeeeqzx"
+ns 2 "eeeeeeeeeeeeeeqzx"
+ns 3 "eeeeeeeeeeeeeeqzx"
+ns 4 "eeeeeeeeeeeeeeqzx"
+ns 5 "eeeeeeeeeeeeeeqzx"
+ns 6 "eeeeeeeeeeeeeeqzx"
+ns 7 "eeeeeeeeeeeeeeqzx"
+ns 8 "eeeeeeeeeeeeeeqzx"
+ns 9 "eeeeeeeeeeeeeeqzx"
+ns 10 "eeeeeeeeeeeeeeqzx"
+ns 11 "eeeeeeeeeeeeeeqzx"
+ns 12 "eeeeeeeeeeeeeeqzx"
+ns 13 "eeeeeeeeeeeeeeqzx"
+ns 14 "eeeeeeeeeeeeeeqzx"
+ns 15 "eeeeeeeeeeeeeeqzx"
+ns 16 "eeeeeeeeeeeeeeqzx"
+ns 17 "eeeeeeeeeeeeeeqzx"
+ms 0 "xxeeeeeeeeeeeeeeeeqzxqzx" 13 21
+ms 1 "xxeeeeeeeeeeeeeeeeqzxqzx" 13 21
+ms 2 "xxeeeeeeeeeeeeeeeeqzxqzx" 13 21
+ms 3 "xxeeeeeeeeeeeeeeeeqzxqzx" 13 21
+ms 4 "xxeeeeeeeeeeeeeeeeqzxqzx" 13 21
+ms 5 "xxeeeeeeeeeeeeeeeeqzxqzx" 13 21
+ms 6 "xxeeeeeeeeeeeeeeeeqzxqzx" 13 21
+ms 7 "xxeeeeeeeeeeeeeeeeqzxqzx" 13 21
+ms 8 "xxeeeeeeeeeeeeeeeeqzxqzx" 13 21
+ms 9 "xxeeeeeeeeeeeeeeeeqzxqzx" 13 21
+ms 10 "xxeeeeeeeeeeeeeeeeqzxqzx" 13 21
+ms 11 "xxeeeeeeeeeeeeeeeeqzxqzx" 13 21
+ms 12 "xxeeeeeeeeeeeeeeeeqzxqzx" 13 21
+ms 13 "xxeeeeeeeeeeeeeeeeqzxqzx" 13 21
+ns 14 "xxeeeeeeeeeeeeeeeeqzxqzx"
+ns 15 "xxeeeeeeeeeeeeeeeeqzxqzx"
+ns 16 "xxeeeeeeeeeeeeeeeeqzxqzx"
+ns 17 "xxeeeeeeeeeeeeeeeeqzxqzx"
+ns 18 "xxeeeeeeeeeeeeeeeeqzxqzx"
+ns 19 "xxeeeeeeeeeeeeeeeeqzxqzx"
+ns 20 "xxeeeeeeeeeeeeeeeeqzxqzx"
+ns 21 "xxeeeeeeeeeeeeeeeeqzxqzx"
+ns 22 "xxeeeeeeeeeeeeeeeeqzxqzx"
+ns 23 "xxeeeeeeeeeeeeeeeeqzxqzx"
+ns 24 "xxeeeeeeeeeeeeeeeeqzxqzx"
+
+# span_arms L3, K -10 (§14.4 L3 hand pin): `(?<=e{10})eeeeeqzx` [engine vm]
+pattern (?<=e{10})eeeeeqzx
+features all
+encoding byte
+engine vm
+ms 0 "eeeeeeeeeeeeeeeqzx" 10 18
+ms 1 "eeeeeeeeeeeeeeeqzx" 10 18
+ms 2 "eeeeeeeeeeeeeeeqzx" 10 18
+ms 3 "eeeeeeeeeeeeeeeqzx" 10 18
+ms 4 "eeeeeeeeeeeeeeeqzx" 10 18
+ms 5 "eeeeeeeeeeeeeeeqzx" 10 18
+ms 6 "eeeeeeeeeeeeeeeqzx" 10 18
+ms 7 "eeeeeeeeeeeeeeeqzx" 10 18
+ms 8 "eeeeeeeeeeeeeeeqzx" 10 18
+ms 9 "eeeeeeeeeeeeeeeqzx" 10 18
+ms 10 "eeeeeeeeeeeeeeeqzx" 10 18
+ns 11 "eeeeeeeeeeeeeeeqzx"
+ns 12 "eeeeeeeeeeeeeeeqzx"
+ns 13 "eeeeeeeeeeeeeeeqzx"
+ns 14 "eeeeeeeeeeeeeeeqzx"
+ns 15 "eeeeeeeeeeeeeeeqzx"
+ns 16 "eeeeeeeeeeeeeeeqzx"
+ns 17 "eeeeeeeeeeeeeeeqzx"
+ns 18 "eeeeeeeeeeeeeeeqzx"
+ns 0 "eeeeeeeeeeeeeeqzx"
+ns 1 "eeeeeeeeeeeeeeqzx"
+ns 2 "eeeeeeeeeeeeeeqzx"
+ns 3 "eeeeeeeeeeeeeeqzx"
+ns 4 "eeeeeeeeeeeeeeqzx"
+ns 5 "eeeeeeeeeeeeeeqzx"
+ns 6 "eeeeeeeeeeeeeeqzx"
+ns 7 "eeeeeeeeeeeeeeqzx"
+ns 8 "eeeeeeeeeeeeeeqzx"
+ns 9 "eeeeeeeeeeeeeeqzx"
+ns 10 "eeeeeeeeeeeeeeqzx"
+ns 11 "eeeeeeeeeeeeeeqzx"
+ns 12 "eeeeeeeeeeeeeeqzx"
+ns 13 "eeeeeeeeeeeeeeqzx"
+ns 14 "eeeeeeeeeeeeeeqzx"
+ns 15 "eeeeeeeeeeeeeeqzx"
+ns 16 "eeeeeeeeeeeeeeqzx"
+ns 17 "eeeeeeeeeeeeeeqzx"
+ms 0 "xxeeeeeeeeeeeeeeeeqzxqzx" 13 21
+ms 1 "xxeeeeeeeeeeeeeeeeqzxqzx" 13 21
+ms 2 "xxeeeeeeeeeeeeeeeeqzxqzx" 13 21
+ms 3 "xxeeeeeeeeeeeeeeeeqzxqzx" 13 21
+ms 4 "xxeeeeeeeeeeeeeeeeqzxqzx" 13 21
+ms 5 "xxeeeeeeeeeeeeeeeeqzxqzx" 13 21
+ms 6 "xxeeeeeeeeeeeeeeeeqzxqzx" 13 21
+ms 7 "xxeeeeeeeeeeeeeeeeqzxqzx" 13 21
+ms 8 "xxeeeeeeeeeeeeeeeeqzxqzx" 13 21
+ms 9 "xxeeeeeeeeeeeeeeeeqzxqzx" 13 21
+ms 10 "xxeeeeeeeeeeeeeeeeqzxqzx" 13 21
+ms 11 "xxeeeeeeeeeeeeeeeeqzxqzx" 13 21
+ms 12 "xxeeeeeeeeeeeeeeeeqzxqzx" 13 21
+ms 13 "xxeeeeeeeeeeeeeeeeqzxqzx" 13 21
+ns 14 "xxeeeeeeeeeeeeeeeeqzxqzx"
+ns 15 "xxeeeeeeeeeeeeeeeeqzxqzx"
+ns 16 "xxeeeeeeeeeeeeeeeeqzxqzx"
+ns 17 "xxeeeeeeeeeeeeeeeeqzxqzx"
+ns 18 "xxeeeeeeeeeeeeeeeeqzxqzx"
+ns 19 "xxeeeeeeeeeeeeeeeeqzxqzx"
+ns 20 "xxeeeeeeeeeeeeeeeeqzxqzx"
+ns 21 "xxeeeeeeeeeeeeeeeeqzxqzx"
+ns 22 "xxeeeeeeeeeeeeeeeeqzxqzx"
+ns 23 "xxeeeeeeeeeeeeeeeeqzxqzx"
+ns 24 "xxeeeeeeeeeeeeeeeeqzxqzx"
+
+
+# Review r66 (lane l3r66, 2026-11-21): span_arms L3's pick rule on the default route; every cell is
+# libpcre2-8 10.46's (tests/lib/p2probe.c) at every start position.
+# review r66 CHECK-3: the pick rule's DEFAULT-route keep (BACK's `xyza` at K -3 displaces the unbounded consumed `xyz`); handoff_vm.rxt carries the block under `engine vm` only
+pattern (?<=xyz)a+xyz
+features all
+ms 0 "xyzaxyz" 3 7
+ms 1 "xyzaxyz" 3 7
+ms 2 "xyzaxyz" 3 7
+ms 3 "xyzaxyz" 3 7
+ns 4 "xyzaxyz"
+ns 5 "xyzaxyz"
+ns 6 "xyzaxyz"
+ns 7 "xyzaxyz"
+ms 0 "qxyzaxyz" 4 8
+ms 1 "qxyzaxyz" 4 8
+ms 2 "qxyzaxyz" 4 8
+ms 3 "qxyzaxyz" 4 8
+ms 4 "qxyzaxyz" 4 8
+ns 5 "qxyzaxyz"
+ns 6 "qxyzaxyz"
+ns 7 "qxyzaxyz"
+ns 8 "qxyzaxyz"
+ms 0 "xyzaaxyzq" 3 8
+ms 1 "xyzaaxyzq" 3 8
+ms 2 "xyzaaxyzq" 3 8
+ms 3 "xyzaaxyzq" 3 8
+ns 4 "xyzaaxyzq"
+ns 5 "xyzaaxyzq"
+ns 6 "xyzaaxyzq"
+ns 7 "xyzaaxyzq"
+ns 8 "xyzaaxyzq"
+ns 9 "xyzaaxyzq"
+ns 0 "axyz"
+ns 1 "axyz"
+ns 2 "axyz"
+ns 3 "axyz"
+ns 4 "axyz"
+ns 0 "xyzxyz"
+ns 1 "xyzxyz"
+ns 2 "xyzxyz"
+ns 3 "xyzxyz"
+ns 4 "xyzxyz"
+ns 5 "xyzxyz"
+ns 6 "xyzxyz"

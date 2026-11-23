@@ -1242,6 +1242,8 @@ test-backrefs-identity: all
 # lane l1ffix): `req_whole_run`'s value and why per witness, as the blinded
 # author recorded them, with every shortfall naming a declared limit. Their
 # answers ride test-corpus (`d27_l1/l1d27_witnesses.rxt`). 88 compiles, seconds.
+# [span_arms L3] the same checker over `d27_l3/` (lane l3wire; 453 compiles, one
+# per witness x encoding x config; answers ride test-corpus, `l3d27_witnesses.rxt`).
 #
 # It SKIPS LOUDLY without libpcre2, like every other oracle-dependent script
 # here, and it parallelizes internally on PROCS (default tests/lib/
@@ -1253,6 +1255,7 @@ test-lookaround: all
 	bash tests/lookaround/run_lookaround_diff.sh
 	bash tests/lookaround/run_expansion_diff.sh
 	python3 tests/lookaround/d27_l1/check_listing.py build/pcrec
+	python3 tests/lookaround/d27_l1/check_listing.py build/pcrec tests/lookaround/d27_l3
 
 # [DD-14] wave B+C: module `recursion`. Its `.rxt` corpus rides `test-corpus`
 # like every other module's; THIS target is the behavioural instrument, and it

@@ -4767,3 +4767,102 @@ bsu3fix2 delivered (6cf672b6a on lane/bsu3fix; lanecheck DONE; TaskStop).
 - 729 RED 00:06 (rc=2, 1924s): ONE section, test-memfn-arch, class 6 (arch-noun) — 'pshufb' in S3516's comment + SAB_DESC, written by bsu3fix2 (6cf672b6a). Triage lane (sonnet, read-only), report /var/tmp/pcrec-pcrec/scratch/bsu3fix2/triage729.md. simdfloor GREEN (22771/0): 726's red is fixed. Stale wording, not a defect; no byte moved.
 - Fix 7c7e625b5 on lane/bsu3fix (bsu3fix3): "pshufb" -> "byte shuffle" in S3516 prose (the S3515 allowlist rows say "prose in the row is worded arch-free"; rewording beats an allowlist row). make test-memfn-arch: 32 passed / 0 failed.
 - 730 cancelled; 729/730 re-gated to 07:00 and requeued; 731 still 07:00. Main told. Lesson: a reworded sabotage's prose runs the arch-blind check too — run make test-memfn-arch on any fix lane that touches tests/ text (seconds).
+
+## 2026-11-22 08:11 (kit)
+
+- 729 make test GREEN 07:33 (2021 s), 730 mech GREEN 07:58 (17 rows), 731 ids GREEN 08:09.
+- Merged lane/bsu3fix -> f861873a8, make strict clean; [responses] done (partial) R-47 U3 at d04ee5047.
+- Main accepted U3 for landing at abi 112 (L3 re-pins to 113 after it). Review numbers: U4 = r78, U5 = r79, U6 = r80.
+- Next: U4 (G2-V, T-table pins, rest of C18, sabotage (a)-(f)) per block_span.md §14.
+
+## 2026-11-22 08:13 (kit)
+
+- Main CORRECTION: U3 lands at abi 111 (main is 110; U2 was re-pinned 111 -> 110 at landing); L3 then 112; kit's next abi event asks main (113+). Kit branch merges main back after U3 lands.
+- U4 split into two disjoint lanes cut from ad3c8f1c2: bsu4g (opus) G2-V unit + whole with PROT_NONE guards, plants (a)(b), S3525-S3529; bsu4p (sonnet) 20 T-table pins, SPAN-SEED wiring, C18 rest, routing leg, DIFFER_PINS/FLOORS, plants (c)-(f), S3530-S3539. Both: no byte moves, no memfn/src edits; owed kit-bsu4{g,p}-{test,mech}. Code round r78 before U4 delivery.
+
+## 2026-11-22 08:47 (kit)
+
+- bsu4g DELIVERED (lane/bsu4g c0f615a49; lanecheck DONE): G2-V unit 1,216 renderings / 1,177,900 windows at both guard placements, 0 wrong 0 faults; whole 336 artifacts / 90,240 find-all runs 0 wrong; plants S3525 (a), S3526 (b) reached + detected; run_g2_win.sh 30,206/0. OWED 736-kit-bsu4g-test, 737-kit-bsu4g-mech. Lane stopped.
+- Findings to fold into block_span.md at U4 delivery: (1) §10.2's "plant (b) benign on HORS" is wrong where B divides K (moved final block leaves byte K-B untested; [0-9a-f]{17} misanswers; still caught). (2) "literal run beside a stretch" never reaches V (the literal is D1's stop): population 0, printed, not floored. (3) the empty set is refused at define, never reaches V.
+
+## 2026-11-22 08:47 (kit)
+
+- bsu4p DELIVERED (lane/bsu4p cc247853f; lanecheck DONE): tests/memfn/span_pins.py (20 T-table pin cells; SPAN-SEED census 28/31, k source == shipped text per site) called inside C18; C18 three NAMED span witnesses (v3-only), floor 3, FLOORS re-pinned x86-64 74 / v3 105 (x86-64 55 was already stale); routing_shape.py V leg + 7 selftest shapes 21/21; libc census funcs floor 141 -> 281; DIFFER_PINS verified unchanged. Plants S3530-S3536 (c,d,e,f + C18 controls 2-4) REACH 7/7, DETECTED in-lane except S3535 (first ANOMALY: C18 crashed on an unadmitted width; fixed, lint rejects it; matrix verdict owed). OWED 738-kit-bsu4p-test, 739-kit-bsu4p-mech. Lane stopped.
+- Findings: S3535 crash fix (a C18 robustness defect, kit-side); stale x86-64 floor; plant (c) edits the predicate since bsu3fix's static assert blocks a literal 15.
+- Next: code round r78 over both U4 branches while 736-739 run.
+
+## 2026-11-22 08:51 (kit)
+
+- Combined U4 branch lane/bsu4 = bsu4g + merge bsu4p (023ab6eb8); one conflict, c4_allowlist.tsv, both sides' appended rows kept (88 rows). make test-memfn-arch 32/0, make strict clean.
+- r78 code round launched: coordinator crit-memfn-bsu4 (opus) on lane/bsu4, BASE = merge-base with the kit branch (ad3c8f1c2).
+- 736/737 (bsu4g) and 738/739 (bsu4p) validate the halves; the combined tip needs its own make test + mech after r78's fixes.
+
+## 2026-11-22 09:26 (kit)
+
+- r78 (memfn-bsu4, code) draft back: no answer/speed finding; 0 emitted movers (164 pairs), 9 plants LOUD with REACH; "every check can fail" PARTLY false. RULED FIX FIRST: drafted dispositions stand, plus PLANTSB-2 keep the row (guards proven by G2V-1's self-witness), PINS-7 cheap part FIX-NOW (one k-source reader), C18WIRE-8 fix both. 3 lessons into critics.md. Review committed 020f3766c (4 old index lines to NOTES.md for the size limit).
+- Lane bsu4fix (opus) on lane/bsu4fix from lane/bsu4 023ab6eb8; ids S3540-S3544; owed kit-bsu4fix-test/mech. Cancelled 737-739 (half-branch validation, superseded by the fixed combined tip); 736 left to finish.
+
+## 2026-11-22 09:27 (kit) — OWNER WORDS to the kit (width-night-bench, via /q in the kit session), VERBATIM
+
+"width-night-bench: 1. so this shouldn't be a single number then but a table of numbers depending on what is being scanned including mixed types.
+2. pcrec needs to specifically tell kit that it wants the cover and not a candidate which can be fewer. That might be in the form of a start/end into the span for the coverage range. If the kit knows it needs to recheck, anything beyond a candidate is a waste"
+
+- Kit reading: (1) the cover width becomes a declared TABLE keyed by what the span scans (digit, hex, word, literal run, mixed), per layer; B-lite (job 310) already shows the sign flips by kind (digit near-miss x3-5 loss at 24-32, hex and literal wins). (2) the site states the STRENGTH of answer it needs as a fact: a proven range [start,end) of the span (cover / proven fraction) vs a candidate the engine rechecks; the kit picks its method per strength (D157 facts, not methods). Family: R-40 (minimum useful bytes after a candidate) and R-46 (the weaker question at the presence site) are the same "what question does the site ask" fact; three members -> propose one fact.
+- Posted as a responses.md notice (proposed D202 addendum) for main to file; no lane, no build.
+
+## 2026-11-22 09:29 (kit) — OWNER WORDS to the kit (width-night-bench, follow-up), VERBATIM
+
+"width-night-bench: but this leaves kit options like the candidate check might be disjoint from the coverage or the cover check goes into the non coverage because the simd form checks 32 bytes anyway"
+
+- Kit reading: the stated range is an OBLIGATION (what the answer must prove), not a fence on what the kit may read or test. The kit may test positions outside it (a candidate test disjoint from the range; a SIMD block that runs past it), as long as every reject is SOUND (it uses only sets pcrec states as necessary at that position) and every read stays in bounds (the existing guard rules). Consequence: pcrec hands the per-position sets beyond the range too (the exact sets inside, the necessary or hull sets outside), so the kit has something sound to test there.
+
+## 2026-11-22 09:37 (kit) — OWNER WORDS to the kit (cover width), VERBATIM
+
+"As far as the width, that is your call within the above. I'm not sure the variables that determine the answer. We could use a table. An/or there could be a mathematical idea of sufficiently checked where a match score keeps going up with each test until it passes some threshold (that pcrec might provide). So rare bytes provide more, ranges less.
+1. is this a width of check or coverage?
+2. another variable is simd. If simd can prove 32 bytes cheap then that's different than scalar
+3. simd is the reason the choice is yours."
+
+- Kit answer (given to him the same turn):
+  - (1) There are TWO widths. COVERAGE is pcrec's fact: the range that must be proven if the kit answers without a recheck. CHECK is the kit's choice: how far a candidate filter tests before handing to the engine. Today's "cover width 32" is a limit on coverage: take the proof, or decline it to the engine.
+  - (2) Yes. Cost per position is per layer. A SIMD block tests 32 positions for about one unit, so proving coverage of 32 or less is near-free there; scalar pays per byte.
+  - (3) Agreed.
+  - His score is the general form of the stopping rule: test in order of selectivity (rare bytes first), and stop when the next test costs more than the engine recheck it is expected to save. The threshold input is pcrec's ENGINE COST UNIT (D202 (2)). The table is that rule tabulated per kind x layer.
+  - Lean: a table per kind x layer first, fitted to the SIMD reference night. The score is built only if the table cannot fit the measured answers (mixed spans are the likely trigger). Pricing stays a later step (memory pcrec-pilot-is-pricing-baseline). No build now.
+
+- Correction (owner, via main, verbatim): "The score or threshold were ideas to consider. Other comments were framing". Decided: width = kit's call within D202 add. 1. Table and score are ideas only; numbered points are framing. responses.md notice corrected.
+
+## 2026-11-22 09:44 (kit) — OWNER WORDS (d3-repin-permission, main's question, answered in the kit session), VERBATIM
+
+"d3-repin-permission: you have permission to run the repin script"
+
+- Relayed to main verbatim. Kit offer: if l3land's retry is still denied, the kit reads the member diff against its condition and runs D3FLOOR_REPIN=1 bash tests/memfn/run_d3floor.sh in that worktree only.
+
+## 2026-11-22 09:45 (kit)
+
+- bsu4fix DELIVERED (lane/bsu4fix 7a93f5377): every r78 FIX-NOW + DOC item fixed, mutation proof all RED (G2V-1 A-D, guard plant, G2V-2, PINS-1..6, V-ahead-of-deny, C18WIRE-1/2); in-lane g2v 2840/0, span_pins 83/0, k-source controls 6/6, routing 24/24, arch 32/0, strict. Not in-lane: full run_g2_win.sh, simdfloor, mech S3526/S3531 (box yielding then held by a timing job) -> covered by OWED 740 kit-bsu4fix-test, 741 kit-bsu4fix-mech (15 rows). Lane stopped.
+- INCIDENT: the lane's unlocked in-lane runs overlapped the first ~50 s of main's 200-k159fix-timing (09:42:17-09:43:07). Main told. Brief rule to add: in-lane runs over a few seconds take scripts/boxlock (or check boxlock status for a TIMING holder) before starting.
+- 09:45 Path change (Frank to main, relayed): "Lanes can run repin script in their lane". l3land re-pins itself under the kit's R-1 condition; kit reads the member diff in l3land_report.md after.
+- 09:57 Owner (via main, verbatim): "dense-not-target: close". No N for super dense; dense scope = 2+ hits per block; the plain loop is picked per case by the measured tables. Filed by main in plan_row_bodies/REQ-PAST-LAST.md.
+- 10:00 D3-FLOOR re-pin at l3land STOPPED under R-1 (rows outside the four classes: main's span_seed.rxt (U1) +41 compiles/cell, 38 members gained per c-vm cell, 3 at utf8/c-default; K146/K147 corpus rows add no member). No member lost, no floor drop. Kit ruled YES (gains only from committed corpus added after the 548b2a7ac pin); lane re-pins in worktrees/l3land, CHECK mode green, commits only the two tsvs.
+- 10:33 740 RED: one section, test-compound B4 G7 lever fence (c): span_pins.py, span_ksource.py, S3532 name --harness=span-head (new in U4, by design) outside the fence's ALLOW (triage /var/tmp/pcrec-pcrec/scratch/bsu4fix/triage740.md). Not a check defect. Fixed 23b325e99 (ALLOW + comment), make test-compound PASS; 740/741 requeued. Lesson: a U4 check that uses a harness lever needs its lever-fence row in the same commit (bsu4p's red, unseen because 738 was cancelled).
+
+## 2026-11-22 11:50 (kit)
+
+- 740 make test GREEN 11:13 (2318 s), 741 mech GREEN 11:48 (15 rows) on lane/bsu4fix 23b325e99.
+- Merged lane/bsu4fix into lane/memfn-k1108, then main (U3 landed at abi 111 e4f861642, K159, D202 add. 1-2) -> 0eceaaee1. Four append-only doc conflicts (critics.md, lanes history, reviews CLAUDE.md/NOTES.md): union, or main's side where main had already moved the same index lines. The abi readers auto-merged to main's 111. make strict clean, test-memfn-arch 32/0.
+- Tip validation queued on a detached worktree u4tip: 742 kit-u4tip-test, 743 kit-u4tip-mech. Delivery of U4 waits on both.
+- 13:08 742 make test GREEN 12:34, 743 mech GREEN 13:08 on 0eceaaee1 (detached u4tip). [responses] done (partial) R-47 U4 at 3e62406e2; main told.
+- 13:10 Main ack: L3 lands first (112), then U4 with a cloud test. Lane bsu5 (sonnet) launched for U5 from b51fd80bd: card C6 per §8, kit-grid@8 UNMEASURED, formhash shape/renderer/entry, clang arms for the 3 real sites ([BSPAN-CLANG-DIFF], D201 add. 5); no timing; ids S3546-S3549; owed kit-bsu5-test/mech; code round r79 before delivery.
+- 13:27 bsu5 DELIVERED (lane/bsu5 28b2da326): C6 span_vector (8 patterns, 6 regimes + near-miss-in, A/A arm, C6_RULE sha 6351bff3901e3955), kit-grid@8 UNMEASURED/CANDIDATE, formhash MF_FH_SPAN + renderer + entry span-vector (hash a9efa02907d0645b; mf_form_entry gains .k -> S2930 re-aimed, REACH hand-proved), sibling card C6c clang 21 -O2 SIMD-off on the 3 real sites (declared compiler column). Identity 356/356 pairs byte-identical, no abi event. Open points for U6 labelled in C6_RULE (N/A needs call counts; WIN re-time without S; LAUNCHES for 710's variants). OWED 744/745; cards.py selftest still running under boxlock (lane NOT stopped yet: TaskStop would kill it).
+- 13:50 r79 (memfn-bsu5, code): no product finding, 0 movers, nothing timed; claims 3-5 fail as built (hash covers B=32 only; A/A cannot fail; compiler rides a layer name; 12 dead near-miss cells; rule record missing verdict/unit, sha of a scratch file). RULED FIX FIRST: F2 salt + VOID rule, F16 fold with F1, F13 gcc -Os leg now (clang -O3 DOC: no bench arm), F15 PLAN. Review f5521141c/b4310ce43; 3 lessons; lens table: measurement admits C subjects with a rule record. 744/745 cancelled (superseded). Lane bsu5fix (opus), ids S3550-S3554.
+- 14:10 Owner ruling via main, verbatim: "kit-arch-step: yes but after existing effort completed. Then overall arch review of kit sections with suggestions. Possible refactors, favoring smaller items. Then arch reviews going forwards". Plan row [KIT-ARCH-STEP]. Order: (1) finish R-47 (U5, U6) with no retroactive notes; (2) ONE overall arch review of the kit's sections, refactors suggested (smaller favoured), filed not built; (3) arch note + arch-mode critic round before every new kit feature's design. Kit tells main when R-47 is complete.
+- 14:18 bsu5's cards.py selftest TIMED OUT (rc=124 at timeout 3000, no output, 100% CPU 13:24-~14:15, held the box lock). Counted RED. Ruling R-1 to bsu5fix: find the cost, fix so selftest ends with a verdict, run it in-lane, report base cost; stop if more than small. bsu5 lane stopped.
+- 14:29 R-1 answered by bsu5fix: the full cards.py selftest takes ~90 min at the base too (formsfixm measured 07:38-09:08 at be2994675, asked for >= 7200 s); cmd_selftest identical at base/U5/tip; U5's 3000 s bound was too short, block buffering emptied the log. Not a U5 regression. R-2: line-buffer + docstring, queue kit-bsu5fix-selftest (cap 7200, after mech), END. The df-cache speedup (formsfixm's idea) NOT built: harness cost, no product value now (memory pcrec-test-harness-minimal); logged here as an idea only.
+- 14:38 bsu5fix accepted (tip 36548a3a9: R-1/R-2 done, cards.py line-buffered + runtime/bound docstring). 746 running (started on de36c27c9; 57a38e78c touches stdout buffering + docstring only), 747 mech after, 748 full selftest (cap 7200) after mech. Lane stopped.
+- 16:48 748 kit-bsu5fix-selftest RED (rc=1, 5634 s): 219 ok, then AttributeError in selftest_rev12 -> variant_key -> _h: cc_ident(cc) is None (variant_key called without a compiler, after F3's declared compiler column). A U5-fix regression. Triage+fix lane bsu5fix2 (sonnet) on lane/bsu5fix.
+- 16:57 bsu5fix2 accepted (412afe9f5, cards.py only). Cause: 7f870f6d6 (already in lane/bsu5) gave cc_ident/variant_key a cc=None default; the r44 I drill's stub returned None. Fix: the compiler is required (no default), and the drill passes CC; 80/80 keys match 28b2da326. The lane MISSED ruling R-1 (its 749 --ready is exit 0) and left an in-lane 'selftest --rev12' running beside main's suites (safekilled). 749 started 16:57, cap 7200 -> ends by 18:57, inside the pre-20:00 window, so the gate is moot this time. Lesson: verify that a ruling sent after launch shows up in the deliverable.
+- 16:59 main: L3 LANDED + PUSHED at abi 112 (main 65ad0f18f), all green. U4 merging at 3e62406e2 in worktrees/u4land (cloud test + mech on the merge, then ff). Kit merges main after main says U4 landed. Next abi 113+, ask first.
+- 18:33 749 GREEN (222/0, 5661 s). Merged lane/bsu5fix2 into the kit branch (988ddf804, clean), make strict ok; [responses] done (partial) U5 posted. Pending: main says U4 landed -> merge main -> tip test+mech on a detached worktree.
+- 19:30 main: U4 LANDED + PUSHED (7af611f1e; cloud test + mech green). Merged main into the kit branch: 26ef32ad5 (one conflict, critics.md, both sides' lesson blocks kept); make strict ok; abi 112 in the tree. Tip validation queued on detached worktree u5tip, not-before 2026-11-23T01:00 plus a 01:00-18:15 clock gate (evening hold): 750 kit-u5tip-test, then 751 kit-u5tip-mech (U2-U5 rows, 18). Then hand 26ef32ad5 to main for U5's landing.
+- 02:22 750 GREEN (2671 s) + 751 GREEN (18 rows, all detected) at 26ef32ad5. U5 tip handed to main ([responses] line). Next: U6 (brief after main lands U5); [KIT-ARCH-STEP] stage 2 after R-47.

@@ -26,7 +26,8 @@
 #   calls-printf 44, calls-fprintf 96.
 # R4e'.0b (lane r4e0b, 2026-10-09, Linux dev box, gcc 15.2) adds the ROUTING
 # leg (routing_shape.py) and its population `funcs`, the offset-skip/pre-check
-# functions seen: measured 188 (full) / 119 (--quick), floors ~90%.
+# functions seen: measured 188 (full) / 119 (--quick), floors ~90% (then; the
+# current measures and floors are beside FLOORS below, 281 / 150 since R-47 U4).
 # ic2fix triage (2026-10-28): composition 45 -> 38 (measured 43). A file build
 # now compiles every target before writing any (cli.md §1.1.1¶4, review
 # 2026-10-27-r1-ic2 F7), so the two rxtsource fixtures that carry a refused
@@ -56,14 +57,21 @@ done
 if [ -n "$quick" ]; then
     # measured: artifacts 533, dfa 293, vm 240, idiom 42, calls-memchr 305,
     # calls-memcmp 26
+    # funcs 107 -> 150, AT the measure (lane bsu4fix, r78 C18WIRE-8, 2026-11-22): 144
+    # offset-skip/pre-check functions (slack since the 107 was set, closed) + the 6 vector
+    # span selectors of span_seed.rxt's default-stream sample
     FLOORS=(artifacts=480 dfa=260 vm=215 idiom=37 calls-memchr=275
-            calls-memcmp=23 funcs=107)
+            calls-memcmp=23 funcs=150)
 else
     # D172 S3 (lane s3): funcs 169 -> 141, pinned AT the measure: the cover row
     # took the fixed-width patterns, whose search defines no offset-skip function
     FLOORS=(artifacts=820 dfa=310 vm=500 composition=38 none=300 idiom=80
             calls-memchr=470 calls-memcmp=40 calls-strlen=40 calls-printf=38
-            calls-fprintf=85 funcs=141)
+            calls-fprintf=85 funcs=281)
+    # R-47 U4 (lane bsu4p): funcs 141 -> 281, pinned AT the measure: 275 offset-skip/pre-check
+    # functions (BASE's own checker already read 275: slack since S3, closed) + 6 vector span
+    # selectors (the `_mf<h>_vs<j>` name rule; span_seed.rxt's patterns in the default-stream
+    # sample). Corrected by lane bsu4fix (r78 C18WIRE-4).
 fi
 fl=()
 for f in "${FLOORS[@]}"; do fl+=(--floor "$f"); done
