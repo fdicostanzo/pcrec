@@ -8703,3 +8703,39 @@ The manager's answers (told to him):
    him as slug label-in-argument: a label parameter passed INSIDE an in-place argument. It meets the manager's
    reading (a) of argument-default ("a part label written ON an argument at a call labels a template": a compile
    error), which a yes would narrow or withdraw.
+
+### 2026-11-23 OWNER RULING — label-in-argument: sending an unbound label inside an argument is ok, and `_` on the outer spot does not affect it ("an accepted backdoor"); second thoughts on a label SET in an argument, to re-examine
+tags: core/labels/paths/argument-default core/operators/bindings/label-variables core/labels/export core/principles/label-names-spot lib/json/members
+
+ASKED (slug label-in-argument: a label parameter passed inside an in-place argument,
+`json.row(_:, "msg", json.string(body:)) & (body: contains("timeout"))`; whether `_` on the outer spot closes it
+"is part of this question"; the manager's leaning yes, held loosely). HIS WORDS, whole:
+
+"label in argument: this is an interesting one. your use of body was not what i was thinking but it did raise
+interesting points that need examination. the rule about passing a label and templates and such was when we set
+a label like B(a=B), not when we sent an unbound label. (honestly, i'm having second thoughts even about the
+label setting in an argument. whats the difference between A:=[f="frank"], ... B(A) and ... B(f="frank") ? lets
+re-examine after if for no other reason than to remind me of the issues. ) for this issue, sending the unbound
+label is ok and! i would say it wouldn't be affected by the _ as it becomes an accepted backdoor into the inner
+pattern- which is almost the whole point."
+
+Class, part by part:
+- An OBSERVATION: the manager's `body` sketch "was not what i was thinking" for his point 3 (threading the label
+  to string); what he had in mind is NOT recorded (not said); to ask.
+- A CLARIFICATION of his own ruling: "the rule about passing a label and templates and such was when we set a
+  label like B(a=B), not when we sent an unbound label": argument-default's template rule is about a label SET on
+  an argument (his `B(a=B)`, the documents' `B([a = A])`), not about an unbound label sent in.
+- SECOND THOUGHTS, not a ruling, with a REQUEST: "i'm having second thoughts even about the label setting in an
+  argument. whats the difference between A:=[f="frank"], ... B(A) and ... B(f="frank") ? lets re-examine after if
+  for no other reason than to remind me of the issues." The manager's reading (a) of argument-default (a part
+  label written on an argument is a compile error) is to be RE-EXAMINED with him; it stands meanwhile, marked.
+- A RULING on the issue asked: "for this issue, sending the unbound label is ok": a label parameter may be passed
+  inside an in-place argument. And his answer on `_` ("i would say"): it "wouldn't be affected by the _ as it
+  becomes an accepted backdoor into the inner pattern- which is almost the whole point": `_` on the outer spot
+  does not close a label the caller sent in.
+The manager's readings (marked; for the fold to test): (a) the sent label is the caller's own name, read bare
+(`body`); (b) placed once / twice / never by the receiving body: set once / the same-label-twice rules / the
+never-pass warning; (c) the backdoor passes `[_ = rx]` and a `_` part label alike, since both are ways the outer
+body declines to NAME the spot, and the sent label needs no name from it; whether it also passes a body that
+uses the argument ALONE (no label on the spot at all) is the natural extension: taken as yes (the backdoor does
+not depend on the outer body's cooperation), to confirm.
