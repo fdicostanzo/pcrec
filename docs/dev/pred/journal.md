@@ -1002,3 +1002,59 @@ wake.md says (read the draft WHOLE first; A4 is a ruled-words finding: read his 
   second shape CLOSED on label-reference at his question; zero-in-loop ASKED (waiting).
 - NEXT: the FOLD lane (r86, predfold1123) for 2026-11-22 late + 2026-11-23, with the six overtaken r84 findings and
   the lane report's LEFT FOR THE FOLD LANE list; brief after his zero-in-loop answer or at the next pause.
+
+## 2026-11-23 — zero-in-loop and binding-fixed ruled; fold lane predfold1123 launched
+
+- RULED: zero-in-loop (b); binding-fixed: yes (a new principle; confirms "two uses of one piece are two pieces").
+  Main merged P-25 (014ebc42f).
+- LAUNCHED: lane predfold1123 (opus; worktree `worktrees/predfold1123`, cut at e420369c5; deliver + empty rulings
+  file written first; `lanewatch --follow` armed): the fold of the record from "a question on transform-export:
+  `A(rx) := /${=rx}/`" through "binding-fixed: yes", with r84's six handed-over findings. Its review is r86
+  (coordinator to launch at its delivery). Later rulings of this session go to its rulings file as R-n.
+- To do without asking him: options-position's first half is in his own words ("in future bindings"; the ruled
+  statement "literals written after the statement"): close it as "from the statement on" (an R-n for the lane);
+  repeat / turning a flag off stay unstated.
+
+## 2026-11-23 — zero-open ruled; the call-forms play-out written at his request
+
+- RULED: zero-open, all four (R1 in predfold1123's rulings file). Discussion recorded: his count-prefixed list
+  example, "length(0:)", `0` as the one open name.
+- call-forms: his lean (b) ("i like your suggestion"), `repeat(X, _, 5)` "is 0 up to 5", and a request to play it
+  out (nine questions, two levels). WRITTEN as the record entry "2026-11-23 MANAGER — the play-out he asked for"
+  (a proposal throughout): a head is a binding list and a call binds it against the argument record; omitted /
+  unspecified `_` / open kept apart; array = lift, tuple = positions, map = names; a user macro taking a macro,
+  with its termination cost. Runs: `$PCREC_TMPDIR/scratch/pred/call_forms.py`. He "will be back later to go over".
+- IN FLIGHT: lane predfold1123 (R1 pending in its file). r86 round to launch at its delivery.
+
+## 2026-11-23 — predfold1123 delivered and merged; critic round r86 launched
+
+- Lane predfold1123 delivered (lanecheck DONE; R1 zero-open applied): MERGED (026090af8); lint 7,902 / 0;
+  plan-lint green; model 18 / 0, 24 plants caught. Folded: every ruling from 2026-11-22 late through zero-open.
+  Answers changed are listed in its report (two-sources' line; five programs legal again under argument-label;
+  `c := (0: 5)` an error; the two-argument capture wrapper to rejected). Lane stopped.
+- Its note for after the review: zero-open's two record entries were not in its worktree, so four pieces cite them
+  in history lines only (match-so-far, reads, warnings, capture) and core/values/reads keeps its 2026-11-22 date:
+  the r86 fix lane turns them into rulings items.
+- Owner questions the lane left, by slug: label-set-precedence (`[a = A | b = B]`), question-request,
+  effect-in-guard, array-request-spelling, label-parameter-dollar (optional-label-general is closed by his `?:`
+  lean: check how the lane wrote it).
+- LAUNCHED: coordinator `crit-predfold1123` (opus, background), review r86, subject frozen at 026090af8, scope
+  014ebc42f..026090af8, round dir `$PCREC_TMPDIR/scratch/crit-predfold1123/`. NOT a delivery to main until r86 is
+  ruled and its fix lane lands.
+- WAITING ON HIM: the call-forms play-out (he said he would be back to go over it).
+
+## 2026-11-23 — r86 drafted and ruled; fix lane predfix86 launched; call-forms discussion continues
+
+- r86 (coordinator `crit-predfold1123`, 5 opus lenses + verifier; 46 items, 0 refuted; draft
+  `$PCREC_TMPDIR/scratch/crit-predfold1123/review.md`): RULED (record entry "2026-11-23 MANAGER — review r86").
+  Three findings were errors of MY fold brief: the joint and value `?:` lines printed legal against the asked
+  statement's conservative edges (A1); optional-label-general closed on my thought (A1); his call spelling
+  `l = ts:` taken as a head default (A8). Coordinator stopped.
+- LAUNCHED: lane predfix86 (opus; worktree `worktrees/predfix86`, cut at a05795469; deliver + empty rulings file
+  first; lanewatch armed). It also folds label-hole-full (ruled mid-round) beside A15 and files the review.
+- With the owner since the fold: label-hole-full RULED (by kind of group); count-unspecified RULED (an unspecified
+  count bound by meaning); DISCUSSION: `repeat(A)` as `A*`, unset against the underscore, his conditional repeat
+  head (same table as head (i) but for a written 0), the `? :` / `?:` spelling collision, "meet me half way".
+  ASKED: unspecified-rule; WAITING: repeat-head. None of the call-forms material is folded (a later fold).
+- LESSON (his): a lone underscore VANISHES in his chat UI: fenced code blocks or the word (memory saved).
+- Queue additions from r86: closing-own-label, capture-in-set, optional-entry-edges.

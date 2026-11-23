@@ -78,6 +78,7 @@ history:
     (`| (h: 10)`) is not enough.
 - 2026-11-19 (lane preddoc3c): its trigger and source written into the base piece; the item's text copied here.
 - 2026-11-19 (lane preddoc5, review r59 EXAMPLE-2): the base piece says `all` is retired and the mark is out.
+- 2026-11-23 (lane predfold1123, the fold of 2026-11-22 late and 2026-11-23; records "2026-11-23 OWNER RULING — optional-label: yes (`(h?: S)` holds when h is absent or in S); and a FLAG: is it a special form or the general case of an expression left of `:`", "2026-11-23 OWNER, on optional-place: "Before the colon"; and a proposal: an alternative operator to the colon, `:` and `?:`"): the sentence "there is no optional mark" corrected: the optional entry `?:` (core/conditions/form/optional-entry) is in the language; the mark "Drop-mark: yes" dropped was the per-part `((h, m?): R)`.
 
 ## parked/ideas/unset-member — An "unset" member in a value set
 slugs: 
@@ -131,6 +132,7 @@ history:
   - TRIGGER: an example where the empty case must be singled out and `+`, `some`, `count` do not serve.
 - 2026-11-19 (lane preddoc3c): its trigger and source written into the base piece; the item's text copied here.
 - 2026-11-19 (lane preddoc5, review r59 EXAMPLE-2): the base piece says the mark is out.
+- 2026-11-23 (lane predfold1123, the fold of 2026-11-22 late and 2026-11-23; records "2026-11-23 OWNER RULING — optional-label: yes (`(h?: S)` holds when h is absent or in S); and a FLAG: is it a special form or the general case of an expression left of `:`", "2026-11-23 OWNER, on optional-place: "Before the colon"; and a proposal: an alternative operator to the colon, `:` and `?:`"): the sentence "there is no optional mark" corrected: the optional entry `?:` (core/conditions/form/optional-entry) is in the language; the mark "Drop-mark: yes" dropped was the per-part `((h, m?): R)`.
 
 ## parked/ideas/zero-loop-default — A default read when a reached loop runs zero times
 slugs: 
@@ -291,6 +293,7 @@ history:
     finite vs infinite alone does not catch the `6,` flip (its set, `m < h`, is finite).
 - 2026-11-19 (lane preddoc3c): its trigger and source written into the base piece; the item's text copied here.
 - 2026-11-19 (lane preddoc5, review r59 EXAMPLE-2): the base piece says the mark-in-none diagnostic left with the mark.
+- 2026-11-23 (lane predfold1123, the fold of 2026-11-22 late and 2026-11-23; records "2026-11-23 OWNER RULING — optional-label: yes (`(h?: S)` holds when h is absent or in S); and a FLAG: is it a special form or the general case of an expression left of `:`", "2026-11-23 OWNER, on optional-place: "Before the colon"; and a proposal: an alternative operator to the colon, `:` and `?:`"): the sentence "there is no optional mark" corrected: the optional entry `?:` (core/conditions/form/optional-entry) is in the language; the mark "Drop-mark: yes" dropped was the per-part `((h, m?): R)`.
 
 ## parked/ideas/nested-relation — One nested-relation statement for spans, passes and occurrence hits
 slugs: 
@@ -850,6 +853,48 @@ history:
 - 2026-11-21 (lane predscope; a source line, nothing ruled): his question "does that mean that v is not a label but a label variable?" (record: "2026-11-21 OWNER, discussing bare-nested-scope: rules on literals or compiler rewrites; is `v` a label variable; `inner(digits)`; what the compiled C exports"); the manager's answer there: `v` is an ordinary rx parameter, and a macro that names the label to test itself (`small(L) := (L: <5)`) would need this parked label parameter. His example of the same day: "C cannot see rx as its a binding variable not a label." (pure-label). The trigger is unchanged.
 2026-11-22 (lane predbound, bound-condition ruled): `see:` the under-construction core/operators/bindings/label-variables, his alternative 1 ("macro variables"); the idea stays parked.
 - 2026-11-22 (lane predfix82, review r82 GENERAL-11, FIXIND-8; record "2026-11-22 MANAGER — review r82 (predfold1122): dispositions ruled; two corrections of record entries (no owner words)"): a bullet: superseded by core/operators/bindings/label-variables; its question on non-parameter labels answered. Status date 2026-11-19 to 2026-11-22.
+- 2026-11-23 (lane predfold1123, the fold of 2026-11-22 late and 2026-11-23; record "2026-11-23 OWNER, on approach 1 (a macro takes a label): "lets tentatively work with it"; label-parameter-twice "seems" answered by the same-label-twice rules"): label-variables now holds the ruled pieces (label-omitted, label-default, label-kinds, label-in-argument, label-forward).
+
+## parked/ideas/empty-argument — An empty argument position
+slugs: 
+rulings:
+- 2026-11-23 (class: IDEA) "they can be omitted by row(,"level", ...) if we choose to allow that" (record: "2026-11-23 OWNER RULING — label-parameter-omitted: `_` is the unspecified label; and: no argument is omitted under the current call rules; label arguments are not special by position or requirement")
+rejected:
+readings:
+evidence:
+history:
+- 2026-11-23 (lane predfold1123, the fold of 2026-11-22 late and 2026-11-23; record "2026-11-23 OWNER RULING — label-parameter-omitted: `_` is the unspecified label; and: no argument is omitted under the current call rules; label arguments are not special by position or requirement"): a new parked piece.
+
+## parked/ideas/reference-kind — A reference kind of label parameter for users
+slugs: 
+rulings:
+- 2026-11-23 (class: RULING) "the reference kind can be used by natives but stays off limits for users until we see a valid, safe set of rules for it." (record: "2026-11-23 OWNER RULING — label-kinds: yes, one mark, one meaning; the reference kind is for natives, off limits for users for now")
+rejected:
+readings:
+evidence:
+history:
+- 2026-11-23 (lane predfold1123, the fold of 2026-11-22 late and 2026-11-23; record "2026-11-23 OWNER RULING — label-kinds: yes, one mark, one meaning; the reference kind is for natives, off limits for users for now"): a new parked piece.
+
+## parked/ideas/label-symbol — A label pre-defined as a symbol
+slugs: 
+rulings:
+- 2026-11-23 (class: IDEA) "this means a macro can take a label and, maybe, a label can be pre-defined as a symbol." (record: "2026-11-23 OWNER, two other approaches to a label named by a macro's caller: (1) label binding in macros; (2) conditions allow expressions for the reference")
+rejected:
+readings:
+evidence:
+history:
+- 2026-11-23 (lane predfold1123, the fold of 2026-11-22 late and 2026-11-23; record "2026-11-23 OWNER, two other approaches to a label named by a macro's caller: (1) label binding in macros; (2) conditions allow expressions for the reference"): a new parked piece.
+
+## parked/ideas/optional-arguments — Optional positional macro arguments without defaults
+slugs: 
+rulings:
+- 2026-11-23 (class: IDEA) "Could the ? Meaning be used in macro arguments to define optional positional args without defaults? Then conditional and macro arg definitions looks closer ( not the same)." (record: "2026-11-23 OWNER, on optional-label-general: the `?` in conditions "is a special case"; where it sits; `?` for optional macro arguments; a value left of `:` with no label")
+rejected:
+readings:
+evidence:
+history:
+- 2026-11-23 (lane predfold1123, the fold of 2026-11-22 late and 2026-11-23; record "2026-11-23 OWNER, on optional-label-general: the `?` in conditions "is a special case"; where it sits; `?` for optional macro arguments; a value left of `:` with no label"): a new parked piece.
+- 2026-11-23 (lane predfix86, review r86 D3; record "2026-11-23 MANAGER — review r86 (predfold1123): the dispositions; three errors of the manager's own brief named; no owner words"): a note that the idea would give `?` a second meaning, against his reason for the `?:` operator (optional-place); his words kept; `see:` gains core/conditions/form/optional-general.
 
 ## parked/ideas/cartesian — An explicit product of arrays
 slugs: 

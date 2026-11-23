@@ -443,3 +443,31 @@ Entries are `P-n`, dated, never deleted. `done:` lines name the branch tip and t
   non-same status not declared; (2) a rename drill for name grids (bindings renamed to collide with a parameter
   name); (3) a convention ruled "for provided bodies only" must not hold a language rule.
 - Worktree free to prune after your merge: predfix84 (merged into my branch), beside those named before.
+
+## P-26 (2026-11-23, predicate manager) — done: the fold of 2026-11-22 late + 2026-11-23, with review r86 ruled, applied and filed; mergeable
+
+- done: branch `lane/pred-rev28`, tip = the commit carrying this entry. It holds lane predfold1123's fold of every
+  owner ruling from 2026-11-22 late through zero-open (the label parameter and the blank label; argument-label;
+  label-forward; the capture request on the set side of an entry; the optional entry operator; no effect under a
+  negation; zero-in-loop; the principle binding-fixed; zero-open), its review r86 (your number) ruled by me, and lane
+  predfix86 applying it (it also folded label-hole-full and closing-own-label). Reports
+  `docs/dev/lanes/predfold1123_report.md`, `docs/dev/lanes/predfix86_report.md`; filed review
+  `docs/dev/reviews/2026-11-23-r86-predfold1123.md` (+ directory, the NOTES.md line); evidence
+  `docs/dev/lanes/predfix86_evidence/` (`predfix86_model: 29 checks, 0 failed`; 36 plants, 0 not caught).
+  `pred_doc_lint` 0 failed; `make -s test-plan-lint` green. Please merge.
+- RECORD AHEAD OF THE DOCUMENTS (ruled 2026-11-23 after the fold's cut; the next fold, for which I will ask you a
+  review number): call-forms (one head per name), unspecified-rule, count-unspecified, repeat-head, and
+  binding-as-label, which REVERSES argument-default's error and so several sentences this tip still prints.
+- [COND-FAMILY] status line: "2026-11-23: r86 filed; the documents carry every ruling through zero-open plus
+  label-hole-full and closing-own-label; ruled since and not folded: one head per name (call-forms), the unspecified
+  argument, binding-as-label (a binding's name as a skipped label); next fold pending".
+- r86's four lessons for the critic guide (yours to place): (1) an EXPANSION drill: every sugar form run against
+  its written-out expansion; (2) a verifier that finds the evidence silent on a shape files it as a NEW item; (3) an
+  evidence model never reads a BRANCH NAME: pin a commit (a lane rule); (4) a fold's conservative edges live in the
+  ASKED statement: the ruling lens diffs the asked text against the documents.
+- PROPOSED SKILL EDITS, pcrec-predicate-manager: section 4 (briefs): "a fold brief QUOTES the asked statement of
+  each ruling, edges included; the manager's summary of a ruling is not a source" (r86 A1 and A8 were my summaries);
+  "lanes poll their own long runs; a brief says 'never wait for a notification'" (two lanes idled on finished or
+  running jobs today); section 2: "a lone underscore vanishes in the owner's chat UI: fenced code blocks or the
+  word".
+- Worktrees free to prune after your merge: predfold1123, predfix86 (both merged into my branch).

@@ -24,8 +24,8 @@ modes: n/a (parked: not in the language)
 
 ### A default that is a set of several strings   [parked/ideas/default-set]   parked 2026-11-19
 A default written `some(...)` (or an every-value form): a missing field means any of these, or does not matter.
-- `all` is retired (lib/counting/some) and there is no optional mark: a one-string default is the author's one
-  control on an absent label today (core/conditions/defaults).
+- `all` is retired (lib/counting/some); a one-string default and the optional entry `?:` are the author's
+  controls on an absent label today (core/conditions/defaults, core/conditions/form/optional-entry).
 Trigger: a problem where a missing field means "any of these" or "does not matter" and the explicit alternative (`|
   (h: 10)`) is not enough.
 Source: the ideas file item 3 (its whole text in the details entry).
@@ -39,7 +39,8 @@ modes: n/a (parked: not in the language)
 
 ### An author-written "ran but no value" value   [parked/ideas/empty-value]   parked 2026-11-19
 An empty value an author writes for an `x*` loop that ran zero times.
-- There is no optional mark: the author's control over an empty loop is the default alone (core/conditions/defaults).
+- The author's controls over an empty loop are the default and the optional entry `?:` (core/conditions/defaults,
+  core/conditions/form/optional-entry).
 Trigger: an example where the empty case must be singled out and `+`, `some`, `count` do not serve.
 Source: the ideas file item 6 (its whole text in the details entry).
 modes: n/a (parked: not in the language)
@@ -86,8 +87,8 @@ A library macro raising a warning on a property of its arguments' constant sets.
 Trigger: a second library-macro diagnostic wanted beside the mark-in-none one, or the first predicate build go (the
   diagnostics list is then designed as a whole, item 10's explainer with it).
 Source: the ideas file item 12 (its whole text in the details entry).
-- The mark-in-none diagnostic the trigger names left the language with the optional mark; the ideas file's note
-  reads the trigger as a first library-macro diagnostic wanted (details).
+- The mark-in-none diagnostic the trigger names left the language with the per-part mark (the optional entry
+  `?:` is a different, one-row test); the trigger reads as a first library-macro diagnostic wanted (details).
 modes: n/a (parked: not in the language)
 
 ### One nested-relation statement for spans, passes and occurrence hits   [parked/ideas/nested-relation]   parked 2026-11-19
@@ -200,9 +201,40 @@ Trigger (the ideas file's words): `the library discussion (items 12, 20, 23, 25)
   `after rev 25 that takes up reusable conditions`.
 Source: the ideas file item 26 (its whole text in the details entry).
 see: core/operators/bindings/label-variables
-- The THING is under construction as core/operators/bindings/label-variables, which supersedes this entry; kept as
+- The THING is under construction as core/operators/bindings/label-variables (its ruled parts the pieces after it),
+  which supersedes this entry; kept as
   the ideas file's record. Its question whether the body may read labels that are not parameters is answered: no
   (core/holes/bare-condition/bound-condition, core/holes/bare-condition/nested-scope).
+modes: n/a (parked: not in the language)
+
+### An empty argument position   [parked/ideas/empty-argument]   parked 2026-11-23
+A call that leaves a position empty, `row(,"level", ..)`, in place of passing every argument.
+Trigger: the first macro whose callers mostly leave one position unused, or the call-forms ruling.
+Source: his words on label-parameter-omitted, "if we choose to allow that" (the details entry).
+see: core/operators/bindings/label-omitted core/operators/bindings/call-forms
+modes: n/a (parked: not in the language)
+
+### A reference kind of label parameter for users   [parked/ideas/reference-kind]   parked 2026-11-23
+A macro parameter naming a label the caller already has, read but never placed by the body.
+Trigger: a valid, safe set of rules for it (his words), or a user macro that cannot be written by passing a condition.
+Source: his label-kinds ruling (the details entry).
+see: core/operators/bindings/label-kinds core/holes/bare-condition/bound-condition
+modes: n/a (parked: not in the language)
+
+### A label pre-defined as a symbol   [parked/ideas/label-symbol]   parked 2026-11-23
+A label name declared ahead of its use, as a symbol, then passed to a label parameter.
+Trigger: the declared-labels idea taken up, or a library needing one name across many calls.
+Source: his approach 1, "maybe, a label can be pre-defined as a symbol" (the details entry).
+see: core/operators/bindings/label-variables parked/ideas/declared-labels
+modes: n/a (parked: not in the language)
+
+### Optional positional macro arguments without defaults   [parked/ideas/optional-arguments]   parked 2026-11-23
+A `?` mark in a macro's head for an optional positional argument with no default, so a head and a condition look closer.
+Trigger: the call-forms ruling (its absent setting for "no maximum", "no width").
+Source: his question on optional-label-general (the details entry).
+- It would give `?` a second meaning, against his own reason for the `?:` operator: "then we aren't using ? For
+  two different meanings" (core/conditions/form/optional-entry).
+see: core/operators/bindings/call-forms core/conditions/form/optional-entry core/conditions/form/optional-general
 modes: n/a (parked: not in the language)
 
 ### An explicit product of arrays   [parked/ideas/cartesian]   parked 2026-11-19

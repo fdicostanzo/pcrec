@@ -1,0 +1,280 @@
+== library bodies (library.md): chars ([ch = /(?s:.)/])* ; length(S) := chars & (count((chars.ch: /(?s:.)/)): S) ; month_numbered(S) := months & (months.mname.index: S) ; between: >= lo & <= hi
+== months := [mname = [/Jan(?:uary)?/, /Feb(?:ruary)?/, /Mar(?:ch)?/, /Apr(?:il)?/, /May/, /June?/, /July?/, /Aug(?:ust)?/, /Sep(?:tember)?/, /Oct(?:ober)?/, /Nov(?:ember)?/, /Dec(?:ember)?/]]
+== CONTROL: the loaded matcher against python `re`, the FOLD extensions on
+PASS CONTROL: differing (WHOLE, SEARCHED, FIND-ALL): `"ab" | "a"` (0, 0, 0); `identity(A)` against `\d` (0, 0, 0) over 40 texts; a label-only group around a negated class against python `re` (0, 0, 0) over 85 texts
+== ARGLABEL (argument-label, ruled): a label the caller writes in an argument is its own; the ruled error stands
+   LINE [core/labels/export/arguments] A part label written on the argument: WHOLE `3xx` HOLDS, `7xx` FAILS / SEARCHED `7xx 3xx` `3xx`@4 / FIND-ALL `3xx 7xx 4xx` [`3xx`@0, `4xx`@8] (`B([f = /\d/]) & (f: <5)`, B(rx) := `/${rx}xx/`)
+   LINE [core/labels/export/arguments] Placed twice, the last mention: WHOLE `7,3` HOLDS, `3,7` FAILS / SEARCHED `3,7 7,3` `7,3`@4 / FIND-ALL `7,3 3,7 1,2` [`7,3`@0, `1,2`@8] (`pair([f = /\d/]) & (f: <5)`, pair(p) := `/${p},${p}/`)
+   LINE [core/labels/paths/two-sources] The first shape, read bare: WHOLE `7-3` FAILS, `3-7` HOLDS / SEARCHED `7-3 3-7` `3-7`@4 / FIND-ALL `7-3 3-7 1-2 9-9` [`3-7`@4, `1-2`@8] (`B(/(?<d>\d)/) & (d: <5)`, B(rx) := `/${rx}-(?<d>\d)/`)
+   LINE [core/labels/paths/argument-default] A label written on the argument: WHOLE `42xx` HOLDS, `100xx` FAILS, `042xx` FAILS / SEARCHED `x100xx 42xx` `0xx`@3 / FIND-ALL `100xx 42xx 7xx 300xx` [`0xx`@2, `42xx`@6, `7xx`@11, `0xx`@17] (`B([a = A]) & (a.d: <100)`, A := `[d = rx.digits]`, B(rx) := `/${rx}xx/`)
+   LINE [core/labels/export/arguments] His isodate argument: WHOLE `2000-01-02xx` HOLDS, `2001-01-02xx` FAILS / SEARCHED `1999-12-31xx 2000-03-04xx` `2000-03-04xx`@13 / FIND-ALL `2000-01-02xx 2001-01-02xx 2000-12-31xx` [`2000-01-02xx`@0, `2000-12-31xx`@26] (`B([d = isodate]) & (d.year: 2000)`, B(rx) := `/${rx}xx/`, isodate := `[year = /\d{4}/] SEQ "-" SEQ [month = /\d\d/] SEQ "-" SEQ [day = /\d\d/]`)
+   LINE [core/labels/export/arguments] The read inside the argument: WHOLE `2000-01-02xx` HOLDS, `2001-01-02xx` FAILS / SEARCHED `1999-12-31xx 2000-03-04xx` `2000-03-04xx`@13 / FIND-ALL `2000-01-02xx 2001-01-02xx 2000-12-31xx` [`2000-01-02xx`@0, `2000-12-31xx`@26] (`B(isodate & (isodate.year: 2000))`, B(rx) := `/${rx}xx/`, isodate := `[year = /\d{4}/] SEQ "-" SEQ [month = /\d\d/] SEQ "-" SEQ [day = /\d\d/]`)
+   LINE [core/labels/export/arguments] The body using its argument alone: modes: a compile error (`B(A) & (A.d: <5)`, A := `/(?<d>\d)/`, B(rx) := `/${rx}xx/`: `d` is written in A's text, not the caller's, and B uses A alone; argument-default).
+      (refusal: `A.d`: a label of an argument, which is a template and not a spot in the pattern (a compile error, core/labels/paths/argument-default))
+   LINE [lib/rx/repeat] A label written on the argument: WHOLE `3` HOLDS (a = `3`), `73` HOLDS (a = `3`), `37` FAILS / SEARCHED `7 3` `3`@2 / FIND-ALL `37 73 4` [`3`@0, `73`@3, `4`@6] (`rx.repeat([a = rx.digit], min = 1) & (a: <5)`)
+   LINE [lib/search/hits] Bare, the caller's own: WHOLE `ax` HOLDS, `a` FAILS, `axa` FAILS / SEARCHED `a ax` `a ax`@0 / FIND-ALL `a ax ax` [`a ax ax`@0] (`hits(/a(?<g>x)?/) & (g: "x")`)
+PASS ARGLABEL: legal and the caller's own: `B([f = ..])` True, placed twice (the last mention) True, an in-place group read bare (the caller's, not the body's `d`) True, `B([a = A]) & (a.d: ..)` True, `B([d = isodate])` True, the read inside the argument True, `rx.repeat([a = rx.digit], ..)` then `a` True, `hits(/a(?<g>x)?/)` then `g` True; the ruled `B(A) & (A.d: ..)` refused True (`A.d`: a label of an argument, which is a template and not a spot in the pattern (a compile error, core/labels/paths/argument-default))
+== LABELPARAM (the label parameter: his tentative direction; the slug rulings): the caller's name on the spot
+   LINE [core/operators/bindings/label-variables] His example: WHOLE `5` HOLDS, `55` FAILS, `7` FAILS / SEARCHED `7 5` `5`@2 / FIND-ALL `5 7 56 15` [`5`@0, `5`@4, `5`@8] (`A(x:) & (x: 5)`, A(l:) := `/(?<:${l}>\d+)/`)
+   LINE [core/operators/bindings/label-variables] Placed twice, the plain read: WHOLE `7,5` HOLDS, `5,7` FAILS, `5,5` HOLDS / SEARCHED `5,7 7,5` `7,5`@4 / FIND-ALL `7,5 5,7 1,5 5,5` [`7,5`@0, `1,5`@8, `5,5`@12] (`A(x:) SEQ "," SEQ A(x:) & (x: 5)`, A(l:) := `/(?<:${l}>\d+)/`)
+   LINE [core/operators/bindings/label-variables] Placed twice, a group question: WHOLE `7,5` HOLDS, `5,7` HOLDS, `7,7` FAILS / SEARCHED `7,7 5,7` `5,7`@4 / FIND-ALL `7,5 5,7 1,2 5,5` [`7,5`@0, `5,7`@4, `5,5`@12] (`A(x:) SEQ "," SEQ A(x:) & some((x: "5"))`, A(l:) := `/(?<:${l}>\d+)/`)
+   LINE [core/operators/bindings/label-variables] Placed twice, the index: WHOLE `7,5` FAILS, `5,7` HOLDS / SEARCHED `7,5 5,7` `5,7`@4 / FIND-ALL `7,5 5,7 1,5 5,5` [`5,7`@4, `5,5`@12] (`A(x:) SEQ "," SEQ A(x:) & (x[1]: 5)`, A(l:) := `/(?<:${l}>\d+)/`)
+   LINE [core/operators/bindings/label-variables] Across `&`: modes: a compile error (`A(x:) & A(x:) & (x: 5)`, A(l:) := `/(?<:${l}>\d+)/`: both sides set x, an ambiguous reference (core/labels/flow)).
+      (refusal: `x`: both sides of `&` surface it, an ambiguous reference (core/labels/flow))
+   LINE [core/operators/bindings/label-omitted] The unspecified label: WHOLE `3!` HOLDS, `7!` HOLDS / SEARCHED `x3!` `3!`@1 / FIND-ALL `3! 7!` [`3!`@0, `7!`@3] (`A(_:) SEQ "!"`, A(l:) := `/(?<:${l}>\d)/`)
+   LINE [core/operators/bindings/label-omitted] A body placing then reading its label, passed `_`: WHOLE `3` HOLDS, `7` FAILS / SEARCHED `7 3` `3`@2 / FIND-ALL `3 7 4` [`3`@0, `4`@4] (`C(_:)`, C(l:) := `/(?<:${l}>\d)/ & (l: <5)`)
+   LINE [core/operators/bindings/label-default] Passed by name: WHOLE `5` HOLDS, `55` FAILS, `7` FAILS / SEARCHED `7 5` `5`@2 / FIND-ALL `5 7 56 15` [`5`@0, `5`@4, `5`@8] (`A2(l = x:) & (x: 5)`, A2(l = _:) := `/(?<:${l}>\d+)/`)
+   LINE [core/operators/bindings/label-default] Left out, the default `_`: WHOLE `5` HOLDS, `55` HOLDS, `x` FAILS / SEARCHED `x5` `5`@1 / FIND-ALL `5 7` [`5`@0, `7`@2] (`A2()`, A2(l = _:) := `/(?<:${l}>\d+)/`)
+   LINE [core/operators/bindings/label-kinds] The reference kind in a user macro: modes: a compile error (`A(x:, /\w/)`, A(a:, B) := `B & (a: 5)`: A reads a label it never places, off limits for users).
+      (refusal: A reads its label parameter `a` and never places it: the reference kind, off limits for users (a compile error at the definition, label-kinds))
+   LINE [core/operators/bindings/label-kinds] A path as a marked argument: modes: a compile error (`A(x.d:)`, A(l:) := `/(?<:${l}>\d)/`: a marked argument is one new name).
+      (refusal: `x.d:` for the label parameter `l` of A: a marked argument is ONE new name (label-kinds))
+   LINE [core/operators/bindings/label-kinds] A body reading its own label after placing it: WHOLE `3` HOLDS, `7` FAILS / SEARCHED `7 3` `3`@2 / FIND-ALL `3 7 4` [`3`@0, `4`@4] (`C(x:)`, C(l:) := `/(?<:${l}>\d)/ & (l: <5)`)
+   LINE [core/operators/bindings/label-forward] Passed on: WHOLE `<3>` HOLDS, `<7>` FAILS / SEARCHED `<7> <3>` `<3>`@4 / FIND-ALL `<3> <7> <4>` [`<3>`@0, `<4>`@8] (`B(x:) & (x: <5)`, B(l:) := `/<${A(l:)}>/`, A(l:) := `/(?<:${l}>\d)/`)
+   LINE [core/operators/bindings/label-forward] Passed on across `|`: WHOLE `3` HOLDS (x = `3`), `e3` HOLDS (x = `3`), `e7` FAILS / SEARCHED `e7 3` `3`@3 / FIND-ALL `3 e7 e4` [`3`@0, `e4`@5] (`V(x:) & (x: <5)`, V(l:) := `A(l:) | E(l:)`, A(l:) := `/(?<:${l}>\d)/`, E(l:) := `/e(?<:${l}>\d)/`)
+   LINE [core/operators/bindings/label-in-argument] Sent inside the argument, `_` on the outer spot: WHOLE `<"3">` HOLDS, `<"7">` FAILS / SEARCHED `<"7"> <"3">` `<"3">`@6 / FIND-ALL `<"3"> <"7"> <"4">` [`<"3">`@0, `<"4">`@12] (`W(_:, S(body:)) & (body: <5)`, W(l:, v) := `/<${[l = v]}>/`, S(l:) := `/"(?<:${l}>\d)"/`)
+   LINE [core/operators/bindings/label-in-argument] The outer body using the argument alone: WHOLE `<"3">` HOLDS, `<"7">` FAILS / SEARCHED `<"7"> <"3">` `<"3">`@6 / FIND-ALL `<"3"> <"7"> <"4">` [`<"3">`@0, `<"4">`@12] (`W3(S(body:)) & (body: <5)`, W3(v) := `/<${v}>/`, S(l:) := `/"(?<:${l}>\d)"/`)
+   LINE [core/labels/export/arguments] A caller's label on the spot: WHOLE `2000-01-02xx` HOLDS, `2001-01-02xx` FAILS / SEARCHED `1999-12-31xx 2000-03-04xx` `2000-03-04xx`@13 / FIND-ALL `2000-01-02xx 2001-01-02xx 2000-12-31xx` [`2000-01-02xx`@0, `2000-12-31xx`@26] (`R(x:, isodate) & (x.year: 2000)`, R(l:, v) := `/${[l = v]}xx/`, isodate := `[year = /\d{4}/] SEQ "-" SEQ [month = /\d\d/] SEQ "-" SEQ [day = /\d\d/]`)
+PASS LABELPARAM: his example and the twice-placed reads legal with the record's answers True; across `&` refused True; `_`, the default, a body reading its own placed label, passed on (twice, across `|`), sent inside an argument through `_` and through a body using it alone, a caller's label on the spot reading isodate's year: all legal True
+PASS LPRULES: a body placing then reading `_` reads its own placement True (the body reads its own placement; nothing is exported); refused: the reference kind at the definition True (A reads its label parameter `a` and never places it: the reference kind, off limits for users (a compile error at the definition, label-kinds)); a path as a marked argument True (`x.d:` for the label parameter `l` of A: a marked argument is ONE new name (label-kinds)); the backdoor through `_` open True
+== OPTENTRY (optional-label, ruled; `?:` his lean): absent or in S
+   LINE [core/conditions/form/optional-entry] The entry `?:`: WHOLE `x` HOLDS, `3x` HOLDS, `7x` FAILS / SEARCHED `7x x` `x`@1 / FIND-ALL `7x 3x x` [`x`@1, `3x`@3, `x`@6] (`/(?<h>\d)?x/ & (h ?: <5)`)
+   LINE [core/conditions/form/optional-entry] The plain entry: WHOLE `x` FAILS, `3x` HOLDS, `7x` FAILS / SEARCHED `7x x` FAILS / FIND-ALL `7x 3x x` [`3x`@3] (`/(?<h>\d)?x/ & (h: <5)`)
+   LINE [core/conditions/form/optional-entry] The default inside the set: WHOLE `x` HOLDS, `3x` HOLDS, `7x` FAILS / SEARCHED `7x x` `x`@1 / FIND-ALL `7x 3x x` [`x`@1, `3x`@3, `x`@6] (`/(?<h>\d)?x/ & (h = "0": <5)`)
+   LINE [core/conditions/form/optional-entry] Under `NOT`: WHOLE `x` FAILS, `3x` FAILS, `7x` HOLDS / SEARCHED `7x x` `7x`@0 / FIND-ALL `7x 3x x` [`7x`@0] (`/(?<h>\d)?x/ & NOT (h ?: <5)`)
+   LINE [core/conditions/form/optional-entry] A joint left part: WHOLE `6,1` HOLDS, `5,3` HOLDS, `5,1` FAILS, `,1` HOLDS, `,9` HOLDS, `5,` HOLDS, `2,` HOLDS, `,` HOLDS / SEARCHED `5,1 ,1 6,0` `5,`@0 / FIND-ALL `5,1 5,4 ,1 2, 7,` [`5,`@0, `5,4`@4, `,1`@8, `2,`@11, `7,`@14] (`/(?<a>\d)?,(?<b>\d)?/ & ((a, b) ?: >= (5, 3))`)
+   LINE [core/conditions/form/optional-entry] A value left part: WHOLE `3,4` HOLDS, `6,7` FAILS, `,4` HOLDS, `3,` HOLDS / SEARCHED `6,7 3,` `6,`@0 / FIND-ALL `6,7 3,4 ,4` [`6,`@0, `3,4`@4, `,4`@8] (`/(?<a>\d)?,(?<b>\d)?/ & (($a + $b) ?: <10)`)
+PASS OPTENTRY: `(h ?: <5)` on `x`/`3x`/`7x`: [True, True, False]; the plain entry [False, True, False]; `?:` and the default inside the set alike in every mode over 40 texts: True; `NOT (h ?: <5)` [False, False, True] (the answers of `(h: !<5)`); a joint and a value left part run True
+== CAPTURE (the request, the day's final shape): the set side, `?:`, an `&` operand; capture-twice (a)
+   LINE [lib/structural/capture] Requires the label: WHOLE `x` FAILS, `3x` HOLDS (h = `3`) / SEARCHED `x 3x` `3x`@2 / FIND-ALL `x 3x x` [`3x`@2] (`/(?<h>\d)?x/ & (h: capture("h"))`)
+   LINE [lib/structural/capture] If present: WHOLE `x` HOLDS (h unset), `3x` HOLDS (h = `3`) / SEARCHED `x 3x` `x`@0 / FIND-ALL `x 3x x` [`x`@0, `3x`@2, `x`@5] (`/(?<h>\d)?x/ & (h ?: capture("h"))`)
+   LINE [lib/structural/capture] The stretch: WHOLE `12` HOLDS, `x` FAILS / SEARCHED `x12` `12`@1 / FIND-ALL `1 22` [`1`@0, `22`@2] (`/\d+/ & capture("n")`)
+   LINE [lib/structural/capture] Requested twice, the last mention: WHOLE `7,5` HOLDS (d = `5`), `7` FAILS / SEARCHED `x7,5 1,2` `7,5`@1 / FIND-ALL `7,5 1,2` [`7,5`@0, `1,2`@4] (`A SEQ "," SEQ A`, A := `[d = /\d+/] & (d: capture("d"))`)
+   LINE [lib/structural/capture] Through the label's path: WHOLE `2025-01-02` HOLDS (year = `2025`) / SEARCHED `x 2025-01-02` `2025-01-02`@2 / FIND-ALL `2025-01-02 1999-12-31` [`2025-01-02`@0, `1999-12-31`@11] (`isodate & (isodate.year: capture("year"))`, isodate := `[year = /\d{4}/] SEQ "-" SEQ [month = /\d\d/] SEQ "-" SEQ [day = /\d\d/]`)
+PASS CAPTURE: `(h: capture("h"))` on `x` False (an entry on an absent label fails); `(h ?: ..)` on `x` True; `rx & capture("n")` runs True; requested twice in sequence, d = '5' (the last mention); through a path True
+== NEGATION (capture-negated, broadened): an effect macro cannot be under negation
+   LINE [core/filters/negation/effects] Under `NOT`: modes: a compile error (`/(?<h>\d)?x/ & NOT (h: capture("h"))`: an effect under negation).
+      (refusal: a capture request under a negation (`NOT (h: capture("h"))`): an effect macro cannot be under negation (a compile error, capture-negated))
+   LINE [core/filters/negation/effects] Under `!`: modes: a compile error (`/(?<h>\d)?x/ & (h: !capture("h"))`: an effect under negation).
+      (refusal: a capture request under a negation (`!capture("h")`): an effect macro cannot be under negation (a compile error, capture-negated))
+   LINE [core/filters/negation/effects] Beside a negation: WHOLE `x` FAILS, `3x` HOLDS, `7x` FAILS / SEARCHED `7x 3x` `3x`@3 / FIND-ALL `7x 3x x` [`3x`@3] (`/(?<h>\d)?x/ & (h: capture("h")) & NOT (h: >= 5)`)
+   LINE [core/filters/negation/effects] In `when`'s test: modes: a compile error (`when(/(?<d>\d)/ & (d: capture("d")), /x/)`: the test reaches the guard's `NOT peek(test)`; the manager's reading).
+      (refusal: in `when`'s guard: a capture request under a negation (`NOT peek(/(?<d>\d)/ & (d: capture("d")))`): an effect macro cannot be under negation (a compile error, capture-negated) (effect-in-guard, the manager's reading))
+PASS NEGATION: `NOT (h: capture(..))` refused True, `(h: !capture(..))` refused True (a capture request under a negation (`!capture("h")`): an effect macro cannot be under negation (a compile error, capture-negated)); a request beside a negation legal True; a request in `when`'s test refused through the body read from library.md True
+== ZEROLOOP (zero-in-loop (b)): `0` in a loop reads from the definition's start
+   LINE [core/conditions/match-so-far/in-loop] `0` first in the pass: WHOLE `3;4;` HOLDS, `3;7;` HOLDS, `7;3;` FAILS, `3;7;4;` FAILS / SEARCHED `3;7;4;` `3;7;`@0 / FIND-ALL `3;7;4; 7;7; 1;2;` [`3;7;`@0, `4;`@4, `7;`@7, `7;`@9, `1;2;`@12] (`((0: !contains("7")) SEQ /\d/ SEQ ";")+`)
+   LINE [core/conditions/match-so-far/in-loop] The per-item test, a label on the part: WHOLE `3;4;` HOLDS, `3;7;` FAILS, `7;3;` FAILS / SEARCHED `7;3;4;` `3;4;`@2 / FIND-ALL `3;7;4; 7;7; 1;2;` [`3;`@0, `4;`@4, `1;2;`@12] (`([d = /\d/] SEQ (d: !"7") SEQ ";")+`)
+PASS ZEROLOOP: `((0: !contains("7")) SEQ /\d/ SEQ ";")+` on `3;4;`/`3;7;`/`7;3;`/`3;7;4;`: [True, True, False, False] (the record's run: HOLDS, HOLDS, FAILS, FAILS)
+== ZEROBIND (zero-condition-binding, ruled): a condition on `0` bound alone is an error
+   LINE [core/holes/bare-condition/zero-binding] Bound alone: modes: a compile error (`c`, c := `(0: 5)`: a condition on `0` bound alone).
+      (refusal: `c := (0: 5)`: a condition on `0` bound alone (a compile error for now, zero-condition-binding))
+   LINE [core/holes/bare-condition/zero-binding] Written in place: WHOLE `5` HOLDS, `7` FAILS / SEARCHED `x5` `5`@1 / FIND-ALL `5 7 5` [`5`@0, `5`@4] (`/\d/ & (0: 5)`)
+PASS ZEROBIND: `c := (0: 5)` refused True (`c := (0: 5)`: a condition on `0` bound alone (a compile error for now, zero-condition-binding)); the same condition written in place legal True
+== PRINCIPLE (binding-fixed): a user's loop around a binding agrees with it written out
+PASS PRINCIPLE: over 121 texts, every mode: a user's loop and the written-out uses agree True; one definition looped differs True (its conditions read its own previous pass)
+== ZEROOPEN (zero-open, ruled; rulings file R1): `0` is the one name read open
+   LINE [core/conditions/match-so-far] Two reads on one path: WHOLE `34` HOLDS, `35` FAILS, `44` FAILS / SEARCHED `x34 35` `34`@1 / FIND-ALL `34 35 34` [`34`@0, `34`@6] (`/\d${(0: "3")}\d${(0: "34")}/`)
+   LINE [core/conditions/match-so-far] A group question on `0`: modes: a compile error (`/(?<d>\d)+/ & some((0: "1"))`: `0` has no settings, so no array).
+      (refusal: a group question on `0`: `0` has no settings, so no array (a compile error, zero-open))
+   LINE [core/conditions/match-so-far] An index on `0`: modes: a compile error (`/(?<d>\d)+/ & (0[1]: "1")`: `0` has no settings).
+      (refusal: an index on `0`: `0` has no settings (a compile error, zero-open))
+   LINE [lib/structural/capture] A request on an open `0`: modes: a compile error (`/\d${(0: capture("n"))}x/`: pattern text follows the hole, so `0` is open there; for now).
+      (refusal: a capture request on an open `0` (pattern text follows the hole): a compile error for now (zero-open))
+   LINE [lib/structural/capture] A request on `0` written last: WHOLE `12` HOLDS, `x` FAILS / SEARCHED `a12` `12`@1 / FIND-ALL `1 22` [`1`@0, `22`@2] (`/\d+${(0: capture("n"))}/`)
+   LINE [core/values/reads] `$0` in a value hole: WHOLE `abab` HOLDS, `aba` FAILS, `aa` HOLDS / SEARCHED `xabab` `abab`@1 / FIND-ALL `abab cc d` [`abab`@0, `cc`@5] (`/\w+${$0}/`)
+PASS ZEROOPEN: two reads of `0` on one path, the later extending the earlier, run True; refused: a group question on `0` True, an index True, a request on an open `0` True; a request written last legal True (the manager's reading (a) of "complete", as modelled); `$0` in a value hole against python `re` `(\w+)\1` in every mode over 8 texts: True; `?:` on `0` draws ['pcrec.default.unused']
+== ARGSHAPES (review r84 A7): each shape of "what an argument exports" under argument-label
+   LINE [core/labels/export/arguments] A part label on an argument of a list body: WHOLE `3` HOLDS, `7` FAILS / SEARCHED `7 3` `3`@2 / FIND-ALL `3 7 4` [`3`@0, `4`@4] (`identity([a = A]) & (a.h: <5)`, A := `/(?<h>\d)/`, identity(x) := `/${[(=) = x]}/`)
+   LINE [core/labels/export/arguments] A read inside an argument, bare: modes: a compile error (`B(A & (h: "3"))`, A := `/(?<h>\d)/`, B(rx) := `/${rx}xx/`: `h` is not written in the caller's text; label-reference).
+      (refusal: label `h` read in the argument `A & (h: "3")` is not written in the definition the argument is written in: reference it with its source (a compile error, core/labels/paths/label-reference))
+   LINE [core/labels/export/arguments] A read inside an argument, with its source: WHOLE `3xx` HOLDS, `7xx` FAILS / SEARCHED `7xx 3xx` `3xx`@4 / FIND-ALL `3xx 7xx` [`3xx`@0] (`B(A & (A.h: "3"))`, A := `/(?<h>\d)/`, B(rx) := `/${rx}xx/`)
+   LINE [core/patterns/atomic] A part label over an expression in an argument: WHOLE `25` FAILS, `13` HOLDS / SEARCHED `25` FAILS / FIND-ALL `25 13` [`13`@3] (`atomic([ab = (B | A)]) & (ab.l: <20)`, A := `/(?<l>\d)\d/`, B := `/(?<l>\d\d)/`)
+   LINE [core/labels/export/arguments] A binding in parentheses: modes: a compile error (`identity((A)) & (identity.h: <5)`, A := `/(?<h>\d)/`, identity(x) := `/${[(=) = x]}/`: the argument's own text writes no label, A used alone in it).
+      (refusal: `identity.h`: `h` is not visible through `identity` (a compile error, core/labels/paths))
+   LINE [core/labels/export/arguments] A binding alone: WHOLE `3` HOLDS, `7` FAILS / SEARCHED `7 3` `3`@2 / FIND-ALL `3 7 4` [`3`@0, `4`@4] (`identity(A) & (identity.h: <5)`, A := `/(?<h>\d)/`, identity(x) := `/${[(=) = x]}/`)
+   LINE [core/labels/export/arguments] A named list on a spot: modes: a compile error (`N(A) & (N.h: <5)`, A := `/(?<h>\d)/`, N(rx) := `/${[(=h) = rx]}/`: a parameter exports nothing the definition can see, so the list names no exported label).
+      (refusal: at the binding `N(rx) := /${[(=h) = rx]}/`: `h` is not a label the part exports (export-list: only an exported label is listed))
+   LINE [core/patterns/alternation] WHOLE `25` HOLDS (l = `2`), `7` FAILS / SEARCHED `25` `25`@0 / FIND-ALL `25 13` [`25`@0, `13`@3] (`[ab = (B | A)] & (ab.l: <20)`, A := `/(?<l>\d)\d/`, B := `/(?<l>\d\d)/`)
+   LINE [core/operators/precedence] The label set beside `|`: WHOLE `25` FAILS, `13` HOLDS / SEARCHED `25` FAILS / FIND-ALL `25 13` [`13`@3] (`[ab = B | A] & (ab.l: <20)`, A := `/(?<l>\d)\d/`, B := `/(?<l>\d\d)/`)
+PASS ARGSHAPES: `identity([a = A])` then `a.h` legal True; a bare read inside an argument of a label its text does not write refused True; with its source legal True; `atomic([ab = (B | A)])` then `ab.l` legal True; `identity((A))` exports nothing True, `identity(A)` exports `h` True; a named list on a spot refused True; the label set tighter than `|` (`[ab = B | A]` and `[ab = (B | A)]` answer differently) True; a default with `?:` draws ['pcrec.default.unused']
+== READINGS: the manager's readings of the range that a run decides (the report lists every reading)
+   LINE [core/labels/paths/two-sources] The second shape, read bare: WHOLE `1,7` HOLDS, `7,1` FAILS / SEARCHED `7,1 1,7` `1,7`@4 / FIND-ALL `1,7 7,1 1,2 9,9` [`1,7`@0, `1,2`@8] (`/(?<h>\d)/ SEQ A & (h: <5)`, A := `/,(?<h>\d)/`)
+   LINE [core/conditions/form/value-left] A value with no label: WHOLE `x` HOLDS / SEARCHED `ax` `x`@1 / FIND-ALL `x x` [`x`@0, `x`@2] (`/x/ & ("Frank": /F.*/)`)
+   LINE [lib/json/members] The label on the data: WHOLE `{"v":"ok"}` HOLDS, `{"v":3}` HOLDS, `{"v":7}` FAILS, `{"v":"no"}` FAILS, `{"v":true}` FAILS, `{"v":"3"}` HOLDS / SEARCHED `{"v":7} {"v":"ok"} {"v":3}` `{"v":"ok"}`@8 / FIND-ALL `{"v":"ok"} {"v":7} {"v":3} {"v":"no"} {"v":"3"}` [`{"v":"ok"}`@0, `{"v":3}`@19, `{"v":"3"}`@38] (`row(v:, "v") & (v: "ok" | <5)`, the sketch above)
+   LINE [lib/json/members] A filter over two rows at the line: WHOLE `{"lo":3,"hi":7}` HOLDS, `{"hi":7,"lo":3}` HOLDS, `{"lo":7,"hi":3}` FAILS, `{"lo":3}` FAILS, `{"lo":"3","hi":"7"}` HOLDS, `{"lo":3,"x":true,"hi":7}` HOLDS / SEARCHED `{"lo":7,"hi":3} {"hi":9,"lo":8}` `{"hi":9,"lo":8}`@16 / FIND-ALL `{"lo":3,"hi":7} {"lo":7,"hi":3} {"lo":3} {"hi":2,"lo":1}` [`{"lo":3,"hi":7}`@0, `{"hi":2,"lo":1}`@41] (`row(lo:, "lo") & row(hi:, "hi") & (lo: <$hi)`, the sketch above)
+   LINE [lib/json/members] Several keys: WHOLE `{"a":3}` HOLDS (x = `3`), `{"b":3}` HOLDS (x = `3`), `{"a":7,"b":3}` HOLDS (x = `3`), `{"a":3,"b":7}` HOLDS (x = `3`), `{"a":7,"b":8}` FAILS, `{"c":3}` FAILS / SEARCHED `{"a":7,"b":8} {"a":3,"b":7}` `{"a":3,"b":7}`@14 / FIND-ALL `{"a":3} {"c":1} {"a":7,"b":8} {"b":4,"a":9}` [`{"a":3}`@0, `{"b":4,"a":9}`@30] (`row(x:, "a" | "b") & (x: <5)`, the sketch above)
+   SUPPORTED: two-sources second shape: a bare name reads only what the definition writes (candidate (b))
+   SUPPORTED: label-parameter-twice: the plain read is the last mention; the group question reads both; the index in order
+   SUPPORTED: label-parameter-twice across `&`: the ambiguous reference
+   SUPPORTED: label-parameter-omitted (a): `_` exports nothing (a group of `_` is a plain group)
+   SUPPORTED: label-kinds (a): reading a parameter never placed is refused at the definition; (b) `l.d:` refused
+   SUPPORTED: label-in-argument (c): the backdoor passes `_` and a body using the argument alone
+   SUPPORTED: argument-export: a caller's label on the spot reads the in-place argument (`x.year`)
+   SUPPORTED: optional-label: `NOT (h ?: S)` has the answers of `(h: !S)`
+   SUPPORTED: optional-place (b): the mark lets a search drop an optional group to pass (`5,`@0)
+   SUPPORTED: value-left (d): a value with no label is fixed at compile time (holds everywhere here)
+   SUPPORTED: label-forward: across `|` the branch taken sets the label
+   SUPPORTED: label-forward q1: a filter over two rows' labels at the line is an ordinary entry
+   SUPPORTED: label-forward q2: several keys, the LAST fitting member in the object's order
+   SUPPORTED: JSON picture q1: a filter inside the argument and a test on the label agree in every mode
+   SUPPORTED: label-forward run: on the data the string "3" and the number 3 read alike
+   SUPPORTED: capture-twice: requested twice in sequence, the caller gets the last mention
+   SUPPORTED: zero-in-loop: `0` first in the pass reads all the earlier passes, not the previous pass alone
+PASS READINGS: 17 readings run; against the record's statement of each: all agree
+== SWEEP: every printed three-mode line (`rejected:` and history lines skipped): predfix84's engine (the FOLD extensions off) over the starting documents against this one over these; every non-same status and every moved answer DECLARED
+   DECLARED x1: `(?J)`: not modelled
+   DECLARED x1: `padded(rx, n)`: only `padded(rx)` is read
+   DECLARED x3: a JSON sketch line: its bodies (`row`, `value`, `string`, ...) are in 
+   DECLARED x1: a condition bound alone and read where used: not modelled (the fold la
+   DECLARED x2: a group number read as a label (core/labels/numbers): not modelled
+   DECLARED x10: a name the line binds in its prose, not its tail (the sweep reads the 
+   DECLARED x16: a provided body this model does not read (native, or not modelled)
+   DECLARED x1: a readings line quoting a run as printed before label-reference (its S
+   DECLARED x1: a readings line quoting the draft's run of a form it marks NOT SUPPORT
+   DECLARED x7: a set, a negation or a conditional group as an operand: not parsed by 
+   DECLARED x4: a value list in a hole (`${[]}`, `${[2, 4] + ..}`): not modelled
+   DECLARED x8: not modelled (the header's list); the printed line is RIGHT (review r8
+   DECLARED x13: value arithmetic over a pattern or several strings: not modelled
+   ADDED core.md:280 `[ab = (B | A)] & (ab.l: <20)`
+   ADDED core.md:311 `atomic([ab = (B | A)]) & (ab.l: <20)`
+   ADDED core.md:616 `B([f = /\d/]) & (f: <5)`
+   ADDED core.md:617 `pair([f = /\d/]) & (f: <5)`
+   ADDED core.md:618 `B([d = isodate]) & (d.year: 2000)`
+   ADDED core.md:619 `B(isodate & (isodate.year: 2000))`
+   ADDED core.md:621 `R(x:, isodate) & (x.year: 2000)`
+   ADDED core.md:622 `identity([a = A]) & (a.h: <5)`
+   ADDED core.md:624 `B(A & (A.h: "3"))`
+   ADDED core.md:625 `identity(A) & (identity.h: <5)`
+   ADDED core.md:807 `B([a = A]) & (a.d: <100)`
+   ADDED core.md:827 `B(/(?<d>\d)/) & (d: <5)`
+   ADDED core.md:944 `/x/ & ("Frank": /F.*/)`
+   ADDED core.md:967 `/(?<h>\d)?x/ & (h ?: <5)`
+   ADDED core.md:968 `/(?<h>\d)?x/ & (h: <5)`
+   ADDED core.md:969 `/(?<h>\d)?x/ & (h = "0": <5)`
+   ADDED core.md:970 `/(?<h>\d)?x/ & NOT (h ?: <5)`
+   ADDED core.md:971 `/(?<a>\d)?,(?<b>\d)?/ & ((a, b) ?: >= (5, 3))`
+   ADDED core.md:972 `/(?<a>\d)?,(?<b>\d)?/ & (($a + $b) ?: <10)`
+   ADDED core.md:1059 `/\d${(0: "3")}\d${(0: "34")}/`
+   ADDED core.md:1074 `((0: !contains("7")) SEQ /\d/ SEQ ";")+`
+   ADDED core.md:1075 `([d = /\d/] SEQ (d: !"7") SEQ ";")+`
+   ADDED core.md:1184 `/(?<h>\d)?x/ & (h: capture("h")) & NOT (h: >= 5)`
+   ADDED core.md:1211 `/\w+${$0}/`
+   ADDED core.md:1796 `/\d/ & (0: 5)`
+   ADDED core.md:1846 `[ab = B | A] & (ab.l: <20)`
+   ADDED core.md:1888 `A(x:) & (x: 5)`
+   ADDED core.md:1889 `A(x:) SEQ "," SEQ A(x:) & (x: 5)`
+   ADDED core.md:1890 `A(x:) SEQ "," SEQ A(x:) & some((x: "5"))`
+   ADDED core.md:1891 `A(x:) SEQ "," SEQ A(x:) & (x[1]: 5)`
+   ADDED core.md:1907 `A(_:) SEQ "!"`
+   ADDED core.md:1908 `C(_:)`
+   ADDED core.md:1918 `A2(l = x:) & (x: 5)`
+   ADDED core.md:1919 `A2()`
+   ADDED core.md:1933 `C(x:)`
+   ADDED core.md:1947 `W(_:, S(body:)) & (body: <5)`
+   ADDED core.md:1948 `W3(S(body:)) & (body: <5)`
+   ADDED core.md:1958 `B(x:) & (x: <5)`
+   ADDED core.md:1959 `V(x:) & (x: <5)`
+   ADDED library.md:452 `hits(/a(?<g>x)?/) & (g: "x")`
+   ADDED library.md:775 `rx.repeat([a = rx.digit], min = 1) & (a: <5)`
+   ADDED library.md:809 `/(?<h>\d)?x/ & (h: capture("h"))`
+   ADDED library.md:810 `/(?<h>\d)?x/ & (h ?: capture("h"))`
+   ADDED library.md:811 `/\d+/ & capture("n")`
+   ADDED library.md:812 `A SEQ "," SEQ A`
+   ADDED library.md:813 `isodate & (isodate.year: capture("year"))`
+   ADDED library.md:815 `/\d+${(0: capture("n"))}/`
+   ADDED library.md:892 `row(v:, "v") & (v: "ok" | <5)`
+   ADDED library.md:893 `row(lo:, "lo") & row(hi:, "hi") & (lo: <$hi)`
+   ADDED library.md:894 `row(x:, "a" | "b") & (x: <5)`
+   ANSWER MOVED (declared): `/(?<h>\d)/ SEQ A & (h: <5)`: two-sources' second shape closed on label-reference: the line (a) to `rejected:`, the answers of (b) printed bare
+   ANSWER MOVED (declared): `/(?<h>\d)?x/ & (h = "x": !<5)`: predfix84's engine refused a default in an entry; this model runs it as printed: no printed answer moves
+   ANSWER MOVED (declared): `/\d${c}x/`: zero-condition-binding ruled an error: the lines (a) and (c) to `rejected:`
+   ANSWER MOVED (declared): `[ab = B | A] & (ab.l: <20)`: re-spelled `[ab = (B | A)]` (the label set binds tighter than `|`, the manager's syntax reading); the old spelling printed at core/operators/precedence
+   ANSWER MOVED (declared): `[h = rx.digit] SEQ ((h: <5))?`: predfix84's engine crashed on it (TypeError); this model runs it as printed: no printed answer moves
+   ANSWER MOVED (declared): `capture("d", /\d+/)`: optional-label's statement replaced the two-argument wrapper by `rx & capture("name")`
+PASS SWEEP: 263 printed lines now (DIFF 9, REFUSED 58, same 207, unparsed 1), 216 at the starting commit under predfix84's engine; undeclared 0; moved or gone and not declared 0; declared moves 6; added 50; stale declarations 0
+== NULLABLE: EVID-4's known limit: no program the checks ran has a loop whose body can match empty
+PASS NULLABLE: 450 programs run by the checks above (SWEEP's included), walked node by node: 0 with a loop whose body can match empty
+== SUCCESSOR: every earlier in-force model re-run; its LAST LINE read; each red declared superseded, with the digest of the red's own FAIL line (a red whose content changes under an unchanged name fails here)
+   predfix84  last line: predfix84_model: 37 checks, 4 failed (CONVENTION, GRID, SWEEP, DOC)
+      CONVENTION [6ec984243fdd]: superseded by the request has no body placing an argument (optional-label's statement), so `capture` left the covered list; ARGSHAPES here
+         its FAIL line: FAIL CONVENTION: the convention sentence occurs 1 time(s) in library.md; covered pieces not pointing at lib/convention/argument-labels: ['lib/structural/capture'] (of 13)
+      DOC [1ab4ce1d8fd7]: superseded by this fold rewrote lines it looks for (argument-label, two-sources, zero-binding, the request); SWEEP and DOC here
+         its FAIL line: FAIL DOC: 37 lines; missing: 1
+      GRID [ff2c086f1de3]: superseded by ARGLABEL and ARGSHAPES here: argument-default's readings (a), (b) withdrawn by argument-label; the sentences it looks for rewritten
+         its FAIL line: FAIL GRID: 168 cells (predspot's 144; a part label over a call 16; a label no text writes 4; the open spot-read-name 4): AGREE 164, DISAGREE 0 [], UNDECIDED 4 (each its open slug in its piece); rename drill (a binding named like the macro's
+      SWEEP [aa1903f09f09]: superseded by SWEEP here: the fold's new lines (the label parameter, `?:`, the request, `$0`) its engine does not read; each moved line declared there
+         its FAIL line: FAIL SWEEP: 263 printed lines now (CRASH 2, DIFF 11, REFUSED 96, same 165, unparsed 1), 0 at the starting commit under predspot's engine; every non-same status declared (10 line declarations, 10 rule rows): undeclared 34 [('UNDECLARED', 'co
+   predspot   last line: predspot_model: 27 checks, 6 failed (CONVENTION, GRID, SWEEP, SUCCESSOR, FSWEEP, DOC)
+      CONVENTION [6ec984243fdd]: superseded by the request has no body placing an argument (optional-label's statement), so `capture` left the covered list; ARGSHAPES here
+         its FAIL line: FAIL CONVENTION: the convention sentence occurs 1 time(s) in library.md; covered pieces not pointing at lib/convention/argument-labels: ['lib/structural/capture'] (of 13)
+      DOC [c35db78094ed]: superseded by this fold rewrote lines it looks for (argument-label, two-sources, zero-binding, the request); SWEEP and DOC here
+         its FAIL line: FAIL DOC: 22 lines; missing: 1
+      FSWEEP [b7fecdad9ee7]: superseded by the same six lines predfix84 declared (its OPENFLAGS, PATFLAGS, FSWEEP) at line numbers this fold moved; SWEEP here
+         its FAIL line: FAIL FSWEEP: 4 flag lines at the starting commit (each reproduced under 2026-11-19's rule, then run under hole-flags: 4 stand, 0 changed); 16 flag lines now, each printed as hole-flags runs it; bad 6 [('core.md', 257, '/(?${o})${w}/', 'REFU
+      GRID [656ac2487a85]: superseded by ARGLABEL and ARGSHAPES here: argument-default's readings (a), (b) withdrawn by argument-label; the sentences it looks for rewritten
+         its FAIL line: FAIL GRID: 144 cells (9 spellings x 4 occurrences x 4 read kinds; predfix83's 96 and 48 new): AGREE 144, DISAGREE 0 [], UNDECIDED 0; sentences missing [('argument', 'one', 'plain', 'ad-rule'), ('argument', 'one', '$', 'ad-rule'), ('argument
+      SUCCESSOR [c4d4280f9e2c]: superseded by SUCCESSOR here: it re-runs the same models, each red declared in this table
+         its FAIL line: FAIL SUCCESSOR: 9 earlier models re-run one at a time, each last line read; every red declared superseded with an unchanged FAIL line: [('predfix83', 'MARKS', 'CONTENT CHANGED'), ('predfix83', 'SUCCESSOR', 'CONTENT CHANGED'), ('predfix83', 
+      SWEEP [a69d9f1ce297]: superseded by SWEEP here: the fold's new lines (the label parameter, `?:`, the request, `$0`) its engine does not read; each moved line declared there
+         its FAIL line: FAIL SWEEP: 272 printed lines now (CRASH 2, DIFF 8, REFUSED 104, same 156, unparsed 2), 215 at the starting commit under the old engine; in both with the same program and texts 204, answers moved 0; gone 11 (respelled 6, an error now 2), ad
+   predfix83  last line: predfix83_model: 25 checks, 6 failed (AWAITS, UNMARKED, SWEEP, SUCCESSOR, MARKS, DOC)
+      AWAITS [2b8a870671e7]: superseded by as predfix84 declared: AWAITS here: argument-default is ruled, so no line awaits it (0 marked lines)
+         its FAIL line: FAIL AWAITS: 0 marked lines; not (local same, error refused): none; 0 with no read
+      DOC [05476f118e2f]: superseded by as predfix84 declared: predspot's fold rewrote the texts it looks for (argument-default ruled; the bodies restated) and SWEEP here (each gone line RESPELLED, ERROR NOW or DROPPED) and DOC here
+         its FAIL line: FAIL DOC: 7 lines; missing: 2
+      MARKS [378686a20835]: superseded by this fold rewrote the texts its marks look for (argument-default, two-sources, call-prefix, capture-export ruled); the pieces' history lines here
+         its FAIL line: FAIL MARKS: 38 dispositions found where they landed; missing: ['A3', 'A3', 'A8', 'A8', 'A8', 'D4', 'D8']
+      SUCCESSOR [1a82adec20c8]: superseded by SUCCESSOR here: it re-runs the same models, each red declared in this table
+         its FAIL line: FAIL SUCCESSOR: 8 earlier models re-run, each last line read; every red declared superseded with an unchanged FAIL line: [('preddef', 'AWAITS', 'UNDECLARED'), ('preddef', 'DOC', 'UNDECLARED'), ('preddef', 'MARKS', 'CONTENT CHANGED'), ('pred
+      SWEEP [f25fc35c219e]: superseded by SWEEP here: the fold's new lines (the label parameter, `?:`, the request, `$0`) its engine does not read; each moved line declared there
+         its FAIL line: FAIL SWEEP: 311 printed lines (old engine 311: CRASH 2, DIFF 26, REFUSED 133, same 148, unparsed 2); the fixed engine (local): CRASH 2, DIFF 26, REFUSED 132, same 149, unparsed 2; moved and not listed: 2 [(('core.md', 619), 'error', 'REFUSE
+      UNMARKED [7cddc8c573f0]: superseded by argument-label made legal the lines its error engine refuses (616-619, 807, ...); ARGLABEL and SWEEP here
+         its FAIL line: FAIL UNMARKED: 149 unmarked lines reproduced under (local); moved under (error): [(('core.md', 616), 'same', 'REFUSED'), (('core.md', 617), 'same', 'REFUSED'), (('core.md', 618), 'same', 'REFUSED'), (('core.md', 807), 'same', 'REFUSED'), ((
+   preddef    last line: preddef_model: 22 checks, 5 failed (AWAITS, UNMARKED, SUCCESSOR, MARKS, DOC)
+      AWAITS [e8f86816cd7a]: superseded by as predfix84 declared: AWAITS here, as predfix83's
+         its FAIL line: FAIL AWAITS: 0 marked lines; not (local same, error refused): none; 0 with no read; the piece's own line: (local) differing 0, (error) refused True
+      DOC [a80040d59ecb]: superseded by this fold rewrote lines it looks for (argument-label, two-sources, zero-binding, the request); SWEEP and DOC here
+         its FAIL line: FAIL DOC: 10 lines; missing: [('core/labels/paths/argument-default', '(local): WHOLE `3xx` HOLDS, `7xx` FAILS / SEARCHED `7xx 3xx` `3xx`@4 / FIND-ALL `3xx 7xx 4'), ('core/labels/export/capture-export', 'WHOLE `3!` HOLDS, `33!` FAILS / SEARC
+      MARKS [78d47e2d3183]: superseded by this fold rewrote the texts its marks look for (argument-default, two-sources, call-prefix, capture-export ruled); the pieces' history lines here
+         its FAIL line: FAIL MARKS: 22 pieces of the fold found where they landed; missing: ['statement 3', 'statement 5', 'call-prefix', 'argument-default', 'capture-export', 'two-sources', 'form caveat', 'errors row']
+      SUCCESSOR [9ce8705eed79]: superseded by as predfix84 declared: SUCCESSOR here
+         its FAIL line: FAIL SUCCESSOR: 7 earlier models re-run, each last line read; every red declared superseded: NO
+      UNMARKED [aaaf622009ad]: superseded by argument-label made legal the lines its error engine refuses (616-619, 807, ...); ARGLABEL and SWEEP here
+         its FAIL line: FAIL UNMARKED: 148 unmarked lines reproduced under (local); moved under (error): [(('core.md', 616), 'same', 'REFUSED'), (('core.md', 617), 'same', 'REFUSED'), (('core.md', 618), 'same', 'REFUSED'), (('core.md', 619), 'same', 'REFUSED'), ((
+   predfix82  last line: predfix82_model: 22 checks, 4 failed (REPRINT, SUCCESSOR, MARKS, DOC)
+      DOC [7ba579a211b8]: superseded by this fold rewrote lines it looks for (argument-label, two-sources, zero-binding, the request); SWEEP and DOC here
+         its FAIL line: FAIL DOC: 15 lines; missing: [('two-sources', '(a) the label as it reaches the caller, an argument written in place: WHOLE `7-3` HOLDS, `'), ('two-sources', '(b) the source written here, as spelled with a part label: WHOLE `7-3` FAILS, `3-7
+      MARKS [cadd463ec154]: superseded by this fold rewrote the texts its marks look for (argument-default, two-sources, call-prefix, capture-export ruled); the pieces' history lines here
+         its FAIL line: FAIL MARKS: 35 dispositions' texts found where they landed; missing: ['ANS-1', 'ANS-2a', 'ANS-2b', 'RULING-4', 'RULING-9', 'GENERAL-5']
+      REPRINT [49e1c7ae12f2]: superseded by as predfix84 declared: predspot's fold rewrote the texts it looks for (argument-default ruled; the bodies restated) and SPOT here (example 1 revised; its spot-labelled line) and SWEEP
+         its FAIL line: FAIL REPRINT: 10 of 12 re-derived lines found verbatim in the documents (missing: ['nested-scope ex. 1', 'nested-scope ex. 3']); the set form against value-left's `(($a + $b): <10)` on the 100 digit pairs: 0 differ
+      SUCCESSOR [7af0ee27f19f]: superseded by as predfix84 declared: SUCCESSOR here
+         its FAIL line: FAIL SUCCESSOR: 6 earlier models re-run, each last line read; every red declared superseded: NO
+   predcall   last line: predcall_model: 14 checks, 3 failed (SCAN, PREDREF, DOC)
+      DOC [ee72c84698ec]: superseded by as predfix84 declared: predspot's fold rewrote the texts it looks for (argument-default ruled; the bodies restated) and ARGNAME and TWOSPOT here (call-prefix's lines re-spelled) and SWEEP
+         its FAIL line: FAIL DOC: 10 lines; missing: [('call-prefix', "A's own d, through the argument (case 2): WHOLE `7-3` FAILS, `3-7` HOLDS, `3-3` HOLDS / SE"), ('call-prefix', "d as the call surfaces it, the last mention (B's): WHOLE `7-3` HOLDS, `3-7` FAILS,
+      PREDREF [bdc1a3daaa39]: superseded by as predfix84 declared: SUCCESSOR here: predref is now a traceback (below), so its expected red is gone
+         its FAIL line: FAIL PREDREF: red: [] (expected ['MARKS']: its MARKS looks for the call-prefix piece still open, covered by MARKS here, which looks for it ruled; its other 7 checks stay green on the folded documents)
+      SCAN [677e6eb8490f]: superseded by the label parameter's lines (`A(x:) & (x: 5)`, `(?<:${l}>..)`) read a label its scan does not know; LABELPARAM and SWEEP here
+         its FAIL line: FAIL SCAN: 366 program spans checked; 52 distinct spans read a label bare or through an unknown head, all on LEFT; not on LEFT: [('core.md', '/(?<:${l}>\\d)/ & (l: <5)'), ('core.md', '<(10 - $b)'), ('core.md', 'A(x:) & (x: 5)'), ('core.md',
+   predref    last line: CompileError: an undeclared name: (=) = X
+      TRACEBACK [654619d66d03]: superseded by as predfix84 declared: SPOT and PLACES here: the provided bodies now write the export list on their spot (`atomic(X) := /(?>${[(=) = X]})/`, transform-export), which predref's lowerer, older than export-list, cannot read
+         its FAIL line: CompileError: an undeclared name: (=) = X
+   predbound  last line: CompileError: an undeclared name: (=) = x
+      TRACEBACK [f8b5d917c866]: superseded by as predfix84 declared: SPOT and PLACES here, as predref's (its body reader meets `[(=) = x]`)
+         its FAIL line: CompileError: an undeclared name: (=) = x
+   predfix77  last line: AssertionError: `chars := (.*?)`, `nchars
+      TRACEBACK [455b59c946bc]: superseded by as predfix84 declared: predfix83's SUCCESSOR, which declared it, and predfix82's REPRINT and predbound's checks, unchanged
+         its FAIL line: AssertionError: `chars := (.*?)`, `nchars
+   predarr    last line: AssertionError: `chars := (/.*?/)`
+      TRACEBACK [ce43d48c7e37]: superseded by as predfix84 declared: predfix83's SUCCESSOR, which declared it, and predfix82's REPRINT and predref's HITS, unchanged
+         its FAIL line: AssertionError: `chars := (/.*?/)`
+   predscope  last line: AssertionError: `(repeat\(x, min\) := /\(\?:\$\{x\}\)\{\$\{min\},\}/)`
+      TRACEBACK [17ab1e47c179]: superseded by as predfix84 declared: TWOSPOT here: its reader of rx.repeat's third body expects `${x}`; the body now writes `${[(=) = x]}` (transform-export)
+         its FAIL line: AssertionError: `(repeat\(x, min\) := /\(\?:\$\{x\}\)\{\$\{min\},\}/)`
+PASS SUCCESSOR: 11 earlier models re-run one at a time (predfix84 light: its SUCCESSOR is this list), each last line read; every red declared superseded with an unchanged FAIL line: yes
+== QUOTES: every owner sentence this lane quotes occurs in the record and the documents; every cited title is one
+PASS QUOTES: 13 quoted sentences in the record and the documents, missing: none; 2 of R1's in the manager's branch record and the documents, missing: none; 17 record titles cited whole, not a title or not cited: none
+== DOC: every line this model formats for a piece occurs verbatim in the documents
+PASS DOC: 65 lines; missing: 0
+predfold1123_model: 18 checks, 0 failed
