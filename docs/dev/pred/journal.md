@@ -1002,3 +1002,15 @@ wake.md says (read the draft WHOLE first; A4 is a ruled-words finding: read his 
   second shape CLOSED on label-reference at his question; zero-in-loop ASKED (waiting).
 - NEXT: the FOLD lane (r86, predfold1123) for 2026-11-22 late + 2026-11-23, with the six overtaken r84 findings and
   the lane report's LEFT FOR THE FOLD LANE list; brief after his zero-in-loop answer or at the next pause.
+
+## 2026-11-23 — zero-in-loop and binding-fixed ruled; fold lane predfold1123 launched
+
+- RULED: zero-in-loop (b); binding-fixed: yes (a new principle; confirms "two uses of one piece are two pieces").
+  Main merged P-25 (014ebc42f).
+- LAUNCHED: lane predfold1123 (opus; worktree `worktrees/predfold1123`, cut at e420369c5; deliver + empty rulings
+  file written first; `lanewatch --follow` armed): the fold of the record from "a question on transform-export:
+  `A(rx) := /${=rx}/`" through "binding-fixed: yes", with r84's six handed-over findings. Its review is r86
+  (coordinator to launch at its delivery). Later rulings of this session go to its rulings file as R-n.
+- To do without asking him: options-position's first half is in his own words ("in future bindings"; the ruled
+  statement "literals written after the statement"): close it as "from the statement on" (an R-n for the lane);
+  repeat / turning a flag off stay unstated.
