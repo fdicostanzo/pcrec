@@ -8236,3 +8236,23 @@ WHERE THE RULES PINCHED (each a finding for the owner; none decided):
    a call's labels; the protected default keeping `member_any`, `ws`, `string` out of the caller's sight with no
    `_` anywhere; the flag ruling (`^`, `$` and `m` sit in the final literal; nothing needed to inherit); `n` as
    a library option; fields not in the search are just more rows with `json.value`.
+
+### 2026-11-23 OWNER, on label-name-hole as first put: "the label set doesn't work because you can't put a hole in predicate"
+tags: core/holes/name core/labels/label-only-group core/labels/paths core/patterns/literals core/operators/bindings/label-variables
+
+Put to him (slug label-name-hole, the first JSONL pain point): may a macro name a label from an argument, in two
+positions: the label-only group in rx text `(?<:${k}>...)` and the label set at the expression level
+`[${k} = v]`; candidates (a) both, (b) rx text only, (c) no. With a run (a path model,
+`$PCREC_TMPDIR/scratch/pred/label_name_hole.py`) of `[r = kv("ts", /\d+/)] & (r.ts: <5)`, kv(k, v) :=
+`/${k}=(?<:${k}>${v})/`: WHOLE `ts=3` HOLDS, `ts=7` FAILS, `ts=12` FAILS / SEARCHED `ts=7 ts=3` `ts=3`@5 /
+FIND-ALL `ts=3 ts=7 id=1 ts=12 ts=4` [`ts=3`@0, `ts=1`@15, `ts=4`@21]. HIS WORDS, whole:
+
+"the label set doesn't work because you can't put a hole in predicate"
+
+Class: an OBSERVATION correcting the question (not a ruling on label-name-hole). He is right by the documents:
+core/patterns/literals, "Crossings: from rx text to the expression language only by `${...}`; from the expression
+language to rx only by `/.../`": a hole exists only in rx text, so `[${k} = v]` is not a form of the language and
+candidate (a) was not a candidate. The manager's question is withdrawn in that half. The manager's reading
+(marked): at the expression level a label named by an argument is then not a hole question at all; it is the
+label-variable direction (core/operators/bindings/label-variables, under construction). What remains to ask:
+whether the ruled name hole extends to the label-only group in rx text.
