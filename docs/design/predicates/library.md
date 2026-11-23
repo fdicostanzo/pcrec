@@ -909,10 +909,12 @@ defined: ?
   ${ws}:${ws}${value(l:) & (l: f)}${ws}(?:,${member_any})*\}/`, a member any member, `_:` its labels.
 - The label is set to the unquoted text, so the string `"3"` and the number `3` read alike (his string-label words:
   "the row() label arg would be set to the unquoted portion of the string").
-- A filter inside the argument and a test on the label agree in every mode (`row(_:, "msg", contains("timeout"))`
-  and `row(_x:, "msg") & (_x: contains("timeout"))`; a reading, run).
+- A filter inside the argument and a test on the label agree in every mode (the line "A filter inside the argument";
+  a reading, run). The sketch's `row` reads its label (`& (l: f)`), so it refuses `_` (a body that reads its label
+  parameter, core/operators/bindings/label-omitted): the caller names one; an open point of the library's design.
 - Several rows joined by `&` read at the line: an ordinary entry over their labels; several keys in one row: the last
   fitting member in the object's order (the lines below; readings, run).
+A filter inside the argument: WHOLE `{"msg":"db timeout"}` HOLDS, `{"msg":"ok"}` FAILS, `{"msg":"timeout a","msg":"ok"}` HOLDS / SEARCHED `{"msg":"ok"} {"msg":"db timeout"}` `{"msg":"db timeout"}`@13 / FIND-ALL `{"msg":"ok"} {"msg":"db timeout"} {"msg":"timeout"}` [`{"msg":"db timeout"}`@13, `{"msg":"timeout"}`@34] (`row(m:, "msg", contains("timeout"))`, the sketch above; `row(m:, "msg") & (m: contains("timeout"))` the same answers)
 The label on the data: WHOLE `{"v":"ok"}` HOLDS, `{"v":3}` HOLDS, `{"v":7}` FAILS, `{"v":"no"}` FAILS, `{"v":true}` FAILS, `{"v":"3"}` HOLDS / SEARCHED `{"v":7} {"v":"ok"} {"v":3}` `{"v":"ok"}`@8 / FIND-ALL `{"v":"ok"} {"v":7} {"v":3} {"v":"no"} {"v":"3"}` [`{"v":"ok"}`@0, `{"v":3}`@19, `{"v":"3"}`@38] (`row(v:, "v") & (v: "ok" | <5)`, the sketch above)
 A filter over two rows at the line: WHOLE `{"lo":3,"hi":7}` HOLDS, `{"hi":7,"lo":3}` HOLDS, `{"lo":7,"hi":3}` FAILS, `{"lo":3}` FAILS, `{"lo":"3","hi":"7"}` HOLDS, `{"lo":3,"x":true,"hi":7}` HOLDS / SEARCHED `{"lo":7,"hi":3} {"hi":9,"lo":8}` `{"hi":9,"lo":8}`@16 / FIND-ALL `{"lo":3,"hi":7} {"lo":7,"hi":3} {"lo":3} {"hi":2,"lo":1}` [`{"lo":3,"hi":7}`@0, `{"hi":2,"lo":1}`@41] (`row(lo:, "lo") & row(hi:, "hi") & (lo: <$hi)`, the sketch above)
 Several keys: WHOLE `{"a":3}` HOLDS (x = `3`), `{"b":3}` HOLDS (x = `3`), `{"a":7,"b":3}` HOLDS (x = `3`), `{"a":3,"b":7}` HOLDS (x = `3`), `{"a":7,"b":8}` FAILS, `{"c":3}` FAILS / SEARCHED `{"a":7,"b":8} {"a":3,"b":7}` `{"a":3,"b":7}`@14 / FIND-ALL `{"a":3} {"c":1} {"a":7,"b":8} {"b":4,"a":9}` [`{"a":3}`@0, `{"b":4,"a":9}`@30] (`row(x:, "a" | "b") & (x: <5)`, the sketch above)

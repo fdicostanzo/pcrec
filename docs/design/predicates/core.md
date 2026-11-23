@@ -1954,21 +1954,24 @@ Placed twice, the index: WHOLE `7,5` FAILS, `5,7` HOLDS / SEARCHED `7,5 5,7` `5,
 Across `&`: modes: a compile error (`A(x:) & A(x:) & (x: 5)`, A(l:) := `/(?<:${l}>\d+)/`: both sides set x, an ambiguous reference (core/labels/flow)).
 
 ### The unspecified label   [core/operators/bindings/label-omitted]   ruled 2026-11-23
-At a call `_` is the unspecified label (`row(_:, "level", ..)`); no argument is omitted under the current call rules, labels or not.
+At a call `_` is the unspecified label (`string(_:)`, lib/json/members' sketch, whose body only places `l`); no argument is omitted under the current call rules, labels or not.
 needs: core/operators/bindings/label-variables
 see: core/modules/leave-out core/operators/bindings/call-forms parked/ideas/empty-argument
 - His words: "i agree that _ should be the unspecified label- it also comments on your meaning."; "we currently don't
   have overloading so a macro defined for 3 args needs three args. they can be omitted by row(,"level", ...) if we
   choose to allow that but not omitted under current macro call rules regardless of labels."
 - In the body `_` follows forms already ruled: `[l = B]` is `[_ = B]`, `(?<:${l}>...)` a plain non-capturing
-  group, so nothing is exported (the manager's reading (a); the line "The unspecified label"). Two `_` never
+  group, so nothing is exported (the manager's reading (a); the lines "The unspecified label" and "Closed by
+  `_`", whose written-out `[_ = v]` is refused alike). Two `_` never
   collide (reading (b)).
 - A body that reads its label parameter, called with `_`, is a compile error at the call: there is nothing to read
   (the manager's reading (c); the second line); a body that reads without placing is refused at its definition
-  (core/operators/bindings/label-kinds).
+  (core/operators/bindings/label-kinds). The cost: such a body cannot be called with `_`; the caller passes a name
+  (a private `_x:` if it wants none exported), as lib/json/members' filter-taking `row` needs.
 - The empty argument position `row(,"level", ..)` is his idea, not ruled (parked/ideas/empty-argument).
 The unspecified label: WHOLE `3!` HOLDS, `7!` HOLDS / SEARCHED `x3!` `3!`@1 / FIND-ALL `3! 7!` [`3!`@0, `7!`@3] (`A(_:) SEQ "!"`, A(l:) := `/(?<:${l}>\d)/`)
 A body placing then reading its label, passed `_`: modes: a compile error (`C(_:)`, C(l:) := `/(?<:${l}>\d)/ & (l: <5)`: the body reads `l` and `_` names nothing to read).
+Closed by `_`: modes: a compile error (`W(_:, A) & (A.h: <5)`, W(l:, v) := `/<${[l = v]}>/`, A := `/(?<h>\d)/`: `_` on the spot is `[_ = v]`, which closes the door through A).
 
 ### A label parameter with a default   [core/operators/bindings/label-default]   ruled 2026-11-23
 A label parameter may be an optional (keyword) parameter under the existing call rule; passed by name it is written `l = x:`, his spelling lean.
