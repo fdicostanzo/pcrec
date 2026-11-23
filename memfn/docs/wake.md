@@ -33,7 +33,7 @@ The kit manager (`/pcrec-memfn-manager`). The ledger and journal branch is workt
   - r87 ruled FIX FIRST: dead worker, --units closure, subset label, maxtasksperchild=1, longest-first from 758's profile.
   - Lane **bsu6par2** (sonnet, worktrees/bsu6par2) is applying them; it owes one selftest job. GREEN -> merge lane/bsu6par2 into the kit branch, then deliver to main as an R-47 U6 addendum.
 - **Filed, not built** (bsu6par survey): mutb.py per-mutant parpool units (27 min serial); split run_g2_win.sh by head (288 s critical path).
-- **After R-47 completes** (timing verdict in): tell main, so [KIT-ARCH-STEP] stage 2 can be chartered (Frank's ruling is verbatim in the 11-22 journal).
+- **After R-47 completes** (the Zen 4 timing verdict in): reach the HAND-OFF STATE (no queued jobs, no running lanes, branch delivered, wake.md written) and tell main: Frank moves the kit session to the Mac, one kit at a time (owner 11-23, verbatim in the journal). [KIT-ARCH-STEP] stage 2 starts after the move unless Frank says otherwise. C6c: Zen 4 only, no Mac cell.
 - **Sabotage ids:** the next free id is S3570 (worktrees/.mgr/sabotage_ids.txt).
 - **Prunable** (scripts/wtprune, after main pushes U6): bsu3*, bsu4*, u4tip, bsu5*, u5tip, bsu6, bsu6t, bsu6fix, bsu6fix2, bsu6fix3; bsu6par/bsu6par2 after their merge.
 - **Merge main** into the kit branch at the next quiet point: it picks up pinmsg.
