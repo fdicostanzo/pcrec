@@ -1093,3 +1093,15 @@ wake.md says (read the draft WHOLE first; A4 is a ruled-words finding: read his 
   plus the EXPANSION drill and a grid over the ownership table), rule, fix lane, P-27.
 - Queue with the owner: capture-in-set; optional-entry-edges; the three flags questions; a map written in place; a
   user macro taking a macro; the older list; the spellings review.
+
+## 2026-11-23 — close (/close): predfold1123b delivered and merged; r88 NOT launched
+
+- Lane predfold1123b delivered (lanecheck DONE; rulings file empty throughout; nudged once to poll its sabotage
+  run): MERGED (3c6462b24); lint 8,502 / 0; plan-lint green; model 18 / 0, 25 plants caught (its first plant run
+  missed 3: fixed and re-run). Lane stopped. It refuted two lines of my spot-read-name working (pre-condition-4);
+  neither was written.
+- NOT a delivery: the fold is unreviewed. r88 (reserved by main) is the FIRST act of the next session, before any
+  question to the owner; a parallelism lens on the evidence model joins it (the owner's item, via main).
+- Main, the same hour: P-17..P-26's skill edits merged (24 items); the polling exception for predicate lanes
+  granted; the [COND-FAMILY] row's next line updated.
+- wake.md REWRITTEN from scratch; owner.md current; P-27 (pausing) posted; main told. Nothing in flight; no cron.

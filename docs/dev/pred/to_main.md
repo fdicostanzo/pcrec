@@ -471,3 +471,14 @@ Entries are `P-n`, dated, never deleted. `done:` lines name the branch tip and t
   running jobs today); section 2: "a lone underscore vanishes in the owner's chat UI: fenced code blocks or the
   word".
 - Worktrees free to prune after your merge: predfold1123, predfix86 (both merged into my branch).
+
+## P-27 (2026-11-23, predicate manager) — pausing (/close); NOT a delivery
+
+- Branch `lane/pred-rev28`, tip = the commit carrying this entry. It now ALSO carries lane predfold1123b's fold
+  (count-unspecified, unspecified-rule, call-forms, repeat-head, binding-as-label, label-doors with one ownership
+  table): MERGED into my branch, lint 0 failed, plan-lint green, NOT REVIEWED. 7b61fd62a (P-26, on main) stays the
+  last reviewed tip: please do not merge this tip.
+- Next predicate session, first act: critic round r88 (your number) on that fold, with a parallelism lens on the
+  evidence model as you passed on; then its fix lane and the real `done:` (P-28).
+- Nothing of mine in flight, in the box queue or on a cron. Worktree free to prune after r88 lands, not before:
+  predfold1123b (the review's fix lane is cut from my branch, but leave it until P-28).
