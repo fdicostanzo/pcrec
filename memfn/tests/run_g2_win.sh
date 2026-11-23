@@ -22,6 +22,7 @@
 #   4. the floors (K35), literals below, sharing no source with the family.
 #
 #   --reach        the mech row S3012's probe: the in-run sites render (a REACH token)
+#   --v            section V alone (G2-V unit and whole, below; the mech suite `g2v`)
 #   --plant NAME   the same run over a COPY of memfn/src with one planted
 #                  defect (the table below): the run must go red. --plants
 #                  runs them all. Writes only the work directory.
@@ -412,6 +413,36 @@ if [ "${1:-}" = "--reach" ]; then
     exit 0
 fi
 
+# --- SECTION V: G2-V, the vector span (block_span.md rev 4.2 §10.2; R-47 U4, lane
+# bsu4g): memfn/tests/g2_vspan.py's UNIT (every V rendering of a generated set x k space
+# at x86-64-v3, its selector driven on windows flush against a PROT_NONE page at each
+# end, against python re over the class the test writes) and WHOLE (pcrec's artifacts,
+# SIMD-off and x86-64-v3, widths 32 and 4095, find-all over the cards' regimes and the
+# near-miss staircases, subjects flush against a PROT_NONE page at each end, against
+# python re; V sites counted by §10.1's k source). Its floors are literals in that file.
+# The traced pass (G2W_TRACE) skips it: the plain pass runs it once.
+v_section() {
+    local vw="$WORK/vsec" p f
+    mkdir -p "$vw"
+    if [ ! -x "$ROOT/build/pcrec" ]; then note "section V: $ROOT/build/pcrec not built (make all first)"; return; fi
+    CC="$CC" "$TIMEOUT_BIN" 1800 python3 -I "$ROOT/memfn/tests/g2_vspan.py" both --root "$ROOT" --lib "$LIB" \
+        --work "$vw" > "$WORK/vsec.log" 2>&1
+    grep -h '^FAIL\|^G2V\|^SKIPPED' "$WORK/vsec.log" | head -40
+    read -r p f < <(counts "$WORK/vsec.log")
+    if [ "$p" = x ] || [ "$f" = x ]; then note "section V printed no counts ($(tail -3 "$WORK/vsec.log" | tr '\n' ' '))"
+    else tp=$((tp + p)); tf=$((tf + f)); fi
+}
+if [ "${1:-}" = "--v" ]; then
+    [ -f "$LIB" ] || fail_setup "$LIB not built (make all first)"
+    tp=0 tf=0
+    note() { tf=$((tf + 1)); echo "FAIL: $1"; }
+    v_section
+    echo "checks passed: $tp"
+    echo "checks failed: $tf"
+    [ "$tf" -eq 0 ]
+    exit $?
+fi
+
 [ -f "$LIB" ] || fail_setup "$LIB not built (make all first)"
 T_START=$(date +%s)
 tp=0 tf=0
@@ -485,7 +516,7 @@ for cf in $FRAME_CELL_FLOORS; do floor "frame cell ${cf%%:*}" "$(fcv cells "${cf
 for cf in $FRAME_CLASS_FLOORS; do floor "frame class ${cf%%:*}" "$(fcv classes "${cf%%:*}")" "${cf#*:}"; done
 if [ -n "${G2W_TRACE:-}" ]; then
     for tr in $TRACED_FLOORS; do
-        floor "traced defines ${tr%%:*}" "$(grep -cE "^MFTRACE END table=wfE art=[0-9]+ site=[0-9]+ phase=define chosen=${tr%%:*} " "$WORK/plain.gen.log")" "${tr#*:}"
+        floor "traced defines ${tr%%:*}" "$(grep -cE "^MFTRACE END table=wfE art=[0-9]+ site=[0-9]+ phase=define( [a-z_]+=[^ ]+)* chosen=${tr%%:*} " "$WORK/plain.gen.log")" "${tr#*:}"
     done
 fi
 for inf in $INRUN_FLOORS; do floor "inrun ${inf%%:*}" "$(val inrun "${inf%%:*}")" "${inf#*:}"; done
@@ -605,6 +636,11 @@ if [ -f "$WORK/head$G2W_SHIPPED_HEAD.gen.log" ]; then
         if [ -n "$d" ] && [ "$d" = "$l" ]; then tp=$((tp + 1)); else note "default pass loops $fam=${d:-?} != head $G2W_SHIPPED_HEAD pass's ${l:-?}"; fi
     done
     echo "G2W default==head$G2W_SHIPPED_HEAD loops: $(grep -h '^g2_win_gen: loops' "$WORK/plain.gen.log" | cut -d' ' -f3-)"
+fi
+if [ -z "${G2W_TRACE:-}" ]; then
+    t0=$(date +%s)
+    v_section
+    echo "G2W section V wall $(( $(date +%s) - t0 ))s"
 fi
 echo "G2W wall total $(( $(date +%s) - T_START ))s"
 

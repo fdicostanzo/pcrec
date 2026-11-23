@@ -6086,3 +6086,3965 @@ TO TEST: (a) a compile-time judgement of a binding ALONE (a can-never-match warn
 in a flagged hole: such warnings belong at the USE, not at the binding; (b) the same before/after split exists
 for a complement (`A & !B` in a flagged hole). Asked of him (flags-before-and): keep "before", or does he want a
 binding of an `&` settled where it is written.
+
+### 2026-11-19 OWNER, discussing flags-in-filter: resolve the expression on its own, then insert the result wrapped by the context options
+tags: core/holes/flags/in-filter core/holes/flags core/holes/bare-condition core/holes/value
+
+Asked **flags-before-and** (in a flagged hole, do the sides of an `&` take the flags before the intersection, as
+folded, or after). HIS WORDS, whole (marked by him "discussion"):
+
+"flags-in-filter: discussion: C in the hole can inherit the flags. In other words, the expression is run on its
+own independent of flags. Then when the expression is resolved, the resulting rx is inserted in place wrapped by
+the context options. Advantage is that an expression bound and inserted or insert whole both behave the same.
+Label references to rx would be $x so would return the match.
+Bare conditions are a different matter and would be always in the options of then literal."
+
+Read for the intended words (phone): "of then literal" = "of THE literal".
+
+Class: DISCUSSION (his word), carrying a PROPOSAL, not a ruling: (1) an expression in a hole (his C, `A & B`) is
+RESOLVED ON ITS OWN, "independent of flags"; (2) "the resulting rx is inserted in place wrapped by the context
+options": the RESULT inherits, not the sides (the "after" of the entry above); (3) the advantage he names: bound
+then inserted, and inserted whole, behave the same; (4) a label reference in the expression is `$x`, which
+"would return the match" (the label's text); (5) a bare condition is "a different matter": always under the
+options of the literal it stands in. If ruled, (1)-(2) REVERSE "flags-in-filter: both sides inherit" of the same
+evening as the manager folded it (the sides take the flags first).
+
+CHECKED CONTEMPORANEOUSLY, and told to him (python, hand-built; "wrapped" read as the case-insensitive closure of
+the resolved set, the only reading under which his example gives nothing):
+- His example, A := `/[a-z]x/`, B := `/[A-Z]x/`: resolved alone, nothing; wrapped, nothing. Flags into each side
+  first: `ax`, `AX`, `aX`, `Ax` all match.
+- `/[a-z]+/ & /b.*/` under `(?i)`: both orders accept `blah` and `BLAH` and refuse `alah`, `ALAH`: no difference
+  (the two orders part only where the sides' case demands conflict).
+- (3) holds under BOTH orders: bound-then-inserted equals inserted-whole either way.
+- A COLLISION with a ruled rule: flags-propagate's "a flag it writes for itself wins" (`/(?i)${/(?-i)ab/}/`: run
+  as `(?i)(?:(?-i:ab))`, `ab` HOLDS, `AB` FAILS). A closure of the resolved result cannot see a `(?-i)` that was
+  spent in resolving: A := `/(?-i)ab/`, `/(?i)${A}/` refuses `AB` (ruled), while `/(?i)${A & A}/`, resolved then
+  wrapped, would accept it: one set, two spellings, two answers (against meaning-not-spelling).
+- (4) and (5) agree with the documents as they stand (core/holes/value: the read's text matched "under the
+  options in force at the hole"; a bare condition tested where the hole stands).
+
+### 2026-11-19 OWNER RULING — flags-in-filter confirmed: the environment of the hole sets the default options for the expression inside; and a request for a warning
+tags: core/holes/flags/in-filter core/holes/flags core/diagnostics/warnings
+
+Asked **flags-before-and**, with the collision shown (under resolve-then-wrap, `/(?i)${A & A}/` with A :=
+`/(?-i)ab/` would accept `AB` where `/(?i)${A}/` refuses it), and asked what that program should do. HIS WORDS,
+whole:
+
+"That's a good one! As soon as I think I have it figured out you present a fantastic conundrum.
+
+flags-in-filter: i cannot think of a different solution. I agree with the ruling that the environment of the
+hole sets the default options for the expression inside.
+
+However, I also anticipate the bug reports that will come from this. Is there a way to provide a warning?"
+
+Class: a RULING, confirming "flags-in-filter: both sides inherit" in his own statement of it: "the environment of
+the hole sets the default options for the expression inside". It answers flags-before-and: BEFORE (the options
+are the expression's defaults, so each side starts with them and a flag a side writes for itself wins). His
+resolve-then-wrap proposal of the entry before is thereby DROPPED by him ("i cannot think of a different
+solution"). And a QUESTION / REQUEST to the manager: "Is there a way to provide a warning?" (he expects bug
+reports). Nothing ruled about the warning.
+
+The manager's PROPOSAL for the warning (told to him; asked as **flags-warning**, not ruled; run:
+`$PCREC_TMPDIR/scratch/pred/flagswarn.py`, brute force over 1,554 strings of `abxABX`, length 1 to 4): warn at
+the HOLE when a filter expression (an `&` or a complement) put in a hole whose inherited flags differ from the
+expression's own would give a different result than "the expression alone, then the flag on its result"; an
+operand that writes the flag itself is taken as it is. On the session's examples: `[a-z]x & [A-Z]x` under `(?i)`
+(alone 0 strings, in the hole 12): WARN; `[a-z]+ & ![A-Z]+` (alone 120, in the hole 0): WARN; `[a-z]+ & b.*`,
+`[ab]+ & a.*`, `[a-z]+ & !b.*`, `(?-i)ab & (?-i)ab`: quiet. Its message names the fix his principle gives: write
+the flag in the operand. Readings: it is a set comparison of the kind `pcrec.test.never` already is, computable
+where the operands are regular; where they are not, it does not fire.
+
+### 2026-11-19 OWNER RULING — flags-warning: yes, when it works; not when the expression reads a label of the literal
+tags: core/diagnostics/warnings core/holes/flags/in-filter
+
+Asked **flags-warning** (the manager's proposal at his request: at the hole, for an `&` or a complement that
+inherits a flag, warn when the ruled result, each side taking the flag first, differs from "the expression
+alone, then the flag applied to its result"; an operand that writes the flag itself taken as it is; the
+structural alternative and no warning as the other answers; run on six examples). HIS WORDS, whole:
+
+"flags-warning: yes when it works. You can't do it if the expression refers to $x a label in the literal"
+
+Class: a RULING on the slug: YES to the proposed (exact) trigger, "when it works": where the comparison can be
+made at compile time. And a LIMIT he states: it cannot be made when the expression reads `$x`, a label of the
+literal (a value known only at match time); there the warning does not fire.
+
+The manager's readings, for the next lane to test: (a) "when it works" also covers the proposal's own limit (an
+operand that is not regular: no warning), and an over-budget comparison (no warning, no error); (b) the name is
+a placeholder, `pcrec.flags.filter`, the manager's; (c) the message points at writing the flag in the operand;
+(d) the trigger is stated for `i`; `m` and `s` (the other inherited flags) follow the same comparison.
+
+### 2026-11-20 OWNER, to main (relayed as M-2): rx and graph manipulation will be built for the predicate language; save two engine one-offs for then
+tags: core/filters/and core/filters/complement parked/ideas/string-level-rx
+
+Said to the pcrec manager while discussing a lookaround matter of pcrec proper (L3's forward-scan re-entry), relayed
+verbatim in `docs/dev/pred/from_main.md` M-2; recorded here 2026-11-21 at the wake of the fourth predicate-manager
+session. HIS WORDS, whole:
+
+"Looking forward, we are probably going to have to build a bunch of rx and graph manipulation stuff for the predicate
+language. I don't know how you planned to implement rx intersection or subtraction but this sounds an awful lot like
+that. Perhaps we save both this and match start for then when it can be proper manipulation rather than one offs"
+
+Class: a LEAN (main's class, kept: said in another discussion, not asked as a ruling). Main's context, not his words:
+"this" is running a subject's proved bytes through the DFA graph from the state reached, pruning unreachable states;
+"match start" is the parked [MATCH-KNOWN]; both are recorded in `docs/design/plan_row_bodies/REQ-LOOKAROUND.md`.
+
+What it says for the predicate language: (1) an EXPECTATION, not a requirement: the build will need rx and graph
+manipulation; (2) he names intersection and subtraction (`&`, `A & !B`) as the operations he means, and says he does
+not know how they are to be implemented: no design of ours states it either (the work is DESIGN ONLY; the nearest
+piece is parked/ideas/string-level-rx, "string operations as graph manipulation (phase two)"); (3) a DIRECTION for
+main's two items (wait for "proper manipulation rather than one offs"), which is main's to act on.
+
+The manager's readings (NOT his words; nothing folded): (a) how `&` and `!` are built (an automaton product and
+complement over the DFA graph, or otherwise) is a question for the architecture note of the first build go, through
+main, not for these documents; (b) if a shared graph-manipulation layer becomes a design item it is a
+[COND-FAMILY]-owned shared piece that main's two deferred items ride on (main's statement in M-2, D193.6).
+
+### 2026-11-21 OWNER RULING — class-value: ascending codepoints everywhere
+tags: lib/builtin/enumerate/class-value lib/builtin/enumerate core/arrays/class-order lib/structural/sort
+
+Asked **class-value** (what "lowest to highest" means for a class that is not digits; shown his ruled words, his
+earlier discussion "digits followed by letters as per normal", and a run under codepoint order:
+`enumerate(/[\dA-Fa-f]/)` is `0123456789ABCDEFabcdef`, `A` index 11, `a` index 17; `[a-cB]` enumerates `B a b c`;
+the answers (a) ascending codepoint everywhere, (b) a value order now; the manager's leaning (a);
+`$PCREC_TMPDIR/scratch/pred/classvalue.py`, python `re`, the alternation built from the sorted member list). HIS
+WORDS, whole:
+
+"class value: this references enumerate(). it was me undoing a statement that it should be descending so that $y +
+1 would naturally have longer digits appear in alternations before shorter however it 1. turned out not to work
+100% and 2. was useless for - anyway so i undid the directive with this statement. it is more natural to enumerate
+classes lowest to highest. alternation order should be decided by transform anyway for consistency. ascending
+codepoints everywhere makes sesne."
+
+Read for the intended word: "sesne" = "sense".
+
+Class, part by part:
+1. A RULING on the slug, answer (a): "ascending codepoints everywhere makes sense". The reading taken, and told to
+   him: "everywhere" is every class in `enumerate`'s order, digits or not (for digits the two agree).
+2. An ACCOUNT of his own earlier ruling (quantified-order's "classes change to lowest to highest"): it undid the
+   descending directive, which was there so that `$y + 1` would put longer digits first, because it "turned out
+   not to work 100%" and "was useless for - anyway". A RECOLLECTION, checked against the record: SUPPORTED ("It was
+   to help the arithmetic common choice but if it doesn't completely then it shouldn't at all.").
+3. A STATEMENT of his view, not asked as a ruling (an OBSERVATION): "it is more natural to enumerate classes lowest
+   to highest"; "alternation order should be decided by transform anyway for consistency" (it agrees with his "Only
+   solution is sorting output when needed", 2026-11-19; `sort` stays under construction).
+
+Not ruled by it: the parked idea of number operations over a declared ordered symbol set (parked/ideas/class-base)
+is untouched; candidate (b) is out only as the order of `enumerate`.
+
+The manager's readings, for the next lane to test: (a) a caseless single character is a class for this rule:
+`(?i)k` enumerates `K`, `k`, U+212A in codepoint order; (b) "codepoint" in a byte-mode program is the byte value.
+
+### 2026-11-21 OWNER, discussing flat-read-outside: "so the read is based on match not group?"
+tags: core/labels/export/flat-read-outside core/labels/one-rule core/labels/flow
+
+Asked **flat-read-outside** (outside a binding, is a part's label read flat under the inside rules, (a); a compile
+error with the path required, (b); or legal across `|` and an error across a sequence, (c); the manager's leaning
+(a); shown his words of 2026-11-19, the ruled ambiguity across `&` only, and the piece's two run lines). HIS WORDS,
+whole: "flat-read-outside: so the read is based on match not group?"
+
+Class: a QUESTION back; DISCUSSION, nothing ruled.
+
+The manager's answer (told to him): yes, with one precision. A read is by NAME, never by which group is written:
+"Every group of one name sets the same label" (core/labels/one-rule), and a flat `x` reads what the path that
+matched left in that name. Across `|` that is the branch taken. The precision: it is not "any group of the name
+that matched": entering a branching resets the labels inside it (his "Yes. Let's keep it", 2026-11-17), so a later
+optional that is entered and sets nothing leaves the label UNSET though an earlier group of the name matched; the
+piece's ruled line, quoted: `A SEQ B`, A := `/(?<h>\d)/`, B := `/(?:,(?<h>\d))?/`: WHOLE `7` HOLDS (h unset), `7,3`
+HOLDS (h = `3`) (core/labels/flow; evidence preddoc3a FLOW). The path (`b.x`) is the read by GROUP.
+
+### 2026-11-21 OWNER RULING — flat-read-outside: a (a flat read outside a binding follows the inside rules)
+tags: core/labels/export/flat-read-outside core/labels/export
+
+Asked **flat-read-outside** (the entry above has the question and his question back, answered: a read is by name,
+what the path that matched left in it; the path `b.x` is the read by group). HIS WORDS, whole:
+"flat-read-outside: a"
+
+Class: a RULING on the slug, answer (a) as it was put to him: "Flat reads follow the inside rules. Both examples
+stand as shown; the path is there when you want to say which part." So outside a binding a part's public label is
+read flat as it is inside: across `|` the branch taken sets it and the read is legal; across the sequence operator
+the last mention wins. His sentence of 2026-11-19 ("I can't access x y z flat because it's ambiguous and therefore
+an error. So it's b.x or a.b.x.") is thereby not the rule; the ambiguous reference stays the error across `&`
+(label-flow, 2026-11-17). The lines he was shown: `pair & (x: <5)`, pair := `[b = /(?<x>\d)/] | [c = /a(?<x>\d)/]`:
+WHOLE `3` HOLDS, `a3` HOLDS, `a7` FAILS / SEARCHED `a7 a3` `a3`@3 / FIND-ALL `3 a7 a4` [`3`@0, `a4`@5];
+`date & (v: <5)`, date := `[y = /(?<v>\d)/] SEQ "-" SEQ [m = /(?<v>\d)/]`: WHOLE `7-3` HOLDS, `3-7` FAILS / SEARCHED
+`3-7 7-3` `7-3`@4 / FIND-ALL `7-3 3-7 1-2` [`7-3`@0, `1-2`@8] (evidence predfix61 FB).
+
+No reading of the manager's is added by this ruling. Still a reading under statement 3: a part under a `_` part
+label, or `[_ = A]`, passes none of its labels.
+
+### 2026-11-21 OWNER, discussing bare-nested-scope: literals are not the way to think about it; construction; which way a hole is filled; descending and horizontal; the kind of hole
+tags: core/holes/bare-condition/nested-scope core/holes/insert core/values/reads core/holes/name
+
+Asked **bare-nested-scope** (when a literal holding a hole is itself inserted into another rx, do the hole's
+readers, a bare condition, `$y`, `0`, read (a) the literal they are written in, or (b) the rx as composed; shown
+his "composed at the point it is used" and his free-name "Catastrophic", the piece's run lines for
+`/(?<h>\d)${inner}/`, and the manager's leaning (a)). HIS WORDS, whole:
+
+"bare-nested-scope: this is an important question that we have to get right. the trick here is that literals are
+not the way to think about it. we need to support construction in a useful way. also, some of this presupposes the
+way in which a hole is filled semantically. for instance, in your example, is inner defined first, then outer is
+defined around inner, or is the thinking that the outermost is designed and filled in down the hole. also, there is
+decending logic of filling the hole and horizontal logic of filling two holes and what do they relatively see? then
+there is the nature of the hole being filled. is the label hole treated the same as an rx hole?"
+
+Class: DISCUSSION; nothing ruled. What he states: (1) a weight ("an important question that we have to get right");
+(2) a CORRECTION of the question's frame: "literals are not the way to think about it"; (3) a REQUIREMENT on any
+answer: "we need to support construction in a useful way"; (4) three questions he puts to the frame: which way a
+hole is filled (inner defined first and outer around it, or the outermost designed and filled in downward); what a
+descending fill and two horizontal fills "relatively see"; whether "the label hole" is treated as an rx hole is.
+
+WITHDRAWN by the manager on (2) and (3): the leaning (a) AS PUT (the unit being the literal). The record already
+has his words against the literal as a unit: 2026-11-19, hole-export, "The problem is with composition, nothing
+will be in the same rx ... [x = digit]+. The final form is /(?<x>\d)+/ but that was composed from /${}+/,
+/(?<${}>${})/, and /\d/ so none of it was in the same rx", and his ruling that followed, "array-scope: the only way
+to do it is by the scope of the entire rx".
+
+The manager's answer (told to him; a FRAME proposed, every part of it the manager's unless quoted): the meaning is
+defined on the FINISHED rx, so neither order of definition is privileged; the holes that take compile-time values
+(a name, a count, class members, an option) are filled first and shape the rx ("Holes are filled first", in-filter,
+2026-11-18); the match-time readers (a bare condition, `$y`, `0`) are then resolved at their point in the finished
+rx; descending and horizontal are then one question, "what is visible at this point"; what remains to decide is
+whether a separately DEFINED piece (a binding, not a literal) may read a name it does not define. Nothing folded.
+
+### 2026-11-21 OWNER, discussing bare-nested-scope: an EXERCISE asked for (construct moderately difficult rx from macros), with his predictions
+tags: core/holes/bare-condition/nested-scope core/operators/bindings core/patterns/sequence
+
+After the manager's proposed frame (meaning on the finished rx; shaping holes and matching holes; open or closed
+at a binding boundary; the manager's leaning then: open). HIS WORDS, whole:
+
+"please perform the following exercise: get a few current or new moderately difficult rx. then construct them
+using a presumed set of rx construction macros. for this exercise, each piece should be a different macro/operator
+eg don't put \d+ use digit+ there should be the need for labels and conditions. you are not limited to currently
+proposed macros. lets see where you need to reference and which of the rules would limit you. predictions: i think
+most of the macros can be defined bottom up so month := digit. digit year := repeat(digit, 4) isodate := ([=year] .
+"-" . [=month] . "-" . [=day]) & (year: <2050) etc"
+
+Class: a REQUEST (an exercise for the manager) and a PREDICTION ("i think most of the macros can be defined bottom
+up"); nothing ruled; he does not answer the frame. Spellings in his example are placeholders (D193 addendum 4),
+recorded for the spellings review: `.` as the sequence operator; `[=year]`, read by the manager as `[year = year]`
+(the part label named for the binding it holds, the `=x` shorthand of the binding list and of a call, ruled
+2026-11-19, in a third place: a READING, not asked); `month := digit. digit`.
+
+### 2026-11-21 MANAGER — the construction exercise he asked for: four rx built from macros only; where a reference was needed (no owner words)
+tags: core/holes/bare-condition/nested-scope core/operators/bindings core/diagnostics/dollar-form parked/ideas/label-parameter parked/ideas/label-hygiene
+
+The exercise of the entry above, done by the manager (`$PCREC_TMPDIR/scratch/pred/construct.py`, python `re`: each
+macro a function returning rx text, the construction lowered mechanically, compared with a target in the three
+modes; a scratch run for discussion, NOT a lane's evidence). Presumed macros beyond the library's: `digit`,
+`word_char`, `any`, `any_of`, `repeat`, postfix `+ * *?`, `until(stop)`, `close(t)`, `bounded_item(max)`.
+- E1 isodate, bottom up as he predicted (`year := repeat(digit, 4)`, `month := digit SEQ digit`, `isodate := [=year]
+  SEQ "-" SEQ [=month] SEQ "-" SEQ [=day]` with `(year: <2050)`, `(month: padded(between(1, 12)))` and a day rule
+  by month): 0 of 14 subjects differ from a hand-written regex of the same dates; `x2026-11-21 2051-01-01
+  1987-06-30` FIND-ALL [`2026-11-21`@1, `1987-06-30`@23]. Every label read is of a label the definition itself
+  makes. (The judge takes one path per start: the pattern is fixed width.)
+- E2 same-quote string: `until(stop) := (NOT peek(stop) SEQ any)*`; `string := [q = any_of("\"", "'")] SEQ [body =
+  until($q)] SEQ $q`: 0 of 6 differ from `(?<q>["'])(?<body>(?:(?!\k<q>)(?s:.))*)\k<q>`. The READ `$q` is passed
+  to the macro as an ARGUMENT.
+- E3 element: `close(t) := "</" SEQ t SEQ ">"`; `element := "<" SEQ [tag = word_char+] SEQ ">" SEQ any*? SEQ
+  close($tag)`: 0 of 5 differ from `<(?<tag>\w+)>(?s:.)*?</\k<tag>>`. The read passed as an argument again.
+- E4 limit list: `bounded_item(max) := [v = digit] SEQ (v: <= max) SEQ ","`; `limitlist := [limit = digit] SEQ ":"
+  SEQ bounded_item($limit)+` (a condition on every pass, against a label set outside the loop): lowered by
+  enumerating the one-digit label; 0 of 5 differ from an independent procedural reference; `5:3,7,` WHOLE FAILS,
+  SEARCHED `5:3,`@0.
+In E2, E3 and E4 the capture stands in for the label (no loop resets the label read).
+
+FINDINGS (the manager's; told to him):
+1. His prediction is SUPPORTED on these four: every piece was definable bottom up. No separately defined rx piece
+   had to read a label it does not set.
+2. Where a lower piece needs an outer value, the READ is passed as a macro ARGUMENT (`until($q)`, `close($tag)`,
+   `bounded_item($limit)`): "a read is an rx" (one-type, ruled) and a macro is inlined at its use (bindings, ruled),
+   so the read is written, and resolves, in the caller's definition. A VALUE parameter; the parked label parameter
+   was not needed.
+3. A CONDITION bound on its own (`modern := (year: <2050)`) reads labels it does not set by its nature: it is "laid
+   against the labels of the pattern it meets" (the condition form). That is not the free-name case.
+4. Rules that pinched: (a) inside a macro a test of a parameter is written `(v: <= max)` when the macro makes the
+   label, but a test of a passed read alone is `t & S`, which at the call is the form `$x & S` and draws
+   `pcrec.dollar.filter`; (b) a label a macro makes for its own use (`q`) is public unless named `_q`, and two uses
+   in one rx make two settings of one name; (c) `$q` reads the LABEL where the regex wrote `\k<q>` (the capture):
+   alike here, not inside a loop that resets; (d) `[=year]` is not a defined form.
+5. Not met: a case that NEEDS a piece to read an undeclared outer label (the open side of the question).
+
+### 2026-11-21 OWNER, discussing bare-nested-scope after the exercise: `_x` closed in a binding, `x` available where the binding is used; how do the predicate rules translate into the rx literal
+tags: core/holes/bare-condition/nested-scope core/labels/export core/holes/labels core/operators/bindings
+
+After the construction exercise and the manager's leaning (closed at a binding; outer values passed as arguments;
+conditions open by nature). HIS WORDS, whole:
+
+"we have two sides to this. predicate language: i can see that _x labels should be closed within a binding
+definition and x labels should be available when the binding is used, including through another binding. i know
+that at its based, all macros are of the form x(y) := /blah${y}abc/ but what i can't tell is how the predicate
+rules translate into the rx literal"
+
+Read for the intended word: "at its based" = "at its base".
+
+Class: DISCUSSION; nothing newly ruled. (1) A STATEMENT of the predicate-language side, which is the export rule as
+already ruled (2026-11-18 export-rule, 2026-11-19 hole-export: "Agree both pass through"): `_x` closed within the
+binding it is defined in, `x` available where the binding is used, "including through another binding". (2) A
+PREMISE: every macro is at base `x(y) := /blah${y}abc/`. (3) A QUESTION to the manager: how the predicate rules
+translate into the rx literal. He does not answer open-or-closed.
+
+The manager's answer to (3) (told to him; a PROPOSAL, the manager's throughout; nothing folded): the rules never
+reach the literal at match time; they are settled at compile time, and the literal that results has only unique
+group names. (i) Each USE of a binding or macro is one instance, its groups renamed apart (the evidence models'
+renaming, the draft R.9). (ii) A scope table per definition, built bottom up, says for each name visible there
+which instance's group it is: the definition's own labels, plus the public labels its parts export; never a `_`
+name of a part. (iii) Three kinds of written reference, each resolved in one place: rx TEXT (`\k<h>`, a number,
+recursion) in the literal alone, as PCRE parses it (free-name, ruled); what is written inside `${...}` or between
+literals (`$h`, a condition's label) in the DEFINITION it is written in, a hole being a window from rx text back
+into that definition's expression language; a macro ARGUMENT in the caller's definition, before it is substituted.
+(iv) A condition bound alone has no rx of its own and is resolved where it is used. RUN
+(`$PCREC_TMPDIR/scratch/pred/translate.py`): `string(open) := /(?<_q>${open})(?<body>(?:(?!\k<_q>)(?s:.))*)\k<_q>/`
+used twice, `/${string(quotes)}=${string(quotes)}/`, lowers to one regex with `_q__1`, `body__1`, `_q__2`,
+`body__2`; the table gives `body` = `body__2` (the last mention) and no `_q`: WHOLE `"a"='b'` HOLDS (body = `b`),
+`"a"="b'` FAILS / SEARCHED `x "a"='b' 'k'="v" "z"=q` `"a"='b'`@2 / FIND-ALL [`"a"='b'`@2, `'k'="v"`@10]. Asked of
+him as bare-nested-scope restated: a name written in a hole is resolved in the definition the hole is written in.
+
+### 2026-11-21 OWNER, discussing bare-nested-scope: rules on literals or compiler rewrites; is `v` a label variable; `inner(digits)`; what the compiled C exports
+tags: core/holes/bare-condition/nested-scope core/labels/export core/operators/bindings parked/ideas/label-parameter core/holes/same-name
+
+Asked **bare-nested-scope** restated (a name written in a hole is resolved in the definition the hole is written
+in; the closed answer's rewrite given as `inner(v) := /x${v & <5}/` called `inner($h)`, "or the condition is passed
+in"). HIS WORDS, whole:
+
+"bare-nested-scope: are you saying this can't be resolved through a rule set on literals so its a matter of
+compiler rewrites? for your inner(v) example, does that mean that v is not a label but a label variable? would
+inner(digits) have meaning here as, sofar, macros take rx as arguments but a rx argument to inner() would be hard
+to see in your example. once the rx is written, and the C form is produced and run, what would be the labels that
+the pcrec compiler would export?"
+
+Class: three QUESTIONS to the manager; DISCUSSION, nothing ruled.
+
+The manager's answers (told to him; hand-built runs, `$PCREC_TMPDIR/scratch/pred/innerv.py`):
+1. Rules on literals: for PUBLIC labels the rule IS on the literal and is ruled ("a compose and a literal rx have
+   the same label behavior": the composed rx read as one literal, last mention). What a literal cannot say: a
+   private `_x`, and which group an rx-text `\k<x>` means when a piece is used twice; there the compiler renames
+   groups apart, which same-name already implies ("A group that arrives through a hole is the inserted pattern's
+   own"). A renaming, not a rewrite of the pattern.
+2. `v` is an ordinary rx parameter, not a label variable. `inner(digits)` has a meaning: `/x${/\d+/ & <5}/`, x then
+   a number under 5 (WHOLE `x3` HOLDS, `x7` FAILS / SEARCHED `ax7 x3` `x3`@4 / FIND-ALL `x3 x7 x44` [`x3`@0,
+   `x4`@6]); `inner($h)` is x then h's text when h is under 5 (in `/(?<h>\d)${inner($h)}/`: WHOLE `3x3` HOLDS, `3x`
+   FAILS). CORRECTED by the manager: that rewrite is NOT the original `/x${(h: <5)}/`, which tests h and consumes
+   nothing (WHOLE `3x` HOLDS, `7x` FAILS / SEARCHED `7x 3x` `3x`@3 / FIND-ALL `3x 7x 4x` [`3x`@0, `4x`@6]); the
+   faithful closed form passes the CONDITION: `inner(c) := /x${c}/`, `inner((h: <5))`. A macro that names the label
+   to test itself (`small(L) := (L: <5)`) would need the label variable he asks about: the parked label parameter.
+3. The compiled C's labels: export statement 5 (ruled 2026-11-18): "The caller's captures are what is visible from
+   the top-level program by these rules": the public names in the top-level scope table, flat and by part-label
+   path; no `_` name; never a renamed internal name. Not stated: the caller's group NUMBERS for a composed rx;
+   whether the caller gets the array of a name; the open caller-ambiguous.
+
+### 2026-11-21 OWNER, correcting himself in the bare-nested-scope discussion: a label is not a capture; a pure label is a compiler value; the question is what a pure label is scoped to
+tags: core/labels/labels-vs-captures core/labels/export core/labels/paths lib/structural/capture parked/ideas/label-only-group core/holes/bare-condition/nested-scope
+
+After the manager's answer that the compiled C exports the public names of the top-level program (export
+statement 5). HIS WORDS, whole:
+
+"i made a mistake forgetting that a label is not a capture. these labels may not exist as capture groups at all
+and non-capture group labels are just compiler values that disappear once the rx is written ie [ d = digits ] & (d:
+< 100) has no capture (no capture(...)) so therefore d would not be visible in the capture groups of the pcrec
+compiled C artifact. however, labels are visible in predicate language and perhaps that is where your rewrite idea
+sits. its not so much rewrite and to internally define what a pure label is scoped to."
+
+Read for the intended word: "and to internally define" = "AS to internally define".
+
+Class: a CORRECTION of his own last question (its premise, that the artifact exports labels) and a STATEMENT, not
+asked as a ruling: (1) a label is not a capture; (2) a label that is not a capture group is a compiler value that
+"disappear[s] once the rx is written"; (3) his example: `[d = digits] & (d: <100)` "has no capture (no
+capture(...))", so `d` is not among the artifact's capture groups; (4) labels are visible in the predicate
+language; (5) a REFRAMING of the manager's renaming: the matter is "to internally define what a pure label is
+scoped to".
+
+AGAINST THE RECORD (checked the same turn, told to him):
+- SUPPORTED by his 2026-11-17 words: "setting labels is just the label using the group-label-not-capture syntax";
+  and by the parked label-only group (his proposal of 2026-11-09, recalled 2026-11-18): named and non-capturing.
+- IN TENSION with export statement 5 as ruled ("The caller's captures: agree", 2026-11-18; the statement put to
+  him then: the caller sees the public labels of the top-level program plus paths through its part labels), with
+  core/labels/paths' first bullet (a reading of the draft §3.1: "`[x = A]` is the group form `(?<x>A)` read as a
+  label"), and with lib/structural/capture's bullet "A binding's public labels reach the caller by export with no
+  macro".
+- WITHDRAWN by the manager: answer 3 of the entry above as far as it said the caller gets `body` and `k.body`
+  for labels no capture makes.
+
+RUN for the question that follows (brute force over `\d+`'s greedy order, the stretch a canonical numeral under
+100): `[d = digits] & (d: <100)`: WHOLE `42` HOLDS, `100` FAILS, `042` FAILS / SEARCHED `x100 42` `10`@1 / FIND-ALL
+`100 42 7` [`10`@0, `0`@2, `42`@4, `7`@7]; the answers do not depend on whether `d` is a capture.
+
+The manager's readings (NOT his words; nothing folded): (a) a pure label still costs the matcher something where a
+condition or a read needs its text at match time; what disappears is its visibility to the caller; (b) with pure
+labels, scope is a matter of the predicate language alone, and renaming apart is needed only for captures and
+rx-text references. Asked of him as **pure-label**.
+
+### 2026-11-21 OWNER RULING — pure-label: captures are written explicitly; a label is made a capture afterwards too; `_` labels never export; three examples of what a definition may name
+tags: core/labels/labels-vs-captures core/labels/export core/labels/paths lib/structural/capture core/holes/bare-condition/nested-scope core/operators/bindings core/holes/labels
+
+Asked **pure-label** (which forms make a capture the caller gets: (a) only rx-text groups and `capture(...)`,
+`[x = A]` a pure label, statement 5 narrowed from labels to captures; (b) as ruled 2026-11-18, every public label;
+(c) nothing unless asked for; the manager's leaning (a)). HIS WORDS, whole:
+
+"i agree that captures are explicitly written either in literal form or using a macro like capture(). what i don't
+know is precisely what that looks like. two methods are to specify it like a wrapper like [ d = capture(digits) ]
+etc or specify it afterthefact like [ d = digits ] & capture(d) or something. no spelling suggested. the reason for
+the second one is that someone may use a library form like isodate. isodate and all the other libraries don't want
+to presume everyone is interested in every label being a capture. but then, someone might later want the year of
+an isodate as a capture. so an add on component that converted a label into a capture is needed. label discussion
+continued: i agree that _t are not rx pcre possible values but as we discussed are 1. purely predicate labels and
+2. cannot become exported captures (although they might be internal captures). they would be used in your examples
+to define a binding level label like the quote character in a string. let me give some examples rather than rules:
+1.  A := [ d = digits ] B(rx) := /${rx}xx/ C := B(A) & (d: < 100) is legal. C can see d as a flat look into A. C
+cannot see rx as its a binding variable not a label. 2. previous but B(rx) := /${rx}xx/ & (d: <100) is incorrect.
+3. previous but B(rx) := /${[dd = rx]}xx/ & (dd: < 100) would be correct"
+
+Class, part by part:
+1. A RULING on the slug, answer (a): "captures are explicitly written either in literal form or using a macro like
+   capture()". It NARROWS export statement 5 (2026-11-18, "The caller's captures: agree"): the caller gets
+   captures, not every public label; `[x = A]` makes a label and no capture.
+2. DISCUSSION, with a REQUIREMENT stated: how a capture is asked for is not settled ("what i don't know is
+   precisely what that looks like"; "no spelling suggested"); two methods named, a wrapper (`[d =
+   capture(digits)]`) and after the fact (`[d = digits] & capture(d)`); his reason for the second: a library form
+   such as isodate does not presume its labels are captures, and its user "might later want the year of an isodate
+   as a capture"; "so an add on component that converted a label into a capture is needed". Both spellings are
+   placeholders.
+3. A STATEMENT he marks as agreed ("as we discussed"): `_t` labels are (1) "purely predicate labels" and (2)
+   "cannot become exported captures (although they might be internal captures)"; their use: "a binding level label
+   like the quote character in a string".
+4. THREE EXAMPLES, given "rather than rules", on the open bare-nested-scope: (1) `A := [d = digits]`, `B(rx) :=
+   /${rx}xx/`, `C := B(A) & (d: <100)` is LEGAL: "C can see d as a flat look into A. C cannot see rx as its a
+   binding variable not a label." (2) `B(rx) := /${rx}xx/ & (d: <100)` is INCORRECT. (3) `B(rx) := /${[dd =
+   rx]}xx/ & (dd: <100)` is CORRECT. The three verdicts are his; no rule is stated by him.
+
+CHECKED CONTEMPORANEOUSLY (brute force over `\d+`'s greedy order then `xx`, d a canonical numeral under 100; told
+to him): example 1, `C`: WHOLE `42xx` HOLDS, `100xx` FAILS, `042xx` FAILS / SEARCHED `x100xx 42xx` `0xx`@3 /
+FIND-ALL `100xx 42xx 7xx 300xx` [`0xx`@2, `42xx`@6, `7xx`@11, `0xx`@17]. Example 1 agrees with hole-export and
+flat-read-outside as ruled. Example 3 with `B(A)` gives the same answers (dd and d are one text).
+
+The manager's readings, for the fold lane to test (NOT his words): (a) the rule his three examples fit: a
+definition's body may name the labels it writes itself and the public labels of the parts it writes in; it may NOT
+name a label of a PARAMETER (unknown until the call); a parameter's public labels pass through to the definition's
+USER; a parameter's name is never a label; (b) this is the CLOSED answer to bare-nested-scope for labels; `0` and
+the nested read are not covered by the examples; (c) the after-the-fact capture names its label by the same
+visibility rules a condition does, so a `_` label cannot be named, hence cannot be captured, outside its binding;
+(d) the existing `capture(name, x) := /(?<${name}>${x})/` is the wrapper method in its literal form; the
+after-the-fact form has no body in the language (native); (e) what the caller reads for a captured label that a
+loop sets (the label's last-pass value or PCRE's carried capture) is not stated.
+
+### 2026-11-21 OWNER, on condition-argument: "i need an example that can't be written more simply"
+tags: core/holes/bare-condition/nested-scope core/operators/bindings lib/control/when lib/control/when-test
+
+Asked **condition-argument** (may a caller pass a condition naming the labels of another argument: `B(rx, c) :=
+/${rx}xx/ & c`, `C := B(A, (d: <100))`; the manager's leaning: legal). HIS WORDS, whole:
+
+"condition-argument: i need an example that can't be written more simply. B(rx) := /${rx}xx/ C := B(A & (d:
+<100))"
+
+Class: a REQUEST and a COUNTER-EXAMPLE (the manager's example reduces to a condition attached to the argument);
+DISCUSSION, nothing ruled.
+
+CHECKED (brute force, 19,530 subjects over `0 1 9 x` and space, lengths 1 to 6; WHOLE and FIND-ALL): his `C :=
+B(A & (d: <100))` and `C := B(A) & (d: <100)`: 0 differ. His rewrite is equivalent and simpler; the manager's
+example is WITHDRAWN as a case for the question.
+
+The manager's answer (told to him): (1) a condition used ONCE at the edge of an argument is always written on the
+argument, as he shows; a test across two parts is written in the definition that holds both (bottom up). (2) The
+case that does not reduce is a macro that places the condition where the caller cannot attach it, more than once
+or negated; that macro exists and is RULED: `when(test, then, else = //) := (test SEQ then) | (NOT peek(test) SEQ
+else)` with "A condition or a `peek(A)` as the test" (when-test, 2026-11-18), and the record's own use of it with
+labels of the surrounding item, `when((h: 5), (m: >=3), else = (h: >5))` (2026-11-19, "would when() work here").
+So the record ALREADY ANSWERS condition-argument (legal): the question should not have been asked; WITHDRAWN as a
+question. RUN (hand-built, the test of `kind` standing as a lookbehind): `tagged := [kind = any_of("n", "w")] SEQ
+":" SEQ when((kind: "n"), digits, else = word)`: WHOLE `n:42` HOLDS, `n:ab` FAILS, `w:ab` HOLDS, `w:42` HOLDS /
+SEARCHED `n:ab w:ab` `w:ab`@5 / FIND-ALL `n:42 n:ab w:ab n:7x` [`n:42`@0, `w:ab`@10, `n:7`@15].
+The manager's reading, for the fold lane: a condition passed as an argument is resolved in the CALLER's
+definition (where it is written), as every argument is; the macro's body never names its labels.
+
+### 2026-11-21 OWNER RULING — zero-in-definition: a (`0` is the match so far of the definition it is written in)
+tags: core/conditions/match-so-far core/holes/bare-condition core/holes/bare-condition/nested-scope core/holes/pattern
+
+Asked **zero-in-definition** (when a definition that uses `0` is put inside another rx, where its `0` starts: (a)
+the definition's own match so far; (b) the using rx's match so far; shown his "composed at the point it is used ...
+the 0: is the match so far", ruled on one definition; the example `B := /x${(0: /\dx/)}/`, `C := /(?<h>\d)${B}/`,
+its lines the documents' (core/holes/bare-condition/nested-scope, lane predfix61): (a) WHOLE `3x` FAILS / SEARCHED
+`a3x` FAILS / FIND-ALL `3x 7x` []; (b) WHOLE `3x` HOLDS, `7x` HOLDS / SEARCHED `a3x` `3x`@1 / FIND-ALL `3x 7x`
+[`3x`@0, `7x`@3]; the manager's leaning (a)). HIS WORDS, whole: "zero-in-definition: a"
+
+Class: a RULING on the slug, answer (a) as put to him: "`0` is the match so far of the definition it is written
+in"; "within one definition `0` still spans all its literals and operands, so your ruled example is unchanged"
+(zero-in-sequence, `/\d/ SEQ (0: /7/) SEQ /\d/`). It settles the `0` line of bare-nested-scope: candidate (a) of
+that piece, with the unit the DEFINITION (a binding or a macro body), not the literal.
+
+The manager's readings, for the fold lane to test: (a) an expression written in place (an argument, a hole's
+content) belongs to the definition it is written in; (b) a condition bound ALONE has no rx of its own: its `0` is
+the match so far of the definition it is USED in (core/holes/bare-condition's reading "a binding whose whole body
+is a bare condition ... behaves as the bare condition does"); (c) `${A & (0: S)}` is unchanged: that `0` is only A
+(ruled, operand-world); (d) zero-in-loop (pass or rx start) is untouched and still open.
+
+### 2026-11-21 OWNER RULING — array-vs-passes: a (the group questions and the index read the array of settings)
+tags: core/labels/labels-vs-captures/array-vs-passes core/labels/labels-vs-captures lib/counting/some lib/counting/count lib/counting/occurs core/model/table/group-truth core/model/places/outermost-view core/values/tuples
+
+Asked **array-vs-passes** (do `some`, `count`, `occurs` and `h[k]` read (a) the array of a label's settings, (b)
+the loop's passes, or (c) split: a group question over passes, the array form and its index over settings; the
+manager's leaning (c); shown the piece's three parting cases and a fourth run today, `/(?:(?<h>\d):(?<m>\d),)+/ &
+some((h: "5", m: "3"))`: passes WHOLE `5:1,2:3,` FAILS, settings HOLDS). HIS WORDS, whole:
+
+"array-vs-passes: in your example, the user chose to set the labels the same. if they wanted the out-the-loop
+setting to be separately labeled they could have done so. also, if they wanted the h5,m3 condition to be held at
+the same time they could have specified (h,m): (5,3) but they did not. they chose to use the same labels and
+therefore that has to have a meaning. for simplicity, and due to the fact that the other interpretations can be
+otherwise spelled, i think option "a""
+
+Class: a RULING on the slug, answer (a) ("i think option "a"", with his reasons): `some`, `count`, `occurs` and
+`h[k]` read the ARRAY OF SETTINGS of a name: every setting, in order, the one outside the loop included (his
+2026-11-17 "The array takes all h including the one outside the group"; array-scope, 2026-11-19). His reasons: the
+user chose one name, "and therefore that has to have a meaning"; a setting outside the loop wanted apart is given
+its own label; "simplicity"; "the other interpretations can be otherwise spelled". It REVISES lib/counting's
+statements on passes (`some(c)`: "at least one pass of a loop meets the condition c", 2026-11-15) and the reading
+under core/model/places/outermost-view ("Pass tests ... range over the outermost loop's passes").
+
+One part of his reasons is a CLAIM about a spelling, checked the same turn: "if they wanted the h5,m3 condition
+to be held at the same time they could have specified (h,m): (5,3)". Under (a) a joint entry inside a group
+question meets TWO arrays, and no rule says how they pair. RUN (`/(?:(?<h>\d)(?::(?<m>\d))?,)+/`, m optional;
+python, the arrays built from the parse, "only what was set" as array-slot rules): `5,2:3,` has h = [`5`, `2`], m
+= [`3`]: paired BY INDEX the tuple (`5`, `3`) is found though no item holds both; paired by ITEM it is not found.
+`5:3,` both find it; `5:1,2:3,` neither. So his spelling gives "at the same time" only if a joint entry pairs by
+item (the passes again) or the arrays keep unset slots (against array-slot, 2026-11-17: "only what was set"). Told
+to him, and asked as **joint-in-some**.
+
+The manager's readings, for the fold lane to test: (a) a record of two entries inside a group question is the
+product of its entries, each over its own array: `some((h: "5", m: "3"))` is "some h is 5 and some m is 3"; (b)
+`count(c)` and `occurs` on a one-entry condition count SETTINGS; on a condition of several entries what is counted
+is not stated; (c) the group questions are false / zero on an empty array (no setting), which replaces "false
+where the loop made no pass"; (d) the open group-truth ("each pass judged with its own labels") is re-put or
+closed by this ruling: `NOT some(c)` against `occurs.none(NOT c)` now part on settings, not passes; (e) "same item"
+without a joint entry is spelled on the item: a label set only where the item meets the condition, then a group
+question on that label.
+
+### 2026-11-21 OWNER RULING — joint-in-some: agree (a joint entry inside a group question is refused for now; "same item" is written on the item)
+tags: core/labels/labels-vs-captures/array-vs-passes lib/counting/some core/values/tuples parked/ideas/user-doc-traps
+
+Asked **joint-in-some** (inside a group question, how a joint entry `(h, m): ...` pairs the two arrays: (a) by
+index, as the arrays stand; (b) by item; (c) refused for now, "same item" written on the item itself, `[ok = item &
+((h, m): ("5", "3"))]` then `some((ok: anything))`; the manager's leaning (c); shown the run where by-index finds
+(`5`, `3`) in `5,2:3,` though no item holds both). HIS WORDS, whole (he wrote the slug "join-in-some"):
+
+"join-in-some: agree and elegant. that said, no one would know to write it."
+
+Class: a RULING on the slug. The reading of "agree" taken, and told to him: the manager's leaning, (c): a joint
+entry inside a group question is refused for now (a compile error; (a) or (b) can be allowed later without
+changing an answer), and "same item" is the on-item label followed by a group question on that label. And an
+OBSERVATION: "no one would know to write it" (discoverability; nothing ruled by it).
+
+The manager's readings, for the fold lane: (a) the refusal's message names the on-item form (the manager's call on
+a diagnostic's content); (b) the idiom goes on the user-documentation list (parked/ideas/user-doc-traps); (c) a
+provided shorthand for it is an idea, not asked for by him: nothing parked beyond the list item.
+
+### 2026-11-21 MANAGER — after lane predscope: pure-label, the `_` labels, zero-in-definition and the three examples folded; a reading told to the owner is NARROWED (no owner words)
+tags: core/labels/export core/labels/paths core/conditions/match-so-far core/holes/bare-condition/nested-scope core/holes/bare-condition/labels lib/structural/capture
+
+Lane predscope (opus; report `docs/dev/lanes/predscope_report.md`; evidence `docs/dev/lanes/predscope_evidence/`, 20
+checks, 21 plants caught; lint after the merge 5,446 / 0) folded: pure-label (export statement 5 narrowed to
+captures; `[x = A]` a label and no capture), the `_` statement, zero-in-definition (the `0` line of
+bare-nested-scope ruled), his three examples verbatim in core/holes/bare-condition/nested-scope (the piece STAYS
+OPEN), a new under-construction piece for the label-to-capture add-on.
+
+The manager's readings, as tested (the report has each): SUPPORTED: pure-label (c), (d) with a caveat (the
+existing `capture(name, x)` cannot take its name from a part label, as his `[d = capture(digits)]` would), (e);
+condition-argument; zero-in-definition (a), (c), (d); class-value (a) as to the order. UNTESTABLE: class-value
+(b); zero-in-definition (b); pure-label (b). NOT SUPPORTED AS STATED, and NARROWED: pure-label (a), "a
+definition's body may name the labels it writes itself and the public labels of the parts it writes in; it may NOT
+name a label of a PARAMETER". Over the 17 definitions the documents print it refuses 7: five bound conditions and
+computed labels (pass-start-read's `c`, `sum`, `n := count(..)`, `nchars`, `mnum`), which read the labels of the
+pattern they meet by their nature and are OUTSIDE the rule (told to him earlier the same day: "a condition bound
+on its own is naturally open"), and the nested-scope piece's own two lines.
+
+What the manager told him and now takes back in part: "That is the closed answer for labels." His three examples
+speak of a PARAMETER's labels only. None speaks of a label the definition's USER sets (from above, or from a
+sibling to the left): the piece's `inner := /x${(h: <5)}/` case, and the ruled piece core/holes/bare-condition/
+labels' line `A SEQ B`, B := `/${(c: >= 5)}(?<c>\d)/`, "reads A's c" (WHOLE `73` HOLDS), which a definition closed
+to its user's VALUES would turn into never matching (predscope CLOSEDB). So bare-nested-scope is still open, in
+this narrowed form; to be told to him and asked.
+
+Owner questions the lane leaves (proposed slugs): zero-condition-binding (a condition bound alone, `c := (0:
+rx.digit)`: the `0` of the definition it is used in, or its own, empty); bare-nested-scope narrowed; 
+capture-loop-value (PCRE's carried value or the label's last-pass value for a capture a loop sets). For a
+pcre2-reader, not him: the members of `(?i)k` in libpcre2 per mode.
+
+### 2026-11-21 OWNER, on class-hole-order: the example program is not legal predicate language
+tags: core/holes/class/lift-order core/patterns/literals
+
+Asked **class-hole-order** with the piece's example `/${[${c}] + 1}/`, c := [`9`, `0`]. HIS WORDS, whole:
+
+"/${[${c}] + 1}/  i think this rx is not written the way you intend or i am missing something. [${c}] is not legal
+predicate language."
+
+Class: a CORRECTION of the manager's example (an OBSERVATION; nothing ruled). He is RIGHT: inside `${...}` the text
+is the expression language, where `${` opens no hole and `[..]` is an array (core/patterns/literals: "from rx text
+to the expression language only by `${...}`; from the expression language to rx only by `/.../`"). The program
+meant is `/${/[${c}]/ + 1}/`: the class written as a literal inside the hole, the lift over that literal. The
+printed answers stand (the model lifted the class with its hole, predfix61 FH; re-run the same turn: (a) `(?:10|1)`
+SEARCHED `x10` `10`@1; (b) `(?:1|10)` SEARCHED `x10` `1`@1). The document's line (written by lane predfix61,
+passed by review r61 and the lint) is corrected in the same commit. The question stands as asked.
+
+### 2026-11-21 OWNER RULING — class-hole-order: a (written order under a lift)
+tags: core/holes/class/lift-order core/holes/class core/arrays/class-order
+
+Asked **class-hole-order** (under a lift, are a class-member hole's values taken (a) in written order, the
+alternation of one class per value, or (b) as one class, lowest to highest; the corrected example `/${/[${c}]/ +
+1}/`, c := [`9`, `0`]: (a) `(?:10|1)`, SEARCHED `x10` `10`@1; (b) `(?:1|10)`, SEARCHED `x10` `1`@1; the manager's
+leaning (a)). HIS WORDS, whole: "class-hole-order: a"
+
+Class: a RULING on the slug, answer (a): under a lift the values of a class-member hole are taken in WRITTEN
+order, the alternation of one class per value (the first half of his 2026-11-19 sentence, "classes should be
+alternations on the class like [x] | [y] like patterns"); "in practice, that means [xy]" stays true for matching.
+No reading of the manager's is added.
+
+### 2026-11-21 OWNER RULING — bare-nested-scope, case 1: a compile error at inner; and a question on a label variable
+tags: core/holes/bare-condition/nested-scope parked/ideas/label-parameter core/conditions/form core/holes/name
+
+Asked **bare-nested-scope** narrowed, in two cases: case 1, a piece names a label it does not hold (`inner :=
+/x${(h: <5)}/` in `/(?<h>\d)${inner}/`); case 2, a piece holds the label but reads it before its own group sets it
+(`A SEQ B`, B := `/${(c: >= 5)}(?<c>\d)/`); answers (a) names closed, public values shared, (b) closed for both,
+(c) composed for both; the manager's leaning (a). HIS WORDS, whole:
+
+"bare-nested-scope: case 1: compile error at inner. would this work: inner(l) := /x${(l: <5}}/
+/(?<h>\d)${inner(h)}/. i guess not unless 1. we note that l is a label variable, or 2. the definition looked at
+its use and figured out it was a label variable from its use"
+
+Read for the intended text: `${(l: <5}}` = `${(l: <5)}`.
+
+Class: (1) a RULING on case 1: "compile error at inner": a separately defined piece that names a label it does
+not hold is a compile error at its definition (answer (c) is out; (a) and (b) agree on case 1). (2) NOT ANSWERED:
+case 2 (the value read); still open. (3) a QUESTION with his own GUESS ("i guess not unless ..."): would a macro
+with a LABEL VARIABLE work, `inner(l) := /x${(l: <5)}/` called `inner(h)`; two ways named: the parameter is noted
+as a label variable, or the definition infers it from its use. DISCUSSION; nothing ruled.
+
+The manager's answer (told to him): his guess is right as the documents stand: left of `:` a name is a label
+(core/conditions/form: "Left of `:` names are labels; on the value side a bare name is a binding and a label is
+read `$x`"), so in the body `l` is a label inner does not hold (the case-1 error itself), and at the call a bare
+`h` is a binding name, not a label. It is the parked label parameter (parked/ideas/label-parameter). What works
+today, RUN (hand-built, `(?<h>[0-4])x`): pass the CONDITION, `inner(c) := /x${c}/`, `/(?<h>\d)${inner((h: <5))}/`:
+WHOLE `3x` HOLDS, `7x` FAILS / SEARCHED `7x 3x` `3x`@3 / FIND-ALL `3x 7x 4x` [`3x`@0, `4x`@6]; or keep the reusable
+part as a SET, `small := <5`, the caller writing `(h: small)`. The manager's leaning on his two ways: (1) over (2):
+a mark on the parameter; inferring from the calls makes a definition's meaning depend on its uses; and a label
+variable is a NAME known at compile time, the kind of value the group-name hole already takes
+(`capture("d", x)`). The manager's recommendation: leave it parked until an example cannot be written by passing
+the condition or the set.
+
+### 2026-11-21 OWNER, on bare-nested-scope case 2: "no, c" — not (a); his reason: the loop case would break
+tags: core/holes/bare-condition/nested-scope core/holes/bare-condition/labels core/conditions/pass-start-read core/labels/one-rule core/labels/flow
+
+Asked **bare-nested-scope, case 2** (a piece holds a public label and reads it before its own group sets it:
+`A := /(?<c>\d)/`, `B := /${(c: >= 5)}(?<c>\d)/`, `A SEQ B`; (a) shared: B's test reads A's `c`, WHOLE `73` HOLDS,
+the documents' line; (b) own value only: never matches; the manager's leaning (a)). HIS WORDS, whole (he wrote the
+slug "base-nested-scope"):
+
+"base-nested-scope: no, c. we actually discussed this and another ruling would break on a. in a loop around the
+insides of the B, the condition would see the second iteration as it is in front of the label definition. the
+first time through it is unset. that would mysteriously break if "a" was the choice"
+
+Class: an ANSWER on the slug whose letter is UNCLEAR, so NOT YET RECORDED AS A RULING. Clear: "no" to (a), with a
+reason. Unclear: "c": the question as last put had (a) and (b) only; (c) of the message before was "composed for
+both", which his case-1 ruling of the same hour ("compile error at inner") excludes. The reading taken, TOLD TO
+HIM AND ASKED BACK: he means (b), own value only (unset the first time; in a loop, B's own previous pass). The
+ruling he recalls ("we actually discussed this") is bare-condition-labels, 2026-11-19: "The first time through the
+loop, the reference is unset then the label is set. The second time through, the reference is set to the previous
+loop value": a RECOLLECTION, checked: SUPPORTED as a ruling.
+
+CHECKED CONTEMPORANEOUSLY, and told to him:
+- His reason does not part (a) from (b). Entering a loop RESETS the labels set inside it (one-rule, 2026-11-17:
+  "Yes. Let's keep it"; the piece: "A name set before a loop and inside it does not survive the loop"), so under
+  (a) too the first pass reads UNSET. RUN (hand-built simulation): `A SEQ B`, B := `/(?:${NOT (c: >= 5)}(?<c>\d))+/`:
+  (a) with the ruled reset and (b) alike: WHOLE `7341` HOLDS, `7391` FAILS / SEARCHED `x7341 7391 29` `7341`@1 /
+  FIND-ALL [`7341`@1, `739`@6, `29`@11]. Only "shared with NO reset" breaks it (WHOLE `7341` FAILS), which no
+  candidate proposed.
+- (a) and (b) part only where no branching is entered between the user's setting and B's read: the plain sequence.
+- A COLLISION of (b) with a ruled rule, one witness pair: ONE definition, `/(?<c>\d)${(c: >= 5)}(?<c>\d)/`: the test
+  reads the first c (bare-condition-labels: "after the group, the value just set"; run 2026-11-19: WHOLE `73`
+  HOLDS, `37` FAILS). COMPOSED from two, `A SEQ B` as above, under (b): never matches. The same rx, two ways of
+  writing it, two answers: against "i adjust my rules to be such that a compose and a literal rx have the same
+  label behavior" (label-flow, 2026-11-17).
+Nothing folded.
+
+### 2026-11-21 OWNER RULING — bare-nested-scope, case 2: b (a separately defined piece reads its own value only)
+tags: core/holes/bare-condition/nested-scope core/holes/bare-condition/labels core/values/reads core/labels/flow
+
+Told that the letter of his last answer was unclear (read as (b)), that the loop case is the same under (a) and
+(b) (entering the loop resets the label; run), and shown the witness pair: one definition `/(?<c>\d)${(c: >=
+5)}(?<c>\d)/` WHOLE `73` HOLDS; composed `A SEQ B`, B := `/${(c: >= 5)}(?<c>\d)/`, under (b) never matches, against
+"a compose and a literal rx have the same label behavior"; asked "Knowing the loop case is safe either way, do you
+still want (b)?". HIS WORDS, whole: "lol. i meant b"
+
+Class: a RULING, with the entry "2026-11-21 OWNER RULING — bare-nested-scope, case 1": the reading taken, and told
+to him: (b) as put, WITH the witness pair in view: "(b) Own value only. A definition is sealed for values as well
+as names, and the compose-equals-literal rule gets an exception: it holds for what the user sees, not for what a
+piece reads inside itself." So, for a separately defined piece: (1) it may not NAME a label it does not hold (a
+compile error at its definition); (2) a read inside it (a bare condition; `$c`, by "`$x` and `x:` never disagree")
+sees only the piece's OWN settings of a label: unset before its own group the first time, its own previous pass in
+a loop. The documents' line `A SEQ B`, B := `/${(c: >= 5)}(?<c>\d)/` (it read A's c: WHOLE `73` HOLDS) becomes
+never matching: WHOLE `73` FAILS, `37` FAILS / SEARCHED `37 73` FAILS / FIND-ALL `73 37 51` [] (predscope CLOSEDB).
+The USER of A and B still reads `c` as labels are read (the last mention): export and flat-read-outside unchanged.
+
+The manager's readings, for the next lane or critic round to test: (a) "separately defined piece" is a binding or
+a macro body; literals, operands and holes written inside ONE definition are one piece (the definition is the
+unit, as for `0`); (b) a bound CONDITION or computed label has no rx of its own and stays laid against the pattern
+it meets (lane predscope's finding); (c) when the USER loops a piece (`B+`), the piece's previous pass is its own
+(his words name "a loop around the insides of the B" only); (d) two uses of one piece (`B SEQ B`) are two pieces:
+the second's read does not see the first's setting; (e) an argument is the caller's text and reads the caller's
+labels.
+
+### 2026-11-21 OWNER, after bare-nested-scope was ruled: "please discuss if you see an issue"; a capture of B compared against a capture of A
+tags: core/holes/bare-condition/nested-scope core/labels/backreferences core/holes/same-name core/labels/flow
+
+After the ruling (names closed; own value only) was folded and told to him, and **bound-condition** asked. HIS
+WORDS, whole:
+
+"bare-nested-scope: please discuss if you see an issue. i see a capture defined in B being used against a capture
+defined in A as a label compare and that seems to me to violate what we just discussed"
+
+Class: a REQUEST for discussion and an OBSERVATION; nothing ruled; bound-condition not answered. The reading
+taken (told to him, with the request to say if he meant another example): he speaks of `A := /(?<c>\d)/`, `B :=
+/${(c: >= 5)}(?<c>\d)/`, `A SEQ B` under the SHARED reading (a): B's test would compare against the group A
+defines; his ruling (b) removes it.
+
+The manager's answer (told to him; the manager's views, nothing folded): agreement, and (b) brings a label read
+inside a piece into line with what is already ruled for rx text: "a backreference inside a part reads the part's
+own group" (backreferences, 2026-11-18) and "A group that arrives through a hole is the inserted pattern's own"
+(same-name, 2026-11-19). Issues seen: (1) moving part of one definition into its own binding can change an answer
+(the one-definition and two-definition lines); the existing warning `pcrec.test.never` fires at B's definition
+(core/holes/bare-condition/labels, "Fixed, fails"), which (a) could not have given; (2) flags flow INTO a piece
+("the environment of the hole sets the default options for the expression inside", 2026-11-19) while label values
+now do not: an asymmetry, defensible (a default the piece may override against a reference), to be stated; (3)
+what ONE piece is when a macro uses its argument twice or a user loops a piece (`list_of(X, sep = S) :=
+/(?:${X}${S})*${X}/`; a predecessor test written in X): the manager's readings (c), (d), (e) of the ruling entry
+decide whether the last item sees the loop's last value; UNTESTED, hand-worked only; for the critic round.
+
+### 2026-11-21 MANAGER — after lane predarr: array-vs-passes and joint-in-some folded; readings tested (no owner words)
+tags: core/labels/labels-vs-captures/array-vs-passes lib/counting/some lib/counting/count lib/counting/occurs core/model/table/group-truth lib/counting/every-pass
+
+Lane predarr (opus; report `docs/dev/lanes/predarr_report.md`; evidence `docs/dev/lanes/predarr_evidence/`, 17
+checks, 17 plants caught; lint after the merge 5,546 / 0) folded array-vs-passes (a) (`some`, `count`, `occurs`,
+`h[k]` read the array of settings; lib/counting and outermost-view's reading revised; the array piece ruled, its
+Passes lines rejected) and joint-in-some (a joint entry inside a group question refused for now; "same item" on
+the item; the idiom on the user-documentation list). No printed `some` / `count` / `length` / `hits` line changed.
+
+The manager's readings, as tested: SUPPORTED: (a) a record of two entries inside a group question is the product
+of its entries, WITH A CONFLICT the lane names (it parts from the joint form there, so "a record is the product
+of its entries = the joint entry" holds outside group questions only); (b) for one entry; (c) (empty array: false
+/ zero; one answer moves: `some(NOT (d: "7"))` on `,` FAILS where the pass reading HELD); (e) the on-item idiom (0
+/ 0 / 0 of 5,461 texts against by-item). NOT SUPPORTED as worded: (d): `NOT some(c)` and `occurs.none(NOT c)` part
+under BOTH readings; what moves is `occurs.none(NOT c)` itself. Also found: the draft's "every pass =
+`some(c) & occurs.none(NOT c)`" holds only on passes (`7,,` HOLDS on the array where the item form FAILS).
+
+Owner questions the lane leaves (proposed slugs): record-in-some; count-several; group-truth re-put (close for one
+entry?); every-pass-spelling re-put (its named form would now mean every SETTING).
+
+### 2026-11-21 OWNER, his "issue definition" for bare-nested-scope: bindings define scope; flags are a symptom of PCRE, probably only `i` inherits; the two languages differ by construction; a sketch `list_of_stuff(X, cmp, S)`
+tags: core/holes/bare-condition/nested-scope core/holes/flags core/holes/flags/in-filter lib/records/list-of core/principles/regex-default parked/ideas/label-parameter
+
+After the manager's three issues with the ruling (extracting a definition changes an answer; flags flow in, label
+values do not; what one piece is for a twice-used argument or a user's loop, with `list_of` and a predecessor test
+written in X). HIS WORDS, whole (two messages; the second about the first's last line):
+
+"bare-nested-scope: issue definition: 1. bindings define scope. if they must refer to each other then construct in
+predicate with labels or create them in the same literal. 2. flags are a symtom of the source being pcre. also, i
+am probably going to rule that only i is inherited this way as it doesn't make sense for any other flag.
+therefore, the only flag we are talking about is case insensitivity. we have to give up mathematical purity for
+the reality on which we were founded. thats practically a quote from godel. 3. i am seeing that the language of
+predicate and the language of regex are different by construction. C has rules like local scope and code blocks
+that are not needed in assembly but are better for correctness. in your example, X should not have a compare with
+predecessor test defined in a single binding because it has no meaning. list_of might not support that. i have no
+idea what this means: list_of_stuff(X, cmp, S) := /(?:${_p = [peek(X)] & cmp}{X}${S})*${X})/"
+
+"oops syntax but i think you can see what i mean"
+
+Class, part by part (DISCUSSION; nothing asked as a ruling):
+1. A STATEMENT of the ruled rule in his words: "bindings define scope. if they must refer to each other then
+   construct in predicate with labels or create them in the same literal." (It confirms the manager's reading (a)
+   of case 2: the unit is the binding; what is written in one literal or one definition is one piece.)
+2. On flags: an OBSERVATION ("flags are a symptom of the source being pcre"), a FORECAST of a ruling, not a ruling
+   ("i am probably going to rule that only i is inherited this way"): a LEAN; today's ruled list is `i`, `m`, `s`
+   (flags-scope / flags-propagate, 2026-11-19, core/holes/flags). And a PRINCIPLE stated: "we have to give up
+   mathematical purity for the reality on which we were founded."
+3. An OBSERVATION ("the language of predicate and the language of regex are different by construction", with the
+   C / assembly comparison: scope rules are there for correctness), and a POSITION on the manager's third issue:
+   "X should not have a compare with predecessor test defined in a single binding because it has no meaning.
+   list_of might not support that." And a SKETCH he does not vouch for ("i have no idea what this means"; "oops
+   syntax"): a list macro taking the comparison as an argument, with a private peek label.
+
+WITHDRAWN by the manager on his position in 3: reading (c) of the case-2 ruling entry ("when the USER loops a
+piece, the piece's previous pass is its own"): a binding that reads its label before its own group is fixed
+(unset) on its own; a predecessor test belongs to the definition that writes the loop. Reading (d) (two uses are
+two pieces) stands with it. Not asked as a ruling; to be confirmed.
+
+The manager's answer on the sketch (told to him; proposals, the manager's; RUN as a hand-built simulation in
+PCRE's order): the macro that owns the loop also owns the test and its two labels, all private; the caller passes
+a macro from the previous item to the SET the next item must be in:
+`list_of_stuff(X, rel, S) := /(?:${step}${S})*${step}/` with step written out as `[_p = peek(X)] SEQ (NOT (_c:
+anything) | (_p: rel($_c))) SEQ [_c = X]`; `at_least(v) := >= v`; `list_of_stuff(digit, at_least, ",")`: WHOLE
+`1,3,3` HOLDS, `1,3,2` FAILS, `7` HOLDS, `3,1` FAILS / SEARCHED `x1,3,2 5` `1,3`@1 / FIND-ALL `1,3,2 5,5,9 4,1`
+[`1,3`@0, `2`@4, `5,5,9`@6, `4`@12, `1`@14]. What it needs that is not defined today: a NAMED MACRO passed as an
+argument outside `each` (lib/structural/each takes one; core/operators/bindings: "No lambda until an example needs
+one"). His form, the comparison passed as a CONDITION `cmp`, needs the caller to name the macro's labels, so they
+must be public part labels (as `hit` is in `occurrences`), and needs a passed condition to read where it is used
+(the open bound-condition).
+
+### 2026-11-21 OWNER, on bound-condition: two examples of what `0` is bound to
+tags: core/conditions/match-so-far core/holes/bare-condition core/holes/bare-condition/nested-scope
+
+Asked **bound-condition** (does a condition bound or passed on its own, no pattern in it, read its labels and its
+`0` where it is used, (a), or is it sealed like a piece, (b); the lane's example `c := (0: rx.digit)` in
+`/\d${c}x/`; the manager's leaning (a)). HIS WORDS, whole:
+
+"bound-condition: A := /\d${(0: 5)}/ binds the literal to 5. A := /\d/ C := /.${A & (0: 5)}/ the 0: is bound to A
+only"
+
+Class: two EXAMPLES with his reading of each; DISCUSSION. Both agree with what is ruled: (1) a bare condition in
+a hole reads the match so far of the rx it is written in (bare-condition, 2026-11-19; zero-in-definition today):
+`/\d${(0: 5)}/` is the digit `5`; (2) in `${A & (0: S)}` the `0` is only A (2026-11-19, "but not /${A & (0:
+digit)}/ where it is only the A"). RUN (the lowered regexes `5` and `.5`, hand-built): (1) WHOLE `5` HOLDS, `7`
+FAILS / SEARCHED `x75` `5`@2 / FIND-ALL `5 7 55` [`5`@0, `5`@4, `5`@5]; (2) WHOLE `x5` HOLDS, `x7` FAILS, `55` HOLDS
+/ SEARCHED `a7 b5` `b5`@3 / FIND-ALL `x5 y7 55` [`x5`@0, `55`@6].
+
+NOT ANSWERED by them (told to him): in neither example is the condition bound to a NAME of its own; the question
+is `c := (0: 5)` then `/\d${c}/`. The slug stays open; re-asked on his own example.
+
+### 2026-11-21 OWNER, on his second example: "make an argument because i am not so sure"; and a CORRECTION of the entry above (no ruling)
+tags: core/conditions/match-so-far core/holes/bare-condition core/filters/and core/holes/and-in-hole core/principles/operand-world
+
+CORRECTION by the manager of the entry above (the run was misread when the entry was written): example (2), the
+lowered `.5`, FIND-ALL `x5 y7 55` is [`x5`@0, ` 5`@5] (the `.` takes the space), NOT [`x5`@0, `55`@6]. Its WHOLE
+and SEARCHED lines stand.
+
+HIS WORDS, whole (he interrupted the turn): "you know what, make an argument because i am not so sure of the
+second example"
+
+Class: a REQUEST; he puts his own second example (`A := /\d/`, `C := /.${A & (0: 5)}/`, "the 0: is bound to A
+only") in doubt. Nothing ruled.
+
+The manager's argument (told to him), FOR "A only":
+1. His ruled words on this exact form (2026-11-19, zero-in-sequence discussion): "but not /${A & (0: digit)}/ where
+   it is only the A"; and operand-world (2026-11-17): "For A & B: from the perspective of B, the subject is now
+   whatever A matched. There is no outside subject ... That's its whole world."
+2. A law the documents state as ruled (core/filters/and): "`A & B` holds exactly when `A & (0: B)` holds, on the
+   same stretch", with and-in-hole (2026-11-15): "An `&` written inside a hole is judged on the stretch the hole
+   consumes". So `/.${A & /5/}/` is `.` then a digit that is `5`; if `0` in `/.${A & (0: 5)}/` were C's match so
+   far, the law would hold outside a hole and fail inside one.
+3. Nothing is lost: the other meaning has its own spelling, the BARE condition after the hole, `/.${A}${(0:
+   S)}/`, whose `0` is C's match so far (bare-condition, ruled).
+AGAINST: today's "`0` is the match so far of the definition it is written in", read alone, says C's; it needs the
+clause it was ruled with ("`${A & (0: S)}` unchanged: that `0` is only A").
+Hand-worked on the lowered forms: A only: `.5`, WHOLE `x5` HOLDS. C's match so far: two characters against the
+one-character set `5`: never matches.
+
+### 2026-11-21 OWNER, confirming his two examples of `0`: "that settles it. my two examples are correct"
+tags: core/conditions/match-so-far core/holes/bare-condition core/filters/and
+
+After the manager's argument for "A only" (the entry above), asked "Does that settle the second example for
+you?". HIS WORDS, whole: "that settles it. my two examples are correct. but lets close the session now"
+
+Class: a CONFIRMATION of both examples as ruled (nothing new ruled): (1) `A := /\d${(0: 5)}/`: the bare
+condition's `0` is the match so far of the rx it sits in ("binds the literal to 5"); (2) `A := /\d/`, `C :=
+/.${A & (0: 5)}/`: "the 0: is bound to A only". The manager's summary sentence, told to him, NOT his words: a bare
+condition belongs to the rx it sits in; a condition joined by `&` belongs to the pattern it is joined to. And a
+DIRECTION: close the session. STILL OPEN, not reached by either example: bound-condition (a condition under its
+own name, `c := (0: 5)`, then `/\d${c}/`; and a named condition's labels).
+
+### 2026-11-22 MANAGER — review r77 (predfold1121): dispositions ruled (no owner words)
+tags: core/labels/labels-vs-captures core/holes/bare-condition/nested-scope core/holes/bare-condition core/conditions/match-so-far core/labels/labels-vs-captures/array-vs-passes core/conditions/form core/values/tuples lib/modifiers/any-case lib/modifiers/length lib/search/hits lib/search/occurrences core/principles/composed-at-point core/labels/flow
+
+Review r77 (design mode; five opus lenses and an opus verifier; draft `$PCREC_TMPDIR/scratch/crit-predfold1121/
+review.md`; 57 raw findings, 13 verified HOLD, 4 PARTLY, none refuted; verdict NOT READY). The manager's
+dispositions, by the draft's ids; every one is the manager's, none an owner ruling:
+
+- A1 + A2 (array-scope against the sealed piece; whose array an `&` operand's group question reads): OWNER
+  QUESTION **array-in-piece**, asked first, with the witness pair. Until he answers the documents MARK THE
+  COLLISION at both pieces (core/labels/labels-vs-captures, core/holes/bare-condition/nested-scope) and state
+  neither answer. No rewording of either ruling by the manager.
+- A3 (bound conditions and computed labels rest on the manager's exemption): FIX-NOW, text: the exemption marked
+  "(a reading; open bound-condition)" in the nested-scope piece, an `open bound-condition` sub-piece carrying the
+  question as asked twice, the seven printed readers pointing at it; a condition-bodied MACRO goes into the same
+  question.
+- A4 (a condition passed into a macro's hole): FIX-NOW, text: "the definition the CONDITION is written in (an
+  argument is its caller's: a reading)" in both restated sentences.
+- A5 (`0` in an `&` written as a sequence operand): FIX-NOW, text, as a marked reading on the ground of
+  operand-world and the ruled `A & B` = `A & (0: B)`: the `0` of a condition joined by `&` is its left operand's
+  match, in a hole (his confirmed example) and as a sequence operand (the reading); one run line.
+- A6 (`0` in an `occurrences` argument; NOT verified by the round): the fix lane verifies it by a run; then PLAN:
+  a stated reading beside zero-in-loop, asked with it.
+- A7 (any_case's third parting): FIX-NOW, text, in the open any-case-body piece, with the warning's behaviour.
+- A8 (the capture of a duplicated name is PCRE's FIRST set group, not the last set): FIX-NOW, text, with the
+  verifier's libpcre2 line re-run by the lane; caller-ambiguous names the duplicate-name case.
+- A9 (record-is-product against the joint refusal): FIX-NOW, text: both ruled statements qualified "outside a
+  group question (open record-in-some)"; record-in-some gets an `open` piece.
+- A10 (do a hole's flags reach a condition's set): PLAN, an owner question riding his forecast "only i is
+  inherited"; trigger: that ruling.
+- A11 (array order with a lookaround; `h[k]` past the end; the "allowed later" promise): DOC, three one-clause
+  readings; the promise narrowed to joint entries.
+- A12 (a user's loop against two uses): FIX-NOW, text: the manager's withdrawal of reading (c) folded, the `{2}`
+  and written-out pair printed agreeing, reading (d) marked "to be confirmed" in the base piece.
+- D1, D3, D5, D6, D7, D10, D12: FIX-NOW, text, as proposed. D2: FIX-NOW for the scope note, the statements and
+  the re-dates; the "sealed definitions" principle is PLAN (a principle needs his words; "bindings define scope"
+  is recorded as his statement, not asked as a principle). D4: FIX-NOW: `chars` re-spelled with a part label (no
+  capture); for `hits` and `occurrences` the capture `hit` stays as written, stated as a reading with the tension
+  named, and an owner question **helper-captures** is queued. D8: the spelling fixes FIX-NOW ("sesne" as he wrote
+  it; "behavior" in his quoted phrase); RULING-9 NOTED: the record entry "bare-nested-scope, case 2: b" states
+  what was put to him before "lol. i meant b"; no session transcript is kept to check it further. D9: FIX-NOW: a
+  fresh evidence script for the manager's hand folds; the stale citations re-pointed; the red re-runs recorded;
+  lane files stay historical. D11: the four DISAGREE items FIX-NOW (one owner per fact, the others cite); the rest
+  PLAN (a de-duplication pass, at the next full revision). D13: PLAN (trigger: `within` being built).
+- GENERAL-4 (rx-text references keep the literal as their unit, language reads the definition): NOTED; stated
+  once as a deliberate difference, a reading.
+- The round's three process lessons are accepted and sent to main as proposed skill edits.
+WITHDRAWN or narrowed readings of the manager's, by this round: case-2 reading (c) (already withdrawn on his
+words); "a binding is its expression where it is used" narrowed to flags; the class gloss "(a binding or a macro
+body)" inside the ruled match-so-far statement becomes a marked reading.
+
+### 2026-11-22 OWNER RULING — array-in-piece: b (a group question inside a bound piece reads only what that piece can see)
+tags: core/labels/labels-vs-captures core/labels/labels-vs-captures/array-vs-passes core/holes/bare-condition/nested-scope lib/counting/some lib/counting/count lib/counting/occurs
+
+Asked **array-in-piece** (review r77, finding A1: inside a separately defined piece, does a group question
+(`some`, `count`, `occurs`, `h[k]`) read (a) the entire rx's settings of the name (array-scope, 2026-11-19: "the
+only way to do it is by the scope of the entire rx") or (b) the piece's own settings only (bare-nested-scope case
+2, 2026-11-21; "bindings define scope"); the witness `A SEQ B`, A := `/(?<h>\d)/`, B := `/(?:;(?<h>\d))*${some((h:
+"7"))}/`, run as a hand-built simulation in PCRE's order (`$PCREC_TMPDIR/scratch/pred/array_in_piece.py`), the
+output pasted:
+entire: WHOLE `7` HOLDS / WHOLE `7;1` HOLDS / WHOLE `1;7` HOLDS / WHOLE `1;2` FAILS / SEARCHED `x7;1 1;7` `7;1`@1 / FIND-ALL `7;1 1;7 3;4 7 2;7;5` [`7;1`@0, `1;7`@4, `7`@12, `2;7;5`@14]
+own: WHOLE `7` FAILS / WHOLE `7;1` FAILS / WHOLE `1;7` HOLDS / WHOLE `1;2` FAILS / SEARCHED `x7;1 1;7` `1;7`@5 / FIND-ALL `7;1 1;7 3;4 7 2;7;5` [`1;7`@4, `2;7;5`@14]
+the manager's leaning (b), with: array-scope then stays the rule for whoever writes the question at a level that
+sees both parts). HIS WORDS, whole:
+
+"array-in-piece: if it was written A & /B-defintion/ then the some(h) would see the h from A. but because B is
+bound first, its internal references refer only to what can be seen at that point."
+
+Class: a RULING on the slug, answer (b), in his own statement: a piece that is BOUND has its internal references
+(a group question's array included) "refer only to what can be seen at that point", the point of its binding;
+written in place in the definition that holds A, the same text "would see the h from A". The two rulings no
+longer collide: array-scope ("the scope of the entire rx") is read over the definition the question is written
+in, with everything visible there.
+
+The manager's readings (marked; for lane predfix77, as R-1 of its rulings file, to test and state):
+(a) his `A & /B-defintion/` is read as "B's text written in place beside A, in one definition": the witness is a
+    sequence, and across a real `&` a name both sides surface is the ambiguous reference (core/labels/flow); the
+    `&` is taken as a placeholder for the composition, not as a ruling on `&`;
+(b) "what can be seen at that point" includes the public labels of the parts the piece itself uses (a B whose
+    body uses A sees A's settings of `h`), by core/labels/export statement 2;
+(c) it covers `some`, `count`, `occurs` and the index `h[k]` alike;
+(d) a group question written in an `&` operand inside ONE definition (review A2) reads the settings visible in
+    that definition at that point: not separately ruled;
+(e) the path form (`x.@a`) and the user's own read of both parts are unchanged.
+His sentence, read literally, also bears on the open bound-condition (a condition bound alone can see nothing
+"at that point"): NOT taken as an answer to it; put to him as the next question.
+
+### 2026-11-22 OWNER, adding to array-in-piece: "or A SEQ /B definition/"
+tags: core/labels/labels-vs-captures core/holes/bare-condition/nested-scope core/labels/flow
+
+After the ruling entry above was recorded and **bound-condition** asked a third time. HIS WORDS, whole:
+
+"or A SEQ /B definition/"
+
+Class: an ADDITION to his array-in-piece statement ("if it was written A & /B-defintion/ then the some(h) would
+see the h from A"); nothing new asked. The reading taken, and told to him: "or", so BOTH compositions: B's text
+written in place beside A, joined by the sequence operator or by `&`, sees A's `h`; bound first, it does not.
+It REPLACES the manager's reading (a) of the entry above ("the `&` is taken as a placeholder for the
+composition"): he names the sequence form himself and keeps the `&` form beside it. The manager's reading, marked:
+for the `&` form the group question's array holds the settings of both sides; whether a PLAIN read of `h` there
+is still the ambiguous reference (core/labels/flow: "Across `&` a name both sides surface is an ambiguous
+reference") is not touched by his words and stays as ruled. bound-condition: not answered by this message.
+
+### 2026-11-22 OWNER, on bound-condition: "the form A := (x: blah) has to be illegal"; his read, a response asked for; two alternatives
+tags: core/holes/bare-condition/nested-scope core/conditions/form core/values/computed-labels core/operators/bindings parked/ideas/label-parameter parked/ideas/restricted-parameter
+
+Asked **bound-condition** a third time (a condition bound under its own name, no pattern in it: (a) laid against
+the pattern it meets where it is used; (b) sealed at its binding, a compile error; the example `late := (h: >5)`,
+`/(?<h>\d)/ & late`: (a) hand-lowered `[6-9]`, run: WHOLE `7` HOLDS, `3` FAILS / SEARCHED `x3 7` `7`@3 / FIND-ALL
+`7 3 9 66` [`7`@0, `9`@4, `6`@6, `6`@7]; (b) a compile error at `late`; the manager's leaning (a), narrowly,
+"weaker than yesterday"; the cost of (b) named: the computed labels). HIS WORDS, whole:
+
+"bound-condition: the form A := (x: blah) has to be illegal. x has no references in the binding. further A := /x/
+& (y: blah) is also illegal as y has no target. this is the only read consistent with the earlier binding
+decisions. this is my read. please respond. alternatives: 1. macro variables A(x:) := (x: < 2100) 2. macro types
+B(d & isodate) := B(year: < 2100) (spellings tbd)"
+
+Class: an ANSWER on the slug, (b), given as "my read" with a response asked for ("please respond"): recorded as
+his POSITION, to be entered as the RULING when he confirms after the response (the reading taken, told to him).
+Its two statements: (1) `A := (x: blah)` is illegal: "x has no references in the binding"; (2) `A := /x/ & (y:
+blah)` is illegal: "y has no target" (this second form is bare-nested-scope case 1, already ruled). His ground:
+"the only read consistent with the earlier binding decisions". And two ALTERNATIVES he names, spellings his
+placeholders ("spellings tbd"): (1) "macro variables", `A(x:) := (x: < 2100)`: a parameter marked as a label (the
+first of the two ways he named on 2026-11-21: "we note that l is a label variable"; parked/ideas/label-parameter);
+(2) "macro types", `B(d & isodate) := B(year: < 2100)`: a parameter restricted to a pattern whose labels the body
+may then name (parked/ideas/restricted-parameter has his earlier `example(g & /\d+/)`); the body as he typed it
+repeats `B`, read for the intended `d & (year: < 2100)` (a reading).
+
+WITHDRAWN by the manager on this position: the leaning (a) and the reading "a bound condition or computed label
+has no rx of its own and is laid against the pattern it meets" (case-2 entry, reading (b); zero-in-definition
+entry, reading (b)).
+
+### 2026-11-22 OWNER, correcting his second alternative: `B(d & isodate) := (year: < 2100)`
+tags: parked/ideas/restricted-parameter parked/ideas/label-parameter core/conditions/form core/labels/flow
+
+After the manager's response on bound-condition (agreement; the computed labels as the cost; alternative 1
+favoured, alternative 2 read as `d & (year: < 2100)` and called heavier). HIS WORDS, whole:
+
+"bound-condition: correction to rx: B(d & isodate) := (year: < 2100)"
+
+Class: a CORRECTION of his own example (alternative 2, "macro types"; the spelling still his placeholder); no
+confirmation of the ruling in it. It WITHDRAWS the manager's reading of the body as `d & (year: < 2100)`: the
+body is the condition alone, and the head `d & isodate` is what gives `year` its target. The manager's reading,
+marked, told to him: B is a named condition whose TARGET is declared in its head (2026-11-14: a condition is "a
+MACRO awaiting its target"); `B(x)` lays `(year: < 2100)` against x, which the head restricts to an isodate. Two
+meanings of the restriction are possible and not chosen by his words: (i) literally the intersection, `B(x)` =
+`x & isodate & (year: < 2100)`, which is writable today as `B(d) := d & isodate & (year: < 2100)` and makes `year`
+ambiguous when x itself surfaces `year` (core/labels/flow); (ii) a promise checked at the call that x holds
+isodate's labels, `year` then being x's own.
+
+### 2026-11-22 OWNER RULING — bound-condition: "mostly confirmed"; `c := (0: 5)` left open
+tags: core/holes/bare-condition/nested-scope core/conditions/form core/values/computed-labels core/operators/bindings core/holes/bare-condition core/conditions/match-so-far parked/ideas/label-parameter parked/ideas/restricted-parameter lib/modifiers/length lib/modifiers/month-numbered lib/counting/count core/conditions/pass-start-read
+
+Asked to confirm the list put to him after his read and his correction: "`A := (x: blah)` is illegal: no reference
+for `x` in the binding. `A := /x/ & (y: blah)` is illegal: no target for `y`. `c := (0: 5)` likewise (my reading).
+Computed labels bound alone (`sum := $a + $b`, `n := count(...)`) are the same form and go with them (my reading).
+Both alternatives are marked under construction: directions acknowledged, spellings open." HIS WORDS, whole (he
+typed the slug "cound-condition"):
+
+"cound-condition: mostly confirmed. i leave the c := (0: 5) open"
+
+Class: a RULING on bound-condition, answer (b), by confirmation of the list, with ONE item taken out by him. The
+reading of "mostly confirmed" taken, and told to him: every item of the list except the `0` case. So, RULED, in
+his words of the entry "2026-11-22 OWNER, on bound-condition": "the form A := (x: blah) has to be illegal. x has
+no references in the binding. further A := /x/ & (y: blah) is also illegal as y has no target."; and, confirmed
+from the manager's list: a computed label bound alone (a binding that reads `$a`, or counts over a label, with no
+pattern in it that holds the label) is the same form and is illegal; his two alternatives (macro variables,
+`A(x:) := (x: < 2100)`; macro types, `B(d & isodate) := (year: < 2100)`) are under construction, spellings open.
+LEFT OPEN by him: `c := (0: 5)`, a condition on `0` bound alone (slug zero-condition-binding; neither answer
+applied).
+
+The manager's readings, for the follow-up lane to test: (a) a condition written in place, an argument included,
+is unchanged (the caller's text); (b) a set bound alone (`late := >5`, used `(h: late)`) is unchanged; (c) the
+five printed definitions this refuses and their in-place forms: pass-start-read's `c` (written in its hole);
+`sum` (`(a: <(10 - $b))`, 0 of 100 digit pairs differ from `(sum: <10)`, run); `mnum` (`(mname.index: S)`);
+`n := count((d: "7"))` against a constant (`occurs.exactly(2, (d: "7"))`); `nchars` in `length(S)`: NO spelling
+today (a count against a set): asked as **count-in-set**; (d) core/values/computed-labels (a reading) is
+withdrawn as a binding form; whether a computed value survives in place is count-in-set's question.
+
+### 2026-11-22 OWNER, on bound-condition: "illegal meaning a compiler error"
+tags: core/holes/bare-condition/nested-scope core/conditions/form core/values/computed-labels core/diagnostics/errors
+
+After the ruling entry above was read back to him and **count-in-set** asked. HIS WORDS, whole:
+
+"illegal meaning a compiler error"
+
+Class: a CLARIFICATION of his own word in the bound-condition ruling (part of that ruling): the forms he called
+illegal (`A := (x: blah)`; `A := /x/ & (y: blah)`; a computed label bound alone, by his confirmation) are COMPILE
+ERRORS, at the binding (the place is the manager's reading, from "x has no references in the binding" and his
+case-1 words "compile error at inner"). Not the under-construction error. count-in-set: not answered by this.
+
+### 2026-11-22 OWNER, on count-in-set: "where do you define label ch?"
+tags: lib/modifiers/length lib/counting/count core/labels/export
+
+Asked **count-in-set** (a count tested against a set now that `n := count(..)` bound alone is a compile error:
+(a) a member of `occurs` taking the set; (b) a value left of `:` in place; the manager's leaning (b), with the
+example `length(S) := chars & (count((ch: /(?s:.)/)): S)`). HIS WORDS, whole:
+
+"count-in-set: i don't understand your length(S) example: where do you define label ch?"
+
+Class: a QUESTION on the manager's example; nothing answered on the slug. The manager's answer (told to him): the
+example left out the helper's definition. `ch` is the group in the library's helper `chars := /(?:(?<ch>(?s:.)))*/`
+(lib/modifiers/length), which `length`'s body USES; inside a binding "the public labels of everything written or
+used there are visible" (core/labels/export, statement 2), so `ch` has its target in the binding. The same body in
+one definition: `length(S) := /(?:(?<ch>(?s:.)))*/ & (count((ch: /(?s:.)/)): S)`.
+
+### 2026-11-22 OWNER RULING — count-in-set: b (a value may stand left of `:` in a condition); and three ideas (`$h` there; declaring a binding's labels; a binding's name as a label prefix)
+tags: core/conditions/form core/values/computed-labels lib/counting/count lib/modifiers/length core/labels/paths core/labels/flow core/labels/export parked/ideas/restricted-parameter
+
+Asked **count-in-set** ((a) a member of `occurs` taking the set, `occurs.in(S, c)`; (b) a value left of `:`,
+written in place, `P & (count((d: "7")): ==2)`, `(($a + $b): <10)`; the manager's leaning (b); the answers the
+documents' printed `count` line under both), and answered on where `ch` is defined (the helper `chars`). HIS
+WORDS, whole:
+
+"count-in-set: ok, thats fine. i think your value in the left part of condition as a fantastic addition so b. it
+suggests $h could go there which is also new. aside: perhaps we will need a syntax to declare the ch in chars. i
+am wonderings not for correctness but clarity. also, it suggests that bindings could be used under certain rules
+as label prefixes like chars.ch as that is clear here. chars seq ":" seq chars & (chars.ch: blah) would need
+defining. respond"
+
+Class, part by part:
+1. "ok, thats fine": he ACCEPTS the answer on `ch` (the helper `chars`, used in `length`'s body).
+2. A RULING on the slug: "so b": a value may stand in the left part of a condition entry, written in place. It
+   REVISES the documents' sentence "An entry is `p: S`, p a label path, never an expression" (core/conditions/form;
+   the manager found no owner words behind "never an expression").
+3. An OBSERVATION: "it suggests $h could go there which is also new."
+4. An IDEA ("aside", "perhaps", "i am wonderings not for correctness but clarity"): a syntax to DECLARE the labels
+   of a binding (the `ch` in `chars`).
+5. An IDEA ("it suggests", "under certain rules"): a binding's name used as a label prefix (`chars.ch`), with the
+   case he says "would need defining": `chars seq ":" seq chars & (chars.ch: blah)` (the binding used twice). It
+   goes against his own label-flow words of 2026-11-17, point 4: "A . B & (A.h: blah) error. A is a binding not a
+   label and could be ambigous if its used multiple times in an expression" (recorded; told to him).
+6. A REQUEST: "respond".
+
+The manager's readings of the ruling, for the fold lane to test: (a) a bare name or label path left of `:` stays a
+LABEL (as today); any other expression there is a VALUE (the parse rule is the manager's call); (b) the value must
+be SINGLE (at most one string, at match time); a value of several strings there is a compile error for now; (c)
+a value that yields nothing fails the entry, as an unset label does, and `NOT` holds on it; (d) `($h: S)` and
+`(h: S)` answer alike in every mode ("`$x` and `x:` never disagree"), so the label form is the value form's
+common case; a default (`h = v`) and a joint entry stay label forms; (e) `length(S)` is `chars & (count((ch:
+/(?s:.)/)): S)`; `sum`'s test is `(($a + $b): <10)`; `mnum`'s is `(mname.index: S)`, already a path.
+
+### 2026-11-22 OWNER, on binding-prefix: "i like your read on this except that perhaps it does refer to all"
+tags: core/labels/paths core/labels/flow core/labels/labels-vs-captures lib/counting/count parked/ideas/field-count
+
+Put to him, on his idea of a binding's name as a label prefix: the definition "a binding used as a part carries a
+part label of its own name, as if written `[=chars]`"; for a binding used twice the candidates (a) legal when used
+once, an error otherwise (the manager's leaning), (b) always, the last mention when used twice, (c) an error as
+today; and his own label-flow words of 2026-11-17 against it. HIS WORDS, whole (he wrote the slug "binding in
+prefix"):
+
+"binding in prefix: i like your read on this except that perhaps it does refer to all. chars SEQ ":" SEQ chars &
+(count(chars.ch): ==5) says all chars must total 5"
+
+Class: a LEAN ("i like your read"; "perhaps"), with an EXAMPLE of the meaning he has in mind; not a ruling. The
+reading taken, told to him: he accepts the definition (the binding's name as an implicit part label) and, for a
+binding used more than once, proposes that the prefix reaches the settings of EVERY use, at least under a group
+question (his example is a count). His `count(chars.ch)` is a placeholder spelling: `count` takes a condition
+today (`count((chars.ch: anything))`); a count over a bare label path is parked/ideas/field-count.
+
+RUN the same turn (hand-built simulation in PCRE's order, `$PCREC_TMPDIR/scratch/pred/binding_prefix.py`; chars :=
+`/(?:(?<ch>(?s:.)))*/`; the output pasted; `(?s:.)` takes a `:` too):
+all: WHOLE `ab:cde` HOLDS / WHOLE `:abcde` HOLDS / WHOLE `ab:cd` FAILS / WHOLE `abcdef` FAILS / SEARCHED `ab:cde` `ab:cde`@0 / FIND-ALL `ab:cde 1:23456 xyz` [`ab:cde`@0, ` 1:234`@6]
+last: WHOLE `ab:cde` FAILS / WHOLE `:abcde` HOLDS / WHOLE `ab:cd` FAILS / WHOLE `abcdef` FAILS / SEARCHED `ab:cde` FAILS / FIND-ALL `ab:cde 1:23456 xyz` [`ab:cde 1:23456`@0]
+
+The manager's view (told to him; nothing folded): his "all" is what array-vs-passes already gives a group
+question (the array is every setting, in order), so for `some`, `count`, `occurs`, `h[k]` through a prefix "all
+uses" needs no new rule; the twice-used case is a difficulty only for a PLAIN read of one value (`(chars.ch:
+blah)`), which is where his 2026-11-17 words apply. Asked back as binding-prefix in two parts.
+
+### 2026-11-22 OWNER RULING — binding-prefix: 1 yes (a group question through a binding's prefix reads every use); 2 a (a plain read through it, the binding used more than once, is a compile error)
+tags: core/labels/paths core/labels/flow core/labels/labels-vs-captures core/labels/labels-vs-captures/array-vs-passes core/labels/export
+
+Asked **binding-prefix** in two parts, after his lean and the run of his example (the entry above): "1. A group
+question through a binding's prefix reads the settings of every use."; "2. A plain read through the prefix, when
+the binding is used more than once: (a) a compile error that says to label the part (`[left = chars]`) ...; (b)
+the last use, as an explicit part label mentioned twice already behaves. My leaning is (a)." HIS WORDS, whole (he
+typed a `"` after the slug):
+
+"binding-prefix" 1. yes. 2. i agree with your lean (a)"
+
+Class: a RULING on both parts. (1) A binding's name may be used as a label prefix (`chars.ch`); under a group
+question (`some`, `count`, `occurs`, the index) it reads the settings of the label made inside EVERY use of the
+binding, in order: his "all chars must total 5". (2) A plain read of one value through the prefix (`(chars.ch:
+blah)`, `$chars.ch`) when the binding is used more than once is a COMPILE ERROR whose message says to label the
+part. It REVISES his label-flow point 4 of 2026-11-17 ("A . B & (A.h: blah) error. A is a binding not a label and
+could be ambigous if its used multiple times in an expression"): the error stays for exactly the case he named
+there, a plain read with several uses; with one use the prefix is legal.
+
+The manager's readings, for lane predbound (R-1 of its rulings file) to test and mark: (a) the definition he
+liked ("i like your read"): a binding used as a part carries a part label of its own name, as if written
+`[=chars]`; with ONE use `A.h` reads as `[aa = A]`, `aa.h` does (`A & B & (A.h: <2)` answers as the documents'
+printed `[aa = /(?<h>\d)\d/] & /\d(?<h>\d)/ & (aa.h: <2)` line); (b) "used more than once" is counted in the
+definition the reference is written in; (c) an EXPLICIT part label mentioned twice is unchanged (a plain read
+names its last mention; ruled 2026-11-21); (d) the prefix gives no access to anything private (export statement
+4), and under a `_` part label or `[_ = A]` nothing is reached; (e) a MACRO's name is not a prefix for now (`B(A)`
+is not reached as `B.x`): not ruled, conservative; (f) a label and a binding of one name: the existing hide-label
+warning; which one a prefix `x.h` names is not stated; (g) the error can be relaxed to the last use later without
+changing an answer.
+
+### 2026-11-22 OWNER, two points after binding-prefix: should a label be REQUIRED to be known textually at its reference ("i'm inclined to say yes"); and why would the joint form not allow values
+tags: core/labels/paths core/labels/export core/labels/export/flat-read-outside core/labels/flow core/conditions/form core/values/tuples lib/modifiers/length parked/ideas/label-hygiene
+
+After the binding-prefix ruling was read back and **helper-captures** asked (not answered by this message). HIS
+WORDS, whole:
+
+"label references: the remaining question is to whether it should be _required_ that the label is known textually
+at reference. ie should ch require chars.ch in the above example. i'm inclined to say yes. thoughts? also, value
+in conditions: why would (x,y): () form not allow values?"
+
+Class: (1) a QUESTION he raises with his LEAN ("i'm inclined to say yes"; "thoughts?"): should a reference to a
+label that is not written in the text of the definition making the reference be REQUIRED to carry its source
+(`chars.ch`, not `ch`, in `length(S) := chars & (count((ch: /(?s:.)/)): S)`). DISCUSSION; nothing ruled. It would
+REVISE the spelling side of flat-read-outside (ruled 2026-11-21: "a flat read outside a binding follows the
+inside rules") and of hole-export, and his example 1 of 2026-11-21 ("C can see d as a flat look into A"). Slug
+for it: label-reference. (2) a QUESTION on the manager's reading (d) of count-in-set ("a default and a joint
+entry stay label forms"): "why would (x,y): () form not allow values?".
+
+The manager's answers (told to him): on (2): no reason; the reading is WITHDRAWN for the joint form: each
+component of a joint entry's left part may be a value, each SINGLE (a reading, to be tested by the lane); a
+default (`h = v`) stays a label form (it stands in for an absent label); inside a group question a joint entry
+stays refused (joint-in-some). On (1): the manager's view is in the reply (for his yes, with what it obliges).
+
+### 2026-11-22 OWNER RULING — label-reference: required (a label not written in the referencing definition's text is referenced with its source); and an idea he parks
+tags: core/labels/paths core/labels/export core/labels/export/flat-read-outside core/labels/flow core/holes/labels core/holes/bare-condition/nested-scope lib/modifiers/length parked/ideas/label-hygiene
+
+Asked **label-reference** ("label-reference: required", or with changes; "Say in particular whether the plain
+`isodate & (year: ...)` idiom is included"), after the manager's view for his yes: the requirement only refuses
+programs, so it can be relaxed later without changing an answer; what it obliges (the everyday idiom longer; a
+prefix for macro calls; arguments; typed parameters; a sweep of the printed examples); and the statement offered:
+"a bare name is a label written in this definition's own text (a group in one of its literals, or a part label
+`[x = ..]` it writes). Any other label is reached through the name that brings it into this definition: a
+binding, a part label, or a typed parameter." HIS WORDS, whole:
+
+"label-reference: required. we can relax it later as you say although i'm not inclined to. (i wrote then deleted
+an idea that if you defined isodate := ... above the binding then later usages of it in the same "program" could
+refer to isodate labels without qualifications but i'm not so sure of it so i will park it)"
+
+Class: (1) a RULING on the slug: "required": a reference to a label that is not known textually at the reference
+carries its source (`chars.ch`, not `ch`). (2) a STANCE: "we can relax it later ... although i'm not inclined
+to". (3) an IDEA he PARKS himself ("i'm not so sure of it so i will park it"): a binding defined above in the
+same program lets later uses refer to its labels without qualification.
+
+The reading taken, told to him: the plain idiom IS included (`isodate & (isodate.year: < 2100)`): he states no
+exception, and the idea he parks is exactly the relaxation that would exempt it. It REVISES the spelling side of
+flat-read-outside (2026-11-21) and hole-export (2026-11-19), and his example 1 of 2026-11-21 (`C := B(A) & (d:
+<100)`, "C can see d as a flat look into A"): what a flat read MEANT becomes what `binding.x` means.
+
+The manager's readings, for the sweep lane to test and mark: (a) "known textually": a bare name is a label
+written in the referencing definition's own text: a group in one of its literals, or a part label it writes; (b)
+any other label is reached through a binding's name (binding-prefix, ruled today) or a part label; (c) the same
+for `$x` reads, backreference-free rx text being untouched (rx text names only its own literal's groups already);
+(d) NOT STATED by his words, to be asked: the prefix for a label that comes from a MACRO CALL's body (`hits(..)`'s
+`hit`), from an ARGUMENT (`B(A)`: `A.d`), and from a typed PARAMETER (`d.year`); until asked, a call is labelled
+(`[x = hits(..)]`, `x.hit`) and an argument that is a binding is reached by the binding's name; (e) no answer of
+any printed example changes: only spellings.
+
+### 2026-11-22 OWNER RULING — helper-captures: the library's helpers set labels, not captures, "unless they are so declared"; a PROPOSAL of the label-only group `(?<:x>...)`; an example to validate
+tags: lib/search/occurrences lib/search/hits lib/modifiers/length lib/structural/capture lib/structural/capture/add-on parked/ideas/label-only-group core/labels/labels-vs-captures core/labels/paths
+
+Asked **helper-captures** (does a caller receive captures for the names a library helper uses internally: (a) as
+written, `hit` a capture; (b) labels only, a capture only where capturing is the body's purpose; the manager's
+leaning (b), which needs a label that is no capture inside rx text). HIS WORDS, whole (he typed the slug
+"help-captures"):
+
+"help-captures: 1. i propose the form (?<:x>...) for a label only group x. i've mentioned it before. 2. occurences
+et al should only set labels not captures unless they are so declared. 3. validate: you can label the results [
+hits = occurences(...) ] & (hits.hit: <5)"
+
+Class: (1) a PROPOSAL, in his word ("i propose"), of a spelling he has given before (2026-11-18; parked/ideas/
+label-only-group): `(?<:x>...)`, a group in rx text that is a label and no capture. Not ruled as a spelling; with
+(2) the THING is needed, so it leaves the parked list (under construction; his form the placeholder). (2) a
+RULING on the slug, answer (b), in his words: "occurences et al should only set labels not captures unless they
+are so declared." (3) a REQUEST to validate an example.
+
+VALIDATED the same turn (told to him). The form is legal under today's rulings: `[hits = occurrences(..)]` is a
+part label the definition writes, so `hits.hit` is known textually (label-reference); the part label `hits` is a
+label named like a provided macro, which "still works" (core/operators/statements). What it MEANS: `(hits.hit:
+<5)` is a plain read, the LAST hit's value; and after `occurrences` (not atomic) a rejecting condition re-splits
+or drops hits (ruled 2026-11-18), so it holds wherever SOME choice of hits ends in one under 5. RUN (hand-built
+simulations in PCRE's order, `$PCREC_TMPDIR/scratch/pred/hits_label.py`, `hits_atomic.py`; outputs pasted):
+`[hits = occurrences(/\d+/)] & ...`:
+plain (hits.hit: <5), the last hit: WHOLE `a1b3` HOLDS / WHOLE `a9b3` HOLDS / WHOLE `a3b9` HOLDS / WHOLE `a1b22` HOLDS / WHOLE `ab` FAILS / SEARCHED `x9 3` `x9 3`@0 / FIND-ALL `a9b3 c7` [`a9b3 c7`@0]
+occurs.none((hits.hit: >= 5)), every hit: WHOLE `a1b3` HOLDS / WHOLE `a9b3` HOLDS / WHOLE `a3b9` HOLDS / WHOLE `a1b22` HOLDS / WHOLE `ab` HOLDS / SEARCHED `x9 3` `x9 3`@0 / FIND-ALL `a9b3 c7` [`a9b3 c7`@0, ``@7]
+`[h = hits(/\d+/)] & ...` (the atomic hit list, a fixed list judged after it):
+plain (hits.hit: <5), the last hit: WHOLE `a1b3` HOLDS (hits ['1', '3']) / WHOLE `a9b3` HOLDS (hits ['9', '3']) / WHOLE `a3b9` FAILS (hits ['3', '9']) / WHOLE `a1b22` FAILS (hits ['1', '22']) / WHOLE `ab` FAILS (hits []) / SEARCHED `x9 3` `x9 3`@0 / FIND-ALL `a9b3 c7` []
+occurs.none((hits.hit: >= 5)), every hit: WHOLE `a1b3` HOLDS (hits ['1', '3']) / WHOLE `a9b3` FAILS (hits ['9', '3']) / WHOLE `a3b9` FAILS (hits ['3', '9']) / WHOLE `a1b22` FAILS (hits ['1', '22']) / WHOLE `ab` HOLDS (hits []) / SEARCHED `x9 3` FAILS / FIND-ALL `a9b3 c7` []
+(In the atomic runs the simulation's label text reads `hits.hit`; the part label there is `h`.)
+
+The manager's readings, for the sweep lane: (a) "occurences et al" is every provided body (the rule is for the
+library; a user's own literal keeps the pure-label rule: a group written in rx text is a capture); (b) "unless
+they are so declared": how a helper declares a capture is not stated; it joins the capture add-on's open form
+(lib/structural/capture/add-on) and the declared-labels idea; (c) `hits`, `occurrences`, `list_of`, `endsWith`'s
+examples and any other provided body writing a named group are restated with the label-only group, placeholder
+`(?<:hit>...)`; (d) the label-only group is a label under every label rule (reset, last mention, the array) and
+never a capture: `\k<x>` to it inside the same literal is not stated (a reading: a compile error for now).
+
+### 2026-11-22 OWNER, on the helper-captures validation: "right", and a second example with a test inside the argument
+tags: lib/search/hits lib/search/occurrences core/conditions/match-so-far core/labels/paths lib/counting/some
+
+After the validation of his labelled-call example (after `occurrences` a rejecting condition re-chooses the hits;
+a test on the hits belongs after the atomic `hits` or inside the argument). HIS WORDS, whole:
+
+"help-captures: right. [h = hits(/\d+/ & (0: <5)) ] & (h.hit: 3) & some((h.hit: 4))<5 and last hit is 3 and some
+hit is 4."
+
+Class: an ACKNOWLEDGEMENT ("right") and an EXAMPLE with his gloss; nothing asked as a ruling. Read for the
+intended text: the program ends at `some((h.hit: 4))`; the words after it are his gloss, "<5 and last hit is 3 and
+some hit is 4".
+
+CHECKED the same turn (check-his-regex; told to him). The program is legal under today's rulings (`h` is a part
+label written there; `h.hit` known through it; `(0: <5)` is joined by `&` to `/\d+/`, so its `0` is that operand's
+match: his confirmed example of 2026-11-21). "last hit is 3" and "some hit is 4" are as he says. "<5" is NOT
+"every number is under 5": written inside the argument it decides WHAT IS A HIT: a number of 5 or more is skipped
+or split (`9` is no hit; `43` gives the hits `4`, `3`). RUN (hand-built simulation,
+`$PCREC_TMPDIR/scratch/pred/hits_inner.py`; output pasted; the second line is the other meaning, `[h = hits(/\d+/)]
+& occurs.none((h.hit: >= 5)) & (h.hit: 3) & some((h.hit: 4))`):
+inner test: WHOLE `4 3` HOLDS (hits ['4', '3']) / WHOLE `3 4` FAILS (hits ['3', '4']) / WHOLE `4 9 3` HOLDS (hits ['4', '3']) / WHOLE `43` HOLDS (hits ['4', '3']) / WHOLE `4 13` HOLDS (hits ['4', '1', '3']) / WHOLE `4 3 9` HOLDS (hits ['4', '3']) / SEARCHED `x4 3` `x4 3`@0 / FIND-ALL `4 3 x 4 3` [`4 3 x 4 3`@0]
+every number: WHOLE `4 3` HOLDS (hits ['4', '3']) / WHOLE `3 4` FAILS (hits ['3', '4']) / WHOLE `4 9 3` FAILS (hits ['4', '9', '3']) / WHOLE `43` FAILS (hits ['43']) / WHOLE `4 13` FAILS (hits ['4', '13']) / WHOLE `4 3 9` FAILS (hits ['4', '3', '9']) / SEARCHED `x4 3` `x4 3`@0 / FIND-ALL `4 3 x 4 3` [`4 3 x 4 3`@0]
+
+### 2026-11-22 OWNER, after the second hits example was checked: "critical is the @assert macros to test that it does what was intended"
+tags: lib/assert/assert lib/assert/each parked/ideas/assert parked/ideas/explainer parked/ideas/user-doc-traps lib/search/hits
+
+After the run showing that a test inside `hits`' argument chooses the hits (`4 9 3` HOLDS, `43` HOLDS) where
+"every number under 5" FAILS. HIS WORDS, whole:
+
+"nice. critical is the @assert macros to test that it does what was intended"
+
+Class: an OBSERVATION and a PRIORITY stated ("critical"); nothing asked as a ruling. The manager's answer (told
+to him; the manager's views): the ruled assertions (lib/assert/assert, 2026-11-14: `@assert.some(X)`,
+`@assert.none(X)`, `@assert.same(A, B)`; "Membership is `&`") already write this check for a WHOLE value: with
+`p` the program, `@assert.none("4 9 3" & p)` fails at compile time and shows the surprise; hand-worked from the
+run of the entry above, not run through a model. What they do NOT reach: an expectation about a SEARCHED or
+FIND-ALL report (which stretch, at which place) or about a label's value on a given subject ("on `4 13` the hits
+are 4 and 13"): no assertion form states those today. Recorded as a gap for the library discussion, with the
+under-construction lib/assert/each and parked/ideas/assert; nothing folded.
+
+### 2026-11-22 OWNER RULING — call-prefix, case 1: the macro's name qualifies a label of its body; case 2: "i'd say A.d is legal there", with a doubt he is working through
+tags: core/labels/paths core/labels/export core/holes/labels core/operators/bindings lib/search/hits core/holes/bare-condition/nested-scope
+
+Asked **call-prefix** (case 1: a label set by a macro's own body, `hits(/\d+/) & (hits.hit: 3)` with the macro's
+name as the prefix, or only through a label on the call; case 2: a label of an argument, `C := B(A) & (d: <100)`:
+`(A.d: <100)` through the binding passed in, and/or `[c = B(A)] & (c.d: <100)`; the manager's leaning: one rule
+for every name, and for case 2 both spellings, "They are the same label"). HIS WORDS, whole:
+
+"call-prefix. case 1. yes use the macro name as shown to qualify the label. 2. i'd say A.d is legal there. i'm
+trying to figure out if B(A) would ever remove the d. its possible it changes the answer to go through [ c = B(A)
+] as B may defined d"
+
+Class: (1) a RULING on case 1: "yes use the macro name as shown to qualify the label": `hits.hit`. The reading
+taken, told to him: with binding-prefix's two rules as put in the question (called once, a legal plain read;
+called more than once, a plain read is the compile error and a group question reads every call). (2) on case 2 a
+LEAN ("i'd say A.d is legal there") and two THOUGHTS he is working through ("i'm trying to figure out"): whether
+`B(A)` could ever REMOVE the `d`; and that going through `[c = B(A)]` may change the answer, "as B may defined
+d". Not recorded as a ruling on case 2; to be confirmed after the response.
+
+CHECKED the same turn (told to him): his second thought is RIGHT and the manager's sentence "They are the same
+label" is WITHDRAWN. RUN (hand-lowered, python `re`; A := `/(?<d>\d)/`, B(rx) := `/${rx}-(?<d>\d)/`; outputs
+pasted):
+A.d <5 (A's own d): WHOLE `7-3` FAILS / WHOLE `3-7` HOLDS / WHOLE `3-3` HOLDS / SEARCHED `7-3 3-7` `3-7`@4 / FIND-ALL `7-3 3-7 1-2 9-9` [`3-7`@4, `1-2`@8]
+c.d <5 (d as B(A) surfaces it: the last mention, B's): WHOLE `7-3` HOLDS / WHOLE `3-7` FAILS / WHOLE `3-3` HOLDS / SEARCHED `3-7 7-3` `7-3`@4 / FIND-ALL `7-3 3-7 1-2 9-9` [`7-3`@0, `1-2`@8]
+The manager's readings (marked): (a) a prefix `X.d` reads `d` AS X SURFACES IT: `A.d` is A's own `d`; `c.d`, and
+`B.d` by case 1, are `d` as the call surfaces it (the last mention among the body's and the argument's); (b) on
+his first thought: B CAN remove it, `B(rx) := /${[_ = rx]}xx/` ("`[_ = A]` makes none of A's labels visible
+anywhere outside A", core/labels/export statement 7); whether `A.d` is then still legal in the caller is NOT
+STATED: put to him.
+
+### 2026-11-22 OWNER, on closed-argument: "i thought you'd lean to (a). what would A.d mean if d no longer was visible?"; and "[ c = B(A) ] does not allow c.A"
+tags: core/labels/paths core/labels/export core/holes/labels core/operators/bindings core/holes/bare-condition/nested-scope
+
+Asked **closed-argument** (when a macro closes its argument's labels, `B(rx) := /${[_ = rx]}xx/`, is the caller's
+`A.d` (a) an error or (b) still legal; the manager's leaning (b): "a closure only needs to guard what the macro
+surfaces"). HIS WORDS, whole (he typed the slug "closed-arguments"):
+
+"closed-arguments: i thought you'd lean to (a). what would A.d mean if d no longer was visible? also: [ c = B(A) ]
+does not allow c.A"
+
+Class: (1) a POSITION by a question: he expected (a) and asks what `A.d` could mean once `d` is not visible; not
+worded as a ruling: recorded as his LEAN to (a), to be entered as the ruling on his confirmation. (2) a STATEMENT:
+"[ c = B(A) ] does not allow c.A": a path does not reach an ARGUMENT by the argument's name through the call's
+label.
+
+The manager's answer (told to him): leaning (b) is WITHDRAWN. His question has no good answer: once B closes the
+argument, where and whether A's `d` is set is B's private business (inside a lookahead, twice, or not at all), so
+`A.d` would name something the caller cannot know from its own text: against label-reference's purpose. So (a):
+`A.d` is legal in the caller exactly where `d` is visible through the call, and it then reads `d` as it reaches
+the caller. On (2): agreed, and it follows from what is ruled: inside B the argument is the parameter `rx`, "a
+binding variable not a label" (2026-11-21), so the call's label `c` holds no part named `A`.
+
+### 2026-11-22 OWNER RULING — closed-argument: a (where a macro closes its argument's labels, the caller's `A.d` is a compile error)
+tags: core/labels/paths core/labels/export core/holes/labels core/operators/bindings
+
+Asked to confirm, after the manager withdrew leaning (b): "(a), stated as I would enter it: `A.d` is legal in the
+caller exactly where `d` is visible through the call, and it reads `d` as it reaches the caller. Where B closes
+the argument, `A.d` is a compile error." ... "Reply "closed-argument: a" and I enter it as the ruling." HIS WORDS,
+whole (he typed the slug "closed-arguments"):
+
+"closed-arguments: a"
+
+Class: a RULING on the slug, answer (a), on the statement as put: for an argument that is a binding, the caller's
+`A.d` is legal exactly where `d` is visible through the call, and reads `d` as it reaches the caller; where the
+macro closes the argument's labels (`B(rx) := /${[_ = rx]}xx/`), `A.d` is a compile error. It also settles
+call-prefix case 2 (his lean "i'd say A.d is legal there"): legal, under this condition. His reason, from the
+entry before: "what would A.d mean if d no longer was visible?".
+
+The manager's readings (marked; for lane predcall as R-1): (a) "visible through the call" is by core/labels/export
+(a `_` part label or `[_ = rx]` in the macro's body closes it); (b) an argument the body uses twice: `A.d` is the
+last mention as it reaches the caller; (c) the compile error is at the reference, and names the macro that closes
+the label (the message is the manager's call).
+
+### 2026-11-22 MANAGER — review r82 (predfold1122): dispositions ruled; two corrections of record entries (no owner words)
+tags: core/labels/paths core/labels/flow core/labels/export core/conditions/form core/labels/labels-vs-captures/array-vs-passes core/holes/bare-condition/nested-scope core/patterns/literals lib/search/occurrences lib/search/hits core/diagnostics/errors
+
+Review r82 (design mode; five opus lenses and an opus verifier over the fold of 2026-11-22, diff 399ef98f4..
+6f1fe4e84; draft `$PCREC_TMPDIR/scratch/crit-predfold1122/review.md`; 44 findings, none rejected; every printed
+example line HOLDS, 35 of 35; quotes 107 of 107 verbatim). The manager's dispositions, by the draft's ids; every
+one is the manager's, none an owner ruling:
+
+- ANS-1 (a name with two sources): FIX-NOW: "A's own `d`" marked a reading citing the checked entry; OWNER
+  QUESTION **two-sources** (an argument written in place; a name written in the definition and also surfaced by a
+  used binding), with the run lines for `7-3` and `1,7`. Neither answer applied.
+- ANS-2: (b) FIX-NOW ("for one use"); (d) FIX-NOW, a reading: uses are counted in the referencing definition's
+  TEXT, before macros expand; (c) FIX-NOW, a reading: the prefix reaches the uses written in the referencing
+  definition's own text, not a use nested inside another used binding; the model fixed to it; (a) the one-use
+  plain read `A.h` is marked a READING resting on label-reference ("required": the required form must be legal)
+  and on his own one-use examples (`(hits.hit: <5)`, `(h.hit: 3)`); OWNER QUESTION **idiom-confirm** covers it
+  together with RULING-9 (the plain idiom `isodate & (isodate.year: < 2100)`, taken as included on his silence).
+- ANS-3: FIX-NOW: "outside a group question"; a value entry inside a group question is a compile error for now
+  (a reading, parallel to joint-in-some); its error-table row.
+- ANS-4 (the tier of a path to a label its source does not pass): FIX-NOW, the manager's reading, no owner
+  question: a label NOT VISIBLE through its source is a compile error (bare-condition-labels, 2026-11-19: no such
+  label is an error; closed-argument, today); the never-pass WARNING is for a visible label no path sets
+  (one-rule). Both printed lines marked readings with that ground; a typo'd path is the same error.
+- ANS-5 (nested paths): FIX-NOW, the manager's reading: a source is a path of names, each step passed by the
+  previous one (export statement 3 as ruled; metadata fields by the same rule); the model supports it or the
+  lines are marked unrun.
+- ANS-6: FIX-NOW, the manager's reading (conservative): the index `h[k]` through a prefix whose uses are joined
+  by `&` is a compile error for now (the two sides of `&` are not ordered); through sequenced uses it is in text
+  order; the model takes an index on a path, or the promise is marked unrun.
+- EVID-1, EVID-2, EVID-3, EVID-5: FIX-NOW (every in-force model re-greened or its red named by a successor
+  check; every model exits non-zero on a failed check; the `_x` closure and the second-`&`-operand defects fixed
+  in the engine the new model loads; a contrast line where a prefix and the bare last mention differ; a
+  quantifier-order plant). EVID-4: FIX-NOW the stated limit in each model's header; PLAN the nullable-body engine
+  fix (trigger: the next lane that prints a nullable-body line).
+- DES-1: FIX-NOW, one sentence, the manager's reading in his words' shape: every label a binding's body names
+  has its target in that binding (so a SET that reads a label, `lim := <(10 - $b)`, bound alone is the same
+  compile error); the target table is PLAN (trigger: macro variables or macro types designed).
+- DES-2: FIX-NOW: the literals sentence amended (provided bodies also write the label-only group, under
+  construction). DES-3: FIX-NOW: "a bare name, a number or a label path"; the three gaps are compile errors for
+  now (readings). DES-6: FIX-NOW, a reading: the part label written in the definition wins, with the hide-label
+  warning. DES-4, DES-5 and the size of library.md: PLAN (triggers as the draft names them).
+- The doc batch (RULING-3, -4, -5, -8; GENERAL-5, -7, -8, -11; FIXIND-1..9; EXAMPLES-2, -4): FIX-NOW as proposed.
+- The round's three lessons are accepted and go to main as proposed skill edits.
+
+CORRECTION 1 (review ANS-2a) of the entry "2026-11-22 OWNER RULING — binding-prefix: 1 yes ...": its Class
+sentence says his label-flow point 4 of 2026-11-17 named "a plain read with several uses". His words there name a
+ONE-use program (`A . B & (A.h: blah)`) and give several uses as the REASON ("could be ambigous if its used
+multiple times in an expression"). So the one-use plain read was an error by his 2026-11-17 words and is legal
+today only as a READING (above), until he answers idiom-confirm. The two parts he ruled stand as recorded.
+CORRECTION 2 (review RULING-5): the bound-condition ruling REVISES the named-condition spelling of 2026-11-14
+(`isSmallYear := (year: <2000)`, "a plain DEFINE binding"): not said in the ruling entry; said here.
+
+### 2026-11-22 OWNER, an analogy to validate: the four ways a part is used, as C++ access levels
+tags: core/labels/export core/labels/paths core/labels/paths/label-reference core/labels/export/flat-read-outside
+
+After P-20 was delivered. HIS WORDS, whole:
+
+"Analogy, c++, please validate: [a = A ] is making the labels from A public to local and later bindings. [_a = A ]
+is making the labels from A protected and available locally but not exported to later bindings. [A ] (A alone,
+default) also makes the labels protected but with different access locally. [_ = A] makes the labels private to A
+and not accessible locally to the binding."
+
+Class: an ANALOGY with a REQUEST to validate; nothing asked as a ruling. Validated against core/labels/export as
+it stands (told to him): THREE of the four match what is ruled: `[a = A]` (statement 3: the part's public labels
+pass out, and are reached locally as `a.h`); `[_a = A]` (statement 6: "an ordinary part label inside its binding
+and exports nothing outside it"); `[_ = A]` (statement 7: "makes none of A's labels visible anywhere outside A").
+The THIRD does not match: A used alone is PUBLIC today, not protected: hole-export (2026-11-19, "both pass
+through") and statement 3 ("the public labels of every part written or used there pass through, a hole and the
+sequence operator alike"); it differs from `[a = A]` only in the local name (the binding's own, `A.h`, by
+binding-prefix) and in giving later bindings no part-label step. If he MEANS the default to be protected, that is
+a new ruling reversing hole-export for an unlabelled part: put back to him as the question default-export.
+
+### 2026-11-22 OWNER, discussing the analogy: `B := A & A`, `C := B & (B.a: 9)`: "here B.a is always an error"
+tags: core/labels/export core/labels/flow core/labels/export/flat-read-outside core/labels/paths
+
+After the validation of his analogy (the default, A used alone, is public today) and the question default-export.
+HIS WORDS, whole:
+
+"Discussion: A := <label a> B := A & A   C := B & (B.a: 9) here B.a is always an error."
+
+Class: DISCUSSION, an example with his verdict; default-export not answered. CHECKED against the documents (told
+to him; a compile-time verdict, read from the rule text, no matching run): his verdict is what is ruled for the
+PLAIN read: across `&` a name both sides surface is the ambiguous reference, a compile error where it is
+referenced (label-flow, 2026-11-17), and a read from outside follows the inside rules (flat-read-outside,
+2026-11-21), so `(B.a: 9)` in C is an error, and nothing C can write repairs it: the two `A` are inside B. The
+group question is not an error there (`some((B.a: 9))` reads both sides' settings: the documents' line "Across
+`&`, a group question over both sides").
+
+### 2026-11-22 OWNER RULING — default-export: protected (a part used alone is available inside the binding and is not exported)
+tags: core/labels/export core/labels/export/flat-read-outside core/labels/paths core/labels/flow core/holes/labels core/labels/paths/label-reference core/holes/bare-condition/nested-scope
+
+Asked **default-export** ("default-export: protected", or say what else the example was pointing at), after: his
+analogy ("[A ] (A alone, default) also makes the labels protected but with different access locally"); the
+validation that A used alone is PUBLIC today (hole-export, 2026-11-19: "both pass through"; export statement 3);
+what a protected default would say ("a part used bare is available locally as `A.h` but exports nothing. To
+export, the binding writes `[a = A]`, or your shorthand `[=A]`"); and his example `B := A & A`, `C := B & (B.a:
+9)`. HIS WORDS, whole:
+
+"default-export: protected"
+
+Class: a RULING on the slug: a part used alone in a binding (no part label) is PROTECTED: its labels are
+available inside that binding (through the binding's name, `A.h`) and are NOT exported to the bindings that use
+it. It REVERSES hole-export (2026-11-19) and export statement 3 for an unlabelled part, and with them the
+example lines that read a bare-used part's label from outside (`pub := /${A}!/`, then `pub.h`). His analogy of
+the same day is thereby the ruled picture: `[a = A]` public; `[_a = A]` and `A` alone protected (local only),
+differing in the local name; `[_ = A]` private to A.
+
+The manager's readings, for the fold lane to test and mark: (a) "used alone" is a bound name used as a sequence
+operand, in a hole or as an `&` operand without a part label: as `[_A = A]` would behave; (b) what a binding
+EXPORTS: the labels its own text writes (a group in one of its literals, a part label it writes, neither
+beginning with `_`), and through a public part label that part's exported labels (`pub.a.h`); (c) a read from
+outside of a label that only a bare-used part holds (`pub.h`) is a compile error (not visible); (d) his shorthand
+`[=A]` (read as `[A = A]`) is the short way to export a part under its own name; still a placeholder spelling;
+(e) a MACRO CALL exports what its body's text writes; an argument the body uses bare is not exported by the call
+(`B.d`, `c.d`), and his example 3 of 2026-11-21 (`B(rx) := /${[dd = rx]}xx/`) is the way a macro passes an
+argument's labels on; (f) array-in-piece is unchanged: inside the binding a bare-used part's settings are seen.
+NOT STATED by his words, to be asked, neither answer applied: **argument-default**: the caller's own `A.d` for
+an argument (`C := B(A) & (A.d: <100)`, B(rx) := `/${rx}xx/`): he called example 1 legal on 2026-11-21 and ruled
+closed-argument today as "legal exactly where `d` is visible through the call"; under a protected default the
+bare `${rx}` passes nothing through the call, so is `A.d` still the caller's local read of its own part, or an
+error; **capture-export**: export statement 5 gives the caller the CAPTURES visible from the top-level program:
+does a capture written in rx text inside a bare-used part two bindings down still reach the caller (as in PCRE),
+or does it follow the labels.
+
+### 2026-11-22 OWNER, a question after default-export: "can I somehow export some labels but not others. Like year only from isodate"
+tags: core/labels/export core/labels/paths parked/ideas/declared-labels lib/builtin/export
+
+HIS WORDS, whole: "Question, can I somehow export some labels but not others. Like year only from isodate"
+
+Class: a QUESTION; nothing ruled. The manager's answer (told to him; from the rules as ruled, no matching run):
+YES at the grain of a PART or of a group the binding writes: a binding exports the parts it labels and the groups
+it writes without `_`, so `isodate := [year = digits4] SEQ "-" SEQ month SEQ "-" SEQ day` (month and day used
+alone: protected) or `/(?<year>\d{4})-(?<_month>\d\d)-(?<_day>\d\d)/` exports `year` only. NOT today at a finer
+grain: a labelled part passes ALL of that part's exported labels (`[d = A]` gives `d.x` and `d.y`); there is no
+form that re-exports ONE label of a part and keeps the rest. That would be his parked idea of declaring a
+binding's labels (parked/ideas/declared-labels), an export list in the binding's head; `@export(names)` (open
+export-choice) selects among a FILE's names, not a binding's labels.
+
+### 2026-11-22 OWNER PROPOSAL — re-exporting one label of a defined part: `[(=year) = isodate]`
+tags: core/labels/export core/labels/paths core/modules/binding-list core/modules/all-symbols core/modules/leave-out parked/ideas/declared-labels
+
+After the manager's answer (yes at the grain of a part; no form re-exports one label of a part). HIS WORDS, whole:
+
+"I meant if isodate was defined and I wanted to reexport year only. [d = isodate] exports all. How about this:
+[(=year) = isodate]"
+
+Class: a CLARIFICATION of his question (isodate already defined; re-export `year` only) and a PROPOSAL ("How about
+this") of a form; nothing ruled; the spelling his placeholder. The manager's reading of the form (told to him): the
+left side of a part label is the NAMED BINDING LIST he ruled for maps on 2026-11-19 ("`(l = left, =right) := X`
+binds `l` to `X.left` and `right` to `X.right`, on any map; `=left` is `left = left`"), applied to a part: the
+binding takes the listed labels of the part as labels of its own (written in its text, so exported and read bare
+inside it), and nothing else of the part. By the same ruled list: a rename `[(y = year) = isodate]`; all of them
+`[(=) = isodate]` (the old public default, now asked for by name); all but one `[(=, _ = month) = isodate]`.
+NOT STATED: a listed name the binding also writes itself (the manager's lean: the same label, last mention, as
+any two groups of one name); whether the part ALSO gets a path name; a listed label is an alias of the part's
+label (same settings, no new capture: a reading).
+
+### 2026-11-22 OWNER RULING — export-list: yes (a binding list on a part label selects which of the part's labels the binding takes); and a direction to clarify bindings against labels
+tags: core/labels/export core/labels/paths core/modules/binding-list core/modules/all-symbols core/modules/leave-out core/conditions/form
+
+Asked "export-list: yes" to enter his proposal `[(=year) = isodate]` as ruled (the spelling a placeholder), with
+the manager's reading of it (the ruled named binding list applied to a part; the table of forms; three readings).
+HIS WORDS, whole (he typed the slug "Export list"):
+
+"Export list: yes. I will say that the form is the same but one is bindings and one is labels. We should clarify
+either they are the same thing but different targets or note their space."
+
+Class: (1) a RULING on the slug: the form `[(=year) = isodate]` is in the language: the left side of a part
+label may be a named list; the binding takes the listed labels of the part as labels of its own (exported; read
+bare inside it) and nothing else of the part. The spelling stays a placeholder. (2) an OBSERVATION and a
+DIRECTION for the documents: "the form is the same but one is bindings and one is labels. We should clarify
+either they are the same thing but different targets or note their space."
+
+The manager's readings, for the fold lane (R-1 of preddef's rulings file) to state and mark: (a) on his
+direction, the documents say: ONE form, the named list, with TWO targets decided by where it stands: left of
+`:=` it defines BINDING names from a map's members (core/modules/binding-list); left of `=` inside a part label
+it defines LABEL names from a part's exported labels; bindings and labels are two name spaces (a bare name left
+of `:` is a label, on the value side a binding: core/conditions/form), and the hide-label warning is where they
+meet; (b) the same ruled list forms carry over: a rename `[(y = year) = isodate]`, several, all `[(=) =
+isodate]`, all but one `[(=, _ = day) = isodate]`; (c) a listed label is an alias of the part's label: the same
+settings and array, no new capture; (d) a listed name the binding also writes itself is the same label (last
+mention); (e) the list form gives the part no path name; (f) only an EXPORTED label of the part can be listed
+(a `_` label or a label the part keeps protected is a compile error at the list).
+
+### 2026-11-22 OWNER, on the two name spaces: "Agree caveat bindings used to scope labels (A.a: 8)"
+tags: core/modules/binding-list core/labels/paths core/conditions/form core/labels/export
+
+Told the sentence the manager chose for his direction (one form, the named list, with two targets decided by
+where it stands; bindings and labels two name spaces: left of `:` a bare name is a label, on the value side a
+binding). HIS WORDS, whole:
+
+"Agree caveat bindings used to scope labels (A.a: 8)"
+
+Class: an AGREEMENT with the sentence ("they are the same thing with different targets"), and a CAVEAT to it: the
+two name spaces are not sealed from each other: a BINDING's name scopes a label (`(A.a: 8)`: binding-prefix,
+call-prefix, ruled today). The manager's wording for the documents, on his caveat (a reading): left of `:` a
+path's LAST step is a label; its earlier steps are sources, each a binding's name, a macro's name or a part
+label; a bare single name there is a label the definition itself writes.
+
+### 2026-11-22 OWNER, an observation: the textually-visible rule solves a label from a used binding hiding another binding
+tags: core/labels/paths/label-reference core/operators/statements core/diagnostics/warnings parked/ideas/label-hygiene core/modules/all-symbols
+
+HIS WORDS, whole: "The textually visible rules solves a problem of a label from a binding reference hiding another
+binding"
+
+Class: an OBSERVATION; nothing ruled. The manager's check against the documents (told to him; a reading): it
+holds. Before label-reference a used binding's label arrived bare, so it could meet a binding of the same name
+(the rule "a binding that hides a label draws a warning", core/operators/statements, `pcrec.label.hidden`); now
+it arrives only as `B.x`, so the only labels that can meet a binding's name are the ones the definition itself
+writes. What remains of the hide-label warning: a label written in the definition against a binding of the same
+name; and for BINDING names, a library adding a name under `(=) := import(..)` (core/modules/all-symbols). For
+the r83 fix lane: restate the hide-label warning's trigger and parked/ideas/label-hygiene accordingly.
+
+### 2026-11-22 OWNER, a question: the kinds of reference ("binding, label, macro argument, capture group name, ?")
+tags: core/operators/bindings core/labels/paths core/labels/backreferences core/labels/numbers core/modules/map core/values/metadata core/conditions/form
+
+HIS WORDS, whole: "So the types of reference are: binding, label, macro argument, capture group name, ?"
+
+Class: a QUESTION (a list to complete); nothing ruled. The manager's answer (told to him; collected from the
+pieces, a reading as a list): his four, plus: a group NUMBER (and `0`, the match so far); a MODULE MEMBER
+(`m.year`, a field by `.`); a METADATA field of a member (`.index`, `.label`); a parameter NAME at a call
+(`sep = ","`); the provided names reserved in call position and the `@` effects; and, under construction, a
+macro VARIABLE (a label parameter, `x:`) and a typed parameter. A table of these (what introduces each, where
+it may be written, what it resolves against) is proposed for the documents: the name table review r82 asked for.
+
+### 2026-11-22 OWNER, on the kinds of reference: "Nothing missed I see"; can some be COMBINED: a capture group name produces a label; macro arg, typed arg, label arg as variations of one thing
+tags: core/operators/bindings core/labels/labels-vs-captures core/labels/numbers core/modules/map core/values/metadata core/labels/paths
+
+After the manager's table of name kinds. HIS WORDS, whole (two messages; the second corrects a word of the first,
+read for the intended "not 'defined' but 'combined'"):
+
+"Nothing missed I see. but I do wonder if some of these can be defined. Maybe, same thing from a different
+perspective. A capture group name produces a label of the same name? A macro arg, typed arg, label arg, are all
+variations on the same thing. Thoughts?"
+
+"Mont "defined" but "combined""
+
+Class: an ACKNOWLEDGEMENT (the list is complete as far as he sees), and a QUESTION with two IDEAS ("I do wonder";
+"Maybe"; "Thoughts?"): kinds that are one thing seen from two sides. Nothing ruled.
+
+The manager's answer (told to him; a view, built on what is ruled): yes, to TWO base kinds. A LABEL: a name for
+a stretch of the match, known at match time; a group in rx text makes one that is ALSO a capture (ruled
+pure-label: a property, not another kind), the label-only group and a part label make one that is not; a group's
+NUMBER is a second name of the same label (ruled: "two names of one label"); a metadata field is a label the
+language provides on a member. A BINDING: a name for a value, known at compile time; a macro's PARAMETER is a
+binding whose value arrives at the call (his "a binding variable not a label"); a label parameter is a parameter
+whose value is a label's NAME, a typed parameter one whose value is an rx with a stated interface; a module
+member is a binding reached through a module; a provided name is a binding the language supplies. And ONE
+operator between them, ruled 2026-11-15: "`.` has one meaning: a field of the map interface of the thing on its
+left". What must NOT be merged: label with binding (match time against compile time; his caveat: a binding
+scopes a label, by position in a path), and a label's value with its capture's value (they part after a loop).
+
+### 2026-11-22 OWNER, on the two-kind view: "I agree with your interpretation. I note that captures can have no label."
+tags: core/labels/labels-vs-captures core/labels/numbers core/operators/bindings core/modules/map
+
+After the manager's view (two base kinds, label and binding, with properties; `.` the one operator between them;
+label not merged with binding, a label's value not merged with its capture's). HIS WORDS, whole (the message
+before it, "Phones... mont = not", confirmed the reading of his correction):
+
+"I agree with your interpretation. I note that captures can have no label."
+
+Class: an AGREEMENT with the view (not asked as a ruling; recorded as agreed framing for the name table), and a
+NOTE: a capture can have no label. The manager's reading of the note (told to him): an unnamed group `( )` is a
+capture with no NAME; the documents give it its NUMBER as a label only where a number is allowed (core/labels/
+numbers, ruled 2026-11-19: one written literal, or an `&` chain with one pattern operand); everywhere else it is
+a capture with no label at all. So "also a capture" and "is a label" are two independent properties: label and
+capture (a named group in a user's literal); label only (a part label, a label-only group); capture only (an
+unnamed group where numbers are refused); neither (a non-capturing group).
+
+### 2026-11-22 OWNER IDEA — program-scoped options: `@options()` setting flags (m, s, n, ...) for the literals of the bindings that follow
+tags: core/patterns/flags core/holes/flags lib/builtin/options core/labels/numbers core/labels/labels-vs-captures parked/ideas/capability-optins core/principles/rx-owns-flags
+
+After the two-kind framing and his note that captures can have no label. HIS WORDS, whole:
+
+"This discussion gave me an idea wrt this as well as options. 1. Using predicate language it's going to be more
+likely to use () in a literal to mean no capturing group. 2. we have options that set those but they don't
+inherit because it would be higgledy-piggledy. 3. What if some options were program scoped. Like "m s n"+ then
+you did a @options() to set them such that literals were interpreted that way in future bindings. 4. Options m s
+really can't be inherited because they change semantics in confusing ways if you don't control them. 5. other
+options?"
+
+Class: an IDEA ("What if"), with two OBSERVATIONS (1: in the predicate language `()` in a literal will more
+often be meant as no capturing group; 2: the options that say so are not inherited, "because it would be
+higgledy-piggledy"), a POSITION on inheritance (4: "Options m s really can't be inherited because they change
+semantics in confusing ways if you don't control them"; with his 2026-11-21 lean "probably going to rule that
+only i is inherited"; today's ruled list at a hole is still `i`, `m`, `s`, flags-scope 2026-11-19), and a
+QUESTION (5: "other options?"). Nothing ruled. Spellings his placeholders.
+
+The manager's view (told to him; nothing folded; the subject is frozen for review r83): for it. A program-scoped
+option is LEXICAL: a literal's meaning is fixed by where it is WRITTEN, which the reader sees above it, never by
+where it is used: the same stance as "bindings define scope", label-reference and rx-owns-flags, and the opposite
+of inheritance at a hole. What it would need stated: it applies to literals written after the statement in the
+SAME FILE and never reaches into an imported library (a pinned library cannot change meaning by its importer); a
+flag a literal writes for itself still wins; an inserted literal carries its own file's defaults into a hole.
+Candidates beyond `m s n` (his question 5): `x` / `xx` (how the literal's TEXT is read: the clearest case, and
+refused at a hole today); `i` as a default; `J`; `U`; and the non-PCRE settings of the same kind the documents
+already have or park: the `&`-in-rx-text switch (core/patterns/literals: "by a module or option"), the warning
+selectors and strictness, the capability opt-ins. With `n` as a program default the cell "a capture with no
+label" (an unnamed group) mostly empties, and the open number questions (number-in-loop) lose their subject.
+
+### 2026-11-22 OWNER RULING — program-options: yes; and a PROPOSAL: `i` keeps inheriting, with a "weak" value the program sets
+tags: core/patterns/flags core/holes/flags core/holes/flags/in-filter lib/builtin/options core/principles/rx-owns-flags lib/modifiers/any-case
+
+Asked "program-options: yes", put as: "the lexical file scope above, starting with `m`, `s`, `n`, `x`; never
+across an import; a literal's own flags win" (the scope above: the setting applies to literals written after the
+statement, in the same file; an inserted literal carries its own file's defaults into a hole). HIS WORDS, whole:
+
+"program-options: yes.
+Proposal: Keep i inherited for now but this could set the "weak" value for i. By that I mean i has three
+settings: on, off, weak on, weak off. On and off are explicit and set the inheritance from there down the hole:
+Whatever was inherited is ignored. With no program specification, it's weakly case sensitive. Program
+specification can set weakly case insensitive. That will inherit as well but can easily be changed by an
+explicit i setting up the hole. Ask if clarification needed"
+
+Class: (1) a RULING on the slug: program-scoped options exist: a statement (placeholder `@options(..)`) sets
+flags for the literals written after it in the same file; starting with `m`, `s`, `n`, `x`; never across an
+import; a flag a literal writes for itself wins. (2) a PROPOSAL ("Proposal:"; "for now"; "could"): `i` stays
+inherited at a hole, with FOUR values (he writes "three settings" and lists four): on and off, EXPLICIT (written
+in a literal), which "set the inheritance from there down the hole: Whatever was inherited is ignored"; weak on
+and weak off, the DEFAULT: with no program specification "weakly case sensitive"; a program specification "can
+set weakly case insensitive", which "will inherit as well but can easily be changed by an explicit i setting up
+the hole". Not ruled. (3) an INVITATION: "Ask if clarification needed".
+
+The manager's reading of the proposal (told to him): the `i` in force at a point is the NEAREST explicit setting
+on the way up (in the literal, then up through each hole); with no explicit setting on the way, a weak value.
+ONE clarification asked (weak-meets-weak): WHICH weak value, when a program that sets weakly insensitive inserts
+a literal from a library file that sets nothing (or sets its own): (a) the program's weak value flows into the
+library's literal; (b) the library's literal keeps its own file's weak value. RUN (hand-lowered, python `re`;
+program: weak on, `/id-${word}/`, word := `/[a-z]+/` from a library file that sets nothing; outputs pasted):
+(a) the program's weak value flows into the library's literal: WHOLE `id-abc` HOLDS / WHOLE `ID-abc` HOLDS / WHOLE `ID-ABC` HOLDS / SEARCHED `x ID-ABC id-abc` `ID-ABC`@2 / FIND-ALL `id-ab ID-AB Id-ab` [`id-ab`@0, `ID-AB`@6, `Id-ab`@12]
+(b) the library's literal keeps its own file's weak value: WHOLE `id-abc` HOLDS / WHOLE `ID-abc` HOLDS / WHOLE `ID-ABC` FAILS / SEARCHED `x ID-ABC id-abc` `id-abc`@9 / FIND-ALL `id-ab ID-AB Id-ab` [`id-ab`@0, `Id-ab`@12]
+
+### 2026-11-22 OWNER, on weak-meets-weak: "Consider this: weak settings do not propagate."
+tags: core/patterns/flags core/holes/flags lib/builtin/options core/principles/rx-owns-flags
+
+Asked **weak-meets-weak** ((a) the program's weak value flows into a library's literal; (b) the library's
+literal keeps its own file's weak value; the manager's leaning (a), on his words "That will inherit as well").
+HIS WORDS, whole: "Consider this: weak settings do not propagate."
+
+Class: a PROPOSAL to consider ("Consider this"): it changes his own sentence of the entry above ("That will
+inherit as well") to its opposite for the weak values; the answer is (b) in the question's terms. Not yet
+entered as a ruling: put back to him as hole-flags with its consequences.
+
+The manager's view (told to him): agreed, and leaning (a) is WITHDRAWN. With it the picture has no exception: a
+weak value is the file's default for the literals written in that file (a program option like `m`, `s`, `n`,
+`x`: lexical, never across an import, never through a hole); only an EXPLICIT `i` or `-i` written in a literal
+is inherited down a hole, replacing whatever was in force, until a nearer explicit setting. Its answers are the
+(b) line of the entry above (WHOLE `ID-ABC` FAILS for a library `word` under a weakly insensitive program; the
+program writes `/(?i)id-${word}/` to reach it). What his words do not yet say, asked with it: `m` and `s` at a
+hole (ruled inherited on 2026-11-19; his point 4 today: "really can't be inherited").
+
+### 2026-11-22 OWNER RULING — hole-flags: yes to all (weak values do not propagate; only an explicit `i` is inherited at a hole; `m` and `s` are no longer inherited)
+tags: core/patterns/flags core/holes/flags core/holes/flags/in-filter lib/builtin/options core/diagnostics/warnings lib/modifiers/any-case core/principles/rx-owns-flags
+
+Asked **hole-flags** as one ruling in three parts: "1. Weak values do not propagate; they are the file's default
+for its own literals. 2. At a hole, only an explicit `i` or `-i` is inherited. It replaces what was in force. 3.
+`m` and `s` are no longer inherited at a hole. This reverses the list of the 19th, by your point 4. A pattern
+that needs them writes them, or its file sets them as program options."; shown the weak example (program weakly
+insensitive, a library `word := /[a-z]+/`: `/id-${word}/` WHOLE `ID-ABC` FAILS; `/(?i)id-${word}/` HOLDS) and the
+`s` example (`/(?s)a${dot}b/`, dot := `/./`: WHOLE `a\nb` HOLDS today, FAILS when `s` is not inherited). HIS
+WORDS, whole:
+
+"hole-flags: yes to all. What i like about the i weak behavior is that it's consistent to the other program
+level settings that only affect literals in program scope."
+
+Class: a RULING on all three parts, and his REASON for the weak behaviour: "it's consistent to the other program
+level settings that only affect literals in program scope." So: (1) `i` has a WEAK value per file (weakly
+case-sensitive unless a program option sets weakly insensitive), the default of the literals written in that
+file; it does not propagate through a hole or across an import; (2) at a hole only an EXPLICIT `i` or `-i`
+(written in a literal) is inherited; it replaces what was in force, down the hole, until a nearer explicit
+setting; (3) `m` and `s` are not inherited at a hole. It REVISES flags-scope / flags-propagate (2026-11-19:
+"`i`, `m`, `s`") and, with it, the examples of core/holes/flags and core/holes/flags/in-filter that rest on an
+inherited flag (those with an explicit `(?i)` stand); his proposal of four `i` values is thereby ruled in this
+form (on and off explicit; weak on and weak off the file's default).
+
+The manager's readings, for the fold lane to test and mark: (a) "explicit" is a flag written in a literal's
+text (`(?i)`, `(?-i)`, `(?i:..)`, `/.../i`) with PCRE's scope inside that literal; `any_case(rx)`'s body writes
+one; a program option is never explicit; (b) the sides of an `&` inside a hole (flags-in-filter, 2026-11-19)
+inherit by the same rule: an explicit `i` only; the warning `pcrec.flags.filter` keeps its trigger; (c) `x`,
+`xx`, `n`, `U` stay not inherited (as ruled); `J` unchanged; (d) the program options `m`, `s`, `n`, `x` and the
+weak `i` are one table: lexical, the file's own literals, from the statement on; (e) a binding of the SAME file
+inserted in a hole of that file has the same defaults, so nothing visible changes there.
+
+### 2026-11-22 MANAGER — review r83 (preddef1122): dispositions ruled; one correction; idiom-confirm closed on default-export (no owner words)
+tags: core/labels/export core/labels/paths core/labels/flow core/holes/labels core/labels/export/flat-read-outside core/modules/binding-list core/conditions/form lib/search/hits lib/search/occurrences core/diagnostics/errors
+
+Review r83 (design mode; five opus lenses, one of them the NAMES grid, and an opus verifier over the fold of
+default-export and export-list, diff 30ca2520d..3e58abe9e; draft `$PCREC_TMPDIR/scratch/crit-preddef1122/
+review.md`; verifier 13 HOLDS, 2 PARTLY; every printed line re-derived agrees; no undeclared red in the
+evidence). The manager's dispositions, by the draft's ids; every one is the manager's, none an owner ruling:
+
+- A1, A2, A7 (the evidence engine accepts what the text refuses: the `&` ambiguity on a read from outside,
+  through a part label over an `&` chain and through an export list across `&`; an export list through a call
+  whose body uses its argument alone; bare `$h` and `h[2]` across `&`): FIX-NOW in a successor model, with one
+  printed refusal line per shape and the error-table rows.
+- A3: FIX-NOW BEFORE the owner is asked argument-default: "The match is the same under both" corrected (false
+  when a body uses its argument both alone and labelled; the two-use run line printed); the cost of the (error)
+  answer across the provided library stated.
+- A4: FIX-NOW, the manager's reading: a read from OUTSIDE a binding sees its EXPORTED settings only; a source the
+  binding keeps protected does not exist for that read (so it neither supplies a value nor makes an `&`
+  ambiguity); a run line.
+- A5: FIX-NOW, the manager's reading: a binding's own name reaches its UNLABELLED uses only; a labelled use is
+  reached by its label; where a part label written in the definition has the binding's own name, the label wins
+  (with the hide-label warning).
+- A6: FIX-NOW: "a call exports what its body exports (core/labels/export statement 3)".
+- A8: FIX-NOW: the dependents marked and listed under argument-default; the manager's reading: a read written
+  INSIDE an argument beside the argument's own group is the caller's own text, legal under both candidates;
+  closed-argument's reading (a) re-worded as awaiting argument-default.
+- D1, D3, D5, D6, D7, D9, D10, D11, D12, D13, D14, D18: FIX-NOW as proposed (D3: ONE statement in
+  core/labels/export: "an unlabelled use carries the implicit label of the binding's name, protected", the other
+  pieces point at it; D6: every reading printed as a rule is marked, his caveat classed AGREEMENT, the citations
+  of readings "(g)/(h)" corrected to the letters the record has).
+- D2: FIX-NOW, with CORRECTION 1 below.
+- D4: (i) FIX-NOW, a reading: a part label over an EXPRESSION written in the definition reads, inside the
+  definition, the labels visible in that expression by the inside rules, and exports outward only what that
+  expression's own text exports; (ii) FIX-NOW, one sentence: a macro's parameter is not a part whose labels the
+  body may name (ruled 2026-11-21; statement 2 does not license `rx.d`); (iii) the label-only group around an
+  argument (`(?<:hit>${x})`: do `hits` and `occurrences` export their argument's labels as `h.hit.g`) joins the
+  OWNER QUESTION argument-default as its library face; (iv) natives: PLAN (trigger: the first native given a
+  body or an interface).
+- D8: FIX-NOW: the sentence in core/holes/labels marked "(awaits capture-export)"; the top level stated as a
+  reading (at the top nothing is outside: the program's own text and the parts it uses alone are both visible
+  to it).
+- D15, D16: PLAN (the access grid and the one-form table at the next full revision); NOW: `[=A]` added to the
+  table of the ways a part is used; the cross case `(=year) := isodate` and a collision between two lists stated
+  as readings (the cross case a compile error for now; a collision the same label, last mention).
+- D17: RULED BY THE RECORD, see below. E1, E2: FIX-NOW in the successor model. E3: NOTED.
+- S1 (the general form as a principle piece): PLAN: a principle needs his words; told to him as a view.
+- Process: the NAME-GRID check (one cell per spelling x occurrences x read kind, each naming its deciding
+  sentence and a run, undecided cells printed) is ACCEPTED and goes into the successor model in this fix lane;
+  the proposed skill edits go to main.
+
+CORRECTION 1 (review D2): the entry "2026-11-22 OWNER RULING — default-export: protected" names hole-export and
+statement 3 as reversed. It ALSO narrows two earlier rulings it does not name: label-flow (b), 2026-11-17 ("a
+compose and a literal rx have the same label behavior"), and bare-nested-scope case 2, 2026-11-21 (the identity
+"holds for what the user sees"): a binding composed from parts used alone exports nothing, where the same text
+written as one literal exports its groups (`D1 := A SEQ B` against `D2 := /(?<c>\d)(?<c>\d)/`). This is a
+consequence of the ruling, the manager's reading; told to the owner.
+idiom-confirm CLOSED on the record (review D17): the statement put to him before he ruled "default-export:
+protected" was "a part used bare is available locally as `A.h` but exports nothing", and his analogy gives the
+part used alone local access. That IS the one-use plain read through the binding's name; so `isodate &
+(isodate.year: < 2100)` at the top, where isodate is used alone, is ruled legal by default-export, and his
+2026-11-17 point 4 is revised by it. Told to him; not asked again.
+
+### 2026-11-22 OWNER, on argument-default: "would it change if the macro was B([a = A]) then a.d"
+tags: core/labels/paths core/labels/export core/holes/labels core/operators/bindings
+
+Asked **argument-default** (with B(rx) := `/${rx}xx/` using its argument alone, is the caller's `A.d` in `C :=
+B(A) & (A.d: <100)` (local) the caller's own read, legal, or (error) a compile error until the macro passes the
+label on; the two-use table where the candidates give different answers; the manager's leaning (error), with the
+transparent provided macros writing `[(=) = rx]`). HIS WORDS, whole:
+
+"argument-default: would it change if the macro was B([a = A]) then a.d"
+
+Class: a QUESTION on the question (the caller labels the argument at the call: `C := B([a = A]) & (a.d: <100)`);
+nothing answered on the slug. The manager's answer (told to him; from the rules, no matching run): it changes the
+SPELLING, not the question. `a` is a part label C writes, so the letter of label-reference is met ("a part label
+it writes"), and two arguments of one binding become distinguishable (`B([a = A], [b = A])`, `a.d` against
+`b.d`); but the part `[a = A]` is still handed to B, which still uses it alone, so where and whether its `d` is
+set is still B's doing: `a.d` and `A.d` are legal or refused together under either answer, and under
+closed-argument (ruled) both are errors where B closes the argument.
+
+### 2026-11-22 OWNER RULING — argument-default: an error; and his reason: a label is to the SPOT in the pattern, a parameter is a template, not a piece of the pattern
+tags: core/labels/paths core/labels/export core/holes/labels core/operators/bindings core/holes/bare-condition/nested-scope core/principles lib/control/peek lib/search/hits lib/search/occurrences
+
+Asked **argument-default** ((local) the caller's `A.d` in `C := B(A) & (A.d: <100)`, B(rx) := `/${rx}xx/`, is the
+caller's own read; (error) a compile error until the macro passes the label on; and, from his question, a
+middle (labelled): read only through a label the caller writes on the argument, `B([a = A])`, `a.d`). HIS WORDS,
+whole:
+
+"argument-default: for me this is an error. I'm just trying to articulate why it's an error other than form. I
+get that it might not end up in the pattern. I think for me it has to do with whether or not it's definitively
+part of the pattern being constructed or if it's a parameter to it. B(rx) := you can't take a label against rx
+directly. You can take a label to the spot that rx gets laid into the regex. The label is not to the regex
+abstractly, it's to the spot in the pattern where the regex is being inserted. A parameter like rx in a call
+B(rx) cannot be labeled because it's not being placed into the pattern. It's not a piece of the pattern. It's a
+template of the rx that might be placed into the pattern."
+
+Class: (1) a RULING on the slug: (error): the caller's read of an argument's label by the argument's name (`A.d`
+for `B(A)` whose body uses `rx` alone) is a compile error. It REVISES his example 1 of 2026-11-21 ("C := B(A) &
+(d: <100) is legal. C can see d as a flat look into A") and settles call-prefix case 2 and closed-argument's
+"visible through the call" in the strict sense: visible only where the macro's body puts a label on the spot (his
+example 3, `[dd = rx]`) or passes the labels on. (2) his REASON, a PRINCIPLE in his words (stated while "trying
+to articulate why"; recorded as a principle he stated, the name the manager's): "The label is not to the regex
+abstractly, it's to the spot in the pattern where the regex is being inserted."; an argument "is not a piece of
+the pattern. It's a template of the rx that might be placed into the pattern."
+
+The manager's readings, for the fold lane to test and mark: (a) the middle (labelled) is refused by his words:
+"A parameter like rx in a call B(rx) cannot be labeled": a part label written ON an argument at a call (`B([a =
+A])`) labels a template, not a spot: a compile error (the reading taken, told to him); (b) the same for a group
+written in an argument passed in place (`B(/(?<d>\d)/) & (d: <5)`): the caller cannot read `d` by itself; this
+answers the first shape of two-sources (the body's `d` is the only one the caller reaches, as `B.d`); (c) a
+condition written INSIDE the argument beside its own group (`occurrences(/(?<n>\d+)/ & (n: <100))`) travels
+with the template and stays legal; (d) a spot the macro's body labels exports the argument's exported labels
+through that label (`B.dd.d`; export statement 3); the label-only `hit` in `hits` / `occurrences` is such a
+spot (`hits.hit.g`); (e) a binding used alone in a definition IS placed: its name stands for its spot there
+(binding-prefix), which is why one use reads plainly and several are ambiguous; (f) NOT STATED, to be asked
+(wrapper-export): the provided macros that use their argument alone (`peek`, `atomic`, `when`, `list_of`, the
+gap bodies): `peek`'s ruled piece says "Labels A sets are readable after it" (2026-11-18); under this ruling no
+caller spelling reaches them unless the body passes them on.
+
+### 2026-11-22 OWNER RULING — wrapper-export: agree (a) (the provided wrappers pass their argument's labels on); and a question: do transforms in general
+tags: lib/control/peek lib/control/atomic lib/control/when lib/records/list-of lib/search/contains lib/modifiers/padded lib/modifiers/quoted lib/search/anchored lib/rx/repeat core/labels/export/export-list
+
+Asked **wrapper-export** ((a) the provided macros that use their argument alone, `peek`, `atomic`, `when`,
+`list_of` and the gap bodies, pass its labels on by an export list on the spot, `peek(A) := /(?=${[(=) = A]})/`,
+the caller reading `peek.d`; (b) they stay as written and `peek`'s sentence "Labels A sets are readable after
+it" is withdrawn; the manager's leaning (a)). HIS WORDS, whole:
+
+"wrapper-export: agree (a). I was worried you'd say peek() doesn't work. It's just a definition change. Do
+transforms in general then pass their labels on? Padded, etc."
+
+Class: (1) a RULING on the slug, answer (a) ("agree (a)"): those provided bodies write the export list on the
+spot where the argument is placed; `peek`'s ruled sentence of 2026-11-18 stays true, read as `peek.d`. With an
+OBSERVATION ("It's just a definition change"). (2) a QUESTION: "Do transforms in general then pass their labels
+on? Padded, etc.": not ruled; the manager's answer below, put back to him as transform-export.
+
+The manager's answer (told to him; a view): yes, as ONE convention for the provided library: a provided body
+that PLACES its argument in the match passes that argument's labels on, by the export list on each spot, unless
+its piece says otherwise: `padded`, `quoted`, `anchored`, `any_case`, `contains` / `startsWith` / `endsWith`,
+`rx.repeat`, `capture`, beside the four ruled above. Not covered by "places": an argument used only as a
+FILTER or under a complement (a complement's labels are never visible, ruled), the set arguments (`between`,
+`prefix_in`), the natives with no body. Cases to state: two spots of one argument (`list_of`, `padded`'s width
+form: the same names, read by the label rules: last mention, or the branch taken); several arguments (`when`:
+a name two of them hold is one label by the same rules); a looped spot (`rx.repeat`, `occurrences`: the label
+rules of a loop; the array for a group question); `hits` / `occurrences` keep the path through `hit`.
+
+### 2026-11-22 OWNER RULING — transform-export: yes (a provided body that places its argument passes its labels on); and two definitions he writes: `hide`, `identity`
+tags: lib/modifiers/padded lib/modifiers/quoted lib/search/anchored lib/search/contains lib/rx/repeat lib/structural/capture lib/control/peek core/labels/export/export-list core/labels/export parked/ideas/user-doc-traps
+
+Asked "transform-export: yes" for the convention: "A provided body that places its argument in the match passes
+that argument's labels on, by the export list on each spot, unless its piece says otherwise" (covering `peek`,
+`atomic`, `when`, `list_of`, `padded`, `quoted`, `anchored`, `any_case`, the gap bodies, `rx.repeat`, `capture`;
+leaving out an argument used only as a filter or under a complement, set arguments, the natives; the stated
+cases: two spots of one argument, several arguments, a looped spot, `hits` / `occurrences` through `hit`). HIS
+WORDS, whole:
+
+"transform-export: yes.
+hide(x) := /${x}/
+identity(x) := /${[(=) = x]}/"
+
+Class: (1) a RULING on the slug: the convention holds for the provided library ("a convention for provided
+bodies only, so no language rule moves", as put to him). (2) two DEFINITIONS he writes, with no words on them:
+read as the two cases of the day's rulings in their smallest form (the reading taken, told to him): `hide(x) :=
+/${x}/` uses its argument alone, so its call exports none of the argument's labels (default-export;
+argument-default); `identity(x) := /${[(=) = x]}/` passes all of them on (export-list; wrapper-export). Checked
+against the rules as ruled (no matching run: both match exactly what `x` matches; what differs is what the call
+exports): correct. NOT ruled as provided NAMES: whether `hide` and `identity` join the library is his to say;
+they go into the convention's piece as its worked pair and onto the user-documentation list.
+
+### 2026-11-22 OWNER, a question on transform-export: `A(rx) := /${=rx}/` then `B := A(/\d/) & (A.rx: 6)`
+tags: core/labels/paths core/labels/export core/holes/labels core/operators/bindings core/spellings/placeholders
+
+While **capture-export** was before him (not answered by this message). HIS WORDS, whole:
+
+"transform-export: question: can i A(rx) := /${=rx}/ then B := A(/\d/) & (A.rx: 6)"
+
+Class: a QUESTION with an example; nothing ruled. The spelling `${=rx}` is his placeholder. The manager's answer
+(told to him): YES in meaning, by what is ruled. Read `${=rx}` as `${[rx = rx]}` (his shorthand `[=year]`, read
+as `[year = year]`): the body puts a LABEL ON THE SPOT where the argument is laid, named for the parameter: his
+own principle of the same evening ("You can take a label to the spot that rx gets laid into the regex") and his
+example 3 of 2026-11-21 (`[dd = rx]`). A part label the body writes is exported by the call (default-export:
+what a binding's own text writes); the macro's name qualifies it (call-prefix case 1); one call, so the plain
+read is legal: `(A.rx: 6)` tests the text matched at that spot. RUN (hand-lowered `(?:6)`, python `re`; output
+pasted): WHOLE `6` HOLDS / WHOLE `7` FAILS / SEARCHED `x76` `6`@2 / FIND-ALL `6 7 66` [`6`@0, `6`@4, `6`@5].
+The manager's readings (marked): (a) `A.rx` is the SPOT's own text; the argument's inner labels are reached
+through it by path (`A.rx.g`), not flat: the third small form beside his `hide` (nothing) and `identity` (the
+inner labels flat); (b) a label named for the parameter by the `=` shorthand draws no hide-label warning (the
+shorthand asks for it); (c) `${=rx}` without the brackets is a spelling for the spellings review.
+
+### 2026-11-22 OWNER, on the spelling `[a = A]`: his interpretation: `[ ]` is an array of one rx, acting as `( )`; `a = A` is the label set, usable in an expression; `[a = A | b = B]`
+tags: core/labels/paths core/arrays/lift core/values/metadata core/operators/precedence core/spellings/placeholders core/holes/pattern
+
+After the manager wrote his `${=rx}` as `${[=rx]}` ("recorded as your placeholder ... the documents' form").
+HIS WORDS, whole:
+
+"[a=A] was your elegant spelling but my interpretation was that [] was defining an array of one rx which is that
+rx so effectively they are acting as (). The a=A could be used as the binding like [a = A | b = B] which is also
+your example of an array/map. The label set in my mind can happen in expression but the precedence needs
+clarifying hence []"
+
+Class: his INTERPRETATION of a spelling and a DIRECTION for it ("the precedence needs clarifying"); DISCUSSION;
+nothing ruled; spellings stay placeholders. What he says: (1) the brackets are the ARRAY (an array of one rx
+is that rx), so they act as grouping; (2) `a = A` is the label set, an operation of the expression language,
+usable for each entry: `[a = A | b = B]`, an array / map of labelled entries; (3) the label set "can happen in
+expression"; the brackets are there because its precedence is unclear.
+
+The manager's view (told to him; the syntax call is the manager's, offered for his word): agreed, and it unifies
+two things the documents keep apart: a part label and a labelled array entry (core/values/metadata already gives
+a member a name, `.label`). The precedence the manager would state: the label set `x = E` binds LOOSER than the
+sequence operator and `&` (so `[ok = item & (c)]` labels the filtered item, as the documents write it) and
+TIGHTER than `|` (so `[a = A | b = B]` is two labelled entries); it is written only where something delimits it:
+inside `[ ]` or directly inside a hole `${ }` (so his `${=rx}` needs no brackets); never bare in `( )`, which
+belong to conditions, calls and binding lists. It REVERSES the documents' reading at core/operators/precedence
+("inside an entry `&` and `|` bind tighter than `=`") for `|`; one printed program changes meaning under it and
+needs parentheses: `atomic([ab = B | A])` (lane preddef's re-spelling; `[ab = (B | A)]`).
+
+### 2026-11-22 OWNER, on arrays: `a | b | c` is an array and an rx; `A[]` is array access; the comma form in brackets stays for now, seen as a macro that makes an array
+tags: core/arrays/lift core/operators/precedence core/values/metadata core/spellings/placeholders core/labels/paths
+
+Asked, after the manager's four precedence points for the label set ("label-set: yes"), which way on the comma
+(are `,` and `|` both entry separators inside `[ ]`, or `|` only). HIS WORDS, whole:
+
+"Array: a | b | c is definitely an array and of course an rx. A[] is an array access. For now, comma in square
+brackets is an array form unless we can think of a better use. Is see them as a macro that takes a,b,c and turns
+it into an array."
+
+Class: STATEMENTS answering the comma question (not worded as a ruling; "For now"): (1) `a | b | c` "is
+definitely an array and of course an rx" (arrays are alternations: ruled 2026-11-19); (2) `A[]` "is an array
+access" (the index form after an operand); (3) the comma form `[a, b, c]` stays "For now ... unless we can think
+of a better use", and he sees it "as a macro that takes a,b,c and turns it into an array": so `[a, b, c]` is
+`a | b | c`. The four precedence points of the label set are NOT answered by this message: they stand as the
+manager's syntax reading (the manager's call), to be marked so.
+
+The manager's readings (marked): (a) inside `[ ]` both `|` and `,` separate entries, the comma binding loosest;
+(b) each entry may carry a label set (`[a = A, b = B]` is `[a = A | b = B]`); (c) `[ ]` after an OPERAND is the
+access (`h[2]`), after an operator or at the start it is the array form (core/operators/precedence already reads
+it so).
+
+### 2026-11-22 OWNER, thoughts on capture-export: "No ruling. Just thoughts": two directions and four truths
+tags: core/labels/export core/labels/export/capture-export core/labels/labels-vs-captures lib/structural/capture lib/structural/capture/add-on core/labels/numbers core/labels/export/caller-ambiguous
+
+Asked **capture-export** ((a) captures follow the labels to the caller; (b) they reach it as PCRE's would; the
+manager's leaning (a) with a one-literal program staying plain PCRE). HIS WORDS, whole:
+
+"capture-export: this could go different directions. 1. capture default: everything is a capture that looks like
+a pcre capture. 2. capture explicit: you must specify a capture for
+It to exit to the caller using dedicated nonpcre spelling.
+Truths:
+if you use predicate language to construct patterns, you are not reasonably going to use group numbers to get
+capture values. Labels only.
+Therefore, extra captures do not interfere with the requested set of captures.
+With our current default privacy setup, you need to specifically create a visibility path for captures if you
+want to select them later.
+However if you select them early in binding macros, you need to make sure they are nevertheless visible because
+what if you use the same one twice? Also, You'd have a capture you cannot use in the rest of the definition.
+No ruling. Just thoughts"
+
+Class: THOUGHTS, in his word ("No ruling. Just thoughts"): two DIRECTIONS (1 "capture default": everything that
+looks like a PCRE capture is one; 2 "capture explicit": a capture must be specified, by a dedicated non-PCRE
+spelling, to exit to the caller) and four OBSERVATIONS he calls truths: values are taken by name, not by group
+number; so extra captures do not interfere with the requested set; under the default privacy a visibility path
+must be created to select a capture later; selecting early, inside binding macros, meets the same part used
+twice and gives "a capture you cannot use in the rest of the definition". capture-export stays OPEN.
+
+The manager's thoughts (told to him; nothing folded): his truths point at WHEN a capture is chosen more than at
+which direction: LATE, at the program, by naming a visible label (a path tells two uses of one part apart and
+nothing chosen is invisible to the definition), which is his after-the-fact add-on of 2026-11-21 (`[ d = digits ]
+& capture(d)`); EARLY selection (a named group deep in a binding) is where both of his last two problems live.
+One truth to add from pcrec itself: an extra capture does not change answers, but it is not free: what must be
+captured decides how the pattern can be compiled, so "do not interfere" holds for results, not for speed. A
+program that is ONE literal stays plain PCRE under either direction.
+
+### 2026-11-22 OWNER RULING — capture-export, in two parts: 1 no (a named group in a part of a composed program is not a capture by default); 2 yes (the program-level `capture(path)` asks for one); explicit and implicit captures
+tags: core/labels/export core/labels/export/capture-export core/labels/labels-vs-captures lib/structural/capture lib/structural/capture/add-on core/labels/export/caller-ambiguous core/patterns/literals
+
+Put to him as two smaller questions for a later time: "1. Is a named group in a part of a composed program a
+capture by default? 2. Is the program-level `capture(path)` the way to ask for one?" HIS WORDS, whole:
+
+"I can answer both now. 1. no. 2.  yes. But because 1 is no doesn't mean it couldn't become one depending on
+what is asked of it later. There's explicit captures that i want returned from the artifact then there are
+implicit ones need from what is requested of the predicate language."
+
+Class: a RULING on both parts, with a DISTINCTION in his words. (1) A named group in a part of a composed
+program is NOT a capture by default. (2) A capture is asked for at the program, by naming a label by its path
+(`capture(path)`; the spelling a placeholder). The distinction: EXPLICIT captures, "that i want returned from
+the artifact" (what the caller receives), and IMPLICIT ones, needed "from what is requested of the predicate
+language" (a group may be captured internally because a condition, a read or a backreference needs its text;
+his 2026-11-21 "although they might be internal captures"); "because 1 is no doesn't mean it couldn't become
+one depending on what is asked of it later". It answers the open capture-export (captures follow export, and
+further: they are asked for) and REVISES pure-label of 2026-11-21 ("captures are explicitly written either in
+literal form or using a macro like capture()") for the literal form inside a composed program.
+
+The manager's readings, for the fold lane to test and mark: (a) the caller receives exactly the EXPLICIT
+captures; an implicit one is never returned; (b) a program that is ONE literal stays plain PCRE, every group a
+capture, numbers included (said to him twice the same evening, not objected to; not ruled by these words); (c)
+"a part of a composed program" is read as every literal of a program that is more than one literal, the top
+level's own literals included (to be confirmed); (d) `capture(path)` names a label VISIBLE to the program, so
+the visibility path is the same one a test needs; the capture's name for the caller is the label's last step
+unless renamed (not stated); (e) the wrapper form `capture(name, x)` and "unless they are so declared"
+(helper-captures) are the EARLY forms his truths spoke against: not removed by these words; marked as awaiting;
+(f) caller-ambiguous: two captures of one name can now arise only from two `capture(..)` requests, an error at
+the second request (a reading); (g) capture-loop-value (what the caller gets for a captured label a loop sets)
+stays open.
+
+### 2026-11-22 OWNER RULING — zero-condition-binding: an error, to be reconsidered later (`c := (0: 5)` bound alone)
+tags: core/holes/bare-condition core/conditions/match-so-far core/holes/bare-condition/nested-scope core/principles/conservative-first
+
+The question he left open the same morning ("mostly confirmed. i leave the c := (0: 5) open"), listed again as
+left on his list. HIS WORDS, whole:
+
+"c := (0: 5): A := (b: 8) is an error because b is not in scope. It cannot be applied to any arbitrary pattern
+nor could it be rewritten cleverly to make that legal and meaningful. (0: 5) could be applied to any pattern.
+All patterns have match 0. It could be rewritten to (like) /.*/ & (0: 5). That's why I wasn't sure of it.
+I think it's better to say it's an error and reconsider later."
+
+Class: a RULING on zero-condition-binding ("it's better to say it's an error and reconsider later"): a condition
+on `0` bound alone, `c := (0: 5)`, is a compile error, for now. With his REASONS for having hesitated, recorded
+for the reconsideration: unlike `A := (b: 8)` ("b is not in scope"; it "cannot be applied to any arbitrary
+pattern"), `(0: 5)` "could be applied to any pattern. All patterns have match 0", and "could be rewritten to
+(like) /.*/ & (0: 5)". And the stance is his conservative-first.
+
+The manager's readings (marked): (a) the error is at the binding, the same compile error as bound-condition's;
+(b) the condition written in place, or passed as an argument, is unchanged (the caller's text); (c) the
+reconsideration's trigger: a program that needs a reusable test on the whole match and cannot write it as a set
+bound alone (`five := 5`, then `(0: five)`), or macro variables being designed.
+
+### 2026-11-22 OWNER, an EXERCISE asked for: update the JSONL example's library code, build a search with it, return field values including fields not in the search
+tags: lib/json/members core/labels/export/export-list core/labels/export/capture-export lib/structural/capture core/labels/paths lib/modifiers/quoted
+
+HIS WORDS, whole: "Capture exercise: take the jsonl example library code and update. Then separately, use it to
+build a search for some jsonl line. Have it return the field values of that result which include fields not in
+the search. Evaluate exercise"
+
+Class: a REQUEST for an exercise; nothing ruled.
+
+### 2026-11-22 MANAGER — the JSONL capture exercise he asked for: the library updated, a search built, values returned; where the rules pinched (no owner words)
+tags: lib/json/members core/labels/export/export-list core/labels/export/capture-export lib/structural/capture core/labels/paths core/labels/paths/binding-prefix lib/modifiers/quoted core/holes/name parked/ideas/label-only-group
+
+Source: the frozen draft's §12.1 E-JSONL (`q := json.row("ts", quoted(dates.isodate & between(..))) &
+json.row("level", quoted("error")) & json.row("msg", json.string & contains("timeout"))`, `/^${q}$/m`); the `json`
+module's bodies were never written (lib/json/members, under construction). Written here under the rulings in
+force tonight, capture-export and the label-set spelling included (both recorded, not yet folded); every
+spelling a placeholder; the manager's sketch, nothing folded.
+
+THE LIBRARY FILE (json):
+    @options("n")                                   # a plain ( ) groups; nothing here is a capture
+    ws      := /[ \t]*/
+    string  := /"(?:[^"\\]|\\.)*"/
+    num     := /-?\d+(?:\.\d+)?/
+    value   := string | num | /true|false|null/
+    member_any := ws SEQ string SEQ ws SEQ ":" SEQ ws SEQ value SEQ ws
+    row(k, v)  := /\{(?:${member_any},)*${ws}"${k}"${ws}:${ws}(?<:${k}>${v & value})${ws}(?:,${member_any})*\}/
+`row(k, v)` puts a label ON THE SPOT of the value, named for the key (the label-only group with a name hole).
+THE SEARCH (the user's file):
+    json := import("json");  dates := import("dates")
+    tsdate := dates.isodate & between("2024-01-01", "2024-03-31")
+    line := [(=) = json.row("ts",    quoted(tsdate))]
+          & [(=) = json.row("level", quoted("error"))]
+          & [(=) = json.row("msg",   json.string & contains("timeout"))]
+          & [(=) = json.row("user",  json.value)]                     # not searched on; the member must exist
+          & [(=) = (json.row("host", json.value) | anything)]         # not searched on; the member may be absent
+    capture(line.ts)  capture(line.user)  capture(line.host)
+    /^${line}$/m
+RUN (hand-lowered model, python `re`, `$PCREC_TMPDIR/scratch/pred/jsonl_exercise.py`; the date set and
+`contains` lowered by hand; output pasted, the six lines also as one subject):
+WHOLE `{"ts":"2024-02-10","level":"error","msg":"db timeout","user":"ann","host":"db1"}` HOLDS (ts = `"2024-02-10"`, user = `"ann"`, host = `"db1"`)
+WHOLE `{"user":7,"msg":"timeout","level":"error","ts":"2024-02-10"}` HOLDS (ts = `"2024-02-10"`, user = `7`, host = unset)
+WHOLE `{"ts":"2024-05-01","level":"error","msg":"timeout","user":"bob"}` FAILS
+WHOLE `{"ts":"2024-02-10","level":"error","msg":"db \"pool\" timeout","user":null}` HOLDS (ts = `"2024-02-10"`, user = `null`, host = unset)
+WHOLE `{"ts":"2024-02-10","level":"error","msg":"db timeout"}` FAILS
+WHOLE `{"user":"a","user":"b","ts":"2024-01-31","level":"error","msg":"timeout"}` HOLDS (ts = `"2024-01-31"`, user = `"b"`, host = unset)
+SEARCHED (the six lines as one subject): line 1 @0 (ts = `"2024-02-10"`, user = `"ann"`, host = `"db1"`)
+FIND-ALL: line 1 @0 (ts = `"2024-02-10"`, user = `"ann"`, host = `"db1"`); line 2 @81 (ts = `"2024-02-10"`, user = `7`, host = unset); line 4 @207 (ts = `"2024-02-10"`, user = `null`, host = unset); line 6 @338 (ts = `"2024-01-31"`, user = `"b"`, host = unset)
+
+WHERE THE RULES PINCHED (each a finding for the owner; none decided):
+1. A label named by an ARGUMENT. `row` wants its value label named for the key. The group-name hole gives that
+   to a group in rx text; the label-only group is under construction; a label set `[${k} = v]` in the expression
+   language has no name-hole rule. Without it every row's label is `val` and the caller must rename four times.
+2. "Called more than once" is too coarse. Four calls of `json.row` export four DIFFERENT names, yet the
+   call-prefix reading makes `row.ts` an error (several calls); the exercise went round it with `[(=) = ..]` on
+   each call. The ambiguity is per NAME, not per macro.
+3. Labels cannot be exported from inside an argument. `quoted(dates.isodate & between(..))` exports nothing of
+   isodate (isodate is used alone in the argument's expression, and a label written on an argument is refused):
+   to read `year` of the timestamp the caller must BIND the argument first and export there (`tsdate := [(=) =
+   dates.isodate] & between(..)`), then every wrapper on the way must pass it on (`quoted`, `row`): three
+   definitions must cooperate for one inner label.
+4. An OPTIONAL member has no idiom: `(row("host", value) | anything)` works because `anything` is a filter that
+   always holds, but nothing says so; a provided `maybe_row` or a stated idiom is wanted. The label set's
+   precedence (tighter than `|`) forces the parentheses.
+5. `capture(path)`: its place in a program (a statement, an `&` operand, an `@` effect), the caller's NAME for
+   the capture (the path's last step here; a rename is needed the moment two paths end alike), and whether an
+   unset label gives the caller an unset capture (`host` on lines 2, 4, 6) are all unstated.
+6. A value's text keeps its quotes (`"ann"`): the raw reading (ruled when `json.quoted` was cut); a caller who
+   wants `ann` needs a label on the spot INSIDE the quotes, which `quoted` does not offer.
+7. Duplicate keys: the label is the member PCRE's order reaches first, here the LAST one (`"b"`): the greedy
+   prefix; unstated in the library's piece.
+8. WHAT WORKED WITHOUT STRAIN: `&` of rows for any key order; the export list `(=)` as the one-word way to take
+   a call's labels; the protected default keeping `member_any`, `ws`, `string` out of the caller's sight with no
+   `_` anywhere; the flag ruling (`^`, `$` and `m` sit in the final literal; nothing needed to inherit); `n` as
+   a library option; fields not in the search are just more rows with `json.value`.
+
+### 2026-11-23 OWNER, on label-name-hole as first put: "the label set doesn't work because you can't put a hole in predicate"
+tags: core/holes/name core/labels/label-only-group core/labels/paths core/patterns/literals core/operators/bindings/label-variables
+
+Put to him (slug label-name-hole, the first JSONL pain point): may a macro name a label from an argument, in two
+positions: the label-only group in rx text `(?<:${k}>...)` and the label set at the expression level
+`[${k} = v]`; candidates (a) both, (b) rx text only, (c) no. With a run (a path model,
+`$PCREC_TMPDIR/scratch/pred/label_name_hole.py`) of `[r = kv("ts", /\d+/)] & (r.ts: <5)`, kv(k, v) :=
+`/${k}=(?<:${k}>${v})/`: WHOLE `ts=3` HOLDS, `ts=7` FAILS, `ts=12` FAILS / SEARCHED `ts=7 ts=3` `ts=3`@5 /
+FIND-ALL `ts=3 ts=7 id=1 ts=12 ts=4` [`ts=3`@0, `ts=1`@15, `ts=4`@21]. HIS WORDS, whole:
+
+"the label set doesn't work because you can't put a hole in predicate"
+
+Class: an OBSERVATION correcting the question (not a ruling on label-name-hole). He is right by the documents:
+core/patterns/literals, "Crossings: from rx text to the expression language only by `${...}`; from the expression
+language to rx only by `/.../`": a hole exists only in rx text, so `[${k} = v]` is not a form of the language and
+candidate (a) was not a candidate. The manager's question is withdrawn in that half. The manager's reading
+(marked): at the expression level a label named by an argument is then not a hole question at all; it is the
+label-variable direction (core/operators/bindings/label-variables, under construction). What remains to ask:
+whether the ruled name hole extends to the label-only group in rx text.
+
+### 2026-11-23 OWNER, a question on label-name-hole: "where does row() use the name?"
+tags: core/holes/name core/labels/label-only-group lib/json/members
+
+HIS WORDS, whole: "where does row() use the name?"
+
+Class: a QUESTION (DISCUSSION); nothing ruled. The manager's answer (told to him): in the exercise's body
+`row(k, v) := /\{(?:${member_any},)*${ws}"${k}"${ws}:${ws}(?<:${k}>${v & value})${ws}(?:,${member_any})*\}/`
+`k` stands twice: as literal text in a pattern hole (`"${k}"`, the key the member must have) and as the name of
+the label-only group on the value's spot (`(?<:${k}>...)`). The body itself never READS that label: the name is
+only for the caller. Without the name hole the body writes a fixed name (`(?<:val>...)`) and each caller renames
+(`[(ts = val) = json.row("ts", ..)]`).
+
+### 2026-11-23 OWNER, on label-name-hole: "what are the proposed restrictions on k here? lets establish those now or they will come back as questions"
+tags: core/holes/name core/holes/pattern core/holes/value core/labels/label-only-group core/labels/export lib/json/members
+
+HIS WORDS, whole: "what are the proposed restrictions on k here? lets establish those now or they will come back
+as questions"
+
+Class: a REQUEST for the proposed restrictions; nothing ruled. The manager's PROPOSAL (each line a proposal, none
+ruled; slugs his to cite), for `k` in `row(k, v)`, used as key text (`"${k}"`) and as a label name
+(`(?<:${k}>...)`):
+- k-one-string: one string known at compile time. Already in the documents for the name position: an array is a
+  compile error (RULED, name-hole 2026-11-18); zero values and a `$` read are compile errors (readings). An rx
+  argument (`/t[sz]/`) is refused in the name position even where it denotes one string (proposal: a quoted
+  string only).
+- k-name-decides: the name position's rule governs the call: `row(["ts", "time"], v)` is a compile error though
+  the key-text position alone would take the array as an alternation (proposal).
+- k-legal-name: the string must be a legal group name by PCRE's rule; `"user-id"`, `"2fa"` are compile errors
+  reported at the CALL, naming the argument (proposal; run, python `re`: `user-id`, `2fa` rejected; `ts`, `_id`,
+  `Ts` accepted). No mangling of an illegal key into a legal name.
+- k-underscore: a name beginning with `_` is a private label as anywhere (`row("_id", v)` exports nothing);
+  proposal: no special case, with a warning at the call.
+- k-collision: a name the body also writes is the same label, the last mention (one-rule), no error (proposal:
+  as written).
+- k-text-literal: in the key-text position the string is literal text, never pattern (`"a.c"` matches only
+  `a.c`; run), under core/holes/value (a reading of which hole kind a string constant is).
+- k-case: the label name is the string as written; names are case-sensitive; an `i` in force does not fold the
+  name (proposal).
+- k-part-of-name: a hole may form part of a name (`(?<:f_${k}>...)`; in the documents for the ruled name hole).
+
+### 2026-11-23 OWNER, on k-underscore: "_t" doesn't work; and the general point: a label provided as a string is not "textually defined"
+tags: core/holes/name core/labels/paths/label-reference core/labels/export core/labels/label-only-group core/principles/label-names-spot
+
+HIS WORDS, whole: "1. "_t" doesn't work because its a string in the binding. but isn't that true of any label
+provided as string? its not "textually defined""
+
+Class: an OBSERVATION and a QUESTION (DISCUSSION); nothing ruled. The manager's answer (told to him): yes, it is
+true of every label named through a hole, the RULED group-name hole included (`/(?<${n}>\d)x/`, n := "d",
+core/holes/name): the documents do not say whose label it is. label-reference says "a bare name is a label the
+definition itself writes"; a hole-named label is written by NO definition's text: the body writes `${k}`, the
+caller writes a string. The manager's proposal (not ruled), put to him as slug hole-named-label: such a label
+belongs to the definition whose literal holds the group (the spot, label-names-spot); it is read only with a
+source, from outside (`row.ts`, `r.ts`: the reader writes the name there); the owning body cannot read it bare
+(its text does not write the name) and has no other way (no hole in the expression language; a backreference's
+name takes no hole). Then a `_` name through a hole is a label nothing can read: proposed a compile error
+(replacing the proposal k-underscore's warning).
+
+### 2026-11-23 OWNER, two other approaches to a label named by a macro's caller: (1) label binding in macros; (2) conditions allow expressions for the reference
+tags: core/operators/bindings/label-variables core/holes/name core/labels/label-only-group core/labels/paths/label-reference core/conditions/form/value-left core/labels/paths/call-prefix lib/json/members
+
+Said after the manager's hole-named-label proposal (not answered; set aside by these words). HIS WORDS, whole:
+
+"lets consider some other approaches. independent: 1. label binding in macros. this means a macro can take a
+label and, maybe, a label can be pre-defined as a symbol. A(l:,B) := [l = B] or A(l:) := /(?<:${l}>\d+)/ then
+A(x:) & (x: 5). this means row(dt:,"date", isodate) & (dt.year: 2000) 2. conditions allow expressions. perhaps
+row("date", isodate) & (row."date": 2000) or some expression on row to get the reference"
+
+Class: two PROPOSALS for discussion ("lets consider"), independent of each other; nothing ruled. Spellings are
+placeholders (`l:` on a parameter and at a call; `row."date"`). Approach 1 is the label-variable direction
+(core/operators/bindings/label-variables, his `A(x:) := (x: < 2100)` of 2026-11-22), now with the body SETTING
+the label (a part label `[l = B]`; the name of a label-only group through a name hole), and "maybe" a label
+pre-defined as a symbol (declared labels).
+
+Check-his-regex, RUN (a path model, `$PCREC_TMPDIR/scratch/pred/label_param.py`): `A(x:) & (x: 5)`, A(l:) :=
+`/(?<:${l}>\d+)/`: WHOLE `5` HOLDS, `55` FAILS, `7` FAILS / SEARCHED `7 5` `5`@2, `56` `5`@0 / FIND-ALL
+`5 7 56 15` [`5`@0, `5`@4, `5`@8]. His `(row."date": 2000)` in approach 2 tests the whole date's text against
+`2000`, which no ISO date is; his approach-1 line has `dt.year`: read as the same intent (told to him).
+
+The manager's readings (each marked, none ruled; told to him):
+- (a) Under approach 1 the caller WRITES the label's name in its own text (`x:`), so label-reference is met with
+  no source: `x`, `dt.year` are the caller's own names. That answers his "its not textually defined".
+- (b) The name is decoupled from the key: no legal-name restriction on the key, no array clash; `_t:` is the
+  caller's private label and works; four calls of `row` set four caller names, so no per-macro ambiguity.
+- (c) `dt.year` reads `year` through the label on the spot: argument-default's reading (d) (a spot the body
+  labels exports the argument's exported labels through that label).
+- (d) If the name hole in rx text takes a LABEL PARAMETER, a STRING there is no longer needed; the ruled
+  name-hole example (`n := "d"`) would be re-spelled; the ruling itself (an array is a compile error) stands.
+- (e) Approach 2 keeps the body naming by string (every k-restriction stays), needs ambiguity-per-name for
+  several calls, and meets value-left: left of `:` anything but a name or path is a VALUE today.
+
+### 2026-11-23 OWNER, on approach 1 (a macro takes a label): "lets tentatively work with it"; label-parameter-twice "seems" answered by the same-label-twice rules
+tags: core/operators/bindings/label-variables core/labels/one-rule core/labels/labels-vs-captures/array-vs-passes core/labels/flow lib/json/members
+
+HIS WORDS, whole: "lets tentatively work with it. it seems like label-paramter-twice is answered by standard same
+label twice rules"
+
+Class: a LEAN / working direction ("tentatively"), NOT a ruling: approach 1, the label parameter, is the form the
+discussion works with; and an OBSERVATION ("it seems") that one label placed twice follows the standard rules
+for a label mentioned twice. The piece stays under construction.
+
+The manager's readings, RUN (a path model, `$PCREC_TMPDIR/scratch/pred/label_param_twice.py`; A(l:) :=
+`/(?<:${l}>\d+)/`, the program `A(x:) SEQ "," SEQ A(x:)` with each test), each a reading for the fold to test:
+- the plain read is the last mention: `& (x: 5)`: WHOLE `7,5` HOLDS, `5,7` FAILS, `5,5` HOLDS / SEARCHED
+  `5,7 7,5` `7,5`@4 / FIND-ALL `7,5 5,7 1,5 5,5` [`7,5`@0, `1,5`@8, `5,5`@12]
+- a group question reads both settings: `& some((x: "5"))`: WHOLE `7,5` HOLDS, `5,7` HOLDS, `7,7` FAILS /
+  SEARCHED `7,7 5,7` `5,7`@4 / FIND-ALL `7,5 5,7 1,2 5,5` [`7,5`@0, `5,7`@4, `5,5`@12]
+- the index is in order: `& (x[1]: 5)`: WHOLE `7,5` FAILS, `5,7` HOLDS / SEARCHED `7,5 5,7` `5,7`@4 / FIND-ALL
+  `7,5 5,7 1,5 5,5` [`5,7`@4, `5,5`@12]
+- across `&` (`A(x:) & A(x:) & (x: 5)`) the plain read is the ambiguous reference, a compile error
+  (core/labels/flow), hand-worked from the rule, no run.
+
+The JSONL exercise under approach 1 (the manager's sketch; the same hand-lowered model re-run, the same answers,
+the labels now the caller's own):
+    row(l:, k, v) := /\{(?:${member_any},)*${ws}"${k}"${ws}:${ws}(?<:${l}>${v & value})${ws}(?:,${member_any})*\}/
+    line := json.row(ts:,   "ts",    quoted(tsdate))
+          & json.row(lvl:,  "level", quoted("error"))
+          & json.row(msg:,  "msg",   json.string & contains("timeout"))
+          & json.row(user:, "user",  json.value)
+          & (json.row(host:, "host", json.value) | anything)
+    capture(line.ts)  capture(line.user)  capture(line.host)
+    /^${line}$/m
+What it changes among the exercise's findings (readings): finding 1 (a label named by an argument) and finding 2
+(per-macro ambiguity) do not arise; the four `[(=) = ..]` lists go; a key that is no legal name is no obstacle.
+Left: findings 3 (a label inside an argument: bind and export first), 4 (the optional member), 5 (capture
+details), 6, 7. New questions it raises: must every call pass the label (`lvl:`, `msg:` are never read); a label
+the body never places; a label pre-defined as a symbol.
+
+### 2026-11-23 OWNER RULING — label-parameter-omitted: `_` is the unspecified label; and: no argument is omitted under the current call rules; label arguments are not special by position or requirement
+tags: core/operators/bindings/label-variables core/operators/bindings core/operators/bindings/call-forms core/modules/leave-out core/labels/export
+
+ASKED AS A RULING (slug label-parameter-omitted: may a call leave a label parameter out; the manager's leaning: no,
+with `_:` as the explicit "none", as the leave-out of a binding list). HIS WORDS, whole:
+
+"label-parameter-omitted: this is two+ questions. we currently don't have overloading so a macro defined for 3
+args needs three args. they can be omitted by row(,"level", ...) if we choose to allow that but not omitted under
+current macro call rules regardless of labels. i agree that _ should be the unspecified label- it also comments
+on your meaning. also, label args are not special by position or requirement. in theory, one could have 2 label
+args."
+
+Class, part by part:
+- A CORRECTION of the question ("this is two+ questions"): omitting an argument is a question about macro calls,
+  not about labels.
+- A STATEMENT of the current rule: "we currently don't have overloading so a macro defined for 3 args needs three
+  args"; not omitted "under current macro call rules regardless of labels". It agrees with the documents
+  (core/operators/bindings: "a call binds every required parameter or is a compile error naming the missing
+  one"; several bodies for one name is the open call-forms).
+- An IDEA, not ruled ("if we choose to allow that"): an empty argument position, `row(,"level", ...)`. Spelling a
+  placeholder. To be parked with a trigger.
+- A RULING on the part asked ("i agree that _ should be the unspecified label"): at a call `_` is the unspecified
+  label; his reason added: "it also comments on your meaning". The reading taken of his "agree": the leaning as
+  put (`row(_:, "level", ..)`).
+- A STATEMENT on the parameter kind: "label args are not special by position or requirement. in theory, one could
+  have 2 label args": a label parameter is a parameter like any other (any position, any number).
+
+The manager's readings (marked; for the fold to test):
+- (a) What `_` means inside the body follows from the forms already ruled: `[l = B]` with `_` is `[_ = B]`, which
+  makes none of B's labels visible outside B (core/labels/export statement 7); in rx text `(?<:${l}>...)` with
+  `_` is a plain non-capturing group. So `row(_:, "level", ..)` exports nothing of its value.
+- (b) Two `_` passed to one call, or `_` placed twice, never collide: `_` is the unusable name.
+- (c) A body that READS a label parameter (`A(x:) := (x: < 2100)`) called with `_` is a compile error at the
+  call: there is nothing to read.
+- (d) "Not special by requirement": a label parameter may be an optional keyword setting like any parameter, its
+  default `_` (`row(k, v, l: = _)`, spelling a placeholder), so a call may leave it out by the EXISTING call rule
+  (keyword arguments are optional settings with defaults). Not his words: a consequence to confirm.
+- (e) The reading "a `:` in a head is a compile error" (core/operators/bindings) is lifted by the label mark when
+  the parameter kind is built.
+
+### 2026-11-23 OWNER RULING — label-parameter-default: yes (a label may be an optional parameter); his spelling lean `l = ts:`
+tags: core/operators/bindings/label-variables core/operators/bindings core/spellings/placeholders core/conditions/form
+
+ASKED AS A RULING (slug label-parameter-default: may a label parameter be a keyword setting with the default `_`,
+so that a call leaves it out by the existing call rule; the manager's leaning: yes; the manager's placeholder at
+the call `l: ts`). HIS WORDS, whole:
+
+"label-parameter-default: yes you could use a label in an optional parameter. i lean towards ..., l = ts:) ...
+spelling for consistency and l: ts looks like a condition"
+
+Class: a RULING ("yes you could use a label in an optional parameter"): a label parameter may be an optional
+(keyword) parameter under the existing call rule. And a SPELLING LEAN, not a ruling ("i lean towards"): passed by
+name it is written `l = ts:` (the keyword form `name = value` with the label mark on the label), "for
+consistency", and because "l: ts looks like a condition". For the spellings review; the manager's `l: ts` is
+withdrawn as a placeholder.
+The manager's reading (marked): the default `_` for such a parameter is the author's to declare in the head
+(`row(k, v, l = _:)`, spelling a placeholder); his words rule the optionality, not which default.
+
+### 2026-11-23 OWNER, on capture-place: "i lean (a)" (an `&` operand); capture() takes a label arg; early capture is no crime
+tags: lib/structural/capture lib/structural/capture/add-on core/labels/export/capture-export core/operators/bindings/label-variables core/labels/export/caller-ambiguous
+
+Asked **capture-place** (where the capture request stands: (a) an `&` operand, as his 2026-11-21 sketch
+`[ d = digits ] & capture(d)`; (b) a program statement; the manager's leaning (b), on his "select them early"
+truth). HIS WORDS, whole:
+
+"capture-place discussion: i lean (a) and note that capture() takes a label arg. i don't think its a crime for
+early capture. in practice, library developers would not include capture in their definitions. all captures
+would probably be defined by the end users as in your json example. therefore, they know what they are doing and
+can see the whole program and decide how to set captures."
+
+Class: DISCUSSION, in his word, with a LEAN ("i lean (a)"): the request is an `&` operand. A NOTE: "capture()
+takes a label arg" (read: its argument is a label, the label-parameter kind of the same day). An OPINION on the
+early case: not "a crime"; in practice captures are the end user's, who sees the whole program. NOT a ruling.
+The manager's leaning (b) is withdrawn: its ground was preventing the early case, which he does not want
+prevented.
+
+The manager's readings (marked): (a) `capture(l:)` is then call-shaped like any macro taking a label, standing
+where a condition stands and always holding; its effect (a caller capture) is native; (b) what (a) leaves to
+state is one label captured from a definition USED TWICE (or two requests of one name): put to him as slug
+capture-twice with the proposal "the caller's captures are one flat set of names under the same-label-twice
+rules". RUN for that question (python `re`, the two uses as `d1`, `d2`): `A SEQ "," SEQ A`, A := `[d = /\d+/] &
+capture(d:)`: WHOLE `7,5` HOLDS (first `7`, last `5`), `7` FAILS / SEARCHED `x7,5 1,2` `7,5`@1 (first `7`, last
+`5`) / FIND-ALL `7,5 1,2` [`7,5`@0 (`7`, `5`), `1,2`@4 (`1`, `2`)].
+
+### 2026-11-23 OWNER RULING — capture-twice: (a) (the same-label-twice rules); and an OBSERVATION: two kinds of label reference, one that sets a new group, one that refers to a group that exists
+tags: lib/structural/capture core/labels/export/caller-ambiguous core/operators/bindings/label-variables core/holes/bare-condition/nested-scope core/holes/bare-condition/bound-condition core/labels/one-rule
+
+ASKED AS A RULING (slug capture-twice: a caller capture name requested twice: (a) the caller's captures are one
+flat set of names under the same-label-twice rules: in a sequence the last mention, across `|` the branch taken,
+across `&` an ambiguous name, a compile error; (b) a compile error whenever two requests can give one name; the
+manager's leaning (a)). HIS WORDS, whole:
+
+"capture-twice: (a). but your example did make me question some details: row(a:,...) defines a: which doesn't
+exist. capture(l.d:) is intended as a reference to l.d. if capture is defined to take a label, should it be
+provided as capture(l.d)? then we have two different kinds of label references. one you can set to a new group
+and one that is a reference to a group that exists. the second one is dangerous and can't be used like the
+first. A(a:, B) := B & (a: 5) then C:= [x = /\d/] | A(/\w/, x)"
+
+Class: a RULING on capture-twice: (a). It answers the open caller-ambiguous for requested captures (the manager's
+reading (f) of 2026-11-22, "an error at the second request", is WITHDRAWN). And an OBSERVATION with a QUESTION
+(DISCUSSION, nothing ruled): two kinds of label reference: one "you can set to a new group" (`row(a:, ...)`
+"defines a: which doesn't exist"), one "a reference to a group that exists" (`capture(l.d)`; his question whether
+it is then written without the mark); "the second one is dangerous and can't be used like the first", with his
+example.
+
+Check-his-regex: his call `A(/\w/, x)` has the arguments in the other order than the head `A(a:, B)`; read as
+`A(x, /\w/)` (told to him). RUN (python `re`, hand-lowered: in the second branch of the `|` x is unset, so
+`(x: 5)` fails): `C := [x = /\d/] | A(x, /\w/)`, A(a:, B) := `B & (a: 5)`: WHOLE `5` HOLDS, `7` HOLDS, `a` FAILS
+/ SEARCHED `a5` `5`@1 / FIND-ALL `a 5 b7` [`5`@2, `7`@5]: the second branch never matches; C answers as `/\d/`.
+
+The manager's readings (marked; told to him): (a) the SET kind keeps the body inside bare-nested-scope (the body
+holds the spot it labels); the READ kind is an exception to it ("A separately defined piece names only labels it
+holds and reads only its own settings"): the body reads the caller's label as it stands at the body's spot,
+which may be unset there (his example) or an earlier pass's; (b) the read kind is what bound-condition's first
+alternative was (`A(x:) := (x: < 2100)`, 2026-11-22); the way that works today is passing the CONDITION, written
+and resolved in the caller's text; (c) a body may read its own label parameter after placing it.
+
+### 2026-11-23 OWNER RULING — label-kinds: yes, one mark, one meaning; the reference kind is for natives, off limits for users for now
+tags: core/operators/bindings/label-variables core/holes/bare-condition/nested-scope core/holes/bare-condition/bound-condition lib/structural/capture core/spellings/placeholders
+
+ASKED AS A RULING (slug label-kinds, the statement put to him: the mark `a:` means the SETTING kind only (the
+call defines a new label in the caller's text; a body may read its own label parameter after placing it); a
+reference to an EXISTING label is written as a plain path, no mark (`capture(l.d)`); only native forms take a
+reference for now; a user macro reading a caller's label stays under construction (pass the condition:
+`A(c, B) := B & c`, `A((x: 5), /\w/)`); so `A(a:, B) := B & (a: 5)` is a compile error at the definition). HIS
+WORDS, whole:
+
+"label-kinds: yes, one mark meaning. the reference kind can be used by natives but stays off limits for users
+until we see a valid, safe set of rules for it."
+
+Class: a RULING. (1) One mark, one meaning: the marked label parameter is the setting kind. (2) The reference
+kind (a path to a label that exists) "can be used by natives" and "stays off limits for users until we see a
+valid, safe set of rules for it" (a direction kept open, with its trigger in his words). It REVISES the
+under-construction piece label-variables as recorded on 2026-11-22: his first alternative `A(x:) := (x: < 2100)`
+is the reference kind, now off limits for users; the spelling `x:` is the setting kind's.
+The manager's readings (marked; for the fold to test): (a) a body that reads a label parameter it never places
+is a compile error at the definition; (b) a marked argument at a call is ONE new name, never a path (`l.d:` is a
+compile error); (c) `capture` takes a reference: `capture(l.d)`, no mark; (d) the group questions and conditions
+are unchanged (their labels are written in the caller's text).
+
+### 2026-11-23 OWNER RULING — capture-name: a (the label's last step, with an optional rename)
+tags: lib/structural/capture lib/structural/capture/add-on core/labels/export/capture-export core/diagnostics/warnings
+
+ASKED AS A RULING (slug capture-name: the caller's name for a requested capture: (a) the last step, with an
+optional rename, `capture(l.d)` gives `d`, `capture(l.d, name = "first")` gives `first`, the name a string; (b) a
+name always required; (c) the whole path is the name; the manager's leaning (a), adding a warning when two
+requests end in one last step and neither is renamed). HIS WORDS, whole:
+
+"capture-name: a"
+
+Class: a RULING: (a). The reading taken: the candidate as lettered (the last step; an optional rename by a
+string; the keyword spelling `name =` a placeholder). The warning the manager added beside the leaning was not
+part of the lettered candidate: NOT ruled; kept as the manager's proposal (a structural warning, moving no
+answer). With capture-twice (a): two requests of one last step, not renamed, give the caller the last mention.
+The manager's readings (marked): (a) a rename to a string that is no legal capture name is a compile error at
+the request; (b) two requests RENAMED to one name follow capture-twice as well; (c) an unset label gives the
+caller an unset capture (regex's own behaviour for a group that did not take part), not asked.
+
+### 2026-11-23 OWNER, reconsidering "the last mention" for requested captures: "perhaps it should define all labels as capture then the rules for multi capture hold"
+tags: lib/structural/capture core/labels/labels-vs-captures core/labels/export/caller-ambiguous core/labels/export/capture-export core/principles/regex-default
+
+Said after capture-loop-value was put to him (not answered by these words directly), about the consequence of
+capture-twice (a) the manager had printed under capture-name ("the caller then gets the last mention"). HIS
+WORDS, whole:
+
+"capture-name: i noticed a comment late about accepting the last reference. perhaps it should define all labels
+as capture then the rules for multi capture hold. that way alternations, captures followed by loops, etc can be
+specified as they can now"
+
+Class: a PROPOSAL ("perhaps"), reconsidering capture-twice (a) of the same day; NOT a ruling; capture-twice (a)
+stands in the record until he rules on the proposal. The reading taken (the manager's, told to him to confirm):
+a request for a capture name makes EVERY group that carries the label a capture under that one name, and the
+caller's value then follows regex's own rules for several groups of one name and for groups in loops ("the rules
+for multi capture", "as they can now"), not the label rules.
+Where the two part, from runs already made: `[l = A] SEQ "," SEQ [r = A]` on `7,5`: the label rules give the
+caller `5` (the last mention); PCRE's rule for two groups of one name gives `7` (core/labels/labels-vs-captures:
+"PCRE's FIRST SET group in pattern order, not the last set (run, libpcre2)"). The loop `/(?:(?<h>\d)?;)+/` on
+`3;;`: the label unset, PCRE's carried `3` (run, python `re`, today). An alternation: the branch taken under
+both.
+The manager's readings (marked): (a) it would REPLACE capture-twice (a) and answer capture-loop-value as (b),
+PCRE's carried value; (b) it removes the seam the manager flagged (one group returning one value as a one-literal
+program and another once composed): "The CAPTURE is regex's" is already the core's sentence; (c) across `&`,
+which PCRE does not have, "pattern order" would be left then right, his left-decides; not stated by him.
+
+### 2026-11-23 OWNER, an alternative to capture-as-pcre: `capture(@x.year)`, an array capture; "thoughts?"
+tags: lib/structural/capture core/labels/labels-vs-captures core/labels/labels-vs-captures/array-vs-passes core/labels/export/capture-export core/spellings/placeholders
+
+Asked **capture-as-pcre** (requested captures follow PCRE's rules for several groups of one name and for loops,
+replacing capture-twice (a) and closing capture-loop-value as the carried value; the manager's leaning: yes). HIS
+WORDS, whole:
+
+"capture-as-pcre: one alternative is to allow capture(@x.year) specifying arrays to get that behavior. thoughts?"
+
+Class: an ALTERNATIVE for discussion (a PROPOSAL; "thoughts?"); nothing ruled; capture-as-pcre not answered. The
+spelling `@x.year` is his placeholder for the array of a name's settings (the documents' placeholder is
+`x.@a`): for the spellings review.
+RUN (python `re`; `/(?:(?<h>\d)?;)+/`): WHOLE `3;4;;` carried `4`, label unset, array [`3`, `4`]; `3;;` carried
+`3`, label unset, array [`3`]; `3;4;` carried `4`, label `4`, array [`3`, `4`] / SEARCHED `x3;4;;` `3;4;;`@1
+(carried `4`, label unset, array [`3`, `4`]) / FIND-ALL `3;4;; 7; ;` [`3;4;;`@0, `7;`@6 (carried `7`, label `7`,
+array [`7`]), `;`@9 (carried unset, label unset, array [])].
+The manager's thoughts (told to him; marked): (a) it mirrors the two reads the language already has of one name,
+the label and the array (array-vs-passes): `capture(x)` hands the caller what `(x: ..)` reads, `capture(@x)` what
+the group questions and `x[k]` read; no third rule set (PCRE's duplicate-name and carried rules) enters composed
+programs; capture-twice (a) stands and capture-loop-value closes as the label; (b) the array holds MORE than
+PCRE's rules give (every setting, in order); PCRE's carried value is recoverable from it where one group sets the
+name, so nothing is lost; (c) an array capture is a new thing for the ARTIFACT (a list of stretches per name; a
+match-API matter of pcrec proper, with a matching cost): its meaning can be acknowledged and its build left
+under construction; a line for main; (d) the seam stays: one literal alone returns PCRE's carried value, the
+same group requested in a composed program returns the label; the manager's leaning moves from capture-as-pcre
+to this alternative for reason (a).
+
+### 2026-11-23 OWNER RULING — array-capture: yes (`capture(x)` the label, `capture(@x)` the array, unbuilt); capture-as-pcre dropped; capture-loop-value closed as the label
+tags: lib/structural/capture lib/structural/capture/add-on core/labels/labels-vs-captures core/labels/labels-vs-captures/array-vs-passes core/labels/export/capture-export core/diagnostics/under-construction
+
+ASKED AS A RULING (the statement put to him: `capture(x)` is the label; `capture(@x)` is the array, its build
+under construction; capture-as-pcre is dropped; "say "array-capture: yes" and I'll record it as ruled, with
+capture-loop-value closed as the label"). HIS WORDS, whole:
+
+"array-capture: yes and i think it was a plan item to allow array captures in the future. unbuilt as you say. so
+then capture-as-pcre: as last label ?"
+
+Class: a RULING: array-capture: yes, "unbuilt as you say" (under construction). With it, by the statement he
+answered: capture-as-pcre (his own "perhaps" of the same hour) is DROPPED; capture-twice (a) STANDS;
+capture-loop-value is CLOSED as (a), the label. A RECOLLECTION ("i think it was a plan item"), CHECKED against
+the plan: confirmed, two rows: [CAPTURE-ARRAY] (filed 2026-10-13, Frank: a repeated capture group records every
+iteration; opt-in per group) and [ARRAY-CAPTURE] (filed 2026-11-09, Frank: "array capture for (X){M, N} perhaps
+using special syntax. Cap N become N capture groups. No unbounded"). And a QUESTION seeking confirmation ("so
+then capture-as-pcre: as last label ?"): answered yes by the manager, with the precise statement: `capture(x)`
+gives the caller the LABEL as a plain read at the end of the match gives it: among several spots the last
+mention; after a loop the last pass's OWN value, unset where that pass set nothing (`3;;`: unset, not `3`); the
+earlier `3` is in the array.
+The manager's readings (marked): (a) `capture(@x)` is a client of the two plan rows; [ARRAY-CAPTURE]'s "No
+unbounded" is his constraint on that row, and the array of settings of a `+` loop is unbounded: a point for the
+build, noted to main, not a predicate ruling; (b) the seam stands and is to be stated: a one-literal program
+returns PCRE's carried value, a requested capture in a composed program the label.
+
+### 2026-11-23 OWNER, on argument-export: "show me why ts.year doesn't work. doesn't ts: point to the provided pattern in place?"
+tags: core/labels/paths/argument-default core/labels/paths core/labels/export core/operators/bindings/label-variables core/conditions/match-so-far lib/convention/argument-labels
+
+Asked **argument-export** (the manager's statement: in `row(ts:, "ts", quoted(dates.isodate & between(..))) &
+(ts.year: 2024)` the read `ts.year` is a compile error "as the rules stand", isodate being used alone inside the
+argument's expression; candidates: bind first, or allow an export list in place). HIS WORDS, whole:
+
+"argument-export: show me why ts.year doesn't work. doesn't ts: point to the provided pattern in place?"
+
+Class: a QUESTION challenging the manager's statement (DISCUSSION); nothing ruled.
+The manager's answer (told to him): the statement was OVER-CLAIMED and is WITHDRAWN as a statement of the rules.
+The chain: (1) `ts` is on the spot of row's body that holds `v & value`; a labelled spot exports "the argument's
+exported labels through that label" (argument-default, the manager's reading (d)); (2) `quoted` passes its
+argument's labels on (transform-export, ruled); (3) the argument is the expression `dates.isodate &
+between(..)`, written IN PLACE in the caller's definition. The error came from reading "the argument's exported
+labels" as what a BINDING holding that expression would export (isodate used alone: nothing; default-export).
+But the documents have a nearer rule for an expression written in place and read in the SAME definition: "A part
+label over an EXPRESSION (`[ab = B | A]`) reads, inside the definition, the labels visible in it by the inside
+rules, and exports outward only what the expression's own text exports" (core/labels/paths; the printed
+`[ab = B | A] & (ab.l: <20)` reads `l` of parts used alone); and "An expression written in place (an argument, a
+hole's content) belongs to the definition it is written in" (core/conditions/match-so-far, a reading). Under the
+label parameter both the label `ts` and the argument's text are the CALLER's, so `ts.year` is an inside read and,
+by that rule, legal. The finding 3 of the JSONL exercise (2026-11-22) was written when the label was the body's
+and read from outside (`line.ts`); it does not carry over unchanged.
+Then the cases reverse from what the manager told him: IN PLACE reads by the inside rules; a BOUND argument
+(`tsdate := dates.isodate & between(..)`) exports nothing of isodate (default-export) unless it exports there.
+RUN (python `re`, a SIMPLIFIED model: the object reduced to its one member; the date set and the year test
+lowered by hand): WHOLE `{"ts":"2024-02-10"}` HOLDS, `{"ts":"2024-05-01"}` FAILS, `{"ts":"2023-02-10"}` FAILS /
+SEARCHED `{"ts":"2023-02-10"} {"ts":"2024-03-31"} {"ts":"2024-01-15"}` the second @20 / FIND-ALL the second @20,
+the third @40.
+Put to him as the restated slug argument-export: a caller's label on a spot that holds the caller's in-place
+argument reads that argument by the inside rules, as a part label over an expression does; the manager's leaning
+yes.
+
+### 2026-11-23 OWNER, on argument-export restated: "this is a confusing one"; he wants yes and wants it to make sense; asks the JSON example's current state
+tags: core/labels/paths/argument-default core/labels/paths core/operators/bindings/label-variables lib/json/members lib/structural/capture
+
+HIS WORDS, whole: "this is a confusing one. i want to say yes because i want that to work but i want also to make
+sure it makes sense. so your saying things must work the way we have defined them? whats the current state of
+the json example given your current understanding and a yes to this issue?"
+
+Class: DISCUSSION; a LEAN toward yes, explicitly conditional ("i want also to make sure it makes sense"); NOT a
+ruling. Two questions to the manager: whether the claim is that the existing definitions already give the
+answer; and the JSON example's current state under a yes.
+The manager's answer (told to him): (1) yes in this sense: the two rules are in the documents (a label over an
+expression reads inside by the inside rules; an argument written in place is the caller's text); what is NEW and
+the manager's is the step that a label parameter's spot counts as "a label over the caller's expression": the
+label parameter itself is his tentative direction, so this is a reading of how they combine, not something
+already defined. (2) the example as written to him, with each line's standing (ruled / his lean / the manager's
+reading / unbuilt); one consequence found while writing it: read from OUTSIDE `line` (`line.ts.year`) the year
+is not exported (isodate is used alone in line's text: default-export), so the inner reads and the capture
+requests are written INSIDE `line` (his "early capture is no crime"), or the whole search is one definition.
+
+### 2026-11-23 OWNER, on the JSON picture: "this aligns with my understanding"; three follow-ups (a condition on `_x`; the quotes; threading the label to string)
+tags: core/labels/paths/argument-default core/operators/bindings/label-variables core/labels/export lib/json/members lib/modifiers/quoted lib/search/contains
+
+Asked whether the JSON picture under a yes to argument-export makes sense as a whole. HIS WORDS, whole:
+
+"this aligns with my understanding. 1. if i were to add a condition to json.row(_x:, "msg", json.string) & (_x:
+contains("timeout") would that also work the same? 2. the string _x matched would have quotes around it ? 3. we
+could thread the label to string to get the unlabeled portion"
+
+Class: an AGREEMENT with the picture ("this aligns with my understanding"). The reading taken, told to him so he
+can object: argument-export is answered YES (a caller's label on a spot holding the caller's in-place argument
+reads that argument by the inside rules), his earlier "i want to say yes" having waited on the picture making
+sense. Then two QUESTIONS and an IDEA (DISCUSSION): "unlabeled" in 3 is read as "unquoted" (the text inside the
+quotes; phone autocorrect), told to him.
+The manager's answers (told to him):
+1. Yes, the same answers. RUN (python `re`; `$PCREC_TMPDIR/scratch/pred/msg_two_forms.py`; form A the filter
+   inside the argument, `json.row(_:, "msg", json.string & contains("timeout"))`; form B `json.row(_x:, "msg",
+   json.string) & (_x: contains("timeout"))`, the row's paths enumerated in PCRE's order, the last `msg` member
+   first): WHOLE `{"msg":"db timeout"}` HOLDS, `{"msg":"ok"}` FAILS, `{"msg":"timeout a","msg":"ok"}` HOLDS (x =
+   `"timeout a"`), `{"msg":"ok","msg":"x timeout"}` HOLDS, `{"a":1,"msg":"t\"q timeout"}` HOLDS / SEARCHED (the
+   five as one subject) the first @0 / FIND-ALL @0, @34, @65, @96: A and B identical in every mode. `_x` is the
+   caller's private label, readable in the definition that writes it. The one difference is where the rejection
+   happens (inside the spot, or after the chain's patterns), not what survives.
+2. Yes: `json.string` includes its quotes, so `_x` is `"db timeout"` with them (the raw reading; finding 6 of the
+   exercise). `contains` is unaffected.
+3. A provided form taking a label for the inside, e.g. `string(l:) := /"(?<:${l}>(?:[^"\\]|\\.)*)"/` (the
+   manager's sketch), used in place: `json.row(_:, "msg", json.string(body:))`. It raises the question put to
+   him as slug label-in-argument: a label parameter passed INSIDE an in-place argument. It meets the manager's
+   reading (a) of argument-default ("a part label written ON an argument at a call labels a template": a compile
+   error), which a yes would narrow or withdraw.
+
+### 2026-11-23 OWNER RULING — label-in-argument: sending an unbound label inside an argument is ok, and `_` on the outer spot does not affect it ("an accepted backdoor"); second thoughts on a label SET in an argument, to re-examine
+tags: core/labels/paths/argument-default core/operators/bindings/label-variables core/labels/export core/principles/label-names-spot lib/json/members
+
+ASKED (slug label-in-argument: a label parameter passed inside an in-place argument,
+`json.row(_:, "msg", json.string(body:)) & (body: contains("timeout"))`; whether `_` on the outer spot closes it
+"is part of this question"; the manager's leaning yes, held loosely). HIS WORDS, whole:
+
+"label in argument: this is an interesting one. your use of body was not what i was thinking but it did raise
+interesting points that need examination. the rule about passing a label and templates and such was when we set
+a label like B(a=B), not when we sent an unbound label. (honestly, i'm having second thoughts even about the
+label setting in an argument. whats the difference between A:=[f="frank"], ... B(A) and ... B(f="frank") ? lets
+re-examine after if for no other reason than to remind me of the issues. ) for this issue, sending the unbound
+label is ok and! i would say it wouldn't be affected by the _ as it becomes an accepted backdoor into the inner
+pattern- which is almost the whole point."
+
+Class, part by part:
+- An OBSERVATION: the manager's `body` sketch "was not what i was thinking" for his point 3 (threading the label
+  to string); what he had in mind is NOT recorded (not said); to ask.
+- A CLARIFICATION of his own ruling: "the rule about passing a label and templates and such was when we set a
+  label like B(a=B), not when we sent an unbound label": argument-default's template rule is about a label SET on
+  an argument (his `B(a=B)`, the documents' `B([a = A])`), not about an unbound label sent in.
+- SECOND THOUGHTS, not a ruling, with a REQUEST: "i'm having second thoughts even about the label setting in an
+  argument. whats the difference between A:=[f="frank"], ... B(A) and ... B(f="frank") ? lets re-examine after if
+  for no other reason than to remind me of the issues." The manager's reading (a) of argument-default (a part
+  label written on an argument is a compile error) is to be RE-EXAMINED with him; it stands meanwhile, marked.
+- A RULING on the issue asked: "for this issue, sending the unbound label is ok": a label parameter may be passed
+  inside an in-place argument. And his answer on `_` ("i would say"): it "wouldn't be affected by the _ as it
+  becomes an accepted backdoor into the inner pattern- which is almost the whole point": `_` on the outer spot
+  does not close a label the caller sent in.
+The manager's readings (marked; for the fold to test): (a) the sent label is the caller's own name, read bare
+(`body`); (b) placed once / twice / never by the receiving body: set once / the same-label-twice rules / the
+never-pass warning; (c) the backdoor passes `[_ = rx]` and a `_` part label alike, since both are ways the outer
+body declines to NAME the spot, and the sent label needs no name from it; whether it also passes a body that
+uses the argument ALONE (no label on the spot at all) is the natural extension: taken as yes (the backdoor does
+not depend on the outer body's cooperation), to confirm.
+
+### 2026-11-23 MANAGER — the re-examination he asked for: a label SET in an argument (`B(A)` with `A := [f = "frank"]` against `B([f = "frank"])`); no owner words
+tags: core/labels/paths/argument-default core/labels/paths/two-sources core/labels/paths/closed-argument core/operators/bindings/label-variables core/principles/label-names-spot core/principles/meaning-not-spelling
+
+What was ruled on 2026-11-22 (his words): the caller's read `A.d` for `B(A)` whose body uses its argument alone
+is an error; "A parameter like rx in a call B(rx) cannot be labeled because it's not being placed into the
+pattern." What was the MANAGER'S reading, not his ruling: (a) a part label written ON an argument at a call
+(`B([a = A]) & (a.d: ..)`) is a compile error; (b) a group written in an in-place argument is not the caller's to
+read bare (`B(/(?<d>\d)/) & (d: <5)`).
+The issues behind the error, as discussed then: the template may be placed once, twice, in a loop or a branch,
+or never, and the caller cannot see which from the call; the body may close the argument on purpose
+(closed-argument); a read by the argument's name names no spot in the caller's own text.
+What today's rulings change: (1) argument-export (yes): a caller's label on a spot reads the caller's in-place
+argument by the inside rules; (2) label-in-argument (ruled): an unbound label sent inside an argument is the
+caller's, read bare, through `_` as well. With (2), `lab(l:, x) := [l = x]` makes `B(lab(f:, "frank"))` legal,
+and it is `B([f = "frank"])` by expansion: refusing the second refuses a spelling (meaning-not-spelling).
+The manager's proposal put to him (slug argument-label; readings (a) and (b) to be WITHDRAWN on a yes): a label
+the caller WRITES in its own text inside an argument (a part label, a group of an in-place literal, a sent
+label) is the caller's own label, set where the body places the template: once, set once; twice, the
+same-label-twice rules; never, the never-pass warning. His ruled error STANDS: `B(A) & (A.f: ..)` with A :=
+`[f = "frank"]`: `f` is written in A's text, not the caller's, and the caller's text gives A no spot. So the
+difference between his two programs is whose text writes the label. The way out of the error is then the
+caller's own label on the argument (`B([a = A]) & (a.f: ..)`), without the body's cooperation.
+RUN (python `re`): `B([f = /\d/]) & (f: <5)`, B(rx) := `/${rx}xx/`: WHOLE `3xx` HOLDS, `7xx` FAILS / SEARCHED
+`7xx 3xx` `3xx`@4 / FIND-ALL `3xx 7xx 4xx` [`3xx`@0, `4xx`@8]. Placed twice, `pair([f = /\d/]) & (f: <5)`,
+pair(p) := `/${p},${p}/` (the last mention): WHOLE `7,3` HOLDS, `3,7` FAILS / SEARCHED `3,7 7,3` `7,3`@4 /
+FIND-ALL `7,3 3,7 1,2` [`7,3`@0, `1,2`@8].
+
+### 2026-11-23 OWNER RULING — argument-label: yes (a label the caller writes inside an argument is the caller's own); and: these mechanisms ease his concern about the default hiding
+tags: core/labels/paths/argument-default core/labels/paths/two-sources core/labels/paths/closed-argument core/operators/bindings/label-variables core/labels/export core/labels/paths/label-reference
+
+ASKED AS A RULING (slug argument-label, the proposal of the re-examination entry above; the manager's leaning
+yes). HIS WORDS, whole:
+
+"argument label: yes. these mechanisms, a: and B(x=A), alleviates some of my concerns about the default hiding
+the internal labels. if you want to access the isodate arguments you can B(d=isodate) & (d.year: 2000) although
+in this case you could just B(isodate & (year: 2000))."
+
+Class: a RULING: argument-label: yes: a label the caller writes in its own text inside an argument (a part
+label, a group of an in-place literal, a sent label) is the caller's own label, set where the body places the
+template (once; twice, the same-label-twice rules; never, the never-pass warning). The manager's readings (a)
+and (b) of argument-default (2026-11-22) are WITHDRAWN; two-sources' first shape is re-settled (the in-place `d`
+is the caller's, read bare; the body's own is `B.d`); his ruled error (`B(A) & (A.d: ..)`) stands. And an
+OBSERVATION: "these mechanisms, a: and B(x=A), alleviates some of my concerns about the default hiding the
+internal labels" (default-export, 2026-11-22). His spelling `B(d=isodate)` is the documents' `B([d = isodate])`
+(a placeholder; for the spellings review: the label set written directly as an argument).
+Check-his-regex: in `B(isodate & (year: 2000))` the bare `year` is not written in the caller's text; under
+label-reference (ruled required, 2026-11-22) it is `B(isodate & (isodate.year: 2000))` (told to him). RUN
+(python `re`, hand-lowered, B(rx) := `/${rx}xx/`, isodate reduced to `\d{4}-\d\d-\d\d` with its year; both of
+his programs lower to the same pattern and test): WHOLE `2000-01-02xx` HOLDS, `2001-01-02xx` FAILS / SEARCHED
+`1999-12-31xx 2000-03-04xx` `2000-03-04xx`@13 / FIND-ALL `2000-01-02xx 2001-01-02xx 2000-12-31xx`
+[`2000-01-02xx`@0, `2000-12-31xx`@26].
+
+### 2026-11-23 OWNER, a proposal for the capture request's shape: `isodate & (isodate.year: capture("year"))`
+tags: lib/structural/capture lib/structural/capture/add-on core/conditions/form core/conditions/two-valued core/principles/no-absence core/operators/bindings/label-variables
+
+After the manager's check of his `B(isodate & (year: 2000))` (bare `year`; label-reference). HIS WORDS, whole:
+
+"good catch on my rx! for capture, would it be better to isodate & (isodate.year: capture("year"))"
+
+Class: a PROPOSAL as a question ("would it be better"): the capture request written on the SET side of a
+condition entry, the label on the left of `:` where labels are always named, the caller's name as the argument.
+Nothing ruled; capture-place (his lean (a), an `&` operand `capture(path)`) and capture-name (a) (ruled the same
+day on that shape) stand until he rules.
+The manager's thoughts (told to him; marked):
+- For it: (a) the label is named where conditions name labels, so `capture` needs NO reference-kind argument:
+  the one native use of the reference kind (label-kinds) goes away; (b) the rename is the argument itself, no
+  keyword; (c) it composes inside an entry (`(isodate.year: >= 2000 & capture("year"))`) and across a record;
+  (d) read as a filter, `capture("d")` is `anything` with an effect, so `digits & capture("d")` (`A & B` =
+  `A & (0: B)`) captures the stretch: his wrapper form and his after-the-fact form of 2026-11-21 become one thing.
+- Against, RUN (python `re`; `/(?<h>\d)?x/`): an entry on an ABSENT label fails (two-valued; "A set never
+  contains absence"), so the request would FILTER: as an entry `(h: capture("h"))`: WHOLE `3x` HOLDS, `x` FAILS /
+  SEARCHED `x 3x` `3x`@2 / FIND-ALL `x 3x x` [`3x`@2]; as an always-holding operand: WHOLE `3x` HOLDS, `x` HOLDS
+  (h unset) / SEARCHED `x 3x` `x`@0 / FIND-ALL `x 3x x` [`x`@0, `3x`@2, `x`@5]. The JSONL `host` (an optional
+  member) is this case. Also: under `NOT` or `!` a request has no sensible meaning (an error or a warning); the
+  array request needs a left side (`@x`) the condition form does not have today.
+- Put to him as slug capture-absent: what a capture entry does on an absent label.
+
+### 2026-11-23 OWNER, on capture-absent: "its already kind of an exceptional piece. can one clean it: (h: capture("h")?)"
+tags: lib/structural/capture core/conditions/form core/conditions/two-valued core/conditions/quantified core/conditions/defaults core/patterns/quantifiers core/holes/value
+
+Asked **capture-absent** (what a capture entry does on an absent label: (a) fails like any entry; (b) never
+rejects; (c) keep the operand shape; the manager's leaning (b), flagged as an exception to no-absence). HIS
+WORDS, whole:
+
+"capture absent: its already kind of an exceptional piece. can one clean it: (h: capture("h")?)"
+
+Class: an OBSERVATION ("already kind of an exceptional piece") and a PROPOSAL as a question: the optional mark
+`?` on the request, `(h: capture("h")?)`, as the explicit way to say "the label may be absent". Nothing ruled.
+The spelling is a placeholder.
+The manager's thoughts (told to him; marked; from the rules, no new run: the two behaviours are the run lines of
+the previous entry): (a) read this way the plain `(h: capture("h"))` stays REGULAR (it fails on an absent label,
+(a) of capture-absent) and the exception is asked for by name, his method; (b) as the documents stand, `?` on a
+SET already has a meaning: `S?` is regex's optional, S or the empty text, and an entry on an absent label fails
+whatever its set ("A set never contains absence"), so `(h: anything?)` still fails on absence: his form needs
+its meaning stated; (c) the regular meaning nearest to it is an OPTIONAL TEST: regex's optional around the whole
+entry, which on a failed test is skipped (the value hole's sentence: "an optional around it is skipped"); a
+quantifier on a condition is the ruled compile error (2026-11-18) because an optional plain test silently
+vanishes; for a capture request vanishing-on-absence is the point; (d) the form that works with NO new rule is
+the ruled default: `(h = "": capture("h"))` (the default stands in for the absent label in that one test), with
+the reading that the request names the real label, so the caller gets an unset capture. Put to him as slug
+capture-optional.
+
+### 2026-11-23 OWNER, on capture-optional: he likes the defaults way; proposes the mark on the label, `(h?: capture("h"))`
+tags: lib/structural/capture core/conditions/defaults core/conditions/form core/conditions/two-valued core/spellings/placeholders
+
+Asked **capture-optional** (three ways to give his `capture("h")?` a meaning: 1 an optional form of the request;
+2 an optional test; 3 the ruled default, `(h = "": capture("h"))`; the manager's leaning 1). HIS WORDS, whole:
+
+"i actually like your thinking with defaults. i don't like adding syntax and semantics if i don't have to. and
+adding something to h that already exists is more congruous. what about (h?: capture("h"))"
+
+Class: a LEAN toward the defaults way (way 3: "i actually like your thinking with defaults"), with his REASONS
+("i don't like adding syntax and semantics if i don't have to"; "adding something to h that already exists is
+more congruous": the mark belongs on the label's side, where the default already is), and a PROPOSAL as a
+question: `(h?: capture("h"))`, the optional mark on the LABEL. Nothing ruled. The manager's leaning 1 is
+withdrawn (it added a form to `capture`).
+The manager's reading of the proposal (told to him; marked): a GENERAL entry form, not a capture form: `(h?: S)`
+holds when h is absent or its text is in S, for any set S; it is the default form without having to name a
+member of S (`(h = v: S)` with v in S), and it also covers a set with no member to name. Then `capture("name")`
+on the set side is `anything` with a request and needs no rule of its own for absence.
+RUN (a path model, `$PCREC_TMPDIR/scratch/pred/optional_label.py`; `/(?<h>\d)?x/`):
+- `(h?: <5)`: WHOLE `x` HOLDS, `3x` HOLDS, `7x` FAILS / SEARCHED `7x x` `x`@1 / FIND-ALL `7x 3x x` [`x`@1, `3x`@3, `x`@6]
+- `(h = "0": <5)`, the default inside the set: the same in every mode
+- `(h: <5)`, plain: WHOLE `x` FAILS, `3x` HOLDS, `7x` FAILS / SEARCHED `7x x` `x`@1 / FIND-ALL `7x 3x x` [`x`@1, `3x`@3, `x`@6]
+- `NOT (h?: <5)`: WHOLE `x` FAILS, `3x` FAILS, `7x` HOLDS / SEARCHED `7x x` `7x`@0 / FIND-ALL `7x 3x x` [`7x`@0]
+(SEARCHED and FIND-ALL agree for the first three because the pattern itself backs off the digit: `7x` fails and
+the `x` alone at 1 matches with h absent; the plain form parts from them only WHOLE on `x`.)
+Put to him as slug optional-label.
+
+### 2026-11-23 MANAGER — CORRECTION to the entry above (the plain row and the note under the run lines were written before the run was read)
+tags: core/conditions/defaults core/conditions/form
+
+In the entry "OWNER, on capture-optional: he likes the defaults way", the line for `(h: <5)`, plain, and the
+parenthesised note after the four lines are WRONG and are withdrawn. The run's output (the same script) is:
+- `(h: <5)`, plain: WHOLE `x` FAILS, `3x` HOLDS, `7x` FAILS / SEARCHED `7x x` FAILS / FIND-ALL `7x 3x x` [`3x`@3]
+The other three lines are as the run printed them. So the plain form parts from `(h?: <5)` in every mode: a
+stretch whose h is absent (`x`) is rejected by the plain form and kept by the optional one. Not told to the owner
+in the wrong form: the answer given to him used the run's output.
+
+### 2026-11-23 OWNER RULING — optional-label: yes (`(h?: S)` holds when h is absent or in S); and a FLAG: is it a special form or the general case of an expression left of `:`
+tags: core/conditions/form core/conditions/defaults core/conditions/form/value-left core/conditions/two-valued lib/structural/capture core/patterns/quantifiers
+
+ASKED AS A RULING (slug optional-label: `(h?: S)` holds when h is absent or in S, as a general entry form; the
+conservative edges proposed: `?` on a joint entry's label, on a value left of `:`, inside a group question are
+compile errors for now; if yes, the capture shape is `(h: capture("h"))`, `(h?: capture("h"))`, `rx &
+capture("name")`, replacing the `capture(path)` operand and its `name =` keyword; the manager's leaning yes). HIS
+WORDS, whole:
+
+"optional-label: yes. flag an item to see if this is a special form or general. eg. (h+: blah) might work but
+has no meaning as it takes the last form. all the other greedies, *, etc basically devolve to the same ?. you
+suggested that the left of the : in a condition is an expression which i agree with so i am wondering if this is
+just a logical extension of that or not"
+
+Class: a RULING: optional-label: yes. By the statement he answered, the capture request's shape is the set-side
+`capture("name")` (requires the label), `(h?: capture("name"))` (if present), `rx & capture("name")` (the
+stretch); the `capture(path)` operand of capture-place (his lean of the morning) and the `name =` keyword of
+capture-name (a) are REPLACED; capture-twice (a) and array-capture carry over (the array request's spelling
+under the new shape is not stated). And a FLAG he asks to be filed, an open item, slug optional-label-general:
+whether `h?` is a special form or the general case, the left of `:` being an expression (value-left, which he
+recalls and agrees with: "which i agree with"); his observations: `(h+: blah)` "might work but has no meaning as
+it takes the last form"; "all the other greedies, *, etc basically devolve to the same ?".
+The manager's first note on the flag (marked; from the rules, hand-worked, no run): under value-left as written,
+left of `:` a bare name or path is a LABEL and any other expression is a VALUE. Read as a value, `$h?` is regex's
+optional of the read: h's text, or the EMPTY text when h is unset ("an optional around it is skipped"), and the
+entry then tests the empty text: `($h?: <5)` on an absent h FAILS (the empty text is no numeral), where the ruled
+`(h?: <5)` HOLDS. So the two part unless the set holds the empty text: as the rules stand `h?` is a form of its
+own on the LABEL, not the value expression `$h?`. To examine: whether the general reading should be made to
+agree, and what `h+` / `h*` denote (his "the last form"; as values, `$h+` is repetition of h's text).
+
+### 2026-11-23 MANAGER — review r84 (predspot1122): the dispositions, ruled with the 2026-11-23 rulings in hand; no owner words
+tags: core/holes/flags core/holes/flags/in-filter core/patterns/flags core/patterns/literals core/model/places core/labels/paths/argument-default core/labels/paths/call-prefix core/labels/paths/closed-argument core/labels/export lib/convention/argument-labels lib/sets/prefix-in lib/builtin/options lib/rx/repeat core/diagnostics/warnings
+
+The draft is `$PCREC_TMPDIR/scratch/crit-predspot1122/review.md` (frozen at e6e95a2c5; no finding REJECTED). Each
+line is the manager's ruling of a PROPOSED disposition. Two lanes take them: the FIX lane predfix84 (it files the
+review) and the FOLD lane that follows it (the rulings of 2026-11-22 late and 2026-11-23), because argument-label
+(ruled 2026-11-23) WITHDREW readings (a) and (b) of argument-default and so overtook part of the labels group.
+
+FIX-NOW, lane predfix84 (documents):
+- A1: reading (e) of hole-flags is scoped: a binding of the same file has the same defaults only where no
+  `@options` statement stands between the binding and the hole; whether the statement may stand mid-file is the
+  open options-position.
+- A2: for FLAGS a binding is its expression where it is WRITTEN, plus an explicit `i` from the hole; "where it is
+  used" stays for matching only (core/holes/flags/in-filter, core/model/places' binding row); a line that shows it.
+- A3: core/patterns/flags' "No implicit extended mode" and core/patterns/literals' "means exactly what PCRE means"
+  are conditioned on the file's program options; details name RULING C2 (2026-11-14) as revised in part by
+  program-options. The consequence (a library literal's meaning is no longer readable off the literal alone) is
+  told to the owner.
+- A5: `prefix_in` (and `suffix_in`, `slice_in`) lay S into a hole as `quoted` does, so S is PLACED and gets the
+  list. This CORRECTS the exemption list the manager gave with wrapper-export ("the set arguments (`between`,
+  `prefix_in`, ...)"): `prefix_in` leaves it. A reading, marked; no printed match moves (labels only).
+- A6: ONE statement in core/patterns/flags naming the sources of a flag at a point, in order (the literal's own
+  text; an explicit `i` or `-i` from the hole; the file's program options from the statement on; the file default).
+  (1) `r` and the a-family are NOT inherited (his hole-flags words: "only an explicit `i` or `-i`"); details'
+  P29-2 line marked superseded. (2) an `i` made by an option hole and (3) program options on string constants and
+  on an argument literal a library body places: listed OPEN (slugs option-hole-explicit, options-reach-constants),
+  no answer applied. (4) `pattern($x)` carries the flags in force where the group is written (the piece's own
+  sentence; a reading). (5) repeated statements and turning a flag off: OPEN, options-position.
+- A8: `pcrec.flags.filter` fires under an inherited `-i` by the same comparison (a reading; the trigger is the
+  manager's call); one clause.
+- C1, C2, C6, C7: as proposed (details marks; call-prefix case 2 is REVISED, not "settled").
+- C8: the format rule stands ("the base never carries history"): the revision marks named move to the details
+  entries; the label-names-spot quote gets its antecedent ("A parameter like rx in a call B(rx) cannot be labeled
+  because it's not being placed into the pattern.").
+- D1, D3, D4, D5, D6, D7, D8(e): as proposed. G2's doc fix (parked/ideas/severity-table: its trigger has fired,
+  said so). G4: a parked piece (a pass-through mark in a macro's head), trigger as the review gives it.
+FIX-NOW, lane predfix84 (the successor evidence model): B1 (parameters alpha-renamed at lowering; a rename drill
+in the grid), B2 (a two-step path through a part label), B3 (label-reference one argument deep), B4 (`@options`
+position for arguments and macro bodies), B5 (grid arms that can fail; a real undecided arm; one plant per
+repaired arm), B7 (the sweep fails on any non-same status not declared; history and `rejected:` lines skipped).
+
+OVERTAKEN by argument-label (2026-11-23), handed to the FOLD lane with the finding's id:
+- A4: `rx.repeat([a = rx.digit], min = 1)` then `a` is LEGAL again (the caller's own label, set where the body
+  places the template: in a loop, the loop's label rules). His "yes" of 2026-11-17 stands; reading (a) is
+  withdrawn. The review's owner question repeat-label is NOT asked: the record answers it.
+- A7: the sentence "what an argument exports" moves into core/labels/export, rewritten under argument-label,
+  argument-export and label-in-argument; each shape the review lists is closed as ruled, a marked reading or open.
+- C3: readings (a) and (b) are withdrawn, not re-marked. C5 and D2: an in-place group is the caller's own again;
+  the sentences are rewritten by the fold (capture-export moves "stays a capture" as well).
+- C4: the mark is fixed by the fold ("`A.d` legal where the body labels the spot" rests on closed-argument (a),
+  which he ruled on the statement "legal in the caller exactly where `d` is visible through the call"; WHICH spots
+  make it visible is the manager's reading). The review's question spot-read-name goes to the queue, low: the
+  caller's own label (`B([a = A])`, `a.d`) is now the way that needs no reading.
+PLAN (no lane now): B6 (nullable arguments in looped spots: the EVID-4 row), D8 (a one-owner pass at the next
+full revision), G1 (three conventions under lib/convention: at the next full revision), G2's table of file
+settings. NOTED: G3.
+OWNER QUESTIONS kept (queued, not urgent): option-hole-explicit, options-reach-constants, options-position,
+spot-read-name. The three lessons for the guide go to main (to_main.md).
+
+### 2026-11-23 OWNER, on optional-label-general: the `?` in conditions "is a special case"; where it sits; `?` for optional macro arguments; a value left of `:` with no label
+tags: core/conditions/form core/conditions/defaults core/conditions/form/value-left core/values/tuples core/operators/bindings core/operators/bindings/call-forms core/conditions/two-valued parked/ideas/kleene-completion
+
+Asked **optional-label-general** (candidates: (a) `?` the only mark, on a label path, `h+` / `h*` compile errors
+for now; (b) his "devolve" reading; (c) a settings reading on the bare label; the manager's leaning (a); the run
+`$PCREC_TMPDIR/scratch/pred/optional_general.py`). HIS WORDS, whole:
+
+"I think the ? In conditions is a special case, but I'm trying to figure out how special. And where is it
+located: after the label or before the colon? (a,b)?: (...) or (a?,b):...  default x=4 didn't make sense with one
+label but it might with multiple. Could the ? Meaning be used in macro arguments to define optional positional
+args without defaults? Then conditional and macro arg definitions looks closer ( not the same). Also, do value
+definitions require exactly one label or at least one? ("Frank": ...) silly but useful for generated code.
+Thoughts."
+
+Class, part by part (DISCUSSION throughout; he asks for "Thoughts"; NOTHING RULED, optional-label-general not
+answered by letter):
+- A LEAN: "I think the ? In conditions is a special case" (toward the mark being a form of its own; "how
+  special" is open in his words).
+- A QUESTION: where the mark sits, after the label or before the colon: `(a,b)?: (...)` or `(a?,b):...`.
+- An OBSERVATION: "default x=4 didn't make sense with one label but it might with multiple".
+- An IDEA as a question: the `?` meaning for macro arguments, "optional positional args without defaults", so
+  that a condition and a macro head "looks closer ( not the same)".
+- A QUESTION: must a value left of `:` name exactly one label or at least one; `("Frank": ...)`, "silly but
+  useful for generated code".
+
+What the record and the documents already hold (checked before answering):
+- A default on one part of a joint entry is RULED (2026-11-16, "unset-component: yes", on `(h, m = 0): R`): "an
+  unset label fails the condition, single or joint, unless the author wrote a default for it".
+- The mark dropped on 2026-11-16 ("Drop-mark: yes") was written per part, `((h, m?): R)`, with the meaning "some
+  value the label could hold": not a test of one row. Yesterday's `(h?: S)` (absent or in S) is a one-row test.
+- value-left's parse (a reading): left of `:` a bare name, a number or a label path is a LABEL, any other
+  expression a VALUE; nothing says a value must read a label, so `("Frank": S)` is a value with no label by the
+  sentence as written (the manager's reading, not ruled); `(5: S)` is the LABEL 5 (a group number), `("5": S)`
+  the value.
+- call-forms (open, 2026-11-19), candidate (b): one head per name "needs a value or an absent setting for "no
+  maximum" and "no width"": an optional parameter without a default is that absent setting.
+
+RUN (a path model, `$PCREC_TMPDIR/scratch/pred/optional_place.py`; `/(?<a>\d)?,(?<b>\d)?/`, the set `>= (5, 3)`,
+output pasted):
+- plain `((a, b): >= (5, 3))`: WHOLE `6,1` HOLDS, `5,3` HOLDS, `5,1` FAILS, `,1` FAILS, `,9` FAILS, `5,` FAILS,
+  `2,` FAILS, `,` FAILS / SEARCHED `5,1 ,1 6,0` `6,0`@7 / FIND-ALL `5,1 5,4 ,1 2, 7,` [`5,4`@4]
+- the mark before the colon, `((a, b)?: >= (5, 3))`, holding when a part is absent: WHOLE `6,1` HOLDS, `5,3`
+  HOLDS, `5,1` FAILS, `,1` HOLDS, `,9` HOLDS, `5,` HOLDS, `2,` HOLDS, `,` HOLDS / SEARCHED `5,1 ,1 6,0` `5,`@0 /
+  FIND-ALL `5,1 5,4 ,1 2, 7,` [`5,`@0, `5,4`@4, `,1`@8, `2,`@11, `7,`@14]
+- a default on one part, `((a = 5, b): >= (5, 3))`: WHOLE `6,1` HOLDS, `5,3` HOLDS, `5,1` FAILS, `,1` FAILS, `,9`
+  HOLDS, `5,` FAILS, `2,` FAILS, `,` FAILS / SEARCHED `5,1 ,1 6,0` `6,0`@7 / FIND-ALL `5,1 5,4 ,1 2, 7,` [`5,4`@4]
+`("Frank": /F.*/)`: python `re.fullmatch` True; against `/G.*/` False (a test fixed at compile time).
+
+The manager's thoughts (told to him; each marked, none ruled; for the fold to test only if he rules):
+- (a) The mark belongs BEFORE THE COLON, on the entry's left part as a whole: "the entry holds when its left part
+  has no value". One label: `(h?: S)` as ruled. A joint: `((a, b)?: R)` holds when a part is absent. A value:
+  `(($a + $b)?: <10)` holds when the value is nothing. Per-part absence in a joint is the ruled DEFAULT (the author
+  supplies the witness: his observation); a per-part mark `(a?, b)` has only the dropped mark's meaning.
+- (b) In a search the mark lets the pattern DROP an optional group to pass (`5,1`: `5,`@0 above): regex's
+  behaviour, to be said in the piece.
+- (c) For macro heads: an optional positional parameter without a default (`repeat(x, min, max?)`) answers
+  call-forms (b)'s "absent setting"; what an absent argument IS depends on where the body lays it (a count bound
+  left out; the empty pattern in a sequence; `anything` beside `&`; `_` for a label, ruled): a table by position,
+  not one value. A direction, not asked as a ruling.
+- (d) A value left of `:` reads zero or more labels; with none it is fixed at compile time and draws
+  `pcrec.test.always` / `pcrec.test.never`; bound alone it names no label, so bound-condition does not refuse it.
+Put to him as slug optional-place.
+
+### 2026-11-23 OWNER, on optional-place: "Before the colon"; and a proposal: an alternative operator to the colon, `:` and `?:`
+tags: core/conditions/form core/conditions/defaults core/conditions/form/value-left core/operators/precedence core/patterns/quantifiers core/spellings/placeholders core/conditions/two-valued
+
+ASKED AS A RULING (slug optional-place: is the mark the entry's, written before the colon, meaning "the entry
+holds when its left part has no value"; `(a?, b): R` a compile error pointing at the default; `h+` / `h*` refused
+for now; the manager's leaning yes). HIS WORDS, whole:
+
+"Before the colon: then perhaps it's an alternative operator to the colon like :  ?:  rather than a separate
+operator. I like that because then we aren't using ? For two different meanings"
+
+Class: an ANSWER on the place ("Before the colon:"), taken as the ruling on optional-place's first part: the mark
+is the entry's, before the colon (the reading taken, told to him so he can object). And a PROPOSAL with a LEAN
+("perhaps"; "I like that"): it is not a mark on the left part at all but a second ENTRY OPERATOR beside `:`,
+spelled `?:`, his reason: "then we aren't using ? For two different meanings" (`?` stays regex's optional and
+nothing else). The spelling is a placeholder. Not ruled by these words: the operator form itself (his "perhaps"),
+the joint and value cases, `(a?, b)`, `h+` / `h*`.
+
+The manager's thoughts (told to him; each marked, none ruled; hand-worked from the rules and from runs already in
+the record, no new run):
+- (a) Two entry operators: `p: S` (the left part has a value and it is in S) and `p ?: S` (the left part has no
+  value, or it is in S). Nothing about the left part changes: a label path, a joint, a value, each as today.
+- (b) It closes optional-label-general as "special, and not a quantifier": there is no `h?` to generalise, so
+  `h+` / `h*` do not arise; `(a?, b)` is not a form.
+- (c) `NOT (h ?: S)` is "h present and outside S", the answers of `(h: !S)`: yesterday's run of `NOT (h?: <5)`
+  (WHOLE `x` FAILS, `3x` FAILS, `7x` HOLDS) against the printed table of core/conditions/two-valued for
+  `(h: !<5)` (`x` / `3x` / `7x`: FAILS / FAILS / HOLDS).
+- (d) A default with it, `(h = v ?: S)`, is a default that can never be used: `pcrec.default.unused` (a warning
+  exists for that), or an error; the manager's call later.
+- (e) The token: `?:` is read whole, so a postfix `?` on a value directly before a colon needs parentheses; in
+  rx text `(?:` is untouched (the operator is of the expression language only).
+- (f) The macro-head idea of the previous entry (`max?`) would then be a different use of `?` from the entry
+  operator: "closer, not the same" gets a little further apart; noted for when call-forms is taken up.
+- (g) The capture request: `(h ?: capture("h"))`.
+
+### 2026-11-23 OWNER, on string-label: the row's label argument is set to the unquoted portion; "we'd need to send it to through to the string binding"
+tags: core/operators/bindings/label-variables lib/json/members core/labels/one-rule core/patterns/alternation core/principles/language-over-macros
+
+Asked **string-label** (what he meant on 2026-11-23 by "we could thread the label to string to get the unlabeled
+portion"; two guesses offered: the row's own label goes inward; something on `string` itself). HIS WORDS, whole:
+
+"String label: i liked your example but what i had in mind was that the row() label arg would be set to the
+unquoted portion of the string. Then all three value types would point directly at the data without json forms
+around it. In order to do that, i was saying we'd need to send it to through to the string binding."
+
+Class: a CLARIFICATION of his own remark (DISCUSSION; a design intent for the JSON library, not a language
+ruling): the label given to `row` is set on the DATA (for a string, the text inside the quotes), so that "all
+three value types would point directly at the data without json forms around it"; the means: the label is sent
+on from `row` "through to the string binding". "unlabeled" of 2026-11-23 was "unquoted" (confirmed by "the
+unquoted portion"). His "i liked your example" is about the manager's `json.string(body:)` sketch (a label sent
+by the caller inside an argument, ruled legal as label-in-argument); it was not what he meant.
+
+The manager's reading (marked; told to him): the LANGUAGE point in it is one a ruling does not yet state: a body
+passing its own label parameter ON to another macro's label parameter (`row`'s body calling `string(l:)`). The
+manager's sketch of the library under it (placeholders; the library's shape is his "not too deeply into any one
+macro"):
+    string(l:)  := /"(?<:${l}>(?:[^"\\]|\\.)*)"/
+    number(l:)  := /(?<:${l}>-?\d+(?:\.\d+)?)/
+    literal(l:) := /(?<:${l}>true|false|null)/
+    value(l:)   := string(l:) | number(l:) | literal(l:)
+    row(l:, k, f = anything) := /\{(?:${member_any},)*${ws}"${k}"${ws}:${ws}${value(l:) & (l: f)}${ws}(?:,${member_any})*\}/
+    json.row(msg:, "msg", contains("timeout"))      json.row(n:, "count", <5) & (n: >2)
+The label is then placed three times across a `|` (the branch taken sets it: one-rule), and the third argument is
+a filter on the DATA, read by the body after it places the label ("a body may read its own label parameter after
+placing it", in the label-kinds statement he ruled).
+
+RUN (python `re`, HAND-LOWERED and simplified: the object reduced to its one member `v`;
+`$PCREC_TMPDIR/scratch/pred/label_forward.py`; the program `json.row(v:, "v") & (v: "ok" | <5)`; output pasted):
+- the label on the data: WHOLE `{"v":"ok"}` HOLDS, `{"v":3}` HOLDS, `{"v":7}` FAILS, `{"v":"no"}` FAILS,
+  `{"v":true}` FAILS, `{"v":"3"}` HOLDS / SEARCHED `{"v":7} {"v":"ok"} {"v":3}` `{"v":"ok"}`@8 (v = `ok`) /
+  FIND-ALL `{"v":"ok"} {"v":7} {"v":3} {"v":"no"} {"v":"3"}` [`{"v":"ok"}`@0, `{"v":3}`@19, `{"v":"3"}`@38]
+- the label on the raw value (json.string as it stands): WHOLE `{"v":"ok"}` FAILS, `{"v":3}` HOLDS, `{"v":7}`
+  FAILS, `{"v":"no"}` FAILS, `{"v":true}` FAILS, `{"v":"3"}` FAILS / SEARCHED the same subject `{"v":3}`@19
+  (v = `3`) / FIND-ALL the same subject [`{"v":3}`@19]
+A consequence the run shows: on the data the string `"3"` and the number `3` read alike (`{"v":"3"}` HOLDS under
+`<5`); telling them apart needs the type.
+Put to him as slug label-forward.
+
+### 2026-11-23 OWNER RULING — label-forward: yes (a body may pass its label parameter on to another macro); two questions (a filter over combined rows at the line; several keys in one row)
+tags: core/operators/bindings/label-variables core/labels/one-rule core/patterns/alternation core/labels/flow core/conditions/form core/holes/pattern lib/json/members
+
+ASKED AS A RULING (slug label-forward, the statement put to him: a body may pass its label parameter on to
+another macro's label parameter; that counts as placing it, and the usual rules apply to wherever it lands: once,
+set once; several times in sequence, the last mention; across `|`, the branch taken; across `&`, an ambiguous
+read, a compile error; never, the never-pass warning; the manager's leaning yes). HIS WORDS, whole:
+
+"Label forward: yes. Most of this could be achieved using the row third argument. Questions 1. could i then use
+this on the line call to filter combined arguments. That would've not been possible using row third arguments
+alone. 2. could i request multiple fields in a row argument meaning "or" i suppose"
+
+Class: a RULING: label-forward: yes, on the statement as put. An OBSERVATION: "Most of this could be achieved
+using the row third argument." Two QUESTIONS (DISCUSSION; nothing ruled by them).
+
+The manager's answers (told to him; each a reading of the rules as they stand, RUN on a HAND-LOWERED model, flat
+objects only, a row's paths taken in PCRE's order (the greedy member loop reaches the LAST fitting member first):
+`$PCREC_TMPDIR/scratch/pred/line_combined.py`; output pasted):
+1. Yes. The labels are the caller's own names, written in the line's text, each set by one side of the `&`, so a
+   condition over two of them is an ordinary entry (no ambiguous reference: no name is surfaced by both sides).
+   `json.row(lo:, "lo") & json.row(hi:, "hi") & (lo: <$hi)`: WHOLE `{"lo":3,"hi":7}` HOLDS (lo=`3`, hi=`7`),
+   `{"hi":7,"lo":3}` HOLDS (lo=`3`, hi=`7`), `{"lo":7,"hi":3}` FAILS, `{"lo":3}` FAILS, `{"lo":"3","hi":"7"}`
+   HOLDS (lo=`3`, hi=`7`), `{"lo":3,"x":true,"hi":7}` HOLDS (lo=`3`, hi=`7`) / SEARCHED
+   `{"lo":7,"hi":3} {"hi":9,"lo":8}` `{"hi":9,"lo":8}`@16 / FIND-ALL
+   `{"lo":3,"hi":7} {"lo":7,"hi":3} {"lo":3} {"hi":2,"lo":1}` [`{"lo":3,"hi":7}`@0, `{"hi":2,"lo":1}`@41]
+2. Yes, as the rules stand: the key is laid into a pattern hole, where several values are one alternation
+   (core/holes/pattern), and the label is no longer tied to the key (the label parameter).
+   `json.row(x:, "a" | "b") & (x: <5)`: WHOLE `{"a":3}` HOLDS (a=`3`), `{"b":3}` HOLDS (b=`3`), `{"a":7,"b":3}`
+   HOLDS (b=`3`), `{"a":3,"b":7}` HOLDS (a=`3`), `{"a":7,"b":8}` FAILS, `{"c":3}` FAILS / SEARCHED
+   `{"a":7,"b":8} {"a":3,"b":7}` `{"a":3,"b":7}`@14 / FIND-ALL `{"a":3} {"c":1} {"a":7,"b":8} {"b":4,"a":9}`
+   [`{"a":3}`@0, `{"b":4,"a":9}`@30]. Without the test, which member x holds: WHOLE `{"a":3,"b":7}` HOLDS
+   (b=`7`), `{"b":7,"a":3}` HOLDS (a=`3`), `{"c":3}` FAILS: the LAST fitting member in the object's order, not the
+   first key written in the alternation; a rejecting test moves to an earlier one. Which key matched is not known
+   to the caller unless the key's spot gets a label of its own (a second label parameter; his "in theory, one
+   could have 2 label args").
+
+RUN for the question put next (slug capture-negated; `$PCREC_TMPDIR/scratch/pred/capture_negated.py`, the
+optional-label path model, `/(?<h>\d)?x/`; output pasted):
+- `NOT (h: capture("h"))`, the request ignored, `capture(..)` as `anything`: WHOLE `x` HOLDS, `3x` FAILS, `7x`
+  FAILS / SEARCHED `3x x` `x`@1 / FIND-ALL `7x 3x x` [`x`@1, `x`@4, `x`@6]
+- `(h: !capture("h"))`, the complement of `anything` is the empty set: WHOLE `x` FAILS, `3x` FAILS, `7x` FAILS /
+  SEARCHED FAILS / FIND-ALL `7x 3x x` []
+- `(h: capture("h"))`, plain: WHOLE `x` FAILS, `3x` HOLDS, `7x` HOLDS / SEARCHED `3x x` `3x`@0 / FIND-ALL
+  `7x 3x x` [`7x`@0, `3x`@3]
+
+### 2026-11-23 OWNER RULING — capture-negated: broadened: "any effect macro cannot be under negation"
+tags: lib/structural/capture core/filters/negation core/filters/complement core/conditions/two-valued core/operators/statements lib/control/when core/diagnostics/errors
+
+ASKED AS A RULING (slug capture-negated: a capture request under `NOT`, under `!`, or inside a group question:
+(a) a compile error for now; (b) legal with the request ignored and a warning; the manager's leaning (a); the run
+lines of the previous entry). HIS WORDS, whole:
+
+"capture-negated: broaden to any effect macro cannot be under negation."
+
+Class: a RULING, broader than the question: an EFFECT macro cannot stand under negation (a compile error; the
+reading taken of "cannot": candidate (a)'s refusal, generalised from the capture request to every effect). The
+part of (a) about a group question (`some((h: capture("h")))`) is not in his words: it stays the manager's
+proposal (a compile error for now), marked, not ruled.
+The manager's readings (marked; for the fold to test):
+- (a) An EFFECT is a form whose meaning is more than which texts it accepts. Today's members: the capture request
+  (`capture("name")`, and the array request, unbuilt) inside an expression; the `@` statements (`@warn`,
+  `@options`, `@export`, the assertions) are effects too but stand alone as statements (core/operators/statements),
+  so they cannot be under a negation already.
+- (b) "Under negation": inside the operand of `NOT` (a condition, a peek) or of `!` (a set, a pattern), at any depth.
+- (c) An edge to put to him, NOT decided: a provided body that lays one argument both plainly and under a
+  negation: `when(test, then)` is `(test SEQ then) | (NOT peek(test) SEQ else)`, so a test that carries a capture
+  request reaches the guard's `NOT peek(test)`. Candidates: the rule refuses it (written where the body puts it);
+  or the guard copy drops the request (labels under a negation are never visible already). Slug effect-in-guard.
+
+### 2026-11-23 MANAGER — two notes after capture-negated (the guard edge taken literally; the array request's placeholder); no owner words
+tags: lib/structural/capture lib/control/when core/filters/negation core/labels/labels-vs-captures/array-vs-passes core/spellings/placeholders
+
+- effect-in-guard is NOT asked: his words cover it as written ("any effect macro cannot be under negation"), and
+  the conservative reading costs nothing: a `when` test that carries a capture request reaches the body's
+  `NOT peek(test)` and is a compile error (the manager's reading, marked; relaxing it later changes no answer).
+  The way to write it with forms that exist: the test without the request, the request after the call through the
+  call's name (lib/control/when: "Labels the test sets are visible after the call through it (`when.h`)"), with
+  the `?:` operator since the else branch leaves the label unset: `when(/(?<d>\d)/, ..) & (when.d ?: capture("d"))`.
+  Told to him in one line.
+- The array request in the set-side shape is NOT asked either (array captures are unbuilt; "all" as a group
+  question was retired on 2026-11-16, "all-question: retire", and "all" is the condition on the item, 2026-11-17,
+  so no general set is proposed right of an array). The fold writes his own spelling of 2026-11-23 moved to the
+  left part, as a PLACEHOLDER and a reading, under construction: `(@x.year ?: capture("years"))`, an array left
+  part taking only a capture request for now.
+
+### 2026-11-23 OWNER, on two-sources (second shape): "isn't the A.h not visible bare?"
+tags: core/labels/paths/two-sources core/labels/paths/label-reference core/labels/flow
+
+Asked **two-sources** (`/(?<h>\d)/ SEQ A & (h: <5)`, A := `/,(?<h>\d)/`: (a) the last mention, A's `h`; (b) the
+group written here; the manager's leaning (b); the two printed lines of core/labels/paths/two-sources). HIS
+WORDS, whole:
+
+"two-sources: isn't the A.h not visible bare?"
+
+Class: a QUESTION that answers the question from the record (not a new ruling). The manager's answer (told to
+him): yes. label-reference, ruled 2026-11-22 ("label-reference: required. we can relax it later as you say
+although i'm not inclined to."): "A label not written in the text of the definition that references it is
+referenced with its source: `chars.ch`, not `ch`". A's `h` is not written in the referencing definition, so it is
+never read bare; the bare `h` can only be the group the definition writes: candidate (b), with the answers of the
+printed line (b) (WHOLE `1,7` HOLDS, `7,1` FAILS / SEARCHED `7,1 1,7` `1,7`@4 / FIND-ALL `1,7 7,1 1,2 9,9`
+[`1,7`@0, `1,2`@8]). The question should not have been asked: the record answered it. two-sources' second shape
+is CLOSED by the manager on label-reference (no new owner ruling; he may object). What the fold changes: the
+flow sentence "Across the sequence operator a name both parts surface is one label, the last mention" is stated
+for names read at ONE level (the definition's own groups read bare; a part's labels read through one prefix or one
+label over the composition), never across the bare / sourced line; candidate (a)'s line goes to rejected.
+
+### 2026-11-23 OWNER RULING — zero-in-loop: (b) (from the definition's start); and a stated position, "not a ruling": the behaviour defined in a binding should not change due to how it is used
+tags: core/conditions/match-so-far/in-loop core/conditions/match-so-far core/holes/bare-condition/nested-scope core/conditions/pass-start-read core/principles/composed-at-point core/labels/one-rule core/labels/paths
+
+ASKED AS A RULING (slug zero-in-loop: inside a loop body `0` reads the match so far (b) from the start of the
+definition it is written in, or (a) from the start of the current pass; the manager's leaning (b), with the
+remark that the per-pass meaning is then written by binding the item and looping the binding). HIS WORDS, whole:
+
+"zero-in-loop: it has to be (b) or it's unusable because you couldn't put 0: in a loop. I'd even disagree with
+your alternative spelling for (b) being (a). I'm willing to alter the definition of 0: if need be. It's not a
+ruling but the behavior defined in a binding should not change due to how it's used. I'd say that's a principle
+but I don't know the ramifications and I'm sure there are exceptions. What if you put it first? Then would it
+refer to the previous pass? That might be ok. I could hear arguments that disagree with this position. For me,
+the (a) interpretation is a recursive interpretation of 0 and not an after the fact interpretation. Likes like
+[prefix = (/\d/)] seq (prefix: /\d/)... not [label = (/\d/ seq (label: /\d/) )]"
+
+Class, part by part:
+- A RULING on the question asked: zero-in-loop: (b) ("it has to be (b)"), held open to argument ("I could hear
+  arguments that disagree with this position"). The clause "or it's unusable because you couldn't put 0: in a
+  loop" is NOT clear to the manager (under (b) a fixed-shape test on `0` in a loop meets a growing text); the
+  reading taken, told to him: with (a) `0` would be a reference to the enclosing pass from inside it, which he
+  calls "recursive" below; to confirm.
+- A DISAGREEMENT with the manager's wording: binding the item and looping the binding is not "(a)". The reading
+  taken: it is (b) again, the binding's own definition being the start ("the behavior defined in a binding should
+  not change due to how it's used"); the manager's label "(a)" for that spelling is withdrawn.
+- AN OFFER, not acted on: "I'm willing to alter the definition of 0: if need be."
+- A POSITION, in his words "not a ruling" and "I'd say that's a principle": "the behavior defined in a binding
+  should not change due to how it's used", with "I don't know the ramifications and I'm sure there are
+  exceptions". NOT recorded as a principle of the documents until he rules it.
+- A QUESTION: `0` written first in the pass: "would it refer to the previous pass? That might be ok."
+- HIS PICTURE of `0`: "after the fact", like `[prefix = (/\d/)] seq (prefix: /\d/)`, a label on what came before
+  the condition; not "recursive", `[label = (/\d/ seq (label: /\d/) )]`, a label on the enclosing thing read
+  inside itself. (Spellings his placeholders.)
+
+The manager's answers (told to him; marked):
+- His picture agrees with the label rule as it stands: "A group's close sets its name" (core/labels/one-rule), so
+  a label read inside its own part is unset there; the recursive form is not available for labels either.
+- `0` first in the pass, under (b): it reads everything the definition has matched before that point, ALL the
+  earlier passes, empty in the first; not the previous pass alone. RUN (a path model,
+  `$PCREC_TMPDIR/scratch/pred/zero_first.py`; `((0: !contains("7")) SEQ /\d/ SEQ ";")+`; output pasted): WHOLE
+  `3;4;` HOLDS, `3;7;` HOLDS, `7;3;` FAILS, `3;7;4;` FAILS / SEARCHED `3;7;4;` `3;7;`@0 / FIND-ALL
+  `3;7;4; 7;7; 1;2;` [`3;7;`@0, `4;`@4, `7;`@7, `7;`@9, `1;2;`@12].
+- The per-item test inside a loop is written his own way, a label on the part: `([d = /\d/] SEQ (d: /\d/) SEQ
+  ";")+` (the answers of the candidate-(a) row: the test reads this pass's digit, which is what that run computed).
+- Ramifications of the position, from the documents (each a pointer, none new): it CONFIRMS the manager's reading
+  awaiting confirmation "two uses of one piece are two pieces" (core/holes/bare-condition/nested-scope: the lines
+  "A user's loop" and "Written out" agree; "One definition, looped" differs). Known places where use DOES change
+  what a binding does, all in what its REGEX TEXT matches, none in what its conditions read: an explicit `i` at a
+  hole (hole-flags, ruled); an assertion at its edge reading its neighbours (core/holes/pattern); `^` / `$` in a
+  filter role meaning the stretch's ends (core/filters/and); which of its paths is reported when a condition
+  outside rejects (core/model/match); a loop or branching around it resetting its labels for the OUTSIDE reader
+  (core/labels/one-rule).
+Put to him as slug binding-fixed.
+
+### 2026-11-23 OWNER RULING — binding-fixed: yes (what a binding's conditions read never depends on where it is used)
+tags: core/principles core/holes/bare-condition/nested-scope core/conditions/match-so-far core/labels/labels-vs-captures/array-vs-passes core/labels/flow core/holes/flags core/principles/composed-at-point
+
+ASKED AS A RULING (slug binding-fixed, the statement put to him: "What a binding's conditions read (its labels,
+its `0`, its arrays) never depends on where the binding is used. What its regex text matches follows regex at its
+edges."; shown with the printed lines "A user's loop" and "One definition, looped" of
+core/holes/bare-condition/nested-scope and the list of places where use changes what the regex text matches; the
+manager's leaning yes). HIS WORDS, whole:
+
+"binding-fixed: yes."
+
+Class: a RULING: the statement as put is a PRINCIPLE of the language (his own position of the entry above, "the
+behavior defined in a binding should not change due to how it's used", now ruled in the form put to him). It
+CONFIRMS the manager's reading "two uses of one piece are two pieces" (the lines "A user's loop", "Written out").
+The manager's readings (marked; for the fold to test): (a) "a binding" covers a macro body (a piece is a binding
+or a macro body: the standing reading); (b) the list of what follows regex at the edges is the five items of the
+entry above (an explicit `i` at a hole; an edge assertion; `^` / `$` in a filter role; which path is reported; an
+outside loop or branching resetting its labels for the outside reader), a list to check, not ruled as closed.
+
+### 2026-11-23 MANAGER — call-forms put to him again, with his own words of the two days and a run; no owner words
+tags: core/operators/bindings/call-forms core/operators/bindings lib/rx/repeat lib/modifiers/padded core/modules/leave-out core/holes/count
+
+Why now: the library writes several bodies for one name (`repeat` three, `padded` two), and his statement of
+2026-11-23 is "we currently don't have overloading so a macro defined for 3 args needs three args"; today he
+asked whether `?` could "define optional positional args without defaults". The two candidates of the open piece:
+(a) several bodies chosen by the arguments passed; (b) one head per name, which "needs a value or an absent
+setting for "no maximum" and "no width"".
+The manager's proposal for (b), from forms that exist (marked; not ruled): ONE head, defaults as today, a default
+allowed to name an earlier parameter, and `_` as the UNSPECIFIED argument in general (he ruled it for a label:
+"i agree that _ should be the unspecified label"), each position saying what unspecified means (a label: none,
+ruled; a count bound: left out). `repeat(x, min, max = min) := /(?:${x}){${min},${max}}/`. His `max?` would be
+the short way to write `max = _`.
+RUN (python `re`, the body filled mechanically by a three-line function; output pasted):
+- `repeat(rx.digit, 3)` is `(?:\d){3,3}`: WHOLE `12` FAILS, `123` HOLDS, `1234` FAILS / SEARCHED `12345` `123`@0 /
+  FIND-ALL `1234567 12` [`123`@0, `456`@3]
+- `repeat(rx.digit, 2, 3)` is `(?:\d){2,3}`: WHOLE `12` HOLDS, `123` HOLDS, `1234` FAILS / SEARCHED `12345`
+  `123`@0 / FIND-ALL `1234567 12` [`123`@0, `456`@3, `12`@8]
+- `repeat(rx.digit, 3, max = _)` is `(?:\d){3,}`: WHOLE `12` FAILS, `123` HOLDS, `1234` HOLDS / SEARCHED `12345`
+  `12345`@0 / FIND-ALL `1234567 12` [`1234567`@0]
+The three ruled meanings of `repeat` ("one argument exact, min and max a range, no maximum unbounded") are met by
+the one head; what changes for a user: "at least 3" is `repeat(x, 3, max = _)`, no longer `repeat(x, min = 3)`.
+NOT covered by absence alone (hand-worked): `padded(rx, n)`'s width form is an alternation of two filtered
+copies; with n unspecified it does not reduce to the no-width body `/0*${rx}/` (it becomes `rx | 0*rx`, another
+order), so `padded` would keep two names or a compile-time test of "is it specified".
+
+### 2026-11-23 OWNER, an example after `0` first in a pass: a list whose length is given by a digit before it; "I don't know what goes in the count()"
+tags: lib/counting/count core/conditions/form/value-left core/labels/labels-vs-captures/array-vs-passes core/conditions/pass-start-read core/holes/value/other-positions core/values/comparisons parked/ideas/match-is-rx-unlocks
+
+Said while call-forms was waiting (not answered by these words). HIS WORDS, whole:
+
+"((0: !contains("7")) SEQ /\d/ SEQ ";")+ how about [c = digit ] ((count() <= $c) SEQ /\d/ SEQ ";")+ but I don't
+know what goes in the count()"
+
+Class: an EXAMPLE with a QUESTION (DISCUSSION; nothing ruled): a digit `c`, then a loop of items with a test at
+the START of each pass comparing a count with `$c`; what `count()` takes. Spellings his placeholders (`digit`;
+the juxtaposition after `[c = digit ]` read as the sequence operator; `(count() <= $c)` read as a value left of
+`:` with a comparison set).
+The manager's answer (told to him; readings of the rules as they stand, marked):
+- `count` takes a condition and counts the settings of its label that meet it (lib/counting/count), so the item
+  gets a label and the count asks for any value: `count((it: anything))`; as a test it is a value left of `:`
+  (count-in-set, ruled): `(count((it: anything)): < $c)`. The whole program:
+  `[c = /\d/] SEQ ((count((it: anything)): < $c) SEQ [it = /\d/] SEQ ";")+`.
+- What it reads inside the loop: the settings made so far on the path ("as they stand where it is read (composed
+  at that point: a reading)", core/labels/labels-vs-captures). Written FIRST in the pass it counts the items
+  before this one, so the comparison is `<`, not `<=` (with `<=` one item too many is admitted, and `0` admits one).
+- RUN (a path model, `$PCREC_TMPDIR/scratch/pred/count_prefixed.py`; output pasted):
+  the test FIRST, `<= $c`: WHOLE `23;4;` HOLDS, `23;4;5;` HOLDS, `23;` HOLDS, `13;` HOLDS, `13;4;` HOLDS, `03;`
+  HOLDS / SEARCHED `23;4;5;` `23;4;5;`@0 / FIND-ALL `23;4;5; 13;4; 03;` [`23;4;5;`@0, `13;4;`@8, `03;`@14]
+  the test FIRST, `< $c`: WHOLE `23;4;` HOLDS, `23;4;5;` FAILS, `23;` HOLDS, `13;` HOLDS, `13;4;` FAILS, `03;`
+  FAILS / SEARCHED `23;4;5;` `23;4;`@0 / FIND-ALL `23;4;5; 13;4; 03;` [`23;4;`@0, `13;`@8]
+  the test AFTER the item, `<= $c`: the same answers as the line above in every mode.
+- These say "at most c items" (`23;` HOLDS). "Exactly c" adds one test after the loop: `(count((it: anything)):
+  == $c)` (hand-worked, not run).
+- It is the length-prefixed field: the direct spelling, a count hole fed by a read (`rx.repeat(item, $c)`), is
+  under construction (core/holes/value/other-positions: "A count from a read is known only at match time; the
+  counted repeat over it is not built"); his form says the same with a condition, and it is the trigger U6 of
+  parked/ideas/match-is-rx-unlocks ("a user program needing a length-prefixed field").
+
+### 2026-11-23 OWNER, on his count-prefixed example: "That was a leading question to using length(0:) in some form."
+tags: core/conditions/match-so-far core/conditions/match-so-far/in-loop lib/modifiers/length lib/strings/strlen lib/modifiers/limited core/values/computed-labels core/values/reads
+
+HIS WORDS, whole: "That was a leading question to using length(0:) in some form."
+
+Class: a REMARK on his own example (DISCUSSION; nothing ruled): the answer he was leading to is the LENGTH of the
+match so far (`0`), "in some form"; the manager's answer had gone to a labelled item and `count`.
+The manager's answer (told to him; readings of the rules as they stand, marked):
+- The form that exists today: `length(S)` is a filter on a stretch (lib/modifiers/length), so the length of the
+  match so far is `(0: length(S))`. His example without a label on the item, the items being two characters wide:
+  `[c = /\d/] SEQ ((0: length(< (1 + 2 * $c))) SEQ /\d/ SEQ ";")+` (a set whose bound is computed from a read,
+  written in place: core/values/computed-labels).
+- RUN (a path model, `$PCREC_TMPDIR/scratch/pred/length_zero.py`; output pasted): WHOLE `23;4;` HOLDS, `23;4;5;`
+  FAILS, `23;` HOLDS, `13;` HOLDS, `13;4;` FAILS, `03;` FAILS / SEARCHED `23;4;5;` `23;4;`@0 / FIND-ALL
+  `23;4;5; 13;4; 03;` [`23;4;`@0, `13;`@8]: the answers of the `count` form with `<`, in every mode.
+- The other form, as a VALUE: `(strlen($0): S)`. `$0` as a read is NOT stated anywhere in the documents (only
+  "`$1` reads label 1 as `$x` reads a name" and `0` left of `:`): a gap, noted for the fold as an open line.
+- What the length of `0` gives that a count does not: a measure in characters with no label on anything (a
+  length-prefixed field counted in characters; a size limit on a loop, his `limited`); what it does not: a count
+  of items when items vary in width. Under binding-fixed and zero-in-loop (b) it measures from the start of the
+  definition it is written in, so a bound piece measures only itself.
+
+### 2026-11-23 OWNER, on `0`: "All other labels are completed at the condition. 0 is not. $0 is provisional. Later labels or captures can replace entirely but 0 grows."
+tags: core/conditions/match-so-far core/conditions/match-so-far/in-loop core/values/reads core/labels/one-rule core/labels/labels-vs-captures/array-vs-passes core/filters/and lib/structural/capture core/conditions/defaults
+
+After the manager's answer on the length of the match so far. HIS WORDS, whole:
+
+"You didn't mention recursion (or I missed it). All other labels are completed at the condition. 0 is not. $0 is
+provisional. Later labels or captures can replace entirely but 0 grows."
+
+Class: an OBSERVATION (DISCUSSION; nothing ruled), and a correct remark that the manager's answer left out the
+"recursive" side he had named (2026-11-23, zero-in-loop: "the (a) interpretation is a recursive interpretation
+of 0"): a condition on `0` speaks about the match it is itself a part of. His distinction: every other label is
+COMPLETE where a condition reads it; `0` is not; a read of it (`$0`) is "provisional"; another label is REPLACED
+whole by a later mention, `0` GROWS.
+
+The manager's answer (told to him; each marked, none ruled):
+- It agrees with the documents on labels: "A group's close sets its name" (one-rule): a label is read closed.
+  `0` is the one name read OPEN: "the text the definition the condition is written in has matched from its start
+  to the condition's point" (match-so-far). Two reads of `0` on one path differ, the later extending the earlier.
+- There are two cases under the one name: joined by `&`, `0` is the left operand's match and that operand is
+  COMPLETE there ("A condition joined by `&` reads its left operand's match as its `0`"); in a sequence or a hole
+  `0` is the open prefix. Only the second is provisional.
+- The recursive reading (`0` = the finished match, read from inside it) adds nothing a test written at the end
+  does not say, so the open-prefix reading is the one with a use; a reason for (b) not given before.
+- Consequences to state (readings): `0` is never absent (his own "every pattern has a match 0"), so a default or
+  the optional entry operator on it never applies; it has no settings, so no array and no group question; `$0`,
+  if a read of it is allowed, is the prefix at the point of the read.
+- RUN (python `re`, HAND-LOWERED, output pasted): `/\w+${$0}/` as `(\w+)\1`: WHOLE `abab` HOLDS, `aba` FAILS,
+  `aa` HOLDS / SEARCHED `xabab` `abab`@1 / FIND-ALL `abab cc d` [`abab`@0, `cc`@5]. Two reads on one path,
+  `/\d${(0: "3")}\d${(0: "34")}/` as `34`: WHOLE `34` HOLDS, `35` FAILS, `44` FAILS / SEARCHED `x34 35` `34`@1 /
+  FIND-ALL `34 35 34` [`34`@0, `34`@6].
+Put to him as slug zero-open.
+
+### 2026-11-23 OWNER RULING — zero-open: yes, all four (`0` is the one name read open; never absent; no settings; `$0` legal; a capture request only where `0` is complete)
+tags: core/conditions/match-so-far core/values/reads core/conditions/defaults core/labels/labels-vs-captures/array-vs-passes lib/structural/capture core/labels/numbers core/diagnostics/errors
+
+ASKED AS A RULING (slug zero-open, the statement put to him: "`0` is the one name read open: the match so far,
+growing along the path. Every other label is read complete."; four consequences: (1) never absent: a default or
+the optional operator on `0` never applies and draws the unused warning; (2) no settings: no array, so a group
+question or an index on `0` is a compile error; (3) `$0` is legal and reads the prefix at the point of the read;
+(4) a capture request on `0` is legal only where `0` is complete, `rx & capture("name")`; on an open `0` in a
+sequence or a hole it is a compile error for now; the manager's leaning yes to all four; the alternative named:
+a separate name for the open prefix, `0` kept for the complete case). HIS WORDS, whole:
+
+"zero-open: yes all 4"
+
+Class: a RULING: the statement and its four consequences, as put. `0` keeps one name for both cases (the
+alternative was not taken). The manager's readings (marked; for the fold to test): (a) "complete" is the `&`
+case (the left operand's match) and a condition written last in its definition; (b) the warning of (1) is
+`pcrec.default.unused` for a default and the same kind for the optional operator (the name the manager's call);
+(c) `$0` in a value hole follows the value hole's rules (literal text, the options in force at the hole).
+
+### 2026-11-23 OWNER, on call-forms: "i like your suggestion. Please play it out"; `repeat(X, _, 5)`; nine questions; "Key: self consistent definitions using basic semantic components"
+tags: core/operators/bindings/call-forms core/operators/bindings core/modules/binding-list core/modules/map core/values/tuples core/arrays/lift lib/structural/each lib/rx/repeat core/modules/positional
+
+Asked **call-forms** ((a) several bodies per name; (b) one head per name, defaults, a default naming an earlier
+parameter, `_` as the unspecified argument; the manager's leaning (b)). HIS WORDS, whole:
+
+"Call forms discussion: repeat(X, _, 5) is 0 up to 5. i like your suggestion. Please play it out: Is the right of
+the default = a pattern expression? Can any arg be keyword? Can keywords intersperse positional? How would
+variable arguments be specified if possible? Can the arguments be abstracted to a map? Then speculate level 2: is
+a macro first class? Can a map or array apply to a macro? Can it be an arg? What does that mean and how would it
+be used? Key: self consistent definitions using basic semantic components. I'll be back later to go over."
+
+Class: DISCUSSION, in his word; a LEAN toward (b) ("i like your suggestion"); a STATEMENT of one consequence he
+expects (`repeat(X, _, 5)` "is 0 up to 5": `_` passed for a count bound leaves the bound out); a REQUEST to play
+the design out against nine questions, in two levels, with his criterion: "self consistent definitions using
+basic semantic components". NOTHING RULED; call-forms stays open until he has gone over the play-out.
+
+### 2026-11-23 MANAGER — the play-out he asked for: one head per name, from components the language already has (a PROPOSAL throughout; no owner words; nothing here is ruled)
+tags: core/operators/bindings/call-forms core/operators/bindings core/modules/binding-list core/modules/all-symbols core/modules/call-shorthand core/modules/leave-out core/modules/map core/modules/positional core/values/tuples core/arrays/lift core/values/one-type lib/structural/each lib/rx/repeat lib/modifiers/padded core/holes/option core/holes/zero-values core/diagnostics/errors
+
+THE COMPONENTS ALREADY THERE (each quoted from the documents):
+- A RECORD: "a call is the macro applied to one record"; "A RECORD (the parentheses of a call or a condition) is
+  never a value: it is laid against fields only".
+- THE BINDING LIST: "`(l = left, =right) := X` binds `l` to `X.left` and `right` to `X.right`, on any map";
+  "In a macro call `f(=x)` is `f(x = x)`, the same degenerate form as in a binding list"; `(=) := X` binds every
+  member; "`_ = left` binds the member `left` to the unusable name `_`".
+- PARAMETERS: "positional arguments are the required parameters in declared order ...; keyword arguments are
+  optional settings with defaults ...; any parameter may be passed by name"; "NO PARTIAL APPLICATION"; "Macros
+  expand at compile time, inlined per use"; "No lambda until an example needs one".
+- COLLECTIONS: an array is an alternation and an operation LIFTS over it ("the nested loop over each operand's
+  `enumerate`"); a tuple is a value of fixed arity; a module is a map ("A map interface is not a created value:
+  no map value is passed around").
+- A macro already travels: "`name := expression` binds a name to whatever the expression is, an rx or a macro";
+  `each(f, A)` takes "a macro whose parameters the entries fill, or a filter passed as a section".
+
+THE ONE IDEA: a macro's HEAD is a binding list, and a CALL binds it against the argument record. Everything
+below is that sentence applied.
+
+LEVEL 1.
+1. The head: names in order; each may carry a default (`name = default`); a label parameter carries its mark.
+   There is ONE head per name (no overloading: his "we currently don't have overloading").
+2. The call's record: positional entries, then named entries (`name = value`, `=name` for `name = name`).
+   Positional entries fill the fields in declared order, a field with a default included (already so: "The legal
+   calls: `when(x, y)`, `when(x, y, z)`"); named entries fill by name. A field filled twice, or a name the head
+   does not have, is a compile error. "Required" means only: has no default.
+3. THREE WAYS a field has no value from the caller, kept apart:
+   - OMITTED: the field takes its default; legal only if it has one.
+   - UNSPECIFIED, `_`: passed, and says "nothing here". It is not the default (`repeat(x, 3, _)` must not become
+     `{3,3}`). Each POSITION the body lays the parameter into says what "nothing here" is, and it is always "as
+     if the slot were not written": a label: no label (RULED, label-parameter-omitted); a count bound: the bound
+     left out (his "0 up to 5"); a set, a comparison bound, an `&` operand: no constraint (`anything`); a pattern
+     in a sequence: the empty pattern; an option position: no options (RULED for `""`, the option hole). A
+     position with no row is a compile error at the call. Arithmetic on `_` is a compile error.
+   - OPEN (to be filled later): NOT in the language ("NO PARTIAL APPLICATION"; a section `(& f)` is the one open
+     form). `_` never means this: `repeat(_, 3)` is not a macro of one parameter.
+   His `max?` in a head is `max = _`: an optional field whose default is "unspecified".
+   UNSPECIFIED is not ZERO VALUES: `${[]}` in a pattern hole is the alternation of no members, the never-matching
+   rx (core/holes/zero-values); `_` there is the empty pattern.
+4. "Is the right of the default = a pattern expression?" It is an expression of the language of whatever kind
+   the parameter takes (an rx, a set, a condition, a label, `_`), and it is BODY TEXT: written in the macro's
+   definition, resolved there (its file's options, its names), under every rule of a body, never in the caller's
+   scope (binding-fixed, namespace-at-reference). It may name EARLIER parameters, left to right (`max = min`),
+   never later ones.
+5. "Can any arg be keyword?" Yes, already: "any parameter may be passed by name". And any may be positional (2).
+6. "Can keywords intersperse positional?" Proposal: no, for now: positional entries first, then named ones; a
+   positional entry after a named one is a compile error (conservative; it can relax without changing an
+   answer). `_` covers the need: `repeat(X, _, 5)`.
+7. "How would variable arguments be specified?" By a component that exists: ONE parameter that takes an ARRAY
+   (`join(a, sep = ".")`, `each(f, A)`, `any_order(a, ..)`): the caller writes `f([x, y, z])`. A "rest"
+   parameter that gathers the remaining positional entries into an array would be sugar for that, parked until
+   an example wants it. What a USER body can do with an array today is limited to handing it on (a hole, a
+   native such as `each` / `join`): "no expression of the language walks an array".
+8. "Can the arguments be abstracted to a map?" The record's two halves ARE the two collections: its positional
+   part is a TUPLE, its named part is a MAP. So a call can take them ready-made, by the binding list's own forms
+   mirrored: a tuple spread over the positions (the mirror of `(a, b) := T`, the OPEN tuple-parts) and a map
+   spread over the names (the mirror of `(=) := M`, ruled). Today's obstacle is on the map side: a map is only a
+   module or a thing with labels, never written in place ("no map value is passed around"; "A RECORD is never a
+   value"). Without changing that, an existing map can still be applied: a module of settings laid against a
+   head (`row(k, v, (=) = opts)`, the spelling a placeholder), taking the members whose names the head has.
+
+LEVEL 2 (speculation, as asked).
+9. "Is a macro first class?" Today it is half so: it is bound, renamed, imported as a module member, and passed
+   to natives (`each(capture, a)`). It cannot be written without a name (no lambda), left partly applied, or put
+   in a hole ("the unapplied-macro error"). Because every macro expands at compile time, the missing step is
+   small: a USER macro may take a macro as an argument and CALL its parameter in its body; passing is
+   substituting a name. No run-time value is involved.
+10. "Can a map or array apply to a macro?" Three collections, three meanings, none new:
+    an ARRAY applied to a macro is the LIFT, already ruled for any parameter that needs its operand single: one
+    call per member, the results the alternatives ("as though this was against fn() and not +"); `each(f, A)`
+    is its explicit form. A TUPLE applied is the positions (8). A MAP applied is the names (8).
+    An array is "or", a tuple is "then", a map is "named".
+11. "Can it be an arg? What does that mean and how would it be used?" Meaning: the parameter stands for an
+    unexpanded body with its head; calling it in the body expands it there, with the caller's kinds checked at
+    that expansion. Uses, each met in the record: the caller chooses the VALUE FORM of a row and the row forwards
+    its label to it (`row(msg:, "msg", json.string)`, the label-forward sketch with `value(l:)` replaced by a
+    parameter); the key of a sort (`sort(X, by = key)`); the test of `where(p, X)`; an item form for `list_of`.
+    RUN (python `re`, the bodies filled mechanically by one-line functions, the label-only group modelled as a
+    named group; `$PCREC_TMPDIR/scratch/pred/call_forms.py`; output pasted), with tag(kind, l:) :=
+    `/<${kind(l:)}>/`, num(l:) := `/(?<:${l}>\d+)/`, word(l:) := `/(?<:${l}>[a-z]+)/`:
+    `tag(num, v:) & (v: <5)` is `<(?P<v>\d+)>`: WHOLE `<3>` HOLDS, `<7>` FAILS, `<ab>` FAILS, `<03>` FAILS /
+    SEARCHED `<7> <ab> <4>` `<4>`@9 / FIND-ALL `<3> <7> <ab> <4>` [`<3>`@0, `<4>`@13]
+    `tag(word, v:) & (v: "ab")` is `<(?P<v>[a-z]+)>`: WHOLE `<ab>` HOLDS, `<abc>` FAILS, `<3>` FAILS / SEARCHED
+    `<3> <abc> <ab>` `<ab>`@10 / FIND-ALL `<ab> <3> <ab>` [`<ab>`@0, `<ab>`@9]
+12. THE COST of a macro as an argument: termination. Today's rule refuses a recursion "other than one integer
+    literal parameter strictly decreasing to a literal base case"; a macro that calls its parameter can hide one
+    (`w(f) := f(f)`, then `w(w)` never stops expanding). Two ways to keep expansion finite: an expansion BUDGET
+    with a compile error over it (as `enumerate` has), or parameter KINDS declared in the head so that a macro
+    parameter cannot receive itself (the under-construction "macro types"). The budget needs nothing new.
+
+RUN for level 1 (the same script; one head `repeat(x, min, max = min) := /(?:${x}){${min},${max}}/`):
+- `repeat(rx.digit, _, 5)` is `(?:\d){0,5}`: WHOLE `` HOLDS, `12` HOLDS, `12345` HOLDS, `123456` FAILS / SEARCHED
+  `x1234567` ``@0 / FIND-ALL `1234567 12 x` [`12345`@0, `67`@5, ``@7, `12`@8, ``@10, ``@11, ``@12]
+- `repeat(rx.digit, 3)` is `(?:\d){3,3}`: WHOLE `` FAILS, `12` FAILS, `12345` FAILS, `123456` FAILS / SEARCHED
+  `x1234567` `123`@1 / FIND-ALL `1234567 12 x` [`123`@0, `456`@3]
+- `repeat(rx.digit, 3, _)` is `(?:\d){3,}`: WHOLE `` FAILS, `12` FAILS, `12345` HOLDS, `123456` HOLDS / SEARCHED
+  `x1234567` `1234567`@1 / FIND-ALL `1234567 12 x` [`1234567`@0]
+
+WHAT IT CHANGES in the documents if he takes it (for a later fold; nothing applied): lib/rx/repeat and
+lib/modifiers/padded lose their several bodies (repeat: the one head above; padded: the width form gets a name of
+its own, since an unspecified width does not reduce to the no-width body: hand-worked); "at least 3" is
+`repeat(x, 3, _)`; core/operators/bindings' sentence on positional and keyword arguments is restated as (2); the
+open call-forms closes as (b); tuple-parts (open) gains a second client.
+WHAT IS LEFT FOR HIM: the interleaving rule (6); whether `_` may be passed to ANY parameter or only to one whose
+head allows it (the play-out assumes any, as his `repeat(X, _, 5)` does); a map written in place (8); a user
+macro taking a macro (9, 11) and which of the two termination rules (12).
+
+### 2026-11-23 OWNER, on the call-forms play-out: `repeat(A)` could be `A*`; "I'm not understanding the distinction between unset and _ ... Is it only whether the arg takes a default?"
+tags: core/operators/bindings/call-forms core/operators/bindings lib/rx/repeat core/holes/count
+
+HIS WORDS, whole: "Comments: 1. repeat(A) could be A*.
+2. I'm not understanding the distinction between unset and _ in your examples. Is it only whether the arg takes a
+default?"
+
+Class: two COMMENTS on the play-out (DISCUSSION; nothing ruled): a SUGGESTION (`repeat(A)` with no count "could
+be" `A*`) and a QUESTION on the play-out's "omitted" (his "unset") against `_`.
+The manager's answers (told to him; a proposal, marked):
+1. It falls out of the same head with one more default: `repeat(x, min = _, max = min)`. With no count both
+   bounds are unspecified, so both are left out: `{0,}`, which is `*`.
+2. Yes, that is the whole distinction. OMITTED: the caller writes nothing and the head's default is used (a
+   compile error if there is none). `_`: the caller writes "nothing here" and the default is NOT used. They
+   differ only where the default is something other than `_` (here `max = min`: `repeat(A, 3)` is exactly 3,
+   `repeat(A, 3, _)` is 3 or more); where the default IS `_` (his `max?`) they are the same call. If the two were
+   merged (`_` = "use the default"), "no maximum" and "exactly n by one argument" could not both come from one
+   head: his ruled "one argument exact" would have to be written `repeat(A, 3, 3)`.
+RUN (python `re`; the head's defaults applied by a four-line function; output pasted):
+- `repeat(rx.digit)` is `(?:\d){0,}`: WHOLE `` HOLDS, `12` HOLDS, `123` HOLDS, `123456` HOLDS / SEARCHED
+  `x1234567` ``@0 / FIND-ALL `1234567 12` [`1234567`@0, ``@7, `12`@8, ``@10]
+- `repeat(rx.digit, 3)` is `(?:\d){3,3}`: WHOLE `` FAILS, `12` FAILS, `123` HOLDS, `123456` FAILS / SEARCHED
+  `x1234567` `123`@1 / FIND-ALL `1234567 12` [`123`@0, `456`@3]
+- `repeat(rx.digit, 3, _)` is `(?:\d){3,}`: WHOLE `` FAILS, `12` FAILS, `123` HOLDS, `123456` HOLDS / SEARCHED
+  `x1234567` `1234567`@1 / FIND-ALL `1234567 12` [`1234567`@0]
+- `repeat(rx.digit, _, 5)` is `(?:\d){0,5}`: WHOLE `` HOLDS, `12` HOLDS, `123` HOLDS, `123456` FAILS / SEARCHED
+  `x1234567` ``@0 / FIND-ALL `1234567 12` [`12345`@0, `67`@5, ``@7, `12`@8, ``@10]
+- `repeat(rx.digit, 2, 5)` is `(?:\d){2,5}`: WHOLE `` FAILS, `12` HOLDS, `123` HOLDS, `123456` FAILS / SEARCHED
+  `x1234567` `12345`@1 / FIND-ALL `1234567 12` [`12345`@0, `67`@5, `12`@8]
+
+### 2026-11-23 OWNER, an aside on label arguments: "because of label args that label holes must be full and not partial"
+tags: core/holes/name core/operators/bindings/label-variables core/labels/paths/label-reference core/labels/label-only-group
+
+HIS WORDS, whole: "(Aside labels args: I'd say because of label args that label holes must be full and not
+partial)"
+
+Class: a LEAN ("I'd say"), said as an aside; NOT a ruling. The reading taken (the manager's, told to him): a
+group-name hole filled by a LABEL PARAMETER (`(?<:${l}>...)`, `(?<${l}>...)`) is the WHOLE name; a label
+parameter as PART of a name (`(?<:f_${l}>...)`) is refused. The ground, from the record: the caller writes the
+label's name in its own text and reads it bare (label-reference; his 2026-11-23 point that a label provided
+otherwise "its not "textually defined""); a name the hole only completes is a name nobody's text writes.
+What the documents say today: core/holes/name (ruled 2026-11-18 for "an array of names there is a compile
+error") also carries the sentence "A hole may form part of a name (`(?<f_${i}>...)`)", which is NOT in his
+ruling words (a sentence of the draft, written for a STRING or number in the hole). The manager's proposal
+(marked, not ruled): the partial form stays for a string or number filling the hole (a generated CAPTURE name,
+`f_1`, `f_2`; as a label such a group is reached only with a source, never bare) and is refused for a label
+parameter. Put to him as slug label-hole-full.
+
+### 2026-11-23 OWNER, on the repeat head: "repeat(A, min = 0, ...) seems the natural definition. But _ in a repeat hole is empty "". But then repeat(A, _,_) ?"
+tags: core/operators/bindings/call-forms lib/rx/repeat core/holes/count core/holes/zero-values core/patterns/literals
+
+HIS WORDS, whole: "repeat: repeat(A, min = 0, ...) seems the natural definition. But _ in a repeat hole is empty
+"". But then repeat(A, _,_) ?"
+
+Class: DISCUSSION (nothing ruled): a SUGGESTION for the head (`min = 0` as the default), a STATEMENT of how he
+reads `_` in a count hole (the empty text, `""`), and a QUESTION it raises: both bounds `_`.
+RUN (libpcre2 10.46 through ctypes, WHOLE; output pasted): `a{,}`: WHOLE `` FAILS, `aaa` FAILS, `a{,}` HOLDS,
+`aaaaaaa` FAILS; `a{,5}`: `` HOLDS, `aaa` HOLDS, `a{,}` FAILS, `aaaaaaa` FAILS; `a{3,}`: `` FAILS, `aaa` HOLDS,
+`a{,}` FAILS, `aaaaaaa` HOLDS; `a{0,}`: `` HOLDS, `aaa` HOLDS, `a{,}` FAILS, `aaaaaaa` HOLDS. (python `re` reads
+`a{,}` as `a*`: `` and `aaa` HOLD, the text `a{,}` FAILS: the two engines part on it.)
+The manager's answer (told to him; a proposal, marked):
+- His question finds the hole in "the empty text": with both bounds empty PCRE2 reads `{,}` as the four literal
+  characters, not a quantifier (the run), so `repeat(A, _, _)` as TEXT would match `A{,}`. `_` in a count bound is
+  therefore stated by MEANING, never as text: no lower bound is 0, no upper bound is unbounded; `repeat(A, _, _)`
+  is `{0,}`, which is `A*`. It is the count position's own rule (each position has its own), beside the one that
+  already says a count is never converted to rx text (core/holes/count).
+- `min = 0` as the default: with it the default of max can no longer be `max = min` (`repeat(A)` would be
+  `{0,0}`). Two consistent heads, to choose between: (i) `repeat(x, min = _, max = min)`: one count is EXACT
+  (the proposal he agreed to on 2026-11-17: "i agree with repeat"), `repeat(A)` is `A*`, and unset differs from
+  `_` in the third position; (ii) `repeat(x, min = 0, max = _)`: his natural head; `repeat(A)` is `A*`,
+  `repeat(A, 3)` is 3 OR MORE, exactly 3 is `repeat(A, 3, 3)`; unset and `_` never differ and no default names
+  another parameter.
+Put to him as slug repeat-head.
+
+### 2026-11-23 OWNER RULING — label-hole-full: a pure label's name hole must be whole; a capture's name may be partial, "but again, the label portion is lost"; and a sketch of the repeat head with a conditional default
+tags: core/holes/name core/labels/label-only-group core/operators/bindings/label-variables core/labels/labels-vs-captures core/operators/bindings/call-forms lib/rx/repeat core/holes/count core/values/one-type
+
+ASKED AS A RULING (slug label-hole-full: a label parameter fills a WHOLE group name, a string or number may still
+be part of one (the manager's leaning); or no partial names at all) and, in discussion, slug repeat-head ((i)
+`repeat(x, min = _, max = min)`: one count exact; (ii) `repeat(x, min = 0, max = _)`: one count "or more"; the
+manager's leaning (ii)). HIS WORDS, whole:
+
+"label-hole-full: pure label must be whole the label is lost. Capture label can be partial but again, the label
+portion is lost.
+
+repeat-head: repeat(A, min = 0, max = ((min &  0)? _ :(min?min:)) := /${A}{${min|0},${max}}/"
+
+Class, part by part:
+- label-hole-full: a RULING, cut differently from the candidates: by the KIND OF GROUP, not by what fills the
+  hole. (1) A pure label (the label-only group): the name hole "must be whole". (2) A capture (a capturing named
+  group): its name "can be partial", "but again, the label portion is lost". The reading taken of "the label is
+  lost" (the manager's, told to him to confirm): a name a hole only completes is not a label anyone can read (no
+  text writes it); so in a pure-label group a partial name would leave nothing, hence whole only; in a capturing
+  group a partial name leaves the CAPTURE under the composed name and no label.
+- repeat-head: a SKETCH in answer (DISCUSSION; his spellings are placeholders: `? :`, `&` as a test, `|` as a
+  fallback, the empty else): min defaults to 0; max's default is CONDITIONAL on min: unbounded when min is 0,
+  else min where min is specified, else nothing; the lower bound is min, or 0. NOT a ruling on (i) or (ii).
+
+Check-his-regex, RUN (python `re`; `$PCREC_TMPDIR/scratch/pred/repeat_head.py`; his head read as stated above,
+head (i) beside it; D := `\d`; output pasted, the calls where the two heads agree shown once):
+- `repeat(D)`, `repeat(D, _)`, `repeat(D, _, _)`: both heads `(?:\d){0,}`: WHOLE `` HOLDS, `12` HOLDS, `123`
+  HOLDS, `123456` HOLDS / SEARCHED `x1234567` ``@0 / FIND-ALL `1234567 12` [`1234567`@0, ``@7, `12`@8, ``@10]
+- `repeat(D, 3)`: both `(?:\d){3,3}`: WHOLE `` FAILS, `12` FAILS, `123` HOLDS, `123456` FAILS / SEARCHED
+  `x1234567` `123`@1 / FIND-ALL `1234567 12` [`123`@0, `456`@3]
+- `repeat(D, 3, _)`: both `(?:\d){3,}`: WHOLE `` FAILS, `12` FAILS, `123` HOLDS, `123456` HOLDS / SEARCHED
+  `x1234567` `1234567`@1 / FIND-ALL `1234567 12` [`1234567`@0]
+- `repeat(D, _, 5)`: both `(?:\d){0,5}`: WHOLE `` HOLDS, `12` HOLDS, `123` HOLDS, `123456` FAILS / SEARCHED
+  `x1234567` ``@0 / FIND-ALL `1234567 12` [`12345`@0, `67`@5, ``@7, `12`@8, ``@10]
+- `repeat(D, 2, 5)`: both `(?:\d){2,5}`: WHOLE `` FAILS, `12` HOLDS, `123` HOLDS, `123456` FAILS / SEARCHED
+  `x1234567` `12345`@1 / FIND-ALL `1234567 12` [`12345`@0, `67`@5, `12`@8]
+- `repeat(D, 0)`, the ONE call that differs: his head `(?:\d){0,}` (the first line's answers); head (i)
+  `(?:\d){0,0}`: WHOLE `` HOLDS, `12` FAILS, `123` FAILS, `123456` FAILS / SEARCHED `x1234567` ``@0 / FIND-ALL
+  `1234567 12` [``@0, ``@1, ``@2, ``@3, ``@4, ``@5, ``@6, ``@7, ``@8, ``@9, ``@10]
+The manager's findings (told to him; marked):
+- His sketch makes one count EXACT (`repeat(D, 3)` is `{3,3}`): it is head (i)'s table, not (ii)'s, in every call
+  but a written `0`. The conditional is there only to tell "0 because nothing was given" from "a count was
+  given"; a default of "unspecified" tells them apart without a conditional: `repeat(x, min = _, max = min)`.
+- `${min|0}` as written is not a fallback when min IS given: `3|0` is two values in a count hole, which makes
+  copies (core/holes/count); a first-that-is-specified choice is the conditional again.
+- The NEW component his sketch uses: a compile-time CONDITIONAL in an expression, choosing by whether a set has a
+  string (`min & 0`) or whether an argument is specified (`min ? .. : ..`). The language has the test (emptiness
+  of a compile-time set: `@assert.some`) but no expression that chooses on it. A candidate basic component;
+  nothing defined; to park with a trigger unless he wants it now.
+
+### 2026-11-23 OWNER, on his own repeat sketch: "With proper ?: spelling And different semantics for repeat holes...lol"
+tags: core/spellings/placeholders core/conditions/form core/holes/count core/operators/bindings/call-forms
+
+HIS WORDS, whole: "With proper ?: spelling
+And different semantics for repeat holes...lol"
+
+Class: a REMARK on his own sketch, in jest (DISCUSSION; nothing ruled): the sketch stands only with a proper
+spelling of its conditional and with other semantics for a count hole than the documents have. repeat-head is
+NOT answered by it.
+The manager's note (told to him; for the spellings review): his conditional's marks, `?` and `:`, are the two
+marks of the optional entry operator he proposed the same day (`p ?: S`); a compile-time conditional, if it is
+ever taken up, needs a spelling that does not meet `?:` or the entry's `:`.
+
+### 2026-11-23 OWNER, on head (i): "So under your i option, repeat(A, _,_) is unintended "{,}" text"
+tags: core/holes/count core/holes/insert lib/rx/repeat core/operators/bindings/call-forms
+
+HIS WORDS, whole: "So under your i option, repeat(A, _,_) is unintended "{,}" text"
+
+Class: an OBJECTION put as a statement (DISCUSSION; nothing ruled): with both bounds the underscore, the body
+`/(?:${x}){${min},${max}}/` would read `{,}`, which is literal text in PCRE2 (the libpcre2 run of the entry "on
+the repeat head").
+The manager's answer (told to him; marked): it is so ONLY if the underscore in a count hole is the empty TEXT
+(his reading of two entries ago), under ANY head; and it is why the play-out states it by meaning. The ground in
+the documents: "`${}` is a context-aware insert, not a string insert" (core/holes/insert, ruled 2026-11-17) and
+"a count is never converted to rx text" (core/holes/count). What head (i), and every other head, needs is ONE
+new sentence in the count position: an unspecified lower bound is 0, an unspecified upper bound is no maximum;
+both unspecified is `{0,}`. That sentence is the "different semantics for repeat holes" of his remark: a rule
+the count position does not have today, proposed, not ruled. The runs of `repeat(D, _, _)` in the two entries
+above (`(?:\d){0,}`) are of that sentence, applied by the model, not of text substitution.
+
+### 2026-11-23 OWNER RULING — count-unspecified: "I agree the count semantics should work that way"; and the bigger question: do the argument rules force positions to be defined "meet me half way"
+tags: core/holes/count core/holes/insert core/operators/bindings/call-forms core/principles/positions-own-rules core/principles/conservative-first lib/rx/repeat
+
+Asked whether the one new sentence of the count position is acceptable, with head (i) (an unspecified lower
+bound is 0, an unspecified upper bound is no maximum; both unspecified is `{0,}`). HIS WORDS, whole:
+
+"I agree the count semantics should work that way and that solves this issue. The bigger decision was if the
+arguments rules we are discussing get in the way or otherwise require us to define things like repeat holes in a
+"meet me half way" fashion."
+
+Class: a RULING on the count position ("I agree the count semantics should work that way"): an unspecified lower
+bound is 0, an unspecified upper bound is no maximum, by meaning, never the empty text (slug count-unspecified,
+the manager's name). "that solves this issue": the `{,}` objection is closed. NOT ruled by these words: the
+repeat head ((i) or his conditional one), call-forms itself. And a QUESTION he names "the bigger decision"
+(DISCUSSION): whether the argument rules under discussion get in the way of the position rules, or force each
+position to bend toward them.
+The manager's answer (told to him; a view, marked):
+- What crosses from the argument rules into a position is ONE thing, the unspecified mark; a head, a record,
+  defaults and names are settled before the body is read and touch no position.
+- The mark has ONE rule, not a table of favours: the construct with that part NOT WRITTEN, in the meaning the
+  construct already has without it. Regex already has the forms: `{3,}` (no upper bound), `{,5}` (no lower
+  bound; libpcre2 10.46 run above), a group with no name, an option group with no letters (the option hole's
+  ruled `""`). The count position's both-empty case is the one place regex's own form is missing (`{,}` is
+  literal text), and the ruled sentence fills it the only natural way.
+- Where a construct has NO form without the part (an operand of arithmetic, a backreference's name, a range
+  end), the mark is a compile error. Nothing is invented to accommodate it.
+- So no position bends; and no table needs defining now: a position gets its line when an example needs the mark
+  there (conservative now, relax later). Today's lines: a label (ruled), an option (ruled as `""`), a count
+  bound (ruled today).
+- The risk he names is real in one form: giving the mark a meaning chosen for convenience per position (the
+  play-out's "a set: no constraint", "a pattern in a sequence: the empty pattern" were of that kind). Those lines
+  are WITHDRAWN from the play-out until an example asks for one; each would then be argued from "the construct
+  without the part".
+Put to him as slug unspecified-rule.
+
+### 2026-11-23 MANAGER — review r86 (predfold1123): the dispositions; three errors of the manager's own brief named; no owner words
+tags: core/conditions/form/optional-entry core/operators/bindings/label-variables core/labels/export/arguments core/labels/export lib/control/when core/conditions/match-so-far lib/structural/capture core/labels/labels-vs-captures core/labels/flow core/labels/paths/argument-default core/filters/negation/effects core/holes/name core/labels/label-only-group core/spellings/placeholders core/operators/precedence
+
+The draft is `$PCREC_TMPDIR/scratch/crit-predfold1123/review.md` (frozen at 026090af8; 46 items; no finding
+REFUTED by its verifier; none REJECTED here). Lane predfix86 applies them and files the review.
+
+THE MANAGER'S OWN ERRORS the round found (each was in the fold lane's brief, not the lane's doing):
+- A1: the brief told the lane to print the joint and value left parts of the optional entry as legal ("the
+  manager's reading, with run lines"). The record says otherwise: optional-label was ruled on a statement whose
+  conservative edges were "`?` on a joint entry's label, on a value left of `:`, inside a group question are
+  compile errors for now", and today's optional-place entry says of the joint and value cases "Not ruled by these
+  words". The edges STAND. The reading is withdrawn.
+- A1 again: optional-label-general was closed in the documents on the manager's thought; it is his FLAG and it is
+  OPEN, its standing state his two leans ("a special case ... how special"; the operator spelling).
+- A8: the brief carried his spelling lean `l = ts:` as if it were a head default naming a label; his words are
+  about a label passed BY NAME at a call.
+
+FIX-NOW, lane predfix86 (documents):
+- A1: the three edges restored as compile errors for now, cited from the ASKED statement; the joint and value
+  lines become the candidates of an open line (slug optional-entry-edges; the joint candidate's cost printed: it
+  breaks the ruled identity `(h: A, m: B)` = `((h, m): (A, B))` on `,9`); optional-label-general re-opened; the
+  qualifier "taken as the ruling ... so he can object" restored on the place.
+- A2: `C(_:)` for a body that reads its label parameter: refused at the call (the manager's reading (c) of
+  label-parameter-omitted), a reading; "a plain non-capturing group" restored.
+- A3: the cell "a caller's own label (a part label, an in-place group) under a body that closes the spot" is
+  OPEN (slug closing-own-label), leaning PASS (the record: the caller's own label on the argument works "without
+  the body's cooperation", the proposal he answered yes); pointers at export statements 3 and 7. No answer applied.
+- A4: `when`: a read written in `then` of a label the CALLER writes in the test is legal (argument-label), a run
+  line; the sentence resting on the withdrawn reading (b) goes; `when(A, (A.h: ..))` is a marked reading by
+  closed-argument's condition.
+- A5: one sentence, the manager's reading: a condition passed as an argument and placed by the body beside `&`
+  reads the left operand's match as its `0` (operand-world: "from the perspective of B, the subject is now
+  whatever A matched"); placed in a sequence or a hole it reads the match so far of the definition it is WRITTEN
+  in, as today. A printed line each.
+- A6: a marked reading: "a one-literal program" is a program that is exactly one literal; any request makes the
+  requested name follow the label rules (`3;;`: unset); labels-vs-captures' "not stated" goes (array-capture
+  closed it).
+- A7: one sentence and one line: on a nullable loop body PCRE's trailing empty pass leaves the label unset, so
+  `?:` never rejects there and an "if present" request returns unset.
+- A8: a marked reading: a label parameter's head default is `_` only, for now; a default naming a label would
+  make a label the caller's text never wrote (label-reference).
+- A9: two rows, marked readings: a SENT label is read bare; through the macro's name or a label on the call it is
+  NOT offered, both spellings refused alike for now; `identity([a = A])`: `a.h` bare (the caller's own) and
+  `identity.a.h` (export statement 3, by path) are both legal.
+- A10, A11, A12, A14 (the tension named in the row), A15 with the ruling label-hole-full of 2026-11-23 folded
+  beside it (a user body may write the label-only group with a label-parameter name hole, whole; a capturing
+  group's name may be partial and is then a capture only, the reading taken of "the label portion is lost").
+- A13: OPEN (slug capture-in-set); the documents state the conservative reading meanwhile (a compile error for
+  now), marked.
+- C1 to C11, D1, D2, D3 (a note in the parked piece that the idea would give `?` a second meaning, against his
+  own reason for the `?:` operator; his words kept).
+FIX-NOW, lane predfix86 (the successor evidence model): B1, B2, B3, B4, B5, B6 (the two readings marked
+UNTESTED: capture output is not modelled), B7, B9, B10 (a pinned commit, never a branch name), B11, B12.
+PLAN (no lane now): B8 (independent controls for the engine-only lines), B13, G1 (the label OWNERSHIP table:
+at the next ruling that adds a row or column), G2 (effects as marks on the accepting path), G3 (one optionality
+table: at the call-forms ruling), G4 (one table for `_`: its trigger has arrived in the live discussion,
+unspecified-rule).
+OWNER QUESTIONS queued: closing-own-label; capture-in-set; optional-entry-edges. Not asked: blank-label-read
+(reading (c) restored), request-in-literal and named-label-default (marked readings, conservative).
+The four lessons for the guide go to main (to_main.md).
+
+### 2026-11-23 OWNER, on unspecified-rule: "please restate the rule and given an example"
+tags: core/operators/bindings/call-forms core/holes/count core/holes/name core/holes/option core/modules/leave-out
+
+HIS WORDS, whole: "unspecified-rule: please restate the rule and given an example"
+
+Class: a REQUEST (DISCUSSION; nothing ruled). The manager's restatement (told to him; the proposal, marked):
+"An argument given as the underscore says: this part is not written. The body then means what the construct at
+that position already means WITHOUT that part. Where the construct has no form without the part, the call is a
+compile error."
+RUN (python `re`, the bodies filled mechanically; the label-only group modelled as a named group; output pasted):
+- a label, A(l:) := `/(?<:${l}>\d+)x/`: `A(n:)` is `(?P<n>\d+)x`: WHOLE `12x` HOLDS, `x` FAILS, `12` FAILS /
+  SEARCHED `a12x 3x` `12x`@1 / FIND-ALL `12x 3x x` [`12x`@0, `3x`@4]; groups named: n. `A(_:)` is `(?:\d+)x`:
+  the same answers in every mode; groups named: none.
+- an option, opt(o) := `/(?${o})ab/`: `opt("i")` is `(?i)ab`: WHOLE `ab` HOLDS, `AB` HOLDS / SEARCHED `x AB ab`
+  `AB`@2 / FIND-ALL `ab AB Ab` [`ab`@0, `AB`@3, `Ab`@6]. `opt(_)` is `ab`: WHOLE `ab` HOLDS, `AB` FAILS /
+  SEARCHED `x AB ab` `ab`@5 / FIND-ALL `ab AB Ab` [`ab`@0].
+- a count bound: the runs of the entries above (`repeat(D, 3, _)` is `(?:\d){3,}`; `repeat(D, _, 5)` is
+  `(?:\d){0,5}`; both unspecified `(?:\d){0,}`, ruled count-unspecified).
+- no form without the part (hand-worked from the rule; compile errors, nothing to run): `between(_, 12)` (a
+  comparison `>=` with no number is not a construct), `n + 1` with n unspecified, a backreference's name.
+
+### 2026-11-23 OWNER RULING — unspecified-rule: "yes and elegant" (the underscore as an argument: the part is not written)
+tags: core/operators/bindings/call-forms core/operators/bindings core/holes/count core/holes/name core/holes/option core/modules/leave-out core/principles/positions-own-rules
+
+ASKED AS A RULING (slug unspecified-rule, the sentence put to him: "An argument given as the underscore says:
+this part is not written. The body then means what the construct at that position already means without that
+part. Where the construct has no form without the part, the call is a compile error."; with the runs of the
+entry above; the manager's leaning yes). HIS WORDS, whole:
+
+"unspecified-rule: yes and elegant"
+
+Class: a RULING: the sentence as put is the definition of the unspecified mark as an argument. With it stand the
+three positions already ruled (a label: label-parameter-omitted; an option: the option hole's `""`; a count
+bound: count-unspecified). The manager's readings (marked; for the fold to test): (a) the two play-out lines
+withdrawn earlier (a set: "no constraint"; a pattern in a sequence: "the empty pattern") are compile errors under
+the rule until an example argues one in; (b) the mark may be passed to ANY parameter (the rule decides at each
+position the body lays it into; a parameter laid into two positions is judged at each); (c) it is not "use the
+default": an omitted argument takes its default, the mark does not (told to him 2026-11-23; he asked, and the
+distinction was explained, not ruled as such).
+
+### 2026-11-23 OWNER RULING — call-forms: yes (one head per name; positional entries first, then named; a default is the macro's own text and may name an earlier parameter; unset takes the default, the underscore does not)
+tags: core/operators/bindings/call-forms core/operators/bindings lib/rx/repeat lib/modifiers/padded core/modules/binding-list core/modules/call-shorthand
+
+ASKED AS A RULING (slug call-forms, the statement put to him in four lines: "1. One head per name. There is no
+overloading; a call is never matched against several bodies. 2. Positional entries first, then named ones.
+Positional entries fill the parameters in declared order, including those with defaults. Any parameter may be
+named. A positional entry after a named one is a compile error for now. 3. A default is the macro's own text. It
+is resolved in the macro's definition, and it may name an earlier parameter, never a later one. 4. Unset and the
+underscore are different. An argument left unset takes its default. The underscore does not take the default; it
+means "not written", by the rule you just ruled."; shown with four calls of `repeat(x, min = _, max = min)` and
+their runs; named as NOT part of the ruling: which head `repeat` gets, a map written in place, a user macro that
+takes a macro; the manager's leaning yes). HIS WORDS, whole:
+
+"call-forms: yes."
+
+Class: a RULING: the four lines as put. The open piece core/operators/bindings/call-forms CLOSES as one head per
+name (candidate (b)); candidate (a), several bodies chosen by the arguments passed, is rejected by owner ruling.
+What it changes (for the next fold): lib/rx/repeat and lib/modifiers/padded lose their several bodies (repeat's
+head is the open repeat-head; padded's width form gets a name of its own, the manager's call as a placeholder);
+core/operators/bindings' sentence "positional arguments are the required parameters in declared order ...;
+keyword arguments are optional settings with defaults" is restated as line 2 ("required" = has no default).
+The manager's readings (marked; for the fold to test): (a) a parameter filled twice (by position and by name),
+or a name the head does not have, is a compile error; (b) "the macro's own text" puts a default under every
+rule of a body (its file's options, its names; binding-fixed); (c) the head as a binding list (the play-out's
+"one idea") is the manager's framing, NOT ruled.
+
+### 2026-11-23 OWNER RULING — repeat-head: "agree with your lean" (head (i): `repeat(x, min = _, max = min)`)
+tags: lib/rx/repeat core/operators/bindings/call-forms core/holes/count
+
+ASKED AS A RULING (slug repeat-head: (i) `repeat(x, min = _, max = min)`: no conditional, one count is exact, a
+written 0 is exactly 0; or his conditional head, where a written 0 is "any number" and a compile-time conditional
+is needed; the manager's leaning (i)). HIS WORDS, whole:
+
+"repeat-head: agree with your lean"
+
+Class: a RULING: head (i) (the reading taken of "your lean": the leaning as put in the question he answered).
+`repeat(D)` is `D*`; one count is exact, 0 included; `repeat(D, 3, _)` is 3 or more; `repeat(D, _, 5)` is 0 to
+5. His conditional head is not taken; a compile-time conditional in an expression stays an idea (to park, with
+the trigger "the first default or body that cannot be written without it"; its `?` `:` spelling meets the
+optional entry operator: the spellings review).
+
+### 2026-11-23 OWNER RULING — closing-own-label: "I agree with your lean" (a caller's own label is not closed); the export statement closes ONE door: "there may be other doors"
+tags: core/labels/export core/labels/export/arguments core/labels/paths/closed-argument core/operators/bindings/label-variables core/labels/paths/label-reference core/principles/label-names-spot
+
+ASKED AS A RULING (slug closing-own-label: `B([a = A]) & (a.h: <5)`, B(rx) := `/${[_ = rx]}xx/`, A :=
+`/(?<h>\d)/`: (a) passes: the caller's own label is not closed (WHOLE `3xx` HOLDS, `7xx` FAILS / SEARCHED
+`7xx 3xx` `3xx`@4 / FIND-ALL `3xx 7xx 4xx` [`3xx`@0, `4xx`@8], hand-lowered, python `re`, run the same turn);
+(b) closed, a compile error at `a.h`; the manager's leaning (a), stated as "a name belongs to the text that
+writes it; a body's blank mark hides what the argument's own definition holds, never a name the caller wrote in
+the caller's text"). HIS WORDS, whole:
+
+"closing-own-label: the export statement should say that you can't go through A to get inside. Strictly that A
+doesn't make them visible through it. It's closing that door but there may be other doors. So I agree with your
+lean. Please restate general rule"
+
+Class: a RULING: (a) ("So I agree with your lean"): a label the caller writes inside an argument is not closed
+by a body that closes the spot. A CORRECTION of the export statement's wording, his: `[_ = A]` means "you can't
+go through A to get inside"; "Strictly that A doesn't make them visible through it"; "It's closing that door but
+there may be other doors" (statement 7 today says "makes none of A's labels visible anywhere outside A": too
+wide). And a REQUEST: restate the general rule (the restatement below is the manager's wording, put back to him;
+NOT ruled until he answers).
+
+The manager's restatement (told to him; marked):
+1. A label is OWNED by the text that writes its name; in the definition that writes it, it is read bare.
+2. Any other label is reached through a DOOR: a path through a part's name or label (`A.h`, `c.d`, `B.p.d`).
+3. Each part decides which of ITS doors are open: a labelled spot (open through that label), an export list
+   (open under the part's own names), a part used alone (open inside its definition, not exported), the blank
+   mark `[_ = A]` or a `_` part label (closed).
+4. Closing a door closes that door only: a label keeps every other way to it, and its owner always reads it.
+The two doors on one program (the first line run this turn; the second the printed line "Closed by the macro" of
+core/labels/paths/closed-argument): `B([a = A]) & (a.h: <5)`: the answers above; `B(A) & (A.h: <5)`, the same B:
+a compile error (the door through A is the one B closed).
+
+### 2026-11-23 OWNER, on the door example: "B(A) & (A.h: <5): this is actually an error regardless I believe. B.h might be closer to the mark but unless B exported, it's door is closed"
+tags: core/labels/paths/closed-argument core/labels/paths/call-prefix core/labels/paths/argument-default core/labels/export/arguments core/principles/label-names-spot core/labels/export
+
+Said on the manager's restated general rule (slug label-doors, not answered by these words). HIS WORDS, whole:
+
+"B(A)       & (A.h: <5): this is actually an error regardless I believe. B.h might be closer to the mark but
+unless B exported, it's door is closed"
+
+Class: a CORRECTION of the manager's example, stated as a BELIEF ("I believe"); NOT a ruling by these words. His
+point: the caller's `A.h` for a call `B(A)` is an error WHATEVER the body does; the door, if any, is B's (`B.h`),
+open only where B exports.
+CHECKED AGAINST THE RECORD (a belief is checked, not taken): it agrees with his principle of 2026-11-22
+(label-names-spot: "The label is not to the regex abstractly, it's to the spot in the pattern where the regex is
+being inserted."; "It's not a piece of the pattern. It's a template of the rx that might be placed into the
+pattern.") and with argument-default ("for me this is an error"). It does NOT agree with two earlier entries of
+2026-11-22: call-prefix case 2, his lean "i'd say A.d is legal there", and closed-argument, RULED (a) on the
+statement "`A.d` is legal in the caller exactly where `d` is visible through the call, and it reads `d` as it
+reaches the caller. Where B closes the argument, `A.d` is a compile error." The documents therefore print
+`B(A) & (A.d: <5)` as LEGAL where the body labels the spot (B(rx) := `/${[p = rx]}-(?<d>\d)/`: WHOLE `7-3` FAILS,
+`3-7` HOLDS, `3-3` HOLDS / SEARCHED `7-3 3-7` `3-7`@4 / FIND-ALL `7-3 3-7 1-2 9-9` [`3-7`@4, `1-2`@8]). It is the
+open spot-read-name of review r84 (C4), which the manager had queued low.
+The manager's answer (told to him; marked): his belief is the cleaner rule and follows from his own principle:
+an argument is not a part of the CALLER's pattern, so the caller has no door through the argument's name; the
+doors are the body's (`B.p.d` through a spot it labels, `B.d` where it lists). The restated rule's line 2 is
+corrected accordingly ("a part placed in YOUR OWN definition"). Because it reverses a ruled answer, it is put to
+him as a ruling: slug spot-read-name.
+RUN for spot-read-name (python `re`, hand-lowered; B(rx) := `/${[p = rx]}-(?<d>\d)/`, A := `/(?<d>\d)/`; output
+pasted): `B(A) & (B.p.d: <5)`: WHOLE `7-3` FAILS, `3-7` HOLDS, `3-3` HOLDS / SEARCHED `7-3 3-7` `3-7`@4 /
+FIND-ALL `7-3 3-7 1-2 9-9` [`3-7`@4, `1-2`@8] (the answers the documents print today for `A.d`).
+`B(A) & (B.d: <5)`: WHOLE `7-3` HOLDS, `3-7` FAILS, `3-3` HOLDS / SEARCHED `7-3 3-7` `7-3`@0 / FIND-ALL
+`7-3 3-7 1-2 9-9` [`7-3`@0, `1-2`@8] (the body's own `d`).
+
+### 2026-11-23 OWNER, on spot-read-name: "I suppose it's ok under the following logic": the canonical form is chains of only labels; a binding used as a label is a shorthand, under three conditions
+tags: core/labels/paths/binding-prefix core/labels/paths/closed-argument core/labels/paths/argument-default core/labels/paths/call-prefix core/labels/export/arguments core/labels/paths/label-reference core/labels/paths/one-use-read core/principles/meaning-not-spelling
+
+Asked **spot-read-name** (for a call `B(A)`: (b) the caller's `A.d` is a compile error whatever the body does,
+the door being B's, his belief of the entry above and the manager's leaning; (a) as ruled 2026-11-22, legal where
+visible through the call). HIS WORDS, whole:
+
+"Spot read name: I suppose it's ok under the following logic: the general canonical form is that all labels are
+chains of only labels. However, there is a short hand where a binding can be used as a label where 1. the binding
+is unambiguously referenced 2. a label could be set on the binding 3. the binding reference is as though through
+the skipped label from #2"
+
+Class: a LEAN with its GROUND ("I suppose"), NOT a ruling by these words, and AMBIGUOUS to the manager in one
+point: what "it" is. Two readings: (r1) "it" is the caller's `A.d`: it is OK, as a shorthand; (r2) "it" is
+candidate (b). The ground he gives reads as (r1): a path is canonically a chain of LABELS only; a binding's name
+in a path is a SHORTHAND for a label that was skipped, allowed where (1) the binding is referenced
+unambiguously, (2) a label could have been set on it there, (3) the reference then reads as though through that
+label. NOT guessed: asked back (below).
+What the logic gives under the rules as they stand (the manager's working, marked; hand-worked from rulings, the
+run lines quoted from earlier entries): his three conditions are binding-prefix's own (ruled 2026-11-22: "an
+unlabelled use carries the implicit label of the binding's name"; used more than once, a plain read is the
+compile error) with ONE widening: condition (2) now holds for an ARGUMENT too, since argument-label (ruled
+2026-11-23) lets the caller write a label on an argument. Then `B(A) & (A.d: <5)` is `B([A = A]) & (A.d: <5)`,
+the caller's own label, "set where the body places the template", and by closing-own-label (ruled today) it also
+passes a body that closes the spot. So under (r1), for A referenced once:
+- the body uses its argument alone (`/${rx}xx/`): LEGAL (today a compile error: argument-default, his "for me
+  this is an error"); the answers of the explicit form run 2026-11-23, `B([f = /\d/]) & (f: <5)`: WHOLE `3xx`
+  HOLDS, `7xx` FAILS / SEARCHED `7xx 3xx` `3xx`@4 / FIND-ALL `3xx 7xx 4xx` [`3xx`@0, `4xx`@8];
+- the body labels the spot: LEGAL (as today);
+- the body closes the spot: LEGAL (today a compile error: closed-argument (a)'s second sentence).
+That is the opposite of "an error regardless" (his belief of the entry above), and it would reverse
+argument-default's error and closed-argument's error case; what remains an error is ambiguity (the binding
+referenced more than once) and a place where no label could be written.
+Put to him as slug binding-as-label, with the three candidates and this table.
+
+### 2026-11-23 OWNER, a fourth condition for the shorthand: "a label on the binding has not already been made"
+tags: core/labels/paths/binding-prefix core/labels/paths/closed-argument core/labels/paths/argument-default core/labels/paths/call-prefix core/labels/export/arguments core/labels/paths/label-reference
+
+Asked **binding-as-label** ((s) the shorthand everywhere a label could be written; (b) never through an
+argument; (a) as the documents have it; with the table of three bodies). HIS WORDS, whole:
+
+"Consider one additional rule based on your examples which is that a label on the binding has not already been
+made"
+
+Class: a PROPOSAL ("Consider"): a FOURTH condition on his shorthand of the entry above: the binding's name
+stands for a skipped label only where no label has already been made on that binding there. NOT a ruling.
+What it gives (the manager's working, marked; told to him): each placed thing then has exactly ONE name, the
+label that was written on it, else, where none was written, the binding's name. For `B(A)`, A referenced once:
+- the body uses its argument alone: no label was made: `A.d` is LEGAL (reverses argument-default's error; the
+  answers of the explicit form: WHOLE `3xx` HOLDS, `7xx` FAILS / SEARCHED `7xx 3xx` `3xx`@4 / FIND-ALL
+  `3xx 7xx 4xx` [`3xx`@0, `4xx`@8], run 2026-11-23);
+- the body labels the spot (`[p = rx]`): a label was made: `A.d` is a compile error, the read is `B.p.d` (his
+  "B.h might be closer to the mark"; reverses the printed legal lines of call-prefix case 2; the answers run in
+  the entry "on the door example": WHOLE `7-3` FAILS, `3-7` HOLDS, `3-3` HOLDS / SEARCHED `7-3 3-7` `3-7`@4 /
+  FIND-ALL `7-3 3-7 1-2 9-9` [`3-7`@4, `1-2`@8]);
+- the body closes the spot (`[_ = rx]`): the blank label was made: `A.d` is a compile error (as today);
+- the caller writes its own label (`B([a = A])`): `a.d` is legal whatever the body does (argument-label,
+  closing-own-label), and `A.d` is then a compile error (a label was made); this last line is already the
+  documents' reading for a use inside a definition ("The name reaches the UNLABELLED uses only": `[a = A] SEQ "!"
+  & (A.h: <5)` is a compile error).
+The manager's reading of WHOSE label counts (marked; taken from "based on your examples", whose rows were the
+body's label and the body's blank mark): a label made by anyone on that use, the body included.
+Put to him as the ruling binding-as-label, in his four conditions.
+
+### 2026-11-23 OWNER RULING — binding-as-label: yes (a path is canonically a chain of labels; a binding's name is a shorthand for a skipped label, under four conditions)
+tags: core/labels/paths/binding-prefix core/labels/paths/closed-argument core/labels/paths/argument-default core/labels/paths/call-prefix core/labels/paths/one-use-read core/labels/export/arguments core/labels/paths/label-reference core/labels/paths core/principles/label-names-spot
+
+ASKED AS A RULING (slug binding-as-label, the statement put to him: "A binding's name may be used in a path as
+shorthand for a skipped label where: 1. the binding is referenced unambiguously; 2. a label could have been set
+on it there; 3. the reference reads as though through that label; 4. no label has already been made on it
+there."; with the manager's reading that "already been made" is by anyone on that use, the body included, and
+the table for `B(A)`: the body uses the argument alone: `A.d` LEGAL; labels the spot: a compile error, read
+`B.p.d`; closes the spot: a compile error; the caller labels it: `a.d` whatever the body does, `A.d` a compile
+error; the two reversals named: argument-default's error, and the printed legal lines where the body labels the
+spot; the manager's leaning yes). HIS WORDS, whole:
+
+"binding-as-label: yes"
+
+Class: a RULING: the four conditions (the first three and the fourth are HIS, 2026-11-23, in the two entries
+above; the statement put to him quotes them) and the table as put. It REVERSES: argument-default (2026-11-22,
+"argument-default: for me this is an error."): where the body uses its argument alone the caller's `A.d` is now
+LEGAL, the shorthand label set where the body places the template; call-prefix case 2's lean ("i'd say A.d is
+legal there") and closed-argument (a)'s first sentence for a spot the body labels: there `A.d` is a compile
+error and the read is `B.p.d`. It KEEPS: closed-argument's error where the body closes the spot; binding-prefix
+(the same rule inside a definition; "used more than once" is condition 1); closing-own-label and argument-label
+(a label the caller writes is its own). It ANSWERS the open spot-read-name (review r84 C4): through a labelled
+spot the read is the body's path. The principle label-names-spot stands (the shorthand label, like a written
+one, is on the spot where the body places the template).
+The manager's readings (marked; for the fold to test): (a) "by anyone on that use, the body included" (told to
+him with the statement; he did not object); (b) a body that LISTS the spot (`[(=) = rx]`) has made a label on
+it: `A.d` is a compile error, the read is `B.d`; (c) a body that places the argument twice, alone: the shorthand
+label is set twice, the same-label-twice rules; never: the never-pass warning; (d) the canonical form ("all
+labels are chains of only labels") is his statement of the general form, to be written as such.
+NOT sent to the running fix lane predfix86 (a reversed design is a fresh lane's): the next fold takes it with
+call-forms, unspecified-rule, count-unspecified and repeat-head.
+
+### 2026-11-23 MANAGER — a consequence found by lane predfix86: a body that reads its label parameter cannot be called with the blank label; no owner words
+tags: core/operators/bindings/label-variables lib/json/members core/operators/bindings/call-forms
+
+The fix lane stopped on review r86's A2: with the manager's reading (c) of label-parameter-omitted restored (a
+body that reads its label parameter, called with `_`, is a compile error at the call), two printed examples are
+refused by its engine: `row(_:, "msg", contains("timeout"))` and `row(_:, "level")`, for the label-forward
+sketch's `row(l:, k, f = anything)`, whose body reads `l` in `(l: f)`. RULED by the manager (R2 in the lane's
+rulings file): the reading STANDS; it now also follows from unspecified-rule (ruled the same day): a condition
+entry whose label is "not written" is not a construct, so the call is a compile error. The examples are
+re-spelled with a named label (the lane's run: legal, the two forms agree); the cost is stated in the piece (the
+caller passes a name, a private `_x:` if it wants none exported). The JSON sketch is the manager's, under
+construction: that its filter-taking `row` refuses the blank label is a point of the LIBRARY's design, told to
+the owner, not asked as a language question.

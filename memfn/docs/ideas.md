@@ -792,3 +792,106 @@ Frank, ruling on [LANDWALK-PRES]: at a found byte (a landmark, a required-run ca
   - Manager notes: shuffle-based transitions (Hyperscan's "Sheng" style) bound the state count by the shuffle width: 16 states (pshufb), 64 (vpermb, AVX-512 VBMI: dev box Zen 4 yes, ubuntubudu Zen 1 no), 128 (two-table permute). Breaking the per-byte dependency = composing transition functions across bytes (log steps per block); only the final state per block is needed for "does the row match", positions cost more.
   - Fits the opt-in SIMD thread (each form must beat scalar or name a benefit). Open: the state count Frank's 18 instructions assume; where real automata exceed it (JSON row products, weekday ~100) a split or a state-reduction is needed.
   - NOT scheduled (close-before-start); trigger: a measured scan-bound pattern population where the DFA walk dominates.
+- 2026-11-14 CORRECTION (lane mfind, lane/memfn-mfind report): the 11-07 entry's "{X,x} PAIR (an inline word-at-a-time loop)" is WRONG. Pair is two memchr streams (a libc call per stream), not an inline word loop. The 11-07 per-byte ratio "pair 0.074" therefore prices two libc streams, not inline machinery. The inline one-member finder (fn-mfind / mfind-w16 / mfind-w32, built unpicked by mfind) reuses vrun's levels, spellings and the D155 ladder, not pair.
+
+## 2026-11-15 — long exact spans (relayed by main; raw observations, NO build, NO request, evaluate later)
+Context: main's [COVER-CAP] rev 2 (docs/design/cover_cap.md; design round running) will at its stage 2 state exact
+spans longer than 32 positions (36, 40, 100, 500; mostly long runs of ONE byte class, e.g. [0-9a-f]{n}). The
+capability request (a span of any length) comes later as an R-n after that round. pcrec states sets only; the kit
+sees repeats itself from the sets it is passed (D157: pcrec never states runs or names a form).
+1. Measured by main 2026-11-15: the REPORT window's emitted check is one inline range test per position in an
+   unrolled && chain; [0-9a-f]{8} -> {24} adds ~138 chars of C and ~8 asm lines per position
+   (/var/tmp/pcrec-pcrec/scratch/spanfacts/h8.c, h24.c). The kit never compares adjacent positions' sets today.
+2. Frank (his words): "i am presuming in spans like the example class, kit will be able to use simd instructions to
+   reduce. also, it can consider unrolling by X in the loop as an interrim between inline and loop. but that is an
+   old school optimization- i'm not sure it even applies with modern cpu".
+3. Frank (his words): "if the inline form causes the artifact to bust the L1/L2 cache then they might turn out
+   slower". Main's note: the && chain exits at the first mismatch, so miss-heavy cells hide it; it shows on
+   hit-dense / near-miss subjects and on cold or many-pattern regimes; a one-matcher hot loop flatters the inline form.
+4. Frank (his words): "it might adopt start and later tactics where the first N checks are inline to not spoil
+   prediction then as it gets more likely to be correct it changes to loop". Main's note: N is a tuning constant;
+   the measurable behind it is the depth at which candidates die.
+Kit first reading (not evaluated): a run of one class over n positions is a loop over n bytes against one set (a
+SIMD range/classify block per 16/32 bytes, exact); the measurables are candidate death depth and code size vs the
+inline chain; any N or unroll width is a suspect constant until measured (memory pcrec-suspect-tuning-constants).
+
+- 2026-11-15 OWNER DIRECTION (Frank via main, for [COVER-CAP] stage 2; NOT a build go), verbatim: "we have a performance dial for pcrec. it could include some options for the kit. Also, I would default to sub span loops (excepting the measured head inline ) then measure if inline was faster than the other way around. Measure three: all inline, all loops, header inline then loops. Then the speed dial option can be always inline should it prove that is faster". Kit reading: for long exact spans the DEFAULT is loops over repeated sub-spans with a measured inline head; three forms each get a card (all inline / all loops / inline head then loops); all-inline, if measured faster, becomes a performance-dial option, not the default. Context: main's cover_cap.md rev 4.1 reads the exact stretch from the anchored DFA; the stage-2 request will ask for spans up to 4095 positions; a user-settable per-artifact span limit (shorter default) is a stage-2 item. Relates to the long-exact-span entries (1)-(4) above.
+
+- 2026-11-15 FACT (main, from code review r9 of lane/covs1, finding EMITTED-2; docs/dev/reviews/2026-11-15-r9-covs1.md): the emitted cover form for a 32-position class span (32 digits) on a dense-near-miss subject (31 digits then a letter, repeated): instructions:u 230.7 M on the base build (DFA route) vs 1,534.8 M on the cover route, x6.65; on a plain-miss subject +14 %. Observed: after a failed check the form resumes one byte later, and the statement tells every position's set. The same form serves spans up to 24 on main today. Owner: stage 1 lands, then a night timing including this regime; it will be part of the [COVER-CAP] stage-2 request. (Kit observation, unevaluated: a near-miss regime is where a skip distance from the failing position, not one byte, would matter; logged, not proposed.)
+
+- 2026-11-19 MEASURED (job 706, formperf, perf stat :u on Zen 4, the C3 artifacts of run fcards-zen4-1; table
+  scratch/memfn/formperf/run-20261119T095049/results.md): on long one-class spans with NEAR-MISS subjects (most of the span matches,
+  then the attempt fails and restarts a byte later), the cost of the inline head is BRANCH MISPREDICTION, not instruction footprint.
+  hex500 near-miss, per byte: h0 (loop) 221 cyc, 3.5 branch misses; h8 240/4.5; h16 260/6.1; h32 335/9.1; h64 458/14.3; all-inline
+  I 707/27.5. Op-cache hit stays 100 % for every head <= 64 (code 1.2-2.9 KB), so footprint does not separate h0 from h64: about 22
+  extra cycles per extra miss, which is a mispredict's price. Footprint does bite the ALL-INLINE text at length: hex1000 I is 29.7 KB of
+  code, op-cache hit 58.9 %, 1.6 L1i misses and 127 branch misses per byte, 3,587 cyc/B. Hit-dense subjects show none of it (every
+  head about 2 ns/B; attempts end early). Reading: each inline position is its own conditional branch whose exit point varies per
+  attempt, so the predictor misses several times per attempt; a loop concentrates that into one branch with one exit miss.
+  IDEA (UNMEASURED, D77, no build): a BRANCHLESS inline block (a SWAR or vector compare of 8/16/32 positions against the class,
+  one branch per block) might keep the inline head's short-span win without its per-position mispredicts; trigger = a census of
+  long one-class spans on near-miss-shaped real subjects worth the work. Also relevant to any other kit form that unrolls a
+  data-dependent compare chain (verify, run pre-check).
+
+- 2026-11-19 MEASURED (job 707, spike simdhead, Frank's ask; table scratch/memfn/simdhead/run-20261119T102012/results.md; critic
+  crit-simdhead: no FIX-BEFORE-READING, layout noise ~15 %, calibration vs the cards within 2 % (hex1000 near-miss -17 %)). BLOCK
+  compares of the WHOLE span (no per-position branches, one overlapping tail block) beat every head/loop split by far. Near-miss ns/B,
+  hex500 / hex1000: loop h0 39 / 166, scalar-h64 84 / 238, SWAR-h64 23 / 88, AVX2-h64 21 / 87, SWAR-full 11 / 57 (SIMD-off layer),
+  SSE-full 4.6 / 16, AVX2-full 2.8 / 9.4, AVX-512-full 2.5 / 6.2 (info only). Hit-dense: ~2 ns/B for every head form, but the full block
+  forms run 0.02-0.23. A SIMD/SWAR HEAD followed by the scalar loop tail gains only ~1.7-1.9x: the tail dominates, and the block width
+  of the head barely matters. Block forms bring branch misses down to the loop's level or below. SWAR-full is unrolled (11.8 / 24.6 KB;
+  hex1000 op-cache 75 %): a block LOOP (UNMEASURED) would keep the code small. The classes are general (pshufb nibble test; SWAR by
+  ranges, cost linear in the ranges). One class (hex), one near-miss depth profile. D77 TRIGGER CANDIDATE for a span block form at
+  both layers; NOT a build go (owner direction first; design + critic round before any build).
+  -> evaluated 2026-11-20 (jobs 708 blockspan + 709 blockspace, Frank's "expand to other classes ... if it more or less always
+  improves it should replace the inline form"; decision scratch/memfn/blockspan/run-20261120T010224/decision.md, rule frozen before
+  data; analysis scratch/memfn/blockanalysis/report.md): DOES NOT REPLACE as frozen. Scalar swar-loop vs H64: LOSS (50 repeated; S
+  WIN 117/190). SIMD avx2-loop vs H64@on: LOSS (18; S WIN 142/190). Real losses: multi-range SWAR (vowel, 5 ranges) at k<=64
+  costs about as much as the inline chain; a single SWAR block vs 8 fused compares (nonl k=8); tiny absolute miss-heavy cells.
+  dig/hi losses are CONFOUNDED: the harness's block arms carry a different WALK around the span (10 vs 8 ins/B, lower IPC), not
+  span work. Loop vs unrolled: mostly TIE. Post-data SIMD table (window sites k 16..1000, scan sites k 24..64 -> block; else H64):
+  0 LOSS, S WIN 122 (SELECTION-BIASED; needs a fresh run with the walk held fixed). Scalar: no compile-time table works (only the
+  regime separates WINs from LOSSes). 709: candidate N tracks k for SWAR on hex/word, none (>64) for AVX2, small for nonl: no
+  single N.
+- 2026-11-20 (Frank: "consider order in the inline portion of the span test. Fail fast ... rarest to most common"). Read of today's
+  emitted window text (`build/pcrec -p rx --pattern '[0-9a-f]{12}'`): it probes the LAST position first (Horspool shift sh[] on a
+  non-member), then verifies positions 0..k-2 FRONT to back in one && chain, and on any failure shifts by the probe byte's sh[]
+  (1 for a member), discarding WHERE it failed. Ideas: (a) one-class spans/windows: every position has the same class, so rarity
+  cannot order them; POSITION can: verify BACK to front and resume past the rightmost failure (all windows covering it fail). This
+  is fail-fast in near-miss (front-first re-reads up to k-1 members per one-byte shift, O(k) per byte) and never shifts less than
+  today. (b) mixed windows/runs (several terms): test the rarest term first: the kit already holds the ranking (mf_pred.rank_pos/
+  rank_ppm, lowest mass first); the run compares are word-wide (runcmp.c, offset order), so order matters most for per-byte set
+  tests. UNMEASURED; a scalar-layer spike (H64 vs back-to-front-with-skip vs rank order, near-miss/miss/hit-dense) would test it.
+  Note: it attacks the same near-miss cost the block forms fixed, at the layer (scalar) where blocks did not replace H64.
+  + 2026-11-20 (Frank: "better to scan in reverse? Or last, first, last-1, second? Different strategies"). Kit judgment: for a
+  one-class window the rightmost failure sets the shift, so REVERSE is the strong candidate (same checks-to-failure as front-first
+  on random/miss text, much longer jump; near-miss fails in 1-2 checks). Better still: reverse + REMEMBER the known members
+  between the failure and the old window end (only bytes past the old end are re-checked: each byte about once, Boyer-Moore
+  bad-character specialized to one class). Alternating (last, first, last-1, ...) sits between the two; it is a control that should lose.
+  Mixed windows: rarest first, ties to the rightmost (the kit's rank already breaks ties to the higher offset). Order is moot
+  for hit-dense windows and for block forms. Spike arms if run: front (today), reverse+jump, reverse+jump+remember, alternating,
+  rank-first (mixed only).
+
+- 2026-11-20 (Frank: "Test the ramp up vs chunk. A max ramp may solve my streaming concerns"; job 712, rule efb4f0d7d3ab0bd5, warm counted):
+  - The max ramp (R-46's ramp clipped at the current aligned chunk) beats aligned chunks wherever their reads differ (early match, find-all restarts), never loses, never asks past the chunk (stream-safe), and the clip costs nothing.
+  - OPEN: no scalar method of the window removes the dense loss against the plain loop. One pass is 1.29-1.45x OFF on dense but regresses sparse cells; repeated finds are 2.2x+. Candidate: a SIMD last-occurrence scan in the window. Evaluate before any build.
+
+- 2026-11-20 check order (Frank: "consider order in the inline portion of the span test. Fail fast"; job 711, rule 28b518b84de080aa):
+  - No arm replaces front-to-back: each loses repeatably on hit-dense cells (its overhead on passing checks).
+  - Reverse wins big where failures land late; the jump alone wins where they land early; alternating wins at both ends but loses mid-span; rarest-first is flat on mixed sites.
+  - POST-DATA (selection-biased) idea, unevaluated: the order is a property of where failures land in the SUBJECT, so only a subject-aware choice (a measured regime fact) could pick it. Not a compile-time table.
+- 2026-11-20 block-confirm (job 710, rule 6351bff3901e3955; the confirming run Frank asked for after 708): the table declared BEFORE data (window 16<=k<=1000, scan 24<=k<=64 -> the avx2-loop block span; else H64) is CONFIRMED at the SIMD-on layer: 0 LOSS, 127/144 NEW busy pick cells WIN, median 3.5x over all busy wins. Candidate for a build (design, critic round, Frank's go). The scalar layer is unchanged.
+- 2026-11-21 span census (lane spancensus): kit span sites are rare in both populations: 16 of 5161 corpus patterns and 11 of 332 bench patterns have one at all, and 39 of 41 sites have k<=31. The 710 block rule routes 1 corpus pattern and 3 bench patterns. This matches Frank's expectation that SIMD beyond window finding is niche. Every SIMD row now reports its population count beside its timing.
+
+### 2026-11-21 12:56 — [COVER-NEARMISS-SKIP]: check the last position first, verify backward (owner, via main)
+Frank's words, in part (relayed by main): "search for g at last plus min width ... it starts verify span back 32, sees the g and stops".
+- Main's reading: at a candidate start p, check the span's LAST position (p+k-1) first, then verify backward; on a miss at position q, the next start is q+1. This is the Boyer-Moore-style back-scan applied to a class span.
+- Main's model: main docs/dev/cover_nearmiss/span_sim.py (a model, not kit code).
+  - It agrees with brute force on every 16-byte text for k=3..5.
+  - On [0-9a-f]{32} over "31 hex + g" repeated: 0.031 reads per byte, against 16.5 for restart-one-later and 1.0 for a forward skip. Worst seen: 1.12 per byte.
+- Kit notes, unevaluated:
+  - It composes with the block span: a backward block test still finds the rightmost miss.
+  - The bound needs the miss position, which today's span loop does not keep.
+- UNSCHEDULED, under its trigger.
+- 2026-11-23 one CPU-quiet instrument (review r80 FIDELITY-6, PLAN; lane bsu6fix logged it, nothing built): the CPU-quiet control in cards.py (`QuietControl`/`RealProbe`, the port of job 710's confirm.py) is the fifth copy of one instrument (710's confirm.py, docs/design/findall_iter/twin/parity.sh, docs/design/memfn/probes/rq4/rq4.py, the bench's quiet.py: pin, SMT sibling, /proc/stat busy deltas), and inside cards.py C1-C5 time without it while C6/C6c time with it. Idea: keep ONE in-tree instrument (the cards.py port: tracked, a probe seam, a DRY twin) as time_cells' default launch for every card; the bench's quiet.py stays its own (box-level pre-flight, another repo). TRIGGER: the next C1-C5 re-run.
+- 2026-11-23 a timed-launch ledger (review r80 FIDELITY-7, PLAN; lane bsu6fix logged it, nothing built): the general form of the C6 record is a per-LAUNCH ledger (pass, cell, exe identity, attempt, sibling busy, nivcsw, seconds, ns/B, valid/void), appended as each launch happens, with the per-arm rows, the voids file and the quiet sample as VIEWS of it; c6decide would read the ledger alone. Unlocks: record-level pool checks beyond the exe ids bsu6fix records, re-reading the control's thresholds without re-timing, a readable partial ledger after a cap kill, one recorder for C1-C5 and C6. bsu6fix's per-launch exe ids and `pool` lines are the 90 % piece. TRIGGER: the first record re-read under a changed control threshold.

@@ -1,0 +1,6 @@
+report: docs/dev/lanes/predfix77_report.md
+sections: STATE AT HANDOFF; DISPOSITIONS APPLIED; MANAGER READINGS TESTED; ANSWERS CHANGED; WHAT MOVED; DRAFT READINGS ADDED; OWNER QUESTIONS LEFT; EVIDENCE AND COMMANDS
+nonempty: all
+commit: yes
+files: docs/design/predicates/core.md; docs/design/predicates/core_details.md; docs/design/predicates/library.md; docs/design/predicates/library_details.md; docs/dev/reviews/2026-11-21-r77-predfold1121.md; docs/dev/lanes/predfix77_evidence/predfix77_model.py; docs/dev/lanes/predfix77_evidence/predfix77_model.out; docs/dev/lanes/predfix77_evidence/predfix77_sabotage.out
+owed: none

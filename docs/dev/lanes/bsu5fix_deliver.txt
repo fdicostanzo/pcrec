@@ -1,0 +1,6 @@
+report=docs/dev/lanes/bsu5fix_report.md
+sections: STATE AT HANDOFF; FIXES BY ID; HASH COVERAGE PROOF; A/A PROOF; IDENTITY; IN-LANE RUNS; OWED RUNS
+nonempty: all
+commit: yes
+owed: kit-bsu5fix-test kit-bsu5fix-mech
+dirty-ok: docs/dev/artifact_size_log.tsv

@@ -1127,6 +1127,11 @@ fi
 # RX_REQ_RUN "none" -> "[6364][616f][676c6d7477]" (+20) and RX_REQ_WHY "none" -> "untestable"
 # (+6); the abi number keeps its width. Read by diffing the artifact built from 27bf6f146^
 # (the tree before the flip). Diff read, not bumped.
+# span_arms L3 (lanes l3tri..l3r66, abi 109 -> 110): NO row moves against the abi 109 base. The
+# l3tri re-record (`(?<=foo)bar` 38505 -> 39608, its run inside the lookbehind) was undone by
+# review r65 A's pick rule (35d352129): the default route keeps BASE's `626172@0`, so the manifest
+# is back at 38505; the K -3 figures hold only under `--engine=vm`, which this census does not run
+# (review r66 TRADE-1, restated by lane l3r66).
 MANIFEST="$ROOT_DIR/tests/codegen/manifests/m5_stage1_stamps.tsv"
 if [ -d "$(dirname "$MANIFEST")" ]; then
     if [ -f "$MANIFEST" ]; then

@@ -12,5 +12,8 @@ SAB_REACH='"$PCREC" --features all --emit-facts --pattern '\''bar(?=baz)'\'' | g
 SAB_REACH_EXPECT="REACH-WL4"
 SAB_EXPECT=DETECTED
 SAB_COUNT=1
-SAB_BEFORE='    *run = rb_top(w, &v->runs);'
-SAB_AFTER='    *run = v->runs.all && v->runs.rg.n ? rn_app(v->runs.best, v->runs.rg) : rb_top(w, &v->runs);   /* SABOTAGE S3383 */'
+SAB_BEFORE='    *run = rb_top(w, &v->runs, &v->set, cons_lo, cons_hi);'
+SAB_AFTER='    if (v->runs.all && v->runs.rg.n) { *run = rn_app(v->runs.best, v->runs.rg); *cons_lo = 0; *cons_hi = run->n; } else *run = rb_top(w, &v->runs, &v->set, cons_lo, cons_hi);   /* SABOTAGE S3383 */'
+# RE-ANCHORED 2026-11-21 (lane l3r66, review r66 EMIT-3): `rb_top` takes the root's set. Intent unchanged.
+# RE-ANCHORED 2026-11-20 (lane l3feat2, span_arms L3 feature): TOP returns the consumed extent beside the run (D-5);
+# the plant states the kept `rg` as consumed. Intent unchanged.

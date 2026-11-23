@@ -312,3 +312,26 @@ Round 2026-11-18 r47, predspec26 design re-check (`docs/dev/reviews/2026-11-18-r
 2. **A place/position table cell about a fact written INSIDE a nested place must say where it is written.** Drill each row's `0` / label / reference cell with the row nested inside the `&`, loop and hole rows (A2, A5).
 3. **For every CHECK the subject cites as "supported", mutate one arm.** If no mutation of the cited arm can move the count, the check shares its source (N3, CS3).
 4. **A 0/0/0 at a short pool length is not evidence when the witness needs a longer text.** A4 needed length 7, A5 needed `min = 1`: critics state the minimum witness length they reached.
+
+2026-11-22 r78, kit code round memfn-bsu4 (`docs/dev/reviews/2026-11-22-r78-memfn-bsu4.md`), accepted 2026-11-22 (kit manager):
+1. **A harness's floors count what was DRIVEN, not only what was GENERATED.** That means per-placement runs, per-layer runs, and a self-witness for each guard page (one deliberate over-read that must fault). In r78, four mutations disabled half the promised regime and passed green while every generation floor held (G2V-1).
+2. **A sabotage row cited as a guard-page witness must be benign without the guard.** Otherwise it witnesses the answer leg. When it is not benign, say so in its header and prove the guard by the harness's self-witness (PLANTSB-2).
+3. **A check that holds an ORDER over a table pins every row ahead of the moved one,** not only the rows the design names. In r78, T-deny ahead of V was held by test-axes only (PLANTSA-2).
+- (2026-11-22, r81 k159fix) **A stop or early-exit fix needs a BOUNDED witness beside its cost witness.** A CPU guard on an unbounded witness cannot tell a correct stop from an over-eager one (plant V1, a subset test in place of equality, moved 8 of 11 bounded widths and none of the existing table's rows).
+
+2026-11-22 r79, kit code round memfn-bsu5 (`docs/dev/reviews/2026-11-22-r79-memfn-bsu5.md`), accepted 2026-11-22 (kit manager):
+1. **A form-hash dep must cover every rendering the card times.** Enumerate the canonical instance's renderer branches against the card's cells, and plant one per branch (F1: the hash covered B = 32 only).
+2. **An A/A arm is a control only if it shares the comparison's axes,** and the rule says what a failed A/A does (F2: H64.b shared H64's layout pool).
+3. **"Written before data" includes the verdict clause and the unit.** Drill an all-unreadable run (F5, F6).
+
+Round 2026-11-20 r65, l3feat code round (`docs/dev/reviews/2026-11-20-r65-l3feat.md`); lessons ruled 2026-11-20 (manager).
+1. **A ruled decline is measured against BASE, not only against the build without it** (r65 l3feat A): its census carries a BASE -> SUBJECT column for every stamp the decline moves; R-1's with-vs-without census read "no stamp changes" while BASE -> SUBJECT moved `RX_DFA_PREFILTER`/`RX_REQ_WHY`, up to x10.
+2. **A check arm for a route the same change declines is either reached or deleted** (r65 l3feat C): [5.12l]'s K < 0 arm ran zero times and was red on correct text when planted.
+3. **When a design restates a premise in a code comment, grep the spec for the same premise** (r65 l3feat G): tuning ¶7a/¶8b were the spec twin of the restated presence comment.
+4. **The abi grep's hits are a checklist, ticked in the report** (r65 l3feat D): the grep listed the identity gate's pin and it was still missed.
+
+2026-11-23 r80, kit code round memfn-bsu6 (`docs/dev/reviews/2026-11-23-r80-memfn-bsu6.md`), accepted 2026-11-23 (kit manager):
+1. **A harness's "fresh" or "new" claim is stated in the SAME descriptor its own proof uses** (F-1: new by bytes vs new by layout).
+2. **A DRY or synthetic probe keys its readings on the exe it is HANDED, not on the cell label,** or every wiring fault is invisible (F-2/C-3, found independently by two lenses).
+3. **A selftest that RECOMPUTES a command's exit code instead of calling the command shares its source with what it checks** (C-7).
+4. **A no-launch guard checks the inherited environment, not only explicit arguments** (C-5).

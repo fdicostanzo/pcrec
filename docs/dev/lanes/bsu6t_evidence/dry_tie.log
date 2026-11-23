@@ -1,0 +1,46 @@
+cards: time: C6 deny and reach check: 6 (pattern, layer) pairs, failures 0
+cards: time: 36 pools built and proved (first pass and re-time, 144 exes), refused 0
+cards: time: run 423ec5567a94d122 -> /var/tmp/pcrec-pcrec/scratch/bsu6t/rd/results_c6_423ec5567a94d122.tsv; population 39 cells (3 N/A, 12 void by method), 72 timed arm cells, 360 first-pass launches; DRY (model tie): no clock
+cards: time: quiet sample: CPU7_MAX 0.050, NIVCSW_MAX 2 per 0.060 s launch (calibration C6/c6_hex32/H64/hit-dense/on)
+cards: time: first pass done, 0 cells owe a re-time (fresh pools), 0 void launches; arm rows NOT-RUN: first 0, re-time 0
+cards: time: DRY: 370 synthetic launches, clock calls 0, timed execs refused 0
+cards: time: the record read back (c6decide /var/tmp/pcrec-pcrec/scratch/bsu6t/rd/results_c6_423ec5567a94d122.tsv):
+DRY RECORD: every reading is SYNTHETIC (no clock ran): NOT A TIMING, NOT A VERDICT
+C6 on: NO LOSS; readable 8 of 8; W/T/L 0/8/0; A/A: 0 standing non-TIE of 8 readable (rate 0.000, AA_VOID_MAX 0.050), 0 single-pass; N/A 1, HARNESS 0, NOISE 0, NOT-RUN 0
+C6c off-clang: NO LOSS; readable 8 of 8; W/T/L 0/8/0; A/A: 0 standing non-TIE of 8 readable (rate 0.000, AA_VOID_MAX 0.050), 0 single-pass; N/A 1, HARNESS 0, NOISE 0, NOT-RUN 0
+C6c off-os: NO LOSS; readable 8 of 8; W/T/L 0/8/0; A/A: 0 standing non-TIE of 8 readable (rate 0.000, AA_VOID_MAX 0.050), 0 single-pass; N/A 1, HARNESS 0, NOISE 0, NOT-RUN 0
+C6 on: A/A single-pass rate 0.000 (0 of 8)
+C6 on: W/T/L per pattern: c6_dig32 0/4/0, c6_hex32 0/4/0
+C6 on: W/T/L per regime: hit-dense 0/2/0, miss-heavy 0/2/0, near-miss 0/1/0, near-miss-in 0/1/0, random 0/2/0
+C6 on: N/A (0 span calls): c6_hex32/near-miss
+C6 on: LOSS (standing): none
+C6 on: INCONCLUSIVE-NOISE: none
+C6 on: INCONCLUSIVE-HARNESS: none
+C6 on: NOT-RUN: none
+C6 on: standing WINs (information; a WIN gates nothing): none
+C6 on: not repeated: none
+C6 on: re-time NOT-RUN (the window closed; RE-TIME: a reading LOSS stands, a WIN counts as a TIE, an A/A non-TIE stands): none
+C6c off-clang: A/A single-pass rate 0.000 (0 of 8)
+C6c off-clang: W/T/L per pattern: c6_dig32 0/4/0, c6_hex32 0/4/0
+C6c off-clang: W/T/L per regime: hit-dense 0/2/0, miss-heavy 0/2/0, near-miss 0/1/0, near-miss-in 0/1/0, random 0/2/0
+C6c off-clang: N/A (0 span calls): c6_hex32/near-miss
+C6c off-clang: LOSS (standing): none
+C6c off-clang: INCONCLUSIVE-NOISE: none
+C6c off-clang: INCONCLUSIVE-HARNESS: none
+C6c off-clang: NOT-RUN: none
+C6c off-clang: standing WINs (information; a WIN gates nothing): none
+C6c off-clang: not repeated: none
+C6c off-clang: re-time NOT-RUN (the window closed; RE-TIME: a reading LOSS stands, a WIN counts as a TIE, an A/A non-TIE stands): none
+C6c off-os: A/A single-pass rate 0.000 (0 of 8)
+C6c off-os: W/T/L per pattern: c6_dig32 0/4/0, c6_hex32 0/4/0
+C6c off-os: W/T/L per regime: hit-dense 0/2/0, miss-heavy 0/2/0, near-miss 0/1/0, near-miss-in 0/1/0, random 0/2/0
+C6c off-os: N/A (0 span calls): c6_hex32/near-miss
+C6c off-os: LOSS (standing): none
+C6c off-os: INCONCLUSIVE-NOISE: none
+C6c off-os: INCONCLUSIVE-HARNESS: none
+C6c off-os: NOT-RUN: none
+C6c off-os: standing WINs (information; a WIN gates nothing): none
+C6c off-os: not repeated: none
+C6c off-os: re-time NOT-RUN (the window closed; RE-TIME: a reading LOSS stands, a WIN counts as a TIE, an A/A non-TIE stands): none
+approx (VOID BY METHOD, never timed): 12 cells
+cards: time: DONE rc=0

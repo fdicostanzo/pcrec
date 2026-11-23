@@ -24,8 +24,8 @@ modes: n/a (parked: not in the language)
 
 ### A default that is a set of several strings   [parked/ideas/default-set]   parked 2026-11-19
 A default written `some(...)` (or an every-value form): a missing field means any of these, or does not matter.
-- `all` is retired (lib/counting/some) and there is no optional mark: a one-string default is the author's one
-  control on an absent label today (core/conditions/defaults).
+- `all` is retired (lib/counting/some); a one-string default and the optional entry `?:` are the author's
+  controls on an absent label today (core/conditions/defaults, core/conditions/form/optional-entry).
 Trigger: a problem where a missing field means "any of these" or "does not matter" and the explicit alternative (`|
   (h: 10)`) is not enough.
 Source: the ideas file item 3 (its whole text in the details entry).
@@ -39,7 +39,8 @@ modes: n/a (parked: not in the language)
 
 ### An author-written "ran but no value" value   [parked/ideas/empty-value]   parked 2026-11-19
 An empty value an author writes for an `x*` loop that ran zero times.
-- There is no optional mark: the author's control over an empty loop is the default alone (core/conditions/defaults).
+- The author's controls over an empty loop are the default and the optional entry `?:` (core/conditions/defaults,
+  core/conditions/form/optional-entry).
 Trigger: an example where the empty case must be singled out and `+`, `some`, `count` do not serve.
 Source: the ideas file item 6 (its whole text in the details entry).
 modes: n/a (parked: not in the language)
@@ -56,7 +57,7 @@ modes: n/a (parked: not in the language)
 `count(^h)`, `some(^h)`: counting or testing over a field reference.
 - The field reference is the paused sigil (parked/ideas/other-side-sigil); `some` and `count` over a condition stay
   (lib/counting/some, lib/counting/count).
-Trigger: a use of a field reference with real value beyond rejecting an empty loop (counting every pass, as in the
+Trigger: a use of a field reference with real value beyond rejecting an empty loop (counting every setting, as in the
   draft's `length(S)` body, is a candidate to be argued, not a trigger met).
 Source: the ideas file item 8 (its whole text in the details entry).
 modes: n/a (parked: not in the language)
@@ -86,8 +87,8 @@ A library macro raising a warning on a property of its arguments' constant sets.
 Trigger: a second library-macro diagnostic wanted beside the mark-in-none one, or the first predicate build go (the
   diagnostics list is then designed as a whole, item 10's explainer with it).
 Source: the ideas file item 12 (its whole text in the details entry).
-- The mark-in-none diagnostic the trigger names left the language with the optional mark; the ideas file's note
-  reads the trigger as a first library-macro diagnostic wanted (details).
+- The mark-in-none diagnostic the trigger names left the language with the per-part mark (the optional entry
+  `?:` is a different, one-row test); the trigger reads as a first library-macro diagnostic wanted (details).
 modes: n/a (parked: not in the language)
 
 ### One nested-relation statement for spans, passes and occurrence hits   [parked/ideas/nested-relation]   parked 2026-11-19
@@ -165,25 +166,75 @@ One table of severity by selector for the three warning controls.
 Trigger: the next design step on warnings or on `@options` (item 20), or any build of one of the three controls,
   whichever comes first.
 Source: the ideas file item 23 (its whole text in the details entry).
+- Its trigger has fired: the program options (lib/builtin/options) were a design step on `@options`. The table is
+  not made; its general form, one table of the file settings (what each governs, its reach, whether it crosses an
+  import or a hole, its strength), is planned, this table its warning column.
 modes: n/a (parked: not in the language)
 
-### For the user documentation: the things a reader will get wrong   [parked/ideas/user-doc-traps]   parked 2026-11-19
+### For the user documentation: the things a reader will get wrong   [parked/ideas/user-doc-traps]   parked 2026-11-22
 A list of the things a reader will get wrong unless told, for the user documentation.
 Trigger: the first user documentation of the predicate language (docs/guide/ tier); until then the manager appends.
 Source: the ideas file item 24 (its whole text in the details entry).
+- A user's macro passes none of its argument's labels on unless its author writes the export list on the spot: his
+  pair, `hide(x) := /${x}/` (none) and `identity(x) := /${[(=) = x]}/` (all), match alike and export differently;
+  the provided library's convention covers provided bodies only (lib/convention/argument-labels).
 modes: n/a (parked: not in the language)
 
-### Label hygiene for libraries   [parked/ideas/label-hygiene]   parked 2026-11-19
+### Label hygiene for libraries   [parked/ideas/label-hygiene]   parked 2026-11-22
 Label hygiene for libraries: the macro-variable problem.
 Trigger: the rx-module discussion, or the first library file with labels.
 Source: the ideas file item 25 (its whole text in the details entry).
+- Partly overtaken: a library label is reached only through its source (core/labels/paths/label-reference,
+  core/labels/paths/call-prefix), so two patterns' `h` meet only in the user's own prefixed text; a provided body's
+  groups are labels only (core/labels/label-only-group); a pattern exposing only what it declares is
+  parked/ideas/declared-labels. What stays parked: whether a collision left is worth a rule.
+- His observation, "The textually visible rules solves a problem of a label from a binding reference hiding another
+  binding": what is left of hiding (a reading): a label written in the definition against a binding of the same
+  name (`pcrec.label.hidden`, core/operators/statements), and a binding name a library adds under `(=) :=
+  import(..)` (core/modules/all-symbols). At the part grain default-export (a part used alone exports nothing) and
+  export-list (a part's labels taken one by one) narrow what can meet (core/labels/export/export-list).
 modes: n/a (parked: not in the language)
 
-### A condition with a label parameter   [parked/ideas/label-parameter]   parked 2026-11-19
+### A condition with a label parameter   [parked/ideas/label-parameter]   parked 2026-11-22
 A condition with a label parameter, bound where it is used.
 Trigger (the ideas file's words): `the library discussion (items 12, 20, 23, 25), or the first revision of the draft`
   `after rev 25 that takes up reusable conditions`.
 Source: the ideas file item 26 (its whole text in the details entry).
+see: core/operators/bindings/label-variables
+- The THING is under construction as core/operators/bindings/label-variables (its ruled parts the pieces after it),
+  which supersedes this entry; kept as
+  the ideas file's record. Its question whether the body may read labels that are not parameters is answered: no
+  (core/holes/bare-condition/bound-condition, core/holes/bare-condition/nested-scope).
+modes: n/a (parked: not in the language)
+
+### An empty argument position   [parked/ideas/empty-argument]   parked 2026-11-23
+A call that leaves a position empty, `row(,"level", ..)`, in place of passing every argument.
+Trigger: the first macro whose callers mostly leave one position unused, or the call-forms ruling.
+Source: his words on label-parameter-omitted, "if we choose to allow that" (the details entry).
+see: core/operators/bindings/label-omitted core/operators/bindings/call-forms
+modes: n/a (parked: not in the language)
+
+### A reference kind of label parameter for users   [parked/ideas/reference-kind]   parked 2026-11-23
+A macro parameter naming a label the caller already has, read but never placed by the body.
+Trigger: a valid, safe set of rules for it (his words), or a user macro that cannot be written by passing a condition.
+Source: his label-kinds ruling (the details entry).
+see: core/operators/bindings/label-kinds core/holes/bare-condition/bound-condition
+modes: n/a (parked: not in the language)
+
+### A label pre-defined as a symbol   [parked/ideas/label-symbol]   parked 2026-11-23
+A label name declared ahead of its use, as a symbol, then passed to a label parameter.
+Trigger: the declared-labels idea taken up, or a library needing one name across many calls.
+Source: his approach 1, "maybe, a label can be pre-defined as a symbol" (the details entry).
+see: core/operators/bindings/label-variables parked/ideas/declared-labels
+modes: n/a (parked: not in the language)
+
+### Optional positional macro arguments without defaults   [parked/ideas/optional-arguments]   parked 2026-11-23
+A `?` mark in a macro's head for an optional positional argument with no default, so a head and a condition look closer.
+Trigger: the call-forms ruling (its absent setting for "no maximum", "no width").
+Source: his question on optional-label-general (the details entry).
+- It would give `?` a second meaning, against his own reason for the `?:` operator: "then we aren't using ? For
+  two different meanings" (core/conditions/form/optional-entry).
+see: core/operators/bindings/call-forms core/conditions/form/optional-entry core/conditions/form/optional-general
 modes: n/a (parked: not in the language)
 
 ### An explicit product of arrays   [parked/ideas/cartesian]   parked 2026-11-19
@@ -229,22 +280,29 @@ Trigger (any one of its unlocks):
 Source: the ideas file item 31 (its whole text in the details entry).
 modes: n/a (parked: not in the language)
 
-### The label-only group   [parked/ideas/label-only-group]   parked 2026-11-19
-`(?<:x>...)` (his stated form, a placeholder): a group that is labelled, not a capture.
-Trigger: the owner rules it (it is his to raise as a question), or the spellings review reaches group forms.
-Source: the ideas file item 32 (its whole text in the details entry).
-modes: n/a (parked: not in the language)
-
 ### The array form in a hole, `${@y}`   [parked/ideas/array-in-hole]   parked 2026-11-19
 `${@y}` (a placeholder): one of the earlier values; a future direction, not built, not defined now.
 Trigger: a user program of the declared-then-used shape; or the array form's type being defined for conditions.
 Source: the ideas file item 33 (its whole text in the details entry).
 modes: n/a (parked: not in the language)
 
-### A parameter restricted by `&` in a definition's head   [parked/ideas/restricted-parameter]   parked 2026-11-19
+### A parameter restricted by `&` in a definition's head   [parked/ideas/restricted-parameter]   parked 2026-11-22
 `example(g & /\d+/) := ...` (his placeholder): a restricted parameter; the same to limit or overload operators.
 Trigger: typed parameters taken up (phase two), or a second meaning wanted for an operator on non-numbers.
 Source: the ideas file item 34 (its whole text in the details entry).
+see: core/operators/bindings/macro-types
+- The THING is under construction as core/operators/bindings/macro-types, which supersedes this entry; kept as the
+  ideas file's record.
+modes: n/a (parked: not in the language)
+
+### A pass-through mark in a macro's head   [parked/ideas/pass-through-mark]   parked 2026-11-23
+A parameter marked in the macro's head as passing its argument's labels on, in place of `[(=) = x]` on every spot.
+Trigger: the first user macro with two or more spots needing the list, or the spellings review.
+Source: a critic's unlock on the general form of core/principles/label-names-spot (the details entry).
+see: lib/convention/argument-labels parked/ideas/user-doc-traps
+- The general form: a name is visible where its spot is placed and listed. A mark in the head (a spelling such as
+  `(=)x`, a placeholder) is one opt-in per parameter in place of the list on each spot (list_of's three spots,
+  padded's width form), and makes `hide` and `identity` differ in the signature, not only in the body.
 modes: n/a (parked: not in the language)
 
 ### Number operations over a base given by a class   [parked/ideas/class-base]   parked 2026-11-19
@@ -285,4 +343,19 @@ Trigger: a use with "real value other than 'override a users own *'" (his words)
   author's own `*` loop (`some(^h)`) is not one.
 Source: the record, the field-reference entries and retire-paused (details).
 see: parked/ideas/field-count core/values/tuples
+modes: n/a (parked: not in the language)
+
+### A syntax to declare a binding's labels   [parked/ideas/declared-labels]   parked 2026-11-22
+A syntax to declare the labels a binding provides (the `ch` in `chars`), for clarity, not for correctness.
+Trigger: macro types being designed (core/operators/bindings/macro-types), or the first library file with labels.
+Source: the record, count-in-set's ruling entry (his words in the details entry): "aside: perhaps we will need a
+  syntax to declare the ch in chars. i am wonderings not for correctness but clarity."
+see: core/labels/export lib/modifiers/length core/labels/paths/binding-prefix
+modes: n/a (parked: not in the language)
+
+### Unqualified labels after a binding defined above   [parked/ideas/unqualified-after-definition]   parked 2026-11-22
+A binding defined above in the same program (`isodate := ...`) would let its later uses refer to its labels without qualification; parked by the owner himself.
+Trigger: his taking it up, or the idiom `isodate & (isodate.year: ..)` proving too heavy in the worked examples.
+Source: the record, the label-reference ruling entry (his words in the details entry).
+see: core/labels/paths/label-reference
 modes: n/a (parked: not in the language)

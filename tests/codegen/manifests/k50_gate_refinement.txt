@@ -425,3 +425,19 @@ x*$
 # the branch point's text, its empty setting does not).
 (?:x\Kac|xab)
 (*UCP)\b\w+\b
+
+# ---------------------------------------------------------------------
+# [l3chk, 2026-11-20] (cloud run 44855950624 shard 13). Two L3 patterns whose
+# run pick breaks a TIE on the byte-rate prior, which is BYTE-ONLY (D123-4,
+# src/findings/default.rxt:42-46): `(?<=a)(b)\1x` stamps RX_REQ_RUN "6162@1"
+# (handoff -1) under byte and "none" under utf8 (REQ_BYTE 120 and the
+# rq_set[] { 98 } presence beside it); `(?i)(?<=ab)(b)\1x` stamps
+# "414242@2/dfdfdf" (handoff -2) under byte and nothing under utf8. The
+# encodings differ in a stamped, declared selection (RX_REQ_RUN, RX_REQ_WHY,
+# RX_REQ_HANDOFF), not in an encoding conditional of the hot path; neither side
+# is slower than main's compiler (utf8 = main's no run, byte gains a handoff).
+# DD12a(i)'s selection check reads a run stated on ONE side (tests/codegen/
+# run_encoding_checks.sh, [l3chk]); these two rows are the divergence it
+# leaves, listed as the other UNDECLARED rows are: an EXACT exception list.
+#UNDECLARED (?<=a)(b)\1x
+#UNDECLARED (?i)(?<=ab)(b)\1x

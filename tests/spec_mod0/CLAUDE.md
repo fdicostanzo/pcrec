@@ -9,7 +9,10 @@ That blindness is the point. Tests derived from an implementation inherit the
 implementation author's alphabet; these are derived from the promise, so where
 the promise and the code disagree, the check fails instead of agreeing.
 
-Not part of `make test`, and it does not run `make`. One entry point:
+A `make test` section (`make test-spec`, since the specfix lane, 2026-11-21): the
+suite builds against libpcre2 directly (tests/lib/resolve_pcre2.sh, the way
+tests/fuzz does) and SKIPS loudly, exit 0, when libpcre2-8 is not resolvable.
+It does not run `make` itself. One entry point:
 
     bash tests/spec_mod0/run_spec_mod0.sh            # the gate
     bash tests/spec_mod0/run_spec_mod0.sh --oracle-only   # NOT the gate
@@ -17,9 +20,10 @@ Not part of `make test`, and it does not run `make`. One entry point:
 ## Files
 
 - **spec_common.h** — the shared harness: the libpcre2 oracle (via `../fuzz/pcre2_abi.h`), the `--list-syntax` TSV parser, `spec_is_lexical()`, and the population/floor ...
+- **known_findings.inc** — check10's list of registry values that disagree with the oracle (a finding list, fails stale in both directions).
 - **floors.txt** — every ratcheting population floor, in one file.
-- **class_expectations.inc** — the measured class-position expectation of each of the 44 class-reachable rows plus 22 endpoint-adjacent probes (check04).
-- **endpoint_deviations.inc** — the three cells where libpcre2 decides a range endpoint differently from check08's five-step model (check08).
+- **class_expectations.inc** — the measured class-position expectation of each of the 57 class-reachable rows plus 22 endpoint-adjacent probes (check04).
+- **endpoint_deviations.inc** — the five cells where libpcre2 decides a range endpoint differently from check08's five-step model (check08).
 - **run_spec_mod0.sh** — builds and runs everything; dumps the registry and verb tables from a *run* of pcrec, never a committed copy.
 - **check01_isolation.sh**, **check06_cursor.sh**, **check09_every_feature_toggles.sh** — the three shell checks.
 - **check02 / 03 / 04 / 05 / 07 / 08 / 10** `.c` — the seven C checks for the ten module-0 invariants.
@@ -27,7 +31,29 @@ Not part of `make test`, and it does not run `make`. One entry point:
 - **spec_pcrec.h** — running the pcrec BINARY as a black box: fork/exec with a timeout, and the four-way verdict classification (ACCEPTED / REFUSED-AS-UNIMPLEMENTED / ...
 - **check13_uprop_syntax.c**, **check14_option_runs.c** — a THIRD D27 pass (2026-08-12, MOD-0.8b), scoped to two construct families' RECOGNITION behaviour: `\p{...}` / ...
 
-## Exit status, and why a green run is not available yet
+## Exit status
+
+**As of 2026-11-21 (specfix): 14 pass, 0 fail — exit 0, and it is part of
+`make test`.** A moved pin or a new registry row that no pin covers fails the
+run in the change that moved it. What the 2026-11-21 repair changed:
+the harness (direct link, `spec_abi.pattern_info`, check07's `--help` buffer);
+check04 pinned the 13 rows added since (`\g<..>` family, `\a \e \f \n \r \t
+\x41`), each equal to the registry's own `class_expect` column; check06's
+no-doorway set gained the four `bare` rows (registry.md section 2 says
+`quant-suffix` and `bare` have no lexical doorway); check07 leaves the
+`invoker-only` module `code-c` out of the features lists and models three
+contract-stated cross-module rows (`(?m)`->assertions, `(?J)`->backrefs per
+pattern_language.md 6.2 p3, by-name references->named-groups) and the rule
+that a closed gate answers before the grammar is judged (2.3 p1); check08 pins
+the two `^` cells; check10 supplies the referents a reference probe needs and
+raises the D2 blind-spot ceiling 4 -> 12 with each row named. **One open
+finding is carried, not pinned:** `known_findings.inc` lists 13 registry
+`quantifiable=no` values (backreferences, `(?(1)a|b)`) that disagree with
+libpcre2 once the probe has a group; the registry data is the thing to fix, and
+fixing it makes the entry stale, which fails the run until the entry is
+deleted. Details: docs/dev/lanes/specfix_report.md.
+
+## Exit status, historical (superseded by the paragraph above)
 
 Three per-check outcomes: **PASS** (the comparison ran and agreed), **FAIL**
 (something disagreed, or a population fell below its floor), and

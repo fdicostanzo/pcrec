@@ -77,3 +77,38 @@ took E-func to 0 (b30b_report.md).
 
 ## The D3 floor gate (lane d3wire, R-44)
 `run_d3floor.sh` builds r33_sim's traced probe (build.sh), runs collect.py's corpus sweep per emit_sweep cell (byte|utf8 x c-default|c-vm) and feeds d3_floor.py, which reads d3_floor.tsv (every value the MEASURED census/compile/failed/record count EXACT (band 0: the measured spread over four sweeps is 0): below = loss, above = "census changed: re-pin"; the movers number is read live from emit_sweep DIFFER_PINS, not copied) and also holds the census as a SET against d3_census.tsv (D3F-2: a swap that keeps the counts is red, lost/gained members named; `D3FLOOR_REPIN=1 bash tests/memfn/run_d3floor.sh` rewrites it and prints the diff) and runs ten plants per cell derived from the measured sweep: S3228 (lose a census pattern; census rose past the band), S3229 (empty/truncated sweep), S3230 (floor below the DIFFER pin), S3231 (lost corpus pattern; crash wave of failed compiles), S3232/S3233 (in-place swap; a pure loss named). Review r10 (D3W-1/2/5/6/9) shaped this: the first floors were r43's, 20-31 patterns loose, and deleting Part D's three D27 witness files stayed green. Scratch is under $PCREC_TMPDIR; PROCS (default half the box) is the make -j too. D3W-6 residue: the set relation movers <= census is checked by `d3_floor.py --movers` on demand only (needs a deny_reach sweep per cell); the gate holds the census EXACTLY equal to the pinned set (the earlier "counts suffice" was refuted by r11 D3F-2). D3W-8: a third floor-table member triggers one shared floor reader. Measured 125 s at -j4, hence test-axes / opt-in, not `make test`. collect.py, build.sh, probe.c stay in docs/dev/lanes/r33_sim and are gate dependencies.
+
+## A respelled form (moved from CLAUDE.md "Maintaining it", lane bsu1, 2026-11-21)
+
+Worked example (lane advtri, 2026-10-08, abi 67): [MEMFN] R4h's layout
+normalization respelled the five ADVANCE loops in the kit's layout
+(parenthesised `more` and member, braced body, step on its own line), and
+`walk-stmt`/`walk-open` stopped seeing them (4 rule-4 FAILs, 3 C12 STALE
+ceilings). Both regexes were widened to the new shape, not the rows or
+ceilings touched: C12 reads the same 12 forms in the same ceilings.
+
+## span_vector_identity.py (R-47 U2, lane bsu2, 2026-11-21)
+
+The vector span's identity gate (docs/design/memfn/block_span.md §10.2, G-4):
+the deny `--memfn=no-span-vector` on the U2 binary against a REFERENCE binary
+(the lane's merge base, built once) with no deny, over the corpus (byte and
+utf8, both engines, both layers) and span_seed.rxt's patterns at
+`--window-search-width=4095`, after the nine-spelling abi mask declared in
+the file (M1-M9) and nothing else. Its second arm holds the default artifact's
+movers to exactly the artifacts that call a V selector. Opt-in, no make
+target; heavy (run under `scripts/boxlock run`). Usage: `--ref-bin REF
+--ref-abi N --bin BIN --abi N [--jobs N] [--every K] [--cells corpus,seed4095]`.
+Lane bsu2fix (review r75) changed it: the mask rows are selected by name and
+replace a group only where it equals that side's STATED abi (per-row hit counts
+printed); each cell holds a mover FLOOR (28 byte / 20 utf8 at width 32, 31 at
+4095; span_seed.rxt is always in the population) and fails at population 0; at
+a mover the default-vs-deny diff must be one definition insertion plus one walk
+line per site, one call per site; the `-fmemfn-simd=x86-64` layer is in. It is
+a DELIVERY step, not a ratchet (its reference is a pre-merge build): what
+repeats is memfn_arm.py's span-vector DIFFER rows (block_span.md §14).
+
+## proof_run guard-page layouts (moved from CLAUDE.md, lane bsu4p)
+Since D172 S2 commit 1 (lane wsc1) proof_run repeats every call with the subject at a guard page after n, one before 0, and between SENTINEL pads (review S2's read-limit layouts); plant `S1408` (an over-read past n; wsc1's `WSC1-R1`, renamed by wsc2) is their witness.
+
+## span_pins.py (R-47 U4, lane bsu4p)
+The T-table pin cells and SPAN-SEED's V-site census, called from C18's main (one counter, one `checks passed` line, so the `simdfloor` mech arm scores it). `run_simd_floor.sh` builds `build/libpcrec_mftrace.a` and links a traced CLI (the finder row of §10.1's k source); the harness binary gives the head-0 loop text. Both are required arguments of simd_floor_check.py.

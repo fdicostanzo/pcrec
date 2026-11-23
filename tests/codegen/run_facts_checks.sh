@@ -573,6 +573,72 @@ else
     ok "[facts-sl1] $nsl witnesses list land_char and width exactly as the definitions give them (all 4 reachable declines)"
 fi
 
+# 9b. [K159] THE WIDTH WALK'S CPU BOUND (growth-time-bound ruling, Frank
+# 2026-11-21: CPU seconds). Nested `+` 14 deep (`(?:c|b)+` wrapped 13 more
+# times as `(?:X|b)+`; the NFA doubles per level, about 65,000 states) once
+# cost n frontier closures of an n-state frontier in `pcrec_width_walk`:
+# 20.2 s CPU at main 715b90b5f (lane plusprof) and the same at 92f5e77b6.
+# The repeated-frontier stop (src/facts/kset.c) brings the WHOLE compile to
+# 0.04 to 0.09 s CPU on the Linux dev box (lane k159r81, 2026-11-22, 6 runs,
+# 52 MB RSS; loadshame never read QUIET: busy-cores 0.28 to 5.8, some of the
+# load phantom iowait; review r81 measured 0.28 s CPU under load).
+# BOUND 5 s CPU, DERIVED: 18x the worst fixed cost measured (0.28 s; 50x
+# the lightest) so a slower box or a sanitized build stays far under it,
+# and 4x under the unfixed cost on the FASTEST box we have (every other box
+# is slower, so the old walk fails everywhere); CPU, not wall, so a loaded
+# box does not move it, with a 120 s wall bound as the hang guard and a 1 GB
+# RSS bound (20x the measured 52 MB) as the allocation guard.
+# The value is written by hand: shortest match one byte (`c`), unbounded.
+wp='c|b'
+for i in $(seq 1 14); do
+    if [ "$i" -lt 14 ]; then wp="(?:$wp)+|b"; else wp="(?:$wp)+"; fi
+done
+# ONE line: the K37 sweep reads a compiler site line by line, so the watchdog
+# must share the line with the compiler word.
+"$ROOT_DIR/scripts/watchdog" -l k159-width -c 5 -s 120 -m 1g -L "$WORKDIR/wd.log" -- "$PCREC" --emit-facts --pattern "$wp" > "$WORKDIR/wb.l" 2> "$WORKDIR/wb.err"
+wrc=$?
+wbv="$(sect "$WORKDIR/wb.l" facts | grep -F "$(printf 'fact=width\t')" | col value)"
+if [ "$wrc" -eq 123 ]; then
+    bad "[facts-width-cpu] nested + 14 deep spent more than 5 CPU seconds (K159: the width walk lost its repeated-frontier stop)"
+elif [ "$wrc" -ne 0 ]; then
+    bad "[facts-width-cpu] nested + 14 deep: rc $wrc ($(head -1 "$WORKDIR/wb.err"))"
+elif [ "$wbv" != '[1,inf)' ]; then
+    bad "[facts-width-cpu] nested + 14 deep: width [$wbv], by hand [[1,inf)]"
+else
+    ok "[facts-width-cpu] nested + 14 deep lists width [1,inf) within 5 CPU seconds"
+fi
+
+# 9c. [K159] BOUNDED WIDTH WITNESSES beside the cost guard (review r81
+# CHECK-1). The guard's witness is unbounded, so an over-eager stop (the
+# repeat test as a SUBSET test) also lists [1,inf) there and passes. These
+# bounded patterns have frontiers that share states across depths; an
+# over-eager stop turns their finite bmax into inf. Values by hand (shortest
+# and longest match in bytes) and identical on main 92f5e77b6 and this build:
+#   (?:a|bb)c      a|bb is 1 or 2 bytes, then c: [2,3]
+#   a{0,30}b       0 to 30 a's then b: [1,31]
+#   (?:ab){2,5}c   2 to 5 two-byte units then c: [5,11]
+printf '%s\n' \
+    '(?:a|bb)c	[2,3]' \
+    'a{0,30}b	[1,31]' \
+    '(?:ab){2,5}c	[5,11]' > "$WORKDIR/wbnd"
+nwb=0; wbbad=""
+while IFS=$'\t' read -r wpat wwant; do
+    nwb=$((nwb + 1))
+    if ! "$TIMEOUT_BIN" 120 "$PCREC" --emit-facts --pattern "$wpat" > "$WORKDIR/wbd.l" 2> "$WORKDIR/wbd.err"; then
+        wbbad="$wbbad '$wpat': refused ($(head -1 "$WORKDIR/wbd.err"));"; continue
+    fi
+    wgot="$(sect "$WORKDIR/wbd.l" facts | grep -F "$(printf 'fact=width\t')" | col value)"
+    [ "$wgot" = "$wwant" ] || wbbad="$wbbad '$wpat': width [$wgot], by hand [$wwant];"
+done < "$WORKDIR/wbnd"
+echo "REACH: $nwb bounded width witness(es)"
+if [ "$nwb" -ne 3 ]; then
+    bad "[facts-width-bounded] $nwb of 3 witnesses ran — the check is short"
+elif [ -n "$wbbad" ]; then
+    bad "[facts-width-bounded] bounded widths moved:$wbbad"
+else
+    ok "[facts-width-bounded] $nwb bounded patterns whose frontiers share states list the hand-derived finite width"
+fi
+
 # ---- [RUN-POS-SET] stage 2p: the piece set ----------------------------------
 # `req_pieces` (docs/design/alt_normal_form.md §3.4; facts_listing.md
 # §4.1.2) on witnesses whose values are an INDEPENDENT model's
@@ -793,7 +859,7 @@ RP='xy(?:ab){2}zw'
 rbad=""; nrw=0
 rget() { # rget <bin> <arm-or-flag-or-empty> <pattern> <fact> -> "value<TAB>why" (byte)
     local arm=()   # an arm name is a --harness=restore= arm; a `-f...` is a compiler flag
-    case "$2" in "") ;; -*) arm=("$2") ;; *) arm=("--harness=restore=$2") ;; esac
+    case "$2" in "") ;; -*) read -ra arm <<< "$2" ;; *) arm=("--harness=restore=$2") ;; esac   # flags split on spaces
     "$TIMEOUT_BIN" 120 "$1" --features all "${arm[@]}" --emit-facts --pattern "$3" > "$WORKDIR/rp.l" 2> "$WORKDIR/rp.err" ||
         { printf 'REFUSED\t%s\n' "$(head -1 "$WORKDIR/rp.err")"; return; }
     sect "$WORKDIR/rp.l" facts | grep -F "$(printf 'encoding=byte\t')" | arow "$4" /dev/stdin > "$WORKDIR/rp.r"
@@ -858,6 +924,50 @@ fi
 #   - the run is equal with and without `-fno-ctx-node` where the lowering
 #     can differ (`a(?=b)[bc]`, `ab[xy](?=(?<=x)y)[xy]`: the item is the
 #     lookaround's body or its context node, one answer, §14.4 L1 Tests).
+# span arms L3 (span_arms.md §14.4 L3, BACK): a left guard standing at the
+# root joins the head as a run that begins up to the declared lookbehind
+# length before the attempt start (K < 0), and `req_byte` and the run pin
+# read only its CONSUMED extent (D-6). By hand from §14.2's L3 rows:
+#   - `(?<=foo)bar` is `foobar` at -3, pinned over `bar` only (`0:3+3`);
+#     `restore=look` gives back `bar` (S-L, W-L1);
+#   - `(?<=ab|b)c` is `bc` at -1, the union of the branches' -1 term (W-L3);
+#   - `(?<=abc)x` is `abcx` (S1887's pattern);
+#   - W-S4c `(?<=qz)ab`: `req_byte` is `b`, a consumed byte, never `z`;
+#   - W-L17 `(?<=foobar)\d*x` and W-L19 `(?<=a{32})b`: an EMPTY consumed
+#     extent, so the set's pick (120, 98) and no pin; W-L18 `(?<=foo)` has no
+#     set byte at all, `req_byte` none;
+#   - W-T3's listing row `(?<=a{20})b{20}`: `a^20 b^12` at -20, the FIRST 32
+#     positions (a keep-last `++` states `a^12 b^20`);
+#   - `(?<=foo)bar(?=baz)` stays `foobar` at -3: the `++ rg` clause is L2's;
+#   - W-D2 `(?<=ab)(?<=cb)c` is still `dead`, and its run is now BACK's `bc`
+#     at -1 (D-4's BACK row has no never conjunct; any run is sound for a
+#     pattern that never matches).
+# Review r65 A (the REV 3.3 addendum's pick rule, BACK's `displaces` column):
+# where a forward scan may re-enter on the run (every compile but
+# `--engine=vm` / `-fno-req-handoff`), BACK displaces only a consumed run
+# that is empty or unbounded, and an empty consumed extent displaces none.
+# So every L3 row above runs under `--engine=vm` (its run_pin rows under
+# `-fno-req-handoff`: the pin is an E3 fact of the forward NFA; neither has
+# a forward re-entry, so the run choice decides), and the default route lists BASE's run where the
+# consumed part has a bounded one: `(?<=foo)bar` `bar` at 0, `(?<=qz)x?a:`
+# `a:` at 1 (the x10 shape), `(?<=x)qzjv[a-z]*\d` K 0 (CONTRACT-5's shape);
+# `(?<=xyz)a+xyz` keeps BACK's `xyza` at -3 (the consumed best `xyz` is
+# unbounded), `(?<=foo)` keeps `foo` at -3 (no consumed run), and
+# `(?<=foobar)\d*x` lists no run (the BACK run's consumed extent is empty);
+# `-fno-req-handoff` is the no-re-entry route too. W-D2 lists BASE's `none`
+# by default and BACK's `bc` under `--engine=vm`. S3455 is the plant (the
+# column passed over), red on these default-route cells.
+# Review r66 (the REV 3.5 addendum): `-fprefilter` forces the forced VM a
+# hybrid prefilter whose forward scan re-enters, so `--engine=vm
+# -fprefilter` keeps `(?<=qz)x?a:`'s `a:` at 1 (EMIT-2; plant S3480); an
+# EMPTY consumed run keeps BASE's BYTE landmark where a necessary byte sits
+# at a bounded K, so `(?<=qz)(?:a.|.a)` lists no run with landmark K 1 by
+# default and BACK's `qz` at -2 under `--engine=vm` (EMIT-3; plant S3481);
+# `(?<=a)(b)\1x` lists BACK's `ab` at -1 by default on byte (its consumed
+# best is the rate-picked `x`, unbounded; CHECK-2). The rule's narrowing
+# plants (CHECK-4): S3482 (no empty-best disjunct, red on `(?<=foo)`),
+# S3483 (no unbounded disjunct, red on `(?<=xyz)a+xyz`), S3484 (no engine
+# clause, red on the `--engine=vm` cells).
 lbad=""; nlk=0
 if [ ! -x "$HBIN" ]; then
     lbad=" $HBIN is missing (make builds it);"
@@ -884,6 +994,7 @@ p	-	a(?=b)[bc]	req_byte	98	rate:builtin-prior
 p	-	foo(?=bar)baz	req_whole_run	666f6f62617a	dead
 h	look	foo(?=bar)baz	req_whole_run	666f6f62617a	harness:look
 p	-	(?<=ab)(?<=cb)c	req_whole_run	none	dead
+p	--engine=vm	(?<=ab)(?<=cb)c	req_whole_run	6263	dead
 p	-	x[^\x00-\xff]y	req_whole_run	none	dead
 p	-	x(?=[^\x00-\xff])y	req_whole_run	7879	dead
 p	-fno-ctx-node	x(?=[^\x00-\xff])y	req_whole_run	7879	dead
@@ -904,6 +1015,43 @@ p	-	(?:foo(?=bar)baz|q)	req_whole_run	none	-
 p	-	x(?!foo(?=bar)baz)y	req_whole_run	7879	rate:builtin-prior
 p	-	(?:foo(?=bar)baz){0}x	req_whole_run	none	-
 p	-	[ac]{17}[bc]{17}(?<=(?<=ca{16})b{17}).	req_whole_run	6161616161616161616161616161616161626262626262626262626262626262/fdfdffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff	rate:builtin-prior
+p	--engine=vm	(?<=foo)bar	req_whole_run	666f6f626172	rate:builtin-prior
+p	--engine=vm	(?<=foo)bar	req_landmark_maxoff	-3	-
+p	-fno-req-handoff	(?<=foo)bar	run_pin	0:3+3	-
+h	look	(?<=foo)bar	req_whole_run	626172	harness:look
+p	--engine=vm	(?<=ab|b)c	req_whole_run	6263	rate:builtin-prior
+p	--engine=vm	(?<=ab|b)c	req_landmark_maxoff	-1	-
+p	--engine=vm	(?<=abc)x	req_whole_run	61626378	rate:builtin-prior
+p	--engine=vm	(?<=qz)ab	req_byte	98	rate:builtin-prior
+p	--engine=vm	(?<=foobar)\d*x	req_whole_run	666f6f626172	rate:builtin-prior
+p	--engine=vm	(?<=foobar)\d*x	req_byte	120	rate:builtin-prior
+p	-fno-req-handoff	(?<=foobar)\d*x	run_pin	none	-
+p	--engine=vm	(?<=foo)	req_whole_run	666f6f	rate:builtin-prior
+p	--engine=vm	(?<=foo)	req_byte	none	-
+p	--engine=vm	(?<=a{32})b	req_landmark_maxoff	-32	-
+p	--engine=vm	(?<=a{32})b	req_byte	98	rate:builtin-prior
+p	-fno-req-handoff	(?<=a{32})b	run_pin	none	-
+p	--engine=vm	(?<=a{20})b{20}	req_whole_run	6161616161616161616161616161616161616161626262626262626262626262	rate:builtin-prior
+p	--engine=vm	(?<=a{20})b{20}	req_landmark_maxoff	-20	-
+p	--engine=vm	(?<=foo)bar(?=baz)	req_whole_run	666f6f626172	rate:builtin-prior
+p	-	(?<=foo)bar	req_whole_run	626172	rate:builtin-prior
+p	-	(?<=foo)bar	req_landmark_maxoff	0	-
+p	-	(?<=qz)x?a:	req_whole_run	613a	rate:builtin-prior
+p	-	(?<=qz)x?a:	req_landmark_maxoff	1	-
+p	-	(?<=x)qzjv[a-z]*\d	req_landmark_maxoff	0	-
+p	-	(?<=xyz)a+xyz	req_whole_run	78797a61	rate:builtin-prior
+p	-	(?<=xyz)a+xyz	req_landmark_maxoff	-3	-
+p	-	(?<=foo)	req_whole_run	666f6f	rate:builtin-prior
+p	-	(?<=foobar)\d*x	req_whole_run	none	-
+p	-fno-req-handoff	(?<=foo)bar	req_whole_run	666f6f626172	rate:builtin-prior
+p	--engine=vm -fprefilter	(?<=qz)x?a:	req_whole_run	613a	rate:builtin-prior
+p	--engine=vm -fprefilter	(?<=qz)x?a:	req_landmark_maxoff	1	-
+p	-	(?<=qz)(?:a.|.a)	req_whole_run	none	-
+p	-	(?<=qz)(?:a.|.a)	req_landmark_maxoff	1	-
+p	--engine=vm	(?<=qz)(?:a.|.a)	req_whole_run	717a	rate:builtin-prior
+p	--engine=vm	(?<=qz)(?:a.|.a)	req_landmark_maxoff	-2	-
+p	-	(?<=a)(b)\1x	req_whole_run	6162	rate:builtin-prior
+p	-	(?<=a)(b)\1x	req_landmark_maxoff	-1	-
 LKEOF
     for pat in 'a(?=b)[bc]' 'ab[xy](?=(?<=x)y)[xy]'; do
         nlk=$((nlk + 1))

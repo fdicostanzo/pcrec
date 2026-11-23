@@ -282,6 +282,12 @@ Owner waits: a row or stage waiting on the OWNER (a charter, a build go, an answ
   REQUIREMENTS (Frank 2026-11-10): (1) CPU-aware: runner CPUs vary, so each shard records its CPU flags and SIMD-needing rows declare the feature they need; a row the CPU cannot run is a LOUD skip listed in the verdict, never green by absence; (2) casual use: `make test` on any branch, one command, not only the full suite; (3) the kit dispatches and reads its own runs independently (owner-tagged runs, its own results); (4) lane branches may be pushed (cloud/ prefix, deleted after the run); (5) NO model polling: a lane dispatches as its LAST act and ENDS (as with boxqueue add); the run's verdict reaches its owner through the zero-token watcher path (queuewatch/monread), never a lane or agent watching it; (6) SHARD BY LENGTH (Frank): casual use = sharded make test (frequent); in the full suite a stage runs WHOLE on one runner when its whole run is shorter than the target shard length, and only longer stages (mech, axes, likely san) are sharded
   REQUIREMENTS cont.: (7) TABLE-DRIVEN (Frank): one declared kinds table (kind, command, selector, shards, per-shard limit, needs, owners) read by the workflow, cloudrun and the gather; no kind named in code (a check); (8) FAILURE OUTPUT: every shard uploads its full log; the verdict file names each red shard with its make `*** [...] Error` lines (or the failing mech row ids); the watcher event carries the run URL; `gh run download` fetches the logs for triage
   REQUIREMENTS cont. 2: (9) CASUAL TARGET ~10 MIN WALL (Frank: else we are just waiting again; local make test ~28 min): shard count derived from CI's recorded per-section times, plus measured per-shard setup; every section whose own runner time exceeds the target is LISTED as the floor to split; (10) SHARD BUDGET (Frank): make test = 20 shards (two runs fit in Pro's 40); the full suite = 20 by default so a make test always fits beside it, a per-run override up to 40 for an overnight suite when nothing else needs runners; the budget is a kinds-table column; (11) MORE SHARDS THAN SLOTS (Frank): a kind declares shards (count) and max_parallel (the budget, Actions `strategy.max-parallel`) separately; extra shards queue inside the run and a freed slot takes the next one (dynamic balance at shard grain); the shard size is chosen against the measured per-shard setup cost (build once, pass the binary as an artifact, if setup dominates)
+  - [GROWTH-CLOUD] STATE:not-started — the growth sweep as a sharded cloud kind (CLI stage, library plain, library ASan)
+    filed: 2026-11-21 manager, from Frank ("Consider some of these new sections for sharding and running in the cloud")
+    status (2026-11-21): GO; lane growcloud building; one local run is ~1 h 40 min CLI + ~55 min plain library + ~2.5 h ASan library (the kit's bsu2 waited ~2 h behind it)
+    waits: nothing: GO (Frank 2026-11-21, "growth-cloud: yes"); built on lane/grow4's tables (the cell tables are reshaped there), lands after it
+    next: one `growth` row in tests/ci/cloud_kinds.tsv sharded by cell list; each shard runs CLI then library for its own cells so per-cell bounds come from the same runner; ASan library as its own shards; ubuntu-latest's gcc differs from the house gcc 15.2, so stack-depth headroom is read per compiler
+    refs: tests/ci/cloud_kinds.tsv; .github/workflows/cloud-test.yml; tests/growth/; docs/design/plan_row_bodies/GROWTH-SWEEP.md
 - [REQ-PAST-LAST] STATE:started — stop the search loop once attempts pass the LAST occurrence of a required run (unbounded handoff)
   filed: 2026-10-29 manager (kit observation at Frank's request, memfn/docs/responses.md on lane/memfn-r30)
   status (2026-11-13): BUILT on lane/reqpast (abi 105), review r2-reqpast FIX-NOW applied by lane rpfix, PORTED onto main's K38-2 (abi 104 -> 105) by lane rpport; row handoff-attempts-unbounded stops the VM attempt loop past the run's last occurrence; cloud test + axes + mechrows OWED on lane/rpport, awaits landing.
@@ -314,20 +320,90 @@ Owner waits: a row or stage waiting on the OWNER (a charter, a build go, an answ
     status (2026-11-21): filed; unmeasured; a Zen 1 LOSS would block the level (D155 item 2, D144 add. 4), not merely move the lower bounds
     trigger: the level is built and delivered behind the OFF switch; it stays CANDIDATE until a run on each bench box that runs it, Zen 1 (ubuntubudu) via main (kit review r69 R-31)
     refs: decisions D155 item 2, D144 add. 4, D201; docs/design/memfn/block_span.md (lane/bspan3) sections 8, 13
-  - [BSPAN-VANY-RIDE] STATE:not-started — block span: vany joins the lifted selector writer
+  - [BSPAN-VANY-RIDE] STATE:not-started — block span: vany joins both lifted writers (the selector and the level block)
     filed: 2026-11-21 manager (kit review r69 R-30 relay; bsrec)
     status (2026-11-21): filed as a ride-along, not built; U2 lifts ofsskip's two writers into one shared kit helper (r68 ruling R-4)
     trigger: vany's next touch (kit design note block_span.md section 5, "One writer")
     refs: docs/design/memfn/block_span.md (lane/bspan3) section 5; memfn/src/vany.c; decisions D201
+    NOTE (2026-11-21, kit relay of review r76): BOTH lifts ride here. Level-block members: ofsskip.c fn_level_block, vany.c vany_level, window.c vs_w32_block. Folds r76 SLOT-4 (V's level choice is an inline if beside the declared level rows), SLOT-5 (a) the name builders and (b) the sink-brackets predicate; SLOT-6's general form is NOTED (no build)
+  - [BSPAN-SCALAR-RISK] STATE:not-started — block span: changed SIMD-off code for \w{17}/\w{20}/\w{32}-like shapes ships unmeasured
+    filed: 2026-11-21 manager (Frank's scalar-check-cut answer "yes", relayed verbatim by the kit; D201 add. 4)
+    status (2026-11-21): filed as a declared known risk; the scalar timing is dropped; U2b's census holds the 3 real bench sites identical and \w{20} is its floor witness
+    trigger: a bench or user pattern of a changed shape (a \w-like run of that width) appears -> measure its SIMD-off code against today's
+    refs: decisions D201 add. 3 (a), add. 4; docs/design/memfn/block_span.md (lane/bspan3) section 13
+    NOTE (2026-11-21, lane u2land): R-47 U2+U2b LANDED on main (merge 2d8beeb2a of lane/memfn-k1108 994de281c; abi 110, re-pinned from the kit's 111; L3 takes 111); this row and [BSPAN-CLANG-DIFF] stay open
+    NOTE (2026-11-22, lane u3land): R-47 U3 (the vector span's w32 level block, SIMD layer only) LANDED on main (merge of lane/memfn-k1108 d04ee5047; abi 111, re-pinned from the kit's 112; L3 re-pins to 112 after); this row and [BSPAN-CLANG-DIFF] stay open
+    NOTE (2026-11-21, kit relay): the census also differs at gcc -O2 on [aeiou]-like and [A-Za-z0-9_-]-like sets and utf8 hex/digit at some k; and the 3 REAL bench sites' SIMD-off code DIFFERS under clang -O2/-O3 and gcc -Os (identical only at gcc -O1..-O3). The kit asks the owner `wrap-clang` directly (it tests his scalar-wrap premise)
+  - [BSPAN-CLANG-DIFF] STATE:not-started — block span: the 3 real bench sites' SIMD-off code differs under clang -O2/-O3 and gcc -Os
+    filed: 2026-11-21 manager (Frank's wrap-clang answer: "do track the clang issue with an item for follow-up to make sure no surprises"; D201 add. 5)
+    status (2026-11-21): filed; U2 ships as built; the SIMD-off text is identical only under gcc -O1..-O3
+    trigger: the bench's clang arms (pcrec-auto-clang and siblings) are timed; rides the kit's U5 C6 card
+    refs: decisions D201 add. 5; [BSPAN-SCALAR-RISK]
 - [REQ-LOOKAROUND] STATE:started — runs and span checks see through POSITIVE lookarounds into their fixed part
   filed: 2026-11-05 Frank ("we should schedule it"; "the run can go partially into a variable look around (the fixed part)")
-  status (2026-11-20): L1 LANDED d68a1294c (full suite GREEN, baseline reset); L3 census GO (57 movers, bench 2) and its five remodels LANDED (lane/l3pin, review r63); L3 FEATURE next (brief carries r63 CONFORM-1)
-  next: the L3 feature lane, then L2
+  status (2026-11-22): L1 LANDED d68a1294c; L3 remodels 1c26d77ea; L3 FEATURE LANDED PENDING CLOUD: merge d92d672be (lane l3land) at abi 112, owner 2026-11-22 "land it with your lean"; cloud runs + D3-FLOOR re-pin owed (l3land_report.md)
+  next: the cloud verdicts and the D3-FLOOR re-pin for L3, then L2
   refs: docs/design/plan_row_bodies/POSTFACT.md 2026-11-08 (span intersection: lookahead removal + lookahead to DFA, a general form of this row); docs/design/alt_normal_form.md; docs/dev/reviews/2026-11-05-r2-alt-normal-form.md (SLOT-6 general form); [CTX-PREFILTER] (its one-character prefilter case, a reader of this fact); D172 (spans carry negative start offsets); src/facts/req.c
+  NOTE (2026-11-21): abi numbers RESERVED by main (revised 2026-11-22): 110 = U2/U2b, 111 = U3 (landed first), 112 = L3 (lane l3land); a later lander re-pins to the next free number in the same change
+  NOTE (2026-11-21 close): L3 (lane/l3tri4 cc96bb7a8; cloud tables on lane/l3pop fcf710c02): planted bugs 16/17 detected + S3407 declared, cloud mech GREEN; cloud axes RED = stale D3-FLOOR pin (lane/l3axtri, class b, re-pin owed); re-time queued for 01:00 11-22; lands after both, rebased on U2, at abi 111
   Probes (2026-11-05, --emit-facts): `foobar` run 666f6f626172; `(?<=foo)bar` run only `bar`; `bar(?=baz)` only `bar`; `xyz(?<=yz)abc` only `abc` (the lookbehind even cuts the consumed `xyz`). A positive lookaround is a fact about the subject at known offsets: the run extends backward across the match start (the scan begins up to the lookbehind's width before the start offset, which PCRE2 lets a lookbehind read) and forward through a lookahead (both constraints hold: intersect). A VARIABLE lookaround still contributes its fixed part adjacent to the cursor (the lookbehind body's fixed-width suffix, the lookahead's fixed-width prefix): `(?<=fo+)bar` -> `obar` at -1.
   Negative lookarounds give exclusions only and stay walls. The SAME holds for the span check (Frank, 2026-11-05: "Which is also true of the span check"): the span facts handed to the kit (D172: per-position sets, negative start offsets allowed) include the lookaround's fixed positions, so a found candidate is verified against them too, not only searched by the run.
   Frank, 2026-11-06 ("record it somewhere"): the forward-vs-lookbehind-first question is answered HERE, not by a separate ordering decision. A positive lookaround's fixed part, with its offset (a set, D187/D172), joins the one find-the-span choice set, and pricing picks the window (e.g. `(?<=\x00\x01)[a-z]+` locates on the lookbehind's bytes). Negative lookarounds only veto at FINISH. The in-FINISH check order is left to the reverse-DFA work (A-REV). Cheap trigger: a compile-only census of corpus/bench patterns whose rarest bytes sit inside a positive lookaround; likely after A-REV (same facts).
   NOTE (2026-11-18): architecture note docs/design/req_lookaround_arch.md ACCEPTED (review r50); Frank ruled context-producer-home (ONE span, one producer); remodel-go is the manager's call; both in docs/design/plan_row_bodies/REQ-LOOKAROUND.md
+  - [L3-CONS-REENTRY] STATE:not-started — the forward scan re-enters on a BACK run's consumed extent (K' >= 0)
+    filed: 2026-11-20 manager (review 2026-11-20-r65-l3feat A step 2, HOUSE-6 unlock 1; lane l3r65 wrote the row)
+    status (2026-11-20): filed; nothing designed. L3's pick rule keeps BASE's run where a re-entry exists; this would let BACK keep it too
+    trigger: L2's design (L2 must re-check every forward-scan re-entry anyway, span_arms §14.4 L2's REV 3.3 line)
+    refs: docs/design/span_arms.md §14.4 L3 REV 3.3/3.4; docs/dev/reviews/2026-11-20-r65-l3feat.md A, Q; docs/design/plan_row_bodies/REQ-LOOKAROUND.md on main, the LEAN paragraph (Frank's 2026-11-20 words, landed on main after this row's branch was cut; quoted verbatim in span_arms §14.4 L3 REV 3.4, review r66 TRADE-2)
+    The re-entry restricted to the run's consumed extent, K' = whole_maxoff + cons_lo >= 0, re-asks only consumed bytes, so it needs its own soundness argument (the decline's lesson: equal DFA states have equal futures only over consumed bytes). Frank's 2026-11-20 lean (a discussion, not a ruling): graph-based re-entry ("follow the proved bytes through the whole graph") waits for a general rx/graph manipulation layer, as the predicate language will need one.
+  - [L3-BOUNDED-RUN-REFINE] STATE:not-started — refine "bounded" toward "keeps re-entry" with gen-tier dominance facts
+    filed: 2026-11-20 manager (R-1 of lane l3chk; route 2 of the byte/UTF-8 run asymmetry, not taken)
+    status (2026-11-20): filed; nothing designed. Route 1 (declare the asymmetry, generalize the DD12a(i) checker) was taken instead
+    trigger: L2's design, or a measured loss from a bounded run that hands off nothing
+    refs: docs/dev/lanes/l3chk_report.md; docs/dev/lanes/l3r65tri_report.md; tests/codegen/manifests/k50_gate_refinement.txt [l3chk]; src/findings/default.rxt:42-46; D123-4
+    `(?<=a)(b)\1x` and `(?i)(?<=ab)(b)\1x` state a run under byte (the byte-only byte-rate tie-break) and none under UTF-8; neither side is slower than BASE. NOTED by review r66 EMIT-1: bounded one-byte consumed bests with no handoff (`(?<=foo)b`, `(?<=foo)[bc]`) block BACK too; the same shape, trigger unchanged. The refinement would make the pick rule decline a run that keeps no re-entry from gen-tier dominance facts, removing the asymmetry at its source rather than declaring it.
+  - [L3-BACK-CLIP] STATE:not-started — a BACK join that overflows the stored bound clips lookbehind bytes first, not consumed ones
+    filed: 2026-11-20 manager (review 2026-11-20-r65-l3feat L, EMIT-5; lane l3r65 wrote the row)
+    status (2026-11-20): filed; measured mixed (0.87 to +10%) on one shape, minor
+    trigger: a bench cell with a long lookbehind before a long consumed run (`(?<=a{20})b{8}zb{11}`'s shape)
+    refs: docs/dev/reviews/2026-11-20-r65-l3feat.md L; src/facts/req.c `rb_top_back`
+    `lg ++ head` keeps the first 32 positions, so a long lookbehind clips the consumed run from the right: `(?<=a{20})b{8}zb{11}`'s offsets 0..19 -> 0..11, consumed bytes BASE had are dropped.
+  - [L3-BYTE-LANDMARK-WIN] STATE:not-started — take BACK's run over a byte landmark where it wins (the given-up x6 on English text)
+    filed: 2026-11-21 manager (review 2026-11-21-r66-l3fix EMIT-3 ruling; lane l3r66 wrote the row)
+    status (2026-11-21): filed; given up at landing. The pick rule keeps BASE's byte-landmark handoff (no loss), which also gives up a win
+    trigger: L2's design, or a bench pattern that reaches the shape (an empty consumed run, a necessary byte at a bounded K, a lookbehind run)
+    refs: docs/design/span_arms.md §14.4 L3 REV 3.5; docs/dev/reviews/2026-11-21-r66-l3fix.md EMIT-3; D191 addendum 3; src/facts/req.c `rb_top_back_displaces`
+    `(?<=qz)(?:a.|.a)`, instructions:u, 1 MiB x 5 searches: BASE's handoff on `a` (K 1) costs 85,622,145 on English text, where BACK's `qz` at -2 costs 14,170,871 (x6 win), but 39,964,842 vs 8,998,891 on qz-dense text (x4.4 loss). Choosing between them needs the subject's byte rates (pricing) or a sound re-entry at K < 0 ([L3-CONS-REENTRY]); no corpus pattern reaches the shape today.
+  - [L3-RUN-CAP] STATE:not-started — a 33+-byte lookbehind keeps no consumed position in the 32-position run (D27 F1)
+    filed: 2026-11-21 manager (lane l3wire; the blinded L3 witnesses' finding F1)
+    status (2026-11-21): filed; a listing gap the spec allows, not a violation. Declared as limit `run-cap` (A35) in tests/lookaround/d27_l3/l3d27_limits.tsv
+    trigger: L2's design, or a bench pattern reaching the shape (a lookbehind of 33+ bytes before a consumed run)
+    refs: docs/dev/lanes/l3d27_report.md F1; tests/lookaround/d27_l3/; [L3-BACK-CLIP] (the sibling clip, consumed bytes dropped from the right)
+    Under `--engine=vm`, `(?<=<36 bytes>)!` lists the lookbehind's last 32 bytes at K -32 without `!`; the default lists `4142..4a`@0 for `(?<=<40 bytes>)ABCDEFGHIJ`. The cap itself is general (a plain 40-byte literal lists its first 32).
+  - [L3-MEET-WIDE] STATE:not-started — two lookbehinds combine where one has a wide class (D27 F2)
+    filed: 2026-11-21 manager (lane l3wire; finding F2)
+    status (2026-11-21): filed; a listing gap the spec allows. Limit `meet-wide` (A15)
+    trigger: L2's design, or a bench pattern reaching the shape
+    refs: docs/dev/lanes/l3d27_report.md F2; tests/lookaround/d27_l3/
+    `(?<=.b)(?<=a.)cd` lists `626364`@-1 where the meet `ab` would give `61626364`@-2; two lookbehinds that agree byte for byte do meet. L1's recorded limit (a wide class in a body is dropped), reached through a meet.
+  - [L3-NESTED-HEAD] STATE:not-started — a lookbehind nested at the start of a lookbehind body must not block the item (D27 F3)
+    filed: 2026-11-21 manager (lane l3wire; finding F3)
+    status (2026-11-21): filed; a listing gap the spec allows. Limit `nested-head` (A17)
+    trigger: L2's design, or a bench pattern reaching the shape
+    refs: docs/dev/lanes/l3d27_report.md F3; tests/lookaround/d27_l3/; docs/design/span_arms.md §10 U-nesteditem
+    `(?<=(?<=x)ab)cd` lists `6364`@0 (not even the outer `ab` joins); nested at the END it joins (`(?<=a(?<=a))bc` gives `616263`@-1).
+  - [L3-CLASS-ONE] STATE:not-started — a one-character class lookbehind before a single consumed byte joins (D27 F4)
+    filed: 2026-11-21 manager (lane l3wire; finding F4)
+    status (2026-11-21): filed; a listing gap the spec allows, possibly a deliberate weak-position choice the spec does not state. Limit `class-one` (A45)
+    trigger: L2's design, or a bench pattern reaching the shape
+    refs: docs/dev/lanes/l3d27_report.md F4; tests/lookaround/d27_l3/
+    `(?<=a|b)c` and `(?<=[ab])c` list no run under vm; with two consumed bytes `(?<=[ab])cd` joins (`[6162]6364`@-1), and a one-BYTE lookbehind joins either way.
+  - [REQ-CAND-STRUCT] STATE:not-started — the run candidate travels as one { run, lo, hi } record, not loose int pointers
+    filed: 2026-11-20 manager (review 2026-11-20-r65-l3feat P, HOUSE-5; lane l3r65 wrote the row)
+    status (2026-11-20): filed; maintenance only, no answer or speed change
+    trigger: L2's AHEAD candidate adds its own consumed extent
+    refs: docs/dev/reviews/2026-11-20-r65-l3feat.md P; src/facts/req.c TOP, src/facts/facts.c, src/facts/facts.h `pcrec_run_cons`
+    The consumed extent `[lo, hi)` passes as `int *lo, *hi` through four layers (TOP's rows, `rb_top`, `pcrec_req_walk`, the record).
 - [COVER-CAP] STATE:started — lift the cover route's 24-position cap (long exact literals and fixed shapes finish in the engine)
   filed: 2026-11-11 manager (lane paper), from the skipmeas measurement; set S3
   status (2026-11-19): stage 2 + the kit's span forms LANDED on main 77edff7ae (abi 109; full cloud suite green after triage covtri1119); the width default stays 32 (interim); owed: cover_cap.md §11.4 part B night timing (cover vs engine) to set it
@@ -348,11 +424,28 @@ Owner waits: a row or stage waiting on the OWNER (a charter, a build go, an answ
     trigger: the decisions-why section of cover_cap.md §3.3 NOTED (R-14) is built, which would list the kind once
     refs: docs/design/cover_cap.md §3.1, §3.3; docs/dev/reviews/2026-11-15-r7-covcap-r4.md FI-6; [ROWCONJ]
     The NFA-provenance facts are read by more than one conjunct table separately: the cover's kept `erased`/`island` guards (rev 4.1) and lmwalk.c's own copy of `nfa->erased`; `split_conj[]` is the third table. One shared row kind, read by `cover_conj[]`, `lmwalk_conj[]` and `split_conj[]`, replaces the per-table copies.
+  - [COVER-WIDTH-KIT] STATE:not-started — the cover width becomes the kit's per-layer take/decline; pcrec keeps hard ceilings only
+    filed: 2026-11-21 manager, from Frank's width-owner answer (D202)
+    status (2026-11-21): filed; no build go ("can be fixed assumption now"); today pcrec's limits.def row decides at 32
+    trigger: the owner's build go, or [COVER-WIDTH-SIMD]'s measurement (a second layer's row makes one pcrec number wrong for one of them)
+    refs: decisions D202, D198 add. 1, D157; docs/design/cover_cap.md §11.2
+  - [ENGINE-COST-UNIT] STATE:not-started — pcrec states an engine cost unit to the kit (what the engine route would cost; inexact allowed)
+    filed: 2026-11-21 manager, from Frank ("we need a cost unit that pcrec provides to kit for engine usage. Even if inexact"; D202)
+    status (2026-11-21): filed; the kit may use a fixed assumption until it exists; pricing in general stays deferred (memory pcrec-pilot-is-pricing-baseline)
+    trigger: [COVER-WIDTH-KIT]'s build, or the next kit decision that compares against the engine
+    refs: decisions D202; docs/design/memfn/integration.md (the request seam)
+    DISCUSSION (Frank 2026-11-21: "Maybe instructions per byte?"): manager's lean: yes as the unit (deterministic, portable across boxes, inexact accepted), per engine form and per regime (hit-dense, near-miss, miss-heavy), measured once and declared in a table; its home is a measurement set (measure_store/, D166), which already carries per-class values to libpcrec. Known blind spots: SIMD does more per instruction, and branch mispredicts and cache misses cost no instructions. Not yet a ruling.
+  - [COVER-WIDTH-SIMD] STATE:not-started — the SIMD layer's cover-vs-engine reference timing; makes the width night actionable
+    filed: 2026-11-21 manager, from Frank ("it needs simd for reference _eventually_ or it's not actionable"; D202)
+    status (2026-11-21): filed; the block span's vector wrapper (R-47 U2+U2b) landed 2026-11-21 at abi 110; its SIMD-on form still waits on the bench runs ([BSPAN-ZEN1-C6])
+    trigger: the block span's SIMD form delivered; rides its Zen 1 bench run ([BSPAN-ZEN1-C6]) on the targeted hardware
+    refs: decisions D202, D201; docs/design/cover_cap.md §11.4
   - [COVER-NEARMISS-SKIP] STATE:not-started — the kit's near-miss skip for the long cover (O(n*k) on a dense near miss)
     filed: 2026-11-16 manager (review r32 (2026-11-16, round covs2code), PLAN; lane covs2fix wrote the row)
     status (2026-11-16): filed; nothing built
     trigger: cover_cap.md §11.4's timing, or the first caller of --window-search-width above 32
     refs: review r32 (2026-11-16, round covs2code) F2; docs/design/cover_cap.md §11.2 [R-45 reply]; docs/spec/tuning.md §2.56¶1
+    NOTE (2026-11-21, Frank's idea, his words in part: "search for g at last plus min width ... it starts verify span back 32, sees the g and stops"): check the span's LAST position first, verify backward, and on a miss at p restart at p+1. Manager's simulation (docs/dev/cover_nearmiss/span_sim.py): agrees with brute force on every 16-byte text for k=3..5; on `[0-9a-f]{32}` over 31 hex + g repeated, 0.031 reads per byte vs 16.5 for restart-one-later and 1.0 for a forward skip; worst seen 1.12 reads per byte. The kit owns the method (D157).
     The long cover re-tests up to k-1 positions per byte on a subject dense with near misses ([0-9a-f]{1000}: ~211x the engine). "No fix in the first build" is ruled; the caller contract now states the cost. A kit request when the trigger fires; pcrec states facts only (D157).
   - [COVER-C15-CONJ] STATE:not-started — C15 reads the width alone: drop cc_fits' three kit-bound conjuncts
     filed: 2026-11-16 manager (review r32 (2026-11-16, round covs2code), PLAN; lane covs2fix wrote the row)
@@ -488,7 +581,28 @@ Owner waits: a row or stage waiting on the OWNER (a charter, a build go, an answ
   RULING growth-stackcap (Frank 2026-11-20): "no but note as future direction". FUTURE DIRECTION: a ladder of threads smaller than the stack budget; today limits.md §3.10¶4 promises an overflow, not a refusal, below the budget, so every such cell fails by design until that promise changes.
   DIRECTION library-vs-process (Frank 2026-11-20, his words): "Also, library vs process. I want to see if a series of tests run in a single process using the library crashes. That will test if it cleans up". The runner gains a LIBRARY mode: one process calls pcrec_compile on the whole cell series (refusals and memory-cap failures included) and must not crash, must leave no leak (LeakSanitizer) and must still compile a control pattern correctly at the end; the CLI-per-cell mode stays.
 
+
 ## Candidates ([OPTLOOP])
+- [KIT-ARCH-STEP] STATE:not-started — the memfn kit adopts the architecture step, in three stages
+  filed: 2026-11-22 owner (ruling kit-arch-step)
+  status (2026-11-22): ruled, nothing started. Stages: (1) after the in-flight effort, ONE arch review of the kit's sections with suggestions + possible refactors, smaller items favored; (2) then the arch step for every new kit feature
+  trigger: the kit's in-flight effort completes (R-47 block span, U5 and after)
+  refs: [ARCH-STEP]; docs/design/plan_row_bodies/KIT-ARCH-STEP.md; .claude/skills/pcrec-memfn-manager; pcrec-architect; pcrec-critic (mode arch)
+- [FH-INTRIN] STATE:not-started — mf_form_hash alpha-renames _mm* intrinsics, so a SIMD form change can leave its hash unchanged
+  filed: 2026-11-22 main (kit review r79 F15; block_span.md §8 "[U5, r79 F15] PLAN, not built")
+  status (2026-11-22): filed; nothing built. cmpeq->cmpgt or loadu->load hashes the same. Fix: keep intrinsic families in kept[]; cost: every stored hash goes stale (a re-measure event)
+  trigger: the next formhash shape touch, or any card verdict that rests on a SIMD-form hash
+  refs: docs/design/memfn/block_span.md §8; kit review r79 (F15); [BSPAN-CLANG-DIFF]
+- [WIDTH-PATH-BOUND] STATE:not-started — the width walk is still quadratic on acyclic and late-cycle patterns (path form is O(n+edges))
+  filed: 2026-11-22 lane k159r81, from review r81 COMPLEXITY-1 (docs/dev/reviews/2026-11-22-r81-k159fix.md)
+  status (2026-11-22): filed; nothing built. `q(?:a|bc){N}` walk 0.089/0.333/1.338 s at N=2000/4000/8000 (x4 per doubling), same on BASE. The path form is TIGHTER where a live cycle cannot reach accept: an ANSWER CHANGE for the width fact
+  trigger: a measured pattern where the walk's share of compile time matters (D77); a [GROWTH-SWEEP] row with the walk >= ~10% of an accepted compile
+  refs: known_issues K159; src/facts/kset.c; [K159-PLUS-SUPERLINEAR]; [GROWTH-SWEEP]; review r81 COMPLEXITY-3 (unlocks: a shared memoized frontier sequence for the kset + width walks, an emitted-size pre-check before E3 facts)
+- [K160-ALTNF-CUBIC] STATE:not-started — pcrec_altnf's class fold is about cubic in single-char alternatives; budget never binds
+  filed: 2026-11-22 lane k159r81, from review r81 COMPLEXITY-2
+  status (2026-11-22): filed; nothing built. N distinct 4-byte characters, -e utf8: 0.61/3.38/24.2 s at 2000/4000/8000; the budget misses its own dominant term (K35 shape, a population nobody counts)
+  next: owner's fix go (growth-time-bound "fix first" applies), then profile (SUSPECTED: altnf.c:401-403 hash re-read inside the sweep :421-430; anf_cls_union over a growing list), count the dominant term in the budget; add a [GROWTH-SWEEP] cell (char-list alternation, -e utf8)
+  refs: known_issues K160; src/gen/altnf.c; [GROWTH-SWEEP]; docs/dev/reviews/2026-11-22-r81-k159fix.md
 - [FIT-RUNG-ORDER] STATE:not-started — the size ladder drops the run handoff before the islands even when the artifact would fit with it
   filed: 2026-11-13 manager (finding of lane s2tri on the S2 landing; test-island N=300/340, RETRY)
   status (2026-11-13): filed, unscheduled; speed cost only, under the size cap (answers unchanged); measured instance: the island-free artifact WITH the handoff is 412,797 B and fits, yet the handoff is dropped
@@ -527,7 +641,7 @@ Owner waits: a row or stage waiting on the OWNER (a charter, a build go, an answ
   filed: 2026-11-13 manager (Frank: "the predicate section is likely to need a bunch of graph transformation work ... is the graph setup for it ... generic helpers ... as simple and generic as it could be ... am I off base?"; survey: not off base)
   status (2026-11-13): filed, NOT SCHEDULED: attached to the [COND-FAMILY] body of work (D194 add. 2026-11-12), which Frank holds in discussion (2026-11-13); PREREQUISITE of the [COND-FAMILY] predicate base; first client [DFA-MIN-FAST]
   next: when scheduled: a plain automaton (byte-class transitions, accept tags, special conditions as symbols); shared worklist, state-set hash, bitset, ONE partition refinement; generic reachability, SCC, product, complement, reversal, Hopcroft; emission DFA derived after
-  refs: [DFA-MIN-FAST]; [COND-FAMILY]; D196 add. 2 (internal Boolean operators, lookaround lowering); D153 remodel-first; survey facts in the row's charter text below
+  refs: [DFA-MIN-FAST]; [COND-FAMILY]; D196 add. 2 (internal Boolean operators, lookaround lowering); D153 remodel-first; docs/design/plan_row_bodies/AUTOMATON-KIT.md (loop-in-loop rewrite, 2026-11-22); survey facts in the row's charter text below
   Survey 2026-11-13: no product/intersection/complement/dominators/graph reversal; 3 epsilon-closure walks (dfa.c clo_walk, kset.c wdrain, nfa.c cstart_check_omission), 4 hand-written hash tables, per-file seen[] arrays, 2 callgraph cycle detections, partition refinement twice (dfa.c refine_by static, minimize.c Moore); ~350 lines of context/island special cases inline in dfa.c, minimize declines islands; lookaround lowered to epsilon (a sound superset, UNSOUND under complement: &! needs exact operands); only direction (sides_of) and context-as-atoms are generic today.
   Unlock (Frank 2026-11-13, "a pure dfa graph could be used to randomly generate matchable strings"): uniform sampling by path counting; uses: subjects not from the author's alphabet (transition-covering sets; near misses via complement; oracle still checks), example strings in messages (ambiguity witness, cost tool, D196 --compare counterexample), library test data. Caveat: today's DFA is a lookaround superset (filter by the real matcher, or sample the exact automaton). Trigger: the kit exists AND the equivalence tool or a coverage push wants it.
 - [DFA-MIN-FAST] STATE:not-started — DFA minimization is quadratic on large counted repeats; make it n log n
@@ -676,7 +790,7 @@ Owner waits: a row or stage waiting on the OWNER (a charter, a build go, an answ
   filed: 2026-11-09 manager (Frank: "array capture for (X){M, N} perhaps using special syntax. Cap N become N capture groups. No unbounded")
   status (2026-11-09): UNSCHEDULED. Opt-in syntax only (PCRE2's last-iteration default stays); one group with n entries via its own accessor, never renumbering other groups
   trigger: (D77) a caller asking for it, or a pattern family that today re-runs a match per iteration to recover each one
-  refs: docs/design/plan_row_bodies/ARRAY-CAPTURE.md; [POSTFACT]
+  refs: docs/design/plan_row_bodies/ARRAY-CAPTURE.md; [POSTFACT]; [COND-FAMILY] (future client: the predicate `capture(@x)`; its array of a `+` loop's settings is UNBOUNDED, against this row's "No unbounded"; P-23, 2026-11-23)
 - [CAPS-VIEW-RERENDER] STATE:not-started — re-render cycle1_caps_view.md's CAPS table under the bench's I-99/I-100 classes
   filed: 2026-09-28 lane admin88
   status (2026-09-28): not started; FILED 2026-09-28, admin88, on `[OPTLOOP.2.analysis]`'s own residual #4, `docs/dev/optloop/cycle2_close.md` §2 item 4 — proposed, not ruled, per that document's own text
@@ -961,6 +1075,12 @@ Owner waits: a row or stage waiting on the OWNER (a charter, a build go, an answ
   status (2026-11-21): tests/thread/compile_stack_driver.c sets features and engine only, so no DEPTH_FAMILIES row reaches island or wide-class builds; the utf8 class nest `([e-u]bc|[e-u]bd(...abe)*)*d` was 440,560 B at BASE and is 64 B over the stated 319,504 B worst
   trigger: [GROWTH-SWEEP]'s runner build, or the next utf8 depth finding: one ENCODING argument to the driver and one utf8 row (a test-harness edit, not a product change)
   refs: docs/dev/reviews/2026-11-21-r67-k152.md (F9); [GROWTH-SWEEP]; [K152-NFA-DEPTH]; tests/thread/run_compile_stack.sh
+- [SKIP-VISIBLE] STATE:not-started — sections that SKIP loudly (PC-3, test-spec) give a green make test with nothing decided
+  filed: 2026-11-21 manager (review r70 RATCHET-3), written by lane specfix2
+  status (2026-11-21): filed; a box without libpcre2 exits 0 from each such section after its .ran marker is touched, visible only in stderr scrollback; CI builds pcre2 10.46 but nothing asserts it resolved
+  trigger: the next CI change (ci.yml / cloud-test.yml edit)
+  refs: docs/dev/reviews/2026-11-21-r70-specfix.md; tests/spec_mod0/CLAUDE.md
+  One row for every SKIP-loudly section. Options: (a) a CI-only require-oracle switch that turns the SKIP into a failure where pcre2 is built; (b) a trailer line listing the skipped sections at the end of make test.
 - [CTX-FACTS-NEG] STATE:not-started — D168 context facts at negative offsets / past the end (`\b`, fixed lookbehind), anchored DFA
   filed: 2026-11-16 manager (admin1116; part (b) split out of [DD-11.5] by the manager's ruling of 2026-11-16)
   status (2026-11-16): filed; no build before a measured need (D77); the producer is no longer an NFA span slice (deleted by [COVER-CAP] stage 1, abi 108)
@@ -1274,13 +1394,6 @@ Owner waits: a row or stage waiting on the OWNER (a charter, a build go, an answ
   refs: docs/spec/rxt_format.md §1.5¶3 (multi-line capability without multi-line syntax, today); [RXT-ONE-READER]; [INLINE-C] (long embedded C is the driver); dev_journal 2026-11-01
   Design scope: verbatim bytes between the delimiters; the final-newline/CR policy, diagnostic line numbers and the interplay with `pattern-esc`/escaped subjects stated once; it fires [RXT-ONE-READER]'s trigger (a three-leg format change), so the design weighs ONE-READER as stage 1.
   Driver (Frank 2026-11-01): with embedded C, patterns are getting long, and a one-line `pattern-esc` with `\n` escapes is unreadable and unreviewable. A GENERAL form: a value block is a property of the format, not of `pattern`; the existing one-line spellings stay.
-- [PIN-MSG-DEPTH] STATE:not-started — mech rows S1760/S1761 depend on scratch depth (256-byte message cut)
-  filed: 2026-11-01 manager (kit triage r30b2tri)
-  status (2026-11-01): the rows read UNREACHED when MECH_SCRATCH/TMPDIR is deep (fixture path about 107 chars); main's default mktemp path (about 87) fits
-  next: make the probes path-independent: SAB_REACH copies the fixtures to a short $REACH_TMP-relative path (or the expected phrase is matched on a message that puts it before the path)
-  refs: tests/mech/sabotages/S1760_pin_compare_skipped.sh; S1761; [IFACE-PUSH] (candidate: keep the refusal tail); docs/design/plan_row_bodies/IFACE-PUSH.md
-  note (2026-11-03, file1103): session 128 carry-over item "S1760/S1761" is this row; nothing new found (rows added by ic3, docs/dev/lanes/ic3_report.md).
-  Test-side half of the 256-byte `pcrec_error.msg` cut. The interim fix is a short MECH_SCRATCH in the reach job (kit-owned, no code change).
 - [X-NEL-RAW] STATE:not-started — does pcrec skip a raw 0x85 byte under (?x) in byte mode as libpcre2 does?
   filed: 2026-11-01 manager (found 2026-10-30 by lane ri698)
   status (2026-11-01): UNPROBED (box rule: no runs during the 2026-11-01 bench window); spec pattern_language.md §3.2 promises the skip under -e byte
@@ -1378,6 +1491,11 @@ Owner waits: a row or stage waiting on the OWNER (a charter, a build go, an answ
   status (2026-10-29): not started. Meant to remove one D27 cell; with no worktree NAMEs, `--apply` also removed all 9 gated REMOVE candidates (7 kit memfn-* trees). All merged, clean and quiet, branches kept: nothing lost.
   next: make `--dir` alone scope `--apply` to the named dirs (worktrees only when NAMEs are given too), plus a self-test row.
   refs: scripts/wtprune (arg parse, line 83); worktrees/.wtprune.log 2026-10-29T02:43
+- [WTPRUNE-QUIET] STATE:not-started — a `--quiet` wtprune teardown for critic rounds (it leaks denied lanes' commits)
+  filed: 2026-11-21 manager (review 2026-11-21-r66-l3fix PROCESS, accepted; lane l3r66 wrote the row)
+  status (2026-11-21): filed; not started. A critic round's teardown ran wtprune, whose report printed the commit subjects of lanes the critics were denied
+  next: a `--quiet` switch that prints only counts and the critic round's own targets, used by the pcrec-critic skill's teardown; plus a self-test row.
+  refs: scripts/wtprune; .claude/skills/pcrec-critic/SKILL.md; docs/dev/reviews/2026-11-21-r66-l3fix.md (Rulings, PROCESS)
 - [RUNG-HYB-GROW] STATE:not-started — THE DROP-HANDOFF RUNG CAN GROW A HYBRID AND WASTE ONE COMPILE
   filed: 2026-10-29 manager, from lane reqvm1rung's finding (docs/dev/lanes/reqvm1rung_report.md, "Finding (not acted on)")
   status (2026-10-29): `(\p{Xwd})x`: the re-entry displaced a start-byte row, hybrid 1,040,199 B vs 1,041,150 B without it, so the drop GROWS it; the attempt is wasted (one extra 1 MB-class compile) and the VM-only form loses its attempt rows. Never worse than main.
@@ -2117,7 +2235,7 @@ Owner waits: a row or stage waiting on the OWNER (a charter, a build go, an answ
   filed: 2026-10-13 Frank (session 111), witness `(?:(\d+)\s*\,?\s*){1,50}`
   status (2026-10-13): not started; idea stage; PCRE2 keeps only the last iteration (a pcrec extension, D26)
   next: discussion with Frank (opt-in syntax per group, API shape, oracle)
-  refs: [POSTFACT]; [VAR]; [M4-CALLOUTS]; decisions D26; docs/spec/match_api.md (rx_group_entry)
+  refs: [POSTFACT]; [VAR]; [M4-CALLOUTS]; decisions D26; docs/spec/match_api.md (rx_group_entry); [COND-FAMILY] (future client: the predicate `capture(@x)`, an unbounded array of a `+` loop's settings; P-23, 2026-11-23)
   Prior art: .NET Group.Captures, Python `regex` captures(). Opt-in PER GROUP so other groups pay nothing. Bounded repeats ({1,50}) give a fixed slot array; unbounded needs a caller buffer plus an overflow code. VM: slot i written by iteration i, the count trailed so backtracking discards abandoned iterations. DFA: only via tagged-DFA positions per iteration (bounded), likely VM-only first. An API addition and abi event; build it BEFORE [IFACE-PUSH] (Frank 2026-10-13: features first, so the push knows what the new API must hold). Oracle: python `regex` captures() is a new dependency (bench-side or opt-in).
 
 - [DEBUG-CHECKS] STATE:not-started — an opt-in CHECKED generation mode: caller-misuse and invariant checks for development
@@ -2226,6 +2344,12 @@ Owner waits: a row or stage waiting on the OWNER (a charter, a build go, an answ
   utf8 literal-pick cells: pcrec leads jit but trails re2/rust x1.2-x15.7 (lit-sharp-s worst), 10 utf8 cells. FIRST STEP: the cheap two-artifact twin (`-e byte` vs `-e utf8` of one literal) — may be a pick defect. ROUND 3 rank 3a-4 (D153): kept at rank 4; remodel overlap likely refactor A (landmark pick / [TIE-ALIGN]) — confirm at its twin step.
 
 ## Boonies
+- [LB-NEST-CAP] STATE:not-started — cap the BACK row by the walk's own reach, so sound nested-lookbehind runs are kept
+  filed: 2026-11-20 manager (review 2026-11-20-r65-l3feat I speed half, WALK-1; lane l3r65 wrote the row)
+  status (2026-11-20): parked; the comment is fixed (review r65 I doc half); no answer is wrong
+  trigger: a corpus or bench pattern with a nested lookbehind whose guard reaches past the widest single lookbehind
+  refs: docs/dev/reviews/2026-11-20-r65-l3feat.md I; src/facts/facts_derive.h `ReqWalkParams.lb_bytes`
+  `lb_bytes` follows PCRE2's max_lookbehind (a max over nesting) while the walk's guard sums, so `(?<=(?<=x)a)b` (true run `xab` at -2) is declined; the design's §5.5 says why the cap exists before it moves.
 - [RUN-LOWINFO-HEAD] STATE:not-started — run's head position is a low-information class tail (`\w+`) after rule (1)
   filed: 2026-11-15 manager (review 2026-11-15 r1 posts2 EMITTED-1, NOTED; filed by lane fixposts2)
   status (2026-11-15): NOTED, unmeasured (a suspected speed cost, very low); the answer is sound and the scan byte is unchanged.

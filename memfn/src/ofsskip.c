@@ -550,7 +550,7 @@ static const fn_row *fn_select(mf_art *art, uint32_t handle, const mf_hooks *h,
                                const fn_in *x, int slot)
 {
     gate_in in = { .s = x->site, .h = h, .art = art };
-    gate_tctx tc = { art, "fn", handle, MF_PH_DEFINE, &in, slot == FN_PREFIX, 0, 0 };
+    gate_tctx tc = { art, "fn", handle, MF_PH_DEFINE, &in, slot == FN_PREFIX, 0, 0, NULL };
     gate_verdict why = { 0, 0 };
     size_t i = kit_walk(&fn_table, slot, &in, MF_PH_DEFINE, art->denies, x, &tc, &why);
     if (i < NFN) return &fn_rows[i];
@@ -575,7 +575,7 @@ int ofs_fn_serves(const mf_art *art, const mf_site *site, const mf_hooks *h,
     fn_in x = { p, max_reach(p), 0, 0, 0, site, NULL, NULL, 0, art->levers, NULL, NULL };
     ofs_fn_scan(p, &x.k, &x.a, &x.b);
     gate_in in = { .s = site, .h = h, .art = art };
-    gate_tctx tc = { art, "fn", art->nsites + 1, MF_PH_DEFINE, &in, 0, 1, 0 };
+    gate_tctx tc = { art, "fn", art->nsites + 1, MF_PH_DEFINE, &in, 0, 1, 0, NULL };
     gate_verdict why = { 0, 0 };
     size_t r = kit_walk(&fn_table, FN_BODY, &in, MF_PH_DEFINE, art->denies, &x, &tc, &why);
     if (r < NFN) *pick = fn_rows[r].pick;
@@ -600,7 +600,7 @@ static unsigned fn_rungs(mf_art *art, uint32_t handle, const mf_hooks *h,
     unsigned nr = 0;
     rung[nr++] = top;
     gate_in in = { .s = x->site, .h = h, .art = art };
-    gate_tctx tc = { art, "fn", handle, MF_PH_DEFINE, &in, 1, 0, 0 };
+    gate_tctx tc = { art, "fn", handle, MF_PH_DEFINE, &in, 1, 0, 0, NULL };
     for (const char *const *r = top->decl->rungs; *r && nr < MF_NLEVEL; r++) {
         size_t i = fn_row_named(*r);
         if (i < NFN && kit_ask(&fn_table, i, &in, MF_PH_DEFINE, art->denies, x, &tc, NULL))
@@ -637,6 +637,42 @@ int ofs_fn_fall(mf_art *art, const mf_hooks *h, const mf_pred *p, const char *ca
                 mf_sink *o)
 {
     return fn_call_line(art, h, p, callee, o);
+}
+
+/* kit.h: THE SELECTOR WRITER. */
+int kit_selector(const char *fn, const char *body, const char *top, int level,
+                 kit_sel_line head, kit_sel_line call, const void *ctx, mf_sink *o)
+{
+    if (head(ctx, fn, o)) return -1;
+    if (top) {
+        o->simd_open(o->u, level);
+        if (call(ctx, top, o)) return -1;
+        o->simd_close(o->u);
+    } else if (call(ctx, body, o)) {
+        return -1;
+    }
+    o->puts(o->u, "}\n\n");
+    return 0;
+}
+
+/* The FUNC's line writers for kit_selector: fn_head and fn_call_line over
+ * one context, the art, hooks and predicate every line of the FUNC reads. */
+typedef struct {
+    mf_art         *art;
+    const mf_hooks *h;
+    const mf_pred  *p;
+} fn_sel_ctx;
+
+static int fn_sel_head(const void *ctx, const char *name, mf_sink *o)
+{
+    const fn_sel_ctx *c = ctx;
+    return fn_head(c->art, c->h, c->p, name, o);
+}
+
+static int fn_sel_call(const void *ctx, const char *callee, mf_sink *o)
+{
+    const fn_sel_ctx *c = ctx;
+    return fn_call_line(c->art, c->h, c->p, callee, o);
 }
 
 /* THE FIT TEST's counting sink (kit.h ofs_fn_fits): every byte a helper's
@@ -717,7 +753,9 @@ static int fn_level_block(mf_art *art, const mf_hooks *h, const fn_in *x,
     return 0;
 }
 
-/* THE SELECTOR, the function `fn` itself (D155 addendum 1): a function that
+/* THE SELECTOR, the function `fn` itself (D155 addendum 1), written by the
+ * kit-wide selector writer (kit_selector, block_span.md §5) with the FUNC's
+ * own head and call line: a function that
  * does work never contains `#if`; the selector's whole body is the choice,
  * ONE call (unit U2): with no PREFIX row rendered, the plain call to
  * `callee`, the SIMD-off FUNC byte for byte; with rungs, the call to the top
@@ -729,16 +767,9 @@ static int fn_selector(mf_art *art, const mf_hooks *h, const mf_pred *p,
                        const fn_row *const *rung, const char *const *names,
                        unsigned nr, mf_sink *o)
 {
-    if (fn_head(art, h, p, fn, o)) return -1;
-    if (nr) {
-        o->simd_open(o->u, (int)rung[0]->decl->level);
-        if (fn_call_line(art, h, p, names[0], o)) return -1;
-        o->simd_close(o->u);
-    } else if (fn_call_line(art, h, p, callee, o)) {
-        return -1;
-    }
-    o->puts(o->u, "}\n\n");
-    return 0;
+    fn_sel_ctx c = { art, h, p };
+    return kit_selector(fn, callee, nr ? names[0] : NULL, nr ? (int)rung[0]->decl->level : 0,
+                        fn_sel_head, fn_sel_call, &c, o);
 }
 
 /* MEMFN_FORMS' token for the FUNC (§R4.9.2.3 "The stamp"): `<form>@<level>`

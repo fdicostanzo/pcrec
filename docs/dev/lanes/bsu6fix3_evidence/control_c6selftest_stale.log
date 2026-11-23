@@ -1,0 +1,98 @@
+ok    c6selftest: rule_710.md's block sha 6351bff3901e3955 is job 710's recorded 6351bff3901e3955
+ok    c6selftest: c6_rule.md's block sha 9a2875a6bf089837, computed from the file
+ok    c6selftest: the rule's CONSTANTS clause parses to {'FLOOR_MIN': 0.15, 'SPREAD_MAX': 0.3, 'AA_VOID_MAX': 0.05, 'READABLE_MIN': 0.5}
+FAIL  c6selftest: (r38 J2) time_cells interleaves the arms in rounds: 0 launches over 40 arm cells (40 rows, 40 not ok: void selftest_j2.<locals>.<lambda>() takes 3 positional arguments but 4 were given): every round of 10 holds each arm once: False; the drills' order: False
+ok    c6selftest: VERDICT drill CELL RULE, all TIE: reads 'NO LOSS' (want 'NO LOSS'); A/A rate 0.0
+ok    c6selftest: VERDICT drill RE-TIME: a repeated LOSS (V 30 % slower twice): reads 'LOSS' (want 'LOSS'); A/A rate 0.0
+ok    c6selftest: VERDICT drill RE-TIME: a LOSS not repeated: reads 'NO LOSS' (want 'NO LOSS'); A/A rate 0.0
+ok    c6selftest: VERDICT drill RE-TIME: a LOSS whose re-time did not run stands: reads 'LOSS' (want 'LOSS'); A/A rate 0.0
+ok    c6selftest: VERDICT drill RE-TIME: a WIN whose re-time did not run is a TIE: reads 'NO LOSS' (want 'NO LOSS'); A/A rate 0.0
+ok    c6selftest: VERDICT drill A/A: a standing A/A non-TIE at 4 of 40 cells (rate 0.10 > 0.05) VOIDS the box: reads 'VOID (A/A FAILED: rate 0.100 > 0.050)' (want 'VOID (A/A FAILED: rate 0.100 > 0.050)'); A/A rate 0.1
+ok    c6selftest: VERDICT drill A/A: one standing A/A non-TIE of 40 (rate 0.025) makes its cell HARNESS, the box reads on: reads 'NO LOSS' (want 'NO LOSS'); A/A rate 0.025
+ok    c6selftest: VERDICT drill A/A: no readable A/A cell is VOID: reads 'VOID (A/A UNREAD)' (want 'VOID (A/A UNREAD)'); A/A rate None
+ok    c6selftest: VERDICT drill UNIT: a bimodal V (2 of 5 launches 40 % slow) is NOISE, never a TIE: all cells so -> INCONCLUSIVE-NOISE: reads 'INCONCLUSIVE-NOISE' (want 'INCONCLUSIVE-NOISE'); A/A rate 0.0
+ok    c6selftest: VERDICT drill UNIT: one outlier launch does not hide a 25 % LOSS (the middle-three spread): reads 'LOSS' (want 'LOSS'); A/A rate 0.0
+ok    c6selftest: VERDICT drill N/A: every cell calls the span 0 times: reads 'INCONCLUSIVE-N/A' (want 'INCONCLUSIVE-N/A'); A/A rate None
+ok    c6selftest: VERDICT drill WINDOW: 24 of 40 cells NOT-RUN: reads 'TRUNCATED: INCONCLUSIVE-NOT-RUN' (want 'TRUNCATED: INCONCLUSIVE-NOT-RUN'); A/A rate 0.0
+ok    c6selftest: VERDICT drill WINDOW: 4 of 40 cells NOT-RUN, the rest clean: reads 'TRUNCATED: NO LOSS' (want 'TRUNCATED: NO LOSS'); A/A rate 0.0
+ok    c6selftest: VERDICT drill CPU-QUIET: H64.b void (no valid launch) beside a repeated V LOSS: the cell is NOISE, not a LOSS: reads 'NO LOSS' (want 'NO LOSS'); A/A rate 0.0
+ok    c6selftest: VERDICT drill CPU-QUIET: H64.b short (4 valid launches) beside a repeated V LOSS: the cell is NOISE, not a LOSS: reads 'NO LOSS' (want 'NO LOSS'); A/A rate 0.0
+ok    c6selftest: VERDICT drill CPU-QUIET: 4 cells with V void leave their A/A unread: 2 standing A/A non-TIE of 38 A/A-readable is VOID (counting those 4 would read 2 of 42 = 0.048): reads 'VOID (A/A FAILED: rate 0.053 > 0.050)' (want 'VOID (A/A FAILED: rate 0.053 > 0.050)'); A/A rate 0.05263157894736842
+ok    c6selftest: VERDICT drill CPU-QUIET: a re-time with V void leaves a first-pass A/A non-TIE STANDING (both re-time comparisons NOISE): HARNESS, the box reads on: reads 'NO LOSS' (want 'NO LOSS'); A/A rate 0.025
+ok    c6selftest: VERDICT drill the re-time V void: its cell is the one HARNESS (1), A/A-readable 40 of 40
+ok    c6selftest: the contrast: the whole-range spread floor 1.01 reads that LOSS as a TIE
+ok    c6selftest: RECORD: a header written now passes the check
+ok    c6selftest: RECORD: a header of another rule sha is refused
+ok    c6selftest: RECORD: a file with no #c6 header is refused
+ok    c6selftest: RECORD drill design: V WINs (repeated) at hit-dense, TIE elsewhere (block_span.md §8 on 710's CONFIRMED table): reads [(('C6', 'on'), 'NO LOSS'), (('C6c', 'off-clang'), 'NO LOSS'), (('C6c', 'off-os'), 'NO LOSS')], exit 0 (want [(('C6', 'on'), 'NO LOSS'), (('C6c', 'off-clang'), 'NO LOSS'), (('C6c', 'off-os'), 'NO LOSS')], exit 0)
+ok    c6selftest: RECORD drill design: the standing WINs are the hit-dense cells, each 'repeated' ([(('C6', 'on'), 8, 8), (('C6c', 'off-clang'), 3, 3), (('C6c', 'off-os'), 3, 3)])
+ok    c6selftest: RECORD drill all-TIE: reads [(('C6', 'on'), 'NO LOSS'), (('C6c', 'off-clang'), 'NO LOSS'), (('C6c', 'off-os'), 'NO LOSS')], exit 0 (want [(('C6', 'on'), 'NO LOSS'), (('C6c', 'off-clang'), 'NO LOSS'), (('C6c', 'off-os'), 'NO LOSS')], exit 0)
+ok    c6selftest: RECORD drill a high A/A rate (3 standing A/A non-TIE cells per (card, layer), rate > 0.05) VOIDS each box: reads [(('C6', 'on'), 'VOID (A/A FAILED: rate 0.094 > 0.050)'), (('C6c', 'off-clang'), 'VOID (A/A FAILED: rate 0.250 > 0.050)'), (('C6c', 'off-os'), 'VOID (A/A FAILED: rate 0.250 > 0.050)')], exit 0 (want [(('C6', 'on'), 'VOID (A/A FAILED: rate 0.094 > 0.050)'), (('C6c', 'off-clang'), 'VOID (A/A FAILED: rate 0.250 > 0.050)'), (('C6c', 'off-os'), 'VOID (A/A FAILED: rate 0.250 > 0.050)')], exit 0)
+ok    c6selftest: RECORD drill all-unreadable (every arm short of LAUNCHES valid launches): no readable A/A, VOID: reads [(('C6', 'on'), 'VOID (A/A UNREAD)'), (('C6c', 'off-clang'), 'VOID (A/A UNREAD)'), (('C6c', 'off-os'), 'VOID (A/A UNREAD)')], exit 0 (want [(('C6', 'on'), 'VOID (A/A UNREAD)'), (('C6c', 'off-clang'), 'VOID (A/A UNREAD)'), (('C6c', 'off-os'), 'VOID (A/A UNREAD)')], exit 0)
+ok    c6selftest: RECORD drill every V arm short: BOTH of each cell's comparisons NOISE (c6_rule.md CPU-QUIET CONTROL; r80 RULE-1), so no A/A is readable: VOID (A/A UNREAD): reads [(('C6', 'on'), 'VOID (A/A UNREAD)'), (('C6c', 'off-clang'), 'VOID (A/A UNREAD)'), (('C6c', 'off-os'), 'VOID (A/A UNREAD)')], exit 0 (want [(('C6', 'on'), 'VOID (A/A UNREAD)'), (('C6c', 'off-clang'), 'VOID (A/A UNREAD)'), (('C6c', 'off-os'), 'VOID (A/A UNREAD)')], exit 0)
+ok    c6selftest: RECORD drill truncated: 60 % of the cells NOT-RUN (first pass): reads [(('C6', 'on'), 'TRUNCATED: INCONCLUSIVE-NOT-RUN'), (('C6c', 'off-clang'), 'TRUNCATED: INCONCLUSIVE-NOT-RUN'), (('C6c', 'off-os'), 'TRUNCATED: INCONCLUSIVE-NOT-RUN')], exit 4 (want [(('C6', 'on'), 'TRUNCATED: INCONCLUSIVE-NOT-RUN'), (('C6c', 'off-clang'), 'TRUNCATED: INCONCLUSIVE-NOT-RUN'), (('C6c', 'off-os'), 'TRUNCATED: INCONCLUSIVE-NOT-RUN')], exit 4)
+ok    c6selftest: RECORD drill a reading LOSS the re-time repeats: reads [(('C6', 'on'), 'LOSS'), (('C6c', 'off-clang'), 'NO LOSS'), (('C6c', 'off-os'), 'NO LOSS')], exit 0 (want [(('C6', 'on'), 'LOSS'), (('C6c', 'off-clang'), 'NO LOSS'), (('C6c', 'off-os'), 'NO LOSS')], exit 0)
+ok    c6selftest: RECORD drill a reading LOSS the re-time does not repeat (a TIE, listed): reads [(('C6', 'on'), 'NO LOSS'), (('C6c', 'off-clang'), 'NO LOSS'), (('C6c', 'off-os'), 'NO LOSS')], exit 0 (want [(('C6', 'on'), 'NO LOSS'), (('C6c', 'off-clang'), 'NO LOSS'), (('C6c', 'off-os'), 'NO LOSS')], exit 0)
+ok    c6selftest: RECORD drill truncated re-time: a reading LOSS whose re-time did not start STANDS, listed single-pass; the verdict is prefixed TRUNCATED (r80 RULE-4) and the reader exits 4: reads [(('C6', 'on'), 'TRUNCATED: LOSS'), (('C6c', 'off-clang'), 'NO LOSS'), (('C6c', 'off-os'), 'NO LOSS')], exit 4 (want [(('C6', 'on'), 'TRUNCATED: LOSS'), (('C6c', 'off-clang'), 'NO LOSS'), (('C6c', 'off-os'), 'NO LOSS')], exit 4)
+ok    c6selftest: RECORD drill a reading LOSS standing on a NOISY re-time (its V short) is listed single-pass (r80 RULE-2): reads [(('C6', 'on'), 'LOSS'), (('C6c', 'off-clang'), 'NO LOSS'), (('C6c', 'off-os'), 'NO LOSS')], exit 0 (want [(('C6', 'on'), 'LOSS'), (('C6c', 'off-clang'), 'NO LOSS'), (('C6c', 'off-os'), 'NO LOSS')], exit 0)
+ok    c6selftest: RECORD drill an A/A non-TIE standing on a NOISY re-time makes its cell HARNESS, listed single-pass (r80 RULE-2): reads [(('C6', 'on'), 'NO LOSS'), (('C6c', 'off-clang'), 'NO LOSS'), (('C6c', 'off-os'), 'NO LOSS')], exit 0 (want [(('C6', 'on'), 'NO LOSS'), (('C6c', 'off-clang'), 'NO LOSS'), (('C6c', 'off-os'), 'NO LOSS')], exit 0)
+ok    c6selftest: RECORD drill an A/A WIN (H64.b faster) standing on a NOISY re-time STANDS too (RE-TIME: an A/A non-TIE stands): HARNESS: reads [(('C6', 'on'), 'NO LOSS'), (('C6c', 'off-clang'), 'NO LOSS'), (('C6c', 'off-os'), 'NO LOSS')], exit 0 (want [(('C6', 'on'), 'NO LOSS'), (('C6c', 'off-clang'), 'NO LOSS'), (('C6c', 'off-os'), 'NO LOSS')], exit 0)
+ok    c6selftest: RECORD drill a GATE FAIL in a first-pass row: the arm is unread (both comparisons NOISE), the run is RED, exit 1 (r80 CHECKS-1): reads [(('C6', 'on'), 'NO LOSS'), (('C6c', 'off-clang'), 'NO LOSS'), (('C6c', 'off-os'), 'NO LOSS')], exit 1 (want [(('C6', 'on'), 'NO LOSS'), (('C6c', 'off-clang'), 'NO LOSS'), (('C6c', 'off-os'), 'NO LOSS')], exit 1)
+ok    c6selftest: RECORD drill a GATE FAIL in a re-time row: exit 1 (r80 CHECKS-1): reads [(('C6', 'on'), 'LOSS'), (('C6c', 'off-clang'), 'NO LOSS'), (('C6c', 'off-os'), 'NO LOSS')], exit 1 (want [(('C6', 'on'), 'LOSS'), (('C6c', 'off-clang'), 'NO LOSS'), (('C6c', 'off-os'), 'NO LOSS')], exit 1)
+ok    c6selftest: RECORD drill one N/A cell per regime per (card, layer) (15 cells + the 8 named cuts): listed N/A, out of the population, NO LOSS: [(('C6', 'on'), 'NO LOSS', 9, 27), (('C6c', 'off-clang'), 'NO LOSS', 7, 7), (('C6c', 'off-os'), 'NO LOSS', 7, 7)]
+ok    c6selftest: RECORD refusal no #end line (the run died): exit 2 (want 2, refused: /no #end line/)
+ok    c6selftest: RECORD refusal a header of another rule sha: exit 2 (want 2, refused: /recorded under rule f{16}/)
+ok    c6selftest: RECORD refusal a header without the harness field: exit 2 (want 2, refused: /the header lacks harness/)
+ok    c6selftest: RECORD refusal recorded at another LAUNCHES: exit 2 (want 2, refused: /recorded at LAUNCHES=7/)
+ok    c6selftest: RECORD refusal a re-time the first pass owes, absent: exit 2 (want 2, refused: /owes a re-time and the record holds 0 re-time rows/)
+ok    c6selftest: RECORD refusal a re-time the first pass does not owe, present: exit 2 (want 2, refused: /owes no re-time and the record holds 3 re-time rows/)
+ok    c6selftest: RECORD refusal an unknown line (r80 CHECKS-2): exit 2 (want 2, refused: /an unknown line 'bogus/)
+ok    c6selftest: RECORD refusal a cell that calls the span with no first-pass row for an arm (r80 CHECKS-2): exit 2 (want 2, refused: /has no first-pass row for \['H64\.b'\]/)
+ok    c6selftest: RECORD refusal an owed re-time holding 2 of its 3 rows (r80 CHECKS-2): exit 2 (want 2, refused: /owes a re-time and the record holds 2 re-time rows/)
+ok    c6selftest: RECORD refusal rows of a cell outside the record's population (r80 CHECKS-2): exit 2 (want 2, refused: /rows of cells outside the record's population \(C6/c6_nosuch/)
+ok    c6selftest: RECORD refusal a first-pass NOT-RUN cell carrying re-time rows (it owes none; r80 CHECKS-2): exit 2 (want 2, refused: /owes no re-time and the record holds 3 re-time rows/)
+ok    c6selftest: RECORD refusal a re-time that ran FIRST-PASS exes (c6_rule.md RE-TIME: never the first pass's; r80 FIDELITY-2): exit 2 (want 2, refused: /re-time ran first-pass exes/)
+ok    c6selftest: RECORD refusal a launch whose exe is in no recorded pool (r80 FIDELITY-2): exit 2 (want 2, refused: /exes \['f{16}', .* are not members of a recorded pool/)
+ok    c6selftest: RECORD refusal an ok row without its exe identities (r80 FIDELITY-2): exit 2 (want 2, refused: /exes None are not members of a recorded pool/)
+ok    c6selftest: RECORD refusal an #end status the rows contradict (complete over NOT-RUN rows; r80 CHECKS-10): exit 2 (want 2, refused: /#end says status complete, the rows say truncated/)
+ok    c6selftest: QUIET thresholds from a quiet stubbed sample: CPU7_MAX 0.050 (the 5 % floor), NIVCSW_MAX 2
+ok    c6selftest: QUIET thresholds from a busy sample (15 %): CPU7_MAX capped at 0.20, flagged
+ok    c6selftest: QUIET a noisy launch (sibling 90 % busy) is VOID and re-timed once: value 1.0, voids 1, launches 2
+ok    c6selftest: QUIET a launch void on every attempt (nivcsw 50 > 2) is re-timed up to 2 more times, then counts as SHORT (None): voids 3, launches 3
+ok    c6selftest: QUIET the nivcsw limit: 3 switches in a 0.50 s launch vs NIVCSW_MAX 2 per 0.06 s reads valid
+ok    c6selftest: QUIET the nivcsw limit: 3 switches in a 0.06 s launch vs NIVCSW_MAX 2 per 0.06 s reads VOID
+ok    c6selftest: QUIET the nivcsw limit: 2 switches in a 0.03 s launch vs NIVCSW_MAX 2 per 0.06 s reads valid
+ok    c6selftest: QUIET the nivcsw limit: 2 switches in a 0.06 s launch vs NIVCSW_MAX 2 per 0.06 s reads valid
+ok    c6selftest: QUIET a sibling busy exactly at CPU7_MAX 0.050 is valid (`>`): valid
+ok    c6selftest: QUIET an arm short of LAUNCHES valid launches: BOTH of its cell's comparisons are NOISE (r80 RULE-1) (NOISE, AA-NOISE)
+ok    c6selftest: DRY guard: timed_launch, a taskset exec, a CARD_TIME exec, an exec INHERITING CARD_TIME (r80 CHECKS-5) raise ClockCalled (a BaseException); an untimed exec runs, an untimed exec (untimed_env) runs under an inherited CARD_TIME
+ok    c6selftest: POOLS: retime 0 of V, H64 (and C1-C5's arms) is the r41 pool (300 texts x every layer); over 2000 texts x 3 layers every C6_DISJOINT pair shares no (class, alignment) (0 overlaps), no re-time variant repeats a first-pass exe (0 clashes), 1047 re-time draws redrawn
+ok    c6selftest: POOLS: the plant pool-overlap gives H64.b H64's (class, alignment) pairs at 100 of 100 texts
+cards: the re-time pool of t0 on V repeats a first-pass exe after 0 redraws: REFUSED
+ok    c6selftest: POOLS: a re-time pool that cannot be drawn within REDRAW_MAX redraws is REFUSED (exit 2), never a loop (r80 CHECKS-9)
+ok    c6selftest: REACH CONTROL: a hit-dense cell with 0 span calls is refused; a near-miss cell with 0 is N/A, not refused
+ok    c6selftest: POOL DISJOINTNESS: clean pools pass; a refused pool, H64.b on H64's layouts, a re-time sharing one first-pass layout and an unproved pool are each refused
+ok    c6selftest: PREPARE plant reach-dead: REFUSED (exit 2, REACH CONTROL), no manifest
+ok    c6selftest: PREPARE plant pool-overlap: REFUSED (exit 2, NOT LAYOUT-DISJOINT), no manifest
+ok    c6selftest: PREPARE C6 c6_hex32: exit 0, the manifest written
+ok    c6selftest: PREPARE: the manifest's BUILT layouts are layout-disjoint over 6 pools
+ok    c6selftest: DRY exercise (CARD_TIME preset): exit 0, clock calls 0, the record round-trips through c6decide (exit 0)
+ok    c6selftest: DRY exercise: 9 re-time rows (the owed cells' three arms), first-pass attempts 70
+ok    c6selftest: DRY WINDOW: a deadline (+64.77 s) inside the first pass's last launch: first pass complete (0 NOT-RUN rows; its 6 void-by-method rows read method), every re-time row NOT-RUN (9), the verdict TRUNCATED (r80 RULE-4), exit 4
+ok    c6selftest: DRY gatefail: a wrong answer at a TIMED launch is the row's gatefail and the run is RED (exit 1; r80 FIDELITY-4)
+ok    c6selftest: DRY plant: the re-time handed the FIRST pass's exes is a WiringFault, REFUSED (exit 2; r80 FIDELITY-2)
+ok    c6selftest: TIME refuses a rule_710.md whose sha is not job 710's (exit 2; the read-back cannot: it hashes the same moved file)
+ok    c6selftest: TIME refusals: no manifest (exit 2), a timing without --job-start (2), a timing with a DRY's --deadline (2)
+ok    c6selftest: WINDOW computed (c6_deadline): no window flag on a timing REFUSED, start + cap - 600, min with --stop-at, a DRY without one has none: [([], False, True), (['--cap', '--job-start'], False, True), (['--cap', '--job-start', '--stop-at'], False, True), ([], True, True)]
+ok    c6selftest: DRY probe keyed on the exe's proved pool: a first-pass V exe labelled H64 reads 1.302 (want 1.3), a re-time V exe in a 'first' pass reads 1.007 (want 1.0)
+ok    c6selftest: TIME refuses a manifest of another harness (exit 2)
+cards: time refuses to compile (the pool exe c6_hex32 V on v0 retime 8 is not built): run `time RUNDIR --prepare` first
+ok    c6selftest: TIME refuses to compile: a build with COMPILE_OK clear exits 2 (r80 FIDELITY-5)
+ok    c6selftest: check_c6 control: the 3 real (pattern, layer) texts read clean ([])
+ok    c6selftest: check_c6 plant the selector calls `__body` while `__w32` is defined: RED (C6 c6_hex32 on: arm V's selector does not call a defined `__w32` at the SIMD layer: the cell does not time the vector span)
+ok    c6selftest: check_c6 plant the site never calls the selector (only its definition names it): RED (C6 c6_hex32 on: the site never calls the selector rxa_mf1_vs0: V's text is dead code)
+ok    c6selftest: check_c6 plant `__w32` only in a comment: RED (C6 c6_hex32 on: arm V's selector does not call a defined `__w32` at the SIMD layer: the cell does not time the vector span)
+ok    c6selftest: check_c6 plant the block loop's k is not C6_SITE's: RED (C6 c6_hex32 on: the block loop for (; i + 16 < 30; i += 16) is not C6_SITE's k 31 at B 16)
+ok    c6selftest: check_c6 plant a scan site labelled window in C6_SITE: RED (C6 c6_dig32 on: the site is a scan site, C6_SITE says window)
+ok    c6selftest: check_c6 plant the deny arm carries V's text: RED (C6 c6_hex32 on: V and H64 render ONE text (an A/A cell by construction: the deny is ignored, or the stretch is outside the table))
+c6selftest: 95 rows, 1 failed

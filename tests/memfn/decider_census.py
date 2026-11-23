@@ -106,8 +106,10 @@ BACKSTOP = LIVE + BYPASS
 # the composer's search row and the tables' self-check); 61 at R-38 K38-2a
 # (the TIE table's row T_RUN_LEFT, `TIE_LOWER`, inside wf_ties); 67 at
 # plan_frame.md 3.0b (wf_arm_pick's E-stmt row walk, the frame part's fixed
-# RF_FN / RS_CALLER rows read by wf_frame_of and by wf_agree).
-HITS = 67
+# RF_FN / RS_CALLER rows read by wf_frame_of and by wf_agree); 68 at
+# block_span.md U1 (R-47, lane bsu1: the T-SPAN walk `kit_walk(&wf_spantable`
+# in wf_stretches, a member).
+HITS = 68
 # EXACT, like row_floors.tsv's ROWS_FLOOR (a floor with slack lets rows vanish
 # silently): a unit that moves a decider edits the map AND this number.
 # 50 at 1a; 51 at 1b (tie_over gone; kit_tie_takes' prototype and
@@ -138,7 +140,9 @@ HITS = 67
 # MF_TRACE agreement wf_agree excluded).
 # R-38 Part D: translate:run-rank became the shared function run_rank (one
 # member for one, part_d.md §2.1 item 3; RUN_CALLERS' `translate` with it).
-MEMBER_COUNT = 70
+# 72 at block_span.md U1 (R-47, lane bsu1): T-SPAN's enumerator wf_stretches
+# and its rows wf_spanrows in (the retired wf_span_head if-chain had no row).
+MEMBER_COUNT = 72
 
 # D: THE RUN CALLERS, EXACT (a call site added or lost is red): callee ->
 # {enclosing definition: uses}: EVERY use of the identifier (a call, an alias, a

@@ -1,0 +1,4 @@
+variant-0 extra noise normal s=0.01 (heads)  N=200 | von/pt: fl 0 h8 126 P!=64 0.630 | voff/pt: fl 2 h8 133 P!=64 0.665 | von/pool: fl 20 h8 110 P!=64 0.550
+variant-0 extra noise normal s=0.015 (heads) N=200 | von/pt: fl 11 h8 119 P!=64 0.595 | voff/pt: fl 3 h8 130 P!=64 0.650 | von/pool: fl 50 h8 109 P!=64 0.545
+variant-0 extra noise t(3) s=0.01 (heads)    N=200 | von/pt: fl 9 h8 118 P!=64 0.590 | voff/pt: fl 14 h8 132 P!=64 0.660 | von/pool: fl 96 h8 72 P!=64 0.360
+  texts read/night median 120.0, excluded median 0.0; per-text pure-error df: min 6 median 12.0, share<4 0.000

@@ -28,6 +28,7 @@
 # would-decline or a no-row selection, `noend`) is the detector, on the
 # sample the arm `n2sample` runs (tests/memfn/run_n2_sample.sh), which holds
 # offset-skip and pre-check witnesses (SAB_REACH_POP).
+# Re-aimed by lane bsu2 (R-47 U2): gate_tctx gained a trailing `tag` field (review r72 SLOT-7), so every initializer ends `, NULL`; same intent.
 SAB_ID="S689-empty-slot-walked"
 SAB_FILE="memfn/src/ofsskip.c"
 SAB_SUITES="n2sample"
@@ -38,5 +39,5 @@ SAB_REACH_EXPECT='static inline size_t rx_ofsskip(const unsigned char *subject, 
 SAB_REACH_POP="tests/memfn/n2_sample_patterns.txt|^abc\\[0-9\\]\\+xyz\$|1"
 SAB_EXPECT=DETECTED
 SAB_COUNT=1
-SAB_BEFORE='    gate_tctx tc = { art, "fn", handle, MF_PH_DEFINE, &in, slot == FN_PREFIX, 0, 0 };'
-SAB_AFTER='    gate_tctx tc = { art, "fn", handle, MF_PH_DEFINE, &in, 0 /* SABOTAGE S689 */, 0, 0 };'
+SAB_BEFORE='    gate_tctx tc = { art, "fn", handle, MF_PH_DEFINE, &in, slot == FN_PREFIX, 0, 0, NULL };'
+SAB_AFTER='    gate_tctx tc = { art, "fn", handle, MF_PH_DEFINE, &in, 0 /* SABOTAGE S689 */, 0, 0, NULL };'

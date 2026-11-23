@@ -290,17 +290,20 @@ static bool pin_proved(const KsetWalk *o, const ReqRun *r, int k, int j)
 
 /* The pin of the stretch around run position `x` of `r` (an exact one) into
  * `*pin`, unpinned where none: the maximal exact stretch `[s0, e0)` holding
- * `x`, placed at every walk offset `ro` for its start; at each placement the
+ * `x` inside the run's consumed extent `[clo, chi)` (span_arms L3, D-6: a
+ * position inside a lookbehind is no consumed byte, so no pin claims it),
+ * placed at every walk offset `ro` for its start; at each placement the
  * pinned part is the LONGEST sub-stretch around `x` the walk proves
  * (`pin_proved`), and the pin is the longest over every placement, ties to
  * the smallest offset. Where the whole stretch is proved that is exactly the
  * whole-or-nothing pin (review r55 B), and it is never shorter. */
 static void pin_around(const KsetWalk *o, const ReqRun *r, int x, RunPin *pin)
 {
-    int s0, e0;
+    int s0, e0, clo, chi;
     *pin = (RunPin){ false, 0, 0, 0, 0 };
-    for (s0 = x; s0 > 0 && pcrec_run_byte(r, s0 - 1) >= 0; s0--) {}
-    for (e0 = x + 1; e0 < r->whole_len && pcrec_run_byte(r, e0) >= 0; e0++) {}
+    pcrec_run_cons(r, &clo, &chi);
+    for (s0 = x; s0 > clo && pcrec_run_byte(r, s0 - 1) >= 0; s0--) {}
+    for (e0 = x + 1; e0 < chi && pcrec_run_byte(r, e0) >= 0; e0++) {}
     if (e0 - s0 < 2) return;
     /* R-38 K38-2 (span_runs_sheet.md §4.2): the WHOLE run, CLIPPED per
        placement to the walk's reach, `l = min(e0 - s0, nwalk - ro)`; the
@@ -350,17 +353,24 @@ static void pin_around(const KsetWalk *o, const ReqRun *r, int x, RunPin *pin)
  * whole-or-nothing form pinned, its pick is still a candidate and still
  * wins (PICK is an argmin, so dropping losers keeps the winner) and its pin
  * is unchanged; a position the walk cannot prove no longer takes the pick
- * from one it can. */
+ * from one it can.
+ *
+ * ONLY THE CONSUMED EXTENT (span_arms §14.3 D-6, L3): the pick's candidates
+ * and the stretch lie inside `pcrec_run_cons`'s `[lo, hi)`, so a run that
+ * begins inside a lookbehind pins only bytes a match consumes (an empty
+ * extent pins nothing); the gen readers' widening (`walk_proves`' `d >= 0`
+ * refusal) keeps the stated span consumed too. */
 void pcrec_run_pin(const KsetWalk *o, const ReqRun *r, const uint32_t *rate,
                    RunPin *pin)
 {
     unsigned char cand[PCREC_MAX_REQ_RUN_SCAN];
-    int pos[PCREC_MAX_REQ_RUN_SCAN], nc = 0;
+    int pos[PCREC_MAX_REQ_RUN_SCAN], nc = 0, lo, hi;
     RunPin p;
 
     *pin = (RunPin){ false, 0, 0, 0, 0 };
     if (r->whole_len < 2) return;
-    for (int i = r->whole_len - 1; i >= 0; i--) {
+    pcrec_run_cons(r, &lo, &hi);
+    for (int i = hi - 1; i >= lo; i--) {
         int b = pcrec_run_byte(r, i);
         if (b < 0) continue;
         pin_around(o, r, i, &p);
@@ -381,7 +391,27 @@ void pcrec_run_pin(const KsetWalk *o, const ReqRun *r, const uint32_t *rate,
  * `PCREC_W_UNBOUNDED` where a frontier is still live past the NFA's state
  * count: every consuming state consumes one byte, so a path that long repeats
  * a state, which is a cycle. `bmin` is -1 where no depth accepts. BYTES, from
- * the NFA, never `pcrec_cwmin`/`pcrec_cwmax` (characters, §3.1's table). */
+ * the NFA, never `pcrec_cwmin`/`pcrec_cwmax` (characters, §3.1's table).
+ *
+ * [K159] THE REPEATED-FRONTIER STOP. The walk's carried state is the closed
+ * frontier's consuming SET `w.cur` alone: `wadvance` reads nothing else (the
+ * successors of `cur`, closed), and the step's `accept` is computed by that
+ * same closure, so both `cur[j+1]` and `accept[j+1]` are pure functions of
+ * the SET `cur[j]` (its order is irrelevant: the closure of a seed set is a
+ * set). So once `cur[j]` equals an earlier `cur[c]` (c < j), the sequence from
+ * j repeats the one from c forever: every later frontier is one of
+ * `cur[c+1..j]`, all live, so the frontier never empties — the docstring's
+ * own "live past n" case, hence `PCREC_W_UNBOUNDED`, what the loop returns
+ * past `nfa->n` — and every later `accept` is one already met at a depth
+ * <= j, so no new FIRST accept (`bmin`) can appear. The answer is the one
+ * the walk to `nfa->n` reaches, only sooner (nested `+` was n steps of an
+ * n-state closure). The repeat is found by Brent's checkpoint: the set at
+ * depths 0, 1, 2, 4, 8, … is kept (exactly, as membership stamps) and each
+ * later frontier is compared with it exactly (`w.cur` is duplicate-free: `wpush`
+ * admits a state once per generation across both closure phases, so equal size
+ * plus every member stamped IS set equality), so a cycle of period λ that
+ * begins by depth μ is seen by depth 4·max(μ, λ); memory one set. The
+ * `j > nfa->n` exit stays as the backstop: no walk is longer than before. */
 void pcrec_width_walk(Ctx *cx, const Nfa *nfa, long long *bmin, long long *bmax)
 {
     *bmin = -1;
@@ -398,6 +428,11 @@ void pcrec_width_walk(Ctx *cx, const Nfa *nfa, long long *bmin, long long *bmax)
     Walk w;
     wstart(cx, &w, nfa);
     int *next = pcrec_arena_alloc(&cx->arena, (size_t)nfa->n * sizeof(int));
+    /* the checkpoint: `ck[s] == ckid` marks state s a member, `nck` its size */
+    int *ck = pcrec_arena_alloc(&cx->arena, (size_t)nfa->n * sizeof(int));
+    long long ckat = 0;
+    int ckid = 0;
+    int nck = -1;
     long long last = -1;
     for (long long j = 0;; j++) {
         if (w.accept) {
@@ -405,6 +440,17 @@ void pcrec_width_walk(Ctx *cx, const Nfa *nfa, long long *bmin, long long *bmax)
             last = j;
         }
         if (w.ncur == 0) { *bmax = last; return; }
+        if (w.ncur == nck) {
+            int i = 0;
+            while (i < w.ncur && ck[w.cur[i]] == ckid) i++;
+            if (i == w.ncur) { *bmax = PCREC_W_UNBOUNDED; return; }
+        }
+        if (j == ckat) {
+            ckid++;
+            for (int i = 0; i < w.ncur; i++) ck[w.cur[i]] = ckid;
+            nck = w.ncur;
+            ckat = j ? 2 * j : 1;
+        }
         if (j > nfa->n) { *bmax = PCREC_W_UNBOUNDED; return; }
         wadvance(&w, next);
     }

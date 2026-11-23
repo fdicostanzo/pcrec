@@ -1,0 +1,5 @@
+report: docs/dev/lanes/specfix2_report.md
+sections: Summary; Ratchet; Docs; Plan row; Validation dispatched; STATE AT HANDOFF
+nonempty: all
+commit: yes
+owed: none

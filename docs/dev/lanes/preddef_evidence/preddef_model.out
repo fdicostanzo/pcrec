@@ -1,0 +1,90 @@
+== library bodies (library.md): chars ([ch = /(?s:.)/])* ; length(S) := chars & (count((chars.ch: /(?s:.)/)): S) ; month_numbered(S) := months & (months.mname.index: S) ; between: >= lo & <= hi
+== months := [mname = [/Jan(?:uary)?/, /Feb(?:ruary)?/, /Mar(?:ch)?/, /Apr(?:il)?/, /May/, /June?/, /July?/, /Aug(?:ust)?/, /Sep(?:tember)?/, /Oct(?:ober)?/, /Nov(?:ember)?/, /Dec(?:ember)?/]]
+== CONTROL: the loaded matcher against python `re`
+PASS CONTROL: differing (WHOLE, SEARCHED, FIND-ALL): `"ab" | "a"` (0, 0, 0); `/${A}!/` against `\d!` (0, 0, 0) over 40 texts
+== PROTECT: readings (a), (b), (c): a part used alone is seen inside and not exported (statement 3)
+PASS PROTECT: inside `/${A}!/` and `A SEQ "!"` with `(A.h: <5)` and a labelled part read `pub.h`, `pub.a.h`: whole answers differing from `[0-4]!` [0, 0, 0, 0] over 40 texts; from outside refused: `p2.h` (hole) True, `p2.h` (sequence) True, `p2.A.h` True, `p6.h` under `[_a = A]` True
+   refusal: `p2.h`: `h` is not visible through `p2` (a compile error, core/labels/paths)
+== EXAMPLE: his `B := A & A`, `C := B & (B.a: 9)`, "here B.a is always an error" (reading (g))
+PASS EXAMPLE: refused: at C plain True, group question True; at the top plain True, group question True; `B.x.a`, `B.y.a` whole answers differing from `9`: 0, 0 over 40 texts
+   refusal at C: at the binding `C := B & (B.a: 9)`: `B.a`: `a` is not visible through `B` in C (a compile error, core/labels/export)
+== ANALOGY: his four forms, each read locally and from outside (the table's rows; reading (d))
+   [a = A]   local `a.h` legal, outside `pub.h` legal
+   [_a = A]  local `_a.h` legal, outside `pub.h` refused
+   A         local `A.h` legal, outside `pub.h` refused
+   [_ = A]   local `A.h` refused, outside `pub.h` refused
+   [A = A]   local `A.h` legal, outside `pub.A.h` legal
+PASS ANALOGY: 5 forms (the four rows and his `[=A]` read as `[A = A]`), local and outside read against the table: differing none
+== MACRO: reading (e): a call exports what its body's text writes; an argument used alone is not exported
+PASS MACRO: `/${rx}xx/`: `B.d` refused True, `c.d` refused True; `/${rx}-(?<d>\d)/`: `c.d` reads the body's own d, differing 0 over 40 texts; his example 3 `B.dd.d` differing 0 over 5
+   refusal: `B.d`: `d` is not visible through `B` (a compile error, core/labels/paths)
+== SWEEP-TABLE: every printed three-mode line under argument-default's two candidates
+   229 printed lines; the old engine (predfix82's, without the rule) ran 229
+== AWAITS: every line marked "(awaits argument-default)": the printed answers under (local), refused under (error) where its program reads the argument's label
+   core.md:277 local same, error REFUSED
+   core.md:661 local same, error REFUSED
+   core.md:664 local same, error REFUSED
+   core.md:686 local same, error REFUSED
+   core.md:729 local same, error REFUSED
+   core.md:1541 local same, error REFUSED
+   library.md:254 local REFUSED, error REFUSED (no read in the program: its label annotation awaits; a library body this engine does not model, the old engine alike)
+   library.md:367 local same, error REFUSED
+   library.md:400 local REFUSED, error REFUSED (no read in the program: its label annotation awaits; a library body this engine does not model, the old engine alike)
+   library.md:616 local REFUSED, error REFUSED (no read in the program: its label annotation awaits; a library body this engine does not model, the old engine alike)
+PASS AWAITS: 10 marked lines; not (local same, error refused): none; 3 with no read; the piece's own line: (local) differing 0, (error) refused True
+== UNMARKED: every unmarked printed line answers alike under both candidates (none silently awaits)
+PASS UNMARKED: 128 unmarked lines reproduced under (local); moved under (error): none
+== ARRAY: reading (f): inside a binding a part used alone has its settings seen (array-in-piece)
+PASS ARRAY: inside `some((A.h: "7"))` differing 0; outside `some((B.h: "7"))` reads B's own h only, differing 0, over 40 texts; `B.A.h` from outside refused True
+== NESTED2: binding-prefix's nested use: `X.d.h` through X's part label, `X.D.h` refused (D used alone in X)
+PASS NESTED2: `X.d.h` differing from `\d+;\d*4!` 0 over 1365 texts; `X.D.h` refused True
+== LIBRARY: reading (h): `length` uses `chars` alone, so a call exports no `ch`
+PASS LIBRARY: `length(3)` differing from three characters 0 over 31 texts; `length.ch` refused True, `length.chars.ch` refused True; `chars.ch` (chars's own part label, the last) differing 0
+== VISIBLE: a path read inside a body to a label not visible there is a compile error, as at the top
+PASS VISIBLE: inside C `B.h` refused True; at the top refused True; `B.A.h` through B's part label legal True
+   refusal inside: at the binding `C := B SEQ "!" & (B.h: <5)`: `B.h`: `h` is not visible through `B` in C (a compile error, core/labels/export)
+== SETAND: `B := A & A` and `A & /../` are patterns, not sets (a fix to the loaded engine's set test)
+PASS SETAND: `A & A` a set False, `A & /(?<b>\d)/` a set False, `<5` a set True
+== LIST: export-list (R-1): `[(=year) = isodate]` takes the listed labels only
+PASS LIST: one `date.year`, renamed `date.y`, all `date.month`, all but one `date.day`, read bare inside: differing [0, 0, 0, 0, 0] over 7 texts; refused: unlisted `date.month` True, the part's path `date.isodate.month` True, the renamed-away `date.year` True, the left-out `date.month` True, an unexported `(=hour)` True
+   refusals: `date.month`: `month` is not visible through `date` (a compile error, core/labels/paths) | at the binding `date := [(=hour) = isodate] SEQ "!"`: `hour` is not a label the part exports (export-list: only an exported label is listed)
+== CAPTEXP: capture-export's two candidates, the match the same under both
+PASS CAPTEXP: labels visible at the top-level program (candidate (a)'s captures): []; groups written in rx text (candidate (b)'s): ['h']
+== ATOMIC: the re-spelled atomic line; the old program refused (reading (e))
+PASS ATOMIC: `[ab = atomic(B | A)] & (ab.l: <20)` refused True: `ab.l`: `l` is not visible through `ab` (a compile error, core/labels/paths)
+== SCAN: a textual control on every printed line, the engine's runs aside: a read `X.y` from outside, X bound on the line, where X's text writes no `y` and has no public part label to pass one
+PASS SCAN: 229 printed lines, 17 reads `X.y` through a binding on the line; flagged: none
+== NULLABLE: EVID-4's known limit: no program the checks ran has a loop whose body can match empty
+PASS NULLABLE: 320 programs run by the checks above, walked node by node: 0 with a loop whose body can match empty
+== SUCCESSOR: every earlier in-force model re-run; its LAST LINE read; each red declared superseded
+   predfix82  last line: predfix82_model: 22 checks, 2 failed (SUCCESSOR, MARKS)
+      MARKS: superseded by MARKS here: its ANS-1 text "a name with two sources is open two-sources" left the call-prefix bullet reflowed for default-export (40-line cap); the pointer stands as "two sources: core/labels/paths/two-sources", and two-sources gains its default-export bullet
+      SUCCESSOR: superseded by SUCCESSOR here: its own re-run of predref and predcall meets their new DOC reds, declared below
+   predbound  last line: predbound_model: 21 checks, 1 failed (DOC)
+      DOC: superseded by predfix82's declaration, unchanged: REPRINT (its two missing lines re-printed)
+   predref    last line: predref_model: 8 checks, 3 failed (SCAN, MARKS, DOC)
+      DOC: superseded by ATOMIC and SWEEP here: the atomic line is re-spelled `atomic([ab = B | A]) & (ab.l: <20)` (the old program is refused under default-export, reading (e)); answers unchanged
+      MARKS: superseded by predfix82's declaration, unchanged: predcall's MARKS (call-prefix ruled)
+      SCAN: superseded by predfix82's declaration, unchanged: VALUEGQ, BOUNDSET, REPRINT (three fragment spans)
+   predcall   last line: predcall_model: 14 checks, 3 failed (SCAN, PREDREF, DOC)
+      DOC: superseded by MACRO here: the line "d as the call surfaces it, the last mention (B's)" is renamed "d as the call exports it, the body's own" (default-export), its answers unchanged and printed by MACRO
+      PREDREF: superseded by predfix82's declaration, unchanged: SUCCESSOR (this check reads predref's last line itself)
+      SCAN: superseded by predfix82's declaration, unchanged: the same three fragment spans
+   predfix77  last line: AssertionError: `chars := (.*?)`, `nchars
+      TRACEBACK: superseded by predfix82's declaration, unchanged: REPRINT and predbound's checks (the `chars` body reader)
+   predarr    last line: AssertionError: `chars := (/.*?/)`
+      TRACEBACK: superseded by predfix82's declaration, unchanged: REPRINT and predref's HITS (the same `chars` body reader)
+   predscope  last line: predscope_model: 20 checks, 3 failed (NAMES, CLOSEDB, DOC)
+      CLOSEDB: superseded by predfix82's declaration, unchanged: REPRINT `bare-condition/labels`
+      DOC: superseded by predfix82's declaration, unchanged: REPRINT (lines re-spelled under label-reference and nested-scope)
+      NAMES: superseded by predfix82's declaration, unchanged: predbound's bound-condition checks
+PASS SUCCESSOR: 7 earlier models re-run, each last line read; every red declared superseded: yes
+== SWEEP: every printed three-mode line, old engine against the rule (argument-default (local)); no printed answer moves unless listed under ANSWERS_CHANGED
+PASS SWEEP: 229 printed lines (old engine 229: CRASH 1, DIFF 14, REFUSED 79, same 133, unparsed 2); the rule: CRASH 1, DIFF 14, REFUSED 77, same 135, unparsed 2; reproduced by the old engine and not the rule: 0 []; reproduced by the rule only: 2 [('core.md', 541), ('core.md', 543)]; ANSWERS_CHANGED 0
+== QUOTES: every owner sentence this lane quotes occurs in the record and the documents; every cited title is one
+PASS QUOTES: 10 quoted sentences in the record and the documents, missing: none; 7 record titles cited, not a title or not cited: none
+== MARKS: each piece of the fold where it landed
+PASS MARKS: 22 pieces of the fold found where they landed; missing: none
+== DOC: every line this model formats occurs verbatim in the documents
+PASS DOC: 10 lines; missing: none
+preddef_model: 22 checks, 0 failed

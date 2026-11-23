@@ -1,0 +1,18 @@
+#!/usr/bin/env bash
+# 301-main-l3feat-reach: every mech row's REACH probe on worktrees/l3feat
+# (span_arms L3 makes the handoff fire on lookbehind runs; BOILERPLATE's
+# delivery bar). The matrix exits 1 iff a row is UNREACHED.
+set -u
+TREE=/home/pcrec/projects/pcrec/worktrees/l3feat
+case "${1:-}" in
+    --dry-run)
+        [ -f "$TREE/tests/mech/run_sabotage_matrix.sh" ] || { echo "no matrix in $TREE" >&2; exit 1; }
+        echo "would run in $TREE: REACH_ONLY=1 bash tests/mech/run_sabotage_matrix.sh"
+        echo "boxqueue: cap 3600"; echo "boxqueue: patience none"
+        echo "boxqueue: expect none reason=exec'd, so the matrix's rc (1 on any UNREACHED row, 2 incomplete) is the job's rc"
+        exit 0 ;;
+    --ready) exit 0 ;;
+esac
+cd "$TREE" || exit 1
+. scripts/tmpdir.sh
+REACH_ONLY=1 exec bash tests/mech/run_sabotage_matrix.sh

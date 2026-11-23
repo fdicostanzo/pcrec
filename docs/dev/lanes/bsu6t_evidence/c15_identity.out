@@ -1,0 +1,10 @@
+same  cell lists, STEP1 + STEP2B at every h* in GRID (1374 cells at h*=64)
+same  launch order (interleaved rounds) at every h*
+same  launch order, arm-major control
+same  pools: base pool_variants == lane arm_pool(retime 0), 400 keys x 4 layers x 13 arms
+same  launch draws (launch_variant) at the default salt
+same  time_cells output file, STEP1: 175546 bytes, 1327 rows (sha b140ce155089be12)
+same  time_cells output file, STEP1 --with-approx: 143893 bytes, 1327 rows (sha 938ffa4bc32f4a5f)
+same  time_cells output file, STEP2B at h*=8: 19094 bytes, 145 rows (sha 67a06fde75200e4b)
+c15 identity: 8 checks, 0 differ
+plan: 1741 lines IDENTICAL base vs lane (after mapping the base copy's rule-file path, the one differing line, 1665)

@@ -127,7 +127,7 @@
  * MULTILINE EFFECT), which this file's original model — one construct, one
  * owning module — did not anticipate and, correctly, flagged as a disagreement
  * once module `assertions` landed ([M6.2] wave C, 2026-08-19). See
- * `is_m_cross_module_row`'s own comment, right above `member_ok[]` below, for
+ * `extra_module_of_row`'s own comment, right above `member_ok[]` below, for
  * the fact, the evidence, the exact scope, and the expiry condition.
  *
  * SABOTAGE (verified — see the final report for exact commands and output).
@@ -189,6 +189,20 @@ static int name_lookup(const char *m)
     return -1;
 }
 
+/* registry.md section 2 (`module`, `flags`): a `code-<lang>` module's rows
+ * carry the `invoker-only` flag, and such a module is NOT a `--features`
+ * name -- only --allow-code enables it, and `all` does not contain it. A
+ * features list naming one is refused whole, so it cannot take part in the
+ * all-on / inverted-M configurations this check builds from feature lists. */
+static int name_invoker_only(int idx)
+{
+    for (int i = 0; i < spec_nrows; i++) {
+        if (strcmp(spec_col(&spec_rows[i], SPEC_COL_MODULE), names[idx])) continue;
+        if (strstr(spec_col(&spec_rows[i], SPEC_COL_FLAGS), "invoker-only")) return 1;
+    }
+    return 0;
+}
+
 /* ------------------------------------------------------------------------
  * Running pcrec as a black box, no shell involved anywhere: every syntax
  * probe reaches pcrec as one argv element via execv(), so a construct's
@@ -206,7 +220,7 @@ typedef struct {
     int ran;
     int timed_out;
     int exit_code;
-    char out[4096];
+    char out[65536];   /* --help alone is ~15 KB and grows; a cap below it hides "--features" */
     char err[512];
 } PcrecRun;
 
@@ -425,10 +439,21 @@ static VClass compile_verdict(const char *pcrec_path, const char *features,
  * Returns 1 if ok, else 0 after reporting. */
 static int transition_ok(const char *syntax, const char *rowmod,
                          int mod_disabled_in_cfg, const char *cfgname,
-                         VClass base, VClass vc, const char *named)
+                         VClass base, VClass vc, const char *named,
+                         int oracle_rejects)
 {
-    if (mod_disabled_in_cfg && (base == VC_ACCEPTED || base == VC_SCOPE)) {
-        const char *dead_state = base == VC_ACCEPTED ? "ACCEPTED" : "OUT-OF-SCOPE";
+    /* A module-owned row whose probe libpcre2 ITSELF rejects (a backreference
+     * or recursion probe naming a group the one-token probe does not have) is
+     * refused-as-invalid with the module on. With the module off, the
+     * contract (pattern_language.md 2.3 p1) refuses every construct of a
+     * not-enabled module with `requires module 'X'`, valid or not: the gate
+     * answers before the grammar is judged. So that baseline flips too. */
+    int gate_first_invalid = base == VC_INVALID && oracle_rejects &&
+                             rowmod && *rowmod;
+    if (mod_disabled_in_cfg && (base == VC_ACCEPTED || base == VC_SCOPE ||
+                                gate_first_invalid)) {
+        const char *dead_state = base == VC_ACCEPTED ? "ACCEPTED" :
+                                 base == VC_SCOPE ? "OUT-OF-SCOPE" : "INVALID";
         if (vc != VC_UNIMPL) {
             spec_fail("row '%s' (module '%s'): still %s under %s (got %s) — "
                       "a row whose baseline is %s and whose OWN module is "
@@ -487,7 +512,7 @@ static void build_inverted_list(char *buf, size_t bufsz, int skip)
     buf[0] = 0;
     int first = 1;
     for (int i = 0; i < nnames; i++) {
-        if (i == skip) continue;
+        if (i == skip || name_invoker_only(i)) continue;
         if (!first) strncat(buf, ",", bufsz - strlen(buf) - 1);
         strncat(buf, names[i], bufsz - strlen(buf) - 1);
         first = 0;
@@ -544,11 +569,31 @@ static void build_inverted_list(char *buf, size_t bufsz, int skip)
  * fix is interim truth-restoration, not architecture (Frank's own framing
  * on the [SPEC-M] plan row). Delete this block and its call site the day
  * that lands, and the ordinary transition rule should just work. */
-static int is_m_cross_module_row(const SpecRow *r)
+static const char *extra_module_of_row(const SpecRow *r)
 {
-    return !strcmp(spec_col(r, SPEC_COL_KIND), "group") &&
-           !strcmp(spec_col(r, SPEC_COL_SELECTOR), "m") &&
-           !strcmp(spec_col(r, SPEC_COL_MODULE), "modifiers");
+    const char *kind = spec_col(r, SPEC_COL_KIND), *sel = spec_col(r, SPEC_COL_SELECTOR),
+               *mod = spec_col(r, SPEC_COL_MODULE), *syn = spec_col(r, SPEC_COL_SYNTAX);
+    if (!strcmp(kind, "group") && !strcmp(mod, "modifiers")) {
+        if (!strcmp(sel, "m")) return "assertions";   /* SPEC-M, above */
+        /* pattern_language.md 6.2 p3: "`(?J)` needs `backrefs` besides
+         * `modifiers`, while `--list-syntax` names only `modifiers` on their
+         * rows (the row dispatches the option run; the letter names its own
+         * module)." Same shape as (?m), stated by the contract itself. */
+        if (!strcmp(sel, "J")) return "backrefs";
+    }
+    /* A probe that names a group by NAME needs a group of that name, and
+     * pattern_language.md 7.5 makes `named-groups` the module that declares
+     * one (the DEFINE row's own probe even spells `(?<w>a)`, a 7.5
+     * construct). The by-name reference rows (7.3 p3's `\k<m>` family, the
+     * recursion by-name spellings) are probes with no declared group, so
+     * the NAME is what their refusal under `-named-groups` turns on.
+     * SPEC GAP, reported not pinned: no spec sentence states that a by-name
+     * REFERENCE (as opposed to a declaration) is gated by `named-groups`. */
+    if (!strcmp(syn, "(?(DEFINE)(?<w>a))") || !strcmp(syn, "\\k<name>") ||
+        !strcmp(syn, "(?P=n)") || !strcmp(syn, "(?P>n)") ||
+        !strcmp(syn, "(?&name)"))
+        return "named-groups";
+    return NULL;
 }
 
 static int member_ok[256];
@@ -678,7 +723,7 @@ int main(int argc, char **argv)
                  * a disabled-module row here (the transition rule's first
                  * arm); no-module rows take the equality arm. */
                 transition_ok(S, (m && *m) ? m : "", m && *m, "all-off",
-                              vc_base[i], vc, named);
+                              vc_base[i], vc, named, !member_ok[i]);
                 int midx = name_lookup(m);
                 if (midx >= 0 && member_ok[i] && vc_base[i] == VC_ACCEPTED) {
                     pairs[midx]++;
@@ -689,6 +734,7 @@ int main(int argc, char **argv)
 
         int m_exception_fired = 0;
         for (int mi = 0; mi < nnames; mi++) {
+            if (name_invoker_only(mi)) continue;   /* no features-list toggle exists */
             char inv[1024];
             build_inverted_list(inv, sizeof inv, mi);
             for (int i = 0; i < spec_nrows; i++) {
@@ -702,7 +748,7 @@ int main(int argc, char **argv)
                 snprintf(cfg, sizeof cfg, "inverted(-%s)", names[mi]);
                 int mod_disabled = m && *m && strcmp(m, names[mi]) == 0;
 
-                /* SPEC-M NAMED EXCEPTION (see is_m_cross_module_row's own
+                /* SPEC-M NAMED EXCEPTION (see extra_module_of_row's own
                  * comment above): under inverted-assertions specifically,
                  * `(?m)`'s own module ('modifiers') stays enabled, so the
                  * ordinary rule would demand equality with baseline -- but
@@ -711,31 +757,31 @@ int main(int argc, char **argv)
                  * refused-as-unimplemented naming 'assertions', the SAME
                  * transition shape a disabled-own-module row takes, just
                  * naming a different module. */
-                if (!mod_disabled && is_m_cross_module_row(&spec_rows[i]) &&
-                    !strcmp(names[mi], "assertions")) {
+                const char *extra = extra_module_of_row(&spec_rows[i]);
+                if (!mod_disabled && extra && !strcmp(names[mi], extra)) {
                     m_exception_fired = 1;
-                    if (vc_base[i] == VC_ACCEPTED) {
-                        if (vc != VC_UNIMPL || strcmp(named, "assertions") != 0)
-                            spec_fail("row '%s' (module '%s'): SPEC-M named "
-                                      "exception -- disabling module "
-                                      "'assertions' must flip (?m)'s "
-                                      "MULTILINE EFFECT to "
+                    if (vc_base[i] == VC_ACCEPTED ||
+                        (vc_base[i] == VC_INVALID && !member_ok[i])) {
+                        if (vc != VC_UNIMPL || strcmp(named, extra) != 0)
+                            spec_fail("row '%s' (module '%s'): cross-module "
+                                      "exception -- disabling module '%s' "
+                                      "must flip the row to "
                                       "refused-as-unimplemented naming "
-                                      "'assertions' (got %s, named '%s')",
-                                      S, m, vclass_name(vc), named);
+                                      "'%s' (got %s, named '%s')",
+                                      S, m, extra, extra, vclass_name(vc), named);
                     } else if (vc != vc_base[i]) {
-                        spec_fail("row '%s' (module '%s'): SPEC-M named "
+                        spec_fail("row '%s' (module '%s'): cross-module "
                                   "exception -- baseline was not accepted "
-                                  "(%s), yet disabling 'assertions' still "
+                                  "(%s), yet disabling '%s' still "
                                   "changed the verdict to %s", S, m,
-                                  vclass_name(vc_base[i]), vclass_name(vc));
+                                  vclass_name(vc_base[i]), extra, vclass_name(vc));
                     }
                 } else {
                     /* inverted-M disables ONLY M: rows of every other module
                      * take the equality arm, so a toggle that leaks across
                      * modules fails naming both sides. */
                     transition_ok(S, (m && *m) ? m : "", mod_disabled, cfg,
-                                  vc_base[i], vc, named);
+                                  vc_base[i], vc, named, !member_ok[i]);
                 }
                 int midx = name_lookup(m);
                 if (midx == mi && member_ok[i] && vc_base[i] == VC_ACCEPTED)

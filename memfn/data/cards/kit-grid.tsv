@@ -110,6 +110,25 @@
 # for these rows; they live here because kit-synthetic's cards are the synthetic sets', "never
 # measured" (its header), and these are measured method cards (lane forms report, Cards).
 #
+# `ver 8` is the VECTOR SPAN's card C6 `span_vector` (R-47 U5, docs/design/memfn/block_span.md §8): on
+# ONE pcrec binary at `-fmemfn-simd=x86-64-v3`, the arm V (the default compile: the wrapper, the `w32`
+# block) against the arm H64@on (`--memfn=no-span-vector`: the wrapper, the body and the TU's header and
+# stamps change together, timed together on purpose: G-3 is what the caller gets). WHOLE-ARTIFACT cells,
+# `form` (V, H64, H64.b: the A/A arm, the deny's text timed as a third arm on its OWN layout pool), `pat` (a
+# C6 pattern id; its width is stated per pattern in cards.py), `regime` (the six of ver 7 plus near-miss-in at
+# the window sites with k + 1 <= 255; the cuts are named in the rule), `layer` (`on` for C6; C6c, the
+# compiler-axis card, `off-clang` and `off-os`: the SIMD-off layer under clang -O2 and gcc -Os, rows of
+# cards.py's layer table). Unit: ratio of V's median ns per subject byte to H64's in the same (pat, regime,
+# layer) cell. `lengths` `-` and `aa_rule` `aa-cell` as ver 7, with the A/A arm per pattern in the card
+# itself. THE RULE is the committed memfn/tests/span_forms/c6_rule.md (adapting job 710's, rule_710.md,
+# clause by clause; review r79): its sha, computed from the file, heads every result (its RECORD clause); a
+# standing A/A non-TIE rate above its threshold VOIDS a box's verdict. `deps` kit:form.span-vector:
+# formhash.c's WINDOW shape at k >= 1, three instances (b16 k 31 and b32 k 40 at x86-64-v3, off k 31 at no
+# level: every rendering the cards time), so a change of V's text stales the row. UNMEASURED: no set
+# holds a ver-8 row and no box has run it; V is CANDIDATE until C6 has run on every bench box that runs it
+# (block_span.md §8, D155 item 2). The SIMD-off wrapper under gcc -O2 is not timed (r68 F-14; U2b's census
+# is its record); C6c times it under clang -O2 and gcc -Os for [BSPAN-CLANG-DIFF] (it gates nothing).
+#
 # Divergence recorded (fdb1_report.md F-B1-6): r17b_prime.md §5.2's card table
 # lists `gstar` with dims form;kind;shape, while §1.3's reader R5 reads
 # `kit.gstar.<liner>.<kind>` (two tokens). The card follows the READER; a
@@ -139,3 +158,4 @@ kit	span_pop	7	form;pat;regime;layer	ratio	cards.py C2 uuid36 lit40 alt49 abc60 
 kit	span_long	7	form;pat;regime;layer	ratio	cards.py C3 k 500,1000 hex|a 1MiB	-	5	1	aa-cell	-	-	-
 kit	span_size	7	form;pat;layer	bytes	cards.py C4 k 32,500,1000,4095 hex|a compile-only	-	1	1	-	-	-	-
 kit	span_engine	7	form;pat;regime	ratio	cards.py C5 C1-C3 patterns engine route 1MiB	-	5	1	aa-cell	-	-	-
+kit	span_vector	8	form;pat;regime;layer	ratio	cards.py C6 (+C6c clang off) V|H64|H64.b real3 w32 k16,31 w4095 k32,1000 scan k24,64 1MiB	-	5	1	aa-cell	-	-	kit:form.span-vector

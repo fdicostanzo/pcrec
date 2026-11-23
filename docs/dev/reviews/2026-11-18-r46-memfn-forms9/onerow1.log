@@ -1,0 +1,4 @@
+interaction ONE row (hex24 hit-dense) tau 0.03 N=200 | von/pt: fl 72 h8 1 P!=64 0.045 | voff/pt: fl 42 h8 1 P!=64 0.075 | von/pool: fl 197 h8 1 P!=64 0.005
+interaction ONE row (hex24 hit-dense) tau 0.05 N=200 | von/pt: fl 181 h8 0 P!=64 0.025 | voff/pt: fl 173 h8 3 P!=64 0.090 | von/pool: fl 200 h8 0 P!=64 0.000
+interaction ONE row (hex24 hit-dense) tau 0.1 N=200 | von/pt: fl 200 h8 0 P!=64 0.000 | voff/pt: fl 200 h8 0 P!=64 0.065 | von/pool: fl 200 h8 0 P!=64 0.000
+  texts read/night median 120.0, excluded median 0.0; per-text pure-error df: min 6 median 12.0, share<4 0.000

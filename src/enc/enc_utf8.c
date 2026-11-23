@@ -703,5 +703,6 @@ const PcrecEnc pcrec_enc_backend_utf8 = {
      * continuation bytes, so a context set with a member above 0x7F is not
      * byte-expressible (enc.h's field comment). */
     0x7Fu,
-    sites_utf8  /* [MEMFN] M7 the exact span compare's site data */
+    sites_utf8, /* [MEMFN] M7 the exact span compare's site data */
+    4u          /* span_arms L3 (D-11): a character is at most four bytes */
 };

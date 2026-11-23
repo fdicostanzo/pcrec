@@ -13,3 +13,6 @@ Each file is the row VERBATIM as it stood when it was moved (2026-10-12), indent
 - `VAR.md`, `UCP.md`, `V-E.md`, `ENG-TACTICS.md`, `K50-DD12AI-MANIFEST.md`, `OPT-SIMD.md`, `OPT-A.md`, `ENG-PGO.md`, `OPT-VMLIT.md` — the nine plan.md rows that were over 5 KB after the cleanup; each plan.md row points at its file.
 
 Maintenance: add a file here when a plan row is split out; update this list.
+- `GROWTH-SWEEP.md` — [GROWTH-SWEEP]'s long-form rulings (growth-compile-cells).
+- `AUTOMATON-KIT.md` — [AUTOMATON-KIT]: the owner's loop-in-loop rewrite direction (2026-11-22).
+- `KIT-ARCH-STEP.md` — the owner's kit-arch-step ruling (2026-11-22): the kit adopts the architecture step after its current effort, via one overall kit review first.

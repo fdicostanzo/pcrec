@@ -1,0 +1,2 @@
+per-ROW x3 on 5%% + t(5), phase 1%%          N=200 | von/pt: fl 5 h8 113 P!=64 0.585 | voff/pt: fl 8 h8 122 P!=64 0.625 | von/pool: fl 192 h8 4 P!=64 0.045
+  texts read/night median 120.0, excluded median 0.0; per-text pure-error df: min 6 median 12.0, share<4 0.000

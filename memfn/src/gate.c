@@ -959,6 +959,7 @@ static void head(const gate_tctx *t, const char *what)
     if (t->site) fprintf(stderr, "%u", t->site);
     else         fputs("-", stderr);
     fprintf(stderr, " phase=%s", phase_name(t->phase));
+    if (t->tag) fprintf(stderr, " %s", t->tag);
 }
 
 void gate_trace_sel(const gate_tctx *t)

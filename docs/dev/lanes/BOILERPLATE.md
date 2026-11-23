@@ -52,7 +52,9 @@ Read-only critics work in the main tree and never run make.
 - RULINGS FILE: if your brief names `<name>_rulings.md` in your worktree,
   re-read it before each commit, before any run over ~2 min, and before
   your report; name the last entry applied in STATE AT HANDOFF. Later
-  rulings come there, not by message.
+  rulings come there; the manager ALSO sends a one-line message naming
+  each new R-n (three lanes missed file-only rulings on 2026-11-21: grow6,
+  u2land, grow7). An empty-at-launch file is not a missing one: re-read it.
 - COMMIT INCREMENTALLY (WIP commits) — commit age is your liveness signal.
 - NEVER `git stash` (push or pop): the stash is ONE list shared by every worktree of the repo, so a pop takes another session's entry (langfix2 popped the K113 landing's stash, 2026-10-22). Park work in a WIP commit on your branch instead.
 - A HOOK refuses a subagent's Write/Edit to a main-tree path outside worktrees/ (scripts/hooks/lane_writes_in_worktree.sh, [HOOK-GUARDS]); another refuses `git commit -a`/`--all`. Blocked: write in your worktree, commit named paths. A lane the manager chartered to write the main tree (a landing lane) is admitted by `worktrees/.mgr/main_write_ok` (manager-written); never create that file yourself.
@@ -141,6 +143,9 @@ Branch lane/<lane>, committed, report committed, targeted validation run
 with numbers in the handback. RE-PIN EVERY MANIFEST/COUNT/PIN YOUR CHANGE
 MOVES in the same delivery (readers found by grep) — post-merge manager
 cleanup of your pins is a delivery failure. The full battery is the manager's at merge.
+Re-pin scripts (e.g. `D3FLOOR_REPIN=1 bash tests/memfn/run_d3floor.sh`) are YOURS to run in your own worktree (the owner,
+2026-11-22: "Lanes can run repin script in their lane"); a kit-owned floor still needs the kit's OK first, and its condition
+binds. If a permission check refuses the command anyway, report it; never route around it.
 A NEW OR CHANGED .rxt CORPUS FILE moves population pins well beyond
 the rxtsource census: the start-set mover manifests (tests/startset/manifests/),
 the axes allowances, size tripwires. Run `make test` (async), not only the

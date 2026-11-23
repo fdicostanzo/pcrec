@@ -27,7 +27,7 @@ import importlib.util
 import re
 import sys
 
-FN_ROW = re.compile(r"^MFTRACE END table=fn .*\bphase=define chosen=(fn-[^ ]+)")
+FN_ROW = re.compile(r"^MFTRACE END table=fn .*\bphase=define (?:[a-z_]+=\S+ )*?chosen=(fn-[^ ]+)")
 
 
 def load_census0(path):

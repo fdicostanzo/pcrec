@@ -6647,3 +6647,16 @@ next: the runtime-selection discussion with Frank (owner.md); bench subst mini-b
   status (2026-11-21): DONE (closed, not a defect): the shipped emit cap refuses both shapes; grow6 made spine/empty and spine/inl ordinary stability cells at the shipped limits (review r74 VERDICT-1)
   trigger: (closed) a pattern-length / group-count limit design would still bound the caps-lifted case; no row waits on it
   refs: known_issues K156; docs/dev/lanes/grow5_report.md; tests/growth/cells.tsv
+- [K159-PLUS-SUPERLINEAR] STATE:done — the width walk is about quadratic in NFA states: nested + compiles x4.5 slower per level (K159)
+  filed: 2026-11-22 lane plusprof, from the manager's growth sweep measurement
+  status (2026-11-22):  DONE: landed on main d912756d1 from lane/k159r81 (fix 1ffad2f2c on lane/k159fix; cloud test GREEN on 8bc950eab): the walk stops at a repeated frontier (Brent checkpoint), answers unchanged; d=14 20.2 s to 0.07 s CPU; guard [facts-width-cpu] + S3505/S3541; docs/dev/lanes/k159fix_report.md
+  trigger: owner ruling growth-time-bound 2026-11-21 ("fix first"): a fix lane stops the walk at a repeated frontier set (or another state-count-free bound) and keeps a CPU-second bound cell in the growth sweep
+  refs: known_issues K159; docs/dev/lanes/plusprof_report.md; src/facts/kset.c:385; [GROWTH-SWEEP]
+- [PIN-MSG-DEPTH] STATE:done — mech rows S1760/S1761 depend on scratch depth (256-byte message cut)
+  filed: 2026-11-01 manager (kit triage r30b2tri)
+  status (2026-11-01): the rows read UNREACHED when MECH_SCRATCH/TMPDIR is deep (fixture path about 107 chars); main's default mktemp path (about 87) fits
+  next: make the probes path-independent: SAB_REACH copies the fixtures to a short $REACH_TMP-relative path (or the expected phrase is matched on a message that puts it before the path)
+  refs: tests/mech/sabotages/S1760_pin_compare_skipped.sh; S1761; [IFACE-PUSH] (candidate: keep the refusal tail); docs/design/plan_row_bodies/IFACE-PUSH.md
+  note (2026-11-03, file1103): session 128 carry-over item "S1760/S1761" is this row; nothing new found (rows added by ic3, docs/dev/lanes/ic3_report.md).
+  Test-side half of the 256-byte `pcrec_error.msg` cut. The interim fix is a short MECH_SCRATCH in the reach job (kit-owned, no code change).
+  status (2026-11-23, lane pinmsg): DONE: both probes copy tests/code/frag to a short mktemp dir under $PCREC_TMPDIR and use it for every path, so the message phrase lands inside the 256-byte cut at any scratch depth; REACHED at deep and default scratch (test-side only, no src/ change)

@@ -1,0 +1,73 @@
+s1 -> CONTROL (the control for `identity(A)` widened to `\d!?`): caught
+   last line: predfold1123_model: 18 checks, 1 failed (CONTROL)
+   its FAIL line: FAIL CONTROL: differing (WHOLE, SEARCHED, FIND-ALL): `"ab" | "a"` (0, 0, 0); `identity(A)` against `\d` (2, 10, 14) over 40 texts; a label-only group around a negated class against python `re` (0, 0, 0) over 85 texts
+s2 -> ARGLABEL (ARGLABEL off: a label written in an argument is the template's again): caught
+   last line: predfold1123_model: 18 checks, 6 failed (ARGLABEL, LABELPARAM, ARGSHAPES, READINGS, SWEEP, DOC)
+   its FAIL line: FAIL ARGLABEL: legal and the caller's own: `B([f = ..])` False, placed twice (the last mention) False, an in-place group read bare (the caller's, not the body's `d`) False, `B([a = A]) & (a.d: ..)` False, `B([d = isodate])` False, the read inside the argument True, `rx.repeat([a = rx.digit], ..)` th
+s3 -> ARGLABEL (the ruled error `B(A) & (A.d: ..)` expected legal): caught
+   last line: predfold1123_model: 18 checks, 1 failed (ARGLABEL)
+   its FAIL line: FAIL ARGLABEL: legal and the caller's own: `B([f = ..])` True, placed twice (the last mention) True, an in-place group read bare (the caller's, not the body's `d`) True, `B([a = A]) & (a.d: ..)` True, `B([d = isodate])` True, the read inside the argument True, `rx.repeat([a = rx.digit], ..)` then `a
+s4 -> LABELPARAM (LABELPARAM writes the body's parameter name, not the caller's, on the spot): caught
+   last line: predfold1123_model: 18 checks, 5 failed (LABELPARAM, LPRULES, READINGS, SWEEP, DOC)
+   its FAIL line: FAIL LABELPARAM: his example and the twice-placed reads legal with the record's answers False; across `&` refused False; `_`, the default, a body reading its own placed label, passed on (twice, across `|`), sent inside an argument through `_` and through a body using it alone, a caller's label on th
+s5 -> LPRULES (the reference kind accepted at the definition (label-kinds off)): caught
+   last line: predfold1123_model: 18 checks, 2 failed (LPRULES, READINGS)
+   its FAIL line: FAIL LPRULES: a body placing then reading `_` reads its own placement True (the body reads its own placement; nothing is exported); refused: the reference kind at the definition False (label `x` is not written in this definition: reference it with its source); a path as a marked argument True (`x.d:
+s6 -> LPRULES (`_` on a sent label's outer spot closes it (the backdoor shut)): caught
+   last line: predfold1123_model: 18 checks, 5 failed (LABELPARAM, LPRULES, READINGS, SWEEP, DOC)
+   its FAIL line: FAIL LPRULES: a body placing then reading `_` reads its own placement True (the body reads its own placement; nothing is exported); refused: the reference kind at the definition True (A reads its label parameter `a` and never places it: the reference kind, off limits for users (a compile error at th
+s7 -> OPTENTRY (`?:` reads an absent left part as failing (the plain `:`)): caught
+   last line: predfold1123_model: 18 checks, 5 failed (OPTENTRY, CAPTURE, READINGS, SWEEP, DOC)
+   its FAIL line: FAIL OPTENTRY: `(h ?: <5)` on `x`/`3x`/`7x`: [False, True, False]; the plain entry [False, True, False]; `?:` and the default inside the set alike in every mode over 40 texts: False; `NOT (h ?: <5)` [True, False, True] (the answers of `(h: !<5)`); a joint and a value left part run True
+s8 -> CAPTURE (a capture request on an absent label holds (the request read as `?:`)): caught
+   last line: predfold1123_model: 18 checks, 3 failed (CAPTURE, SWEEP, DOC)
+   its FAIL line: FAIL CAPTURE: `(h: capture("h"))` on `x` True (an entry on an absent label fails); `(h ?: ..)` on `x` True; `rx & capture("n")` runs True; requested twice in sequence, d = '5' (the last mention); through a path True
+s9 -> NEGATION (a request under `NOT` accepted): caught
+   last line: predfold1123_model: 18 checks, 1 failed (NEGATION)
+   its FAIL line: FAIL NEGATION: `NOT (h: capture(..))` refused False, `(h: !capture(..))` refused False (None); a request beside a negation legal True; a request in `when`'s test refused through the body read from library.md False
+s10 -> ZEROLOOP (`0` in a loop read from the pass's start): caught
+   last line: predfold1123_model: 18 checks, 2 failed (ZEROLOOP, READINGS)
+   its FAIL line: FAIL ZEROLOOP: `((0: !contains("7")) SEQ /\d/ SEQ ";")+` on `3;4;`/`3;7;`/`7;3;`/`3;7;4;`: [True, True, False, False] (the record's run: HOLDS, HOLDS, FAILS, FAILS)
+s11 -> ZEROBIND (a condition on `0` bound alone accepted): caught
+   last line: predfold1123_model: 18 checks, 1 failed (ZEROBIND)
+   its FAIL line: FAIL ZEROBIND: `c := (0: 5)` refused False (None); the same condition written in place legal True
+s12 -> PRINCIPLE (one use of the looped binding expected to differ from its written-out text): caught
+   last line: predfold1123_model: 18 checks, 1 failed (PRINCIPLE)
+   its FAIL line: FAIL PRINCIPLE: over 121 texts, every mode: a user's loop and the written-out uses agree False; one definition looped differs True (its conditions read its own previous pass)
+s13 -> READINGS (one reading's expected verdict inverted): caught
+   last line: predfold1123_model: 18 checks, 1 failed (READINGS)
+   its FAIL line: FAIL READINGS: 17 readings run; against the record's statement of each: DISAGREE ['two-sources second shape: a bare name reads only what the definition writes (candidate (b))']
+s14 -> SWEEP (one declared moved answer removed): caught
+   last line: predfold1123_model: 18 checks, 1 failed (SWEEP)
+   its FAIL line: FAIL SWEEP: 263 printed lines now (DIFF 9, REFUSED 58, same 207, unparsed 1), 216 at the starting commit under predfix84's engine; undeclared 0; moved or gone and not declared 1; declared moves 5; added 50; stale declarations 0
+s15 -> NULLABLE (a nullable loop added to the programs run): caught
+   last line: predfold1123_model: 18 checks, 1 failed (NULLABLE)
+   its FAIL line: FAIL NULLABLE: 451 programs run by the checks above (SWEEP's included), walked node by node: 1 with a loop whose body can match empty: [('/(?:(?<d>\\d)*)+/', ())]
+s16 -> SUCCESSOR (one declared red removed): caught
+   last line: predfold1123_model: 18 checks, 1 failed (SUCCESSOR)
+   its FAIL line: FAIL SUCCESSOR: 11 earlier models re-run one at a time (predfix84 light: its SUCCESSOR is this list), each last line read; every red declared superseded with an unchanged FAIL line: [('predfix84', 'CONVENTION', 'UNDECLARED')]
+s17 -> QUOTES (an owner sentence altered): caught
+   last line: predfold1123_model: 18 checks, 1 failed (QUOTES)
+   its FAIL line: FAIL QUOTES: 13 quoted sentences in the record and the documents, missing: ['optional-label: yes. (altered)']; 2 of R1's in the manager's branch record and the documents, missing: none; 17 record titles cited whole, not a title or not cited: none
+s18 -> DOC (a formatted line altered): caught
+   last line: predfold1123_model: 18 checks, 1 failed (DOC)
+   its FAIL line: FAIL DOC: 65 lines; missing: 1
+s19 -> ARGLABEL (TWOSRC off: a bare name the caller writes in place reads the body's group (the last mention)): caught
+   last line: predfold1123_model: 18 checks, 4 failed (ARGLABEL, READINGS, SWEEP, DOC)
+   its FAIL line: FAIL ARGLABEL: legal and the caller's own: `B([f = ..])` True, placed twice (the last mention) True, an in-place group read bare (the caller's, not the body's `d`) True, `B([a = A]) & (a.d: ..)` True, `B([d = isodate])` True, the read inside the argument True, `rx.repeat([a = rx.digit], ..)` then `a
+s20 -> ZEROOPEN (zero-open off: a group question, an index and a request on an open `0` accepted): caught
+   last line: predfold1123_model: 18 checks, 2 failed (ZEROOPEN, ARGSHAPES)
+   its FAIL line: FAIL ZEROOPEN: two reads of `0` on one path, the later extending the earlier, run True; refused: a group question on `0` False, an index False, a request on an open `0` False; a request written last legal True (the manager's reading (a) of "complete", as modelled); `$0` in a value hole against pytho
+s21 -> ARGSHAPES (a part label written on an argument not widened to the caller (groups only)): caught
+   last line: predfold1123_model: 18 checks, 3 failed (ARGSHAPES, SWEEP, DOC)
+   its FAIL line: FAIL ARGSHAPES: `identity([a = A])` then `a.h` legal False; a bare read inside an argument of a label its text does not write refused True; with its source legal True; `atomic([ab = (B | A)])` then `ab.l` legal False; `identity((A))` exports nothing True, `identity(A)` exports `h` True; a named list
+s22 -> ARGSHAPES (the label set read tighter than `|` no longer: `[ab = B | A]` labels the whole alternation): caught
+   last line: predfold1123_model: 18 checks, 3 failed (ARGSHAPES, SWEEP, DOC)
+   its FAIL line: FAIL ARGSHAPES: `identity([a = A])` then `a.h` legal True; a bare read inside an argument of a label its text does not write refused True; with its source legal True; `atomic([ab = (B | A)])` then `ab.l` legal True; `identity((A))` exports nothing True, `identity(A)` exports `h` True; a named list o
+s23 -> ZEROOPEN (`$0` read as nothing (the hole dropped)): caught
+   last line: predfold1123_model: 18 checks, 3 failed (ZEROOPEN, SWEEP, DOC)
+   its FAIL line: FAIL ZEROOPEN: two reads of `0` on one path, the later extending the earlier, run True; refused: a group question on `0` True, an index True, a request on an open `0` True; a request written last legal True (the manager's reading (a) of "complete", as modelled); `$0` in a value hole against python `
+s24 -> NEGATION (`when`'s guard not judged: a test carrying a request accepted): caught
+   last line: predfold1123_model: 18 checks, 1 failed (NEGATION)
+   its FAIL line: FAIL NEGATION: `NOT (h: capture(..))` refused True, `(h: !capture(..))` refused True (a capture request under a negation (`!capture("h")`): an effect macro cannot be under negation (a compile error, capture-negated)); a request beside a negation legal True; a request in `when`'s test refused through
+predfold1123_sabotage: 24 plants, 0 not caught (each plant turned its target check FAIL, no traceback)

@@ -181,13 +181,25 @@ FORM_IDS = {
     "mfind-w16":  ("mfind@w16",     {"-": None}, "-"),
     "mfind-w32":  ("mfind@w32+w16", {"-": None}, "-"),
     "fn-memchr":  ("fn-memchr",     {"-": None}, "-"),
+    # R-47 U5 (block_span.md §8): V, the block span, on a window site of the
+    # hex set, ONE INSTANCE PER RENDERING card C6 times (review r79 F1): b16
+    # (k 31) and b32 (k 40) at x86-64-v3, the w32 level's two blocks, row the
+    # MEMFN_FORMS token; off (k 31) at no level, V's SIMD-off wrapper and
+    # selector (C6c), row D-hors, the finder row that decided the stop (no
+    # token at no level); card kit-grid@8. A row a dict: one per class
+    "span-vector": ({"b16": "span-vector@w32", "b32": "span-vector@w32", "off": "D-hors"},
+                    {"b16": None, "b32": None, "off": None}, "b16"),
 }
-FORM_INSTANCE_FLOOR = 14
+# the instance count, pinned (14 at S2c's table + mfind; 16 at lane mfind; 18
+# at review r79 F1/F18: span-vector's three instances); the exact set check
+# below names a missing one
+FORM_INSTANCE_FLOOR = 18
 # span_cards.md §2.4 [rev1.2 READY-2; rev1.3 r9-CHECKS-3]: the card guard's
 # population, EXACT (kit-grid@1 9, kit-kernels@1 5, kit-synthetic 0, kit-grid@3
 # 3): a card added with a kit:form. dep bumps it in the same change
-CARD_FORMDEP_COUNT = 20     # 18 at R-38 Part D: kit-grid@5's every_pos; 20 at
-                            # lane mfind: kit-grid@6's find_byte and find_hit
+CARD_FORMDEP_COUNT = 21     # 18 at R-38 Part D: kit-grid@5's every_pos; 20 at
+                            # lane mfind: kit-grid@6's find_byte and find_hit; 21 at
+                            # R-47 U5: kit-grid@8's span_vector
 # span_cards.md §2.4 (S2e): the measure_store pass's population floor, pinned
 # at landing as zen4-grid3@1's form-bearing row count (38 rows, 5 `enter`)
 STORE_FORMROW_FLOOR = 33
@@ -347,8 +359,9 @@ def check_hash(fx):
             bad("instance %s %s does not resolve (rc %s): its facts reach no row, or another" % (fid, cls, rc))
             continue
         seen[(fid, cls)] = h
-        (ok() if row == want[0] else
-         bad("instance %s %s reached row %s, the design's %s" % (fid, cls, row, want[0])))
+        wrow = want[0][cls] if isinstance(want[0], dict) else want[0]
+        (ok() if row == wrow else
+         bad("instance %s %s reached row %s, the design's %s" % (fid, cls, row, wrow)))
         (ok() if (canon == "1") == (cls == want[2]) else
          bad("instance %s %s: canon %s, the design's canonical class is %s" % (fid, cls, canon, want[2])))
         t = run([fx, "--site-text", fid, cls]).stdout.decode()

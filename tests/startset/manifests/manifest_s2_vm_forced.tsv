@@ -4846,3 +4846,334 @@ tests/lookaround/d27_l1/l1d27_witnesses.rxt:959	--features lookaround,classes,mo
 tests/lookaround/d27_l1/l1d27_witnesses.rxt:974	--features lookaround,classes,modifiers	283f3d6b6576295b5c5c7830302d5c5c7838305d7b337d
 tests/lookaround/d27_l1/l1d27_witnesses.rxt:989	--features lookaround,classes,modifiers	61283f3d5b612d7a5d7b327d7a29626379
 tests/lookaround/d27_l1/l1d27_witnesses.rxt:999	--features lookaround,classes,modifiers	616263283f3c3d785b612d7a5d7b327d29
+# lane l3feat2 (2026-11-20): +38 rows, every one a NEW block of span_arms L3 (tests/litscan/spanarms.rxt's Unit L3 section,
+# past base line 1178; tests/litscan/presence_deny.rxt's W-T3 blocks, past base line 951), found by vmhat_checks [vm-movers]; no existing row moved.
+tests/litscan/presence_deny.rxt:1124	--features all --encoding=byte --engine=vm	283f3c3d617b32307d29627b32307d
+tests/litscan/presence_deny.rxt:954	--features all --encoding=byte	283f3c3d617b32307d29627b32307d
+tests/litscan/spanarms.rxt:1192	--features all --encoding=byte	283f3c3d666f6f29626172
+tests/litscan/spanarms.rxt:1243	--features all --encoding=byte --engine=vm	283f3c3d666f6f29626172
+tests/litscan/spanarms.rxt:1296	--features all --encoding=byte	283f3c3d61627c622963
+tests/litscan/spanarms.rxt:1320	--features all --encoding=byte --engine=vm	283f3c3d61627c622963
+tests/litscan/spanarms.rxt:1344	--features all --encoding=byte	283f3c3d61622961625b612d7a5d2a71
+tests/litscan/spanarms.rxt:1372	--features all --encoding=byte --engine=vm	283f3c3d61622961625b612d7a5d2a71
+tests/litscan/spanarms.rxt:1401	--features all --encoding=byte	283f3c3d61622961625b612d7a5d2a71285c772a295c31
+tests/litscan/spanarms.rxt:1430	--features all --encoding=byte --engine=vm	283f3c3d61622961625b612d7a5d2a71285c772a295c31
+tests/litscan/spanarms.rxt:1460	--features all --encoding=byte	283f3c3d6162296162285c77295c31
+tests/litscan/spanarms.rxt:1495	--features all --encoding=byte --engine=vm	283f3c3d6162296162285c77295c31
+tests/litscan/spanarms.rxt:1531	--features all --encoding=byte	283f3c3d612961285c77295c31
+tests/litscan/spanarms.rxt:1555	--features all --encoding=byte --engine=vm	283f3c3d612961285c77295c31
+tests/litscan/spanarms.rxt:1580	--features all --encoding=byte	283f3c3d436f6e74656e742d4c656e6774683a20295c64
+tests/litscan/spanarms.rxt:1665	--features all --encoding=byte --engine=vm	283f3c3d436f6e74656e742d4c656e6774683a20295c64
+tests/litscan/spanarms.rxt:1751	--features all --encoding=byte	283f3c3d666f6f626172295c642a78
+tests/litscan/spanarms.rxt:1802	--features all --encoding=byte --engine=vm	283f3c3d666f6f626172295c642a78
+tests/litscan/spanarms.rxt:1903	--features all --encoding=byte	283f3c3d617b33327d2962
+tests/litscan/spanarms.rxt:2052	--features all --encoding=byte --engine=vm	283f3c3d617b33327d2962
+tests/litscan/spanarms.rxt:2202	--features all --encoding=byte	283f3c3d61616161616161616161616161616161616161612962626262626262627a6262626262626262626262
+tests/litscan/spanarms.rxt:2330	--features all --encoding=byte --engine=vm	283f3c3d61616161616161616161616161616161616161612962626262626262627a6262626262626262626262
+tests/litscan/spanarms.rxt:2460	--features all --encoding=utf8	283f3c3dc3a961296263
+tests/litscan/spanarms.rxt:2496	--features all --encoding=utf8 --engine=vm	283f3c3dc3a961296263
+tests/litscan/spanarms.rxt:2532	--features all --encoding=byte	283f3c3d5c7863335c7861392978
+tests/litscan/spanarms.rxt:2551	--features all --encoding=byte --engine=vm	283f3c3d5c7863335c7861392978
+tests/litscan/spanarms.rxt:2571	--features all --encoding=byte	283f3c3d6974656d2029646f6e65
+tests/litscan/spanarms.rxt:2636	--features all --encoding=byte --engine=vm	283f3c3d6974656d2029646f6e65
+tests/litscan/spanarms.rxt:2703	--features all --encoding=byte	283f3c3d61295c4b62
+tests/litscan/spanarms.rxt:2724	--features all --encoding=byte --engine=vm	283f3c3d61295c4b62
+tests/litscan/spanarms.rxt:2746	--features all --encoding=byte	283f3c3d5c47612962
+tests/litscan/spanarms.rxt:2765	--features all --encoding=byte --engine=vm	283f3c3d5c47612962
+tests/litscan/spanarms.rxt:2784	--features all --encoding=byte	283f3c3d666f6f29626172283f3d62617a29
+tests/litscan/spanarms.rxt:2829	--features all --encoding=byte --engine=vm	283f3c3d666f6f29626172283f3d62617a29
+tests/litscan/spanarms.rxt:2875	--features all --encoding=byte	283f3c3d616229283f3c3d63622963
+tests/litscan/spanarms.rxt:2897	--features all --encoding=byte --engine=vm	283f3c3d616229283f3c3d63622963
+tests/litscan/spanarms.rxt:2920	--features all --encoding=byte	283f3c3d657b31307d296565656565717a78
+tests/litscan/spanarms.rxt:2987	--features all --encoding=byte --engine=vm	283f3c3d657b31307d296565656565717a78
+# lane l3r66 (2026-11-21): +1 row, the NEW default-route block of `(?<=xyz)a+xyz` (review r66 CHECK-3, tests/litscan/spanarms.rxt:3058); a VM-hat mover under --engine=vm as its engine-vm twin in handoff_vm.rxt is; no existing row moved.
+tests/litscan/spanarms.rxt:3058	--features all	283f3c3d78797a29612b78797a
+# lane l3tri3 (2026-11-21): +246 rows, every one a block of the new corpus file d27_l3 (L3 blinded witnesses, tests/lookaround/d27_l3/l3d27_witnesses.rxt), found by vmhat_checks [vm-movers]; no existing row moved.
+tests/lookaround/d27_l3/l3d27_witnesses.rxt:10	--features lookaround	283f3c3d666f6f29626172
+tests/lookaround/d27_l3/l3d27_witnesses.rxt:59	--features lookaround --engine=vm	283f3c3d666f6f29626172
+tests/lookaround/d27_l3/l3d27_witnesses.rxt:238	--features lookaround	283f3c3d666f6f2962
+tests/lookaround/d27_l3/l3d27_witnesses.rxt:291	--features lookaround --engine=vm	283f3c3d666f6f2962
+tests/lookaround/d27_l3/l3d27_witnesses.rxt:345	--features lookaround	283f3c3d717a29283f3a612e7c2e6129
+tests/lookaround/d27_l3/l3d27_witnesses.rxt:390	--features lookaround --engine=vm	283f3c3d717a29283f3a612e7c2e6129
+tests/lookaround/d27_l3/l3d27_witnesses.rxt:436	--features lookaround	283f3c3d78797a29612b78797a
+tests/lookaround/d27_l3/l3d27_witnesses.rxt:477	--features lookaround --engine=vm	283f3c3d78797a29612b78797a
+tests/lookaround/d27_l3/l3d27_witnesses.rxt:519	--features lookaround	283f3c3d6162296364
+tests/lookaround/d27_l3/l3d27_witnesses.rxt:556	--features lookaround --engine=vm	283f3c3d6162296364
+tests/lookaround/d27_l3/l3d27_witnesses.rxt:594	-i --features lookaround	283f3c3d666f6f29626172
+tests/lookaround/d27_l3/l3d27_witnesses.rxt:652	-i --features lookaround --engine=vm	283f3c3d666f6f29626172
+tests/lookaround/d27_l3/l3d27_witnesses.rxt:711	--features lookaround,modifiers	283f3c3d283f6929666f6f29626172
+tests/lookaround/d27_l3/l3d27_witnesses.rxt:760	--features lookaround,modifiers --engine=vm	283f3c3d283f6929666f6f29626172
+tests/lookaround/d27_l3/l3d27_witnesses.rxt:810	--features lookaround,modifiers	283f3c3d666f6f29283f6929626172
+tests/lookaround/d27_l3/l3d27_witnesses.rxt:859	--features lookaround,modifiers --engine=vm	283f3c3d666f6f29283f6929626172
+tests/lookaround/d27_l3/l3d27_witnesses.rxt:910	--features lookaround	283f3c3dc3a92978
+tests/lookaround/d27_l3/l3d27_witnesses.rxt:946	--features lookaround --engine=vm	283f3c3dc3a92978
+tests/lookaround/d27_l3/l3d27_witnesses.rxt:983	--features lookaround --encoding=utf8	283f3c3dc3a92978
+tests/lookaround/d27_l3/l3d27_witnesses.rxt:1020	--features lookaround --encoding=utf8 --engine=vm	283f3c3dc3a92978
+tests/lookaround/d27_l3/l3d27_witnesses.rxt:1058	--features lookaround	283f3c3de697a5e69cac29e8aa9e
+tests/lookaround/d27_l3/l3d27_witnesses.rxt:1092	--features lookaround --engine=vm	283f3c3de697a5e69cac29e8aa9e
+tests/lookaround/d27_l3/l3d27_witnesses.rxt:1127	--features lookaround --encoding=utf8	283f3c3de697a5e69cac29e8aa9e
+tests/lookaround/d27_l3/l3d27_witnesses.rxt:1162	--features lookaround --encoding=utf8 --engine=vm	283f3c3de697a5e69cac29e8aa9e
+tests/lookaround/d27_l3/l3d27_witnesses.rxt:1198	-i --features lookaround	283f3c3dc3a92978
+tests/lookaround/d27_l3/l3d27_witnesses.rxt:1229	-i --features lookaround --engine=vm	283f3c3dc3a92978
+tests/lookaround/d27_l3/l3d27_witnesses.rxt:1261	-i --features lookaround --encoding=utf8	283f3c3dc3a92978
+tests/lookaround/d27_l3/l3d27_witnesses.rxt:1299	-i --features lookaround --encoding=utf8 --engine=vm	283f3c3dc3a92978
+tests/lookaround/d27_l3/l3d27_witnesses.rxt:1337	--features lookaround	283f3c3d6129283f3c3d61296263
+tests/lookaround/d27_l3/l3d27_witnesses.rxt:1370	--features lookaround --engine=vm	283f3c3d6129283f3c3d61296263
+tests/lookaround/d27_l3/l3d27_witnesses.rxt:1404	--features lookaround	283f3c3d616229283f3c3d62296364
+tests/lookaround/d27_l3/l3d27_witnesses.rxt:1437	--features lookaround --engine=vm	283f3c3d616229283f3c3d62296364
+tests/lookaround/d27_l3/l3d27_witnesses.rxt:1471	--features lookaround	283f3c3d2e6229283f3c3d612e296364
+tests/lookaround/d27_l3/l3d27_witnesses.rxt:1506	--features lookaround --engine=vm	283f3c3d2e6229283f3c3d612e296364
+tests/lookaround/d27_l3/l3d27_witnesses.rxt:1542	--features lookaround	283f3c3d61283f3c3d6129296263
+tests/lookaround/d27_l3/l3d27_witnesses.rxt:1567	--features lookaround --engine=vm	283f3c3d61283f3c3d6129296263
+tests/lookaround/d27_l3/l3d27_witnesses.rxt:1593	--features lookaround	283f3c3d283f3c3d78296162296364
+tests/lookaround/d27_l3/l3d27_witnesses.rxt:1626	--features lookaround --engine=vm	283f3c3d283f3c3d78296162296364
+tests/lookaround/d27_l3/l3d27_witnesses.rxt:1660	--features lookaround	283f3c3d283f3a666f296f29626172
+tests/lookaround/d27_l3/l3d27_witnesses.rxt:1709	--features lookaround --engine=vm	283f3c3d283f3a666f296f29626172
+tests/lookaround/d27_l3/l3d27_witnesses.rxt:1759	--features lookaround	28283f3c3d666f6f2962617229
+tests/lookaround/d27_l3/l3d27_witnesses.rxt:1808	--features lookaround --engine=vm	28283f3c3d666f6f2962617229
+tests/lookaround/d27_l3/l3d27_witnesses.rxt:1858	--features lookaround	283f3a283f3c3d666f6f29626172292b
+tests/lookaround/d27_l3/l3d27_witnesses.rxt:1913	--features lookaround --engine=vm	283f3a283f3c3d666f6f29626172292b
+tests/lookaround/d27_l3/l3d27_witnesses.rxt:1969	--features lookaround,match-start-reset	283f3c3d666f6f2962615c4b72
+tests/lookaround/d27_l3/l3d27_witnesses.rxt:2008	--features lookaround,match-start-reset --engine=vm	283f3c3d666f6f2962615c4b72
+tests/lookaround/d27_l3/l3d27_witnesses.rxt:2048	--features lookaround,match-start-reset	283f3c3d666f6f296261725c4b
+tests/lookaround/d27_l3/l3d27_witnesses.rxt:2087	--features lookaround,match-start-reset --engine=vm	283f3c3d666f6f296261725c4b
+tests/lookaround/d27_l3/l3d27_witnesses.rxt:2127	--features lookaround,match-start-reset	283f3c3d666f6f295c4b626172
+tests/lookaround/d27_l3/l3d27_witnesses.rxt:2176	--features lookaround,match-start-reset --engine=vm	283f3c3d666f6f295c4b626172
+tests/lookaround/d27_l3/l3d27_witnesses.rxt:2226	--features lookaround,atomic-groups	283f3e283f3c3d666f6f2962617229
+tests/lookaround/d27_l3/l3d27_witnesses.rxt:2275	--features lookaround,atomic-groups --engine=vm	283f3e283f3c3d666f6f2962617229
+tests/lookaround/d27_l3/l3d27_witnesses.rxt:2325	--features lookaround,atomic-groups	283f3c3d666f6f29283f3e62617229
+tests/lookaround/d27_l3/l3d27_witnesses.rxt:2374	--features lookaround,atomic-groups --engine=vm	283f3c3d666f6f29283f3e62617229
+tests/lookaround/d27_l3/l3d27_witnesses.rxt:2424	--features lookaround,atomic-groups	283f3c3d283f3e666f6f2929626172
+tests/lookaround/d27_l3/l3d27_witnesses.rxt:2473	--features lookaround,atomic-groups --engine=vm	283f3c3d283f3e666f6f2929626172
+tests/lookaround/d27_l3/l3d27_witnesses.rxt:2523	--features lookaround,atomic-groups	283f3e283f3c3d7829797c7a2977
+tests/lookaround/d27_l3/l3d27_witnesses.rxt:2557	--features lookaround,atomic-groups --engine=vm	283f3e283f3c3d7829797c7a2977
+tests/lookaround/d27_l3/l3d27_witnesses.rxt:2592	--features lookaround	283f3c3d666f6f296261727c62617a
+tests/lookaround/d27_l3/l3d27_witnesses.rxt:2650	--features lookaround --engine=vm	283f3c3d666f6f296261727c62617a
+tests/lookaround/d27_l3/l3d27_witnesses.rxt:2709	--features lookaround	283f3a283f3c3d782961627c63622964
+tests/lookaround/d27_l3/l3d27_witnesses.rxt:2741	--features lookaround --engine=vm	283f3a283f3c3d782961627c63622964
+tests/lookaround/d27_l3/l3d27_witnesses.rxt:2774	--features lookaround	283f3c3d666f6f296261727c283f3c3d666f6f2962617a
+tests/lookaround/d27_l3/l3d27_witnesses.rxt:2829	--features lookaround --engine=vm	283f3c3d666f6f296261727c283f3c3d666f6f2962617a
+tests/lookaround/d27_l3/l3d27_witnesses.rxt:2885	--features lookaround	283f3c3d615b62635d2964
+tests/lookaround/d27_l3/l3d27_witnesses.rxt:2924	--features lookaround --engine=vm	283f3c3d615b62635d2964
+tests/lookaround/d27_l3/l3d27_witnesses.rxt:2964	--features lookaround	283f3c3d61627c6364296566
+tests/lookaround/d27_l3/l3d27_witnesses.rxt:3005	--features lookaround --engine=vm	283f3c3d61627c6364296566
+tests/lookaround/d27_l3/l3d27_witnesses.rxt:3047	--features lookaround,classes	283f3c3d616263295c64
+tests/lookaround/d27_l3/l3d27_witnesses.rxt:3082	--features lookaround,classes --engine=vm	283f3c3d616263295c64
+tests/lookaround/d27_l3/l3d27_witnesses.rxt:3118	--features lookaround	283f3c3d5c7830305c786666297a
+tests/lookaround/d27_l3/l3d27_witnesses.rxt:3145	--features lookaround --engine=vm	283f3c3d5c7830305c786666297a
+tests/lookaround/d27_l3/l3d27_witnesses.rxt:3173	--features lookaround	283f3c3d6162636465666768696a6b6c6d6e6f707172737475767778797a303132333435363738392921
+tests/lookaround/d27_l3/l3d27_witnesses.rxt:3192	--features lookaround --engine=vm	283f3c3d6162636465666768696a6b6c6d6e6f707172737475767778797a303132333435363738392921
+tests/lookaround/d27_l3/l3d27_witnesses.rxt:3212	--features lookaround	283f3c3d616229637b337d
+tests/lookaround/d27_l3/l3d27_witnesses.rxt:3239	--features lookaround --engine=vm	283f3c3d616229637b337d
+tests/lookaround/d27_l3/l3d27_witnesses.rxt:3267	--features lookaround	283f3c3d616229633f64
+tests/lookaround/d27_l3/l3d27_witnesses.rxt:3296	--features lookaround --engine=vm	283f3c3d616229633f64
+tests/lookaround/d27_l3/l3d27_witnesses.rxt:3326	--features lookaround	283f3c3d616229782a6364
+tests/lookaround/d27_l3/l3d27_witnesses.rxt:3361	--features lookaround --engine=vm	283f3c3d616229782a6364
+tests/lookaround/d27_l3/l3d27_witnesses.rxt:3397	--features lookaround	283f3c3d616229283f3a63647c636529
+tests/lookaround/d27_l3/l3d27_witnesses.rxt:3426	--features lookaround --engine=vm	283f3c3d616229283f3a63647c636529
+tests/lookaround/d27_l3/l3d27_witnesses.rxt:3456	--features lookaround,assertions	283f3c3d5c62666f6f29626172
+tests/lookaround/d27_l3/l3d27_witnesses.rxt:3501	--features lookaround,assertions --engine=vm	283f3c3d5c62666f6f29626172
+tests/lookaround/d27_l3/l3d27_witnesses.rxt:3547	--features lookaround	283f3c3d666f6f29283f3d6261722962
+tests/lookaround/d27_l3/l3d27_witnesses.rxt:3596	--features lookaround --engine=vm	283f3c3d666f6f29283f3d6261722962
+tests/lookaround/d27_l3/l3d27_witnesses.rxt:3646	--features lookaround	283f3c3d666f6f29626172283f3c3d6f62617229
+tests/lookaround/d27_l3/l3d27_witnesses.rxt:3695	--features lookaround --engine=vm	283f3c3d666f6f29626172283f3c3d6f62617229
+tests/lookaround/d27_l3/l3d27_witnesses.rxt:3745	--features lookaround	283f3c3d61622963283f3c3d62632964
+tests/lookaround/d27_l3/l3d27_witnesses.rxt:3764	--features lookaround --engine=vm	283f3c3d61622963283f3c3d62632964
+tests/lookaround/d27_l3/l3d27_witnesses.rxt:3784	--features lookaround,assertions	283f3c3d5e612962
+tests/lookaround/d27_l3/l3d27_witnesses.rxt:3805	--features lookaround,assertions --engine=vm	283f3c3d5e612962
+tests/lookaround/d27_l3/l3d27_witnesses.rxt:3827	--features lookaround	283f3c3d617c622963
+tests/lookaround/d27_l3/l3d27_witnesses.rxt:3866	--features lookaround --engine=vm	283f3c3d617c622963
+tests/lookaround/d27_l3/l3d27_witnesses.rxt:3906	--features lookaround	283f3c3d666f6f7c6261722962617a
+tests/lookaround/d27_l3/l3d27_witnesses.rxt:3935	--features lookaround --engine=vm	283f3c3d666f6f7c6261722962617a
+tests/lookaround/d27_l3/l3d27_witnesses.rxt:3965	--features lookaround	283f3c3d283f3c21782961622963
+tests/lookaround/d27_l3/l3d27_witnesses.rxt:3992	--features lookaround --engine=vm	283f3c3d283f3c21782961622963
+tests/lookaround/d27_l3/l3d27_witnesses.rxt:4020	--features lookaround	283f3c3d616229283f3c2178622963
+tests/lookaround/d27_l3/l3d27_witnesses.rxt:4039	--features lookaround --engine=vm	283f3c3d616229283f3c2178622963
+tests/lookaround/d27_l3/l3d27_witnesses.rxt:4059	--features lookaround --encoding=utf8	283f3c3d61295c787b3130307d
+tests/lookaround/d27_l3/l3d27_witnesses.rxt:4079	--features lookaround --encoding=utf8 --engine=vm	283f3c3d61295c787b3130307d
+tests/lookaround/d27_l3/l3d27_witnesses.rxt:4100	--features lookaround,classes	283f3c3d5c647b337d2978
+tests/lookaround/d27_l3/l3d27_witnesses.rxt:4127	--features lookaround,classes --engine=vm	283f3c3d5c647b337d2978
+tests/lookaround/d27_l3/l3d27_witnesses.rxt:4360	--features lookaround,classes	283f3c3d7879295c772b
+tests/lookaround/d27_l3/l3d27_witnesses.rxt:4395	--features lookaround,classes --engine=vm	283f3c3d7879295c772b
+tests/lookaround/d27_l3/l3d27_witnesses.rxt:4431	--features lookaround --encoding=utf8	283f3c3d666f6f29626172
+tests/lookaround/d27_l3/l3d27_witnesses.rxt:4481	--features lookaround --encoding=utf8 --engine=vm	283f3c3d666f6f29626172
+tests/lookaround/d27_l3/l3d27_witnesses.rxt:4532	-i --features lookaround --encoding=utf8	283f3c3d666f6f29626172
+tests/lookaround/d27_l3/l3d27_witnesses.rxt:4591	-i --features lookaround --encoding=utf8 --engine=vm	283f3c3d666f6f29626172
+tests/lookaround/d27_l3/l3d27_witnesses.rxt:4651	--features lookaround	283f3c3d6129283f3c3d622963
+tests/lookaround/d27_l3/l3d27_witnesses.rxt:4670	--features lookaround --engine=vm	283f3c3d6129283f3c3d622963
+tests/lookaround/d27_l3/l3d27_witnesses.rxt:4690	--features lookaround	283f3c3d616229283f3c3d63622964
+tests/lookaround/d27_l3/l3d27_witnesses.rxt:4703	--features lookaround --engine=vm	283f3c3d616229283f3c3d63622964
+tests/lookaround/d27_l3/l3d27_witnesses.rxt:4717	--features lookaround	283f3c3d612962283f3c3d6129
+tests/lookaround/d27_l3/l3d27_witnesses.rxt:4730	--features lookaround --engine=vm	283f3c3d612962283f3c3d6129
+tests/lookaround/d27_l3/l3d27_witnesses.rxt:4744	--features lookaround	78283f3c3d79297a
+tests/lookaround/d27_l3/l3d27_witnesses.rxt:4757	--features lookaround --engine=vm	78283f3c3d79297a
+tests/lookaround/d27_l3/l3d27_witnesses.rxt:4771	--features lookaround	6162283f3c3d78622963
+tests/lookaround/d27_l3/l3d27_witnesses.rxt:4784	--features lookaround --engine=vm	6162283f3c3d78622963
+tests/lookaround/d27_l3/l3d27_witnesses.rxt:4798	--features lookaround	283f3c3d666f6f29626172283f3c3d62617a29
+tests/lookaround/d27_l3/l3d27_witnesses.rxt:4825	--features lookaround --engine=vm	283f3c3d666f6f29626172283f3c3d62617a29
+tests/lookaround/d27_l3/l3d27_witnesses.rxt:4853	-i --features lookaround	283f3c3d6129283f3c3d422963
+tests/lookaround/d27_l3/l3d27_witnesses.rxt:4873	-i --features lookaround --engine=vm	283f3c3d6129283f3c3d422963
+tests/lookaround/d27_l3/l3d27_witnesses.rxt:4895	--features lookaround	283f3c3dc3a929283f3c3dc3a82978
+tests/lookaround/d27_l3/l3d27_witnesses.rxt:4907	--features lookaround --engine=vm	283f3c3dc3a929283f3c3dc3a82978
+tests/lookaround/d27_l3/l3d27_witnesses.rxt:4920	--features lookaround --encoding=utf8	283f3c3dc3a929283f3c3dc3a82978
+tests/lookaround/d27_l3/l3d27_witnesses.rxt:4933	--features lookaround --encoding=utf8 --engine=vm	283f3c3dc3a929283f3c3dc3a82978
+tests/lookaround/d27_l3/l3d27_witnesses.rxt:4946	--features lookaround	283f3c3d615b62635d29283f3c3d2e642965
+tests/lookaround/d27_l3/l3d27_witnesses.rxt:4961	--features lookaround --engine=vm	283f3c3d615b62635d29283f3c3d2e642965
+tests/lookaround/d27_l3/l3d27_witnesses.rxt:4977	--features lookaround,classes	283f3c3d5c6429283f3c3d5b612d7a5d2978
+tests/lookaround/d27_l3/l3d27_witnesses.rxt:4990	--features lookaround,classes --engine=vm	283f3c3d5c6429283f3c3d5b612d7a5d2978
+tests/lookaround/d27_l3/l3d27_witnesses.rxt:5004	--features lookaround	283f3c3d61283f3c3d62292963
+tests/lookaround/d27_l3/l3d27_witnesses.rxt:5017	--features lookaround --engine=vm	283f3c3d61283f3c3d62292963
+tests/lookaround/d27_l3/l3d27_witnesses.rxt:5031	--features lookaround,atomic-groups	283f3e283f3c3d6129283f3c3d62292963
+tests/lookaround/d27_l3/l3d27_witnesses.rxt:5050	--features lookaround,atomic-groups --engine=vm	283f3e283f3c3d6129283f3c3d62292963
+tests/lookaround/d27_l3/l3d27_witnesses.rxt:5070	--features lookaround	283f3c3d61622963283f3c3d786329
+tests/lookaround/d27_l3/l3d27_witnesses.rxt:5083	--features lookaround --engine=vm	283f3c3d61622963283f3c3d786329
+tests/lookaround/d27_l3/l3d27_witnesses.rxt:5136	--features lookaround --encoding=utf8	283f3c3d6129283f3c3d622963
+tests/lookaround/d27_l3/l3d27_witnesses.rxt:5156	--features lookaround --encoding=utf8 --engine=vm	283f3c3d6129283f3c3d622963
+tests/lookaround/d27_l3/l3d27_witnesses.rxt:5177	--features lookaround,assertions	283f3c3d5b5e5c7830302d5c7866665d2978
+tests/lookaround/d27_l3/l3d27_witnesses.rxt:5190	--features lookaround,assertions --engine=vm	283f3c3d5b5e5c7830302d5c7866665d2978
+tests/lookaround/d27_l3/l3d27_witnesses.rxt:5204	--features lookaround	666f6f283f3c3d62617229
+tests/lookaround/d27_l3/l3d27_witnesses.rxt:5231	--features lookaround --engine=vm	666f6f283f3c3d62617229
+tests/lookaround/d27_l3/l3d27_witnesses.rxt:5259	--features lookaround	283f3c3d782962283f3c3d6329
+tests/lookaround/d27_l3/l3d27_witnesses.rxt:5272	--features lookaround --engine=vm	283f3c3d782962283f3c3d6329
+tests/lookaround/d27_l3/l3d27_witnesses.rxt:5286	--features lookaround	283f3a78283f3c3d7929292b
+tests/lookaround/d27_l3/l3d27_witnesses.rxt:5299	--features lookaround --engine=vm	283f3a78283f3c3d7929292b
+tests/lookaround/d27_l3/l3d27_witnesses.rxt:5313	--features lookaround	28616229283f3c3d612963
+tests/lookaround/d27_l3/l3d27_witnesses.rxt:5326	--features lookaround --engine=vm	28616229283f3c3d612963
+tests/lookaround/d27_l3/l3d27_witnesses.rxt:5373	--features lookaround	283f3c3d616229283f3c3d612963
+tests/lookaround/d27_l3/l3d27_witnesses.rxt:5386	--features lookaround --engine=vm	283f3c3d616229283f3c3d612963
+tests/lookaround/d27_l3/l3d27_witnesses.rxt:5400	-i --features lookaround	283f3c3d6129283f3c3d622963
+tests/lookaround/d27_l3/l3d27_witnesses.rxt:5420	-i --features lookaround --engine=vm	283f3c3d6129283f3c3d622963
+tests/lookaround/d27_l3/l3d27_witnesses.rxt:5441	--features lookaround	283f3c3d6162296364283f3c3d616429
+tests/lookaround/d27_l3/l3d27_witnesses.rxt:5452	--features lookaround --engine=vm	283f3c3d6162296364283f3c3d616429
+tests/lookaround/d27_l3/l3d27_witnesses.rxt:5464	--features lookaround	283f3c21666f6f29626172
+tests/lookaround/d27_l3/l3d27_witnesses.rxt:5512	--features lookaround --engine=vm	283f3c21666f6f29626172
+tests/lookaround/d27_l3/l3d27_witnesses.rxt:5561	--features lookaround	283f3c216129283f3c21622963
+tests/lookaround/d27_l3/l3d27_witnesses.rxt:5585	--features lookaround --engine=vm	283f3c216129283f3c21622963
+tests/lookaround/d27_l3/l3d27_witnesses.rxt:5610	--features lookaround	283f3c3d61627c6364652966
+tests/lookaround/d27_l3/l3d27_witnesses.rxt:5639	--features lookaround --engine=vm	283f3c3d61627c6364652966
+tests/lookaround/d27_l3/l3d27_witnesses.rxt:5669	--features lookaround	283f3c3d617c62632964
+tests/lookaround/d27_l3/l3d27_witnesses.rxt:5696	--features lookaround --engine=vm	283f3c3d617c62632964
+tests/lookaround/d27_l3/l3d27_witnesses.rxt:5724	--features lookaround	283f3c3d28666f6f2929626172
+tests/lookaround/d27_l3/l3d27_witnesses.rxt:5773	--features lookaround --engine=vm	283f3c3d28666f6f2929626172
+tests/lookaround/d27_l3/l3d27_witnesses.rxt:5823	--features lookaround	782a283f3c3d782979
+tests/lookaround/d27_l3/l3d27_witnesses.rxt:5864	--features lookaround --engine=vm	782a283f3c3d782979
+tests/lookaround/d27_l3/l3d27_witnesses.rxt:5906	--features lookaround,classes	5c772b283f3c3d666f6f29626172
+tests/lookaround/d27_l3/l3d27_witnesses.rxt:5980	--features lookaround,classes --engine=vm	5c772b283f3c3d666f6f29626172
+tests/lookaround/d27_l3/l3d27_witnesses.rxt:6055	--features lookaround	283f3c3d617b312c337d2962
+tests/lookaround/d27_l3/l3d27_witnesses.rxt:6082	--features lookaround --engine=vm	283f3c3d617b312c337d2962
+tests/lookaround/d27_l3/l3d27_witnesses.rxt:6110	--features lookaround	283f3c3d666f6f293f626172
+tests/lookaround/d27_l3/l3d27_witnesses.rxt:6174	--features lookaround --engine=vm	283f3c3d666f6f293f626172
+tests/lookaround/d27_l3/l3d27_witnesses.rxt:6239	--features lookaround	283f3c3d666f6f297b307d626172
+tests/lookaround/d27_l3/l3d27_witnesses.rxt:6303	--features lookaround --engine=vm	283f3c3d666f6f297b307d626172
+tests/lookaround/d27_l3/l3d27_witnesses.rxt:6368	--features lookaround	283f3a283f3c3d61297c782962
+tests/lookaround/d27_l3/l3d27_witnesses.rxt:6400	--features lookaround --engine=vm	283f3a283f3c3d61297c782962
+tests/lookaround/d27_l3/l3d27_witnesses.rxt:6480	--features lookaround	283f3c2178283f3c3d7929297a
+tests/lookaround/d27_l3/l3d27_witnesses.rxt:6516	--features lookaround --engine=vm	283f3c2178283f3c3d7929297a
+tests/lookaround/d27_l3/l3d27_witnesses.rxt:6553	--features lookaround	283f3c3d6129283f3c3d6229637c64
+tests/lookaround/d27_l3/l3d27_witnesses.rxt:6587	--features lookaround --engine=vm	283f3c3d6129283f3c3d6229637c64
+tests/lookaround/d27_l3/l3d27_witnesses.rxt:6622	--features lookaround	283f3a78283f3c3d7929292a7a
+tests/lookaround/d27_l3/l3d27_witnesses.rxt:6651	--features lookaround --engine=vm	283f3a78283f3c3d7929292a7a
+tests/lookaround/d27_l3/l3d27_witnesses.rxt:6681	--features lookaround	283f3c3d61293f283f3c3d622963
+tests/lookaround/d27_l3/l3d27_witnesses.rxt:6718	--features lookaround --engine=vm	283f3c3d61293f283f3c3d622963
+tests/lookaround/d27_l3/l3d27_witnesses.rxt:6756	--features lookaround	283f21283f3c3d6129283f3c3d62292963
+tests/lookaround/d27_l3/l3d27_witnesses.rxt:6808	--features lookaround --engine=vm	283f21283f3c3d6129283f3c3d62292963
+tests/lookaround/d27_l3/l3d27_witnesses.rxt:6861	-i --features lookaround	283f3c3d6129283f3c3d412963
+tests/lookaround/d27_l3/l3d27_witnesses.rxt:6887	-i --features lookaround --engine=vm	283f3c3d6129283f3c3d412963
+tests/lookaround/d27_l3/l3d27_witnesses.rxt:6914	--features lookaround	2e283f3c3d612962
+tests/lookaround/d27_l3/l3d27_witnesses.rxt:6937	--features lookaround --engine=vm	2e283f3c3d612962
+tests/lookaround/d27_l3/l3d27_witnesses.rxt:6961	--features lookaround	283f3c21283f3c3d6129283f3c3d62292963
+tests/lookaround/d27_l3/l3d27_witnesses.rxt:7013	--features lookaround --engine=vm	283f3c21283f3c3d6129283f3c3d62292963
+tests/lookaround/d27_l3/l3d27_witnesses.rxt:7066	--features lookaround	283f3c3d6129283f3c3d62293f63
+tests/lookaround/d27_l3/l3d27_witnesses.rxt:7103	--features lookaround --engine=vm	283f3c3d6129283f3c3d62293f63
+tests/lookaround/d27_l3/l3d27_witnesses.rxt:7141	--features lookaround	28616229283f3c3d622963
+tests/lookaround/d27_l3/l3d27_witnesses.rxt:7158	--features lookaround --engine=vm	28616229283f3c3d622963
+tests/lookaround/d27_l3/l3d27_witnesses.rxt:7176	--features lookaround	283f3a283f3c3d6129283f3c3d6229293f63
+tests/lookaround/d27_l3/l3d27_witnesses.rxt:7228	--features lookaround --engine=vm	283f3a283f3c3d6129283f3c3d6229293f63
+tests/lookaround/d27_l3/l3d27_witnesses.rxt:7282	-i --features lookaround --encoding=utf8	283f3c3dc3a929283f3c3dc3892978
+tests/lookaround/d27_l3/l3d27_witnesses.rxt:7308	-i --features lookaround --encoding=utf8 --engine=vm	283f3c3dc3a929283f3c3dc3892978
+tests/lookaround/d27_l3/l3d27_witnesses.rxt:7335	-i --features lookaround	283f3c3dc3a929283f3c3dc3892978
+tests/lookaround/d27_l3/l3d27_witnesses.rxt:7348	-i --features lookaround --engine=vm	283f3c3dc3a929283f3c3dc3892978
+tests/lookaround/d27_l3/l3d27_witnesses.rxt:7448	--features lookaround,classes	283f3c3d615c643f2962
+tests/lookaround/d27_l3/l3d27_witnesses.rxt:7475	--features lookaround,classes --engine=vm	283f3c3d615c643f2962
+tests/lookaround/d27_l3/l3d27_witnesses.rxt:7503	--features lookaround	283f3c3d6162296162
+tests/lookaround/d27_l3/l3d27_witnesses.rxt:7630	--features lookaround --engine=vm	283f3c3d6162296162
+tests/lookaround/d27_l3/l3d27_witnesses.rxt:7758	--features lookaround	283f3c3d616129616162
+tests/lookaround/d27_l3/l3d27_witnesses.rxt:7906	--features lookaround --engine=vm	283f3c3d616129616162
+tests/lookaround/d27_l3/l3d27_witnesses.rxt:8055	--features lookaround	283f3c3d612961
+tests/lookaround/d27_l3/l3d27_witnesses.rxt:8246	--features lookaround --engine=vm	283f3c3d612961
+tests/lookaround/d27_l3/l3d27_witnesses.rxt:8438	--features lookaround	283f3c3d616261296261
+tests/lookaround/d27_l3/l3d27_witnesses.rxt:8594	--features lookaround --engine=vm	283f3c3d616261296261
+tests/lookaround/d27_l3/l3d27_witnesses.rxt:8751	--features lookaround	283f3c3d616229612b62
+tests/lookaround/d27_l3/l3d27_witnesses.rxt:8909	--features lookaround --engine=vm	283f3c3d616229612b62
+tests/lookaround/d27_l3/l3d27_witnesses.rxt:9068	--features lookaround	283f3c3d616229283f3a6162292b
+tests/lookaround/d27_l3/l3d27_witnesses.rxt:9195	--features lookaround --engine=vm	283f3c3d616229283f3a6162292b
+tests/lookaround/d27_l3/l3d27_witnesses.rxt:9606	--features lookaround,match-start-reset	283f3c3d6261295c4b6162
+tests/lookaround/d27_l3/l3d27_witnesses.rxt:9758	--features lookaround,match-start-reset --engine=vm	283f3c3d6261295c4b6162
+tests/lookaround/d27_l3/l3d27_witnesses.rxt:9911	--features lookaround	283f3c3d616229637c283f3c3d63612962
+tests/lookaround/d27_l3/l3d27_witnesses.rxt:10065	--features lookaround --engine=vm	283f3c3d616229637c283f3c3d63612962
+tests/lookaround/d27_l3/l3d27_witnesses.rxt:10519	--features lookaround	283f3c3d6129283f3c3d62612962
+tests/lookaround/d27_l3/l3d27_witnesses.rxt:10683	--features lookaround --engine=vm	283f3c3d6129283f3c3d62612962
+tests/lookaround/d27_l3/l3d27_witnesses.rxt:10848	-i --features lookaround	283f3c3d61622962
+tests/lookaround/d27_l3/l3d27_witnesses.rxt:11003	-i --features lookaround --engine=vm	283f3c3d61622962
+tests/lookaround/d27_l3/l3d27_witnesses.rxt:11160	--features lookaround	283f3c3dc3a96129c3a9
+tests/lookaround/d27_l3/l3d27_witnesses.rxt:11290	--features lookaround --engine=vm	283f3c3dc3a96129c3a9
+tests/lookaround/d27_l3/l3d27_witnesses.rxt:11421	--features lookaround --encoding=utf8	283f3c3dc3a96129c3a9
+tests/lookaround/d27_l3/l3d27_witnesses.rxt:11552	--features lookaround --encoding=utf8 --engine=vm	283f3c3dc3a96129c3a9
+tests/lookaround/d27_l3/l3d27_witnesses.rxt:11683	--features lookaround	283f3c3d616229283f3d62612962
+tests/lookaround/d27_l3/l3d27_witnesses.rxt:11835	--features lookaround --engine=vm	283f3c3d616229283f3d62612962
+tests/lookaround/d27_l3/l3d27_witnesses.rxt:11988	--features lookaround,atomic-groups	283f3e283f3c3d616229617c622963
+tests/lookaround/d27_l3/l3d27_witnesses.rxt:12129	--features lookaround,atomic-groups --engine=vm	283f3e283f3c3d616229617c622963
+tests/lookaround/d27_l3/l3d27_witnesses.rxt:12538	--features lookaround	283f3c3d61622963283f3c3d626329
+tests/lookaround/d27_l3/l3d27_witnesses.rxt:12686	--features lookaround --engine=vm	283f3c3d61622963283f3c3d626329
+tests/lookaround/d27_l3/l3d27_witnesses.rxt:12835	-i --features lookaround	283f3c3d6162296162
+tests/lookaround/d27_l3/l3d27_witnesses.rxt:12982	-i --features lookaround --engine=vm	283f3c3d6162296162
+tests/lookaround/d27_l3/l3d27_witnesses.rxt:13130	--features lookaround	283f3c216162296162
+tests/lookaround/d27_l3/l3d27_witnesses.rxt:13269	--features lookaround --engine=vm	283f3c216162296162
+tests/lookaround/d27_l3/l3d27_witnesses.rxt:13409	--features lookaround	61283f3c3d62612962
+tests/lookaround/d27_l3/l3d27_witnesses.rxt:13573	--features lookaround --engine=vm	61283f3c3d62612962
+tests/lookaround/d27_l3/l3d27_witnesses.rxt:13738	--features lookaround	622a283f3c3d61622963
+tests/lookaround/d27_l3/l3d27_witnesses.rxt:13927	--features lookaround --engine=vm	622a283f3c3d61622963
+tests/lookaround/d27_l3/l3d27_witnesses.rxt:14117	--features lookaround	283f3c3d616229283f3c3d62622961
+tests/lookaround/d27_l3/l3d27_witnesses.rxt:14143	--features lookaround --engine=vm	283f3c3d616229283f3c3d62622961
+# bsu1 (2026-11-21, R-47 U1): +41 rows, every block of the new tests/memfn/span_seed.rxt (SPAN-SEED, block_span.md §9.3), VM-hat movers under --engine=vm; taken from census_s1.py on the lane's build (corpus rows only, no existing row moved; the regeneration's other differences are left as they were).
+tests/memfn/span_seed.rxt:1013		5b412d5a612d7a302d395f2d5d7b33327d
+tests/memfn/span_seed.rxt:1052		5b412d5a5d7b31377d
+tests/memfn/span_seed.rxt:1076		5b412d5a5d7b32357d
+tests/memfn/span_seed.rxt:1108		5b412d5a5d7b33327d
+tests/memfn/span_seed.rxt:1147		5b2b2e302d395d7b31377d
+tests/memfn/span_seed.rxt:1171		5b2b2e302d395d7b32357d
+tests/memfn/span_seed.rxt:1203		5b2b2e302d395d7b33327d
+tests/memfn/span_seed.rxt:129		5b302d39612d665d7b31367d
+tests/memfn/span_seed.rxt:152		5b302d39612d665d7b31377d
+tests/memfn/span_seed.rxt:176		5b302d39612d665d7b313030317d
+tests/memfn/span_seed.rxt:192		5b302d39612d665d7b313030327d
+tests/memfn/span_seed.rxt:208		5b302d395d7b32347d
+tests/memfn/span_seed.rxt:239		5b302d395d7b32357d
+tests/memfn/span_seed.rxt:271		5b302d395d7b36357d
+tests/memfn/span_seed.rxt:285		5b302d395d7b36367d
+tests/memfn/span_seed.rxt:300		61625b302d395d7b32367d
+tests/memfn/span_seed.rxt:335		5b78795d5b302d395d7b32367d
+tests/memfn/span_seed.rxt:369		5b302d39612d665d7b32307d5b672d7a5d7b32307d
+tests/memfn/span_seed.rxt:384		5b302d39612d665d7b32357d
+tests/memfn/span_seed.rxt:416		5b302d395d7b31377d
+tests/memfn/span_seed.rxt:440		5b302d395d7b33327d
+tests/memfn/span_seed.rxt:46	--features assertions	5c625b302d39612d665d7b33327d5c62
+tests/memfn/span_seed.rxt:479		5c777b31377d
+tests/memfn/span_seed.rxt:503		5c777b32357d
+tests/memfn/span_seed.rxt:535		5c777b33327d
+tests/memfn/span_seed.rxt:574		5b6165696f755d7b31377d
+tests/memfn/span_seed.rxt:598		5b6165696f755d7b32357d
+tests/memfn/span_seed.rxt:630		5b6165696f755d7b33327d
+tests/memfn/span_seed.rxt:669		5b5e5c6e5d7b31377d
+tests/memfn/span_seed.rxt:693		5b5e5c6e5d7b32357d
+tests/memfn/span_seed.rxt:7		5b302d39612d665d7b33327d
+tests/memfn/span_seed.rxt:725		5b5e5c6e5d7b33327d
+tests/memfn/span_seed.rxt:764	--encoding=byte	5b5c7838302d5c7862665d7b31377d
+tests/memfn/span_seed.rxt:789	--encoding=byte	5b5c7838302d5c7862665d7b32357d
+tests/memfn/span_seed.rxt:822	--encoding=byte	5b5c7838302d5c7862665d7b33327d
+tests/memfn/span_seed.rxt:862		5b612d665d7b31377d
+tests/memfn/span_seed.rxt:88		5c647b33327d
+tests/memfn/span_seed.rxt:886		5b612d665d7b32357d
+tests/memfn/span_seed.rxt:918		5b612d665d7b33327d
+tests/memfn/span_seed.rxt:957		5b412d5a612d7a302d395f2d5d7b31377d
+tests/memfn/span_seed.rxt:981		5b412d5a612d7a302d395f2d5d7b32357d

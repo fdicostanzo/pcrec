@@ -949,3 +949,344 @@ ns 34 "xxcaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbd"
 ns 35 "xxcaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbd"
 ns 36 "xxcaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbd"
 ns 37 "xxcaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbd"
+
+# W-T3 (span_arms §5.7 and §14.1 item 6, span arms L3): the run `a^20 b^12` begins 20 bytes before every match (K -20); under --memfn=no-fd-pres-pick (tests/memfn/run_presence.sh [deny-answers]) the pre-check tests the WHOLE run, and a TOP `++` that kept the LAST positions states `a^12 b^20` at -20, found 8 bytes late: the body starts past the match and answers NOMATCH
+pattern (?<=a{20})b{20}
+features all
+encoding byte
+ms 0 "aaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbb" 20 40
+ms 1 "aaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbb" 20 40
+ms 2 "aaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbb" 20 40
+ms 3 "aaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbb" 20 40
+ms 4 "aaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbb" 20 40
+ms 5 "aaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbb" 20 40
+ms 6 "aaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbb" 20 40
+ms 7 "aaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbb" 20 40
+ms 8 "aaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbb" 20 40
+ms 9 "aaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbb" 20 40
+ms 10 "aaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbb" 20 40
+ms 11 "aaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbb" 20 40
+ms 12 "aaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbb" 20 40
+ms 13 "aaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbb" 20 40
+ms 14 "aaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbb" 20 40
+ms 15 "aaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbb" 20 40
+ms 16 "aaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbb" 20 40
+ms 17 "aaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbb" 20 40
+ms 18 "aaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbb" 20 40
+ms 19 "aaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbb" 20 40
+ms 20 "aaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbb" 20 40
+ns 21 "aaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbb"
+ns 22 "aaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbb"
+ns 23 "aaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbb"
+ns 24 "aaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbb"
+ns 25 "aaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbb"
+ns 26 "aaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbb"
+ns 27 "aaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbb"
+ns 28 "aaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbb"
+ns 29 "aaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbb"
+ns 30 "aaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbb"
+ns 31 "aaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbb"
+ns 32 "aaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbb"
+ns 33 "aaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbb"
+ns 34 "aaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbb"
+ns 35 "aaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbb"
+ns 36 "aaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbb"
+ns 37 "aaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbb"
+ns 38 "aaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbb"
+ns 39 "aaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbb"
+ns 40 "aaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbb"
+ms 0 "xaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbx" 21 41
+ms 1 "xaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbx" 21 41
+ms 2 "xaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbx" 21 41
+ms 3 "xaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbx" 21 41
+ms 4 "xaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbx" 21 41
+ms 5 "xaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbx" 21 41
+ms 6 "xaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbx" 21 41
+ms 7 "xaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbx" 21 41
+ms 8 "xaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbx" 21 41
+ms 9 "xaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbx" 21 41
+ms 10 "xaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbx" 21 41
+ms 11 "xaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbx" 21 41
+ms 12 "xaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbx" 21 41
+ms 13 "xaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbx" 21 41
+ms 14 "xaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbx" 21 41
+ms 15 "xaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbx" 21 41
+ms 16 "xaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbx" 21 41
+ms 17 "xaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbx" 21 41
+ms 18 "xaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbx" 21 41
+ms 19 "xaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbx" 21 41
+ms 20 "xaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbx" 21 41
+ms 21 "xaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbx" 21 41
+ns 22 "xaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbx"
+ns 23 "xaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbx"
+ns 24 "xaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbx"
+ns 25 "xaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbx"
+ns 26 "xaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbx"
+ns 27 "xaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbx"
+ns 28 "xaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbx"
+ns 29 "xaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbx"
+ns 30 "xaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbx"
+ns 31 "xaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbx"
+ns 32 "xaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbx"
+ns 33 "xaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbx"
+ns 34 "xaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbx"
+ns 35 "xaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbx"
+ns 36 "xaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbx"
+ns 37 "xaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbx"
+ns 38 "xaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbx"
+ns 39 "xaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbx"
+ns 40 "xaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbx"
+ns 41 "xaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbx"
+ns 42 "xaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbx"
+ns 0 "aaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbb"
+ns 1 "aaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbb"
+ns 2 "aaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbb"
+ns 3 "aaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbb"
+ns 4 "aaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbb"
+ns 5 "aaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbb"
+ns 6 "aaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbb"
+ns 7 "aaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbb"
+ns 8 "aaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbb"
+ns 9 "aaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbb"
+ns 10 "aaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbb"
+ns 11 "aaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbb"
+ns 12 "aaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbb"
+ns 13 "aaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbb"
+ns 14 "aaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbb"
+ns 15 "aaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbb"
+ns 16 "aaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbb"
+ns 17 "aaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbb"
+ns 18 "aaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbb"
+ns 19 "aaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbb"
+ns 20 "aaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbb"
+ns 21 "aaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbb"
+ns 22 "aaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbb"
+ns 23 "aaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbb"
+ns 24 "aaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbb"
+ns 25 "aaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbb"
+ns 26 "aaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbb"
+ns 27 "aaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbb"
+ns 28 "aaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbb"
+ns 29 "aaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbb"
+ns 30 "aaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbb"
+ns 31 "aaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbb"
+ns 32 "aaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbb"
+ns 33 "aaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbb"
+ns 34 "aaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbb"
+ns 35 "aaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbb"
+ns 36 "aaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbb"
+ns 37 "aaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbb"
+ns 38 "aaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbb"
+ns 39 "aaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbb"
+ns 0 "aaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbbbbbbb"
+ns 1 "aaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbbbbbbb"
+ns 2 "aaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbbbbbbb"
+ns 3 "aaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbbbbbbb"
+ns 4 "aaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbbbbbbb"
+ns 5 "aaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbbbbbbb"
+ns 6 "aaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbbbbbbb"
+ns 7 "aaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbbbbbbb"
+ns 8 "aaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbbbbbbb"
+ns 9 "aaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbbbbbbb"
+ns 10 "aaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbbbbbbb"
+ns 11 "aaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbbbbbbb"
+ns 12 "aaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbbbbbbb"
+ns 13 "aaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbbbbbbb"
+ns 14 "aaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbbbbbbb"
+ns 15 "aaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbbbbbbb"
+ns 16 "aaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbbbbbbb"
+ns 17 "aaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbbbbbbb"
+ns 18 "aaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbbbbbbb"
+ns 19 "aaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbbbbbbb"
+ns 20 "aaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbbbbbbb"
+ns 21 "aaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbbbbbbb"
+ns 22 "aaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbbbbbbb"
+ns 23 "aaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbbbbbbb"
+ns 24 "aaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbbbbbbb"
+ns 25 "aaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbbbbbbb"
+ns 26 "aaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbbbbbbb"
+ns 27 "aaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbbbbbbb"
+ns 28 "aaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbbbbbbb"
+ns 29 "aaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbbbbbbb"
+ns 30 "aaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbbbbbbb"
+ns 31 "aaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbbbbbbb"
+ns 32 "aaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbbbbbbb"
+ns 33 "aaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbbbbbbb"
+ns 34 "aaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbbbbbbb"
+ns 35 "aaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbbbbbbb"
+ns 36 "aaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbbbbbbb"
+ns 37 "aaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbbbbbbb"
+ns 38 "aaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbbbbbbb"
+ns 39 "aaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbbbbbbb"
+ns 40 "aaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbbbbbbb"
+
+# W-T3 (span_arms §5.7 and §14.1 item 6, span arms L3): the run `a^20 b^12` begins 20 bytes before every match (K -20); under --memfn=no-fd-pres-pick (tests/memfn/run_presence.sh [deny-answers]) the pre-check tests the WHOLE run, and a TOP `++` that kept the LAST positions states `a^12 b^20` at -20, found 8 bytes late: the body starts past the match and answers NOMATCH [engine vm]
+pattern (?<=a{20})b{20}
+features all
+encoding byte
+engine vm
+ms 0 "aaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbb" 20 40
+ms 1 "aaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbb" 20 40
+ms 2 "aaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbb" 20 40
+ms 3 "aaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbb" 20 40
+ms 4 "aaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbb" 20 40
+ms 5 "aaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbb" 20 40
+ms 6 "aaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbb" 20 40
+ms 7 "aaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbb" 20 40
+ms 8 "aaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbb" 20 40
+ms 9 "aaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbb" 20 40
+ms 10 "aaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbb" 20 40
+ms 11 "aaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbb" 20 40
+ms 12 "aaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbb" 20 40
+ms 13 "aaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbb" 20 40
+ms 14 "aaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbb" 20 40
+ms 15 "aaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbb" 20 40
+ms 16 "aaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbb" 20 40
+ms 17 "aaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbb" 20 40
+ms 18 "aaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbb" 20 40
+ms 19 "aaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbb" 20 40
+ms 20 "aaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbb" 20 40
+ns 21 "aaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbb"
+ns 22 "aaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbb"
+ns 23 "aaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbb"
+ns 24 "aaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbb"
+ns 25 "aaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbb"
+ns 26 "aaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbb"
+ns 27 "aaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbb"
+ns 28 "aaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbb"
+ns 29 "aaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbb"
+ns 30 "aaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbb"
+ns 31 "aaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbb"
+ns 32 "aaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbb"
+ns 33 "aaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbb"
+ns 34 "aaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbb"
+ns 35 "aaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbb"
+ns 36 "aaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbb"
+ns 37 "aaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbb"
+ns 38 "aaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbb"
+ns 39 "aaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbb"
+ns 40 "aaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbb"
+ms 0 "xaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbx" 21 41
+ms 1 "xaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbx" 21 41
+ms 2 "xaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbx" 21 41
+ms 3 "xaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbx" 21 41
+ms 4 "xaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbx" 21 41
+ms 5 "xaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbx" 21 41
+ms 6 "xaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbx" 21 41
+ms 7 "xaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbx" 21 41
+ms 8 "xaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbx" 21 41
+ms 9 "xaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbx" 21 41
+ms 10 "xaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbx" 21 41
+ms 11 "xaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbx" 21 41
+ms 12 "xaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbx" 21 41
+ms 13 "xaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbx" 21 41
+ms 14 "xaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbx" 21 41
+ms 15 "xaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbx" 21 41
+ms 16 "xaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbx" 21 41
+ms 17 "xaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbx" 21 41
+ms 18 "xaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbx" 21 41
+ms 19 "xaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbx" 21 41
+ms 20 "xaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbx" 21 41
+ms 21 "xaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbx" 21 41
+ns 22 "xaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbx"
+ns 23 "xaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbx"
+ns 24 "xaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbx"
+ns 25 "xaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbx"
+ns 26 "xaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbx"
+ns 27 "xaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbx"
+ns 28 "xaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbx"
+ns 29 "xaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbx"
+ns 30 "xaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbx"
+ns 31 "xaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbx"
+ns 32 "xaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbx"
+ns 33 "xaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbx"
+ns 34 "xaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbx"
+ns 35 "xaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbx"
+ns 36 "xaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbx"
+ns 37 "xaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbx"
+ns 38 "xaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbx"
+ns 39 "xaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbx"
+ns 40 "xaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbx"
+ns 41 "xaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbx"
+ns 42 "xaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbx"
+ns 0 "aaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbb"
+ns 1 "aaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbb"
+ns 2 "aaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbb"
+ns 3 "aaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbb"
+ns 4 "aaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbb"
+ns 5 "aaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbb"
+ns 6 "aaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbb"
+ns 7 "aaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbb"
+ns 8 "aaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbb"
+ns 9 "aaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbb"
+ns 10 "aaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbb"
+ns 11 "aaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbb"
+ns 12 "aaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbb"
+ns 13 "aaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbb"
+ns 14 "aaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbb"
+ns 15 "aaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbb"
+ns 16 "aaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbb"
+ns 17 "aaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbb"
+ns 18 "aaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbb"
+ns 19 "aaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbb"
+ns 20 "aaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbb"
+ns 21 "aaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbb"
+ns 22 "aaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbb"
+ns 23 "aaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbb"
+ns 24 "aaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbb"
+ns 25 "aaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbb"
+ns 26 "aaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbb"
+ns 27 "aaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbb"
+ns 28 "aaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbb"
+ns 29 "aaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbb"
+ns 30 "aaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbb"
+ns 31 "aaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbb"
+ns 32 "aaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbb"
+ns 33 "aaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbb"
+ns 34 "aaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbb"
+ns 35 "aaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbb"
+ns 36 "aaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbb"
+ns 37 "aaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbb"
+ns 38 "aaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbb"
+ns 39 "aaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbb"
+ns 0 "aaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbbbbbbb"
+ns 1 "aaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbbbbbbb"
+ns 2 "aaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbbbbbbb"
+ns 3 "aaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbbbbbbb"
+ns 4 "aaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbbbbbbb"
+ns 5 "aaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbbbbbbb"
+ns 6 "aaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbbbbbbb"
+ns 7 "aaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbbbbbbb"
+ns 8 "aaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbbbbbbb"
+ns 9 "aaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbbbbbbb"
+ns 10 "aaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbbbbbbb"
+ns 11 "aaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbbbbbbb"
+ns 12 "aaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbbbbbbb"
+ns 13 "aaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbbbbbbb"
+ns 14 "aaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbbbbbbb"
+ns 15 "aaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbbbbbbb"
+ns 16 "aaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbbbbbbb"
+ns 17 "aaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbbbbbbb"
+ns 18 "aaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbbbbbbb"
+ns 19 "aaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbbbbbbb"
+ns 20 "aaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbbbbbbb"
+ns 21 "aaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbbbbbbb"
+ns 22 "aaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbbbbbbb"
+ns 23 "aaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbbbbbbb"
+ns 24 "aaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbbbbbbb"
+ns 25 "aaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbbbbbbb"
+ns 26 "aaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbbbbbbb"
+ns 27 "aaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbbbbbbb"
+ns 28 "aaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbbbbbbb"
+ns 29 "aaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbbbbbbb"
+ns 30 "aaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbbbbbbb"
+ns 31 "aaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbbbbbbb"
+ns 32 "aaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbbbbbbb"
+ns 33 "aaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbbbbbbb"
+ns 34 "aaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbbbbbbb"
+ns 35 "aaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbbbbbbb"
+ns 36 "aaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbbbbbbb"
+ns 37 "aaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbbbbbbb"
+ns 38 "aaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbbbbbbb"
+ns 39 "aaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbbbbbbb"
+ns 40 "aaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbbbbbbb"

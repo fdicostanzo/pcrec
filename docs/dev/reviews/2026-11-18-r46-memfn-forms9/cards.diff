@@ -1,0 +1,562 @@
+diff --git a/memfn/tests/span_forms/cards.py b/memfn/tests/span_forms/cards.py
+index b005fd513..b035e4fc3 100644
+--- a/memfn/tests/span_forms/cards.py
++++ b/memfn/tests/span_forms/cards.py
+@@ -9,7 +9,8 @@
+ # r41's L9, L5, L6: the layout pools replace the twins, the strict arguments and the keyed G2 record;
+ # lane formsfixl, review r44's A-L: the variant x regime interaction void, the per-head layout floor,
+ # the pool refusal's 32-B half, the confirm's rounds, a fresh run id, the compiler-keyed exe cache,
+-# K6's placed win, the power line's bracket, the checked power pins, the fixed axes named).
++# K6's placed win, the power line's bracket, the checked power pins, the fixed axes named; lane formsfixm,
++# review r45's FORMS8-1..5: the interaction test per text, winsorized, the POOL_SIZE refusal, the docs).
+ """memfn/tests/span_forms/cards.py -- THE SPAN FORMS' CARDS C1-C5, their rule R0-R5 and the
+ identity check (docs/design/memfn/r45_reply.md rev 11 §3 "The cards", "The head `h` and the
+ default", "The head lever and its identity check"; cards kit-grid@7 in
+@@ -61,7 +62,8 @@ THE NIGHT (r45_reply rev 11 §3 "the night order"; each step a command, RUNDIR o
+                            11's rows (r39: per-exe offsets, reading B's power, R0 over the
+                            confirm, one owed list) and rev 12's (r41: the layout pools under
+                            each layout model, GAP_K under layout bimodality, the power rows;
+-                           r44: the interaction and noisy-loser drills, each with its control);
++                           r44: the interaction and noisy-loser drills, each with its control;
++                           r45: heterogeneous noise under layout, the POOL_SIZE refusal);
+                            --rev11 / --rev12 run those rows alone
+   identity H [PATTERNS]    step 3: the lever at H on the FROZEN pcrec-harness against the
+                            REBUILT build/pcrec, byte for byte, both encodings, both layers,
+@@ -160,8 +162,21 @@ MEDSD_REL = 0.4754
+ # 16 mod 64 on this box's glibc for the whole-buffer and not-warm regimes; short-subject record starts
+ # vary by record but not by variant). A share common to every variant of a text therefore also holds
+ # THIS harness's data placement, which a user's binary does not share.
+-# UNMEASURED DEFAULT: POOL_SIZE = 4 (one variant per 16-B phase mod 64, two of each alignment).
++# UNMEASURED DEFAULT: POOL_SIZE = 4 (one variant per 16-B phase mod 64, two of each alignment). FIXED at 4
++# (r45 FORMS8-2): PHASE_ORDER strides four 16-B phase classes and ALIGN_VARIANTS two, so at 8 variant v + 4
++# repeats v's class and flags and r44 C's 32-B and distinct-layout clauses refuse EVERY pool (`dry` exits 1
++# for the whole night); any other value is refused at start (`pool_size_refusal`), never run.
+ POOL_SIZE = int(os.environ.get("POOL_SIZE", "4"))
++
++
++def pool_size_refusal(n):
++    """Why a POOL_SIZE `n` cannot run (r45 FORMS8-2), or None: the 32-B guard and the stratified preludes
++    are built for exactly four phase classes."""
++    if n != 4:
++        return ("POOL_SIZE=%d: the pool is built for exactly 4 variants (PHASE_ORDER strides four 16-B phase "
++                "classes, ALIGN_VARIANTS two alignments; at 8 every pool repeats a layout and r44 C's clauses refuse "
++                "it, below 4 a phase class is never timed); unset POOL_SIZE" % n)
++    return None
+ # UNMEASURED DEFAULT: the prelude's draw space, j in 0..255 (16-B steps mod 4096). STRATIFIED: variant
+ # v takes the 16-B phase class (r + PHASE_ORDER[v mod 4]) mod 4 (r drawn per pool), a random multiple
+ # of 64 B above it, so the PRELUDES of a pool of 4 span the four 16-B phases mod 64 by construction.
+@@ -1522,18 +1537,76 @@ PER_HEAD_FLOOR = True      # r44 B: the layout term per (cell, head); off: rev 1
+ INTERACTION_VOID = True    # r44 A: void a text's cells on a variant x regime interaction; off: rev 12 (the control)
+ # r44 A: THE VARIANT x REGIME INTERACTION LINES. A text's interaction is read from its own launches by a
+ # lack-of-fit test: the per-text fit (row level + one effect a variant) against the (row, variant) cell
+-# means, the launch noise from the launches that repeat a variant inside one row (pure error, pooled over
+-# the night per regime). INTER_SHARE: the share sI2 / (sI2 + sL2), sI2 = max(0, MS(lack of fit) - the
+-# pure-error variance), on the mean-square scale (an index: the lack-of-fit mean square carries ~1.3
+-# launches a (row, variant) cell, so it is not a variance component). A text whose share exceeds
+-# INTER_SHARE AND whose lack of fit is beyond launch noise at INTER_ALPHA (family-wise over the night's
+-# texts, chi-square on the lack-of-fit df) has its C1-C2 cells VOIDED: the per-text term assumes one
+-# effect a variant in every regime, which that text does not show (a void keeps the grid top, never a pick).
++# means, the launch noise from the launches that repeat a variant inside one row (pure error: r45 FORMS8-1,
++# the TEXT's OWN, on launches winsorized at INTER_CLIP, its regime shape from the night's pool per regime;
++# r44 pooled it per regime over every text, which read a noisier text or heavy tails as an interaction;
++# `text_interaction`). INTER_SHARE: the share sI2 / (sI2 + sL2), sI2 = max(0, MS(lack of fit) - the
++# pure-error variance), on the mean-square scale: an INDEX, NOT the variance share (the lack-of-fit mean
++# square carries ~1.3 launches a (row, variant) cell, so it is not a variance component), and it does NOT
++# BIND today (r45 FORMS8-3): with sL2 ~ 0 (a small layout main effect) the share is 1 for any sI2 > 0, so the
++# F line at INTER_ALPHA alone decides. A text whose share exceeds INTER_SHARE AND whose lack of fit is beyond
++# its own launch noise at INTER_ALPHA (family-wise over the night's texts, F on Satterthwaite df shrunk for
++# the night's kurtosis) has its C1-C2 cells VOIDED: the per-text term assumes one effect a variant in every
++# regime, which that text does not show. THE VOID'S SCOPE (r45 FORMS8-1 (b), ruled): r1 step (5) returns the
++# grid top for the WHOLE NIGHT when any cell is void, so ONE flagged text means NO PICK THAT NIGHT
++# (conservative by design; the would-be pick is only recorded). PLANNED (r45 FORMS8-3): an effect-size floor
++# for the void (sI2 above a stated fraction of the floor's own variance), trigger = the first real night that
++# flags a text. COUPLING (r45 FORMS8-4): r44 B's per-head floor does not hold P(h* != 64) under a
++# regime-specific layout on its own (its V_h pools the head's text over its regimes); THIS void carries that
++# safety, so a looser line re-opens it.
+ # UNMEASURED DEFAULT: INTER_SHARE = 0.5 (set so drill (xxiii)'s interaction rows pass; never measured on
+ # a real pool).
+ INTER_SHARE = 0.5
+ # UNMEASURED DEFAULT: INTER_ALPHA = 0.01 (the night's false-void budget for this test, family-wise).
+ INTER_ALPHA = 0.01
++INTER_PE_PER_TEXT = True   # r45 FORMS8-1: the lack of fit against the TEXT's own pure error; off: r44's pure
++                           # error pooled per regime over the night's texts (the control)
++# UNMEASURED DEFAULT: INTER_MIN_PE_DF = 4 (a text with fewer pure-error df is not read for the interaction:
++# never flagged; a head text's six regime rows carry ~12 at LAUNCHES 5 over POOL_SIZE 4).
++INTER_MIN_PE_DF = 4
++# INTER_CLIP = 4.0: the interaction test's winsorizing line, in robust launch sigmas (`_clipped`; a normal
++# launch passes it but for ~6e-5). MEASURED on the drill's SYNTHETIC models only (lane formsfixm, 300 nights a
++# reading): t(5) launches + "phase" tau 1 % + one 5 % H(8) win, nights flagged 21 / 9 / 11 / 10 / 10 of 300 at
++# no clip / 5 / 4 / 3.5 / 3; r44 A's "regime" heads tau 3 % row (seed 3331), P(h* != 64) 0.010 / 0.013 / 0.023
++# / 0.030 / 0.053: 4 is the lowest line that holds both gates with room. On a real night UNMEASURED.
++INTER_CLIP = 4.0
++
++
++def _additive_fit(rs, vs):
++    """The per-text two-way fit (rev 12, R2 B): log x = row level + variant effect, backfitting 4
++    passes, the effects centred to mean 0. `rs` [(row key, log launches, variants)]."""
++    e = {v: 0.0 for v in vs}
++    lev = {}
++    for _ in range(4):
++        for k, ls, vv in rs:
++            lev[k] = sum(x - e[v] for x, v in zip(ls, vv)) / len(ls)
++        acc = {v: [] for v in vs}
++        for k, ls, vv in rs:
++            for x, v in zip(ls, vv):
++                acc[v].append(x - lev[k])
++        e = {v: sum(a) / len(a) for v, a in acc.items()}
++        m = sum(e.values()) / len(e)
++        e = {v: x - m for v, x in e.items()}
++    return lev, e
++
++
++def _fit_stats(rs, vs, lev, e):
++    """A text's fit statistics (r44 A): the residual SS and df, per row (key, launches, pure-error SS
++    and df: the launches that repeat a variant inside the row), and per row the pure-error deviations'
++    moments (r45 FORMS8-1: each squared deviation scaled by m / (m - 1), m its group's size, unbiased for
++    the launch variance: (sum, sum of squares, count)); `fit` keeps the data for the robust re-read."""
++    res = [x - lev[k] - e[v] for k, ls, vv in rs for x, v in zip(ls, vv)]
++    prow, qrow = [], []
++    for k, ls, vv in rs:
++        g = {}
++        for x, v in zip(ls, vv):
++            g.setdefault(v, []).append(x)
++        ss = sum((x - sum(a) / len(a)) ** 2 for a in g.values() for x in a)
++        prow.append((k, len(ls), ss, len(ls) - len(g)))
++        d2 = [(x - sum(a) / len(a)) ** 2 * len(a) / (len(a) - 1) for a in g.values() if len(a) > 1 for x in a]
++        qrow.append((sum(d2), sum(x * x for x in d2), len(d2)))
++    return {"ss_res": sum(x * x for x in res), "df_a": len(res) - len(rs) - len(vs) + 1, "rows": prow,
++            "q": qrow, "fit": (rs, vs, lev, e)}
+ 
+ 
+ def text_effects(rows, text_of, stats=None):
+@@ -1558,18 +1631,7 @@ def text_effects(rows, text_of, stats=None):
+         vs = sorted({v for _k, _l, vv in rs for v in vv})
+         if len(vs) < 2:
+             continue
+-        e = {v: 0.0 for v in vs}
+-        lev = {}
+-        for _ in range(4):
+-            for k, ls, vv in rs:
+-                lev[k] = sum(x - e[v] for x, v in zip(ls, vv)) / len(ls)
+-            acc = {v: [] for v in vs}
+-            for k, ls, vv in rs:
+-                for x, v in zip(ls, vv):
+-                    acc[v].append(x - lev[k])
+-            e = {v: sum(a) / len(a) for v, a in acc.items()}
+-            m = sum(e.values()) / len(e)
+-            e = {v: x - m for v, x in e.items()}
++        lev, e = _additive_fit(rs, vs)
+         res = [x - lev[k] - e[v] for k, ls, vv in rs for x, v in zip(ls, vv)]
+         n = len(res)
+         dfr = max(1, n - len(rs) - len(vs) + 1)
+@@ -1579,24 +1641,92 @@ def text_effects(rows, text_of, stats=None):
+         sl2 = max(0.0, sum(x * x for x in e.values()) / (len(vs) - 1) - noise)
+         out[t] = (e, sl2)
+         if stats is not None:
+-            prow = []
+-            for k, ls, vv in rs:
+-                g = {}
+-                for x, v in zip(ls, vv):
+-                    g.setdefault(v, []).append(x)
+-                ss = sum((x - sum(a) / len(a)) ** 2 for a in g.values() for x in a)
+-                prow.append((k, len(ls), ss, len(ls) - len(g)))
+-            stats[t] = {"ss_res": sum(x * x for x in res), "df_a": n - len(rs) - len(vs) + 1, "rows": prow}
++            stats[t] = _fit_stats(rs, vs, lev, e)
+     return out
+ 
+ 
+-def text_interaction(te, stats, regime_of, alpha=None):
+-    """THE VARIANT x REGIME INTERACTION per text (r44 A), from `text_effects`' stats: the pure-error
+-    variance per regime pooled over every text of the night; per text the lack-of-fit mean square
+-    (residual SS less the text's pure-error SS, over (row, variant) cells - rows - variants + 1 df),
+-    its ratio to the pure-error variance its rows expect, the chi-square line at alpha / (texts read),
+-    the share sI2 / (sI2 + sL2). Returns {text: (share, ratio, line, flagged, df)}; a text with no
+-    lack-of-fit df or no pure-error estimate is absent."""
++def _beta_cf(a, b, x):
++    """The continued fraction of the regularized incomplete beta (Numerical Recipes' betacf, Lentz)."""
++    tiny = 1e-300
++    c, d = 1.0, 1 - (a + b) * x / (a + 1)
++    d = 1 / (tiny if abs(d) < tiny else d)
++    h = d
++    for m in range(1, 10000):
++        m2 = 2 * m
++        for an in (m * (b - m) * x / ((a + m2 - 1) * (a + m2)), -(a + m) * (a + b + m) * x / ((a + m2) * (a + m2 + 1))):
++            d = 1 + an * d
++            d = 1 / (tiny if abs(d) < tiny else d)
++            c = 1 + an / c
++            c = tiny if abs(c) < tiny else c
++            h *= d * c
++        if abs(d * c - 1) < 1e-15:
++            break
++    return h
++
++
++def _beta_i(a, b, x):
++    """The regularized incomplete beta I_x(a, b)."""
++    if x <= 0:
++        return 0.0
++    if x >= 1:
++        return 1.0
++    lead = math.exp(math.lgamma(a + b) - math.lgamma(a) - math.lgamma(b) + a * math.log(x) + b * math.log(1 - x))
++    if x < (a + 1) / (a + b + 2):
++        return lead * _beta_cf(a, b, x) / a
++    return 1 - lead * _beta_cf(b, a, 1 - x) / b
++
++
++@functools.lru_cache(maxsize=None)
++def f_lower(q, d1, d2):
++    """F(d1, d2)'s q quantile, EXACT by bisection on its cdf I_{d1 f / (d1 f + d2)}(d1 / 2, d2 / 2)
++    (FORMS8-1: the lack-of-fit test against the TEXT's own pure error, whose df are small)."""
++    lo, hi = 0.0, 1.0
++    while _beta_i(d1 / 2, d2 / 2, d1 * hi / (d1 * hi + d2)) < q:
++        hi *= 2
++    for _ in range(100):
++        mid = (lo + hi) / 2
++        if _beta_i(d1 / 2, d2 / 2, d1 * mid / (d1 * mid + d2)) < q:
++            lo = mid
++        else:
++            hi = mid
++    return (lo + hi) / 2
++
++
++def _clipped(st, s2, regime_of):
++    """A text's fit statistics re-read on WINSORIZED launches (r45 FORMS8-1): each launch's residual from
++    the text's additive fit, in units of its regime's launch sigma (`s2`, the night's pool per regime),
++    clipped at INTER_CLIP times the text's own robust scale (1.4826 x the median absolute standardized
++    residual), then the fit and its statistics again. A heavy-tailed launch that lands alone in a (row,
++    variant) cell enters the lack of fit whole and the pure error not at all: t(5) launches flagged 21 of
++    300 nights on the variance ratio alone (no clip), 11 at INTER_CLIP 4."""
++    rs, vs, lev, e = st["fit"]
++    z = [(x - lev[k] - e[v]) / math.sqrt(s2[regime_of(k)]) for k, ls, vv in rs for x, v in zip(ls, vv)]
++    sc = 1.4826 * statistics.median(abs(x) for x in z)
++    if sc <= 0:
++        return st
++    cap = INTER_CLIP * sc
++    rs2 = [(k, [lev[k] + e[v] + max(-cap, min(cap, (x - lev[k] - e[v]) / math.sqrt(s2[regime_of(k)])))
++                * math.sqrt(s2[regime_of(k)]) for x, v in zip(ls, vv)], vv) for k, ls, vv in rs]
++    lev2, e2 = _additive_fit(rs2, vs)
++    return _fit_stats(rs2, vs, lev2, e2)
++
++
++def text_interaction(te, stats, regime_of, alpha=None, info=None):
++    """THE VARIANT x REGIME INTERACTION per text (r44 A; r45 FORMS8-1), from `text_effects`' stats.
++    Per text: the lack-of-fit mean square (residual SS less the text's pure-error SS, over (row, variant)
++    cells - rows - variants + 1 df) against the TEXT'S OWN pure-error mean square (the launches that
++    repeat a variant inside one of its rows), each scaled by its rows' regime launch variances (pooled
++    over the night per regime: the SHAPE of the noise across regimes, never its level), an F line at
++    alpha / (texts read) on Satterthwaite's effective df of each side (regime-unequal rows weigh
++    unequally), both df shrunk by 1 / (1 + kappa / 2), kappa the night's excess kurtosis of the
++    pure-error deviations standardized per (text, regime) (a heavy-tailed launch spreads a variance
++    ratio as fewer df would: m squared deviations of excess kurtosis kappa vary as m / (1 + kappa / 2)
++    normal ones). r44 read the lack of fit against the
++    regime pool alone, on chi-square: a text noisier than its regime's pool (one pattern's head arms at
++    2x sigma) or heavy-tailed launches (t(5)) read as an interaction (r45 FORMS8-1: 100 and 55 of 100
++    nights flagged with none). INTER_PE_PER_TEXT off: that r44 form (the control). Returns {text:
++    (share, ratio, line, flagged, df)}; a text with no lack-of-fit df, or fewer than INTER_MIN_PE_DF
++    pure-error df, is absent (never flagged). `info` (a dict): filled with the kurtosis read."""
+     alpha = INTER_ALPHA if alpha is None else alpha
+     pe = {}
+     for st in stats.values():
+@@ -1606,25 +1736,73 @@ def text_interaction(te, stats, regime_of, alpha=None):
+             a[1] += df
+     s2 = {rg: ss / df for rg, (ss, df) in pe.items() if df > 0}
+     cand = {}
+-    for t, st in stats.items():
+-        rows = st["rows"]
+-        dfp = sum(df for _k, _n, _ss, df in rows)
+-        dfl = st["df_a"] - dfp
+-        if dfl < 1 or any(regime_of(k) not in s2 for k, _n, _ss, _df in rows):
+-            continue
+-        ssl = max(0.0, st["ss_res"] - sum(ss for _k, _n, ss, _df in rows))
+-        nn = sum(n for _k, n, _ss, _df in rows)
+-        exp_ = sum(n * s2[regime_of(k)] for k, n, _ss, _df in rows) / nn
+-        if exp_ <= 0:
+-            continue
+-        cand[t] = (ssl / dfl, exp_, dfl)
++    if INTER_PE_PER_TEXT:
++        stats = {t: _clipped(st, s2, regime_of) for t, st in stats.items()
++                 if all(regime_of(k) in s2 for k, _n, _ss, _df in st["rows"])}
++        # each text's own noise level c_t (its pure error over its rows' regime variances), then the night's
++        # kurtosis of the deviations standardized by c_t x the regime variance
++        lev, m2, m4, nq = {}, 0.0, 0.0, 0
++        for t, st in stats.items():
++            rows = st["rows"]
++            if any(regime_of(k) not in s2 for k, _n, _ss, _df in rows):
++                continue
++            pw = sum(df * s2[regime_of(k)] for k, _n, _ss, df in rows)
++            ssp = sum(ss for _k, _n, ss, _df in rows)
++            if pw <= 0 or ssp <= 0:
++                continue
++            lev[t] = ssp / pw
++            for (k, _n, _ss, _df), (q2, q4, n) in zip(rows, st["q"]):
++                w = lev[t] * s2[regime_of(k)]
++                m2 += q2 / w
++                m4 += q4 / (w * w)
++                nq += n
++        kap = max(0.0, (m4 / nq) / (m2 / nq) ** 2 - 3) if nq and m2 > 0 else 0.0
++        shrink = 1 / (1 + kap / 2)
++        if info is not None:
++            info["kurtosis"], info["df_shrink"] = kap, shrink
++        for t, st in stats.items():
++            if t not in lev:
++                continue
++            rows = st["rows"]
++            dfp = sum(df for _k, _n, _ss, df in rows)
++            dfl = st["df_a"] - dfp
++            if dfl < 1 or dfp < INTER_MIN_PE_DF:
++                continue
++            ssp = sum(ss for _k, _n, ss, _df in rows)
++            ssl = max(0.0, st["ss_res"] - ssp)
++            # the lack-of-fit df shared over the rows as their (cells - 1)
++            cl = [max(0, n - df - 1) for _k, n, _ss, df in rows]
++            if sum(cl) <= 0:
++                continue
++            al = [dfl * c / sum(cl) for c in cl]
++            w = [s2[regime_of(k)] for k, _n, _ss, _df in rows]
++            lw = sum(a * x for a, x in zip(al, w))
++            pw = sum(df * x for (_k, _n, _ss, df), x in zip(rows, w))
++            el = lw * lw / sum(a * x * x for a, x in zip(al, w)) * shrink
++            ep = pw * pw / sum(df * x * x for (_k, _n, _ss, df), x in zip(rows, w)) * shrink
++            # ratio = (msl / its regime expectation) / (msp / its regime expectation): c_t cancels
++            cand[t] = (ssl / lw, ssp / pw, el, ep, ssl / dfl, ssp / dfp)
++    else:
++        for t, st in stats.items():
++            rows = st["rows"]
++            dfp = sum(df for _k, _n, _ss, df in rows)
++            dfl = st["df_a"] - dfp
++            if dfl < 1 or any(regime_of(k) not in s2 for k, _n, _ss, _df in rows):
++                continue
++            ssl = max(0.0, st["ss_res"] - sum(ss for _k, _n, ss, _df in rows))
++            nn = sum(n for _k, n, _ss, _df in rows)
++            exp_ = sum(n * s2[regime_of(k)] for k, n, _ss, _df in rows) / nn
++            if exp_ <= 0:
++                continue
++            cand[t] = (ssl / dfl, exp_, dfl, None, ssl / dfl, exp_)
+     out = {}
+-    for t, (msl, exp_, dfl) in cand.items():
+-        line = chi2_lower(1 - alpha / len(cand), dfl) / dfl
+-        si2 = max(0.0, msl - exp_)
++    for t, (a, b, dl, dp, msl, mse) in cand.items():
++        q = 1 - alpha / len(cand)
++        line = f_lower(q, dl, dp) if dp is not None else chi2_lower(q, dl) / dl
++        si2 = max(0.0, msl - mse)
+         sl2 = te[t][1] if t in te else 0.0
+         share = si2 / (si2 + sl2) if si2 > 0 else 0.0
+-        out[t] = (share, msl / exp_, line, msl / exp_ > line and share > INTER_SHARE, dfl)
++        out[t] = (share, a / b, line, a / b > line and share > INTER_SHARE, dl)
+     return out
+ 
+ 
+@@ -1670,14 +1848,19 @@ def adjusted(r, te, t):
+ # the rule or the drill moves; r44 L: `selftest --rev12` CHECKS the pins at tau 1 and 2 %, so a stale pin is
+ # red): {layout tau: (one 5 % winner, one 10 % winner, every head <= 16 5 % faster), each of 300}; rev 11's
+ # accept lines 270 / 270 / 255. Re-pinned by lane formsfixl (r44 B's per-head floor moved them: rev 12 read
+-# (170, 299, 176) / (7, 260, 5)).
+-POWER_RECORD = {0.0: (281, 300, 279), 0.01: (204, 296, 179), 0.02: (25, 271, 18)}
++# (170, 299, 176) / (7, 260, 5)). Re-pinned by lane formsfixm (r45 FORMS8-1's per-text interaction test
++# voids other nights: rev 13 read (204, 296, 179) / (25, 271, 18)).
++POWER_RECORD = {0.0: (281, 300, 279), 0.01: (203, 296, 183), 0.02: (25, 267, 18)}
+ POWER_ACCEPT = (270, 270, 255)
+ 
+ 
+ # r44 K: the night's sigma read (`msig`, the median over texts of sqrt(sL2)) runs LOW: the median of the root
+-# of a ~3-df variance, less the noise subtraction. MEASURED (r44 V11, ESTIMATOR-6; the "phase" model, 30
+-# nights a tau): msig / tau 0.875 / 0.880 / 0.880 at tau 1 / 1.5 / 2 %. The power line reads msig / this.
++# of a ~3-df variance, less the noise subtraction. MEASURED on the drill's SYNTHETIC model (r44 V11,
++# ESTIMATOR-6; the "phase" model, 30 nights a tau), NOT on night data: msig / tau 0.875 / 0.880 / 0.880 at
++# tau 1 / 1.5 / 2 %. The bias depends on the layout model and the text mix (under "heads", I's and aa's texts
++# read sL2 = 0 and pull the median down; under "rho" only the uncorrelated part is read), and POWER_RECORD is
++# drilled under the same "phase" model, so the correction is self-consistent only inside that model: on a
++# real night it is an UNMEASURED correction (r45 FORMS8-5). The power line reads msig / this.
+ SIGMA_READ_BIAS = 0.88
+ 
+ 
+@@ -1835,7 +2018,8 @@ def analyse(night, g2_defective, alpha=ALPHA):
+     tstats = {}
+     te = text_effects([((n, k), r) for n, rr in allfiles for k, r in rr.items()], lambda nk: text_of(nk[1]), tstats)
+     # r44 A: each text's variant x regime interaction, read from its own launches (`text_interaction`)
+-    inter = text_interaction(te, tstats, lambda nk: nk[1][3])
++    iinfo = {}
++    inter = text_interaction(te, tstats, lambda nk: nk[1][3], info=iinfo)
+     flagged = {t for t, v in inter.items() if v[3]} if INTERACTION_VOID else set()
+     res["inter_flagged"] = len([t for t, v in inter.items() if v[3]])
+     adj_rows = {k: dict(r, launches=adjusted(r, te, text_of(k))) if r["status"] == "ok" else r
+@@ -2099,8 +2283,12 @@ def analyse(night, g2_defective, alpha=ALPHA):
+         shs = sorted(v[0] for v in inter.values())
+         fl_ = sorted(t for t, v in inter.items() if v[3])
+         lines.append("rule: variant x regime interaction (r44 A): %d texts read; share median %.3f, max %.3f; flagged "
+-                     "(share > %.2f and lack of fit beyond launch noise at %.3f family-wise) %d%s%s" % (
+-                         len(shs), statistics.median(shs), shs[-1], INTER_SHARE, INTER_ALPHA, len(fl_),
++                     "(share > %.2f, an index that does not bind today, r45 FORMS8-3; and lack of fit beyond the "
++                     "text's own launch noise at %.3f family-wise, launches winsorized at %.1f robust sigmas, F df "
++                     "shrunk x%.2f for the night's pure-error kurtosis %.2f, r45 FORMS8-1) %d; ONE flagged text voids "
++                     "the night's pick (r1 step 5)%s%s" % (
++                         len(shs), statistics.median(shs), shs[-1], INTER_SHARE, INTER_ALPHA, INTER_CLIP,
++                         iinfo.get("df_shrink", 1.0), iinfo.get("kurtosis", 0.0), len(fl_),
+                          ": " + ", ".join("%s share %.3f ratio %.2f (line %.2f)" % ("/".join(t), inter[t][0], inter[t][1],
+                                                                                   inter[t][2]) for t in fl_[:6]) if fl_ else "",
+                          "" if INTERACTION_VOID else " [OFF: control, nothing voided]"))
+@@ -2441,7 +2629,10 @@ def synth_layout_effect(lay, body, v, rg=None):
+     body, which no draw averages). r44 A: "regime": a VARIANT x REGIME effect, exp(N(0, tau)) drawn per
+     (body, regime `rg`, variant), nothing common to a variant across regimes (the shape the per-text fit
+     cannot hold; `heads`: on head texts only). r44 B: "loser": layout exp(N(0, tau)) per (body, variant)
+-    on the texts of the arms `arms` only (a never-picked noisy head), every other text none."""
++    on the texts of the arms `arms` only (a never-picked noisy head), every other text none. r45 FORMS8-3
++    (the critic's models, keyed UNLIKE the fit): "onereg": exp(N(0, tau)) per (body, variant) on head
++    texts in the ONE regime `rg` only (the per-text fit half-absorbs it); "mix": the "phase" model on head
++    texts times a per-(body, regime, variant) interaction exp(N(0, ti))."""
+     st, tau = lay["store"], lay["tau"]
+     if lay["model"] == "heads" and body[0] in ("I", "aa"):
+         return 1.0
+@@ -2452,6 +2643,23 @@ def synth_layout_effect(lay, body, v, rg=None):
+         if (body, rg, v) not in st:
+             st[(body, rg, v)] = math.exp(rng.gauss(0, tau))
+         return st[(body, rg, v)]
++    if lay["model"] == "onereg":
++        if body[0] in ("I", "aa") or rg != lay["rg"]:
++            return 1.0
++        if (body, v) not in st:
++            st[(body, v)] = math.exp(rng.gauss(0, tau))
++        return st[(body, v)]
++    if lay["model"] == "mix":
++        if body[0] in ("I", "aa"):
++            return 1.0
++        if (body, "r") not in st:
++            st[(body, "r")] = rng.randrange(4)
++        ph = (st[(body, "r")] + v) % 4
++        if (body, "ph", ph) not in st:
++            st[(body, "ph", ph)] = math.exp(rng.gauss(0, tau))
++        if (body, rg, v) not in st:
++            st[(body, rg, v)] = math.exp(rng.gauss(0, lay["ti"]))
++        return st[(body, "ph", ph)] * st[(body, rg, v)]
+     if lay["model"] == "loser":
+         if body[0] not in lay["arms"]:
+             return 1.0
+@@ -2475,7 +2683,7 @@ def synth_layout_effect(lay, body, v, rg=None):
+ 
+ def synth_rows(rng, sigma, wins=None, noise="normal", bimodal_cells=(), approx_read=True, regimes=None,
+                rscale=None, aascale=1.0, splits=None, cellwins=None, armoff=None, timefx=None,
+-               order="interleaved", pos0=0, layout=None, only=None):
++               order="interleaved", pos0=0, layout=None, only=None, tscale=None):
+     """A synthetic step-1 results set: C1-C2 every arm, A/A (aa, aa.b) every regime and layer; each
+     arm cell's
+     LAUNCHES launches are T x exp(noise) with T the cell's true time (one per pattern/regime/
+@@ -2503,7 +2711,8 @@ def synth_rows(rng, sigma, wins=None, noise="normal", bimodal_cells=(), approx_r
+     variant's effect (`synth_layout_effect`, held over the night: the first reading, every re-run
+     and the confirm draw from the same pools); the draws are recorded in the row's `variants`.
+     `only` {(card, pat, regime, layer): [arms]}: generate those arm cells only (the confirm's, from
+-    `confirm_cells`), else step 1's."""
++    `confirm_cells`), else step 1's. `tscale(key)` (r45 FORMS8-1): a factor on one arm cell's launch
++    sigma (heterogeneous noise per TEXT: one pattern's head arms noisier); it draws nothing."""
+     wins = wins or {}
+     rscale = rscale or {}
+     splits = splits or {}
+@@ -2525,6 +2734,8 @@ def synth_rows(rng, sigma, wins=None, noise="normal", bimodal_cells=(), approx_r
+     def put(key, T):
+         base = (key[0], key[1], arm_base(key[2])) + key[3:5]
+         sg = sigma * rscale.get(key[3], 1.0) * (aascale if key[0] == "AA" else 1.0)
++        if tscale is not None:
++            sg *= tscale(key)
+         T *= cellwins.get(base, 1.0)
+         if key[:5] in bimodal_cells or (key[1], key[3], key[4]) in bimodal_cells:
+             ls = [T * math.exp(sg * eps()) * (1.08 if i < 2 else 1.0) for i in range(LAUNCHES)]
+@@ -2738,6 +2949,19 @@ def power_rate(head=8, regime="hit-dense", win=0.95, trials=NOISE_TRIALS, seed=7
+     return sum(x == head for x in picks), picks
+ 
+ 
++def inter_rate(seed, win=0.95, trials=NOISE_TRIALS, **kw):
++    """r45 FORMS8-1/-3: over `trials` nights, (nights where H(8)'s one `win` in hit-dense is picked, nights
++    with a text flagged by the interaction test, nights with h* != 64); win None: no win."""
++    rng = random.Random(seed)
++    hit = fl = off = 0
++    for _ in range(trials):
++        v = synth_night(rng, 0.01, cellwins=power_cells(8, "hit-dense", win) if win else None, **kw)
++        hit += v["hstar"] == 8
++        fl += v.get("inter_flagged", 0) > 0
++        off += v["hstar"] != GRID_TOP
++    return hit, fl, off
++
++
+ def _flags(**kw):
+     """Set the rule's control switches; returns the previous values (restore with _flags(**old))."""
+     old = {k: globals()[k] for k in kw}
+@@ -2863,6 +3087,68 @@ def selftest_rev12(check):
+         _flags(**old)
+     check("(r44 A) control: variant x regime heads tau 3 %, no void", pa_ > 0.10,
+           "P(h* != 64) = %.3f over %d nights (the drill sees the defect: accept > 0.10)" % (pa_, NOISE_TRIALS))
++    # r45 FORMS8-1 (c): HETEROGENEOUS launch noise WITH a layout ("phase" tau 1 %) and one true 5 % H(8) win in
++    # hit-dense, no interaction anywhere: (i) t(5) launches, (ii) one pattern's head arms at 2x sigma. GATED:
++    # nights flagged <= 0.05 AND the win's power with the void >= 0.9 x without it (the void off, same seed);
++    # the CONTROL (INTER_PE_PER_TEXT off: r44's pure error pooled per regime, chi-square) flags > 0.05 (r45
++    # read 55 and 100 of 100)
++    hexp = CARD_PATS["C1"][0]
++    ph1 = dict(model="phase", tau=0.01)
++    for k, (what, kw) in enumerate((
++            ("t(5) launches", dict(noise="t5")),
++            ("one pattern's (%s) head arms at 2x sigma" % hexp,
++             dict(tscale=lambda key: 2.0 if key[1] == hexp and key[2] != "I" else 1.0)))):
++        hon, fon, _o = inter_rate(3460 + k, layout=ph1, **kw)
++        old = _flags(INTERACTION_VOID=False)
++        try:
++            hoff, _f, _o = inter_rate(3460 + k, layout=ph1, **kw)
++        finally:
++            _flags(**old)
++        check("(r45 FORMS8-1) no interaction, %s" % what, fon / NOISE_TRIALS <= 0.05 and hon >= 0.9 * hoff,
++              "nights flagged %d of %d (accept <= 0.05); h* = 8 in %d with the void, %d without (accept >= 0.9 x)"
++              % (fon, NOISE_TRIALS, hon, hoff))
++        old = _flags(INTER_PE_PER_TEXT=False)
++        try:
++            _h, fc_, _o = inter_rate(3460 + k, layout=ph1, **kw)
++        finally:
++            _flags(**old)
++        check("(r45 FORMS8-1) control: %s, r44's pooled pure error" % what, fc_ / NOISE_TRIALS > 0.05,
++              "nights flagged %d of %d (the drill sees the defect: accept > 0.05)" % (fc_, NOISE_TRIALS))
++    # r45 FORMS8-3 RECORD: a SMALL interaction (0.5 %, half the launch sigma; the critic's "mix" model, keyed
++    # unlike the fit: heads' "phase" main effect tau x a per-(text, regime, variant) interaction ti), one 5 % H(8)
++    # win: the flagged-night rate and the power, void on vs off
++    for k, (tau, ti) in enumerate(((0.01, 0.005), (0.0, 0.005))):
++        lay = dict(model="mix", tau=tau, ti=ti)
++        hon, fon, _o = inter_rate(3470 + k, layout=lay)
++        old = _flags(INTERACTION_VOID=False)
++        try:
++            hoff, foff, _o = inter_rate(3470 + k, layout=lay)
++        finally:
++            _flags(**old)
++        print("REC  %-48s nights flagged %d of %d; h* = 8 in %d with the void, %d without (RECORD, r45 FORMS8-3)"
++              % ("(r45 FORMS8-3) interaction %g %% x main %g %%" % (100 * ti, 100 * tau), fon, NOISE_TRIALS, hon, hoff))
++    # r45 FORMS8-4 RECORD: the interaction rows keyed unlike the fit, under the new line WITH the per-head floor
++    # (both on, the night's rule), no win: P(h* != 64) and the flagged nights, void on vs off
++    for k, lay in enumerate((dict(model="onereg", tau=0.03, rg="hit-dense"), dict(model="onereg", tau=0.05, rg="hit-dense"),
++                             dict(model="mix", tau=0.03, ti=0.015))):
++        _h, fon, oon = inter_rate(3480 + k, win=None, layout=lay)
++        old = _flags(INTERACTION_VOID=False)
++        try:
++            _h, _f, ooff = inter_rate(3480 + k, win=None, layout=lay)
++        finally:
++            _flags(**old)
++        print("REC  %-48s P(h* != 64) = %.3f with the void (nights flagged %d), %.3f without, of %d (RECORD, r45 "
++              "FORMS8-4)" % ("(r45 FORMS8-4) %s" % ", ".join("%s %s" % kv for kv in sorted(lay.items())),
++                             oon / NOISE_TRIALS, fon, ooff / NOISE_TRIALS, NOISE_TRIALS))
++    # r45 FORMS8-2: a POOL_SIZE other than 4 is refused at start (at 8 every pool repeats a layout: r44 C refuses
++    # every pool), 4 runs; and the command line refuses it before any command (exit 2)
++    ps = {n: pool_size_refusal(n) for n in (2, 3, 4, 8)}
++    cp = subprocess.run([sys.executable, "-I", os.path.abspath(__file__), "plan"], capture_output=True, text=True,
++                        env=dict(os.environ, POOL_SIZE="8"), timeout=120)
++    check("(r45 FORMS8-2) POOL_SIZE other than 4 refused at start", ps[4] is None and all(ps[n] for n in (2, 3, 8))
++          and cp.returncode == 2 and "POOL_SIZE=8" in cp.stderr,
++          "refused: %s; `POOL_SIZE=8 cards.py plan` exit %d, %s" % (
++              ", ".join(str(n) for n in (2, 3, 4, 8) if ps[n]), cp.returncode, cp.stderr.strip()[:90]))
+     # r44 B: a NEVER-PICKED NOISY LOSER (H(1) 20 % slower everywhere, layout tau 4 % on its texts only) beside
+     # one 5 % winner H(8) in hit-dense; GATED at rev 11's line; the control (PER_HEAD_FLOOR off: rev 12's
+     # one cell max) at the same nights (r44 V2 read 151 of 300)
+@@ -3888,6 +4174,10 @@ def main():
+     if len(sys.argv) < 2 or sys.argv[1] not in cmds:
+         print(__doc__)
+         return 2
++    why = pool_size_refusal(POOL_SIZE)
++    if why:
++        print("cards: REFUSED: %s" % why, file=sys.stderr)
++        return 2
+     return cmds[sys.argv[1]](sys.argv[2:]) or 0
+ 
+ 

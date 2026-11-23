@@ -49,7 +49,7 @@ pcrec's checks on the search-code kit (`memfn/`, D146/D147;
 - **proven_check.c** — R-25 (lane memfn-r25): the form class's proven sets honour the row's declared `tests`.
 - **mass_check.c** (1b/1c goldens: `kit_mass`, `kit_run_set`, `kit_run_member`, the normal-form refusal; floor 41), **run_decide_check.c** (K38-1: the run decision's readers, the verify-YES stretch included; floor 13): parts of test-memfn-finder.
 ### The per-offset proof and the context spans (lane r26z1, [MEMFN] R-26 Z1)
-- **run_proof.sh**, **proof_check.c**, **proof_run.c**, **proof_meta.h** — R-26.1-R-26.5's checks (MF_SITE_ABI 18), part `proof` of `make test-memfn-finder` ... Since D172 S2 commit 1 (lane wsc1) proof_run repeats every call with the subject at a guard page after n, one before 0, and between SENTINEL pads (review S2's read-limit layouts); plant `S1408` (an over-read past n; wsc1's `WSC1-R1`, renamed by wsc2) is their witness. Later history of this check (D172 S2 commit 6, S3): tests/memfn/NOTES.md.
+- **run_proof.sh**, **proof_check.c**, **proof_run.c**, **proof_meta.h** — R-26.1-R-26.5's checks (MF_SITE_ABI 18), part `proof` of `make test-memfn-finder` ... Guard-page layouts and plant S1408: NOTES.md. Later history of this check (D172 S2 commit 6, S3): tests/memfn/NOTES.md.
 ### D172 S2 commit 4's lever check (lane wsc4)
 - **run_wreply.sh** — the window family's REPLY check (D172 S2; wsc4-wsc6). Opt-in, no make target; ~10 s plus a tree build; takes the box lock. Full description: NOTES.md "run_wreply.sh".
 ### The guarded-bytes check (RQ-3, D155 add. 2)
@@ -69,18 +69,20 @@ pcrec's checks on the search-code kit (`memfn/`, D146/D147;
 
 - **run_d3floor.sh**, **d3_floor.py**, **d3_floor.tsv**, **d3_census.tsv** — D3 floor gate: `make test-memfn-d3floor`, last step of test-axes; also cloud shard 1; not in `make test`. See NOTES.md.
 
+### SPAN-SEED (R-47 U1, lane bsu1; docs/design/memfn/block_span.md §10.1)
+- **span_seed.rxt**, **gen_span_seed.py** — the vector span's corpus witnesses (41 patterns, python-`re` cases), GENERATED: re-run, never hand-edit.
+- **span_pins.py** — U4: the 22 T-table pin cells and SPAN-SEED's V-site census (byte + utf8), run inside C18 (docstring).
+- **span_ksource.py** — §10.1's k source, one reader for span_pins.py and g2_vspan.py; its predicate controls.
+- **span_vector_identity.py** — U2's identity gate (§10.2 G-4); a delivery step, heavy, args in NOTES.md.
+- **g1_span_vector.py** — U6 G1 dry.
+
 ## Maintaining it
 
 - **A new search form in an emitter:** add a row, or name the function on
   its site's existing row, and raise the floor if you added a row.
 - **A respelled form the vocabulary no longer sees:** rule 4 says so. Teach
-  `search_vocab.tsv` the new shape; never delete the row to get green.
-  Worked example (lane advtri, 2026-10-08, abi 67): [MEMFN] R4h's layout
-  normalization respelled the five ADVANCE loops in the kit's layout
-  (parenthesised `more` and member, braced body, step on its own line), and
-  `walk-stmt`/`walk-open` stopped seeing them (4 rule-4 FAILs, 3 C12 STALE
-  ceilings). Both regexes were widened to the new shape, not the rows or
-  ceilings touched: C12 reads the same 12 forms in the same ceilings.
+  `search_vocab.tsv` the new shape; never delete the row to get green
+  (worked example: NOTES.md "A respelled form").
 - **A migration step's REPLACE commit:** flip its rows to `delegated`.
   From then on, rule 3 holds pcrec to spelling none of them.
 - `c4_populations/` — C4's COMMITTED compiler populations (`gcc -dM -E` dumps

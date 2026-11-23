@@ -1,0 +1,3 @@
+one pattern (dig24) head arms 2x sigma, phase 1%, win N=200 | von/pt: fl 2 h8 116 P!=64 0.585 | voff/pt: fl 3 h8 116 P!=64 0.590 | von/pool: fl 199 h8 0 P!=64 0.000
+one pattern (uuid36) head arms 2x sigma, phase 1%, win N=200 | von/pt: fl 1 h8 126 P!=64 0.630 | voff/pt: fl 1 h8 127 P!=64 0.635 | von/pool: fl 199 h8 1 P!=64 0.005
+  texts read/night median 120.0, excluded median 0.0; per-text pure-error df: min 6 median 12.0, share<4 0.000

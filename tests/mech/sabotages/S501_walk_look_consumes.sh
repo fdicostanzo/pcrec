@@ -11,6 +11,9 @@
 # [INLINE-C] stage 1a (lane ic1a, 2026-10-26) RE-AIMED: the arm now reads the
 # per-kind attribute row (src/core/kindrow.def); the anchor follows the arm's
 # new text and the plant is unchanged in meaning: the lookaround now shares the row-read arm (ss_row); the plant splits it out
+# RE-AIMED 2026-11-22 (lane l3mechtri): ss_walk became void with an in/out
+# accumulator (K147 SPINE_EACH, 04ad1e0ca); the plant now uses that signature
+# (it failed to BUILD, an ANOMALY in cloud mech run 45034890369 shard 64/90).
 SAB_ID="S501-walk-look-consumes"
 SAB_FILE="src/facts/startset.c"
 SAB_SUITES="startset vmhat dfahat"
@@ -29,10 +32,13 @@ SAB_BEFORE='        case A_KRESET:
         case A_LOOK:
 '
 SAB_AFTER='        case A_KRESET:
-            return ss_row(a, acc);
+            ss_row(a, acc);
+            return;
         case A_LOOK: {   /* SABOTAGE S501: the lookaround read as consuming */
-            StartSet b = ss_walk(cx, a->l, ss_empty());
+            StartSet b = ss_empty();
+            ss_walk(cx, a->l, &b);
             b.nullable = false;
-            return ss_cat(b, &acc);
+            *acc = ss_cat(b, acc);
+            return;
         }
 '

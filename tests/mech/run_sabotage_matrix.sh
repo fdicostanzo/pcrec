@@ -456,6 +456,11 @@
 #     body's run-time tiling check only fires on a compile that reaches the
 #     foreign write, and a write on an unreached path (the comment tier, a
 #     rare rung) moves no answer. Registered before S1840.
+#   skippins — added 2026-11-21 (review r72 CHECKS-1, lane bsu1fix); runs
+#     tests/codegen/run_skip_pins.sh: the E-find search rows' `skip` column
+#     held to the artifact (the proved position is not re-tested). Its own arm
+#     because a re-tested position moves no answer and no G2 pin. Registered
+#     before S3500.
 #   twins — added 2026-10-21 ([FINDALL-NEXT] I1, lane i1build); runs
 #     tests/codegen/run_residual_twins.sh: every residual call reaches its
 #     static twin in a -fPIC object (no PLT relocation). Registered before
@@ -573,6 +578,16 @@
 #     whole family under ASan costs ~1.8x g2pres (measured by lane k383:
 #     the --plant ASan path 80 s vs 44 s per plant on the dev box). Rows:
 #     S3100, S3101.
+#   g2v — added 2026-11-22 ([MEMFN] R-47 U4, lane bsu4g); runs
+#     memfn/tests/run_g2_win.sh --v: section V alone, G2-V's unit (every
+#     vector-span rendering of a generated set x k space, windows flush
+#     against a PROT_NONE page at each end, against python re) and whole
+#     (pcrec's artifacts at both layers and widths 32/4095, find-all over the
+#     cards' regimes and the near-miss staircases, subjects flush against a
+#     PROT_NONE page at each end). ~30 s; its own arm because the window
+#     family's full run costs ~220 s and reads none of the vector span's
+#     text. Links the sabotaged tree's build/libpcrec.a and runs its
+#     build/pcrec. Rows: S3525, S3526.
 #   g2win — added 2026-11-14 (lane mechund); runs memfn/tests/run_g2_win.sh:
 #     G2's window family (generated window sites against g2/g2_win_ref.c's
 #     decision, the in-run sites under the lever run-tie-left included).
@@ -3539,6 +3554,16 @@ run_one() {
                 f="$(grep -m1 '^checks failed:' "$work/g2presasan.log" | grep -oE '[0-9]+')"
                 score_arm "$work/g2presasan.log" "$f" "g2pres-asan:${f:-ERR}fail/${p:-?}pass"
                 ;;
+            g2v)
+                # [MEMFN] R-47 U4 memfn/tests/run_g2_win.sh --v (G2-V) — see
+                # the vocabulary entry above. Links the sabotaged tree's own
+                # build/libpcrec.a and runs its build/pcrec.
+                LIB="$tree/build/libpcrec.a" CC="$CC" TMPDIR="$work" \
+                    bash "$tree/memfn/tests/run_g2_win.sh" --v > "$work/g2v.log" 2>&1
+                p="$(grep -m1 '^checks passed:' "$work/g2v.log" | grep -oE '[0-9]+')"
+                f="$(grep -m1 '^checks failed:' "$work/g2v.log" | grep -oE '[0-9]+')"
+                score_arm "$work/g2v.log" "$f" "g2v:${f:-ERR}fail/${p:-?}pass"
+                ;;
             memfnd27frame)
                 # [MEMFN] span_pick 3.0b tests/memfn/d27_frame/run.sh — see
                 # the vocabulary entry above. Links the sabotaged tree's own
@@ -3761,6 +3786,13 @@ run_one() {
                 p="$(grep -m1 '^checks passed:' "$work/trailcompact.log" | grep -oE '[0-9]+')"
                 f="$(grep -m1 '^checks failed:' "$work/trailcompact.log" | grep -oE '[0-9]+')"
                 score_arm "$work/trailcompact.log" "$f" "trailcompact:${f:-ERR}fail/${p:-?}pass"
+                ;;
+            skippins)
+                # tests/codegen/run_skip_pins.sh -- see the vocabulary entry above.
+                PCREC="$pcrec" bash "$tree/tests/codegen/run_skip_pins.sh" > "$work/skippins.log" 2>&1
+                p="$(grep -m1 '^checks passed:' "$work/skippins.log" | grep -oE '[0-9]+')"
+                f="$(grep -m1 '^checks failed:' "$work/skippins.log" | grep -oE '[0-9]+')"
+                score_arm "$work/skippins.log" "$f" "skippins:${f:-ERR}fail/${p:-?}pass"
                 ;;
             stmtwriter)
                 # [VMREC] tests/codegen/run_stmt_writer.sh -- see the

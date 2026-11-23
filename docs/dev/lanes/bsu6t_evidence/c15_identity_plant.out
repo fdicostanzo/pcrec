@@ -1,0 +1,4 @@
+DIFF  time_cells output file, STEP1: 175546 bytes, 1327 rows (sha b86ad3457af50961)
+DIFF  time_cells output file, STEP1 --with-approx: 143893 bytes, 1327 rows (sha 2e9fccafd66583f4)
+DIFF  time_cells output file, STEP2B at h*=8: 19094 bytes, 145 rows (sha 6510559ddd565d09)
+c15 identity: 8 checks, 3 differ

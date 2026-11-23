@@ -7,7 +7,9 @@ SAB_ID="S1760-pin-compare-skipped"
 SAB_FILE="src/parse/rxt_source.c"
 SAB_SUITES="code"
 SAB_DESC="pcrec_rxt_reach_verify skips every edge, so an include/lib pin that does not match the file's SHA-256 is accepted"
-SAB_REACH='printf '\''include "%s/tests/code/frag/pin2_ok.rxt" sha256 0000000000000000000000000000000000000000000000000000000000000000\n\npattern z\n'\'' "$TREE" > "$REACH_TMP/e.rxt"; "$PCREC" -o "$REACH_TMP" "$REACH_TMP/e.rxt"'
+# The fixtures are copied to a SHORT path ([PIN-MSG-DEPTH]): pcrec_error.msg is cut at
+# 256 bytes and the phrase sits after the path, so a deep $TREE/$REACH_TMP hid it.
+SAB_REACH='R="${PCREC_TMPDIR:-/var/tmp/pcrec-$(id -un)}"; mkdir -p "$R"; S=$(mktemp -d "$R/r.XXXXXX"); trap '"'"'rm -rf "$S"'"'"' EXIT; cp -r "$TREE/tests/code/frag" "$S/f"; printf '\''include "%s/f/pin2_ok.rxt" sha256 0000000000000000000000000000000000000000000000000000000000000000\n\npattern z\n'\'' "$S" > "$S/e.rxt"; "$PCREC" -o "$S" "$S/e.rxt"'
 SAB_REACH_EXPECT='sha256 pin mismatch'
 SAB_COUNT=1
 SAB_BEFORE='        if (!e->pin || !e->digest || !strcasecmp(e->pin, e->digest)) continue;'
