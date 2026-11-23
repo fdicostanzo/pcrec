@@ -2,7 +2,7 @@
 
 ## STATE AT HANDOFF
 Branch lane/bsu6par2 (cut from lane/bsu6par 2061e7e98), code and report committed; rulings file
-`docs/dev/lanes/bsu6par2_rulings.md` was absent at every checkpoint (no ruling applied beyond the brief). All five
+`docs/dev/lanes/bsu6par2_rulings.md` was empty at the last re-read (no R-n applied). All five
 FIX-NOW ids are built and run in-lane. No check's assertion, seed or printed text changed (the only changed printed
 line is the `--units` summary, which is SUBSET-LABEL). No timing run, nothing under `memfn/src` or `src/`, c6_rule.md
 untouched. OWED: job `759-kit-bsu6par2-selftest` (key kit-bsu6par2-selftest), queued, the full selftest at -j16 plus the
