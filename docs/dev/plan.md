@@ -778,7 +778,7 @@ Owner waits: a row or stage waiting on the OWNER (a charter, a build go, an answ
   filed: 2026-11-09 manager (Frank: "array capture for (X){M, N} perhaps using special syntax. Cap N become N capture groups. No unbounded")
   status (2026-11-09): UNSCHEDULED. Opt-in syntax only (PCRE2's last-iteration default stays); one group with n entries via its own accessor, never renumbering other groups
   trigger: (D77) a caller asking for it, or a pattern family that today re-runs a match per iteration to recover each one
-  refs: docs/design/plan_row_bodies/ARRAY-CAPTURE.md; [POSTFACT]
+  refs: docs/design/plan_row_bodies/ARRAY-CAPTURE.md; [POSTFACT]; [COND-FAMILY] (future client: the predicate `capture(@x)`; its array of a `+` loop's settings is UNBOUNDED, against this row's "No unbounded"; P-23, 2026-11-23)
 - [CAPS-VIEW-RERENDER] STATE:not-started — re-render cycle1_caps_view.md's CAPS table under the bench's I-99/I-100 classes
   filed: 2026-09-28 lane admin88
   status (2026-09-28): not started; FILED 2026-09-28, admin88, on `[OPTLOOP.2.analysis]`'s own residual #4, `docs/dev/optloop/cycle2_close.md` §2 item 4 — proposed, not ruled, per that document's own text
@@ -1382,13 +1382,6 @@ Owner waits: a row or stage waiting on the OWNER (a charter, a build go, an answ
   refs: docs/spec/rxt_format.md §1.5¶3 (multi-line capability without multi-line syntax, today); [RXT-ONE-READER]; [INLINE-C] (long embedded C is the driver); dev_journal 2026-11-01
   Design scope: verbatim bytes between the delimiters; the final-newline/CR policy, diagnostic line numbers and the interplay with `pattern-esc`/escaped subjects stated once; it fires [RXT-ONE-READER]'s trigger (a three-leg format change), so the design weighs ONE-READER as stage 1.
   Driver (Frank 2026-11-01): with embedded C, patterns are getting long, and a one-line `pattern-esc` with `\n` escapes is unreadable and unreviewable. A GENERAL form: a value block is a property of the format, not of `pattern`; the existing one-line spellings stay.
-- [PIN-MSG-DEPTH] STATE:not-started — mech rows S1760/S1761 depend on scratch depth (256-byte message cut)
-  filed: 2026-11-01 manager (kit triage r30b2tri)
-  status (2026-11-01): the rows read UNREACHED when MECH_SCRATCH/TMPDIR is deep (fixture path about 107 chars); main's default mktemp path (about 87) fits
-  next: make the probes path-independent: SAB_REACH copies the fixtures to a short $REACH_TMP-relative path (or the expected phrase is matched on a message that puts it before the path)
-  refs: tests/mech/sabotages/S1760_pin_compare_skipped.sh; S1761; [IFACE-PUSH] (candidate: keep the refusal tail); docs/design/plan_row_bodies/IFACE-PUSH.md
-  note (2026-11-03, file1103): session 128 carry-over item "S1760/S1761" is this row; nothing new found (rows added by ic3, docs/dev/lanes/ic3_report.md).
-  Test-side half of the 256-byte `pcrec_error.msg` cut. The interim fix is a short MECH_SCRATCH in the reach job (kit-owned, no code change).
 - [X-NEL-RAW] STATE:not-started — does pcrec skip a raw 0x85 byte under (?x) in byte mode as libpcre2 does?
   filed: 2026-11-01 manager (found 2026-10-30 by lane ri698)
   status (2026-11-01): UNPROBED (box rule: no runs during the 2026-11-01 bench window); spec pattern_language.md §3.2 promises the skip under -e byte
@@ -2230,7 +2223,7 @@ Owner waits: a row or stage waiting on the OWNER (a charter, a build go, an answ
   filed: 2026-10-13 Frank (session 111), witness `(?:(\d+)\s*\,?\s*){1,50}`
   status (2026-10-13): not started; idea stage; PCRE2 keeps only the last iteration (a pcrec extension, D26)
   next: discussion with Frank (opt-in syntax per group, API shape, oracle)
-  refs: [POSTFACT]; [VAR]; [M4-CALLOUTS]; decisions D26; docs/spec/match_api.md (rx_group_entry)
+  refs: [POSTFACT]; [VAR]; [M4-CALLOUTS]; decisions D26; docs/spec/match_api.md (rx_group_entry); [COND-FAMILY] (future client: the predicate `capture(@x)`, an unbounded array of a `+` loop's settings; P-23, 2026-11-23)
   Prior art: .NET Group.Captures, Python `regex` captures(). Opt-in PER GROUP so other groups pay nothing. Bounded repeats ({1,50}) give a fixed slot array; unbounded needs a caller buffer plus an overflow code. VM: slot i written by iteration i, the count trailed so backtracking discards abandoned iterations. DFA: only via tagged-DFA positions per iteration (bounded), likely VM-only first. An API addition and abi event; build it BEFORE [IFACE-PUSH] (Frank 2026-10-13: features first, so the push knows what the new API must hold). Oracle: python `regex` captures() is a new dependency (bench-side or opt-in).
 
 - [DEBUG-CHECKS] STATE:not-started — an opt-in CHECKED generation mode: caller-misuse and invariant checks for development
