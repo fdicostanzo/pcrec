@@ -1042,3 +1042,19 @@ wake.md says (read the draft WHOLE first; A4 is a ruled-words finding: read his 
   014ebc42f..026090af8, round dir `$PCREC_TMPDIR/scratch/crit-predfold1123/`. NOT a delivery to main until r86 is
   ruled and its fix lane lands.
 - WAITING ON HIM: the call-forms play-out (he said he would be back to go over it).
+
+## 2026-11-23 — r86 drafted and ruled; fix lane predfix86 launched; call-forms discussion continues
+
+- r86 (coordinator `crit-predfold1123`, 5 opus lenses + verifier; 46 items, 0 refuted; draft
+  `$PCREC_TMPDIR/scratch/crit-predfold1123/review.md`): RULED (record entry "2026-11-23 MANAGER — review r86").
+  Three findings were errors of MY fold brief: the joint and value `?:` lines printed legal against the asked
+  statement's conservative edges (A1); optional-label-general closed on my thought (A1); his call spelling
+  `l = ts:` taken as a head default (A8). Coordinator stopped.
+- LAUNCHED: lane predfix86 (opus; worktree `worktrees/predfix86`, cut at a05795469; deliver + empty rulings file
+  first; lanewatch armed). It also folds label-hole-full (ruled mid-round) beside A15 and files the review.
+- With the owner since the fold: label-hole-full RULED (by kind of group); count-unspecified RULED (an unspecified
+  count bound by meaning); DISCUSSION: `repeat(A)` as `A*`, unset against the underscore, his conditional repeat
+  head (same table as head (i) but for a written 0), the `? :` / `?:` spelling collision, "meet me half way".
+  ASKED: unspecified-rule; WAITING: repeat-head. None of the call-forms material is folded (a later fold).
+- LESSON (his): a lone underscore VANISHES in his chat UI: fenced code blocks or the word (memory saved).
+- Queue additions from r86: closing-own-label, capture-in-set, optional-entry-edges.
