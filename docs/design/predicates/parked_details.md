@@ -894,6 +894,7 @@ readings:
 evidence:
 history:
 - 2026-11-23 (lane predfold1123, the fold of 2026-11-22 late and 2026-11-23; record "2026-11-23 OWNER, on optional-label-general: the `?` in conditions "is a special case"; where it sits; `?` for optional macro arguments; a value left of `:` with no label"): a new parked piece.
+- 2026-11-23 (lane predfix86, review r86 D3; record "2026-11-23 MANAGER — review r86 (predfold1123): the dispositions; three errors of the manager's own brief named; no owner words"): a note that the idea would give `?` a second meaning, against his reason for the `?:` operator (optional-place); his words kept; `see:` gains core/conditions/form/optional-general.
 
 ## parked/ideas/cartesian — An explicit product of arrays
 slugs: 

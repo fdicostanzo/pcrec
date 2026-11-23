@@ -30,6 +30,9 @@ by: core/principles/regex-default
 "the semantic rules should not not depend on the spelling of the regex but on the resulting (graph, behavior, semantics, string set)", with his "if it is possible".
 The wording he agreed to, with his asterisk (*): "two patterns that match the same subjects and set their labels the
 same way answer every condition alike" (*).
+- Where a used binding contributes the name, composed and one-literal spellings part (a reading; the line "A used
+  binding", core/labels/flow, core/labels/paths/two-sources): the bare name is the definition's own.
+A used binding: WHOLE `1,7` HOLDS, `7,1` FAILS / SEARCHED `7,1 1,7` `1,7`@4 / FIND-ALL `1,7 7,1 1,2 9,9` [`1,7`@0, `1,2`@8] (`/(?<h>\d)/ SEQ A & (h: <5)`, A := `/,(?<h>\d)/`; the one literal `/(?<h>\d),(?<h>\d)/ & (h: <5)` WHOLE `1,7` FAILS, `7,1` HOLDS)
 
 ### A set never contains absence (the manager's name)   [core/principles/no-absence]   principle 2026-11-16
 "In my mind <100 is defined as the set of all positive integer strings less than 100. Absence is not part of that set".
@@ -437,13 +440,13 @@ see: core/diagnostics/warnings
 WHOLE `3qxx` FAILS, `q3xx` HOLDS (a = `3`), `7q3xx` HOLDS (a = `3`) / SEARCHED `3qxx` FAILS / FIND-ALL `3qxx q3xx 7q3xx` [`q3xx`@5, `7q3xx`@10] (`/(?:(?<a>\d)|(?<b>[a-z]))*xx/ & (a: <5)`)
 
 ### Labels across composed parts   [core/labels/flow]   ruled 2026-11-22
-A label from a pattern is whatever label it shows where it is read; within a definition a composed pattern and a literal behave alike (the last mention wins); a user reads what a piece exports.
+A label from a pattern is whatever label it shows where it is read; for names written in the definition a composed pattern and a literal behave alike (the last mention wins).
 needs: core/labels/one-rule core/patterns/sequence
 - A part SURFACES a name where the name is visible in the definition, its protected labels included; what a
   piece's user reaches is what it exports (core/labels/export) (a reading).
 - Across the sequence operator a name both parts surface is one label, the last mention, which is not always the
   last match; for names read at ONE level (the definition's own groups read bare; a part's labels through one prefix
-  or one label over the composition), never across the bare / sourced line (core/labels/paths/two-sources).
+  or one label over the composition), never across the bare / sourced line (the manager's restatement, a reading; core/labels/paths/two-sources).
 - Across `&` a name both sides surface is an ambiguous reference: a compile error where a condition or a `$`
   references it, not for existing; a part's own label is reached through a label given to the part.
 - A binding's name is a label prefix: `A.h` is h as A surfaces it; through it a group question reads every use, and
@@ -592,7 +595,7 @@ see: core/labels/paths core/spellings/placeholders core/modules/binding-list
   at the list (a reading, run: `[(=hour) = isodate]`).
 date.year, from outside: WHOLE `2025-01-02!` HOLDS, `1999-01-02!` FAILS / SEARCHED `1999-01-02! 2025-03-04!` `2025-03-04!`@12 / FIND-ALL `2025-01-02! 1999-01-02! 2001-12-31!` [`2025-01-02!`@0, `2001-12-31!`@24] (`date & (date.year: >= 2000)`, date := `[(=year) = isodate] SEQ "!"`, isodate := `[year = /\d{4}/] SEQ "-" SEQ [month = /\d\d/] SEQ "-" SEQ [day = /\d\d/]`)
 date.month, from outside: modes: a compile error (`date & (date.month: "01")`, the same date: the list takes `year` only).
-Through a call that uses its argument alone: modes: a compile error (`[(=d) = B(A)] & (d: <5)`, A := `/(?<d>\d)/`, B(rx) := `/${rx}xx/`: the call exports no such label, so the list cannot take it); `[(=l) = atomic(B | A)]` alike, B and A bindings used alone in the argument (an argument exports what its own text writes, a part used alone in it nothing: lib/convention/argument-labels).
+Through a call that uses its argument alone: modes: a compile error (`[(=d) = B(A)] & (d: <5)`, A := `/(?<d>\d)/`, B(rx) := `/${rx}xx/`: the call exports no such label, so the list cannot take it); `[(=l) = atomic(B | A)]` alike, B and A bindings used alone in the argument (an argument exports what its own text writes, a part used alone in it nothing: core/labels/export/arguments).
 All but one: WHOLE `2025-01-02!` HOLDS, `1999-02-03!` FAILS / SEARCHED `1999-02-03! 2025-01-02!` `2025-01-02!`@12 / FIND-ALL `2025-01-02! 1999-02-03! 2001-01-02!` [`2025-01-02!`@0, `2001-01-02!`@24] (`date & (date.day: "02")`, date := `[(=, _ = month) = isodate] SEQ "!"`, isodate := `[year = /\d{4}/] SEQ "-" SEQ [month = /\d\d/] SEQ "-" SEQ [day = /\d\d/]`)
 Through a call that passes its argument's labels on: WHOLE `3` HOLDS, `7` FAILS / SEARCHED `x73` `3`@2 / FIND-ALL `3 7 4` [`3`@0, `4`@4] (`[(=l) = atomic(/(?<l>\d)/)] & (l: <5)`)
 
@@ -1110,7 +1113,7 @@ A group question on `0`: modes: a compile error (`/(?<d>\d)+/ & some((0: "1"))`:
 An index on `0`: modes: a compile error (`/(?<d>\d)+/ & (0[1]: "1")`: `0` has no settings).
 
 ### The match so far inside a loop   [core/conditions/match-so-far/in-loop]   ruled 2026-11-23
-Inside a loop body `0` reads the match so far from the start of the definition it is written in, every earlier pass included; a per-pass test is a label on the part.
+Inside a loop body `0` reads the match so far from the start of the definition it is written in, every earlier pass included; a per-pass test is a label on the part (a reading).
 needs: core/conditions/match-so-far core/patterns/quantifiers
 by: core/principles/binding-fixed
 - His words: "zero-in-loop: it has to be (b) or it's unusable because you couldn't put 0: in a loop. I'd even
@@ -1213,12 +1216,13 @@ see: lib/control/peek lib/control/when lib/control/when-test/not core/filters/ne
 WHOLE `7` HOLDS, `7x` FAILS / SEARCHED `7x 8` `8`@3 / FIND-ALL `1x 2 3x4` [`2`@3, `4`@7] (`/\d/ SEQ NOT peek(/x/)` is `\d(?!x)`)
 
 ### An effect under negation   [core/filters/negation/effects]   ruled 2026-11-23
-An effect (a form whose meaning is more than which texts it accepts; today the capture request) cannot stand under a negation, `NOT` or `!`, at any depth: a compile error.
+An effect cannot stand under a negation: a compile error. What an effect is, and `NOT` or `!` at any depth: the manager's readings (a), (b) below.
 needs: core/filters/negation
 see: lib/structural/capture lib/control/when core/operators/statements core/diagnostics/errors
 - His words: "capture-negated: broaden to any effect macro cannot be under negation."; "cannot" is read as a
   compile error (the refusal of the candidate put, generalised).
-- The effects today: the capture request (`capture("name")`; the array request, unbuilt) inside an expression; the
+- An effect is a form whose meaning is more than which texts it accepts; today the capture request
+  (`capture("name")`; the array request, unbuilt) inside an expression; the
   `@` statements are effects too but stand alone, never under a negation (the manager's reading (a)).
 - "Under negation": inside the operand of `NOT` (a condition, a peek) or of `!` (a set, a pattern), at any depth
   (reading (b)).
@@ -1837,7 +1841,7 @@ A set that reads a label, bound alone: modes: a compile error at `lim` (`/(?<b>\
 A binding that holds its label: WHOLE `2001` HOLDS, `1999` FAILS / SEARCHED `x1999 2024` `2024`@6 / FIND-ALL `2024 1999 2000` [`2024`@0, `2000`@10] (`year`, year := `/(?<_v>\d{4})/ & (_v: >= 2000)`)
 
 ### A condition on `0` bound to a name of its own   [core/holes/bare-condition/zero-binding]   ruled 2026-11-22
-A condition naming only `0`, bound alone (`c := (0: 5)`), is a compile error at its binding, for now; written in place, or passed as an argument, it is legal.
+A condition naming only `0`, bound alone (`c := (0: 5)`), is a compile error, at its binding (a reading), for now; written in place, or passed as an argument, it is legal (a reading).
 needs: core/holes/bare-condition/bound-condition core/conditions/match-so-far
 by: core/principles/conservative-first
 see: core/holes/bare-condition
@@ -1849,7 +1853,7 @@ see: core/holes/bare-condition
   (`five := 5`, then `(0: five)`) cannot write, or macro variables are designed.
 - His two examples of `0` written in place, "bound-condition: A := /\d${(0: 5)}/ binds the literal to 5. A := /\d/
   C := /.${A & (0: 5)}/ the 0: is bound to A only", agree with what is ruled and do not reach this case.
-Bound alone: modes: a compile error (`c`, c := `(0: 5)`: a condition on `0` bound alone).
+Bound alone: modes: a compile error (`c`, c := `(0: 5)`: a condition on `0` bound alone; `NOT (0: 5)` and `((0: 5))` bound alone alike, a reading).
 Written in place: WHOLE `5` HOLDS, `7` FAILS / SEARCHED `x5` `5`@1 / FIND-ALL `5 7 5` [`5`@0, `5`@4] (`/\d/ & (0: 5)`)
 His first example: WHOLE `5` HOLDS, `7` FAILS / SEARCHED `x75` `5`@2 / FIND-ALL `5 7 55` [`5`@0, `5`@4, `5`@5] (`A := /\d${(0: 5)}/`)
 His second example: WHOLE `x5` HOLDS, `x7` FAILS, `55` HOLDS / SEARCHED `a7 b5` `b5`@3 / FIND-ALL `x5 y7 55` [`x5`@0, ` 5`@5] (`C := /.${A & (0: 5)}/`, A := `/\d/`)
@@ -1888,7 +1892,8 @@ needs: core/patterns/sequence core/patterns/quantifiers core/filters/and core/va
 | 7 | `&` | binary, a chain; the left side decides | ruled (core/filters/and) |
 | 8 | the label set `x = E` | inside `[ ]` or directly in `${ }` only | the manager's syntax reading |
 | 9 | `|` | binary, n-ary | ruled |
-| 10 | `=` then `:` inside an entry | `p = v: S` is `(p = v): S` | a reading |
+| 10 | `=` then `:` or `?:` inside an entry | `p = v: S` is `(p = v): S`; `?:` is one token at `:`'s level, `p = v ?: S` is `(p = v) ?: S` | a reading |
+| head, argument | the label mark `x:` (a name and `:` with no set after it) | postfix on ONE name, tighter than `=`: `l = x:` is `l = (x:)`, the parameter `l` given the label `x` | a reading |
 | statement | `:=` | a statement ends before `NAME :=` | a reading |
 - After `+` or `*`, a token that can begin an operand makes it binary; otherwise it is postfix (a reading). The
   sequence mark cannot begin an operand, so `A+ SEQ B` is unambiguous.
@@ -2053,7 +2058,8 @@ needs: core/operators/bindings
 see: lib/builtin/warn lib/builtin/export lib/builtin/options lib/assert/assert lib/builtin/eval
 - Newlines are layout; long logic goes in `:=` definitions. A statement ends before `NAME :=`.
 - Only `@` forms (compile-time EFFECTS) stand alone; a bare statement without `@` is a compile error ("unused
-  pattern: bind it or make it the result"). Macros cannot take `@`; effects cannot drop it.
+  pattern: bind it or make it the result"). Macros cannot take `@`; `@` statements (compile-time effects) cannot
+  drop it; a match-time effect (the capture request) is written inside an expression (core/filters/negation/effects).
 - The BUILT-INS are a closed list, reserved in CALL position only: `import`, `enumerate`, `pattern`, `param`,
   `file_text`, `records`, and `eval` (the name reserved for the module that alone provides it, lib/builtin/eval);
   the effects `@warn`, `@export`, `@options` (lib/builtin/warn, lib/builtin/export, lib/builtin/options) and the
@@ -2346,8 +2352,7 @@ Every spelling in these documents is a placeholder, settled together in one spel
 | the SORT and its shorthand for longest first (`sort(...)`, `longest_first(X)`; his `lengthSorted()`) | lib/structural/sort |
 | the ARRAY FORM of a read (his `@x`), under a part label (his `x.@a`), its index `h[k]`, the k-th setting (`(h[2]: ..)`) | core/labels/labels-vs-captures, core/values/reads |
 | the CARRIED-CAPTURE form where a `$` reads ("even if ugly") | core/values/reads |
-| a part's LABEL PATH (`aa.h`); the label mark `[x = R]`; the private `_` prefix; `[_ = A]`; the part label named for its binding (his `[=year]`, read as `[year = year]`) | core/labels/paths, core/labels/export |
-| the CAPTURE forms: a wrapper (his `[ d = capture(digits) ]`), after the fact (his `[ d = digits ] & capture(d)`); `capture(name, x)` | lib/structural/capture, lib/structural/capture/add-on |
+| a part's LABEL PATH (`aa.h`); the private `_` prefix; `[_ = A]`; the part label named for its binding (his `[=year]`, read as `[year = year]`) | core/labels/paths, core/labels/export |
 | the CONDITIONAL (`when(A, B, else = C)`), its argument shape, a `when` operator, the comma-free keyword form; `peek(A)` | lib/control/when, lib/control/peek |
 | the condition's parentheses (`(0: rx.digit)`) | core/spellings/condition-parentheses |
 | the ANY-TEXT pattern (`anything`); a constant for the never-matching rx | lib/sets/anything, parked/ideas/never-constant |
@@ -2362,9 +2367,9 @@ Every spelling in these documents is a placeholder, settled together in one spel
 | the BINDING LIST left of `:=` (`(l = left, =right)`), the shorthand `f(=x)`, `(=)`, the unusable name `_` | core/modules/binding-list, core/modules/call-shorthand, core/modules/all-symbols, core/modules/leave-out |
 | the EXPORT LIST on a part label (his `[(=year) = isodate]`) | core/labels/export/export-list |
 | a positional binding `(a, b) := X` | core/modules/positional |
-| the LABEL SET `[a = A]` and its place between `&` and `|`; `[a, b, c]`; `A[k]` | core/operators/precedence, core/labels/paths |
+| the LABEL SET (the label mark) `[a = A]` and its place between `&` and `|`; `[a, b, c]`; `A[k]` | core/operators/precedence, core/labels/paths |
 | the LABEL PARAMETER (`A(l:)` in a head, `A(x:)` at a call, `_:`, `l = ts:` by name) | core/operators/bindings/label-variables, core/operators/bindings/label-default |
-| the CAPTURE REQUEST (`capture("name")`), its array form (`capture(@x)`) | lib/structural/capture |
+| the CAPTURE REQUEST (`capture("name")`); its array form (not stated: a placeholder in lib/structural/capture/add-on) | lib/structural/capture, lib/structural/capture/add-on |
 | the OPTIONAL ENTRY operator (`?:`, his lean) | core/conditions/form/optional-entry |
 modes: n/a (spellings)
 

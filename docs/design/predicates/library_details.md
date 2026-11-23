@@ -126,6 +126,7 @@ evidence:
 history:
 - 2026-11-14: import/export as functions (options (a)-(c), lean (b)), its follow-up (lean `@export(names)`).
 - 2026-11-19 (lane preddoc6, review r60 EFFECTS / COLD-1 / FIXVER-6 / RECOUNT-3 / RULING-7): a new piece. The core sentence "Every provided name written as a call has its piece in the library, these included" (core/operators/statements) named `@export`, `@warn`, `@options` with no library piece; the predicate manager ruled (2026-11-19) the `@` effects call-form names, so each has its library piece, `defined: native`, status by the record. `@export(names)` was defined in core/modules/export, which keeps the meaning (what a file exports is chosen among its public names).
+- 2026-11-23 (lane predfix86, review r86 A12; record "2026-11-23 MANAGER — review r86 (predfold1123): the dispositions; three errors of the manager's own brief named; no owner words"): "An effect: written after `@` only, as a statement." until then: a compile-time effect (the capture request is a match-time effect written inside an expression, core/filters/negation/effects).
 
 ## lib/builtin/pattern — pattern
 slugs:
@@ -168,6 +169,7 @@ evidence:
 history:
 - 2026-11-14: the empty-match hazard ruling and its amendment; 2026-11-17: the names, the library path, the `pcrec.` prefix (core/diagnostics/warnings).
 - 2026-11-19 (lane preddoc6, review r60 EFFECTS): a new piece; the selector rule stays stated in core/diagnostics/warnings, this piece is the name.
+- 2026-11-23 (lane predfix86, review r86 A12; record "2026-11-23 MANAGER — review r86 (predfold1123): the dispositions; three errors of the manager's own brief named; no owner words"): "An effect: written after `@` only, as a statement." until then: a compile-time effect (the capture request is a match-time effect written inside an expression, core/filters/negation/effects).
 
 ## lib/builtin/options — @options, @options.strict
 slugs: program-options options-position options-reach-constants
@@ -192,6 +194,7 @@ history:
 - 2026-11-19 (lane preddoc6, review r60 EFFECTS): a new piece; `@options.strict` was stated only in core/diagnostics/warnings.
 - 2026-11-22 (lane predspot, program-options folded; record "2026-11-22 OWNER RULING — program-options: yes; and a PROPOSAL: `i` keeps inheriting, with a "weak" value the program sets"): ruled 2026-11-17 re-dated 2026-11-22; heading "@options.strict" to "@options, @options.strict". Statement until then: "`@options.strict(sel)` makes the warnings whose names the selector `sel` matches into errors: strictness is selective, never every warning by default."; `defined:` until then "native (a compile-time effect on the compiler's diagnostics)"; "modes: n/a (a compile-time effect; no matching involved)" replaced by two run lines; four bullets added (program options, the weak `i`, his `n`, what is not ruled).
 - 2026-11-23 (lane predfix84, review r84 A1, A6, C6, C7; record "2026-11-23 MANAGER — review r84 (predspot1122): the dispositions, ruled with the 2026-11-23 rulings in hand; no owner words"): the not-ruled bullet until then: "Not ruled: the spelling, and whether it may appear more than once; whether `i` may be set weakly insensitive only at the top of a file; options beyond the four (`xx`, `J`, `U`, the `&`-in-rx switch: the idea's list)." Now the open line options-position (A1, A6 (5)), with both candidates' lines, and the open line options-reach-constants (A6 (3)), with both candidates' lines; the rest of the list kept; slugs added; the class word of his point 1 (C7); "(hole-flags)" cited as hole-flags' "yes to all" (C6).
+- 2026-11-23 (lane predfix86, review r86 A12; record "2026-11-23 MANAGER — review r86 (predfold1123): the dispositions; three errors of the manager's own brief named; no owner words"): "An effect: written after `@` only, as a statement." until then: a compile-time effect (the capture request is a match-time effect written inside an expression, core/filters/negation/effects).
 
 ## lib/modifiers/padded — padded
 was: lib/modifiers/unpadded (2026-11-19, a piece that only said the name is not provided; its content is a rejected line here (review r59 READ-13))
@@ -1082,7 +1085,7 @@ history:
 slugs: json-picture
 rulings:
 - 2026-11-23 "Label forward: yes. Most of this could be achieved using the row third argument." (record: "2026-11-23 OWNER RULING — label-forward: yes (a body may pass its label parameter on to another macro); two questions (a filter over combined rows at the line; several keys in one row)"); the sketch's `value(l:)` forwards the label.
-- 2026-11-23 (class: DIRECTION) the row's label argument set to the unquoted portion, "we'd need to send it to through to the string binding" (record: "2026-11-23 OWNER, on string-label: the row's label argument is set to the unquoted portion; "we'd need to send it to through to the string binding"").
+- 2026-11-23 (class: CLARIFICATION) the row's label argument set to the unquoted portion, "we'd need to send it to through to the string binding" (record: "2026-11-23 OWNER, on string-label: the row's label argument is set to the unquoted portion; "we'd need to send it to through to the string binding"").
 - 2026-11-23 (class: AGREEMENT) "this aligns with my understanding." (record: "2026-11-23 OWNER, on the JSON picture: "this aligns with my understanding"; three follow-ups (a condition on `_x`; the quotes; threading the label to string)"); the JSON picture, with three follow-ups (a condition on `_x`; the quotes; threading the label to string).
 rejected:
 readings:
@@ -1096,6 +1099,7 @@ evidence: docs/dev/lanes/predfold1123_evidence/ predfold1123_model.py READINGS.
 history:
 - 2026-11-19 (lane preddoc5): a new piece (review r59 COMPB-8); the owner's direction of 2026-11-19 puts every call-form name in the library, marked defined or not.
 - 2026-11-23 (lane predfold1123, the fold of 2026-11-22 late and 2026-11-23; records "2026-11-23 OWNER RULING — label-forward: yes (a body may pass its label parameter on to another macro); two questions (a filter over combined rows at the line; several keys in one row)", "2026-11-23 OWNER, on string-label: the row's label argument is set to the unquoted portion; "we'd need to send it to through to the string binding"", "2026-11-23 OWNER, on the JSON picture: "this aligns with my understanding"; three follow-ups (a condition on `_x`; the quotes; threading the label to string)"): status date 2026-11-19 to 2026-11-23 (still under construction); statement's "neither body is written" now "neither body is ruled"; `see:`, the sketch with the label on the data and its three lines added.
+- 2026-11-23 (lane predfix86, review r86 C9, C10; record "2026-11-23 MANAGER — review r86 (predfold1123): the dispositions; three errors of the manager's own brief named; no owner words"): the base quoted the record TITLE's paraphrase ("the row's label argument is set to the unquoted portion") as his words; now his words, "the row() label arg would be set to the unquoted portion of the string". The class word DIRECTION until then; the record's is "a CLARIFICATION of his own remark (DISCUSSION ...)".
 
 ## lib/planned/standard — days, weekday_of, days_in, luhn
 slugs:

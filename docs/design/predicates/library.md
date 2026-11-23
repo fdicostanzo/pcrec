@@ -130,7 +130,7 @@ defined: native (a compile-time effect on the file's public names)
   an edge assertion in it is the edge-assertion error.
 - Candidates: (a) `@export(names)` as above, selecting among the public names; (b) no call: every public binding
   (the `_` rule, core/labels/export) is exported.
-- An effect: written after `@` only, as a statement.
+- A compile-time effect: written after `@` only, as a statement (core/operators/statements).
 modes: n/a (a question; no matching involved)
 
 ### pattern   [lib/builtin/pattern]   reading 2026-11-19
@@ -164,7 +164,7 @@ defined: native (a compile-time effect on the compiler's diagnostics)
 - An `@warn.off` that suppresses nothing draws `pcrec.warn.unused` (core/diagnostics/warnings).
 - Errors cannot be switched off. Its reach (the rest of the file), a per-binding form and a whole-build compiler
   option are readings.
-- An effect: written after `@` only, as a statement.
+- A compile-time effect: written after `@` only, as a statement (core/operators/statements).
 modes: n/a (a compile-time effect; no matching involved)
 
 ### @options, @options.strict   [lib/builtin/options]   ruled 2026-11-22
@@ -192,7 +192,7 @@ defined: native (compile-time effects: how a file's literals are read; the compi
   matches every name.
 - The `@options` family's other members, capability opt-ins declared in the source, are an idea
   (parked/ideas/capability-optins); one table for the controls of one fact is parked/ideas/severity-table.
-- An effect: written after `@` only, as a statement.
+- A compile-time effect: written after `@` only, as a statement (core/operators/statements).
 A library keeps its own options: WHOLE `a\nb` HOLDS, `axb` HOLDS / SEARCHED `a\nb axb` `a\nb`@0 / FIND-ALL `a\nb axb ayb` [`a\nb`@0, `axb`@4, `ayb`@8] (`/a${dot}b/`, dot := `/./` in a library file opening `@options(s)`)
 Never across an import: WHOLE `a\nb` FAILS, `axb` HOLDS / SEARCHED `a\nb axb` `axb`@4 / FIND-ALL `a\nb axb ayb` [`axb`@4, `ayb`@8] (`/a${dot}b/` in a program file opening `@options(s)`, dot := `/./` in a library file that sets nothing)
 Candidate (a) of options-reach-constants: WHOLE `ab` HOLDS, `AB` HOLDS / SEARCHED `x AB ab` `AB`@2 / FIND-ALL `ab AB` [`ab`@0, `AB`@3] (`"ab"` in a program file opening `@options(i)`)
@@ -908,7 +908,7 @@ defined: ?
   literal(l:)`, the label forwarded (label-forward); `row(l:, k, f = anything) := /\{(?:${member_any},)*${ws}"${k}"
   ${ws}:${ws}${value(l:) & (l: f)}${ws}(?:,${member_any})*\}/`, a member any member, `_:` its labels.
 - The label is set to the unquoted text, so the string `"3"` and the number `3` read alike (his string-label words:
-  "the row's label argument is set to the unquoted portion").
+  "the row() label arg would be set to the unquoted portion of the string").
 - A filter inside the argument and a test on the label agree in every mode (`row(_:, "msg", contains("timeout"))`
   and `row(_x:, "msg") & (_x: contains("timeout"))`; a reading, run).
 - Several rows joined by `&` read at the line: an ordinary entry over their labels; several keys in one row: the last
