@@ -110,6 +110,7 @@ PLANTSX = [   # (plant, its target check, what it plants: every plant changes th
     ("s32", "PRINCIPLE", "the binding's entry no longer clears its labels (a loop reads its previous pass)"),
     ("s33", "ARGSHAPES", "the label set read tighter than `|` no longer"),
     ("s34", "NULLABLE", "a nullable loop added to the programs run"),
+    ("s36", "LPRULES", "a label-only group with a partial label-parameter name accepted"),
     ("s35", "QUOTES", "the record read at a commit before zero-open (the pin moved)"),
 ]
 HEAVYX = {"SUCCESSOR"}
@@ -252,6 +253,12 @@ def lp_define(line):                                         # noqa: F811
                                        "caller's text never wrote, core/labels/paths/label-reference)"
                                        % (mm.group(1), lm.group(2)))
                 lm2 = re.fullmatch(r"(\w+)(?: = \w*)?:", h.strip())
+                if lm2 and not sx("s36"):
+                    for g in re.finditer(r"\(\?<:([^>]*)>", mm.group(3)):
+                        if "${%s}" % lm2.group(1) in g.group(1) and g.group(1) != "${%s}" % lm2.group(1):
+                            raise CompileError("`(?<:%s>`: a label-only group's name hole must be the whole name (a "
+                                               "compile error, label-hole-full: \"pure label must be whole\")"
+                                               % g.group(1))
                 if lm2 and re.search(r"\$%s\b" % lm2.group(1), mm.group(3)):
                     raise CompileError("`$%s` in the body of %s: a read of a label parameter with `$` is not defined "
                                        "(a compile error here; core/operators/bindings/label-variables)"

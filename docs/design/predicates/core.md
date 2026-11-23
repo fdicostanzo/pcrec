@@ -330,11 +330,12 @@ see: core/labels/one-rule lib/counting/some core/labels/export lib/structural/ca
 - The LABEL is the language's: what a condition, a default, a joint, `$x` and the group questions read. `$x` and
   `x:` never disagree.
 - A label is not always a capture: "captures are explicitly written either in literal form or using a macro like
-  capture()". A group written in rx text is a label and a capture; `[x = A]` makes a label and no capture, as the
-  label-only group does in rx text (core/labels/label-only-group); what the caller gets is the captures
-  (core/labels/export, statement 5).
-- What the caller receives for a captured label that a loop sets, PCRE's carried value or the label's last-pass
-  value, is not stated (a reading); they part on `3;;` below: the label h unset, PCRE's capture `3`.
+  capture()". A group written in rx text is a label; it is a capture in a one-literal program (a reading), and in a
+  part of a composed program only where the program asks for one (core/labels/export/capture-export); `[x = A]`
+  makes a label and no capture, as the label-only group does in rx text (core/labels/label-only-group); what the
+  caller gets is the captures (core/labels/export, statement 5).
+- A request for a label that a loop sets gives the label (array-capture; lib/structural/capture); they part on
+  `3;;` below: the label h unset, PCRE's capture `3`.
 - The CAPTURE is regex's: PCRE's value for the name, read inside rx text (`\k<x>`, a conditional group, and a
   callout where one is allowed: a one-literal program, core/patterns/literals) and by the carried-capture form, a
   visibly different spelling. Where two groups carry the name (`(?J)`) it is PCRE's FIRST SET group in pattern
@@ -413,9 +414,10 @@ see: core/labels/one-rule core/labels/labels-vs-captures/array-vs-passes lib/sea
 - libpcre2 rejects `(?<:x>foo)` (error 162), so the form changes no valid PCRE pattern (as recorded with his
   recollection of the proposal).
 - Which bodies use it: every provided body that writes a group (`occurrences`, `hits`); "for its own use", which
-  leaves out `capture`, is a reading; a user's
-  own literal keeps pure-label, its named group a capture. How a helper declares a capture is not stated
-  (lib/structural/capture/add-on).
+  leaves out `capture`, is a reading. A user's body may write it with a label-parameter name hole, whole
+  (`(?<:${l}>\d+)`, core/holes/name; label-hole-full). A user's own one-literal program keeps pure-label, its
+  named group a capture; in a part of a composed program a named group is no capture by default
+  (core/labels/export/capture-export). How a helper declares a capture is not stated (lib/structural/capture/add-on).
 
 ### One label rule: branchings reset   [core/labels/one-rule]   ruled 2026-11-17
 A label is a name; entering a branching (an alternation, an optional, a loop) resets every label whose group lies inside it, and in a sequence the last mention wins.
@@ -743,10 +745,10 @@ see: lib/search/hits lib/search/occurrences core/holes/bare-condition/nested-sco
 - A prefix `X.d` reads `d` as X exports it (a reading, run): a call exports what its body exports (core/labels/export statement 3), so `B.d`, and
   `c.d` under `[c = B(A)]`, are the body's own `d` or one a part label in the body passes (`B(rx) := /${[p = rx]}xx/`); where the body writes none and labels none (`B(rx) := /${rx}xx/`) both are compile errors. `A.d` reads A's
   `d` only where the body labels the spot or passes the labels on (case 2, below). A group in a USER macro's
-  body is a capture as in any user literal: helper-captures is for provided bodies only (a reading).
+  body is a label and no capture by default, as in any part of a composed program (core/labels/export/capture-export); helper-captures is for provided bodies only (a reading).
 - Case 2, an argument that is a binding (`A.d` in `B(A)`), by closed-argument and argument-default: legal only
   where the body labels the spot or passes the labels on, a compile error where it uses the argument alone or closes
-  it (core/labels/paths/argument-default, closed-argument).
+  it (which spots: the manager's reading; core/labels/paths/argument-default, closed-argument).
 - An argument used twice: with the list on both spots (`pair(p) := /${[(=) = p]},${[(=) = p]}/`) the caller reads
   `pair.d`, the last mention (the manager's answer on wrapper-export; the line "An argument used twice by the
   body"). A group written in an argument in place is the caller's own (`hits(/a(?<g>x)?/) & (g: "x")`, read
@@ -796,14 +798,14 @@ Closed by a `_` part label: modes: a compile error (`B(A) & (A.d: <5)`, A := `/(
 Candidate (b) of spot-read-name: WHOLE `7-3` FAILS, `3-7` HOLDS, `3-3` HOLDS / SEARCHED `7-3 3-7` `3-7`@4 / FIND-ALL `7-3 3-7 1-2 9-9` [`3-7`@4, `1-2`@8] (`B(A) & (B.p.d: <5)`, A := `/(?<d>\d)/`, B(rx) := `/${[p = rx]}-(?<d>\d)/`)
 
 ### The caller's read of an argument the body uses alone   [core/labels/paths/argument-default]   ruled 2026-11-22
-Where a macro's body uses an argument alone, the caller's read of the labels the argument's own text holds (`A.d` in `B(A)`) is a compile error: the argument is a template.
+Where a macro's body uses an argument alone, the caller's read of the labels written in the argument's binding, not in the caller's text (`A.d` in `B(A)`), is a compile error.
 needs: core/labels/paths/closed-argument core/labels/export core/principles/label-names-spot
 see: core/labels/paths/call-prefix core/labels/paths/two-sources core/holes/bare-condition/nested-scope lib/convention/argument-labels
 - His words: "argument-default: for me this is an error."; his reason is the principle core/principles/label-names-spot.
 - His example 1 (core/holes/bare-condition/nested-scope): `C := B(A) & (A.d: <100)` with B(rx) :=
   `/${rx}xx/` is a compile error; it settles call-prefix case 2 and closed-argument's "visible through the call" in
-  the strict sense: visible only where the body puts a label on the spot (his example 3, `[dd = rx]`) or passes the
-  labels on (the export list; lib/convention/argument-labels).
+  the strict sense (which spots: the manager's reading): visible only where the body puts a label on the spot (his
+  example 3, `[dd = rx]`) or passes the labels on (the export list; lib/convention/argument-labels).
 - A label the caller writes in its own text inside the argument is the caller's own (argument-label, ruled:
   core/labels/export/arguments): `B([a = A]) & (a.d: ..)` is legal (the line "A label written on the argument").
 - Readings of it (the manager's, each run): (c) a condition written INSIDE the argument beside its own group travels with the template and stays legal
@@ -1497,11 +1499,19 @@ by: core/principles/positions-own-rules
   (a reading).
 WHOLE `123` HOLDS, `1` FAILS / SEARCHED `12345` `12`@0 / FIND-ALL `12345 6` [`12`@0, `34`@2] (`rx.repeat(rx.digit, min = n, max = n)`, n := [2, 4], is `(?|\d{2,2}|\d{2,4}|\d{4,4})`: the copy (4,2) removed)
 
-### The group-name hole   [core/holes/name]   ruled 2026-11-18
-A group-name hole takes exactly one name; an array of names there is a compile error.
+### The group-name hole   [core/holes/name]   ruled 2026-11-23
+A group-name hole takes exactly one name; an array of names there is a compile error; a label-only group's name hole is the whole name.
 by: core/principles/positions-own-rules
-Nothing is joined or copied. A hole may form part of a name (`(?<f_${i}>...)`).
+see: core/labels/label-only-group core/operators/bindings/label-variables
+Nothing is joined or copied. A hole may form part of a capturing group's name (`(?<f_${i}>...)`).
+- His words: "label-hole-full: pure label must be whole the label is lost. Capture label can be partial but again,
+  the label portion is lost."
+- A label-only group's name hole is the whole name (`(?<:${l}>...)`); a partial one is a compile error (the line
+  "A partial label-only name").
+- A capturing group's name may be partial and is then a capture only: no text writes the composed name, so no
+  label is read by it (the manager's reading of "the label portion is lost", the reading taken, told to him).
 WHOLE `7x` HOLDS, `x` FAILS / SEARCHED `a7x` `7x`@1 / FIND-ALL `7x 8x` [`7x`@0, `8x`@3] (`/(?<${n}>\d)x/`, n := "d")
+A partial label-only name: modes: a compile error (`A(x:) SEQ "!"`, A(l:) := `/(?<:f_${l}>\d)/`: the name hole of a label-only group must be the whole name).
 
 ### The class-member hole   [core/holes/class]   ruled 2026-11-21
 Several values in a class-member hole are an alternation of the class, one class per value, as a pattern hole is an alternation: `[${c}]`, c := [x, y], is `[x] | [y]`.
@@ -2186,7 +2196,7 @@ see: core/labels/labels-vs-captures core/labels/numbers core/values/metadata cor
 - It states nothing new: each row is its piece's rule, collected (a reading, the manager's view, agreed by him: below).
 | kind | member | written | its piece |
 |---|---|---|---|
-| label | a group in a literal (also a capture) | `(?<h>\d)` in rx text | core/labels/labels-vs-captures |
+| label | a group in a literal (a capture in a one-literal program, or where the program asks) | `(?<h>\d)` in rx text | core/labels/labels-vs-captures |
 | label | a part label | `[x = A]` | core/labels/paths |
 | label | an export-list entry | `[(=year) = A]` | core/labels/export/export-list |
 | label | a label-only group | `(?<:x>...)` (a placeholder) | core/labels/label-only-group |
@@ -2194,11 +2204,11 @@ see: core/labels/labels-vs-captures core/labels/numbers core/values/metadata cor
 | label | a metadata field of a member | `w.index`, `w.label` | core/values/metadata |
 | binding | a definition | `name := expression` | core/operators/bindings |
 | binding | a macro's name | `B(rx) := ..` | core/operators/bindings |
-| binding | a macro's parameter: plain (built), a label parameter, a typed parameter (both under construction) | `rx` in `B(rx)`; `x:`; `B(d & isodate)` | core/operators/bindings, core/operators/bindings/label-variables, core/operators/bindings/macro-types |
+| binding | a macro's parameter: plain (built), a label parameter (its rules ruled, the kind under construction), a typed parameter (under construction) | `rx` in `B(rx)`; `x:`; `B(d & isodate)` | core/operators/bindings, core/operators/bindings/label-variables, core/operators/bindings/macro-types |
 | binding | a module member | `m.year` | core/modules/map |
 | binding | a provided name | the built-ins, the library's names | core/operators/statements, core/modules/default-set |
 | binding | a parameter name at a call | `sep = ","` | core/operators/bindings |
-| binding | an argument at a call: a template, never labelled; its labels reach the caller only through the spot a body labels or lists | `A` in `B(A)` | core/labels/paths/argument-default, core/principles/label-names-spot |
+| binding | an argument at a call: a template; a label the caller writes on or in it is the caller's own (core/labels/export/arguments); the labels of its own text reach the caller only through the spot a body labels or lists | `A` in `B(A)` | core/labels/paths/argument-default, core/principles/label-names-spot |
 - "Has a label" and "is a capture" are independent (his note "I note that captures can have no label."; the
   manager's reading of it, core/labels/numbers for where a number is allowed):
 | | is a capture | is not a capture |
