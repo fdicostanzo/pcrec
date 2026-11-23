@@ -4891,3 +4891,4 @@ bsu3fix2 delivered (6cf672b6a on lane/bsu3fix; lanecheck DONE; TaskStop).
 - 14:55 main: U6 (partial) LANDED and PUSHED, main 8ee275234 (merge 4a989690c, cloud test GREEN, run 45247182581). Frank has not answered u6-timing-window yet.
 - 15:22 759 GREEN (222/0, 667 s, identical to 757). Merged lane/bsu6par2 (7c40305d8), make strict ok; [responses] done: U6 addendum.
 - 15:53 main: U6 addendum LANDED and PUSHED (merge b291a2f7c, cloud test GREEN, run 45258851130). R-47 waits only on its timing window.
+- 15:54 Pruned the landed kit worktrees (13: bsu2fix, bsu4fix, bsu4g, bsu5*, bsu6, bsu6t, bsu6fix*, u4tip, u5tip; dirt was only deliver files, the size log and a lanecheck marker, diffs saved under worktrees/.wtprune.force/) and 16 merged lane branches by name. bsu6par/bsu6par2 wait for the 120-min quiet gate; bsu3/bsu3fix stay pinned.
