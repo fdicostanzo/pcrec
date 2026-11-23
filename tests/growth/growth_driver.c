@@ -15,10 +15,12 @@
  *       process crashes or leaks (build it with ASan+LSan and the process
  *       exit reports a leak). SERIES_FILE has one TAB-separated line per cell:
  *       CAP STACK RAISE FEATURES ENGINE PATFILE [BOUND_S]. BOUND_S is that
- *       cell's own wall-time bound in seconds (0 or absent = none): a
+ *       cell's own CPU-time bound in seconds (0 or absent = none; the process's
+ *       user+sys, ITIMER_PROF; a wall guard of 10x it is only a hang guard): a
  *       compile still running when it expires is a FAIL (a timeout is a
- *       crash): the SIGALRM handler prints `cell <n> TIMEOUT bound=<s> pat=<file>`
- *       and exits 124, naming the cell, so the series stops cleanly (one
+ *       crash): the handler prints `cell <n> TIMEOUT cpu-bound=<s> wall-guard=<s> pat=<file>`
+ *       (`wall-guard=.. cpu-bound=..` when the guard fired) and exits 123 (124),
+ *       naming the cell, so the series stops cleanly (one
  *       in-process compile cannot be abandoned and the process go on). Before
  *       each compile a `begin <n> bound=<s> pat=<file>` progress line is
  *       printed, so a stuck cell is visible on the pipe. A CONTROL pattern is compiled
@@ -50,6 +52,7 @@
 #include <string.h>
 #include <sys/mman.h>
 #include <sys/resource.h>
+#include <sys/time.h>
 #include <unistd.h>
 
 #include "pcrec.h"
@@ -217,24 +220,44 @@ static double now_s(void)
     return (double)t.tv_sec + (double)t.tv_nsec / 1e9;
 }
 
-/* The per-cell bound: the current cell's line is prebuilt (async-signal-safe:
- * write() only) when the alarm is armed. */
-static char timeout_line[8400];
-static size_t timeout_len;
-static void on_alarm(int sig)
+/* The per-cell bounds ([GROWTH-SWEEP] growth-time-bound): the cell's bound is CPU SECONDS (ITIMER_PROF: the process's
+ * user+sys, every thread, so the compile on the budget thread counts); a WALL guard of WALL_FACTOR x the CPU bound is
+ * only a hang guard (a blocked process burns no CPU).  Each line is prebuilt (async-signal-safe: write() only) when the
+ * timers are armed; the exit is 123 for the CPU bound, 124 for the wall guard (scripts/watchdog's codes). */
+#define WALL_FACTOR 10
+static char cpu_line[8400], wall_line[8400];
+static size_t cpu_len, wall_len;
+static void on_cpu(int sig)
 {
     (void)sig;
-    ssize_t w = write(1, timeout_line, timeout_len);
+    ssize_t w = write(1, cpu_line, cpu_len);
+    (void)w;
+    _exit(123);
+}
+static void on_wall(int sig)
+{
+    (void)sig;
+    ssize_t w = write(1, wall_line, wall_len);
     (void)w;
     _exit(124);
 }
+static size_t clip(int k) { return k < 0 ? 0 : (size_t)k < sizeof cpu_line ? (size_t)k : sizeof cpu_line - 1; }
 static void arm_bound(int n, unsigned bound, const char *pat)
 {
     if (!bound) return;
-    int k = snprintf(timeout_line, sizeof timeout_line, "cell %d TIMEOUT bound=%u pat=%s\n", n, bound, pat);
-    timeout_len = k < 0 ? 0 : (size_t)k < sizeof timeout_line ? (size_t)k : sizeof timeout_line - 1;
-    signal(SIGALRM, on_alarm);
-    alarm(bound);
+    cpu_len = clip(snprintf(cpu_line, sizeof cpu_line, "cell %d TIMEOUT cpu-bound=%u wall-guard=%u pat=%s\n", n, bound, bound * WALL_FACTOR, pat));
+    wall_len = clip(snprintf(wall_line, sizeof wall_line, "cell %d TIMEOUT wall-guard=%u cpu-bound=%u pat=%s\n", n, bound * WALL_FACTOR, bound, pat));
+    signal(SIGPROF, on_cpu);
+    signal(SIGALRM, on_wall);
+    struct itimerval it = {{0, 0}, {bound, 0}};
+    setitimer(ITIMER_PROF, &it, NULL);
+    alarm(bound * WALL_FACTOR);
+}
+static void disarm_bound(void)
+{
+    struct itimerval off = {{0, 0}, {0, 0}};
+    setitimer(ITIMER_PROF, &off, NULL);
+    alarm(0);
 }
 
 static int write_file(const char *path, const char *s)
@@ -326,7 +349,7 @@ int main(int argc, char **argv)
             double t0 = now_s();
             arm_bound(n, bound, fld[5]);
             int started = run_job(&j, (size_t)strtoull(fld[1], NULL, 10), &hw) == 0;
-            alarm(0);
+            disarm_bound();
             double wall = now_s() - t0;
             set_cap(0);
             char lead[64];

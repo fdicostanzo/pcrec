@@ -61,19 +61,39 @@ ROOT = os.path.dirname(os.path.dirname(HERE))
 LADDER = [2 << 20, 8 << 20, 32 << 20, 128 << 20]
 
 # TIME BOUNDS (owner ruling growth-time-bound, 2026-11-21): a cell's time bound is CPU SECONDS (user+sys of the compile's
-# process tree, scripts/watchdog -c), so a loaded box or a slow runner cannot turn a correct cell red; the WALL bound is only a
-# HANG GUARD (a process that sleeps or blocks burns no CPU).  A red names which bound fired.  Values and where they come from:
-# BOUNDS_BASIS below (measured, never guessed).  The OCCASIONAL tier (--tier occasional) has its own, generous pair.
-CPU_S, WALL_S, RSS = 60, 600, "3g"
-OCC_CPU_S, OCC_WALL_S = 1800, 7200
+# process tree, scripts/watchdog -c; the library stage's in-process bound is ITIMER_PROF), so a loaded box or a slow
+# runner cannot turn a correct cell red; the WALL bound is only a HANG GUARD (a process that blocks burns no CPU).  A red
+# names which bound fired ("CPU bound" / "WALL hang guard").  BOUNDS_BASIS says where each value comes from; re-derive
+# them from the sweep's own `CPU:` lines (the slowest cells and the headroom) when a cell approaches them.
+CPU_S, WALL_S, RSS = 300, 1500, "3g"
+OCC_CPU_S, OCC_WALL_S = 3600, 14400
+BOUNDS_BASIS = """\
+CPU_S 300 (default tier, each compile and each matcher build): MEASURED on the dev box (Ryzen 7700X, gcc 15.2, 2026-11-23, after
+  K159): the costliest default-tier compile is a possessive/star nest at depth 250 (`group.poss.last.lit@250`: 27.5 s CPU alone at
+  -j2, 45 s CPU at -j8 where the cores share caches; `atomic.star.last.lit@250` 33.7 s at -j8; `spine/named@65535` 25 s); gcc on the
+  limit cells' matchers costs at most 1.4 s CPU.  The cloud runners (4 cores, slower per core) are NOT measured against this box:
+  the ratio is unknown until the first cloud run of this harness prints its own `CPU:` lines (the slowest cells and the headroom
+  against this bound); 300 s is 6.7x this box's worst under load and 11x its worst alone, a margin meant to absorb that
+  unknown, and is to be RE-DERIVED from those cloud lines.  A superlinear step does not hide under it: the per-doubling
+  report (--doubling) is what catches those.
+WALL_S 1500 (default tier hang guard): below the cloud shard job's 45 min (2700 s) kill, so the guard names the cell before the job
+  is cut (shard 31 of run 44940630891 was cut at the job limit with no cell named), and 5x the CPU bound for a box at one fifth
+  of a core.  It never decides a cell's verdict by speed: a process that burns CPU is judged by CPU_S.
+OCC_CPU_S 3600 / OCC_WALL_S 14400 (occasional tier): the tier's cells are compile-only today (all 107 measured 2026-11-23: the
+  slowest, spine/named@65535, 25 s CPU); the figure is for the cost the ruling named, gcc -O0 on 22 to 119 MB of emitted C
+  (about 10 min and 3.4 GB measured by lane grow4/grow5), at 6x that, and 4x for the wall.
+LIB_FLOOR_S 300 / LIB_MARGIN 20 (library stage, unchanged from lane grow2: the sanitizer build's slowdown), now applied to the
+  cell's CLI-stage compile CPU rather than its wall; the wall guard there is 10x the bound.
+"""
 # A LIMIT cell's matcher runs on each of these subjects (no match, a one-byte, a longer
 # one); each run must exit 0 or 1.  Fixed, not per-cell: the verdict is "it runs", not the answer.
 SUBJECTS = ("", "a", "abcabc")
 # LIBRARY per-cell bound ([GROWTH-SWEEP] timeout addendum): each in-process
-# compile gets its OWN wall bound = max(LIB_FLOOR_S, LIB_MARGIN x that cell's
-# slowest CLI-stage run), from the walls file the CLI stage writes.  The
+# compile gets its OWN CPU bound = max(LIB_FLOOR_S, LIB_MARGIN x that cell's
+# slowest CLI-stage compile CPU), from the CPU file the CLI stage writes (a wall
+# hang guard of 10x it rides along, growth_driver.c).  The
 # margin covers the sanitizer build's slowdown (ASan+LSan at -O1 is several
-# times the plain -O2 CLI) and a loaded box; a cell the walls file has never
+# times the plain -O2 CLI) and a loaded box; a cell the CPU file has never
 # seen (a --lib run alone) gets the floor.  A cell over its bound is a FAIL
 # (a timeout is a crash) and the series stops there with the cell named.
 LIB_FLOOR_S, LIB_MARGIN = 300, 20
@@ -388,7 +408,6 @@ def shard_check(cells, table):
 class Runner:
     def __init__(self, work, drv, wd):
         self.work, self.drv, self.wd = work, drv, wd
-        self.walls = {}        # cell id -> slowest CLI-stage wall seconds
         self.libtotals = {}    # cell id -> SUM of its library-mode compiles' wall seconds
         self.totals = {}       # cell id -> SUM of every CLI-stage run's wall seconds (the cell's cost; --units)
         self.pat_id = {}       # patfile -> cell id
@@ -411,8 +430,6 @@ class Runner:
         t0 = time.monotonic()
         r = self.one_(cell, cap)
         w = time.monotonic() - t0
-        if w > self.walls.get(cell.id, 0):
-            self.walls[cell.id] = w
         self.totals[cell.id] = self.totals.get(cell.id, 0) + w
         return r
 
@@ -539,17 +556,17 @@ def tmp_base():
     return os.environ.get("PCREC_TMPDIR") or os.environ.get("TMPDIR") or "/var/tmp/pcrec-%s" % os.environ.get("USER", "u")
 
 
-def walls_path():
-    """One walls file PER TREE (keyed by the tree root): a plant, a worktree and
+def cpus_path():
+    """One CPU file PER TREE (keyed by the tree root): a plant, a worktree and
     main must not bound each other's library-mode compiles (r73 VERDICT-8)."""
     key = hashlib.sha1(ROOT.encode()).hexdigest()[:10]
-    return os.environ.get("GROWTH_WALLS") or os.path.join(tmp_base(), "growth-walls-%s.tsv" % key)
+    return os.environ.get("GROWTH_CPUS") or os.path.join(tmp_base(), "growth-cpus-%s.tsv" % key)
 
 
-def read_walls():
+def read_cpus():
     w = {}
     try:
-        for line in open(walls_path()):
+        for line in open(cpus_path()):
             k, _, v = line.rstrip("\n").partition("\t")
             if v:
                 w[k] = float(v)
@@ -558,10 +575,10 @@ def read_walls():
     return w
 
 
-def write_walls(w):
-    old = read_walls()
+def write_cpus(w):
+    old = read_cpus()
     old.update(w)
-    with open(walls_path(), "w") as f:
+    with open(cpus_path(), "w") as f:
         for k in sorted(old):
             f.write("%s\t%.2f\n" % (k, old[k]))
 
@@ -580,15 +597,15 @@ def lib_mode(rn, cells, ladder):
     series = os.path.join(rn.work, "series.tsv")
     n = 0
     order = []      # the cell id of each series line, in order
-    walls = read_walls()
-    print("library mode: walls file %s (%d of %d cells have a CLI-stage wall; the rest get the %ds floor)"
-          % (walls_path(), sum(1 for c in cells if c.id in walls), len(cells), LIB_FLOOR_S))
+    cpus = read_cpus()
+    print("library mode: CPU file %s (%d of %d cells have a CLI-stage compile CPU; the rest get the %ds floor)"
+          % (cpus_path(), sum(1 for c in cells if c.id in cpus), len(cells), LIB_FLOOR_S))
     with open(series, "w") as f:
         for c in cells:
             # a known-red cell's UNCAPPED run is a known runaway (K150/K151, NEW-n):
             # it would take the one process down with it; its capped runs stay
             for cap in ([] if c.red else [0]) + ladder:
-                bound = max(LIB_FLOOR_S, int(LIB_MARGIN * walls.get(c.id, 0)) + 1)
+                bound = max(LIB_FLOOR_S, int(LIB_MARGIN * cpus.get(c.id, 0)) + 1)
                 f.write("\t".join([str(cap), "0", str(c.raise_), c.features or "-",
                                    str(c.engine), rn.patfile(c), str(bound)]) + "\n")
                 order.append(c.id)
@@ -608,10 +625,12 @@ def lib_mode(rn, cells, ladder):
     bad = []
     to = [l for l in r.stdout.splitlines() if re.match(r"cell \d+ TIMEOUT ", l)]
     for l in to:
-        m = re.match(r"cell (\d+) TIMEOUT bound=(\d+) pat=(.*)", l)
-        bad.append("TIMEOUT (a timeout is a crash): series line %s, cell %s, over its own bound of %ss "
-                   "(CLI wall x%d, floor %ds); series stopped there. progress line: %s"
-                   % (m.group(1), rn.pat_id.get(m.group(3), m.group(3)), m.group(2), LIB_MARGIN, LIB_FLOOR_S, l))
+        m = re.match(r"cell (\d+) TIMEOUT (cpu-bound|wall-guard)=(\d+) (?:cpu-bound|wall-guard)=(\d+) pat=(.*)", l)
+        bad.append("TIMEOUT (a timeout is a crash): series line %s, cell %s, the %s fired at %ss (its CPU bound is %ss: "
+                   "CLI compile CPU x%d, floor %ds; the wall guard is 10x that); series stopped there. progress line: %s"
+                   % (m.group(1), rn.pat_id.get(m.group(5), m.group(5)),
+                      "CPU BOUND" if m.group(2) == "cpu-bound" else "WALL HANG GUARD", m.group(3),
+                      m.group(3) if m.group(2) == "cpu-bound" else m.group(4), LIB_MARGIN, LIB_FLOOR_S, l))
     lines = [l for l in r.stdout.splitlines() if re.match(r"cell \d+ rc=", l)]
     # the library cells' seconds (--units): each progress line's wall, by its series index
     for l in lines:
@@ -788,6 +807,7 @@ def doubling_report(rn, budget, depth, jobs, only=""):
 
 
 def main():
+    global CPU_S, WALL_S
     ap = argparse.ArgumentParser()
     ap.add_argument("--only", default="")
     ap.add_argument("-j", "--jobs", type=int, default=0, help="cells run at once (default nproc/2: a cell can hold GBs; ordered output; -j 1 is the serial control)")
@@ -795,6 +815,7 @@ def main():
                     help="default = every cell but the OCCASIONAL ones (the cloud shards' tier); occasional = the named compile-only "
                          "exceptions with the generous bounds (docs: tests/growth/CLAUDE.md); env GROWTH_TIER")
     ap.add_argument("--cells", default="", metavar="ID[,ID]", help="only these cell ids (after the tier and shard selection)")
+    ap.add_argument("--bounds", action="store_true", help="print each time bound's value and where it was derived, then exit")
     ap.add_argument("--doubling", action="store_true", help="the per-doubling CPU report (REPORT lines, never a red), then exit")
     ap.add_argument("--doubling-only", default="", metavar="SUBSTR[,SUBSTR]", help="with --doubling: only the axes whose name contains one of these")
     ap.add_argument("--no-ladder", action="store_true")
@@ -864,6 +885,9 @@ def main():
         print("# %d cells (%d limit, %d stability): %s" % (len(cells), sum(c.kind == "limit" for c in cells),
               sum(c.kind == "stability" for c in cells), ", ".join("%s %d" % kv for kv in sorted(fams.items()))))
         return 0
+    if a.bounds:
+        print("tier default: CPU %d s, WALL %d s; tier occasional: CPU %d s, WALL %d s\n%s" % (CPU_S, WALL_S, OCC_CPU_S, OCC_WALL_S, BOUNDS_BASIS))
+        return 0
     base = tmp_base()
     os.makedirs(base, exist_ok=True)
     work = tempfile.mkdtemp(prefix="growth-", dir=base)
@@ -877,10 +901,9 @@ def main():
         print("FAIL: could not build growth_driver.c:\n" + b.stderr[:800])
         return 1
     rn = Runner(work, drv, os.path.join(ROOT, "scripts", "watchdog"))
-    global CPU_S, WALL_S
     if a.tier == "occasional":
         CPU_S, WALL_S = OCC_CPU_S, OCC_WALL_S
-    print("growth: tier %s; time bounds: CPU %d s (watchdog -c), WALL hang guard %d s (watchdog -s); basis: BOUNDS_BASIS in run_growth.py"
+    print("growth: tier %s; time bounds: CPU %d s (watchdog -c), WALL hang guard %d s (watchdog -s); basis: BOUNDS_BASIS in run_growth.py (--bounds)"
           % (a.tier, CPU_S, WALL_S))
     if a.doubling:
         jb = a.jobs or max(1, (os.cpu_count() or 4) // 2)
@@ -940,16 +963,16 @@ def main():
                     print("FAIL: %s: %s" % (tag, why))
                     print("      repro: %s" % repro(cell, cap))
     print()
-    write_walls(rn.walls)
+    write_cpus(rn.cpus)
     if a.units:
         write_units(a.units, rn)
-    print("walls file %s: %d cells" % (walls_path(), len(rn.walls)))
+    print("CPU file %s: %d cells" % (cpus_path(), len(rn.cpus)))
     # the CPU the bounds judge: compile CPU (the driver's own rusage) and gcc CPU (watchdog's tree sample), the slowest cells
     cost = sorted(((rn.cpus.get(i, 0.0) + rn.gcc_cpus.get(i, 0.0), i) for i in set(rn.cpus) | set(rn.gcc_cpus)), reverse=True)
     if cost:
-        print("slowest cells by uncapped CPU (compile + gcc matcher build), bound %d s: %s" % (
+        print("CPU: slowest cells by uncapped CPU (compile + gcc matcher build), bound %d s: %s" % (
             CPU_S, "; ".join("%s %.1f s (compile %.1f, gcc %.1f)" % (i, c, rn.cpus.get(i, 0), rn.gcc_cpus.get(i, 0)) for c, i in cost[:5])))
-        print("CPU bound headroom: slowest cell used %.1f s of %d s (%.0f%%); max compile %.1f s, max gcc %.1f s" % (
+        print("CPU: bound headroom: slowest cell used %.1f s of %d s (%.0f%%); max compile %.1f s, max gcc %.1f s" % (
             cost[0][0], CPU_S, 100.0 * cost[0][0] / CPU_S, max(rn.cpus.values(), default=0), max(rn.gcc_cpus.values(), default=0)))
     print("== Growth sweep ==")
     for f, (p, fl, rd, fx) in sorted(fam.items()):

@@ -28,7 +28,7 @@ the exit, not the answer. Opt-in: `make test-growth` (long, NOT in
   `scripts/watchdog` (wall + RSS + CPU), uncapped and under the memory LADDER,
   classifies the outcome, prints `FAIL` (with a repro), `KNOWN-RED`,
   `FIXED-RED` (the ratchet) and a summary; `--lib` is library mode; `--list`, `--pairs`, `--selftest` (the crossing-over alert, both ways),
-  `--shard K/N [--table T]` (the cloud kind's cells; `--shard-check` is its population check; `--units FILE` records per-cell seconds), `--only FAMILY[,FAMILY]` (an unknown family or an empty selection exits nonzero), `--jobs N`, `--no-ladder`, `--verbose`, `--keep`, `--pattern ID`, `--depth-only`; env `GROWTH_WALLS`, `GROWTH_LIB_DRIVER`, `GROWTH_CFLAGS`, `CC`, `LIBPCREC`, `PCREC`, `PCREC_TMPDIR`.
+  `--shard K/N [--table T]` (the cloud kind's cells; `--shard-check` is its population check; `--units FILE` records per-cell seconds), `--only FAMILY[,FAMILY]` (an unknown family or an empty selection exits nonzero), `--cells ID[,ID]`, `-j/--jobs N` (default nproc/2: a cell can hold GBs; the pool is ordered, so `-j 1` and `-j N` print identical verdict lines, `-j 1` is the serial control), `--tier default|occasional|all`, `--doubling [--doubling-only SUBSTR]`, `--bounds`, `--no-ladder`, `--verbose`, `--keep`, `--pattern ID`, `--depth-only`; env `GROWTH_CPUS`, `GROWTH_TIER`, `GROWTH_LIB_DRIVER`, `GROWTH_CFLAGS`, `CC`, `LIBPCREC`, `PCREC`, `PCREC_TMPDIR`.
 - `growth_driver.c` — one `pcrec_compile` on a painted, guarded thread under an
   optional RLIMIT_DATA cap (`one` mode), or a whole series in ONE process
   (`lib` mode, plus a control compiled before and after).
@@ -42,9 +42,9 @@ the exit, not the answer. Opt-in: `make test-growth` (long, NOT in
   in tests/thread/run_compile_stack.sh); its header documents the columns
   (kind, expect, limit, pair, red). Every row runs `all` features, engine 0.
 - `run_growth.sh` — the `make test-growth` body: CLI stage, then library stage
-  against an ASan+LSan build (`build-asan/`). The library stage bounds each
-  in-process compile by its own wall time (CLI walls in
-  `$PCREC_TMPDIR/growth-walls-<tree key>.tsv`, one file per tree root, named in the
+  against an ASan+LSan build (`build-asan/`), then the per-doubling report (unsharded, or the LAST cloud shard). The library stage bounds each
+  in-process compile by its own CPU time (CLI compile CPU in
+  `$PCREC_TMPDIR/growth-cpus-<tree key>.tsv`, one file per tree root, named in the
   output; floor 300 s, margin x20; see testing.md).
 
 ## Rules
@@ -87,6 +87,18 @@ the exit, not the answer. Opt-in: `make test-growth` (long, NOT in
 - Future direction (owner, 2026-11-20, not built): a ladder of THREAD sizes
   below the stack budget; limits.md §3.10¶4 promises an overflow there, so
   every such cell would fail by design.
+
+## Time bounds, per-doubling report, tiers (owner rulings growth-time-bound, growth-doubling-report)
+
+- A cell's bound is CPU SECONDS (watchdog `-c`; the library stage's ITIMER_PROF); the wall bound is a hang guard only; a red
+  names the bound that fired ("CPU bound" / "WALL hang guard"). `run_growth.py --bounds` prints each value and where it was derived
+  (measured on the dev box; the cloud ratio is re-derived from the `CPU:` lines every run prints: slowest cells + headroom).
+- `--doubling`: compile CPU per size on each growth axis, the ratio to the half-size neighbour, `REPORT:` lines (ratio > x3.0 at
+  >= 0.25 s) that are never a red; a crashed/timed-out point IS a FAIL. The nested-`+` axes double the pattern per level.
+- OCCASIONAL tier = `Cell.occasional` = the named compile-only exceptions (107 cells: cells.tsv 15 + the 92 matrix `+` edges).
+  Excluded from the default tier, `--list`, the shard table and the cloud; `GROWTH_TIER=occasional bash tests/growth/run_growth.sh`
+  (CLI stage only, CPU 3600 s / wall 14400 s) runs them. Measured 2026-11-23 after K159: all 107 are cheap (25 s CPU at most, no
+  matcher is built), so the tier moves coverage out of the default run for no saving today; the owner may keep them default.
 
 ## Cloud (kind `growth`, [GROWTH-CLOUD])
 
