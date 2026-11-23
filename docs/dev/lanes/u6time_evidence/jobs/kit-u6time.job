@@ -25,7 +25,7 @@ SIB=$(tr ',' '\n' < /sys/devices/system/cpu/cpu$CPU_PIN/topology/thread_siblings
 EST=1400 CAP=3600
 export TMPDIR=$S/tmp
 tree_ok() {
-    [ "$(git -C "$W" rev-parse HEAD)" = "$(git -C "$W" rev-parse "$TREE_SHA^{commit}")" ] || { echo "u6time: $W HEAD is not $TREE_SHA" >&2; return 1; }
+    git -C "$W" merge-base --is-ancestor "$TREE_SHA" HEAD && git -C "$W" diff --quiet "$TREE_SHA" HEAD -- . ':!docs/dev/lanes/u6time*'         || { echo "u6time: $W is not $TREE_SHA (HEAD may add only docs/dev/lanes/u6time* files)" >&2; return 1; }
     [ -z "$(git -C "$W" status --porcelain --untracked-files=no -- . ':!docs/dev/lanes/u6time*' ':!docs/dev/artifact_size_log.tsv')" ] || { echo "u6time: tracked changes in $W" >&2; return 1; }
     [ -x "$W/build/pcrec-harness" ] && [ -f "$CARDS" ] || { echo "u6time: $W is not built (make -j16)" >&2; return 1; }
     [ "$SIB" = 7 ] || { echo "u6time: SMT sibling of CPU $CPU_PIN reads '$SIB', expected 7" >&2; return 1; }

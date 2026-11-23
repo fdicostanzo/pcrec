@@ -1,7 +1,8 @@
 # u6time: the C6/C6c timing job (R-47 U6), prepared and rehearsed, NOT QUEUED
 
 ## STATE AT HANDOFF
-Tree: this worktree at b291a2f7c (branch lane/u6time), built (`make -j16` under boxlock). Rulings file empty at every checkpoint
+OWED: none.
+Tree: this worktree at b291a2f7c plus the lane commit adding only docs/dev/lanes/u6time* (branch lane/u6time); the job freeze check allows exactly that, built (`make -j16` under boxlock). Rulings file empty at every checkpoint
 (last entry applied: none). Nothing timed, nothing queued, no clock read. Work ended before 18:15.
 Not rehearsed: the evening refusal (20:00-01:00) and the `evening=ok` override, because it needs a different wall clock; the real
 quiet wait and the time stage (timing, forbidden here). The window request's `--ready` floor of 18:15 is replaced by the brief's
@@ -10,7 +11,7 @@ quiet wait and the time stage (timing, forbidden here). The window request's `--
 ## JOB
 `docs/dev/lanes/u6time_evidence/jobs/kit-u6time.job` (one job, three phases; key kit-u6time). Declares cap 3600, est 1400, idle-ok,
 patience none, not-before 2026-11-23T00:00, and the request's three expect lines (done=1, truncated=0, verdict=3).
-- Freeze: TREE_SHA b291a2f7c is checked at --dry-run, --ready and start (HEAD equal, no tracked changes outside docs/dev/lanes/u6time*
+- Freeze: TREE_SHA b291a2f7c is checked at --dry-run, --ready and start (an ancestor of HEAD, no diff outside docs/dev/lanes/u6time*, no tracked changes outside docs/dev/lanes/u6time*
   and artifact_size_log.tsv, build present, SMT sibling of CPU 15 read from sysfs = 7).
 - PREPARE: `JOBS=12 cards.py time RUNDIR --prepare --cards C6,C6c`, then `--dry --dry-model tie` which must show `clock calls 0` and
   `DONE rc=0` (else the job stops).
