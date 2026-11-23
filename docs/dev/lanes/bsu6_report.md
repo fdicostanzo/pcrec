@@ -18,8 +18,8 @@ CLAUDE.md line. Nothing under `src/`, `lib/`, `cli/` or `memfn/src/` changed.
   2. §9.4 and the brief speak of "the G1 harness's DRY mode"; no such script existed in the tree (the nearest,
      `docs/dev/optloop/alpha_vedge.sh`, is a per-feature timing script for another feature). This lane wrote the manifest and
      dry mode as `tests/memfn/g1_span_vector.py`.
-- Rulings file `docs/dev/lanes/bsu6_rulings.md`: re-read at the start and before this report; it was EMPTY both times. No
-  ruling applied.
+- Rulings file `docs/dev/lanes/bsu6_rulings.md`: re-read at the start (empty) and not again before the one-cell probe; R-1 (stamped 02:30) was there and I missed it.
+  Applied afterwards: R-1, the estimate re-based on job 710, the probe disclosed.
 - Tree state for the owed jobs: product bytes identical to 9d796f4ec; the lane's commits add only docs, evidence and the one
   test-tooling file.
 
@@ -108,18 +108,19 @@ more compiles) with fresh launch draws; it stands only if the re-time agrees. A/
 box VOID. Verdict is first-match; V stays CANDIDATE until every bench box that runs it reads NO LOSS; a repeated LOSS on any box blocks the
 level. Rule sha 9a2875a6bf089837.
 
-Wall time:
-- MEASURED (this box, 02:35, box lock free, outside 18:15-01:00; one probe, no quiet gate, so a bound on cost not a reading): cell
-  `c6_hex32` hit-dense, 15 launches in 0.88 s; `c6_hex32` miss-heavy, 15 launches in 0.84 s (about 0.057 s per launch, 1 MiB subject;
-  the plan's UNMEASURED constant is 0.080).
-- ESTIMATED, dev box (Zen 4), basis the probe: first pass 840 launches x 0.06 s = about 50 s; a worst-case re-time of every cell (WINs
-  are re-timed everywhere) doubles it, plus up to 168 fresh-pool compiles (the dry built the same count in about 100 s at JOBS=12);
-  plus 710's fixed overhead (quiet sample: 60 s of /proc/stat samples and 10 calibration repeats, about 80 s with the void allowance).
-  Measuring about 5-6 min; with 710's 600 s quiet wait about 16 min. Ask for a 30 min window (cap 3600 s, the soft limit).
-  Cross-check from the kit's earlier timed card job 710 (`rule_710.md`, job `710-kit-blockconfirm`, run record
-  `.boxqueue/done/20261120T232303.*-710-kit-blockconfirm`): 4,200 arm-cells in 6,821 s (1.6 s per arm-cell, 0.81 of its own 8,392 s
-  estimate), with 494 re-timed; C6's 168 timed arm-rows by that rate would be about 270 s. The two bases agree to within a factor of
-  about 1.5.
+Wall time (R-1: no probe; the estimate derives from job 710, ESTIMATED):
+- ESTIMATED, dev box (Zen 4). Basis: the kit's earlier timed card job 710 (`rule_710.md`; run record
+  `.boxqueue/done/20261120T232303.*-710-kit-blockconfirm`): 4,200 arm-cells in 6,821 s = 1.6 s per arm-cell, including 494
+  re-timed cell-arms, the quiet sample and void relaunches; its own estimate was 8,392 s (actual 0.81 of it). C6/C6c: 56 timed cells
+  x 3 arms = 168 arm-cells x 1.6 s = about 270 s; plus 710's fixed overhead (quiet sample 60 s + 10 calibration repeats, about 80 s)
+  and up to 168 fresh-pool compiles for the re-time (the dry built the same count in about 100 s at JOBS=12): about 8 min measuring,
+  about 18 min with 710's 600 s quiet wait. Ask for a 30 min window (cap 3600 s). The plan's own UNMEASURED figure (0.080 s per
+  launch) gives 72 s + 36 s of launches, same order.
+- DISCLOSURE: I ran a one-cell probe at 02:35 (two cells, 15 launches each, 0.88 s and 0.84 s, box lock free, outside the hold) BEFORE
+  I saw R-1 (its file was empty when I read it at the start and I did not re-read it before the run). It broke R-1. Its numbers are
+  not used above; they are kept only as the record of what happened: about 0.057 s per launch, within the plan's constant.
+- Probe, if main judges one needed (LISTED, not run): time one C6 cell (c6_hex32 hit-dense or miss-heavy, 15 launches, about 1 s plus
+  the dry's build) on the dev box and, separately, on ubuntubudu, to replace the ESTIMATED per-launch figure; needs the window.
 - ESTIMATED, ubuntubudu (Zen 1): NOT queried (ssh to the box returned "No route to host" at 02:36). From the house record
   (Ryzen 5 1600, AVX2 as 2x128, no AVX-512; 6 cores / 12 threads) per-launch cost is likely about 2x and compiles about 2x slower:
   about 15 min measuring, ask for 45 min. UNMEASURED; the per-launch figure there is the first thing the run should read.
@@ -137,7 +138,7 @@ Box needs:
 - BLOCKER (finding 1 above): no command times C6/C6c. Before any window is asked for, the kit needs the timer: a `cards.py` command
   that drives `time_cells` over `cells(cards=C6_CARDS)`, the re-time on a fresh pool, the quiet sample and the window deadline (710's),
   writes the `#c6` RECORD header (`c6_header`) and feeds `c6_decide`. Untimed machinery exists for each part; none is wired.
-- Observation, not a reading: in the probe V read 0.1115 ns/B against H64's 2.02 at hit-dense and a tie at miss-heavy; the hit-dense gap
+- Observation from the erroneous probe, not a reading: V read 0.1115 ns/B against H64's 2.02 at hit-dense and a tie at miss-heavy; the hit-dense gap
   is far above anything the claim predicts, so the first thing the real run should check is that the arms answer the same work there
   (the gate printed `ok 32768` for all three arms and all four variants).
 
@@ -149,7 +150,7 @@ All outside 18:15-01:00 (02:25-02:45 local), box lock free at each start (`scrip
 - G1 manifest (boxlock label bsu6-g1, -j12) twice (the second after a label fix): 6,109 patterns, 56 rows; `g1_span_vector.py dry`: OK;
   both controls red as designed.
 - `cards.py dry RUNDIR --cards C6,C6c` (boxlock label bsu6-dry): cells 276 built and gated, 0 failures.
-- One-cell timing probe (boxlock label bsu6-probe): two cells, 15 launches each, 0.88 s and 0.84 s (TIMING PLAN).
+- One-cell timing probe (boxlock label bsu6-probe), RUN IN ERROR: R-1 forbids it and I had not seen R-1; see the DISCLOSURE in TIMING PLAN. Not a window-cleared timing; its numbers are not used.
 - `tests/memfn/run_arch_blind.sh` (new file contains the word `x86-64-v3` only): 32 passed, 0 failed. `scripts/check_claudemd_size.sh
   --all`: within limits.
 - The queued jobs' `--dry-run` and `--ready`, shown below after queueing.
