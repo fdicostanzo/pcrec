@@ -9617,3 +9617,53 @@ The manager's answer (told to him; a proposal, marked):
   `repeat(A, 3)` is 3 OR MORE, exactly 3 is `repeat(A, 3, 3)`; unset and `_` never differ and no default names
   another parameter.
 Put to him as slug repeat-head.
+
+### 2026-11-23 OWNER RULING — label-hole-full: a pure label's name hole must be whole; a capture's name may be partial, "but again, the label portion is lost"; and a sketch of the repeat head with a conditional default
+tags: core/holes/name core/labels/label-only-group core/operators/bindings/label-variables core/labels/labels-vs-captures core/operators/bindings/call-forms lib/rx/repeat core/holes/count core/values/one-type
+
+ASKED AS A RULING (slug label-hole-full: a label parameter fills a WHOLE group name, a string or number may still
+be part of one (the manager's leaning); or no partial names at all) and, in discussion, slug repeat-head ((i)
+`repeat(x, min = _, max = min)`: one count exact; (ii) `repeat(x, min = 0, max = _)`: one count "or more"; the
+manager's leaning (ii)). HIS WORDS, whole:
+
+"label-hole-full: pure label must be whole the label is lost. Capture label can be partial but again, the label
+portion is lost.
+
+repeat-head: repeat(A, min = 0, max = ((min &  0)? _ :(min?min:)) := /${A}{${min|0},${max}}/"
+
+Class, part by part:
+- label-hole-full: a RULING, cut differently from the candidates: by the KIND OF GROUP, not by what fills the
+  hole. (1) A pure label (the label-only group): the name hole "must be whole". (2) A capture (a capturing named
+  group): its name "can be partial", "but again, the label portion is lost". The reading taken of "the label is
+  lost" (the manager's, told to him to confirm): a name a hole only completes is not a label anyone can read (no
+  text writes it); so in a pure-label group a partial name would leave nothing, hence whole only; in a capturing
+  group a partial name leaves the CAPTURE under the composed name and no label.
+- repeat-head: a SKETCH in answer (DISCUSSION; his spellings are placeholders: `? :`, `&` as a test, `|` as a
+  fallback, the empty else): min defaults to 0; max's default is CONDITIONAL on min: unbounded when min is 0,
+  else min where min is specified, else nothing; the lower bound is min, or 0. NOT a ruling on (i) or (ii).
+
+Check-his-regex, RUN (python `re`; `$PCREC_TMPDIR/scratch/pred/repeat_head.py`; his head read as stated above,
+head (i) beside it; D := `\d`; output pasted, the calls where the two heads agree shown once):
+- `repeat(D)`, `repeat(D, _)`, `repeat(D, _, _)`: both heads `(?:\d){0,}`: WHOLE `` HOLDS, `12` HOLDS, `123`
+  HOLDS, `123456` HOLDS / SEARCHED `x1234567` ``@0 / FIND-ALL `1234567 12` [`1234567`@0, ``@7, `12`@8, ``@10]
+- `repeat(D, 3)`: both `(?:\d){3,3}`: WHOLE `` FAILS, `12` FAILS, `123` HOLDS, `123456` FAILS / SEARCHED
+  `x1234567` `123`@1 / FIND-ALL `1234567 12` [`123`@0, `456`@3]
+- `repeat(D, 3, _)`: both `(?:\d){3,}`: WHOLE `` FAILS, `12` FAILS, `123` HOLDS, `123456` HOLDS / SEARCHED
+  `x1234567` `1234567`@1 / FIND-ALL `1234567 12` [`1234567`@0]
+- `repeat(D, _, 5)`: both `(?:\d){0,5}`: WHOLE `` HOLDS, `12` HOLDS, `123` HOLDS, `123456` FAILS / SEARCHED
+  `x1234567` ``@0 / FIND-ALL `1234567 12` [`12345`@0, `67`@5, ``@7, `12`@8, ``@10]
+- `repeat(D, 2, 5)`: both `(?:\d){2,5}`: WHOLE `` FAILS, `12` HOLDS, `123` HOLDS, `123456` FAILS / SEARCHED
+  `x1234567` `12345`@1 / FIND-ALL `1234567 12` [`12345`@0, `67`@5, `12`@8]
+- `repeat(D, 0)`, the ONE call that differs: his head `(?:\d){0,}` (the first line's answers); head (i)
+  `(?:\d){0,0}`: WHOLE `` HOLDS, `12` FAILS, `123` FAILS, `123456` FAILS / SEARCHED `x1234567` ``@0 / FIND-ALL
+  `1234567 12` [``@0, ``@1, ``@2, ``@3, ``@4, ``@5, ``@6, ``@7, ``@8, ``@9, ``@10]
+The manager's findings (told to him; marked):
+- His sketch makes one count EXACT (`repeat(D, 3)` is `{3,3}`): it is head (i)'s table, not (ii)'s, in every call
+  but a written `0`. The conditional is there only to tell "0 because nothing was given" from "a count was
+  given"; a default of "unspecified" tells them apart without a conditional: `repeat(x, min = _, max = min)`.
+- `${min|0}` as written is not a fallback when min IS given: `3|0` is two values in a count hole, which makes
+  copies (core/holes/count); a first-that-is-specified choice is the conditional again.
+- The NEW component his sketch uses: a compile-time CONDITIONAL in an expression, choosing by whether a set has a
+  string (`min & 0`) or whether an argument is specified (`min ? .. : ..`). The language has the test (emptiness
+  of a compile-time set: `@assert.some`) but no expression that chooses on it. A candidate basic component;
+  nothing defined; to park with a trigger unless he wants it now.
