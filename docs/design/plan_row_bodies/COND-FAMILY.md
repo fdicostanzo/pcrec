@@ -9573,3 +9573,21 @@ RUN (python `re`; the head's defaults applied by a four-line function; output pa
   `x1234567` ``@0 / FIND-ALL `1234567 12` [`12345`@0, `67`@5, ``@7, `12`@8, ``@10]
 - `repeat(rx.digit, 2, 5)` is `(?:\d){2,5}`: WHOLE `` FAILS, `12` HOLDS, `123` HOLDS, `123456` FAILS / SEARCHED
   `x1234567` `12345`@1 / FIND-ALL `1234567 12` [`12345`@0, `67`@5, `12`@8]
+
+### 2026-11-23 OWNER, an aside on label arguments: "because of label args that label holes must be full and not partial"
+tags: core/holes/name core/operators/bindings/label-variables core/labels/paths/label-reference core/labels/label-only-group
+
+HIS WORDS, whole: "(Aside labels args: I'd say because of label args that label holes must be full and not
+partial)"
+
+Class: a LEAN ("I'd say"), said as an aside; NOT a ruling. The reading taken (the manager's, told to him): a
+group-name hole filled by a LABEL PARAMETER (`(?<:${l}>...)`, `(?<${l}>...)`) is the WHOLE name; a label
+parameter as PART of a name (`(?<:f_${l}>...)`) is refused. The ground, from the record: the caller writes the
+label's name in its own text and reads it bare (label-reference; his 2026-11-23 point that a label provided
+otherwise "its not "textually defined""); a name the hole only completes is a name nobody's text writes.
+What the documents say today: core/holes/name (ruled 2026-11-18 for "an array of names there is a compile
+error") also carries the sentence "A hole may form part of a name (`(?<f_${i}>...)`)", which is NOT in his
+ruling words (a sentence of the draft, written for a STRING or number in the hole). The manager's proposal
+(marked, not ruled): the partial form stays for a string or number filling the hole (a generated CAPTURE name,
+`f_1`, `f_2`; as a label such a group is reached only with a source, never bare) and is refused for a label
+parameter. Put to him as slug label-hole-full.
