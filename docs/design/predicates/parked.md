@@ -211,7 +211,9 @@ modes: n/a (parked: not in the language)
 A call that leaves a position empty, `row(,"level", ..)`, in place of passing every argument.
 Trigger: the first macro whose callers mostly leave one position unused, or the call-forms ruling.
 Source: his words on label-parameter-omitted, "if we choose to allow that" (the details entry).
-see: core/operators/bindings/label-omitted core/operators/bindings/call-forms
+see: core/operators/bindings/label-omitted core/operators/bindings/call-forms core/operators/bindings/unspecified
+- call-forms is ruled: an argument written as `_` is a part not written (core/operators/bindings/unspecified); a
+  position left out of the record entirely stays this idea.
 modes: n/a (parked: not in the language)
 
 ### A reference kind of label parameter for users   [parked/ideas/reference-kind]   parked 2026-11-23
@@ -234,7 +236,28 @@ Trigger: the call-forms ruling (its absent setting for "no maximum", "no width")
 Source: his question on optional-label-general (the details entry).
 - It would give `?` a second meaning, against his own reason for the `?:` operator: "then we aren't using ? For
   two different meanings" (core/conditions/form/optional-entry).
+- His `max?` in a head would be `max = _`, a default of "not written" (the manager's suggestion, the call-forms
+  play-out); call-forms is ruled without it.
 see: core/operators/bindings/call-forms core/conditions/form/optional-entry core/conditions/form/optional-general
+modes: n/a (parked: not in the language)
+
+### A compile-time conditional in an expression   [parked/ideas/compile-time-conditional]   parked 2026-11-23
+An expression that chooses between two values at compile time by a test (whether a set has a string, whether an argument is written), as his sketch of the repeat head's default.
+Trigger: the first default or body that cannot be written without it.
+Source: his sketch on label-hole-full, `max = ((min & 0)? _ :(min?min:))`, and the repeat-head ruling (the details entry).
+- Its `?` `:` spelling meets the optional entry operator `?:` (core/conditions/form/optional-entry): a spelling for
+  the spellings review, if it is taken up. The test exists today (`@assert.some`); the choosing expression does not.
+see: lib/rx/repeat lib/assert/assert core/conditions/form/optional-entry
+modes: n/a (parked: not in the language)
+
+### The head as a binding list, and the call forms beside it   [parked/ideas/call-head-forms]   parked 2026-11-23
+A macro's head read as a binding list a call binds against its record, with what that opens: a map written in place, a tuple or map spread over a head, variable arguments, and a macro taking a macro.
+Trigger: one example each: a call whose settings come as a map; a rest parameter a user body needs; a user macro that must call a macro it is given.
+Source: the manager's call-forms play-out, level 1 items 7 and 8 and level 2 items 9 to 12 (the details entry); none ruled.
+- A macro taking a macro needs a termination rule with it: an expansion budget with a compile error over it, or
+  parameter kinds declared in the head (core/operators/bindings/macro-types); the choice is his.
+- Positional entries after named ones (the play-out's interleaving, beyond call-forms line 2's "for now") belong here.
+see: core/operators/bindings/call-forms core/modules/binding-list core/values/tuples core/operators/bindings/macro-types
 modes: n/a (parked: not in the language)
 
 ### An explicit product of arrays   [parked/ideas/cartesian]   parked 2026-11-19
