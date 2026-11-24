@@ -15,3 +15,4 @@ Owner ruling 2026-11-24 "stale-rows-park: agree" applied to docs/dev/plan.md and
 
 ## STATE AT HANDOFF
 Committed on lane/planpark. Rulings file read: empty. Owed: nothing.
+OWED: none
