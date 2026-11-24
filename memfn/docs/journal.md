@@ -4908,3 +4908,9 @@ bsu3fix2 delivered (6cf672b6a on lane/bsu3fix; lanecheck DONE; TaskStop).
 - 01:11 CORRECTION, from main: the PROPOSED 'V leaves CANDIDATE' was WRONG. D155 item 2 and D144 add. 4 make a SIMD verdict come from pcrec-BENCH runs on every box that runs the form; 760 was the kit's own cards (kit timings are unofficial, memfn/CLAUDE.md). Main puts it to Frank as question simd-v-candidate; block_span.md keeps CANDIDATE until he rules. Main merged R-47 (a39e4f15e), strict and lint green, push after cloud green; then prune u6time.
 
 - 2026-11-24 03:13: u6time pruned (wtprune --force; its untracked deliver.txt saved under .wtprune.force) and lane/u6time deleted; the kit holds nothing on the dev box.
+
+## 2026-11-24 — the kit session on the Mac
+- Woke on the Mac (M1 Max, arm64; `gcc` is Apple clang 21, there is no GNU gcc). Registered as kit. monread and boxqueue are Linux-only here (no monitor.log, no flock or /proc), so no queue path exists on this box. Main merged d716c9d72 (R-47 done). Cut lane/memfn-arch from main e11c5f4ef as worktrees/memfn.
+- R-48 (V leaves CANDIDATE; NEON V on the Mac after the arch review; x86 V on return) ACKED in 9f677e62f, with the open question of which compiler times on the Mac.
+- No heartbeat cron: nothing is in flight (no lanes, no queue, main not running). By monitoring.md's keep/drop table there is nothing for a heartbeat to watch.
+- WAITING on main for the [KIT-ARCH-STEP] stage 2 charter (wake: "wait for main's charter"). No session for main is running on this machine, so the ask is the ledger ack.
