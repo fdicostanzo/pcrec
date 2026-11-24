@@ -10228,3 +10228,53 @@ dissolves: list-is-label, both-uses, pair-twice-alone, nested-made, review r88's
 written-out form no longer part) and A9's nested-body cell; the caller no longer needs to know B's body. What it
 reverses: the table ruled with binding-as-label for a body that labels the spot, and closed-argument (a)'s
 second sentence for a body that closes it. Put to him as a ruling, slug shorthand-is-callers.
+
+### 2026-11-23 OWNER RULING — shorthand-is-callers: "yes thats it exactly. Setting a label closes a path (through the shorthand in that binding) but doesn't block out the target."
+tags: core/labels/rule core/labels/ownership core/labels/paths/argument-default core/labels/paths/closed-argument core/labels/paths/call-prefix core/labels/paths/binding-prefix core/labels/paths/label-reference core/labels/export/arguments lib/convention/argument-labels lib/control/peek lib/control/when lib/control/atomic lib/search/hits lib/search/occurrences
+
+ASKED AS A RULING (slug shorthand-is-callers, the statement put to him: "The shorthand label is the caller's own:
+`B(A)` read through `A.d` means `B([A = A])`, whatever B's body does with the spot. Condition 4 counts only
+labels made in the text that writes the shorthand."; with two examples, A := `/(?<d>\d)/`: the body labels the
+spot, B(rx) := `/${[p = rx]}-(?<d>\d)/`, `B(A) & (A.d: <5)` legal and the same read as `B.p.d`: WHOLE `7-3`
+FAILS, `3-7` HOLDS, `3-3` HOLDS / SEARCHED `7-3 3-7` `3-7`@4 / FIND-ALL `7-3 3-7 1-2 9-9` [`3-7`@4, `1-2`@8];
+the body closes the spot, B(rx) := `/${[_ = rx]}xx/`, `B(A) & (A.d: <5)` legal: WHOLE `3xx` HOLDS, `7xx` FAILS /
+SEARCHED `7xx 3xx` `3xx`@4 / FIND-ALL `3xx 7xx 4xx` [`3xx`@0, `4xx`@8], "Through the call, `B.d` stays a compile
+error: that door is the one B closed" (both answer sets quoted from the documents' printed runs of the
+written-out forms, the lines "Through the body's path" and "The caller's own label, under a closing body" of
+core/labels/paths/closed-argument); the closing body named as the edge to decide, the manager's leaning "yes,
+including the closing body"; the two reversals named: the binding-as-label table for a body that labels the
+spot, and closed-argument (a)'s second sentence). HIS WORDS, whole:
+
+"shorthand-is-callers: yes thats it exactly. Setting a label closes a path (through the shorthand in that
+binding) but doesn't block out the target.
+This has been a good trajectory. We started out all open, then moved to mostly all closed. Now we are seeing the
+balance. Very Buddha"
+
+Class: a RULING: the statement as put, the closing body included ("yes thats it exactly", on a statement saying
+"whatever B's body does with the spot" with the closing example legal). His own sentence of the rule: "Setting a
+label closes a path (through the shorthand in that binding) but doesn't block out the target." An OBSERVATION on
+the course of the design ("all open ... mostly all closed ... the balance").
+It REVERSES: the table ruled with binding-as-label (2026-11-23) for a body that labels the spot (`A.d` was a
+compile error, read `B.p.d`: now `A.d` is legal and `B.p.d` stays legal, two names of one spot by label-doors
+line 5); closed-argument (a)'s second sentence (2026-11-22, "Where B closes the argument, `A.d` is a compile
+error": now legal; `B.d` and `c.d` through the call stay compile errors); the manager's reading (a) of
+binding-as-label ("by anyone on that use, the body included") is WITHDRAWN: condition 4 counts labels made in
+the text that writes the shorthand. It KEEPS: the four conditions as his; binding-prefix inside one definition
+(`[a = A] SEQ "!" & (A.h: ..)` a compile error; used more than once, condition 1); the caller's explicit label
+(`B([a = A])`: `a.d`, and then `A.d` a compile error); "[ c = B(A) ] does not allow c.A"; a parameter's name is
+not a label inside the body.
+It DISSOLVES (no question left to ask): list-is-label (the manager's reading (b) withdrawn: a list in the body
+does not touch the caller's `A.d`; `peek(A) & (A.d: ..)`, `atomic`, `when`, `identity`, `hits`, `occurrences`
+alike are legal again); spot-read-name's residue; review r88's nested-made and its A4 (the shorthand and its
+written-out form are one by definition).
+The manager's readings (marked; for the fold to test): (a) an argument the body places twice, or alone and
+labelled: the caller's shorthand label is set at every spot the template is placed, the same-label-twice rules
+(the last mention in a sequence, the branch taken, across `&` the ambiguous reference): this answers both-uses
+and pair-twice-alone without a question, and it CHANGES the printed line "Both uses" where the labelled spot
+comes last; never placed: the never-pass warning; (b) the shorthand label is protected, as export statement 2's
+implicit label is (review r88 A5 stands); (c) in the ownership table the row "an argument's binding, passed
+whole" reads `A.h` in every spot column, and the body row is unchanged; (d) "through the shorthand in that
+binding": inside the definition that makes the label, the labelled use is read by its label only (what
+binding-prefix's "the name reaches the UNLABELLED uses only" already says).
+NOT sent to the running lane predfix88 as work (a reversed design is a fresh lane's); its rulings file gets R-1,
+a notice. The fold is lane predfold1124's, after predfix88 delivers.
