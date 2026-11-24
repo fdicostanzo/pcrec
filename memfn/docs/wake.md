@@ -23,7 +23,7 @@ The kit manager (`/pcrec-memfn-manager`). The kit branch is lane/memfn-k1108 (on
   - The final delivery: [responses] done d716c9d72 on lane/memfn-k1108, carrying 760's timing record (docs/dev/lanes/u6time_evidence/run760/) and the job-shape fix. Check that main merged it.
   - **Verdict, Zen 4 dev box, job 760:** C6 NO LOSS (17/10/0, 27 of 32 readable); C6c NO LOSS under off-clang and off-os.
   - ubuntubudu is UNAVAILABLE, and there is no Mac cell.
-  - **PROPOSED to main:** V leaves CANDIDATE (D155 item 2 over the one-box bench set). The block_span.md labels (~37, ~1007, ~1479, ~1501) change on main's word.
+  - **V stays CANDIDATE:** the official SIMD verdict is a pcrec-BENCH run (D155 item 2, D144 add. 4), and 760 was the kit's own cards (unofficial). Main put it to Frank as question simd-v-candidate (11-24); block_span.md keeps CANDIDATE until he rules. (The kit wrongly proposed a lift in d716c9d72; corrected here.)
 - **Nothing open here:** no kit queue jobs, no running lanes, heartbeat deleted.
   - Leftover worktrees on the dev box: u6time (merged into the kit branch; prune with wtprune once main has it), bsu3/bsu3fix (pinned in .wtprune.keep).
 - **NEXT (on the Mac):** [KIT-ARCH-STEP] stage 2. Frank's ruling, verbatim in the 11-22 journal: "kit-arch-step: yes but after existing effort completed. Then overall arch review of kit sections with suggestions. Possible refactors, favoring smaller items. Then arch reviews going forwards". Wait for main's charter; use the pcrec-architect skill and critic arch mode.
