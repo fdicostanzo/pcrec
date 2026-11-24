@@ -68,8 +68,6 @@ G2="$ROOT/memfn/tests/g2"
 NSITES="${G2P_SITES:-400}"
 NWIDE="${G2P_WIDE:-300}"   # R-38 Part D: the WIDE stream's sites, after today's (their own rng)
 SEED="${G2P_SEED:-20261110}"
-WORK="$(mktemp -d "${TMPDIR:-/var/tmp}/g2pres.XXXXXX")"
-if [ -n "${G2P_KEEP:-}" ]; then echo "work directory: $WORK"; else trap 'rm -rf "$WORK"' EXIT; fi
 TARGETS="x86-64-v3 x86-64 generic"
 ORACLE="$ROOT/tests/memfn/occurrence_oracle.py"
 RECFLAGS="-fsanitize=kernel-address --param asan-instrumentation-with-call-threshold=0 --param asan-stack=0 --param asan-globals=0"
@@ -406,16 +404,29 @@ plant_edits() {
     local s l; s="$(plant_spec "$1")" || return 1
     EDITS=(); while IFS= read -r l; do EDITS+=("$l"); done <<< "$s"
 }
-# --plant-check: every plant in PLANTS counted against today's memfn/src (and the census
-# script for @c0/), never applied or built (scripts/m6read_check_sab_anchors.py's plant pass)
+# THE C0 COPY: the span_pick files a plant's `@c0/X` may name, ONE list read by both modes
+# (--plant copies exactly these into $WORK/c0; --plant-check admits exactly these: r94 CA-1)
+C0_SRC="$ROOT/docs/design/memfn/span_pick"
+C0_FILES="census0.py"
+# PLANT_TWINS: the PLANTS ids that are the same plant as the tests/mech/sabotages row of
+# that id; any other shared id is a collision. The plant pass holds both (review r94 GF-1).
+PLANT_TWINS="$PLANTS"
+# --plant-check [check|dump]: every plant in PLANTS run through the applier's loop over an
+# in-memory copy of today's memfn/src and the C0 copy (check), or decoded (dump), never
+# applied or built, no work directory (scripts/m6read_check_sab_anchors.py's plant pass)
 if [ "${1:-}" = "--plant-check" ]; then
+    case "${2:-check}" in check|dump) ;; *) echo "--plant-check [check|dump]" >&2; exit 2 ;; esac
     args=()
     for id in $PLANTS; do
         if plant_edits "$id"; then args+=(--plant "$id" "${#EDITS[@]}" "${EDITS[@]}"); else args+=(--plant "$id" 0); fi
     done
-    exec python3 -I "$ROOT/tests/lib/plants.py" check pres "$ROOT/memfn/src" \
-        "$ROOT/docs/design/memfn/span_pick" "$ROOT/memfn/tests/run_g2_pres.sh" -- "${args[@]}"
+    # shellcheck disable=SC2086
+    exec python3 -I "$ROOT/tests/lib/plants.py" "${2:-check}" pres "$ROOT/memfn/src" "$C0_SRC" \
+        "$ROOT/memfn/tests/run_g2_pres.sh" --labels <(declare -f plant_spec) \
+        --files c0 <(printf '%s\n' $C0_FILES) --twins "$PLANT_TWINS" -- "${args[@]}"
 fi
+WORK="$(mktemp -d "${TMPDIR:-/var/tmp}/g2pres.XXXXXX")"
+if [ -n "${G2P_KEEP:-}" ]; then echo "work directory: $WORK"; else trap 'rm -rf "$WORK"' EXIT; fi
 
 fail_setup() { echo "FAIL: $1"; echo "checks passed: 0"; echo "checks failed: 1"; exit 1; }
 
@@ -686,7 +697,7 @@ if [ "${1:-}" = "--plant" ] || [ "${1:-}" = "--plants" ]; then
         plant_edits "$id" || fail_setup "no plant $id"
         if plant_asan "$id"; then unset G2P_NOASAN; else export G2P_NOASAN=1; fi
         rm -rf "$WORK/src"; cp -rL "$ROOT/memfn/src" "$WORK/src"   # -L: a symlinked src is copied, never planted in place
-        rm -rf "$WORK/c0"; mkdir -p "$WORK/c0"; cp "$ROOT/docs/design/memfn/span_pick/census0.py" "$WORK/c0/"
+        rm -rf "$WORK/c0"; mkdir -p "$WORK/c0"; for f in $C0_FILES; do cp "$C0_SRC/$f" "$WORK/c0/"; done
         python3 -I "$ROOT/tests/lib/plants.py" apply pres "$WORK/src" "$WORK/c0" -- "${EDITS[@]}" \
             || fail_setup "$id: the plant does not apply"
         kit_objs "$WORK/src" "$WORK/pk_$id" || fail_setup "$id: the planted kit does not compile"

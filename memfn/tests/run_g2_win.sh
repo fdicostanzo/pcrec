@@ -46,8 +46,6 @@ LIB="${LIB:-$ROOT/build/libpcrec.a}"
 G2="$ROOT/memfn/tests/g2"
 NSITES="${G2W_SITES:-1500}"
 SEED="${G2W_SEED:-20261022}"
-WORK="$(mktemp -d "${TMPDIR:-/tmp}/g2win.XXXXXX")"
-trap 'rm -rf "$WORK"' EXIT
 
 # --- the floors (K35): hand-written literals, measured 2026-10-22 on the
 # Linux dev box (seed 20261022, 1500 sites, lane wsc1), less ~10%. Raise them
@@ -154,9 +152,12 @@ REACH_DECISIVE_FLOOR=38
 
 # THE PLANTS: id, then FILE@@FROM@@TO (FILE under memfn/src; FROM replaced
 # by TO, `\n` a newline, `\&` an ampersand). Each must make the run red.
-# Ids from the kit's S1400-S1429 (R-29): S1400-S1407 were wsc1's WSC1-P1..P8; S1540
-# (code review r2, lane s3pair), S1541-S1543 (the S3 final review, lane s3fix) and S1549
-# (the span_pick 1e review, lane sp1efix) are the kit's S1540-S1559.
+# Ids from the kit's S1400-S1429 (R-29): S1400-S1407 were wsc1's WSC1-P1..P8; S1544
+# (code review r2, lane s3pair; minted as S1540, renumbered by review r94 GF-2, lane
+# plantfix2: S1540 is the mech registry's tests/mech/sabotages/S1540_cmp13_align_entry_skipped.sh),
+# S1541-S1543 (the S3 final review, lane s3fix) and S1549 (the span_pick 1e review, lane
+# sp1efix) are in the kit's RUNNER-PLANT RANGE S1541-S1559 (main's ledger records it and
+# never allocates in it; S1540 is main's: lane plantfix2's ruling R-1, 2026-11-24).
 plant_spec() {
     case "$1" in
     S1400) # the edge guard dropped: a non-core position below the candidate read inside [0, F)
@@ -226,7 +227,7 @@ plant_spec() {
         # the native sites' too) with its second stream searching the first member
         # (re-aimed at code review r2 R2-6: fn-pair's members, handed to the shared renderer)
         echo 'ofsskip.c@@    const int m[2] = { a, b };@@    const int m[2] = { a, a };' ;;
-    S1540) # code review r2 R2-6: THE SHARED two-stream renderer (ofs_pair_text) searches its
+    S1544) # code review r2 R2-6: THE SHARED two-stream renderer (ofs_pair_text) searches its
         # first byte in both streams: B-pair and fn-pair (B-fn, native) both lose a byte
         # (re-aimed at the S3 final review's EMIT-1: the renderer's members, at its entry)
         echo 'ofsskip.c@@void ofs_pair_text(kb *o, const ofs_pair *t, const int m[2], int k)\n{@@void ofs_pair_text(kb *o, const ofs_pair *t, const int m2[2], int k)\n{\n    const int m[2] = { m2[0], m2[0] };' ;;
@@ -261,7 +262,9 @@ plant_spec() {
         echo 'window.c@@        if (r == E_FIND) fp->method = fx->brow;@@        if (r == E_FIND) fp->method = fx->pick == FF_PAIR ? "R7w" : fx->brow;' ;;
     S3091) # 3.0b (Z): fused left NO on B-fn: G2's class (the text calls _ofsskip) is red
         echo 'window.c@@        fp->fused = MF_WFUSED_FN;\n        fp->search = wsearch_of(fx->fused->search);@@        fp->fused = MF_WFUSED_NO;\n        fp->search = wsearch_of(fx->fused->search);' ;;
-    S3092) # 3.0b (AA): frame_row swapped E-find <-> E-generic on REPORT sites: G2's form class is red
+    S3092) # 3.0b (AA): frame_row swapped E-find <-> E-generic on REPORT sites: G2's reply-id class
+        # is red first (`FAIL: site N: reply id: method's emptiness ...`, run 2026-11-24, review r94
+        # CA-7); form class may co-fire on the same site, but the runner prints only the first FAIL
         # RE-ANCHORED 2026-11-16 (lane span4k, MF_SITE_ABI 30): reply_frame writes the caller's rows
         # and returns a verdict, so the swap rides the answered branch
         # RE-AIMED 2026-11-24 (lane plantfix, FUW-12): 4d00fccfe (span4kfix SEAM-1) wrote the
@@ -302,20 +305,28 @@ plant_spec() {
     *) return 1 ;;
     esac
 }
-PLANTS="S1400 S1401 S1402 S1403 S1404 S1405 S1406 S1407 S1409 S1410 S1422 S1423 S1425 S1426 S1427 S1428 S1429 S1540 S1541 S1542 S1543 S1549 S2986 S2987 S2989 S2991 S3040 S3041 S3084 S3089 S3090 S3091 S3092 S3093 S3096 S3116 S3117 S3118"
+PLANTS="S1400 S1401 S1402 S1403 S1404 S1405 S1406 S1407 S1409 S1410 S1422 S1423 S1425 S1426 S1427 S1428 S1429 S1544 S1541 S1542 S1543 S1549 S2986 S2987 S2989 S2991 S3040 S3041 S3084 S3089 S3090 S3091 S3092 S3093 S3096 S3116 S3117 S3118"
+# PLANT_TWINS: the PLANTS ids that are the same plant as a tests/mech/sabotages row of
+# that id (none here); any other shared id is a collision. The plant pass holds both.
+PLANT_TWINS=""
 # plant_edits ID: EDITS=(the plant's FILE@@FROM@@TO edit, one), or 1 if no plant ID.
 # THE ONE APPLIER (tests/lib/plants.py, dialect `win`) decodes and applies it for
-# --plant/--plants, and counts it for --plant-check (lane plantfix: FUW-12's class).
+# --plant/--plants, and checks it for --plant-check (lane plantfix: FUW-12's class).
 plant_edits() { local s; s="$(plant_spec "$1")" || return 1; EDITS=("$s"); }
-# --plant-check: every plant in PLANTS counted against today's memfn/src, never
-# applied or built (scripts/m6read_check_sab_anchors.py's plant pass runs this)
+# --plant-check [check|dump]: every plant in PLANTS run through the applier's loop over an
+# in-memory copy of today's memfn/src (check), or decoded (dump), never applied or built,
+# no work directory (scripts/m6read_check_sab_anchors.py's plant pass runs both)
 if [ "${1:-}" = "--plant-check" ]; then
+    case "${2:-check}" in check|dump) ;; *) echo "--plant-check [check|dump]" >&2; exit 2 ;; esac
     args=()
     for id in $PLANTS; do
         if plant_edits "$id"; then args+=(--plant "$id" 1 "${EDITS[@]}"); else args+=(--plant "$id" 0); fi
     done
-    exec python3 -I "$ROOT/tests/lib/plants.py" check win "$ROOT/memfn/src" "$ROOT/memfn/tests/run_g2_win.sh" -- "${args[@]}"
+    exec python3 -I "$ROOT/tests/lib/plants.py" "${2:-check}" win "$ROOT/memfn/src" "$ROOT/memfn/tests/run_g2_win.sh" \
+        --labels <(declare -f plant_spec) --twins "$PLANT_TWINS" -- "${args[@]}"
 fi
+WORK="$(mktemp -d "${TMPDIR:-/tmp}/g2win.XXXXXX")"
+trap 'rm -rf "$WORK"' EXIT
 
 fail_setup() { echo "FAIL: $1"; echo "checks passed: 0"; echo "checks failed: 1"; exit 1; }
 
