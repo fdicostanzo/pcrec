@@ -10278,3 +10278,41 @@ binding": inside the definition that makes the label, the labelled use is read b
 binding-prefix's "the name reaches the UNLABELLED uses only" already says).
 NOT sent to the running lane predfix88 as work (a reversed design is a fresh lane's); its rulings file gets R-1,
 a notice. The fold is lane predfold1124's, after predfix88 delivers.
+
+### 2026-11-23 OWNER RULING — capture-in-set: error; and a DISCUSSION: "we are already pushing it by using the operators that we are ... it's a tool not a logical proofs language"
+tags: lib/structural/capture/in-set lib/structural/capture core/filters/and core/conditions/in-sequence core/filters/negation/effects core/principles/conservative-first
+
+ASKED AS A RULING (slug capture-in-set: a capture request combined with another set by `|` or `&` on the set
+side of an entry: "error", the compile error for both as the documents have it, the manager's leaning; "allow
+`&`", the intersection legal and `|` an error; or a meaning for the union; with the printed candidate lines of
+lib/structural/capture/in-set for `(h: "3" | capture("h"))` and `(h: <5 & capture("h"))`). HIS WORDS, whole:
+
+"capture-in-set: error.
+Discussion: we use "A & cond" or "A seq cond" because they work and mean that we don't have to come up with
+another op code. But really they are not the same thing as A & B, etc. we could for total logical consistency
+create a new operator for conditions to reflect its different relationship with patterns.
+My point is, are already pushing it by using the operators that we are. Then, we add capture() to the mix in the
+same-but-more manner to stretch the idea further because it's convenient and ultimately it's a tool not a
+logical proofs language.
+I feel like we should be grateful for what we have gotten away with and hope nothing cracks"
+
+Class: a RULING: capture-in-set: error: a capture request inside a set built with `|` or `&` (right of `:`) is a
+compile error. The two other cases the open piece lists (a request with a value left of `:`; inside a group
+question) were not in the question: they stay the manager's conservative readings, marked.
+And a DISCUSSION (his word; nothing ruled, no request): a condition joined to a pattern by `&` or by the sequence
+operator is "not the same thing as A & B"; a separate operator for conditions would be the logically consistent
+spelling; the shared operators and `capture()` on top of them are conveniences ("a tool not a logical proofs
+language"); "grateful for what we have gotten away with and hope nothing cracks".
+The manager's thoughts (told to him; marked; nothing applied):
+- Less stretched than it looks for conditions: the ruled piece core/filters/and has "`A & B` holds exactly when
+  `A & (0: B)` holds, on the same stretch; `&` also joins B's labels", so the pattern filter is the special case
+  (a test on the label `0`) and the condition is the general form; a condition in a sequence is a zero-width
+  test at its point, which regex already has (an assertion).
+- The real stretch is the capture request: it tests nothing, it is an effect written as a set. The measure of
+  strain is the number of fences one construct needs: ruled, no effect under a negation, none inside a set
+  operator, none on an open `0`; the manager's readings, none with a value left of `:`, none inside a group
+  question, none in `when`'s test.
+- A watch, not a build: a parked piece "a form of its own for effects (and a condition operator)", trigger: a
+  second kind of effect arrives (the array request being built), or the capture request needs one more fence.
+For the next fold (lane predfold1124): lib/structural/capture/in-set becomes ruled for `|` and `&`, its two other
+cases marked readings; the parked piece above.
