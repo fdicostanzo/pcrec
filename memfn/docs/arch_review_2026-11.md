@@ -1,10 +1,12 @@
 # The memfn kit: architecture review of its sections (R-49, [KIT-ARCH-STEP] stage 2)
 
-STATUS: DRAFT rev 3, for the r92 re-check. Rev 1 (lane archrev) was reviewed as r91 `memfn-archrev`
+STATUS: DRAFT rev 4, for the manager's acceptance. Rev 1 (lane archrev) was reviewed as r91 `memfn-archrev`
 (`docs/dev/reviews/2026-11-24-r91-memfn-archrev.md`); rev 2 (lane archrev2, a fresh architect) answered its findings
 F1-F20 and was re-checked as r92 `memfn-archrev2` (`docs/dev/reviews/2026-11-24-r92-memfn-archrev2.md`); rev 3 (lane
-archrev3, a third fresh architect) answers r92's G1-G12 and G14 and applies its RULING on G13 (§9 gains a sub-part).
-No writer reviews it.
+archrev3, a third fresh architect) answered r92's G1-G12 and G14 and applied its RULING on G13 (§9 gained a sub-part),
+and was re-checked as r93 `memfn-archrev3` (`docs/dev/reviews/2026-11-24-r93-memfn-archrev3.md`); rev 4 (lane
+archrev4, a fourth fresh architect) answers r93's H1-H9, each record re-run at T before it was written in. No writer
+reviews it.
 FORM: a section review, not a feature note. It adapts the `pcrec-architect` method (freeze, vocabulary, site map by
 grep, register lookup, hand-offs) from one feature to each of the kit's four sections. Each site is classed with the
 skill's classes (ROW, CHAIN->TABLE, SHARED, NEW-SEAM, ACCESSOR, WIDEN, AS-IS); here the class says what SHAPE the site
@@ -13,7 +15,8 @@ between files, judged by the guide's "Layering holds at the call level") and NOT
 TREE: T = `a0f13ad83a2432f14341831ba4d1ff68964b79d9`, unchanged from rev 1. Rev 2 was written on lane/archrev2 (cut from
 lane/memfn-arch at 5af5d02d6), rev 3 on lane/archrev3 (cut from lane/memfn-arch at 636fcf7b1); at both,
 `git -C <worktree> diff a0f13ad83 HEAD --stat -- memfn/src memfn/include memfn/tests src tests Makefile` prints nothing
-(C-56, re-run for rev 3 on 2026-11-24), so every code cite below holds at both. R-49 names e11c5f4ef as the branch
+(C-56, re-run for rev 3 on 2026-11-24, and for rev 4 on lane/archrev4, cut from lane/memfn-arch at b38579676, on
+2026-11-24: empty), so every code cite below holds at all three. R-49 names e11c5f4ef as the branch
 point; between e11c5f4ef and T only `memfn/docs/requests.md` and `responses.md` differ under memfn/.
 REQUIREMENTS: R-49 in `memfn/docs/requests.md` (the charter). The owner's ruling kit-arch-step of 2026-11-22,
 verbatim in `docs/design/plan_row_bodies/KIT-ARCH-STEP.md`: "kit-arch-step: yes but after existing effort completed.
@@ -24,13 +27,15 @@ KINDS OF ROW, and the ride-along register (rows 1-30).
 RULINGS THIS NOTE CROSSES: D146 and add. 1 (facts and C spellings are separate structs). D147 and adds. 1-16; Q36
 (extraction). D152 (first-match tables). D155 and add. 3 (composable body pieces). D157 and D162 add. 3 (the ranking
 is the kit's to derive; `rank_*` and `pcrec_find_run_rank` retire). D185 adds. 2026-11-04 (the kit's two faces) and
-2026-11-17 (module vs layer seams). D195 and [FLAG-DEMOTE]. D197 ("instrument only"). D201 adds. 1-5 (the block span,
+2026-11-17 (module vs layer seams). D195 and [FLAG-DEMOTE]. D197 ("instrument only": the kit's fused one-member finder row, ofsskip.c `fn_rows[]`
+fn-mfind and mfind-w32/-w16; NOT census member `ren_fused`, whose one row is B-fn, fn-pair). D201 adds. 1-5 (the block span,
 the scalar wrap). D202. D203 (not applicable: no bug fix here). Kit rulings: Q-M1b-1 (`docs/design/memfn/
-integration.md`, the deny map), the R1 filing of 2026-10-22 (`docs/design/memfn/window_site.md`, "The old fields at
-commit 6"), R-18's retirement order (`memfn/docs/requests.md`: "`plan_hint` retires at S4", "`rank_*` retires at S3"),
-plan_frame.md [rev2.2 R5] and r13 V-3 (the REACH scope). span_pick.md §The tables' named exceptions `[rev3 P4]` ("each
-a second decider kept on purpose") and its disposition rows `[rev5.1 R2]`, `[rev5.1 R4, R8]` ("FIXED, KEEP: U6 and
-translate's grouping named members"). D197 (the fused row: "instrument only"; revisit when "the timing run reports").
+integration.md`, the deny map), R-18's retirement order (`memfn/docs/requests.md`: "`plan_hint` retires at S4",
+"`rank_*` retires at S3"), plan_frame.md [rev2.2 R5] and r13 V-3 (the REACH scope), span_pick.md §The tables' named
+exceptions `[rev3 P4]` ("each a second decider kept on purpose") and its disposition rows `[rev5.1 R2]`, `[rev5.1 R4,
+R8]` ("FIXED, KEEP: U6 and translate's grouping named members"). Kit FILING, not a ruling (a filed item with
+triggers): the R1 filing of 2026-10-22 (`docs/design/memfn/window_site.md`, "The old fields at commit 6"). D197's
+revisit: when "the timing run reports".
 D187 Later (decisions.md: "once the kit split (manifesto, 2026-11-04) puts both on pcrec's side") and
 `docs/design/stream/manifesto.md` §2 ("The kit's two faces become two parts in the end state: its planning face
 ... is part of the planner, and its emitting face ... is part of the back end"). [IR-FORM] member (4) and
@@ -66,8 +71,8 @@ call sites, C-7), with deny, contract gate and trace per row. Beside it sit thre
 R5 (the renderer tables' `ren_find`, Table S's loop and the `wf_support` keyed scan; B2). A 72-member DECIDER CENSUS
 (`tests/memfn/decider_census.tsv`, held by a check) maps every find-the-span decider to its table or to one of 11 NAMED
 EXCEPTIONS with a retirement trigger. Nine of those eleven are second mechanisms, not small deviations (ARV-18). The
-11 rows are a FLOOR of span_pick.md's named exceptions: P2's dominance compare is named there and has no census row
-(ARV-1, C-70). The
+11 rows are a FLOOR of span_pick.md's named exceptions: P2's dominance compare is named there and has no census row;
+it is a tenth second mechanism (it answers by its own compare instead of the declared NONE row; ARV-18, C-70). The
 pcrec seam is the guide's own example of a module seam for the PLAN face; its define/use/emit half is a LAYER seam
 (D185 add. 2026-11-17; §5). Three areas strain:
 
@@ -87,7 +92,7 @@ pcrec seam is the guide's own example of a module seam for the PLAN face; its de
    kit manager (window_site.md, R1). Only the ranking's part is ruled in direction (D162 add. 3, with R-18's order).
 
 Each is a register-shaped remodel with a trigger; none is a defect. The consolidated list (§7) has 18 items, ARV-1 to
-ARV-18 (ids stable from rev 1; ARV-16..18 were new in rev 2; rev 3 adds none): 6 documentation or bookkeeping items, 3
+ARV-18 (ids stable from rev 1; ARV-16..18 were new in rev 2; revs 3 and 4 add none): 6 documentation or bookkeeping items, 3
 small answer-identical code units, 5 larger units (two L), and 4 "leave it" items with triggers. One owner question
 remains (§9), in two parts: the window.c split, and whether ARV-16 may go ahead on its own trigger.
 
@@ -130,7 +135,7 @@ table `plan_cost.def`.
 | A9 | the decider census | C-10, C-55 | 72 members; 11 `EXC:` rows, each with a retirement trigger; a backstop grep goes red on an unlisted decider | ROW (a declared home for every decider) | goal 1 |
 | A10 | the finder's set-key comparator (`cmp_eval` :526, `fd_lookup` :481, `key_expand` :447) and `art->consulted` | C-11 | all 12 `fd_rows` state `FL_NONE`; `consulted` has a reader (compose.c:1598) and NO writer | built ahead of need, never measured | "Build under measurement" |
 | A11 | `plan_cost.def` (9 `MF_COST` rows) and `memfn/data/policy.tsv` (2 keys) | C-12 | policy constants have TWO homes (MATERIAL_NUM/DEN in plan_cost.def; gate_default_e6, r_max_e6 in policy.tsv) | SHARED (open: [KIT-POLICY-TABLE]) | goal 1 |
-| A12 | MARGIN and HORS_MIN reading NONE's uniform mass as a density | C-55 | two one-site `EXC:` rows, retiring at [SPAN-PICK-UTF8] or a priced row on NONE; a third reader of the same kind, P2's dominance compare (presence.c `kit_pres_picks`), is a span_pick named exception with no census row (C-70) | NOTED (census) | "A shape states the inputs it covers" |
+| A12 | MARGIN and HORS_MIN reading NONE's uniform mass as a density | C-55 | two one-site `EXC:` rows, retiring at [SPAN-PICK-UTF8] or a priced row on NONE. P2's dominance compare (presence.c `kit_pres_picks`, :352) is NOT of this kind: it reads the RAW rate table, so under NONE (rate NULL) it answers "not dominated" and never reads the uniform mass (span_pick.md:139, presence.c:71-74); it is a span_pick named exception with no census row (C-70), a second decider (ARV-18) | NOTED (census) | "A shape states the inputs it covers" |
 | A13 | THE FRAMED ASK (:2840-3266: `mf_wdecide`, `wdecide_framed`, `wf_frame_of`, `reply_frame`, `wf_agree`) and THE PARTS (:3267-3538: `wf_has_parts`, `wf_part_site`, `wf_parts_check`, `wf_parts_prepare`, `run_part_terms`) | C-2, C-38 | the production face of the plan seam: it reads the decision, the frame (`wf_frame_of`) and `translate` (:3077). It is neither "planner" nor "text"; rev 1 placed it in no file | AS-IS (its home in a split is §8 H1) | goal 3 |
 
 ### Where it serves and strains each goal
@@ -138,7 +143,7 @@ table `plan_cost.def`.
 - **Goal 1 (one home per question).** SERVED: six question tables plus KEY/M/TIE, every caller makes the same call,
   and the census (A9) fails on an unlisted decider. STRAINS: A6 (two best-so-far shapes); A11 (two policy homes);
   and the census's own second mechanisms (§7 ARV-18): the nine `EXC:` rows that are second deciders (whole tables,
-  chains, or one-part second spellings), among them `select_arm`/`arms[]` (a second frame selector beside T-FRAME) and
+  chains, or one-part second spellings), plus P2's dominance compare, which has no census row, among them `select_arm`/`arms[]` (a second frame selector beside T-FRAME) and
   `fn_rows` BODY (a second T-FIND on OFS sites). Those are the kit's largest goal-1 strains, and rev 1 did not list
   them. Six of the nine live in emitter files and are section B's too (B13).
 - **Goal 2.** SERVED for the plan record (A3). STRAINED for the primitives (A7): "the kit's position primitives" have
@@ -158,38 +163,54 @@ table `plan_cost.def`.
 
 ### Suggestions (section A), smaller first
 
-- **A-s1 (ARV-1, S, doc; register rows, NOTED): the NONE-density readers.** Three named exceptions are small in
-  judgement (e)'s sense (one site, no new reader, no seam), and all three read NONE's uniform mass as a density (A12):
-  `hors_facts` (finder.c) and `m_margin_holds` (window.c), both census `EXC:` rows, and P2's dominance compare
-  (presence.c `kit_pres_picks`, the `dom` line, C-70), which span_pick.md §The tables and presence.c's header both name
-  as an exception ("and so is P2's dominance compare") but which has no census row: the census is a FLOOR of span_pick's
-  named exceptions (C-55, C-70). Rev 2's third member, `translate:grouping`, is a second C-run grouping (span_pick.md
-  heads its table "each a second decider kept on purpose"), so by the note's own test it is a second mechanism and
-  moves to ARV-18. The rows take the register's own shape (KINDS OF ROW (c)), ONE NOTED row per member: remodel "NOTED:
-  <member> reads NONE's uniform mass as a density"; shape: "A shape states the inputs it covers"; where: file and
-  function (finder.c `hors_facts`; window.c `m_margin_holds`; presence.c `kit_pres_picks`); event: the member's retiring
-  trigger, "[SPAN-PICK-UTF8] or a priced row on NONE" (census) and "presence joins the call, or a priced row on NONE"
-  (span_pick.md, P2); size "small: one site"; status "noted <commit>". The census `retires` column stays the CANONICAL
-  home of each trigger; the register row and span_pick's table point at it (P2 gains its census `EXC:` row in the
-  same change; that census edit is a check change, so it follows docs/dev/learnings.md §3). SUSPECTED, for the kit manager,
+- **A-s1 (ARV-1, S, doc; register rows, NOTED): the NONE-density readers.** The split between ARV-1 and ARV-18 is
+  argued from WHAT EACH MEMBER DOES, not from a heading: span_pick.md:127 heads its whole named-exceptions table "each
+  a second decider kept on purpose", which covers every row of it, HORS_MIN/MARGIN (:140) and P2 (:139) included, so
+  it does not discriminate. The test used here: a member that takes the declared row's own output but reads it under
+  an input its shape does not cover (a one-site input-shape gap) is NOTED; a member that answers a question that has a
+  declared row by its OWN spelling instead of that row is a second mechanism (ARV-18). Two members pass the first test:
+  `hors_facts` (finder.c) and `m_margin_holds` (window.c), both census `EXC:` rows, which take the NONE row's uniform
+  mass and read it as a density (A12; small in judgement (e)'s sense: one site, no new reader, no seam). Two do not and
+  are ARV-18's: `translate:grouping` (a second C-run grouping beside `find_groups`/`run_group_ok`; moved in rev 3) and
+  P2's dominance compare (presence.c `kit_pres_picks`, :352 `dom = rate && lead >= 0 && rate[proof->byte] <=
+  rate[lead]`), which reads the RAW rate table, so under NONE it answers "not dominated" where the declared NONE row
+  "would answer `<=`" (span_pick.md:139; presence.c:71-74): it never reads the uniform mass, and it decides by its own
+  compare INSTEAD of the declared row (moved in rev 4; rev 3 filed it here with wording that was false for it). The
+  rows take the register's own shape (KINDS OF ROW (c)), ONE NOTED row per member: remodel "NOTED: <member> reads
+  NONE's uniform mass as a density"; shape: "A shape states the inputs it covers"; where: file and function (finder.c
+  `hors_facts`; window.c `m_margin_holds`); event: the member's census retiring trigger, "[SPAN-PICK-UTF8] or a priced
+  row on NONE"; size "small: one site"; status "noted <commit>". The census `retires` column stays the CANONICAL home
+  of each trigger; the register row points at it. Both members already have census rows, so ARV-1 edits no check: its
+  gate is "doc". SUSPECTED, for the kit manager,
   not decided here: span_pick.md puts "the RESEED KEY row's `scan_ok`" in the `fn_rows` BODY exception, while the
   census maps `scan_ok` to KEY (C-70). Trigger: now (bookkeeping).
-- **A-s4 (ARV-18, S, doc; register rows, implement-then-replace): the census's NINE second mechanisms.** `select_arm`
+- **A-s4 (ARV-18, S, doc + one census row (check); register rows, implement-then-replace): the TEN second
+  mechanisms, nine census `EXC:` rows and P2's dominance compare.** `select_arm`
   (compose.c; arms[] as the non-plan frame selector), `fn_select` and `ofs_fn_serves` (ofsskip.c; fn_rows BODY/PREFIX,
   T-FIND on OFS), `vrun_kb` (vrun.c; SIMD rungs KA/KB), `fd_pres` (finder.c; chain order, T-PRES), `ren_fused`
   (window.c; fused rows rendering whole triples), `kit_pres_picks:landmark` (presence.c; U6's landmark shadow),
   `pred_test:run-chain` (generic.c; the per-byte RUN chain, a second T-CMP) and `translate:grouping` (window.c
-  `translate`; a second C-run grouping beside `find_groups`/`run_group_ok`; moved from ARV-1). Judgement (e) says "A
-  noted deviation is never a second mechanism", and the guide adds "A small, local second walk is still a second
-  mechanism"; the allowance for these is the owner's implement-then-replace with an OPEN register row. So each becomes
-  ONE open REMODEL row of its own (nine rows), WHERE = file and function as listed, event = the census row's retiring
-  trigger. The census `retires` column is the CANONICAL home of each trigger; the register row and span_pick.md's
-  named-exceptions table point at it, so a trigger is edited in one place. These rows re-file RULED KEEPS: span_pick
-  `[rev3 P4]` ("each a second decider kept on purpose") and `[rev5.1 R4, R8]` ("FIXED, KEEP: U6 and translate's
-  grouping named members"); an open remodel row does not reverse a keep, it names the event at which the keep ends.
-  `ren_fused` is also D197's instrument ("instrument only"; revisit when "the timing run reports"): its row carries
-  D197's revisit beside the census event ("a fused row's triple is rendered by its pieces' rows") and does not reopen
-  D197. GENERAL FORM: each second decider joins the table its census `answers` column names (H9). UNLOCK: per member,
+  `translate`; a second C-run grouping beside `find_groups`/`run_group_ok`; moved from ARV-1 in rev 3), and P2's
+  dominance compare (presence.c `kit_pres_picks`, :352; it decides "dominated" by its own raw-rate compare instead of
+  the declared NONE row, A-s1; moved from ARV-1 in rev 4). Judgement (e) says "A noted deviation is never a second
+  mechanism", and the guide adds "A small, local second walk is still a second mechanism"; the allowance for these is
+  the owner's implement-then-replace with an OPEN register row. So each becomes ONE open REMODEL row of its own (ten
+  rows), WHERE = file and function as listed, event = the census row's retiring trigger. The census `retires` column is
+  the CANONICAL home of each trigger; the register row and span_pick.md's named-exceptions table point at it, so a
+  trigger is edited in one place. P2 has no census row today, so it GAINS its census row in the same change (kind
+  `part` of `kit_pres_picks`, anchor the `dom` line, `answers` `EXC:` P2's dominance compare, `retires` span_pick's
+  "presence joins the call, or a priced row on NONE"); `decider_census.py` checks a `part` row's anchor
+  (`make test-memfn-rows`), so that edit is a check change and follows docs/dev/learnings.md §3: ARV-18's gate is "doc
+  + one census row (check)". These rows re-file RULED KEEPS: span_pick `[rev3 P4]` ("each a second decider kept on
+  purpose") and `[rev5.1 R4, R8]` ("FIXED, KEEP: U6 and translate's grouping named members"); an open remodel row does
+  not reverse a keep, it names the event at which the keep ends. ONE MEMBER'S CENSUS EVENT CANNOT CARRY ITS ROW:
+  `ren_fused`'s census trigger, "a fused row's triple is rendered by its pieces' rows", is the remodel's own end state,
+  so as a row event it is circular. (Rev 3 tied `ren_fused` to D197; D197 governs a different row, the fused
+  one-member finder fn-mfind in ofsskip.c, and `ren_fused`'s one row is B-fn, "PAIR, the plan the offset-skip
+  function's predicate: fn_rows[] BODY fn-pair" (window.c:2447-2452). The link is dropped.) PROPOSED carrying event for
+  `ren_fused`'s row, for the kit manager to accept: the next row added to `ren_fused` or to E-find's renderer tables,
+  or `ofs_fn_serves`'s census event ("pcrec states a kind on OFS sites", which retires the fn_rows BODY that B-fn
+  fuses), whichever is first. The other nine members' census events can fire as written. GENERAL FORM: each second decider joins the table its census `answers` column names (H9). UNLOCK: per member,
   the next row in that slot is one row of one table instead of a branch in two places; for the family, the census's
   `EXC:` count falls toward the one-site NOTED rows only. The two SIMD-rung members (`fn_select`'s PREFIX rungs and
   `vrun_kb`, retiring at "the SIMD census rule (C9)") sit in the files of the per-level emission family (ARV-6/ARV-11),
@@ -225,8 +246,9 @@ table `plan_cost.def`.
   `wf_ties` moves, `wf_ties` and `wf_tie_to` (census :61-62; the census BACKSTOP counts `TIE_LOWER` inside `wf_ties`)
   re-key their file: 6 rows; the census self-check's hard-coded plant `("window.c", "kit_pick_takes(&b, c.v", ...)`
   (decider_census.py, the third plant tuple; `kit_run_member`'s loop, window.c:958) re-aims, or `make
-  test-memfn-rows` reports "anchor ... is not in window.c"; G2 plants in the moved lines: exactly 2 (S1403 on
-  `wf_ties`' `[T_MASS_SET]` row, :98; S3106 in run_g2_pres.sh, :954); CONDITIONAL on `wf_ties` moving and :865 being
+  test-memfn-rows` reports "anchor ... is not in window.c"; G2 plants in the moved lines: 1 (S3106 in run_g2_pres.sh,
+  :954), 2 if `wf_ties` moves (S1403's FROM text is `wf_ties`' `[T_MASS_SET]` row, :98, inside `wf_ties[T_N]` at :88,
+  so it moves only with `wf_ties`; C-63); CONDITIONAL on `wf_ties` moving and :865 being
   re-spelled: mech S1417, G2 plant S1402 (run_g2_win.sh) and purity row MARGIN (purity_rows.tsv:19), all three quoting
   :865's text; C15/C16 if a new file. ORDER: after ARV-5 (which homes the set statics the moved code calls) or together
   with it; before ARV-9. UNLOCK: one home for the position questions, so the next primitive (or [SP1D-ARGMIN]'s
@@ -242,13 +264,17 @@ table `plan_cost.def`.
   two-file cut (planner | emitter) and AT LEAST 55 for a three-file cut (planner | frame | text): C-39 counts 54
   (CEILING for what it matches), but its regex skips the six `static const struct {..} name[] = {` tables, and one of
   them, `wf_spanrows` (frame, :2010), is read in code by the text at :3802 and :4487-4488 (C-64), so 54 is not a
-  ceiling. TYPES AND MACROS cross too (`wf_dec`, `wf_alt`, `wf_legacy`, `struct wf_stretch`, `NU`, `WF_SERVES_*`, the
-  `ren_*_row` structs `struct wf_plan` points to): 16 (2-file) and 19 (3-file) by this note's shape (C-64, a FLOOR of
-  its four definition shapes), and r92's own shape found 21 and 25 (CEILING). Each crossing static is de-staticized
+  ceiling. TYPES, MACROS AND ENUMERATORS cross too (`wf_dec`, `wf_alt`, `wf_legacy`, `struct wf_stretch`, `NU`,
+  `WF_SERVES_*`, the `ren_*_row` structs `struct wf_plan` points to; the enumerators `WF_SPAN_HEAD`, :1493 planner,
+  used at :1972, and `WF_VBLK_MIN`/`WF_VBLK_MAX`, :1933 frame, used by the text at :4391-4394): AT LEAST 17 (2-file)
+  and 22 (3-file), a FLOOR (C-64: 16 and 19 by four definition shapes, plus 1 and 3 enumerators by C-72; it still
+  misses `enum`/`union` tags and function-pointer typedefs). r92's own shape found 21 and 25; that is a count of the
+  same four shapes, not a ceiling of what crosses, so this note gives no ceiling. Each crossing static is de-staticized
   under `MF_NS` (C15). A3's "opaque outside window.c" becomes "opaque outside the private header's includers". After
   ARV-5 and ARV-16 two set statics still cross: `full` ("the whole alphabet", :280; called by the legacy rows :1588,
-  :1598, :1704 and the frame :2624) and `sets_at` (:964) (C-39's list). So either ARV-5's family takes `full` (it is the
-  set question "is it all 256?"; H3) or ARV-9's header exports it; the same holds for `sets_at` (H1). Every line of
+  :1598, :1704 and the frame :2624) and `sets_at` (:964) (C-39's list). `full` has ONE owner: H3 decides whether
+  ARV-5's family takes it (it is the set question "is it all 256?"); only if H3 leaves it out does ARV-9's header
+  export it (H1). `sets_at` is H1's. Every line of
   window.c needs a home: rev 1's ranges left 1,240 lines unplaced (C-38), including the framed ask (A13, with
   `mf_wdecide`), THE PARTS, the plan record's own section, the span forms and Table E's legacy rows (with `translate`)
   and the tail (:4511-4672: `wf_plan_class`, `wf_stated_offsets`, the accessors, the floor and find contracts). §8 H1
@@ -322,7 +348,7 @@ admit levels from `levels.def`; the only emitted `#if` text is in targets.c (C-2
 | B3 | `reach_print` (gate.c:907-913) | C-14, C-52 | walks a HAND list of 4 tables through 4 per-table enumerators (`kit_arm_contract`, `rc_row_contract`, `fn_row_contract`, `fd_row_contract`, one reader each); the 4 window `kit_table`s and Table S print no REACH line. plan_frame.md R5 / r13 V-3 RECORD this scope ("the four kit_walk contracts ... not Tables A, M or E") | CHAIN->TABLE (a hand list beside the tables) | "Decisions are declared tables" (observable) |
 | B4 | the selector writers | C-15 | `kit_selector` (ofsskip.c:643; callers ofsskip.c:771, window.c:4465) and `vany_selector` (vany.c:189) | SHARED (second writer) | "One question, one primitive, from the second caller" (fired) |
 | B5 | per-level C-spelling tables | C-16 (rev 2) | 4 spellings: `vany.c:96` `ops_of`, `vrun.c:182` `ops_of`, `vrun.c:548` `mfind_simd` (mask type, ctz builtin, all-ones), and the V form's prefix composition (window.c:4395-4397: `_mm256`/`_mm`, `si256`/`si128`) which also uses ops outside the other tables' vocabulary (`shuffle_epi8`, `set_epi8`, `xor`, `srli_epi16`, `setzero`, :4419-4429) | SHARED (one family, §B "per-level emission") | "One question, one primitive"; D146 add. 1 |
-| B6 | level choice and level names in renderers | C-17 | `LV_X86_*` named outside levels.* on 22 lines (vany 2, vrun 14, window.c 6). "Which level does this site render at" is spelled 3 ways (vany.c:193 top admitted bit; fn_rows' row order; window.c:4407's hard-coded `LV_X86_W32`). The V form emits a 128-bit block (b = 16) under `LV_X86_W32` (:4394, :4412): level and vector WIDTH are two axes there | WIDEN (levels cover one family) | "A shape states the inputs it covers" |
+| B6 | level choice and level names in renderers | C-17 | `LV_X86_*` named outside levels.* on 22 lines (vany 2, vrun 14, window.c 6). "Which level does this site render at" is spelled 3 ways (vany.c:193 top admitted bit; fn_rows' row order; window.c's V form, whose block level is hard-coded at :4412, `o->simd_open(o->u, LV_X86_W32)`, and chosen by the admission test :4459, `art->levels >> LV_X86_W32 & 1`). The V form emits a 128-bit block (b = 16) under `LV_X86_W32` (:4394, :4412): level and vector WIDTH are two axes there | WIDEN (levels cover one family) | "A shape states the inputs it covers" |
 | B7 | targets: facts vs C spellings | C-18 | `targets.def` (facts) apart from `targets_c.def` and targets.c's C section; `includes_c.def` likewise | SHARED, already satisfied (D146 add. 1, applied twice) | goal 2 |
 | B8 | the 256-bit set primitives | C-19 (rev 2) | popcount of a set: 8 loops (SHAPE; compose.c 2, finder.c 2, ofsskip.c, precheck.c, presence.c, window.c), under the names `count`, `set_count`, `popcount256`, `one_member`, `single_byte` and 3 inline. First member: 5 spellings (compose.c:813, finder.c:939, ofsskip.c:75, precheck.c:56, presence.c:98). Membership bit reads: 13 lines in 10 files (SHAPE), of which 6 are helper bodies and 1 is k1_ref.c (G2's ORACLE, excluded): 6 open reads outside helpers and the oracle. "Is this position ONE member?" already has its declared accessor `kit_pos_class_of`/`KIT_POS_ONE` (kit.h:451-462), yet `one_member`, `count(..) == 1` (window.c :406, :620, :954), `set_count(..)` (ofsskip.c :135, :216, :889), `single_byte`, finder's `members == 1` and compose.c:775 re-answer it | SHARED (a family with a declared head) | "One question, one primitive, from the second caller" (fired) |
 | B9 | compose.c's leaf text layer (`kb_*`, `kit_out`, `kit_fail`, `kit_flush`, `kit_sink_ok`, :29-108) | C-20 | every arm file and window.c call compose.c for text primitives while compose.c calls window.c for the family; no layer order is declared for memfn/src | LAYERING | "Layering holds at the call level" |
@@ -362,7 +388,9 @@ admit levels from `levels.def`; the only emitted `#if` text is in targets.c (C-2
   stays its own. Answer-identical (compile-time helpers); control: byte identity over the corpus and G2. Binding
   checks: mech rows S3106 (`count(set) != 1`, window.c:954) and S3525 (`in_set(w->set[st->i], x)`, window.c:4400); 3 G2
   plants: S3106 in run_g2_pres.sh (`count(set) != 1`, :954), S1405 in run_g2_win.sh (`!count(p->set)`, :429) and
-  S1428 in run_g2_win.sh (`two(w->set[w->stop_ix], m);`, :4134) (C-63); [SABANCHOR] is red on a mech row until
+  S1428 in run_g2_win.sh (`two(w->set[w->stop_ix], m);`, :4134) (C-63); 4 if H3 has `full` join and its calls are
+  re-spelled: S1410 in run_g2_win.sh quotes the call `if (full(yes ? p->yset : rd_set(d, p)))` at :1064 (C-63; no mech
+  row anchors a `full` line, C-40); [SABANCHOR] is red on a mech row until
   re-anchored, and a renamed helper makes a plant "not apply". The census does not list the helpers (0 rows, C-41), so
   it is not a control here. ORDER: before (or with) ARV-16 and before ARV-9. Trigger: the next change to any of the
   files holding a spelling, or before ARV-16/ARV-9.
@@ -392,7 +420,9 @@ admit levels from `levels.def`; the only emitted `#if` text is in targets.c (C-2
     stamp`, inside the admission block :4459-4468) is NOT one of this unit's bindings; it binds the admission change.
     The table's key ((level) or (level, width)) and vocabulary are §8 H4.
   - **The family's other two parts (leave it, same event).** CHOOSING the level (vany.c:193's top admitted bit,
-    fn_rows' row order, window.c:4407) and OPENING the block with its include report (ofsskip.c:747-748, vany.c:162/
+    fn_rows' row order, and window.c's admission test :4459 with the block level hard-coded at :4412; the window.c
+    choice IS the admission block :4459-4468 bounded out above, so this part and S3535's exclusion are one item) and
+    OPENING the block with its include report (ofsskip.c:747-748, vany.c:162/
     :235, window.c:4412-4413, two include-report shapes) are in neither ARV-6 nor ARV-11. They are LEFT, with the
     family's one event below: level choice is tied to the admission fact R-48 decides, and vany's include report is
     the out-param `uint32_t *includes` of the PUBLIC entry `mf_kernel_find_any` (memfn.h, C-68), so changing its shape
@@ -584,7 +614,8 @@ commit (memfn/CLAUDE.md), with `tests/memfn/pins/arms.tsv` re-pinned.
   d27_frame/d27_frame.c 7, a D27 spec-first test, proof_check.c 6), among them G2's deny LEGS (`force_batch` runs of
   each family without and with `MF_D_RUN_OVERLAP`) and its two Q-M1b-1 REFUSAL cases (g2_gen.c:2357
   `CASE("denies-not-the-art's", ...)`, :3897 `MC("denies not the art's", ...)`), which test exactly the equality the
-  unit deletes; and 20 `mf_art_begin(` call lines in 13 files (C-65). So ARV-10 carries a G2 RE-CUT (the deny legs
+  unit deletes; and 19 `mf_art_begin(` call lines in 12 harness files (memfn/tests/g2 6 files, 13 lines; tests/memfn
+  6 files, 1 line each), plus pcrec's own statement in src/gen/memfn_sites.c, which the unit edits anyway (C-65). So ARV-10 carries a G2 RE-CUT (the deny legs
   re-routed through the replacement channel, the two refusal cases retired with Q-M1b-1's equality, the fixtures
   re-stated), and G2 is NOT a fixed control across it (§10 q2; the corpus byte identity is), unless H5 chooses a
   replacement that keeps a public deny statement. (c) mech rows on the lines it edits: S571 (memfn_sites.c:42, the
@@ -650,7 +681,7 @@ on pcrec's own `translate`/`known.c` and are not kit rows.
 | 15 (internal deny word `xdeny`, riding [FLAG-DEMOTE]) | the same deny map | CARRIED by ARV-10 with row 3 |
 | 19 (one first-row walker for every table type) | B2's private walkers | the family of B2 is NOTED by ruling (R5); its reopen is row 19's event "the next new declared table", which is also ARV-8's trigger |
 
-No noted-deviation row names a kit file (C-34). The kit's noted deviations are the three NONE-density readers (ARV-1)
+No noted-deviation row names a kit file (C-34). The kit's noted deviations are the two NONE-density readers (ARV-1)
 and ARV-14's three members, each one site with its own row.
 
 **Rows this note PROPOSES** (register columns; the manager writes them at landing, per HOW TO USE IT). Status for every
@@ -658,8 +689,8 @@ remodel row: "open"; for every noted row: "noted <commit>".
 
 | kind | remodel | shape (rule) | where (at T) | event that carries it | size, gate | deletes |
 |---|---|---|---|---|---|---|
-| NOTED (ARV-1), one row per member (3 rows) | NOTED: <member> reads NONE's uniform mass as a density | "A shape states the inputs it covers" | finder.c `hors_facts`; window.c `m_margin_holds`; presence.c `kit_pres_picks` (P2's dominance compare) | the member's retiring trigger, canonical in the census `retires` column (P2's census row is added with the row) | small: one site each | each deviation, at its trigger |
-| REMODEL, implement-then-replace (ARV-18), one row per member (9 rows) | <member> replaced by the table it second-guesses | "One question, one primitive"; goal 1 | compose.c `select_arm`; ofsskip.c `fn_select`, `ofs_fn_serves`; vrun.c `vrun_kb`; finder.c `fd_pres`; window.c `ren_fused`, `translate` (grouping); presence.c `kit_pres_picks` (landmark); generic.c `pred_test` (run chain) | the census row's retiring trigger (canonical there); `ren_fused` also D197's revisit; `fn_select`/`vrun_kb` cross-linked to R-48's architecture note | per row (M-L) | each second mechanism |
+| NOTED (ARV-1), one row per member (2 rows) | NOTED: <member> reads NONE's uniform mass as a density | "A shape states the inputs it covers" | finder.c `hors_facts`; window.c `m_margin_holds` | the member's retiring trigger, canonical in the census `retires` column | small: one site each | each deviation, at its trigger |
+| REMODEL, implement-then-replace (ARV-18), one row per member (10 rows) | <member> replaced by the table it second-guesses | "One question, one primitive"; goal 1 | compose.c `select_arm`; ofsskip.c `fn_select`, `ofs_fn_serves`; vrun.c `vrun_kb`; finder.c `fd_pres`; window.c `ren_fused`, `translate` (grouping); presence.c `kit_pres_picks` (landmark), `kit_pres_picks` (P2's dominance compare); generic.c `pred_test` (run chain) | the census row's retiring trigger (canonical there; P2's census row is added with the rows); `ren_fused` NOT its census trigger (circular) but the proposed event of A-s4 (the next row added to `ren_fused` or E-find's renderer tables, or `ofs_fn_serves`'s event); `fn_select`/`vrun_kb` cross-linked to R-48's architecture note | per row (M-L); filing: doc + one census row (check) | each second mechanism |
 | REMODEL (ARV-5) | the set questions join the `kit_pos_*` family | One question, one primitive, from the second caller | B8's sites (C-19), window.c :231-278 included | the next change to a spelling's file, or before ARV-16/ARV-9 | S-M, no-mover | 5 private popcount helpers + 3 inline loops, 5 first-member spellings, 6 open reads |
 | REMODEL (ARV-16) | the position primitives get one home ([SP1D-KITSPLIT-SEAMS], primitives half) | Layering holds at the call level | window.c :78-151, :947-961 (`kit_mass` too if H2 picks a new file) | the next change to a primitive, [SP1D-KITSPLIT-SEAMS]'s trigger, or before ARV-9; subject to §9 part 2 | S-M, no-mover | the presence<->window cycle, only when `wf_ties` moves and the home is presence.c or takes `kit_mass` (A-s5) |
 | REMODEL (ARV-6 + ARV-11) | the per-level emission unit: level C-spelling half (D146 add. 1) and one selector writer | One question, one primitive; A shape states the inputs it covers | vany.c:96, :189; vrun.c:182, :548; window.c:4395-4429; ofsskip.c:643 | R-48's architecture note, or the next change to a spelling table | S + M, no-mover at x86 | 3 of 4 spelling tables; 1 selector writer (level choice and block-open/include report: left, same event) |
@@ -692,19 +723,19 @@ was split off ARV-1. ORDER constraints are stated in the last column.
 
 | id | suggestion | kind | size, gate | trigger | order / section |
 |---|---|---|---|---|---|
-| ARV-1 | Register rows (NOTED, one per member) for the 3 NONE-density readers (2 census rows + P2's dominance compare, which gains its census row) | register rows | S, doc | now (bookkeeping) | A-s1 |
-| ARV-18 | Register rows (implement-then-replace, open, one per member) for the census's 9 second mechanisms (`translate:grouping` moved from ARV-1) | register rows | S, doc (each remodel M-L at its own trigger) | now (bookkeeping) | A-s4 |
+| ARV-1 | Register rows (NOTED, one per member) for the 2 NONE-density readers (`hors_facts`, `m_margin_holds`; both census rows) | register rows | S, doc | now (bookkeeping) | A-s1 |
+| ARV-18 | Register rows (implement-then-replace, open, one per member) for the 10 second mechanisms: the census's 9 (`translate:grouping` moved from ARV-1 in rev 3) and P2's dominance compare (moved from ARV-1 in rev 4; gains its census row); `ren_fused`'s row gets a carrying event | register rows + census row | S, doc + one census row (check) (each remodel M-L at its own trigger) | now (bookkeeping) | A-s4 |
 | ARV-3 | State each public entry's caller class in memfn.h (3 classes, C-48) | refactor (doc) | S, doc | the next entry added, or with ARV-2 | D-s2 |
 | ARV-4 | Bookkeeping drift: row 10's and A-KIND's WHEREs; [SP1E-RENDERER-TABLE] (half done), [KN-CARRIERLESS] (half done); memfn/src/CLAUDE.md's "11 rows". (Row 7b is NOT drift.) | bookkeeping | S, doc (the manager's) | now | if both ARV-2 and ARV-4 are taken, ARV-4's line re-pins land after ARV-2 (line cites move); §6 |
 | ARV-2 | Move memfn.h's changelog and include/CLAUDE.md's history to memfn/include/NOTES.md (the house rule); keep the 75 `memfn.h:N` cites true (re-cite by symbol, or ARV-4 re-pins after: H11) | refactor (doc) | S, doc | the next `MF_SITE_ABI` bump, or now | if both ARV-2 and ARV-4 are taken, ARV-4's line re-pins land after ARV-2; D-s1 |
 | ARV-6 | One selector writer (`vany_selector` through `kit_selector`); re-aim S2996; targets_check.c a reader | refactor | S, no-mover | with ARV-11 (one event) | B-s2 |
 | ARV-7 | The text buffer's own leaf file (compose.c :29-108, a pure move); the layer order filed as a row with its known violations | refactor + register row | S (move); the order's carve-outs at design | ARV-9, or the next structural compose.c change | before or with ARV-9; B-s3 |
-| ARV-5 | The set questions join the `kit_pos_*` family (it owns window.c :231-278); k1_ref.c excluded; S3106, S3525 and 3 G2 plants (S1405, S1428, S3106) re-anchor | refactor; register row | S-M, no-mover | the next change to a spelling's file | before or with ARV-16; before ARV-9; B-s1 |
+| ARV-5 | The set questions join the `kit_pos_*` family (it owns window.c :231-278); k1_ref.c excluded; S3106, S3525 and 3 G2 plants (S1405, S1428, S3106) re-anchor, 4 if `full` joins and its calls are re-spelled (S1410) | refactor; register row | S-M, no-mover | the next change to a spelling's file | before or with ARV-16; before ARV-9; B-s1 |
 | ARV-16 | The position primitives get one home (window.c :78-151, :947-961); deletes the presence<->window cycle only if `wf_ties` moves and the home is presence.c or takes `kit_mass` | refactor; register row | S-M, no-mover | the next change to a primitive, [SP1D-KITSPLIT-SEAMS]'s trigger, or before ARV-9; subject to §9 part 2 | after or with ARV-5; before ARV-9; A-s5 |
 | ARV-8 | REACH from the declared tables (registration: H7, static or on first walk); delete the 4 enumerators; rows_zero, rows_check A, reach_equal.py, g2_parts, ROWS_FLOOR, run_g2_gate.sh, run_g2_mfind.py re-cut; amends R5/V-3's recorded scope | refactor (trace only); register row | M, harness | the next new declared table (= row 19's event) | B-s4 |
 | ARV-11 | The level C-spelling half (D146 add. 1, third application) for the 4 spelling tables, their fact columns to the facts half; bounded at spelling (no level-admission fact, no level choice, no include report) | refactor; register row | M, no-mover at x86 | R-48's architecture note, or the next spelling-table change | with ARV-6; B-s2 |
 | ARV-10 | One deny mechanism: the bit's 3 readers plus its reversed reader (`--list-axes` `run-overlap`, tuning.md §2.38¶1), Q-M1b-1 amended, a spec amendment if an options row, pcrec edit in the same commit, G2's deny legs and refusal cases re-cut | refactor; register row | M, kit (MF_SITE_ABI) + spec + G2 re-cut | [FLAG-DEMOTE] opening, or the next MF_SITE_ABI layout event, or a second `MF_D_*` bit | serialise with [FLAG-DEMOTE]; D-s3 |
-| ARV-9 | Split window.c along its plan record: every section placed (§8 H1), a private header (statics, types and macros), at T 58 mech rows (56 at its turn), the purity checks redesigned, 50 census rows (44), 41 G2 plants (39; 2 stale at T) | refactor; register row | L, no-mover + harness redesign | the next feature adding a planner or renderer table to window.c; owner question `window-file-split` part 1 | after ARV-5 and ARV-16; after or with ARV-7; A-s2 |
+| ARV-9 | Split window.c along its plan record: every section placed (§8 H1), a private header (statics, types, macros and enumerators), at T 58 mech rows (56 at its turn), the purity checks redesigned, 50 census rows (44), 41 G2 plants (39; 2 stale at T) | refactor; register row | L, no-mover + harness redesign | the next feature adding a planner or renderer table to window.c; owner question `window-file-split` part 1 | after ARV-5 and ARV-16; after or with ARV-7; A-s2 |
 | ARV-12 | Ride the filed R1 item (D162 add. 3 for the ranking): 5 `mf_pred` fields leave, 2 window-site value reservations move, `end_back` per H6; G2's route and families re-cut | refactor; register row | L, kit (MF_SITE_ABI) + harness | the R1 filing's triggers ("a renderer change" may have fired); Table E legacy rows retiring | D-s4 (companion: D-s5 joins row 10) |
 | ARV-13 | LEAVE `cards.py` whole; split by card when the next card lands; the layout pools go to [LAYOUT-DRAW] | leave it | (M, harness, when triggered) | the next card written into cards.py | C-s1 |
 | ARV-14 | LEAVE formhash.c, k1_ref.c and vany.c in libpcrec, each with its reason; one NOTED row per member | leave it; register rows | small (one site each) | per member: formhash.c a measured library-size or link cost (main's R-1, not Q36); k1_ref.c the next change to G2's oracle or its linking; vany.c its routing | C-s2 |
@@ -728,19 +759,27 @@ leave, 2 value reservations move, `end_back` per H6), ARV-14 (one row per member
 choice), ARV-11 (fact columns; level choice and include report left). Rows: ARV-1, ARV-14 and ARV-18 now propose one
 register row per member.
 
+**Id map, rev 3 -> rev 4.** No id was renumbered and none was added. Members moved: P2's dominance compare ARV-1 ->
+ARV-18 (it answers by its own raw-rate compare instead of the declared NONE row; ARV-1 is now 2 rows and edits no
+check, ARV-18 is 10 rows and carries P2's census row, so its gate is "doc + one census row (check)"). `ren_fused`'s
+D197 link is dropped and its row gets a proposed carrying event (A-s4). `full` has one owner, H3. Counts corrected:
+ARV-16's G2 plants (1, 2 if `wf_ties` moves), ARV-5's (3, 4 if `full` joins), the types that cross a cut (at least
+17 / 22 with enumerators, C-72), ARV-10's `mf_art_begin(` lines (19 in 12 harness files). §9 part 2 is restated as
+facts with costs and buys on both sides, and part 1's leaning no longer reads the 11-06 words.
+
 ## 8. What the design step must decide
 
 Handed on, not decided here. Each item names its suggestion and site rows. The note fixes the RULE and the facts;
 these are the choices.
 
 - **H1 (ARV-9; A1-A3, A8, A13): the cut and every section's home.** Two cuts were measured: planner | emitter (2
-  files; 25 statics named across, C-39, and 16-21 types and macros, C-64) and planner | frame | text (3 files; at least
-  55 statics, and 19-25 types and macros). Every section of window.c at T and its candidate homes:
+  files; 25 statics named across, C-39, and at least 17 types, macros and enumerators, C-64 + C-72) and planner |
+  frame | text (3 files; at least 55 statics, and at least 22 types, macros and enumerators). Every section of window.c at T and its candidate homes:
   | lines | section (C-2) | candidate home |
   |---|---|---|
   | :1-77 | includes, the cost table | planner (the cost table is read by the decision) |
   | :78-151 | the TIE table and `kit_tie_*`/`kit_pick_takes` | leaves the file first (ARV-16), with `wf_ties` if H2 moves it (else planner) |
-  | :152-370 | the decision's working state; the set statics and `kit_pos_*` (:231-278); `full` (:280) | planner; :231-278 leave first (ARV-5, home H3); `full` joins H3's family or is exported here |
+  | :152-370 | the decision's working state; the set statics and `kit_pos_*` (:231-278); `full` (:280) | planner; :231-278 leave first (ARV-5, home H3); `full`: H3 decides whether it joins ARV-5's family; only if it does not is it exported here |
   | :371-1374 | candidate list, statement rules (`wf_check`), Table A, row contracts, MARGIN, Table C (`kit_run_member` leaves, ARV-16), THE DECISION | planner |
   | :1375-1462 | THE PLAN (`struct wf_plan`, `offer_at`) | the private header (the struct) + planner |
   | :1463-1555 | THE SPAN FORMS (`plan_of`) | planner |
@@ -751,8 +790,8 @@ these are the choices.
   | :3539-4510 | THE FLOOR ROW, E-FIND's TEXT (the V form) | text (or emitter) |
   | :4511-4672 | `wf_plan_class`, `wf_stated_offsets`, the accessors, the floor/find contracts | accessors with the struct's home; contracts with their arms |
   Also: which part keeps the name window.c (it fixes how many mech rows re-point, S3121's two file values, and every
-  file-name reader of item (2b)); the private header's name and contents (statics, types, macros); `full`'s and
-  `sets_at`'s side; `run_purity_reach.sh`'s and `purity_plant`'s multi-file population and plant design; which census
+  file-name reader of item (2b)); the private header's name and contents (statics, types, macros, enumerators);
+  `sets_at`'s side, and `full`'s only if H3 leaves it out of ARV-5's family; `run_purity_reach.sh`'s and `purity_plant`'s multi-file population and plant design; which census
   rows re-key; where window.c's derived PROVENANCE row goes; and where `wf_renders`'s table sits relative to finder.c
   (A8). The home of the public entry `mf_wdecide` is H8's, not this item's.
 - **H2 (ARV-16; A7): the primitives' home, and with it whether the cycle goes.** The choices and their outcome (A-s5):
@@ -760,11 +799,12 @@ these are the choices.
   cycle stays); MOVES needs an export or a question-shaped accessor for window.c's direct reads (:652, :865), and
   re-binds S1417, plant S1402 and purity row MARGIN if :865 is re-spelled; (b) the home: presence.c (the cycle goes),
   or a new file, which must take `kit_mass` too or it makes a new presence<->new-file cycle. A choice that keeps a
-  cycle is allowed only if the design says so and drops the deletion claim. The 2 G2 plants in the moved lines are
-  S1403 and S3106 (C-63; rev 2's partial map is replaced). Not this item's: window.c :231-278 (H3).
+  cycle is allowed only if the design says so and drops the deletion claim. The G2 plants in the moved lines: 1
+  (S3106), 2 if `wf_ties` moves (S1403, whose FROM text is inside `wf_ties`) (C-63; rev 2's partial map is replaced). Not this item's: window.c :231-278 (H3).
 - **H3 (ARV-5; B8): the set family's home, members and names; it owns window.c :231-278.** kit.h static inlines or a
   .c with prototypes (either is outside window.c, which ARV-16's cycle claim needs); which set questions join
-  (membership, count, first member, `full`, a writer such as `add`); names; whether "only one" is
+  (membership, count, first member, `full`, a writer such as `add`); `full` is THIS item's to decide (H1 exports it only
+  if it does not join; a re-spelled `full` call re-aims G2 plant S1410, :1064); names; whether "only one" is
   `kit_pos_class_of(..) == KIT_POS_ONE` or a named predicate.
 - **H4 (ARV-6, ARV-11; B4-B6): the per-level emission unit.** The spelling table's key ((level) or (level, width));
   its vocabulary (the V form's ops beyond the shared set); its file (a `levels_c.def` beside `targets_c.def`, per D146
@@ -807,7 +847,7 @@ these are the choices.
   the feature joins it in place.
   TODAY: window.c is 4,672 lines. Its planner and emitter are split as a RECORD for state (C-3, C-4), but the text
   calls the planner's private set statics (C-57), and a file split needs a private header with 25 statics (2-file cut)
-  or at least 55 (3-file cut), plus 16-25 types and macros (C-39, C-64), redesigned purity checks and up to 58
+  or at least 55 (3-file cut), plus at least 17 / 22 types, macros and enumerators (C-39, C-64, C-72), redesigned purity checks and up to 58
   re-pointed mech rows (C-40, C-43): an L unit (ARV-9). ARV-5 (the shared set statics) does not need this answer;
   ARV-16 is part 2.
   EXAMPLE (from the record, not hand-worked): R-47's block span added a selection table in the frame sections (the
@@ -816,12 +856,15 @@ these are the choices.
   the text file; with the 2-file cut, both go to the emitter file. Either way the file that takes the V form imports
   `struct wf_plan` and nothing of `decide`. The cut is the design step's (H1). Under (B) it landed as it did. Whether
   R-48 adds such a table or renderer is R-48's own note's question; this example presumes nothing about it.
-  LEANING: (A), at the trigger and not before. Grounds: D185 add. 2026-11-17 is LATER than the 11-06 words and names
-  this boundary as a module split ("If there needs to be data back and forth between layers, that suggests a module
+  LEANING: (A), at the trigger and not before. Grounds: D185 add. 2026-11-17's own words name this boundary as a
+  module split ("If there needs to be data back and forth between layers, that suggests a module
   split like between the kit planner and kit emitter"); R-49's own gloss of the standing memory names the same
   boundary ("plan as text seam (planner vs emitter split)"), though it says nothing of timing or grain, so it favours
   neither option alone; goal 4 lands a remodel at its event "FIRST, as its own answer-identical unit; never ahead of that event",
-  and the trigger here is a feature, not "now".
+  and the trigger here is a feature, not "now". SCOPE OF THIS LEANING: it takes no reading of the 2026-11-06 words
+  "do not split now" (the 11-17 words name the boundary, not the timing; how the 11-06 words bear on a split at a
+  later feature trigger is the owner's reading), and it says nothing about part 2. If the owner reads "do not split
+  now" as covering a triggered split, the leaning falls with it.
   AGAINST (A): the cost is L. If the planning face later moves whole (the kit split), a file split inside memfn/ may be
   re-cut then. Register row 9 ("roadmap A-SEAM / H-HEADER only; a standalone move is churn") ties its split to the
   roadmap area that redesigns the seam, not to the next feature that touches the file; read that way, its kit
@@ -852,7 +895,7 @@ these are the choices.
   on 2 of 10 probes"; it says nothing of the kit's source layout.
 
   **Part 2: ARV-16 and "do not split now".** May ARV-16 (the position primitives leave window.c for one home, A-s5)
-  go ahead on its own trigger, or does it also wait on the 2026-11-06 words "do not split now"?
+  go ahead on its own trigger, or does it wait?
   (C) ARV-16 goes ahead on its own trigger: the next change to any position primitive, [SP1D-KITSPLIT-SEAMS]'s own
   trigger, or before ARV-9, whichever is first. (D) ARV-16 waits, as [SP1D-KITSPLIT-SEAMS] does, until the kit split
   is proposed.
@@ -861,24 +904,37 @@ these are the choices.
   manager filing (2026-11-05) whose Scope begins "move the position primitives to one home" and whose trigger is "the
   kit split (a planner file is the natural home)". ARV-16 is that row's primitives half with new triggers (rev 2's §9
   said ARV-16 did not need the owner's answer; r92 found that contestable, and the kit manager sent it here).
-  WHAT IT COSTS: S-M, a no-mover (byte identity over the corpus and G2 as controls). It re-points 2 mech rows, re-keys
-  4 census rows (6 if `wf_ties` moves) and re-aims one census self-check plant and 2 G2 plants, plus, if :865 is
-  re-spelled, S1417, plant S1402 and purity row MARGIN (A-s5). It needs ARV-5 first or with it. If its home is
-  presence.c, that file grows by the moved lines.
-  WHAT IT BUYS: the presence<->window call cycle goes, but only when `wf_ties` moves and the home is presence.c or
-  takes `kit_mass` too (A-s5; for the other H2 choices it buys no deletion); the position questions get one home, so
-  a later planner file (ARV-9's, or the kit split's) needs no private copy of them. It does not split planner from
-  emitter, and it does not remove A8.
+  FACTS (from the record and the code at T; stated for both options, a ground for neither): ARV-16 moves window.c's
+  planner-side primitives (:78-151, :947-961) to presence.c or a new file; it does not split planner from emitter, and
+  it does not remove A8. [SP1D-KITSPLIT-SEAMS]'s trigger names a different home for the same primitives: "the kit
+  split (a planner file is the natural home)".
+  UNDER (C), WHAT IT COSTS: S-M, a no-mover (byte identity over the corpus and G2 as controls). It re-points 2 mech
+  rows (S1094, S3106), re-keys 4 census rows (6 if `wf_ties` moves) and re-aims one census self-check plant and 1 G2
+  plant (S3106), 2 if `wf_ties` moves (S1403), plus, if :865 is re-spelled, S1417, plant S1402 and purity row MARGIN
+  (A-s5). It needs ARV-5 first or with it. If its home is presence.c, that file grows by the moved lines. The
+  primitives may then move TWICE: now to presence.c or a new file, and again when the kit split makes a planner file
+  their home ([SP1D-KITSPLIT-SEAMS]'s trigger), with S1094/S3106, the census rows and the plants re-pointed each time.
+  UNDER (C), WHAT IT BUYS: the presence<->window call cycle goes, but only when `wf_ties` moves and the home is
+  presence.c or takes `kit_mass` too (A-s5; for the other H2 choices it buys no deletion); the position questions get
+  one home before ARV-9, so ARV-9's planner file needs no private copy of them.
+  UNDER (D), WHAT IT COSTS: the presence<->window cycle and the primitives' two homes stay until the kit split is
+  proposed. ARV-9's ORDER ("after ARV-5 and ARV-16") then needs restating if ARV-9 is taken first: it either waits too,
+  or cuts with the primitives inside its planner part (they are planner code) and its private header exports what the
+  other part reads.
+  UNDER (D), WHAT IT BUYS: no re-point now; the primitives move once, at the kit split, to the home its trigger names.
   EXAMPLE (hand-worked from the code at T, not run): today presence.c calls window.c's `kit_pick_takes`
-  (presence.c:185 in `stretch_window`, :315 in `kit_pres_picks`) while window.c's `kit_run_member` calls presence.c's `kit_mass`
-  (window.c:955). Under (C) with home = presence.c and `wf_ties` moved, both calls stay inside presence.c, and window.c
-  calls presence.c one way. Under (D) the two files keep calling each other until the kit split is proposed.
-  LEANING: none. The words "do not split now" are the owner's; whether moving the planner's own primitives between
-  two planner-side files is a "split" in member (4)'s sense is the owner's reading to give, not this note's.
-  RECORDS: [IR-FORM] member (4) and [SP1D-KITSPLIT-SEAMS] (above); review r92 G13 and its RULING.
-
+  (presence.c:185 in `stretch_window`, :315 in `kit_pres_picks`) while window.c's `kit_run_member` calls presence.c's
+  `kit_mass` (window.c:955). Under (C) with home = presence.c and `wf_ties` moved, both calls stay inside presence.c,
+  and window.c calls presence.c one way; under (C) with another H2 choice, a cycle stays (A-s5). Under (D) the two
+  files keep calling each other until the kit split is proposed, and the calls then move with the kit split's files.
+  LEANING: none. The note carries no argument for (C) or (D). The words "do not split now" are the owner's, and their
+  reading for ARV-16 is the owner's to give. Part 1's leaning takes no reading of them (its SCOPE line), so it answers
+  nothing here.
+  RECORDS: [IR-FORM] member (4) and [SP1D-KITSPLIT-SEAMS] (above); review r92 G13 and its RULING; review r93 H1 and its
+  RULING.
 No other OWNER question. The other items apply rules already ruled (goals 1-4, judgement (a)-(e), D146 add. 1, D152,
-D155 add. 3, D157, D162 add. 3, the R1 filing, main's R-1) or wait on a trigger already named, EXCEPT two that need
+D155 add. 3, D157, D162 add. 3, main's R-1), ride an item already FILED (the kit manager's R1 filing, a filing and
+not a ruling: ARV-12), or wait on a trigger already named, EXCEPT two that need
 AMENDMENTS by others, not by the owner: ARV-10 needs the kit manager's amendment of Q-M1b-1 (the one map and the
 asserted equality; with D195) and, for an options row, main's amendment of registry.md §6¶7; ARV-8 needs the kit
 manager's amendment of plan_frame.md R5 / r13 V-3's recorded REACH scope.
@@ -902,7 +958,7 @@ manager's amendment of plan_frame.md R5 / r13 V-3's recorded REACH scope.
 Set up: `G() { git -C /Users/claude/pcrec/worktrees/archrev3 "$@"; }; T=a0f13ad83` (any checkout holding T works). Under
 zsh write `${T}:path`, not `$T:path` (`:t` is a zsh modifier). `S` is a scratch directory with `window.c`,
 `presence.c` and `finder.c` written from T (`for f in window presence finder; do G show ${T}:memfn/src/$f.c > $S/$f.c;
-done`). Commands marked (rev 2) were added or changed in rev 2 and re-run at T on 2026-11-24. Commands marked (rev 3) were added or changed in rev 3 and re-run at T on 2026-11-24 from lane/archrev3; `R` is `git archive T` unpacked into the scratch directory (`G archive $T | tar -x -C $R`).
+done`). Commands marked (rev 2) were added or changed in rev 2 and re-run at T on 2026-11-24. Commands marked (rev 3) were added or changed in rev 3 and re-run at T on 2026-11-24 from lane/archrev3; `R` is `git archive T` unpacked into the scratch directory (`G archive $T | tar -x -C $R`). Commands marked (rev 4) were added or changed in rev 4 and re-run at T on 2026-11-24 from lane/archrev4 (the same `S` and `R`, written from T in `$PCREC_TMPDIR/scratch/archrev4/`); every record an r93 finding cites was re-run there before it was written in.
 
 - C-1 file sizes: `for f in window.c compose.c kit.h gate.c finder.c ofsskip.c; do G show ${T}:memfn/src/$f | wc -l; done` (4672, 1780, 1541, 1064, 1013, 1170).
 - C-2 window.c sections: `grep -n -E '^/\* -{2,} ' $S/window.c` (19 headers; :73 … :4036); plan record: `G grep -n -E '^struct wf_plan \{|^struct wf_plan;' $T -- memfn/src` (window.c:1391, kit.h:1183).
@@ -978,15 +1034,15 @@ done`). Commands marked (rev 2) were added or changed in rev 2 and re-run at T o
 - C-53 (rev 2) legacy bridge: `G show ${T}:memfn/src/compose.c | sed -n '307,345p'` (both call `select_arm`).
 - C-54 (rev 2) reply structs and hooks in pcrec: `for n in mf_class mf_rows mf_wreply mf_hooks; do G grep -l -w $n $T -- src; done` (5, 2, 1, 8 files).
 - C-55 (rev 2) the 11 EXC rows: `G show ${T}:tests/memfn/decider_census.tsv | awk -F'\t' '$5 ~ /EXC:/ {print $1, $2, $5}'`.
-- C-56 (rev 2; re-run rev 3 on lane/archrev3 at 636fcf7b1: empty) T still holds: `G diff a0f13ad83 HEAD --stat -- memfn/src memfn/include memfn/tests src tests Makefile` (empty).
+- C-56 (rev 2; re-run rev 3 on lane/archrev3 at 636fcf7b1: empty; re-run rev 4 on lane/archrev4 at b38579676: empty) T still holds: `G diff a0f13ad83 HEAD --stat -- memfn/src memfn/include memfn/tests src tests Makefile` (empty).
 - C-57 (rev 2) text sections calling the planner's set statics: `awk 'NR>=3539&&NR<=4510&&/(^|[^a-z_0-9>.])(shape|two|in_set|count)\(/{print NR}' $S/window.c` (4104, 4134, 4400).
 - C-58 (rev 2) quotes: `G grep -n -F 'whoever needs them' $T -- memfn/docs/journal.md memfn/docs/responses.md docs/design/memfn/span_pick.md` (journal.md:2976, responses.md:3073; 0 in span_pick.md); `grep -n 'measured NO' docs/dev/guide/architecture.md`; `grep -n 'measurement card' docs/dev/guide/addenda/kit.md`.
 - C-59 (rev 2) window.c's primitives' callees: `sed -n '78,151p;231,278p;947,961p' $S/window.c | grep -o -E '[a-z_][a-z_0-9]*\(' | sort | uniq -c` (only primitives, the set statics and `kit_mass`).
 - C-60 (rev 3) TIE's table and its binders: `grep -n 'wf_ties' $S/window.c` (:54 comment, :88 definition, :128 in `kit_tie_takes`, :652, :865 in the planner); `G grep -n -F 'wf_ties[T_MARGIN]' $T -- tests memfn/tests` (run_g2_win.sh:168 plant S1402; S1417's SAB_BEFORE/AFTER; purity_rows.tsv:19 MARGIN).
 - C-61 (rev 3) `kit_mass` is a leaf, and window.c's callers: `sed -n '75,83p' $S/presence.c | grep -o -E '[a-z_][a-z_0-9]*\(' | sort -u` (`kit_mass(` only, its own name); `grep -n 'kit_mass(' $S/window.c` (:425, :433, :440, :621, :955 in `kit_run_member`, :1664).
 - C-62 (rev 3) file-name readers beside the purity check: `G show ${T}:tests/memfn/decider_census.py | grep -n -E '"window\.c"'` (:431 and :433 plant tuples, :458 and :479 appends); `G show ${T}:tests/memfn/run_finder.sh | grep -n 'memfn/src/window.c'` (:201-202, `purity_plant`).
-- C-63 (rev 3) G2 plants on ARV-5/ARV-16 lines, and the 2 stale ones: `for p in '[T_MASS_SET]     = { "A-mass at a set position", TIE_LOWER,' 'm->any_empty |= p->core && !count(p->set);' '    two(w->set[w->stop_ix], m);' 'if (cand == KIT_CAND_EXACT ? count(set) != 1 : !kit_pos_spelled(set)) continue;'; do grep -n -F -- "$p" $S/window.c; done` (:98 S1403, :429 S1405, :4134 S1428, :954 S3106; the FROM texts of run_g2_win.sh and run_g2_pres.sh); stale: `grep -c -F 'int ih = plan_ix(w, w->hl);' $S/window.c` (0, S1423) and `grep -c -F '!reply_of(d, out, rows) && !reply_frame(fp, out, rows))' $S/window.c` (0, S3092).
-- C-64 (rev 3) types, macros and table statics across a cut (FLOOR of four definition shapes: `#define`, `} name;`, `struct name {`, one-line `typedef`): the script `$S/xtypes.py` (C-39's group logic with those four shapes in place of `static`) run as in C-39: `PPPEEEEE` 16 of 47, `PPPFFFTT` 19 of 47 (r92's own shape: 21 and 25, CEILING). The six `} name[..] =` tables C-39 skips: `$S/xtables.py` (the same group test on `^\}\s*name\s*\[`): `wf_spanrows` (:2010) is used across both cuts, but its planner hit is the comment :1380, so in CODE it crosses the 3-file cut only (`awk 'NR>=3539&&NR<4511&&/wf_spanrows/{print NR}' $S/window.c`: 3802, 4487, 4488); `wf_erows`' text hit is the comment :4664. Hence statics: 25 (2-file), at least 55 (3-file).
+- C-63 (rev 3) G2 plants on ARV-5/ARV-16 lines, and the 2 stale ones: `for p in '[T_MASS_SET]     = { "A-mass at a set position", TIE_LOWER,' 'm->any_empty |= p->core && !count(p->set);' '    two(w->set[w->stop_ix], m);' 'if (cand == KIT_CAND_EXACT ? count(set) != 1 : !kit_pos_spelled(set)) continue;'; do grep -n -F -- "$p" $S/window.c; done` (:98 S1403, :429 S1405, :4134 S1428, :954 S3106; the FROM texts of run_g2_win.sh and run_g2_pres.sh); (rev 4) S1403's row is inside `wf_ties`: `grep -n 'wf_ties\[T_N\]' $S/window.c` (:88; the table closes at :121), so it moves only with `wf_ties`; S1410 (run_g2_win.sh:248) on a `full` call: `grep -n -F '    if (full(yes ? p->yset : rd_set(d, p))) plan_drop(d, d->poff[i]);' $S/window.c` (:1064); `full`'s callers `grep -n -E '(^|[^a-z_0-9>.])full\(' $S/window.c` (:427 :1064 :1093 :1588 :1598 :1704 :2624); no mech row on :280 or :1064 (`awk -F'\t' '$2=="memfn/src/window.c" && ($3==1064||$3==280)' $S/anchors.tsv`: none); stale: `grep -c -F 'int ih = plan_ix(w, w->hl);' $S/window.c` (0, S1423) and `grep -c -F '!reply_of(d, out, rows) && !reply_frame(fp, out, rows))' $S/window.c` (0, S3092).
+- C-64 (rev 3) types, macros and table statics across a cut (FLOOR of four definition shapes: `#define`, `} name;`, `struct name {`, one-line `typedef`): the script `$S/xtypes.py` (C-39's group logic with those four shapes in place of `static`) run as in C-39: `PPPEEEEE` 16 of 47, `PPPFFFTT` 19 of 47 (r92's own shape: 21 and 25, a count of the same four shapes, not a ceiling of what crosses; (rev 4) the 16/19 names re-run: `NU`, `WF_LOOP_ID`, `WF_SERVES_*` (4), the five `ren_*_row`, `wf_alt`, `wf_dec`, `wf_legacy`, `wf_plan`, `wf_stretch`, and for 3 files also `WF_FIND_ID`, `WF_SPAN_VECTOR_ID`, `wf_rc`; enumerators are C-72's, disjoint from these; FLOOR, it misses `enum`/`union` tags and function-pointer typedefs). The six `} name[..] =` tables C-39 skips: `$S/xtables.py` (the same group test on `^\}\s*name\s*\[`): `wf_spanrows` (:2010) is used across both cuts, but its planner hit is the comment :1380, so in CODE it crosses the 3-file cut only (`awk 'NR>=3539&&NR<4511&&/wf_spanrows/{print NR}' $S/window.c`: 3802, 4487, 4488); `wf_erows`' text hit is the comment :4664. Hence statics: 25 (2-file), at least 55 (3-file).
   `$S/xtypes.py`:
   ```
   import re,sys
@@ -1015,10 +1071,43 @@ done`). Commands marked (rev 2) were added or changed in rev 2 and re-run at T o
           us=sorted({g(j) for j,t in enumerate(L,1) if j!=i and p.search(t) and g(j)!=g(i)})
           print(n,i,g(i),''.join(us))
   ```
-- C-65 (rev 3) deny readers ARV-10 did not name: `(cd $R && grep -n -E '\bdenies\b|MF_D_RUN_OVERLAP' memfn/tests/g2/*.c tests/memfn/*.c tests/memfn/d27_frame/*.c | grep -v -E '^[^:]+:[0-9]+:\s*(/?\*|//)' | cut -d: -f1 | uniq -c)` (g2_gen.c 21, g2_simd_gen.c 6, g2_win_gen.c 2, proof_check.c 6, arm_fixtures.c 14, d27_frame.c 7: 56 lines, 6 files); refusal cases `grep -n -E 'CASE\("denies-not|MC\("denies not' $R/memfn/tests/g2/g2_gen.c` (:2357, :3897); `mf_art_begin(` `(cd $R && grep -rn 'mf_art_begin(' memfn/tests tests/memfn src | grep -v -E ':\s*(/?\*|//)' | wc -l; grep -rln 'mf_art_begin(' memfn/tests tests/memfn src | wc -l)` (20 lines, 13 files); reversed reader `grep -n 'pcrec_memfn_deny_flags(r->deny)' $R/src/dump/axes_dump.c` (:709), `grep -n -F 'prints as axis' $R/memfn/include/memfn.h` (:1878); kit writers `grep -n 'denies = s->denies' $R/memfn/src/window.c` (:1690, :3315); mech rows `grep -E '^(S570|S729|S753|S796|S799)-' $S/anchors.tsv` and `python3 -I tools/review/anchor_map.py $R src/ | grep -E '^S571-'` (compose.c:171, ofsskip.c:606, vrun.c :239/:288/:303; memfn_sites.c:42).
+- C-65 (rev 3) deny readers ARV-10 did not name: `(cd $R && grep -n -E '\bdenies\b|MF_D_RUN_OVERLAP' memfn/tests/g2/*.c tests/memfn/*.c tests/memfn/d27_frame/*.c | grep -v -E '^[^:]+:[0-9]+:\s*(/?\*|//)' | cut -d: -f1 | uniq -c)` (g2_gen.c 21, g2_simd_gen.c 6, g2_win_gen.c 2, proof_check.c 6, arm_fixtures.c 14, d27_frame.c 7: 56 lines, 6 files); refusal cases `grep -n -E 'CASE\("denies-not|MC\("denies not' $R/memfn/tests/g2/g2_gen.c` (:2357, :3897); `mf_art_begin(` `(cd $R && grep -rn 'mf_art_begin(' memfn/tests tests/memfn src | grep -v -E ':\s*(/?\*|//)' | wc -l; grep -rln 'mf_art_begin(' memfn/tests tests/memfn src | wc -l)` (20 lines, 13 files; (rev 4) per file, `... | cut -d: -f1 | sort | uniq -c`: g2_gen.c 2, g2_mfind_gen.c 1, g2_pres_gen.c 1, g2_simd_gen.c 6, g2_vspan_gen.c 1, g2_win_gen.c 2, arm_fixtures.c, d27_frame.c, policy_check.c, proof_check.c, proven_check.c, run_decide_check.c 1 each, and src/gen/memfn_sites.c 1: the harness is 19 lines in 12 files, SHAPE, comment lines excluded); reversed reader `grep -n 'pcrec_memfn_deny_flags(r->deny)' $R/src/dump/axes_dump.c` (:709), `grep -n -F 'prints as axis' $R/memfn/include/memfn.h` (:1878); kit writers `grep -n 'denies = s->denies' $R/memfn/src/window.c` (:1690, :3315); mech rows `grep -E '^(S570|S729|S753|S796|S799)-' $S/anchors.tsv` and `python3 -I tools/review/anchor_map.py $R src/ | grep -E '^S571-'` (compose.c:171, ofsskip.c:606, vrun.c :239/:288/:303; memfn_sites.c:42).
 - C-66 (rev 3) the renderer-interface fields' kinds: `need` writers `(cd $R && grep -n -E '(\.|->)pred\.need *=|p\[(i|np)\]\.need *=' src/gen/*.c)` (6: emit_dfa.c :1544/:1694/:1703, emit_vm.c:4692, memfn_sites.c :1020/:1077); `grep -n 'span_class = MF_SPAN_PRESENCE' $R/src/gen/emit_dfa.c` (:1546); `grep -n -E 'uint8_t +end_back;' $R/memfn/include/memfn.h` (:847, in `mf_site`); `grep -n 'MF_FIELD(end_back' $R/memfn/src/fields.def` (:202); `grep -rc FLD_end_back $R/memfn/src --include='*.c' | grep -v ':0$'` (14 cells in 9 files); per-file readers `grep -c -w -E 'plan_hint|plan_pos|rank_n|rank_pos|rank_ppm|end_back|span_class' $R/memfn/src/*.c $R/memfn/src/*.h $R/memfn/src/*.def | grep -v ':0$'` (window.c 52, compose.c 35, pffind.c 24, ofsskip.c 17, generic.c 10, vrun.c 10, formhash.c 7, precheck.c 7, kit.h 7, gate.c 1, fields.def 1; FLOOR: `need` omitted).
 - C-67 (rev 3) mech rows on the renderer-interface fields: `grep -E '^(S1419|S750|S751|S752|S754|S481|S483|S3125|S794)-' $S/anchors.tsv` and the `src/` map for S1420, S1101 (window.c:473, vrun.c :240-241, compose.c:545, pffind.c:324, window.c:3468, vrun.c:292; emit_dfa.c :1700, :1546); which of them READ a field (SAB_BEFORE) or WRITE one (SAB_AFTER) is read from each row's file under tests/mech/sabotages/.
-- C-68 (rev 3) the per-level family's rows and fact columns: `grep -E '^(S815|S816|S817|S819|S3098|S3102|S3534|S3535|S2995|S3001|S3002|S724|S3004)-' $S/anchors.tsv` (vrun.c :185, :188, :238, :353, :357-:366; window.c :4428, :4460; ofsskip.c :747-748; vany.c:235); `grep -n -E 'int npos;|unsigned +(vw|shift);' $R/memfn/src/vrun.c` (:179, :539, :540); vany's include out-param `grep -n 'uint32_t \*includes' $R/memfn/include/memfn.h` (:2262, `mf_kernel_find_any`); the admission block `sed -n '4459,4468p' $S/window.c`.
+- C-68 (rev 3) the per-level family's rows and fact columns: `grep -E '^(S815|S816|S817|S819|S3098|S3102|S3534|S3535|S2995|S3001|S3002|S724|S3004)-' $S/anchors.tsv` (vrun.c :185, :188, :238, :353, :357-:366; window.c :4428, :4460; ofsskip.c :747-748; vany.c:235); `grep -n -E 'int npos;|unsigned +(vw|shift);' $R/memfn/src/vrun.c` (:179, :539, :540); vany's include out-param `grep -n 'uint32_t \*includes' $R/memfn/include/memfn.h` (:2262, `mf_kernel_find_any`); the admission block `sed -n '4459,4468p' $S/window.c`. (rev 4) the level's window.c lines `grep -n LV_X86 $S/window.c` (:4412 the block open, :4413, :4459 the admission test, :4460, :4465, :4468); `sed -n 4407p $S/window.c` is `kb at;`, rev 3's stale cite.
 - C-69 (rev 3) REACH readers rev 2 did not name: `grep -n 'ROWS_FLOOR=' $R/tests/memfn/run_rows.sh` (:16, 36); `grep -n 'MFTRACE REACH' $R/memfn/tests/run_g2_gate.sh` (:144); `grep -n 'REACH lines' $R/memfn/tests/run_g2_mfind.py` (:302).
-- C-70 (rev 3) records: `(cd $R && grep -n -F "The kit's two faces become two parts" docs/design/stream/manifesto.md; grep -n -F 'once the kit split (manifesto, 2026-11-04)' docs/dev/decisions.md; grep -n -F 'major rewrite to protect' docs/design/plan_row_bodies/ARCH-STEP.md; grep -n -F 'plan as text seam (planner vs emitter split)' memfn/docs/requests.md; grep -n -F 'each a second decider kept on purpose' docs/design/memfn/span_pick.md; grep -n -F 'FIXED, KEEP: U6' docs/design/memfn/span_pick.md; grep -n -F "P2's dominance compare" docs/design/memfn/span_pick.md; grep -n -F 'dom = rate && lead >= 0' memfn/src/presence.c; grep -n scan_ok docs/design/memfn/span_pick.md tests/memfn/decider_census.tsv; grep -n '^## D197' docs/dev/decisions.md)` (manifesto.md:68; decisions.md:10114; ARCH-STEP.md:203; requests.md:1023; span_pick.md :127, :510, :139 (and presence.c's header :71-74); presence.c:352; span_pick.md:132 puts `scan_ok` in the `fn_rows` BODY row while census :43 maps it to KEY; D197 decisions.md:10262); plan rows `grep -n -E '^- \[SP1D-KITSPLIT-SEAMS\]' docs/dev/plan.md` and `grep -n -F '[SP1D-KITSPLIT-SEAMS] waits on it' docs/dev/plan.md` (the row, and [IR-FORM]'s MEMBERS line).
+- C-70 (rev 3) records: `(cd $R && grep -n -F "The kit's two faces become two parts" docs/design/stream/manifesto.md; grep -n -F 'once the kit split (manifesto, 2026-11-04)' docs/dev/decisions.md; grep -n -F 'major rewrite to protect' docs/design/plan_row_bodies/ARCH-STEP.md; grep -n -F 'plan as text seam (planner vs emitter split)' memfn/docs/requests.md; grep -n -F 'each a second decider kept on purpose' docs/design/memfn/span_pick.md; grep -n -F 'FIXED, KEEP: U6' docs/design/memfn/span_pick.md; grep -n -F "P2's dominance compare" docs/design/memfn/span_pick.md; grep -n -F 'dom = rate && lead >= 0' memfn/src/presence.c; grep -n scan_ok docs/design/memfn/span_pick.md tests/memfn/decider_census.tsv; grep -n '^## D197' docs/dev/decisions.md)` (manifesto.md:68; decisions.md:10114; ARCH-STEP.md:203; requests.md:1023; span_pick.md :127, :510, :139 (and presence.c's header :71-74); presence.c:352; span_pick.md:132 puts `scan_ok` in the `fn_rows` BODY row while census :43 maps it to KEY; D197 decisions.md:10262); (rev 4) D197's row in code `grep -n D197 $R/memfn/src/*.c` (compose.c:1630, ofsskip.c :464/:501/:510; none in window.c) and `ren_fused`'s one row `sed -n '2447,2452p' $S/window.c` (`[RF_FN]` "B-fn", fn-pair); the census triggers `awk -F'\t' '$5 ~ /EXC:/ {print $2": "$6}' $R/tests/memfn/decider_census.tsv` (`ren_fused`: "a fused row's triple is rendered by its pieces' rows"; `ofs_fn_serves`: "pcrec states a kind on OFS sites"); P2 `sed -n '352p;71,74p' $S/presence.c`; plan rows `grep -n -E '^- \[SP1D-KITSPLIT-SEAMS\]' docs/dev/plan.md` and `grep -n -F '[SP1D-KITSPLIT-SEAMS] waits on it' docs/dev/plan.md` (the row, and [IR-FORM]'s MEMBERS line).
 - C-71 (rev 3) census rows by window.c section, all 50 placed: `G show ${T}:tests/memfn/decider_census.tsv | awk -F'\t' '$1=="window.c"{split($2,a,":"); print a[1]}' | sort -u | while read -r n; do grep -n -E "(^[a-z}].*[^a-z_0-9]|\} )$n( =|\[|\(|;)" $S/window.c | head -1 | cut -d: -f1; done` bucketed as C-40 (26, 2, 19, 3, 0 in :3267-4510, 0 in :4511-4672; total 50). C-41's regex placed 47 (it misses `wf_ties`, `wf_tie_to` and `wf_srows`, whose definition lines begin with `}` or spaces).
+- C-72 (rev 4) enumerators named across a cut (FLOOR: the names inside `enum {..}` bodies, code lines only, comments stripped): the script below as `$S/xenum.py`, run as C-39: `PPPEEEEE` 1 of 50 (`WF_SPAN_HEAD`, :1493 planner, used :1972), `PPPFFFTT` 3 of 50 (`WF_SPAN_HEAD`; `WF_VBLK_MIN`, `WF_VBLK_MAX`, :1933 frame, used by the text :4391-4394). With C-64: types, macros and enumerators at least 17 (2-file) and 22 (3-file).
+  ```
+  import re,sys
+  L=open(sys.argv[1]).read().split('\n'); cuts=[int(x) for x in sys.argv[2].split(',')]; grp=sys.argv[3]
+  def g(n): return grp[max(i for i,c in enumerate(cuts) if n>=c)]
+  def code(l): return re.sub(r'/\*.*?\*/|//.*','',l)
+  # collect enumerators inside enum { ... } bodies (multi-line aware)
+  defs={}; i=0; n=len(L)
+  while i<n:
+      if re.search(r'\benum\b[^;(]*\{',L[i]):
+          j=i; body=''
+          while True:
+              body+=code(L[j])+'\n'
+              if '}' in code(L[j]) and j>=i: break
+              j+=1
+          start=body.index('{')+1; end=body.index('}')
+          # line numbers: approximate each enumerator to the line where its name appears
+          for k in range(i,j+1):
+              c=code(L[k])
+              if k==i: c=c[c.index('{')+1:]
+              if '}' in c: c=c[:c.index('}')]
+              for m in re.finditer(r'(?:^|,)\s*([A-Z_][A-Z_0-9]*)\s*(?==|,|$)',c):
+                  defs.setdefault(m.group(1),k+1)
+          i=j+1
+      else: i+=1
+  x={}
+  for nm,d in defs.items():
+      p=re.compile(r'(^|[^A-Za-z_0-9])'+nm+r'\b')
+      us={g(k) for k,l in enumerate(L,1) if k!=d and p.search(code(l)) and g(k)!=g(d)}
+      if us: x[nm]=(d,g(d),''.join(sorted(us)))
+  print(len(defs),'enumerators;',len(x),'used in code across a group boundary')
+  for k,v in sorted(x.items()): print(k,v)
+  ```
