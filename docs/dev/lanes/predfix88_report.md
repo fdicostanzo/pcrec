@@ -8,6 +8,7 @@ docs/design/plan_row_bodies/COND-FAMILY.md in this worktree), its draft
 
 ## STATE AT HANDOFF
 
+OWED: none (every FIX-NOW applied; G3, NAMES-5 and B10 are the manager's PLAN rows, not owed by this lane).
 - Rulings file: last entry applied **R-1** (2026-11-23, the owner's shorthand-is-callers; a notice, not new work).
   Applied: the open piece nested-made is NOT written (drafted uncommitted, removed before the first commit; the
   tag was never committed); list-is-label, both-uses, pair-twice-alone left as they were; the WILL BE REVERSED list is under OWNER QUESTIONS LEFT.
