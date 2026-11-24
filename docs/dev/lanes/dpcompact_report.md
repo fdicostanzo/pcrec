@@ -93,3 +93,5 @@ Out of scope: `fold_tables.inc` and `case_tables.inc` (different shapes; the cha
 ## STATE AT HANDOFF
 
 Branch lane/dpcompact. Rulings file: empty at last read (before handback). Code and tests committed; long validation OWED by key: 200-dpcompact-test, 201-dpcompact-mech, 202-dpcompact-sweep, 203-dpcompact-uprops-utf8 (read with `scripts/monread dpcompact --wait` or `scripts/boxqueue state KEY`). A code critic round follows before landing.
+
+OWED: 200-dpcompact-test 201-dpcompact-mech 202-dpcompact-sweep 203-dpcompact-uprops-utf8
