@@ -126,12 +126,15 @@
  *                  be attributed from.
  */
 
+#define _GNU_SOURCE   /* dladdr */
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <stdarg.h>
 #include <unistd.h>
 #include <malloc.h>
+#include <dlfcn.h>
+#include <execinfo.h>
 #include <sys/wait.h>
 
 /* core/internal.h (not just pcrec.h): pcrec_enabled_set_spec, the W3
@@ -193,15 +196,25 @@ static int show_sites = 0;   /* --sites */
  * Each entry must be REACHED by the run (a fixed defect leaves a stale
  * exception, which FAILS: learnings.md section 3, an allowlist entry that
  * stops matching). Empty the list when its row is fixed. */
-static const struct { const char *file, *row; } known_stranded[] = {
+/* `fn`, when set, narrows a row to the blocks allocated UNDER that function
+ * (a frame of the block's allocation stack, inlined frames included): a
+ * StrBuf's blocks all come from sb.c, so the file alone would excuse every
+ * heap builder in the tree. The stack is recorded only for blocks from a
+ * `fn` row's file (STACK_FILE) and symbolized only for stranded ones. */
+static const struct { const char *file, *fn, *row; } known_stranded[] = {
     /* the DFA minimizer's seven heap tables are live across its arena
      * allocations (an OOM-only stranding); the arena would hold them for the
-     * whole compile, a measured peak-memory choice the row owns */
-    { "src/opt/minimize.c", "[MINIMIZE-ARENA-LEAK]" },
+     * whole compile: a scoped arena is the row's fix */
+    { "src/opt/minimize.c", NULL, "[ARENA-SCOPES] (minimize.c tables)" },
+    /* K155's own site: the whole-artifact rewrite buffer of csb */
+    { "src/core/sb.c", "target_headers_render", "[ARENA-SCOPES] (K155, target_headers_render nb)" },
 };
+#define STACK_FILE "src/core/sb.c"
+#define STACK_N 12
 #define N_KNOWN_STRANDED (sizeof known_stranded / sizeof known_stranded[0])
 static long long known_stranded_seen[N_KNOWN_STRANDED];
-static struct { void *p; const char *file; int line; } live_tab[LIVE_CAP];
+typedef struct { void *p; const char *file; int line, nbt; void *bt[STACK_N]; } LiveEnt;
+static LiveEnt live_tab[LIVE_CAP];
 static size_t live_slot(void *p)
 {
     size_t h = ((size_t)p >> 4) * 2654435761u % LIVE_CAP;
@@ -213,6 +226,31 @@ static void live_note(void *p, const char *file, int line)
     if (!p) return;
     size_t h = live_slot(p);
     live_tab[h].p = p; live_tab[h].file = file; live_tab[h].line = line;
+    live_tab[h].nbt = strstr(file, STACK_FILE) ? backtrace(live_tab[h].bt, STACK_N) : 0;
+}
+
+/* [K155] does the recorded allocation stack of `e` pass through function
+ * `fn` (addr2line -i: inlined frames count)? */
+static int stack_has(const LiveEnt *e, const char *fn)
+{
+    for (int i = 0; i < e->nbt; i++) {
+        Dl_info di;
+        if (!dladdr(e->bt[i], &di) || !di.dli_fname) continue;
+        char cmd[1024], line[512];
+        snprintf(cmd, sizeof cmd, "addr2line -f -i -e '%s' 0x%lx 2>/dev/null", di.dli_fname,
+                 (unsigned long)((char *)e->bt[i] - (char *)di.dli_fbase - 1));
+        FILE *f = popen(cmd, "r");
+        if (!f) continue;
+        int hit = 0, odd = 1;
+        while (fgets(line, sizeof line, f)) {
+            line[strcspn(line, "\n")] = 0;
+            if (odd && !strcmp(line, fn)) hit = 1;
+            odd = !odd;
+        }
+        pclose(f);
+        if (hit) return 1;
+    }
+    return 0;
 }
 static void live_forget(void *p)
 {
@@ -222,12 +260,9 @@ static void live_forget(void *p)
     /* backward-shift delete keeps every probe chain whole */
     live_tab[h].p = NULL;
     for (size_t j = (h + 1) % LIVE_CAP; live_tab[j].p; j = (j + 1) % LIVE_CAP) {
-        void *q = live_tab[j].p;
-        const char *f = live_tab[j].file;
-        int l = live_tab[j].line;
+        LiveEnt e = live_tab[j];
         live_tab[j].p = NULL;
-        size_t k = live_slot(q);
-        live_tab[k].p = q; live_tab[k].file = f; live_tab[k].line = l;
+        live_tab[live_slot(e.p)] = e;
     }
 }
 
@@ -395,7 +430,9 @@ static void child_attempt(const Witness *w, long long n, int sust, int fd)
                        live_tab[h].line);
             int k = -1;
             for (size_t j = 0; j < N_KNOWN_STRANDED; j++)
-                if (strstr(live_tab[h].file, known_stranded[j].file)) k = (int)j;
+                if (strstr(live_tab[h].file, known_stranded[j].file)
+                    && (!known_stranded[j].fn || stack_has(&live_tab[h], known_stranded[j].fn)))
+                    k = (int)j;
             known = known == -2 || k < 0 || (known >= 0 && known != k) ? -2 : k;
         }
     rep.known = known;
@@ -580,7 +617,7 @@ static void report(const Witness *w, const Tally *t, int sust)
             w->absorbed_why ? w->absorbed_why : "no filed defect is recorded for this witness");
     if (t->n_known_stranded)
         printf("NOTE: %s%s: %lld of %lld forced allocations stranded heap in a FILED place only "
-               "(the known_stranded table: every stranded block from its file)\n",
+               "(the known_stranded table: every stranded block from its file/function)\n",
                w->name, tag, t->n_known_stranded, t->total);
     if (bad_n == 0) {
         ok("%s%s: every one of %lld forced allocation failures was diagnosed (rc == -1, non-empty message), never abort/signal/success, no new stranded heap",
@@ -886,6 +923,7 @@ static void w5_run(void)
 int main(int argc, char **argv)
 {
     int do_single = 1, do_sustained = 0;
+    { void *warm[2]; (void)backtrace(warm, 2); }   /* loads the unwinder once, before any fork */
     for (int i = 1; i < argc; i++) {
         if (!strcmp(argv[i], "--sustained")) { do_single = 0; do_sustained = 1; }
         else if (!strcmp(argv[i], "--both")) { do_single = 1; do_sustained = 1; }
@@ -1001,8 +1039,9 @@ int main(int argc, char **argv)
      * stale -- the allowlist that quietly stops matching. */
     for (size_t j = 0; j < N_KNOWN_STRANDED; j++) {
         if (known_stranded_seen[j])
-            ok("known stranding %s (%s): reached, %lld trial(s)", known_stranded[j].row,
-               known_stranded[j].file, known_stranded_seen[j]);
+            ok("known stranding %s (%s%s%s): reached, %lld trial(s)", known_stranded[j].row,
+               known_stranded[j].file, known_stranded[j].fn ? " under " : "",
+               known_stranded[j].fn ? known_stranded[j].fn : "", known_stranded_seen[j]);
         else
             bad("known stranding %s (%s) was NOT REACHED by any witness: fixed, or out of "
                 "reach -- remove its known_stranded entry (and close the row) or re-aim a witness",

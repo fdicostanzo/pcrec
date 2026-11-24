@@ -248,13 +248,13 @@ static bool splice_mark(StrBuf *sb, const char *mark, const char *text)
     const char *m = sb->p ? strstr(sb->p, mark) : NULL;
     if (!m || strstr(m + 1, mark)) return false;
     size_t at = (size_t)(m - sb->p), cut = strlen(mark);
-    StrBuf *tail = pcrec_sb_rewrite_buf(sb->cx);   /* [K155] Job.rwsb */
-    pcrec_sb_puts(tail, sb->p + at + cut);
+    StrBuf tail = { .cx = sb->cx };   /* [ARENA-SCOPES] client (K155) */
+    pcrec_sb_puts(&tail, sb->p + at + cut);
     sb->len = at;
     sb->p[at] = 0;
     pcrec_sb_puts(sb, text);
-    pcrec_sb_puts(sb, tail->p ? tail->p : "");
-    pcrec_sb_free(tail);
+    pcrec_sb_puts(sb, tail.p ? tail.p : "");
+    pcrec_sb_free(&tail);
     return true;
 }
 
@@ -358,18 +358,19 @@ static void target_headers_render(Ctx *cx)
     PcrecEmitSize hm = pcrec_emit_size_measure(held, strlen(held), NULL);
     /* pass 2, rebuilt in a fresh buffer, never truncated and re-appended in
      * place: the mark sits near the top, and a truncated csb under a ladder
-     * trial's scratch bound would read a length below its own guarded record;
-     * the Job's rewrite buffer ([K155] Job.rwsb), whose storage then becomes
-     * csb's */
-    StrBuf *nb = pcrec_sb_rewrite_buf(cx);
-    pcrec_sb_printf(nb, "%.*s%s", (int)at, c->p, text);
+     * trial's scratch bound would read a length below its own guarded record */
+    StrBuf nb = { .cx = cx };   /* [ARENA-SCOPES] client: K155's own site */
+    pcrec_sb_printf(&nb, "%.*s%s", (int)at, c->p, text);
     const char *rest = after;
     for (const char *h; (h = strstr(rest, held)); ) {
-        pcrec_sb_printf(nb, "%.*s", (int)(h - rest), rest);
+        pcrec_sb_printf(&nb, "%.*s", (int)(h - rest), rest);
         rest = strchr(h + strlen(held), '\n') + 1;
     }
-    pcrec_sb_puts(nb, rest);
-    pcrec_sb_move_text(c, nb);
+    pcrec_sb_puts(&nb, rest);
+    free(c->p);
+    c->p = nb.p;
+    c->len = nb.len;
+    c->cap = nb.cap;
     c->simd_guarded += strlen(text) - strlen(PCREC_TARGET_HEADERS_MARK)
                      - nheld * strlen(held);
     c->simd_size.total += now.total - was.total - nheld * hm.total;

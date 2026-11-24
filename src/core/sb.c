@@ -327,34 +327,6 @@ void pcrec_sb_splice(StrBuf *dst, const StrBuf *src)
     dst->simd_size.tables += src->simd_size.tables;
 }
 
-/* [K155] The Job's rewrite buffer, checked empty (see Job.rwsb). */
-StrBuf *pcrec_sb_rewrite_buf(Ctx *cx)
-{
-    StrBuf *rw = &cx->job->rwsb;
-    if (rw->p || rw->len)
-        pcrec_ctx_fail(cx, 0, "internal error: a whole-buffer rewrite began while "
-                       "another held the rewrite buffer");
-    return rw;
-}
-
-/* [K155] Moves `src`'s text STORAGE into `dst` and empties `src`; `dst`'s
- * old text is freed and every record of `dst`'s (guarded counts, comment
- * state, layout bytes) is kept: the caller moves records itself. Not an
- * append, so the ladder's scratch-bound abort (sb_grow) cannot read the text
- * half-replaced. No allocation, so it cannot refuse. */
-void pcrec_sb_move_text(StrBuf *dst, StrBuf *src)
-{
-    if ((dst->ar || src->ar) && dst->cx)
-        pcrec_ctx_fail(dst->cx, 0, "internal error: a text move on a scratch "
-                       "(arena) buffer");
-    free(dst->p);
-    dst->p = src->p;
-    dst->len = src->len;
-    dst->cap = src->cap;
-    src->p = NULL;
-    src->len = src->cap = 0;
-}
-
 /* `sb`'s length for a DECISION: uncut, minus every guarded byte, an open
  * bracket's included (see StrBuf.simd_guarded). */
 size_t pcrec_sb_len_decide(const StrBuf *sb)

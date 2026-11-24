@@ -553,14 +553,6 @@ size_t pcrec_sb_len_uncut(const StrBuf *sb);
 void pcrec_sb_simd_open(StrBuf *sb);
 void pcrec_sb_simd_close(StrBuf *sb);
 void pcrec_sb_splice(StrBuf *dst, const StrBuf *src);
-/* [K155] THE WHOLE-BUFFER REWRITE (Job.rwsb): `pcrec_sb_rewrite_buf` hands
- * out the Job's empty rewrite buffer (an internal error if a rewrite is
- * already using it); the rewrite builds the new text there, and
- * `pcrec_sb_move_text` moves that storage into `dst` (whose old text is
- * freed and whose records are kept), leaving the rewrite buffer empty.
- * Heap buffers only: never a scratch builder on either side. */
-StrBuf *pcrec_sb_rewrite_buf(Ctx *cx);
-void    pcrec_sb_move_text(StrBuf *dst, StrBuf *src);
 /* [FINDALL-NEXT] the SCAFFOLD bracket (StrBuf.scaf_guarded): the same rules
  * as the SIMD bracket (line boundaries, no nesting, never inside a SIMD
  * bracket), its bytes subtracted by both decision views and never stamped. */
@@ -3758,16 +3750,6 @@ typedef struct {
      * A scratch buffer is RESET (len = 0) at each use and never freed by its
      * user; `job_cleanup` frees both on every path. */
     StrBuf scr_test, scr_desc;
-    /* [K155] THE REWRITE BUFFER, Job-owned for scr_test's reason: a
-     * WHOLE-BUFFER rewrite of a Job buffer (the target headers' pass 2, the
-     * part layout's marks, a stamp mark's splice) builds its new text here
-     * and then MOVES the storage into the target (`pcrec_sb_move_text`), so
-     * the rewrite costs the compile's peak what one heap copy always cost and
-     * a refusal mid-rewrite strands nothing (`job_cleanup` frees it). Not a
-     * scratch (arena) builder: an arena keeps every copy until the compile
-     * ends, and these copies are the size of the artifact. Empty between
-     * rewrites (`pcrec_sb_rewrite_buf` checks). */
-    StrBuf rwsb;
     /* [M4.7b/K7] Strings taken out of the three buffers above and not yet
      * handed to the caller — Job-owned for exactly that window, so an
      * allocation failure between two takes frees rather than strands them.

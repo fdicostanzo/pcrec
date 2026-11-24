@@ -63,12 +63,17 @@ ALLOW = [
     # -- hand-freed temporaries never live across a refusal --------------
     ("src/opt/scanedge.c", "pcrec_scanedge_dfa", "heap", "ten temporaries freed on every exit; the only refusals while live are their own allocation failures, which free them first (coding.md 1.6)"),
     ("src/opt/minimize.c", "pcrec_minimize_dfa", "heap", "FILED [MINIMIZE-ARENA-LEAK]: its tables are live across arena allocations (OOM only); alloc_check.c's known_stranded row"),
+    # -- [ARENA-SCOPES] clients: LIVE across a refusal today, stranded on it (K155
+    #    stays open until that row registers scoped arenas on the Ctx) --------
+    ("src/gen/memfn_stamps.c", "target_headers_render", "strbuf:nb", "[ARENA-SCOPES] client: K155's own site, the whole-artifact rewrite of csb"),
+    ("src/gen/memfn_stamps.c", "splice_mark", "strbuf:tail", "[ARENA-SCOPES] client: a whole-artifact tail rewrite"),
+    ("src/gen/part_layout.c", "render_buf", "strbuf:o", "[ARENA-SCOPES] client: the whole-artifact layout-mark rewrite"),
+    ("src/gen/clskit.c", "pcrec_clskit_emit_kit", "arena:a", "[ARENA-SCOPES] client: a private arena never registered on the Ctx"),
     # -- outside a compile: no Ctx, so no longjmp can strand anything ------
     ("src/core/compile.c", "pcrec_subst_compile", "arena", "the subst compile: a detached arena, freed on return, no Ctx"),
     ("src/gen/emit_subst.c", "support_unit", "strbuf", "the subst support unit: no Ctx"),
     ("src/gen/emit_subst.c", "pcrec_emit_subst", "strbuf", "the subst emitter: no Ctx"),
     ("src/gen/emit_subst.c", "pcrec_emit_subst", "arena", "the subst emitter: a detached arena, no Ctx"),
-    ("src/gen/clskit.c", "pcrec_clskit_emit_kit", "arena:own", "the no-Ctx fallback only; a compile's text uses the compile's arena"),
     ("src/parse/ks_analysis.c", "analysis_write_canonical", "strbuf", "a knowledge-module view writer: no Ctx, errors by return"),
     ("src/parse/ks_analysis.c", "analysis_write_decoded", "strbuf", "a knowledge-module view writer: no Ctx, errors by return"),
     ("src/parse/rxt_source.c", "*", "strbuf", "the .rxt source reader: its own arena has no Ctx, errors by return (rxt_fail), no longjmp"),
@@ -227,8 +232,8 @@ def main():
     rc = 0
     for rel, ln, fn, shape, text in findings:
         print(f"FAIL: a {shape} builder on the compile path outside the allowlist: {rel}:{ln} in {fn}: {text}\n"
-              f"      (a builder live across a refusal is stranded by its longjmp: use pcrec_sb_scratch(&cx->arena), "
-              f"the Job's rewrite buffer for a whole-buffer rewrite, or a Job-owned field job_cleanup frees; "
+              f"      (a builder live across a refusal is stranded by its longjmp: use pcrec_sb_scratch(&cx->arena) "
+              f"or a Job-owned field job_cleanup frees; "
               f"an ALLOW row needs the reason it can never be live across a refusal)")
         rc = 1
     for k, a in enumerate(ALLOW):
