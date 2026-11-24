@@ -1116,3 +1116,16 @@ wake.md says (read the draft WHOLE first; A4 is a ruled-words finding: read his 
 - Read whole: core.md, library.md, parked.md; the record from closing-own-label to the end.
 - ASKED the owner: list-is-label (run: the list body in three modes; the parting case of two arguments holding
   one name, `W.h` the last mention against `A.h` A's own spot). Waiting on his answer and on r88's hand-back.
+
+## 2026-11-23 — review r88 ruled; fix lane predfix88 launched
+
+- r88 draft (28 items, A1-A18 / B1-B10; none refuted, none rejected): RULED in the record ("MANAGER — review r88
+  (predfold1123b): the dispositions"). Main evidence finding B1: the fold's SUCCESSOR check ran no predecessor
+  (13 models dead at load, declared superseded); my "over ten minutes" premise was wrong (6 s).
+- LAUNCHED lane predfix88 (opus; worktree `worktrees/predfix88`, cut at b63928b48; deliver + empty rulings file
+  first; lanewatch armed): documents A1-A18 (G4 table only), evidence B1-B9, files the review. PLAN: G3, NAMES-5,
+  B10 (re-measure after B1).
+- New owner questions queued: exact-count-unspecified, stacked-chain, nested-made.
+- Coordinator crit-predfold1123b stopped. Waiting: the owner's answer on list-is-label (if it arrives while the
+  lane runs: R-1 in its rulings file); the lane's delivery.
+- For main at P-28: three lessons + three proposed critic-skill changes from r88's process.md.
