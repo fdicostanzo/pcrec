@@ -503,3 +503,4 @@ The first green cloud full suite: every landing up to and including e43603862 is
 - 2026-11-23 880bf4c9c none — merge lane/skilled (predicate P-17..P-26 skill/guide edits; docs only)
 - 2026-11-23 aa75d837e none — merge lane/grow9fix ([GROWTH-SWEEP] runner: CPU bounds, doubling report, empty occasional tier, -j pool, 96 shards; review r89; cloud test GREEN run 45302540051; growth run reds all known: K155 x13, K158 x2)
 - 2026-11-23 6265ab59c none — merge lane/pred-rev28 0dda97065 (fold after zero-open, review r88 applied; docs only; P-28)
+- 2026-11-24 d60949598 none — merge lane/memfn-k1108 a39e4f15e + 89f9984d3 (kit R-47 DONE: U6 timing record, job-shape fix, hand-off wake; cloud test GREEN run 45338584207)
