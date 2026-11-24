@@ -152,6 +152,7 @@ the axes allowances, size tripwires. Run `make test` (async), not only the
 section you think counts (2026-10-10: rev2corp re-pinned rxtsource only;
 main's post-merge make test went red on test-startset, lane sstri).
 A change that makes a strategy fire in new places (new row, widened admission, new rung) runs `REACH_ONLY=1 bash tests/mech/run_sabotage_matrix.sh` before delivery and re-aims each moved witness in the same delivery.
+Any change under `src/`, `cli/`, `lib/` or `memfn/` runs `python3 scripts/m6read_check_sab_anchors.py` (pure grep, seconds) before delivery and re-anchors every stale row it names: a moved anchor makes its sabotage row certify nothing (2026-11-24 k155fix: S256 went stale when sb_grow's nomem route moved; caught only by the codegen job).
 Never merge to main yourself.
 
 ## Design lanes
