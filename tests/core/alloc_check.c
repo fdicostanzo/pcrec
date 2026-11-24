@@ -53,6 +53,8 @@
  *       failing allocation INSIDE a forced fact derivation — its own
  *       property (rc 0 + one `decline:force-failed` row), its own driver
  *       `w5_run()`; see the [W5] block above `main`
+ *   W6  the COMPOUND WALK: nested part compiles whose heap results the
+ *       arena owns ("^abc|x+$"; [K155], its row's comment)
  *
  * [K60FIX] (2026-09-18, lane k60fix, docs/dev/decisions.md D109): W4's own
  * mechanism (the [ART-SIZE] ladder catch absorbing a genuine pcrec_ctx_nomem) is
@@ -252,6 +254,14 @@ static int stack_has(const LiveEnt *e, const char *fn)
     }
     return 0;
 }
+/* [K155] is `p` a block this injector counted (review r96 CHECK-6)? A
+ * block libc returned on its own (`realpath(.., NULL)`, a FILE's buffer)
+ * was never added, so its free must not lower the balance: subtracting it
+ * could cancel a real stranded block of the same size. */
+static int live_tracked(void *p)
+{
+    return p && live_tab[live_slot(p)].p == p;
+}
 static void live_forget(void *p)
 {
     if (!p) return;
@@ -291,10 +301,11 @@ void *pcrec_inject_realloc_at(void *p, size_t sz, const char *file, int line)
 {
     call_n++;
     if (inject_should_fail(file, line)) return NULL;
-    long long old = p ? (long long)malloc_usable_size(p) : 0;
+    int tracked = live_tracked(p);
+    long long old = tracked ? (long long)malloc_usable_size(p) : 0;
     live_forget(p);   /* before the call: `p` is not read after it */
     void *np = realloc(p, sz);
-    if (!np) { live_note(p, file, line); return NULL; }   /* `p` still live */
+    if (!np) { if (tracked) live_note(p, file, line); return NULL; }   /* `p` still live */
     live_bytes -= old;
     return live_add(np);
 }
@@ -307,7 +318,7 @@ char *pcrec_inject_strdup_at(const char *s, const char *file, int line)
 void pcrec_inject_free_at(void *p, const char *file, int line)
 {
     (void)file; (void)line;
-    if (p) live_bytes -= (long long)malloc_usable_size(p);
+    if (live_tracked(p)) live_bytes -= (long long)malloc_usable_size(p);
     live_forget(p);
     free(p);
 }
@@ -589,8 +600,13 @@ static int sweep_mode(const Witness *w, int sust, Tally *t)
 static void report(const Witness *w, const Tally *t, int sust)
 {
     const char *tag = sust ? " [sustained]" : "";
-    long long bad_n = t->n_succeeded + t->n_silent + t->n_signalled + t->n_anomaly
-                    + t->n_leaked;
+    long long want = sust ? w->expect_absorbed_sustained : w->expect_absorbed_single;
+    /* [K155] an absorption count EQUAL to a stated pin is the witness's
+     * documented fallback (absorbed_why), not a finding; any other count is
+     * (above the pin: a new absorption; below: the stale-pin line). */
+    int pinned = want > 0 && w->absorbed_why && t->n_succeeded == want;
+    long long bad_n = (pinned ? 0 : t->n_succeeded) + t->n_silent + t->n_signalled
+                    + t->n_anomaly + t->n_leaked;
     /* [D110] THE POPULATION FLOOR, checked before any verdict: a witness
      * that stopped reaching the compile, or whose allocation shape
      * collapsed, reports "every forced failure was diagnosed" over a
@@ -608,13 +624,15 @@ static void report(const Witness *w, const Tally *t, int sust)
     /* [D105] THE ABSORPTION PIN, in both directions. `n_succeeded` is
      * reported below on its own terms too; this is the comparison against
      * what a FILED defect accounts for. */
-    long long want = sust ? w->expect_absorbed_sustained : w->expect_absorbed_single;
     if (t->n_succeeded < want)
         bad("%s%s: %lld of %lld forced allocations were absorbed, and the pin says %lld -- "
             "the filed defect moved or was FIXED and this pin is stale. Re-pin it in the "
             "same change (%s)",
             w->name, tag, t->n_succeeded, t->total, want,
             w->absorbed_why ? w->absorbed_why : "no filed defect is recorded for this witness");
+    if (pinned)
+        printf("NOTE: %s%s: %lld of %lld forced allocations succeeded through the pinned "
+               "fallback (%s)\n", w->name, tag, t->n_succeeded, t->total, w->absorbed_why);
     if (t->n_known_stranded)
         printf("NOTE: %s%s: %lld of %lld forced allocations stranded heap in a FILED place only "
                "(the known_stranded table: every stranded block from its file/function)\n",
@@ -628,7 +646,7 @@ static void report(const Witness *w, const Tally *t, int sust)
         bad("%s%s: %lld of %lld forced allocations KILLED THE PROCESS BY SIGNAL (K7's abort() class) -- first at N=%lld, signal %lld",
             w->name, tag, t->n_signalled, t->total, t->first_signal_n, t->first_signal_code);
     }
-    if (t->n_succeeded) {
+    if (t->n_succeeded && !pinned) {
         /* The wording of the first sentence is UNCHANGED (it is what the K60
          * measurement quotes); what follows it says whether this count is the
          * standing filed defect or something new. */
@@ -999,6 +1017,24 @@ int main(int argc, char **argv)
           "((?:(?:(?:[^a]{1,2}|[^a]??|.{0,2}?)+){0,8}(){2,3}){1,2}){2,3}",
           PCREC_ENC_BYTE, 0, 0,
           81, 0, 0, NULL },
+        /* [K155] W6 — THE COMPOUND WALK (review r96 GENFORM-1/CHECK-5): a
+         * floor arm beside an end-pinned arm admits the `split` compound
+         * row, so nested part compiles run and hand their heap `c_src` to
+         * the arena (`pcrec_arena_own`, compound.c). W1-W5 never run the
+         * walk. Measured 2026-11-24: BASE (before K155's fix) strands a
+         * part's c_src on 10 diagnosed refusals; with the fix 0 new.
+         *
+         * THE ABSORPTION PIN IS BY DESIGN, not a filed defect: a part that
+         * refuses ends the compound row and the compile falls back to the
+         * plain artifact (compound.c: "Nothing here refuses the compile"),
+         * so single-shot failures inside a part's compile succeed (982 of
+         * 1008); under sustained failure the fallback fails too (0). The
+         * pin is exact (D110); allocation-shape churn on the compound path
+         * re-pins it. `min_total` floor: 504 (half of 1008). */
+        { "W6 (compound split)",   "^abc|x+$",   PCREC_ENC_BYTE, 0, 0,
+          504, 982, 0,
+          "the compound row's by-design fallback: a refused part compile "
+          "leaves the plain artifact (compound.c)" },
     };
     const size_t nw = sizeof witnesses / sizeof witnesses[0];
 
