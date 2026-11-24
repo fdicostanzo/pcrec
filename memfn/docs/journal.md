@@ -4953,3 +4953,8 @@ bsu3fix2 delivered (6cf672b6a on lane/bsu3fix; lanecheck DONE; TaskStop).
   - lane/memfn-plantcheck pushed at b451600bb; code PR #1 opened (review and Linux CI only; main merges locally).
   - OWED on Linux: the full make test and the 7 pres x86-SIMD plants.
 - main ran the 7 pres x86 plants at 6399dfd86 (job 200-main-pres7, Zen 4, 629 s): 6 of 7 DETECTED; S3012 GREEN (NOT DETECTED; oracle green, rows=84780). MY ERROR: the pass form I gave main was wrong. Lines read 'PLANT <id> RED', no '> ', and a detected plant exits rc 0. Doc fix to the runner header. PR #1 is HELD until S3012 is detected or argued equivalent. Main has queued S3012 at the base b9f81ef80 (100-main-s3012base). If it is GREEN at the base, it is pre-existing: PR #1 lands and S3012 becomes a kit K row. Triage lane s3012tri (opus) launched (D203: cause, class, siblings, fix shape).
+- s3012tri delivered (2b0135ffe), merged 63e474123.
+  - S3012 is PRE-EXISTING: d5f9da41b moved presence sites off Table A, so a_mass_choose runs 0 times. A real defect, equivalent only on the pres runner.
+  - CLASS: runner plants are checked to apply, never to detect.
+  - GF-1 HOLE: the check never reads SAB_SUITES, and pres's PLANT_TWINS="$PLANTS" is a blanket declaration. Siblings: 1 of 41 twins diverges from its detector.
+  - RULED: the fix rides PR #1. Lane s3012fix (opus): S3012 moves to run_g2_win, the twin check reads SAB_SUITES, PLANT_TWINS becomes an explicit list, drills + mutants, the pass form documented. The scheduled Linux --plants job is PLAN, to main.
