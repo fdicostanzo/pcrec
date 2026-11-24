@@ -60,7 +60,7 @@ a missing `when:`/`does:`/`{keywords}`, or a live script with no header comment.
 - check_claudemd_size.sh live — when: adding to any CLAUDE.md or before committing one; does: fails a CLAUDE.md over its limit (root 20 KB, others per table); `--all`/`--staged`. {claude.md, size, orientation, cap}
 - check_pcre2_note.sh live — when: a pcre2-reader note lands in docs/dev/pcre2_notes/ (D181); does: rejects what a source paste looks like (fences, preprocessor lines, C operator runs, internal identifiers). {pcre2, clean room, note, wall}
 - spec_toc.py live — when: a docs/spec/*.md heading changes; does: rebuilds that document's table of contents between its marker comments. {spec, toc, headings}
-- m6read_check_sab_anchors.py live — when: sabotage rows or their target files change, as a cheap tripwire beside `make mech`; does: greps that every SAB_BEFORE anchor still occurs in its target. {mech, sabotage, anchor, stale}
+- m6read_check_sab_anchors.py live — when: sabotage rows or their target files change, as a cheap tripwire beside `make mech`; does: greps that every SAB_BEFORE anchor still occurs in its target, then counts every runner plant (the four `plant_spec` runners' `--plant-check`, tests/lib/plants.py) against a floor. {mech, sabotage, anchor, stale, plant}
 - measure.sh live — when: running a design probe from tests/probes/ (D35); does: builds and runs it and archives a stable-named diffable report under docs/measurements/. {probe, measurement, report}
 - size_diff live — when: reading how the artifact-size log moved ([ART-SIZE.1b]); does: one summarised report of per-pattern movement between two size TSVs. {artifact size, diff, log}
 

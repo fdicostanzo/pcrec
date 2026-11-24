@@ -66,3 +66,7 @@ SIMD family targets (unit U2): the space renders once per target (x86-64-v3, x86
 ## Lane reports (moved from CLAUDE.md, lane bsu6par, 2026-11-23, for size)
 
 `G2U_REPORT.md`, `G2X_REPORT.md` (interim, superseded), `G2M4_REPORT.md` (ABI 6, R-7), `G2M6_REPORT.md` (ABI 8 strided ADVANCE), `G2M7_REPORT.md` (ABI 7 MISMATCH), `G2ROWS_REPORT.md` — lane reports.
+
+## Not here yet (moved verbatim from CLAUDE.md, lane plantfix, 2026-11-24, for the 12 KB limit)
+
+The `moved` property test and arm-differs property (§10.2); cross-target `-fsyntax-only` and the kit's timed suite (K-5); the agreement check against `pcrec_cls_cube` (needs pcrec's `tests/`).

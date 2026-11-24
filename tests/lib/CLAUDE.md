@@ -66,3 +66,4 @@ change.
 - Also (one-line entries for these are in the history file): `run_san_group.sh`.
 
 History (long narrative moved verbatim, not auto-injected): `docs/dev/history/claude_md/tests__lib.md`.
+- **plants.py** — (lane plantfix, 2026-11-24; FUW-12) THE ONE APPLIER of the runner-embedded source plants: `apply` (the 4 runners' `--plant`/`--plants`: run_g2_win, run_g2_pres, run_proof, run_wreply) and `check` (count only, each runner's `--plant-check`, read by scripts/m6read_check_sab_anchors.py's plant pass). Three dialects kept bit for bit (`win`, `pres`, `wreply`): its docstring. Here, not memfn/tests/, because pcrec-side runners and scripts/ call it and the kit's runners already source tests/lib.
