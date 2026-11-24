@@ -4936,3 +4936,8 @@ bsu3fix2 delivered (6cf672b6a on lane/bsu3fix; lanecheck DONE; TaskStop).
   - test-codegen: [SABANCHOR] PASS. The target is 19/22: the 3 reds (size_term, case_spelling_identity, residual_twins) are Mac-only and the same at the cut. make strict's -Werror pass is clean; its rc 2 is the kit's aarch64 targets-check, the same at the cut.
   - Twin census (R-1): 16 equal, 23 differ only in comments, S1540 an id COLLISION (kit plant vs mech row): a ruling is needed.
   - Launched r94 crit-memfn-plantcheck (light code round).
+- plantfix's idle notice adds three items for r94's fix pass (no addenda go to the running critics):
+  - (a) tests/codegen/run_codegen_tests.sh's [SABANCHOR] pass message still names only the mech rows (outside plantfix's edit list);
+  - (b) tests/mech/CLAUDE.md does not mention the plant pass;
+  - (c) PROCESS: two of the lane's wait loops used `pgrep -f`, which scripts/safekill's header forbids. They were read-only and signalled nothing, but a future brief should say "poll artifacts, never pgrep".
+  The 7 pres x86-SIMD plants read "red but not by detector" on aarch64 (the same before and after), so they need a Linux run: the PR's CI does not run --plants, so that run stays OWED on the dev box.
