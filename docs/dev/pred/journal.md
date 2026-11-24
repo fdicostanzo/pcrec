@@ -1129,3 +1129,16 @@ wake.md says (read the draft WHOLE first; A4 is a ruled-words finding: read his 
 - Coordinator crit-predfold1123b stopped. Waiting: the owner's answer on list-is-label (if it arrives while the
   lane runs: R-1 in its rulings file); the lane's delivery.
 - For main at P-28: three lessons + three proposed critic-skill changes from r88's process.md.
+
+## 2026-11-23 — shorthand-is-callers RULED (reverses my reading (a) of binding-as-label)
+
+- His question on list-is-label exposed that "made by anyone, the body included" was MY addition to his fourth
+  condition. RULED: the shorthand is the caller's own label, `B(A)` + `A.d` = `B([A = A])`, whatever the body
+  does, the closing body included. Dissolved: list-is-label, both-uses, pair-twice-alone, nested-made, r88 A4.
+- predfix88 (running) got R-1, a notice: do not fold it, skip nested-made, list what will be reversed.
+- NEXT: at predfix88's delivery: merge, lints, then fold lane predfold1124 (the ownership table's argument row,
+  argument-default, closed-argument, call-prefix, label-reference, the six library reads, the lines "Both uses");
+  it needs a review number from main before its critic round.
+- ASKED the owner: capture-in-set.
+- LESSON: a reading of mine attached to HIS condition and carried inside the statement he says yes to is still
+  mine; a table derived through it must say which rows rest on the reading (he ruled the table, not the intent).
