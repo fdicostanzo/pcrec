@@ -5150,7 +5150,13 @@ stranded blocks), because every StrBuf's storage comes from `sb.c`. Today:
 both [ARENA-SCOPES] clients. Its static complement is
 `tests/core/scratch_builder_check.py` (in `make test` via test-core): the
 census of compile-path heap builders, which sees the sites no witness
-reaches.
+reaches. Witness W6 (`^abc|x+$`, review r96) runs the compound walk, the one
+fixed shape (a callee's heap result handed to the arena) the scan cannot
+see: BASE strands a part's text on 10 refusals, the fix 0; its 982
+single-shot absorptions are the compound row's by-design fallback, pinned
+exactly with that reason (a pinned count prints a NOTE, any other count
+FAILS); sabotage S3580 drops `pcrec_arena_own` and only W6 sees it. The
+injected `free` lowers the balance only for a block it counted (CHECK-6).
 
 ## The long-prefix sweep and the irsb byte-neutrality arm ([REVW.1] wave 1 stage 0, 2026-09-18)
 
