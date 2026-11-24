@@ -25,3 +25,4 @@ Items in the ledger pair are numbered and never deleted; a superseded
 item says so in place. Live coordination stays interprocess
 (SendMessage); these files carry what must survive a session boundary.
 - `finder_history.md` — the edit history of the kit's candidate-finder table rows (D161 add. 11/13): one line per row edit with evidence and commit; main mirrors it in docs/design/regime_tables.md. Formal ruled diffs after LOCKDOWN.
+- `arch_review_2026-11.md` — the kit's overall ARCHITECTURE REVIEW ([KIT-ARCH-STEP] stage 2, R-49; lane archrev, 2026-11-24): each kit section (planner, emitter and form tables, measurement cards, the pcrec seam) against docs/dev/guide/architecture.md's goals and register, with the consolidated suggestion list ARV-1..ARV-15 (filed, not built). DRAFT until review r91.
