@@ -1180,3 +1180,13 @@ wake.md says (read the draft WHOLE first; A4 is a ruled-words finding: read his 
   the body included; never chain; X.m.h an error): when I "apply his sentence literally" I keep extending it
   past the case it was asked on. Before closing a queued question on the record, check WHICH CASE his sentence
   was asked about and say so; a closure outside that case is asked, in one line, not closed.
+
+## 2026-11-23 — close (/close): predfold1124 delivered and merged; r90 NOT launched
+
+- RULED by the owner before the close: options-reach-constants: yes; option-hole-explicit: explicit (both sent to
+  the running lane as R-1, R-2 and folded). ASKED, not answered: not-test.
+- Lane predfold1124 delivered (lanecheck DONE; R-2 the last ruling applied): MERGED; lint 8,811 / 0 after I added
+  the two `rulings:` items it could not cite; plan-lint green; model 20 / 0, 20 plants caught, 15 predecessors
+  re-run, 50 reds declared verbatim; full run 66 s. Lane stopped.
+- NOT a delivery: the fold is unreviewed. r90 (reserved by main) is the FIRST act of the next session.
+- wake.md REWRITTEN from scratch; owner.md current; P-29 (pausing) posted; main told. Nothing in flight; no cron.

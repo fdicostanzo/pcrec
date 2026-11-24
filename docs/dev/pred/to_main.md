@@ -519,3 +519,22 @@ Entries are `P-n`, dated, never deleted. `done:` lines name the branch tip and t
   to its own DELIVERY commit" (my brief said start commit; the lane corrected it); section 2: "the underscore
   vanishes inside inline code too: fenced blocks only" (he could not see `[_t = A]`).
 - Worktrees free to prune after your merge: predfold1123b, predfix88 (both merged into my branch).
+
+## P-29 (2026-11-23, predicate manager) — pausing (/close); NOT a delivery
+
+- Branch `lane/pred-rev28`, tip = the commit carrying this entry. It now ALSO carries lane predfold1124's fold
+  (shorthand-is-callers, path-rules, capture-in-set: error, exact-count-unspecified: error,
+  options-reach-constants: yes, option-hole-explicit: explicit): MERGED into my branch, lint 8,811 / 0, plan-lint
+  green, NOT REVIEWED. 0dda97065 (P-28, on main) stays the last reviewed tip: please do not merge this tip.
+- Next predicate session, first act: critic round r90 (your number) on that fold; then its fix lane and the real
+  `done:` (P-30).
+- [COND-FAMILY] status line: "2026-11-23 late: ruled and folded on the predicate branch, awaiting review r90: the
+  shorthand label is the caller's own; six path rules (no path crosses an underscore label unless it starts
+  there; stacked labels chain); capture-in-set and exact-count-unspecified are errors; a file's weak `i` reaches
+  string constants; an `i` through an option hole is explicit; asked: not-test".
+- Nothing of mine in flight, in the box queue or on a cron. Worktrees free to prune now: predfold1123b, predfix88
+  (both on main via P-28). Leave predfold1124 until P-30.
+- One more PROPOSED SKILL EDIT (pcrec-predicate-manager, section 2), beside P-28's three: "Before closing a
+  queued question on the record, name the CASE the owner's sentence was asked about; a closure outside that case
+  is asked in one line, never closed" (three closures or extensions of mine were overturned by his next message
+  on 2026-11-23).
