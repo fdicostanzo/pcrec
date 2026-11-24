@@ -29,10 +29,13 @@ Scratch outputs are under `/var/tmp/pcrec-claude/scratch/s3012tri/` and are not 
   planted function is never called there.
 - **Class.** A runner-embedded plant whose witness stopped reaching after a later kit change.
   Nothing re-runs runner plants for DETECTION (the [SABANCHOR] plant pass checks only that they
-  APPLY), and the plant-twin check compares edit TEXT, not DETECTOR.
+  APPLY), and the plant-twin check compares edit TEXT, not DETECTOR. R-2: GF-1 missed it
+  through a hole in the check. `read_row()` never reads SAB_SUITES, and
+  `PLANT_TWINS="$PLANTS"` declares every pres plant a twin.
 - **Siblings.**
   - Twin-detector divergence: **1 of 41** twins across the 4 runners (S3012 itself).
-  - Generator-unreached pres plants: see the reach census in "Class and siblings".
+  - Generator-unreached pres plants: **0 besides S3012** (33 of 35 reach their site; S3127 is
+    census-only by design).
 - **Fix shape.**
   1. Move S3012's runner row from run_g2_pres.sh to run_g2_win.sh. Its detector there is the
      DECIDE check plus the in-run agreement count.
@@ -131,6 +134,42 @@ matrix. In the runner half, nothing re-runs `--plants`, and the twin's re-aim (a
 was not propagated. That is FUW-12's class (plantri) at the DETECTOR level rather than the ANCHOR
 level.
 
+**R-2: why GF-1 (plantfix2's twin check) did not catch S3012.** The cause is **a hole in the
+check**. It is not a different mech id, a missing mech file or an exemption.
+
+- **Same id, file present.** `tests/mech/sabotages/S3012_in_run_stop_filter_deleted.sh` exists,
+  and it is the only row with that id.
+- **Declared, not exempt.** run_g2_pres.sh declares `PLANT_TWINS="$PLANTS"` (line 413), so all
+  35 of its plants are declared twins by construction. S3012 is one of the 39 compared twins:
+  pres 35 + proof 4. That matches `runner plant twins checked: 39` in the plant pass I re-ran on
+  this tree (`scripts/m6read_check_sab_anchors.py`, rc 0, "every shared id is an equal declared
+  twin").
+- **The hole.** `twin_check()` (scripts/m6read_check_sab_anchors.py:298) compares only each
+  edit's FILE, FROM and TO. `read_row()` sources the row for exactly SAB_ID, SAB_FILE,
+  SAB_BEFORE, SAB_AFTER, SAB_COUNT and their site-2 fields, and never reads **SAB_SUITES**. The
+  runner's plant text and the mech row's BEFORE/AFTER are still equal (mechund re-aimed the
+  DETECTOR, not the text), so GF-1 is green by construction. "Same plant" was defined as "same
+  edit". A twin is the same plant with the same detector, and the detector half of that identity
+  is unchecked.
+- **A second weakness.** `PLANT_TWINS="$PLANTS"` makes the DECLARATION itself unfalsifiable for
+  the pres runner. Every new pres plant is a declared twin automatically, so the
+  collision/declaration half of GF-1 can never red there.
+
+Fix shape for the hole:
+- GF-1 reads SAB_SUITES too, and holds the runner among the arms that run it: an arm→runner map
+  read from `run_sabotage_matrix.sh`'s arm table, not hand-copied. The map needs g2pres and
+  g2pres-asan → run_g2_pres.sh, g2win → run_g2_win.sh, and memfnfinder → run_proof.sh via
+  run_finder.sh.
+- A twin whose row's suites do not name its runner reds as `TWIN DETECTOR MOVED`.
+- Replace `PLANT_TWINS="$PLANTS"` with an explicit id list.
+
+Drills:
+- (a) The live instance: on today's tree the fixed check must red S3012 and nothing else. The
+  census above shows 1 of 41.
+- (b) A `--selftest` mutant in a tree copy: set S3044's SAB_SUITES from g2pres to g2win. Today's
+  check stays green on that mutant, as it does on S3012; the fixed check reds it, naming S3044.
+- (c) The control: S3100's `g2pres-asan` stays green, as the same runner.
+
 **Sibling count 1: twin-detector divergence** (`s3012tri_evidence/twin_detector_census.py`, all 4
 runners). For each runner plant id with a `tests/mech/sabotages` row, the census checks whether
 the row's SAB_SUITES still names the runner's own arm:
@@ -158,7 +197,22 @@ generator. That is 3 targets × lever 0/1 at on_miss_leaves 1 with NWIDE 300 and
 on_miss_leaves 0, the deny pass, and the trace kit's default passes with their MFTRACE stream. A
 plant that leaves every file byte-identical is unreached by anything downstream of the text.
 
-CENSUS_RESULT
+Result (`pres_reach_census.out`; the raw log is `pres_reach_census.raw.log`), 25 artifacts per
+plant (the rendered files, generator logs and trace streams of 8 passes + 3 trace passes):
+
+- **33 of 35 plants move at least one artifact.** For those, the generator reaches the site.
+  The census does not confirm that their detectors fire; that is the dev box's `--plants`
+  verdicts.
+- **S3012 moves 0 of 25. It is UNREACHED.**
+- **S3127 moves 0 of 25, as expected.** It edits only the `@c0` census copy (`census0.py`), which
+  the D3 check reads, not the kit.
+
+So within the presence runner, S3012 is the **only** generator-unreached plant: 0 siblings.
+
+Caveat on the census: the first version of the script never created its NWIDE-0 pass
+directories, so all 7 `*.n0` runs failed and carry no data. They are excluded by
+`retab.sh`, and the script now has the `mkdir`. Those passes are the site-hash stream, the same
+sites without the wide tail, so excluding them hides no population the other passes lack.
 
 **"Expected only on a target this box cannot run".** S3012 does not have this shape. It is
 target-independent and was never x86-only. Its expected-pass set is not a host restriction, so
@@ -173,7 +227,10 @@ D203 fields:
 - Class: as above.
 - Rule broken: a detector re-confirmed on mechanism change, and twin equality covering the
   detector.
-- Sibling count: 1 of 41 twin-detector divergences, plus the reach census above.
+- Sibling count: 1 of 41 twin-detector divergences (S3012 itself), and 0 other
+  generator-unreached plants among the pres runner's 35. The window, proof and wreply runners'
+  48 plants without a mech twin are outside both measures; a per-runner reach census is the way
+  to count them.
 - Fix shape: three parts, below.
 
 1. **S3012 itself (the row).** Retire S3012 from run_g2_pres.sh's PLANTS, `plant_spec`,
@@ -202,12 +259,16 @@ D203 fields:
 ## STATE AT HANDOFF
 
 - STATE: complete (triage; no code edited).
-- Rulings file: R-1 applied. Base run job 100-main-s3012base is main's. By this analysis it
+- Rulings file: R-1 and R-2 applied (R-2 is answered in "Class and siblings"); the last applied is R-2. Base run job 100-main-s3012base is main's. By this analysis it
   should read GREEN at any base after d5f9da41b, which is consistent with "file as a kit K row
   with this class and sibling count".
 - Evidence (committed): `docs/dev/lanes/s3012tri_evidence/twin_detector_census.py`,
   `docs/dev/lanes/s3012tri_evidence/pres_reach_census.sh`, and their outputs
-  `twin_census.out` and `pres_reach_census.out`. Scratch-only helpers in
+  `twin_census.out`, `pres_reach_census.out` and `pres_reach_census.raw.log`, plus `retab.sh`.
+  The Mac suite lock was taken for the census and released.
+  `pres_reach_census.sh` spells the applier's path in two parts. The first draft named it, and
+  [SABANCHOR]'s discovery then listed the script as an UNREADABLE RUNNER. After the change the
+  plant pass on this tree reads clean (81 plants, 39 twins, rc 0). Scratch-only helpers in
   `/var/tmp/pcrec-claude/scratch/s3012tri/`: `apply.sh`, `apply_old.sh`, `build.sh`, `hist.sh`,
   and the instrumented kit `inst/`.
 - x86 runs: no x86 run is needed for the cause; it reproduces identically on the Mac. Optional
