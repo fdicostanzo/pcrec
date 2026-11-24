@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-# assemble.py ROOT OUT : the CUT ASSEMBLER of window_split.md rev 2 (r95 lesson 1).
+# assemble.py ROOT OUT [--pure] : the CUT ASSEMBLER of window_split.md rev 2 (r95 lesson 1).
 #   ROOT : a pcrec tree at the design's T (reads ROOT/memfn/src and ROOT/memfn/include only).
 #   OUT  : a scratch directory (never memfn/src): OUT/memfn/src and OUT/memfn/include are
 #          written there as the tree would read AT THE UNIT'S TIP, window.c removed.
@@ -30,7 +30,9 @@ HERE = os.path.dirname(os.path.abspath(__file__))
 sys.path.insert(0, HERE)
 from ents import entities, blank
 
-root, out = sys.argv[1], sys.argv[2]
+PURE = '--pure' in sys.argv     # the cut alone: no edits.spec, no @new (tables.py's T end, W36)
+argv = [a for a in sys.argv[1:] if a != '--pure']
+root, out = argv[0], argv[1]
 SRC = os.path.join(root, 'memfn/src')
 errs = []
 def err(m): errs.append(m)
@@ -158,7 +160,7 @@ for nm in exports:
             dt = 'extern ' + text[:cut].rstrip()[len('static '):] + ';'
     decls.setdefault(nf, []).append((nm, dt))
 
-for nf, nm, dt in news:          # an accessor edits.spec writes (no window.c definition)
+for nf, nm, dt in ([] if PURE else news):          # an accessor edits.spec writes (no window.c definition)
     decls.setdefault(nf, []).append((nm, dt.strip())); exports.append(nm)
 
 # R4: static forward declarations
@@ -242,7 +244,7 @@ def put(fn, t):
     if fn in files: files[fn] = t
     else: others[fn] = t
 
-spec = open(os.path.join(HERE, 'edits.spec')).read()
+spec = '' if PURE else open(os.path.join(HERE, 'edits.spec')).read()
 renames = re.findall(r'^rename\s+(\w+)\s+(\w+)\s+in\s+(.+)$', spec, re.M)
 def rename_code(t, old, new):
     bl = blank(t); outp = []; last = 0
