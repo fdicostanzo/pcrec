@@ -1105,3 +1105,14 @@ wake.md says (read the draft WHOLE first; A4 is a ruled-words finding: read his 
 - Main, the same hour: P-17..P-26's skill edits merged (24 items); the polling exception for predicate lanes
   granted; the [COND-FAMILY] row's next line updated.
 - wake.md REWRITTEN from scratch; owner.md current; P-27 (pausing) posted; main told. Nothing in flight; no cron.
+
+## 2026-11-23 — eighth session: wake
+
+- Registered (session_role pred); main merged into `lane/pred-rev28` (one routine conflict in the lanes history
+  index, both sides kept): tip d3ca4a5ef; lint 8,502 / 0; plan-lint green. Main told.
+- LAUNCHED review r88: coordinator `crit-predfold1123b` (opus, background), subject frozen at d3ca4a5ef, scope
+  `git diff 7b61fd62a..d3ca4a5ef -- docs/design/predicates/`, six lenses (ruling, examples + expansion drill,
+  fix-induced + general form, names grid over the ownership table, check adequacy, parallelism of the model).
+- Read whole: core.md, library.md, parked.md; the record from closing-own-label to the end.
+- ASKED the owner: list-is-label (run: the list body in three modes; the parting case of two arguments holding
+  one name, `W.h` the last mention against `A.h` A's own spot). Waiting on his answer and on r88's hand-back.
