@@ -358,8 +358,10 @@ static void target_headers_render(Ctx *cx)
     PcrecEmitSize hm = pcrec_emit_size_measure(held, strlen(held), NULL);
     /* pass 2, rebuilt in a fresh buffer, never truncated and re-appended in
      * place: the mark sits near the top, and a truncated csb under a ladder
-     * trial's scratch bound would read a length below its own guarded record */
-    StrBuf nb = { .cx = cx };
+     * trial's scratch bound would read a length below its own guarded record;
+     * a scratch builder (K155: no heap builder lives across a refusal), whose
+     * text then replaces csb's */
+    StrBuf nb = pcrec_sb_scratch(&cx->arena);
     pcrec_sb_printf(&nb, "%.*s%s", (int)at, c->p, text);
     const char *rest = after;
     for (const char *h; (h = strstr(rest, held)); ) {
@@ -367,10 +369,7 @@ static void target_headers_render(Ctx *cx)
         rest = strchr(h + strlen(held), '\n') + 1;
     }
     pcrec_sb_puts(&nb, rest);
-    free(c->p);
-    c->p = nb.p;
-    c->len = nb.len;
-    c->cap = nb.cap;
+    pcrec_sb_replace(c, &nb);
     c->simd_guarded += strlen(text) - strlen(PCREC_TARGET_HEADERS_MARK)
                      - nheld * strlen(held);
     c->simd_size.total += now.total - was.total - nheld * hm.total;

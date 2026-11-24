@@ -6,10 +6,36 @@
 
 #include "core/internal.h"
 
+/* [K155] `n` bytes of storage for `sb`'s text, from where its bytes live
+ * (StrBuf.ar): a scratch builder's arena, which diagnoses its own failure,
+ * or the heap. NULL only on a heap failure, which the caller diagnoses. */
+static char *sb_store(StrBuf *sb, size_t n)
+{
+    return sb->ar ? pcrec_arena_alloc(sb->ar, n) : malloc(n);
+}
+
+/* [K155] Gives back storage sb_store made: the heap's to free, a scratch
+ * builder's to the arena it came from (freed wholesale at the compile's
+ * end, never here: coding_guide §1.6). */
+static void sb_unstore(const StrBuf *sb, char *p)
+{
+    if (!sb->ar) free(p);
+}
+
+/* The no-error-channel failure: diagnosed when `sb` belongs to a compile,
+ * else the abort a detached buffer (syntax_dump.c) keeps. */
+__attribute__((noreturn)) static void sb_nomem(const StrBuf *sb)
+{
+    if (sb->cx) pcrec_ctx_nomem(sb->cx);
+    abort();
+}
+
 /* Ensures `sb` has room for `need` more bytes plus the NUL, doubling from 256
  * and reallocating into a temporary so a failed realloc leaves the old buffer
  * intact for pcrec_sb_free; also the one place the size-term ladder's
- * scratch-bound abort fires, since every append funnels through here. */
+ * scratch-bound abort fires, since every append funnels through here. A
+ * scratch builder (StrBuf.ar) grows by a fresh arena block and a copy, the
+ * old block left to the arena. */
 static void sb_grow(StrBuf *sb, size_t need)
 {
     /* [ART-SIZE] The size term's early abort. Checked here because this is the
@@ -30,10 +56,13 @@ static void sb_grow(StrBuf *sb, size_t need)
      * live and still owned by `sb`, so the error path's pcrec_sb_free reclaims it.
      * Assigning the NULL straight into sb->p would leak it and lose the only
      * pointer to it. */
-    char *np = realloc(sb->p, cap);
-    if (!np) {
-        if (sb->cx) pcrec_ctx_nomem(sb->cx);
-        abort();   /* a detached buffer (syntax_dump.c) has no error channel */
+    char *np;
+    if (sb->ar) {
+        np = pcrec_arena_alloc(sb->ar, cap);
+        if (sb->len) memcpy(np, sb->p, sb->len + 1);
+    } else {
+        np = realloc(sb->p, cap);
+        if (!np) sb_nomem(sb);
     }
     sb->p = np;
     sb->cap = cap;
@@ -298,6 +327,27 @@ void pcrec_sb_splice(StrBuf *dst, const StrBuf *src)
     dst->simd_size.tables += src->simd_size.tables;
 }
 
+/* [K155] Replaces `dst`'s TEXT with `src`'s and keeps every record of
+ * `dst`'s (guarded counts, comment state, layout bytes): the caller that
+ * rebuilt a finished buffer's text in a scratch builder moves its records
+ * itself. A copy into `dst`'s own storage, so the Job buffer stays the
+ * Job's, and not an append, so the ladder's scratch-bound abort (sb_grow)
+ * cannot read the text half-replaced. `src` never aliases `dst`. */
+void pcrec_sb_replace(StrBuf *dst, const StrBuf *src)
+{
+    size_t n = src->len;
+    if (n + 1 > dst->cap) {
+        char *np = sb_store(dst, n + 1);
+        if (!np) sb_nomem(dst);
+        sb_unstore(dst, dst->p);
+        dst->p = np;
+        dst->cap = n + 1;
+    }
+    if (n) memcpy(dst->p, src->p, n);
+    if (dst->p) dst->p[n] = 0;
+    dst->len = n;
+}
+
 /* `sb`'s length for a DECISION: uncut, minus every guarded byte, an open
  * bracket's included (see StrBuf.simd_guarded). */
 size_t pcrec_sb_len_decide(const StrBuf *sb)
@@ -435,23 +485,23 @@ void pcrec_sb_printf(StrBuf *sb, const char *fmt, ...)
 
 /* Hands the caller the buffer's string (allocating an empty one if nothing was
  * ever appended) and detaches it from `sb`, which is left empty and growable
- * again. */
+ * again. Always a HEAP string the caller frees: a scratch builder's text is
+ * the arena's, so it is copied out (a scratch text that only has to outlive
+ * its function needs no take: `p` already does). */
 char *pcrec_sb_take(StrBuf *sb)
 {
-    char *p = sb->p ? sb->p : strdup("");
-    if (!p) {
-        if (sb->cx) pcrec_ctx_nomem(sb->cx);
-        abort();
-    }
+    char *p = sb->p && !sb->ar ? sb->p : strdup(sb->p ? sb->p : "");
+    if (!p) sb_nomem(sb);
     sb->p = NULL;
     sb->len = sb->cap = 0;
     return p;
 }
 
-/* Frees `sb`'s backing storage and resets it to the empty state. */
+/* Frees `sb`'s backing storage and resets it to the empty state (a scratch
+ * builder's storage is the arena's: only the pointer is dropped). */
 void pcrec_sb_free(StrBuf *sb)
 {
-    free(sb->p);
+    sb_unstore(sb, sb->p);
     sb->p = NULL;
     sb->len = sb->cap = 0;
 }
@@ -760,14 +810,11 @@ bool pcrec_sb_render_prefix(StrBuf *sb, const char *prefix)
     if (!sb->p) return true;
     size_t n = render_prefix(NULL, 0, sb->p, sb->len, prefix, &stray);
     if (stray) return false;
-    char *np = malloc(n + 1);
-    if (!np) {
-        if (sb->cx) pcrec_ctx_nomem(sb->cx);
-        abort();   /* a detached buffer has no error channel (sb_grow's rule) */
-    }
+    char *np = sb_store(sb, n + 1);
+    if (!np) sb_nomem(sb);
     render_prefix(np, n, sb->p, sb->len, prefix, &stray);
     np[n] = 0;
-    free(sb->p);
+    sb_unstore(sb, sb->p);
     sb->p = np;
     sb->len = n;
     sb->cap = n + 1;

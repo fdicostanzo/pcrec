@@ -420,8 +420,18 @@ void  pcrec_arena_free(Arena *a);
  * `pcrec_sb_size_decide`. */
 typedef struct { size_t total, prose, tables; } PcrecEmitSize;
 
+/* [K155] `ar`: where the bytes live. NULL is the heap (realloc'd, freed by
+ * pcrec_sb_free or taken): the Job's own buffers, which job_cleanup frees on
+ * every exit, and the buffers outside a compile. Non-NULL is a SCRATCH
+ * builder (`pcrec_sb_scratch`): every growth is a fresh arena block, the old
+ * one is left for the arena, and pcrec_sb_free only forgets the pointer. A
+ * builder live across anything that can reach `pcrec_ctx_fail` or
+ * `pcrec_ctx_nomem` is a scratch one (src/core/CLAUDE.md), so a refused
+ * compile's longjmp strands nothing: the arena it lives in is freed by
+ * job_cleanup. `tests/core/scratch_builder_check.py` holds the line. */
 typedef struct {
     char *p; size_t len, cap; Ctx *cx; size_t abort_over;
+    Arena *ar;
     bool     cmt_drop;
     unsigned cmt_depth;
     unsigned cmt_mute_depth;   /* 0 = not muted; else the muting region's depth */
@@ -482,6 +492,16 @@ typedef struct {
     PcrecEmitSize scaf_size;
 } StrBuf;
 
+/* [K155] A SCRATCH builder over arena `a` (see StrBuf.ar): the one
+ * constructor for a StrBuf that is not the Job's and lives inside a compile.
+ * Its text (`p`) is arena-owned and stays valid until the arena is freed, so
+ * a finished scratch text needs no copy to outlive the function that built
+ * it. Diagnoses through `a->cx` as the heap form does through `.cx`. */
+static inline StrBuf pcrec_sb_scratch(Arena *a)
+{
+    return (StrBuf){ .cx = a->cx, .ar = a };
+}
+
 /* The two comment CLASSES, decided at the emission site (D112 item 2).
  * ESSENTIAL is provenance and the embedder's contract — what the file IS and
  * what it MATCHES — and is emitted under every setting. NON-ESSENTIAL is
@@ -520,6 +540,9 @@ size_t pcrec_sb_len_uncut(const StrBuf *sb);
 void pcrec_sb_simd_open(StrBuf *sb);
 void pcrec_sb_simd_close(StrBuf *sb);
 void pcrec_sb_splice(StrBuf *dst, const StrBuf *src);
+/* [K155] `dst`'s text becomes `src`'s, `dst`'s records kept (sb.c): how a
+ * buffer rebuilt in a scratch builder goes back into the Job's buffer. */
+void pcrec_sb_replace(StrBuf *dst, const StrBuf *src);
 /* [FINDALL-NEXT] the SCAFFOLD bracket (StrBuf.scaf_guarded): the same rules
  * as the SIMD bracket (line boundaries, no nesting, never inside a SIMD
  * bracket), its bytes subtracted by both decision views and never stamped. */
