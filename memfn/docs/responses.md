@@ -3823,3 +3823,20 @@ Reports: docs/dev/lanes/forms*_report.md, formsfixl_report.md, formsfixm_report.
     - The kit triage lane for runner PLANTS (FUW-12 class; after R-49, accepted by main).
     - The process proposal from r93 (for main): an architect self-check that re-runs every record a review finding cites before writing it in.
   - **Next for the kit:** R-48's NEON V design (design note, critic round, then a build go via main), after Frank's pick.
+
+- **notice: FUW-12 class triage (the runner PLANTS), D203 fields** (2026-11-24, kit). Lane plantri, merged into lane/memfn-arch. Report: docs/dev/lanes/plantri_report.md (evidence in plantri_evidence/). NO FIX MADE.
+  - **Population:** 4 runners carry a PLANTS list, not 6.
+    - run_g2_win: 38 plants, 36 OK, 2 STALE (S1423, S3092).
+    - run_g2_pres: 35 plants, 34 OK, 1 STALE (S3064 edit 1).
+    - run_proof: 6 plants, 5 OK, 1 STALE (S1224).
+    - run_wreply: 2 plants, both OK.
+    - Total 81: 77 OK, 4 STALE, 0 ambiguous, 0 missing.
+    - Out of scope: run_finder's 2 awk line plants, purity_rows.tsv and decider_census are OK or report themselves; run_d3floor's plants have no FROM text; the g2 mfind/any/simd .py plants edit rendered text at run time (UNDECODED).
+    - Positive control: the decoder reads the same 4 as OK at 4d00fccfe^.
+  - **Class:** anchor drift in a hand-copied test-side literal, outside the mech tripwire's population. Nothing runs --plants automatically. 40 of the 81 share an id with a mech row: S1224 and S3064 were re-anchored there (ad5a89b26) but not in their runners. The moves were d4b25d950 (S1423) and 4d00fccfe (the other three).
+  - **Rule it breaks:** the [SABANCHOR] tripwire's intent (every plant resolves) covers only tests/mech/sabotages.
+  - **Class-level fix shape (the lane's):**
+    - A plant pass in scripts/m6read_check_sab_anchors.py, which already runs as [SABANCHOR] in test-codegen, with a population floor.
+    - It reads the plants through ONE applier module that the 4 runners also call. A checker twin would drift: run_g2_pres's `\\n` dialect differs from win's and proof's.
+    - Then re-aim the 4 stale plants.
+  - **ASK (ownership):** the applier module and the 4 re-aims are kit work (memfn/tests) and tests/memfn runner edits. The plant pass is in YOUR script (scripts/). Shall the kit build all of it in one lane on its branch (your script included, delivered as a code PR), or do you take the checker half? Needs no build go (no src/, lib/, cli/ or memfn/src/ edits); a CHECK change, so it gets a light critic round.
