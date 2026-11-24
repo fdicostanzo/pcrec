@@ -173,8 +173,10 @@ Standing questions (docs/design/CLAUDE.md).
   `pcrec_count_groups`; syntax_dump.c 3). Each function is found by the nearest preceding definition line.
 - C-6 `GG 'setjmp' src cli lib memfn/src | grep -v -E ':\s*(/?\*|//)'` filtered to calls: 5 `if (setjmp(cx.jb))`
   (compile.c `compile_driver`, `pcrec_count_groups`; syntax_dump.c `built_status_probe`, `pcrec_probe_ask`,
-  `pcrec_syntax_explain`). The rest of the hits, re-run with `if (setjmp` filtered OUT: 1 `#include <setjmp.h>`
-  and comment lines (r100 lesson 1; rev 1's "the rest are comments" was false because it counted from a comment).
+  `pcrec_syntax_explain`). The rest of the hits, re-run with `if (setjmp` and comment-led lines filtered OUT,
+  print 8 lines: 1 `#include <setjmp.h>`, 4 CLAUDE.md prose lines, and 3 code lines whose `setjmp` is inside a
+  trailing comment (compile.c `defo = *opt`, syntax_dump.c's two `cx.arena.cx = &cx`). None is a call (r100
+  lesson 1; rev 1's "the rest are comments" took its count from a comment).
   C-6b `GG -l -E 'built_status_probe|pcrec_probe_ask|pcrec_syntax_explain' tests/mech`: 0 files. C-6c `GG -i -E
   "(only|single)( other)? .?setjmp" src`, read for tree-wide claims: src/core/CLAUDE.md, src/parse/CLAUDE.md,
   compile.c (the pipeline's header comment), parse.c, syntax_dump.c ("the tree's only other `setjmp`"), at least
