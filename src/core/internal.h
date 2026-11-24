@@ -4439,8 +4439,15 @@ struct Ctx {
      * spelled identically share a slot, which is why the key is the render
      * rather than the node.
      *
-     * NULL/0 for every pattern with no variable. */
+     * NULL/0 for every pattern with no variable.
+     *
+     * `var_exp_keys[i]` is `var_exps[i]`'s canonical rendering, rendered
+     * ONCE when the expansion is interned and read by every later lookup:
+     * re-rendering each earlier expansion per new one retained E(E+1)/2
+     * scratch renders in the arena (review r96 COST-1). Same length and
+     * growth as `var_exps`. */
     const VarExp       **var_exps;
+    const char         **var_exp_keys;
     unsigned             n_var_exps;
     /* [K60] docs/dev/known_issues.md, disposition (2) — set by `pcrec_ctx_nomem`
      * ONLY, before its `longjmp`, so `compile_driver`'s recovery point can

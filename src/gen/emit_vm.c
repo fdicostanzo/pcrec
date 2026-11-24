@@ -12902,8 +12902,9 @@ static void vm_emit_vars_resolve(Vm *v, const VmEntry *en)
                      "internal error: a ${...} selector has no resolved name "
                      "slot");
         pcrec_sb_cmt_open(c, PCREC_CMT_NONESSENTIAL);
-        /* The render carries the pattern's own ${...} word bytes. */
-        const char *vr = pcrec_varexp_render(&cx->arena, x);
+        /* The render carries the pattern's own ${...} word bytes; it is the
+         * intern key, rendered once (Ctx.var_exp_keys). */
+        const char *vr = cx->var_exp_keys[i];
         pcrec_sb_puts(c, "    /* ");
         pcrec_sb_ctext(c, (const unsigned char *)vr, strlen(vr), PCREC_CTEXT_COMMENT);
         pcrec_sb_puts(c, " */\n");
