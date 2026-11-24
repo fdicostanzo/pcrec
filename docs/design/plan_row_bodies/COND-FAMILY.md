@@ -10455,3 +10455,43 @@ mention; across `|` the branch taken); (c) the extension across bindings: the st
 macro's name at its call, or a label written on the use, then rules 1, 2 and 4 into its tree; a part USED ALONE
 inside that binding is crossed from outside as an underscore label is (default-export, ruled: protected), and is
 a start inside its own binding (the shorthand).
+
+### 2026-11-23 OWNER RULING — path-rules: yes (his four rules for paths within a binding, the manager's two readings of them, and rules 5 and 6 across bindings)
+tags: core/labels/rule core/labels/ownership core/labels/export core/labels/export/flat-read-outside core/labels/paths core/labels/paths/binding-prefix core/labels/paths/label-reference core/labels/export/arguments core/labels/paths/closed-argument
+
+ASKED AS A RULING (slug path-rules, the statement put to him: his four rules "as you wrote them" (the entry
+above: "1. in the label DAG there is a target label and a starting label. The starting label has at least one
+path to the target label 2. the path may not contain any underscore labels full or prefix unless the underscore
+prefix label is the start 3. within a binding, any label on the path may be used as a start label 4. if a legal
+path exists a.b.c and c can be unambiguously referenced from a, then b can be skipped a.c"); two readings of the
+manager's inside them: "'Any label on the path may be used as a start' means a label the binding's own text
+writes. A label held by a used binding is still read with its source, as you ruled under label-reference." and
+"'Unambiguously' is the existing rule: across `&` a name both sides set is ambiguous; in a sequence the last
+mention wins; across `|` the branch taken."; and the extension: "5. From outside, the start is the binding's
+name, a macro's name at its call, or a label written on the use. The path then continues into that binding's
+tree by rules 1, 2 and 4. 6. A part used alone inside a binding is crossed from outside as an underscore label
+is, and is a start inside its own binding."; with the four statements of the manager's the rules overturn, told
+to him: "stacked labels never chain" (`n.m.h`, `n.h`, `m.h` all legal for `[n = [m = A]]`); "`X.m.h` from
+outside is a compile error" (legal by rule 4); `[n = [_x = P]] & (n.d: <5)` (printed legal: a compile error by
+rule 2; `_x.d` legal); `[l = [_ = P]] & (l.d: <5)` (printed legal: a compile error by rule 2); the examples:
+X := `[n = [m = A]] SEQ "!"`, A := `/(?<h>\d)/`: from outside `X.n.m.h`, `X.n.h`, `X.m.h`, `X.h` all legal, RUN
+for `X & (X.n.m.h: <5)` (python `re`, part labels modelled as named groups, output pasted): WHOLE `3!` HOLDS,
+`7!` FAILS / SEARCHED `7! 3!` `3!`@3 / FIND-ALL `3! 7! 4!` [`3!`@0, `4!`@6]; X2 := `A SEQ "!"`: from outside
+`X2.h` and `X2.A.h` compile errors, inside X2 `A.h` legal; the manager's leaning yes to all six). HIS WORDS,
+whole:
+
+"path-rules: yes"
+
+Class: a RULING: rules 1 to 4 (his words), the two readings as put, rules 5 and 6 as put. It REPLACES label-tree
+(never answered) and label-doors line 5's reach: "their order does not matter" stands for which labels may START
+a path inside the binding that writes them (rule 3); a path that CROSSES an underscore label, full or prefix, is
+refused inside and outside alike (rule 2). The manager's readings (b) and (c) of label-doors (a path passes a
+private label stacked on the spot; `[l = [_ = P]]` opens P's labels through `l`) are WITHDRAWN; reading (a)
+(stacked is nested directly) loses its use: nesting is a path either way. stacked-chain is ANSWERED (the chain
+is legal). The by-name read from outside (flat-read-outside) is rule 4.
+The manager's readings (marked; for the fold to test): (d) the blank label is never a start (it has no name);
+(e) a label a caller writes in an argument, a sent label and the caller's shorthand label are labels of the
+CALLER's binding: starts there (rule 3), whatever the body stacks around them (shorthand-is-callers,
+closing-own-label, the backdoor); (f) from outside, through a call, the body's labels are the tree: `B.p.d`,
+and `B.d` by rule 4 where unambiguous; (g) his equivalence, `[_t = A]` is `[_ = [t = A]]`, is the picture of
+rule 2 (a wall with a start inside), not a second spelling: no label `t` is made.
