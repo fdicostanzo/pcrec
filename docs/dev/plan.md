@@ -2422,9 +2422,9 @@ Owner waits: a row or stage waiting on the OWNER (a charter, a build go, an answ
   refs: known_issues K157; docs/dev/lanes/grow6_report.md; tests/growth/run_growth.py (K157_CELLS); docs/spec/limits.md §8a, match_api.md §4¶3
 - [K155-STAMPS-LEAK] STATE:not-started — target_headers_render leaks its 32 KB pass-2 buffer on an out-of-memory refusal (K155)
   filed: 2026-11-21 lane grow2, from grow1's library stage (NEW-2)
-  status (2026-11-21): filed; nothing built. LeakSanitizer in the growth sweep's ASan library stage names src/gen/memfn_stamps.c target_headers_render
-  next: trigger the next crash-family lane; free or arena-back the StrBuf on every exit of target_headers_render; the library stage of make test-growth goes green on it
-  refs: known_issues K155; docs/dev/lanes/grow2_report.md; src/gen/memfn_stamps.c
+  status (2026-11-24): lane k155fix: census + general rule enforced (23 small builders on pcrec_sb_scratch, compound texts arena-owned, scratch_builder_check.py in make test, alloc_check stranded-heap property); THIS site and the other two whole-artifact rewrites stay heap by ruling R-3, waiting on [ARENA-SCOPES]
+  next: [ARENA-SCOPES] lands, then move nb/render_buf/splice tail onto a scoped arena; the library stage of make test-growth goes green on it; drop their guard allowlist rows and alloc_check's filed stranding
+  refs: known_issues K155; docs/dev/lanes/grow2_report.md; docs/dev/lanes/k155fix_report.md; src/gen/memfn_stamps.c
 - [K150-LMCAT-QUADRATIC] STATE:not-started — the landmark walk's lm_cat rebuilds a CAT spine per candidate: quadratic compile memory (K150)
   filed: 2026-11-20 lane growfile, from growsurv KR-D
   status (2026-11-20): filed; nothing built. `(?:a|b)` x 5,000 spends 3.46 GB with no refusal; the size cap fires only past about 8,000

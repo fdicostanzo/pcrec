@@ -5136,6 +5136,22 @@ both silently absorb a genuine allocation failure into a successful
 compile from a later internal attempt, which no answer-level check or
 `ulimit -v` approach can see.
 
+**The stranded-heap property ([K155], lane k155fix, 2026-11-24).** A
+DIAGNOSED refusal is no longer enough: the injector also frees-tracks
+(`free` is redirected too) and keeps the injected tree's live heap, and a
+trial whose refusal leaves any block live after `pcrec_compile` returns
+FAILS ("diagnosed but STRANDED HEAP"; `--sites` names each block's
+allocating `file:line`). The exceptions are the `known_stranded` table,
+filed defects each tied to a plan row and each required to be REACHED
+(stale = FAIL); a row may narrow itself to blocks allocated UNDER one
+function (the allocation stack, symbolized with `addr2line -i` only for
+stranded blocks), because every StrBuf's storage comes from `sb.c`. Today:
+`minimize.c`'s tables and K155's `target_headers_render` rewrite buffer,
+both [ARENA-SCOPES] clients. Its static complement is
+`tests/core/scratch_builder_check.py` (in `make test` via test-core): the
+census of compile-path heap builders, which sees the sites no witness
+reaches.
+
 ## The long-prefix sweep and the irsb byte-neutrality arm ([REVW.1] wave 1 stage 0, 2026-09-18)
 
 Two new instruments from wave 1's PRECONDITION stage

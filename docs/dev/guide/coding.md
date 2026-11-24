@@ -58,7 +58,12 @@ a function is a re-entrancy bug in a library, not an optimization.
 and all are correct (L8-H3); arena storage dies with the compile's arena. The
 hand-freed heap tables in `minimize.c` (five) and `scanedge.c` (nine/ten) are the
 named exceptions and are correct on every exit (L8-H5/H6) — match their shape if
-you add one, and say why the arena was wrong for it.
+you add one, and say why the arena was wrong for it. CORRECTION (K155, lane
+k155fix): "every exit" is every RETURN; a refusal's longjmp is not one, and
+`minimize.c`'s tables strand on an allocation failure inside it (filed with
+[ARENA-SCOPES]). A builder live across a refusal is arena-backed:
+`pcrec_sb_scratch(&cx->arena)` for a StrBuf, `pcrec_arena_own` for a heap
+result; `tests/core/scratch_builder_check.py` holds the allowlist of the rest.
 
 **1.7 Single-letter locals in the emitters ARE the house convention.** `c` the C
 string buffer, `d` the `Dfa`, `p` the prefix, `b` a `StrBuf`, `v` the `Vm`, `st` a
