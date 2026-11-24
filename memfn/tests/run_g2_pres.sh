@@ -259,8 +259,11 @@ plant_spec() {
         echo 'window.c@@            if (++nderived > 1) return "a second derived run part (one run, one part)";@@            ++nderived;' ;;
     S3064) # C2's DECISION plant: the reply (mf_ask's and mf_defined's mf_class.run)
         # says ver_len + 1 while the renderer (fd_pres_run's quiet ask) renders the
-        # old extent; reaches where the extent ends before the run does
-        echo 'compose.c@@        return fd_pres(art, art->nsites + 1, s, FD_PRES_QUIET, out, \&why) ? -1 : 0;@@        if (fd_pres(art, art->nsites + 1, s, FD_PRES_QUIET, out, \&why)) return -1;\n        { int r_ = kit_pres_run(s); if (r_ >= 0 \&\& out->pres[r_].verify \&\& out->run.ver_len \&\& out->run.ver_lo + out->run.ver_len < kit_pres_run_span(s, r_)->len) out->run.ver_len++; }\n        return 0;'
+        # old extent; reaches where the extent ends before the run does (edit 1 RE-AIMED
+        # 2026-11-24, lane plantfix, FUW-12: site 1 of its mech twin
+        # tests/mech/sabotages/S3064_reply_claims_one_more_position.sh, which ad5a89b26
+        # re-anchored onto 4d00fccfe's statement form of the ALL_PRESENT branch)
+        echo 'compose.c@@            memset(out, 0, sizeof *out);    /* On -1 *out is zeroed (memfn.h) */\n            return -1;\n        }\n        return 0;@@            memset(out, 0, sizeof *out);    /* On -1 *out is zeroed (memfn.h) */\n            return -1;\n        }   /* SABOTAGE S3064 */\n        { int r_ = kit_pres_run(s); if (r_ >= 0 \&\& out->pres[r_].verify \&\& out->run.ver_len \&\& out->run.ver_lo + out->run.ver_len < kit_pres_run_span(s, r_)->len) out->run.ver_len++; }\n        return 0;'
         echo 'compose.c@@            return kit_fail(art, "mf_define: the presence decision refuses this site: %s", pw);@@            return kit_fail(art, "mf_define: the presence decision refuses this site: %s", pw);\n        { int r_ = kit_pres_run(s); if (r_ >= 0 \&\& r->cls.pres[r_].verify \&\& r->cls.run.ver_len \&\& r->cls.run.ver_lo + r->cls.run.ver_len < kit_pres_run_span(s, r_)->len) r->cls.run.ver_len++; }' ;;
     # R-38 K38-3 (lane k383; ids S3098-S3105, from the top of the free range
     # above S3077, 3.0b's S3078-S3097 aside). THE W-K4 PLANTS, per admitted
@@ -395,6 +398,24 @@ plant_expect() {
     esac
 }
 PLANTS="S3007 S3008 S3009 S3010 S3011 S3012 S3043 S3044 S3045 S3046 S3047 S3060 S3061 S3062 S3063 S3064 S3098 S3099 S3100 S3101 S3102 S3103 S3106 S3107 S3108 S3109 S3110 S3111 S3112 S3113 S3114 S3119 S3125 S3126 S3127"
+# plant_edits ID: EDITS=(the plant's edits, one per plant_spec output line, in order),
+# or 1 if no plant ID. THE ONE APPLIER (tests/lib/plants.py, dialect `pres`: `\\n` the
+# C escape, `@c0/X` the census copy) applies them for --plant/--plants and counts them
+# for --plant-check (lane plantfix: FUW-12's class).
+plant_edits() {
+    local s l; s="$(plant_spec "$1")" || return 1
+    EDITS=(); while IFS= read -r l; do EDITS+=("$l"); done <<< "$s"
+}
+# --plant-check: every plant in PLANTS counted against today's memfn/src (and the census
+# script for @c0/), never applied or built (scripts/m6read_check_sab_anchors.py's plant pass)
+if [ "${1:-}" = "--plant-check" ]; then
+    args=()
+    for id in $PLANTS; do
+        if plant_edits "$id"; then args+=(--plant "$id" "${#EDITS[@]}" "${EDITS[@]}"); else args+=(--plant "$id" 0); fi
+    done
+    exec python3 -I "$ROOT/tests/lib/plants.py" check pres "$ROOT/memfn/src" \
+        "$ROOT/docs/design/memfn/span_pick" "$ROOT/memfn/tests/run_g2_pres.sh" -- "${args[@]}"
+fi
 
 fail_setup() { echo "FAIL: $1"; echo "checks passed: 0"; echo "checks failed: 1"; exit 1; }
 
@@ -662,25 +683,12 @@ if [ "${1:-}" = "--plant" ] || [ "${1:-}" = "--plants" ]; then
     level_table || fail_setup "the kit's level listing could not be read"
     bad=0
     for id in $ids; do
-        specs="$(plant_spec "$id")" || fail_setup "no plant $id"
+        plant_edits "$id" || fail_setup "no plant $id"
         if plant_asan "$id"; then unset G2P_NOASAN; else export G2P_NOASAN=1; fi
         rm -rf "$WORK/src"; cp -rL "$ROOT/memfn/src" "$WORK/src"   # -L: a symlinked src is copied, never planted in place
         rm -rf "$WORK/c0"; mkdir -p "$WORK/c0"; cp "$ROOT/docs/design/memfn/span_pick/census0.py" "$WORK/c0/"
-        while IFS= read -r spec; do
-        file="${spec%%@@*}"; rest="${spec#*@@}"; from="${rest%%@@*}"; to="${rest#*@@}"
-        case "$file" in @c0/*) path="$WORK/c0/${file#@c0/}" ;; *) path="$WORK/src/$file" ;; esac
-        python3 -I - "$path" "$from" "$to" <<'EOF' || fail_setup "$id: the plant does not apply"
-import sys
-p, a, b = sys.argv[1], sys.argv[2], sys.argv[3]
-def un(s):
-    return s.replace('\\\\n', '\x00').replace('\\n', '\n').replace('\x00', '\\n').replace('\\&', '&')
-a, b = un(a), un(b)
-s = open(p).read()
-if s.count(a) != 1:
-    sys.exit("plant text found %d times" % s.count(a))
-open(p, 'w').write(s.replace(a, b))
-EOF
-        done <<< "$specs"
+        python3 -I "$ROOT/tests/lib/plants.py" apply pres "$WORK/src" "$WORK/c0" -- "${EDITS[@]}" \
+            || fail_setup "$id: the plant does not apply"
         kit_objs "$WORK/src" "$WORK/pk_$id" || fail_setup "$id: the planted kit does not compile"
         build_gen "p$id" "$WORK/pk_$id"/*.o || fail_setup "$id: the generator does not build"
         kit_objs "$WORK/src" "$WORK/tk_$id" -DMF_TRACE || fail_setup "$id: the planted trace kit does not compile"

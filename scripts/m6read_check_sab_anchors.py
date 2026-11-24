@@ -127,4 +127,98 @@ if stale:
         print("  %-42s %-24s %s" % (fn, tgt, why))
 if not unreadable and not stale:
     print("all anchors resolve")
-sys.exit(1 if (unreadable or stale) else 0)
+
+# ---------------------------------------------------------------------------
+# THE RUNNER PLANT PASS (lane plantfix, 2026-11-24; FUW-12's class, triage
+# docs/dev/lanes/plantri_report.md). Four runners carry plants of their own --
+# a `plant_spec` case function and a `PLANTS` id list, applied by their
+# `--plant ID` / `--plants` modes, which nothing runs automatically -- and the
+# pass above never read them: four FROM texts went stale and nothing noticed.
+# The pass reads each plant through THE RUNNER'S OWN APPLIER: every runner's
+# `--plant-check` mode hands its edits, built by the same `plant_edits` its
+# --plants mode applies, to tests/lib/plants.py's `check` entry, the same file
+# whose `apply` entry the --plants mode calls. There is no second decoder here;
+# this pass only discovers, runs, parses and counts.
+#
+#   discovery   every *.sh under tests/ and memfn/tests/ that defines
+#               `plant_spec() {`. A discovered runner with no --plant-check
+#               mode is UNREADABLE and is never run (it would run the suite).
+#   per plant   STALE / AMBIGUOUS / MISSING FILE / NO SPEC / UNDECODABLE per
+#               edit, and ORPHAN for a plant_spec case PLANTS does not list.
+#   population  its OWN line, "runner plants checked: N", held to a LITERAL
+#               floor: a runner dropped from discovery (renamed, its list
+#               emptied, its mode broken into an empty answer) must go red,
+#               not read "0 stale". Raise the floor in the change that adds
+#               plants; never lower it to make a run pass.
+#
+# The four runners run CONCURRENTLY (owner ruling 2026-11-23: the pass rides
+# test-codegen): measured ~0.2 s each, ~0.3 s for the pass.
+PLANT_FLOOR = 81   # measured 2026-11-24 (lane plantfix): win 38, pres 35, proof 6, wreply 2
+PLANT_DIRS = ("tests", "memfn/tests")
+runners = []
+for d in PLANT_DIRS:
+    for dp, dns, fns in os.walk(os.path.join(root, d)):
+        dns.sort()
+        for fn in sorted(fns):
+            if fn.endswith(".sh"):
+                fp = os.path.join(dp, fn)
+                txt = open(fp, errors="replace").read()
+                if any(ln.startswith("plant_spec() {") for ln in txt.split("\n")):
+                    runners.append((os.path.relpath(fp, root), txt))
+p_unreadable, p_bad = [], []
+nplants = nedits = 0
+env = dict(os.environ, CC_RESOLVE_ANNOUNCED="1")   # cc_resolve's notice; any OTHER stderr is a finding
+procs = []
+for rel, txt in runners:
+    if '"--plant-check"' not in txt:
+        p_unreadable.append((rel, "DEFINES plant_spec BUT HAS NO --plant-check MODE"))
+        continue
+    procs.append((rel, subprocess.Popen(["bash", os.path.join(root, rel), "--plant-check"],
+                                        stdout=subprocess.PIPE, stderr=subprocess.PIPE,
+                                        text=True, env=env)))
+for rel, pr in procs:
+    try:
+        out, err = pr.communicate(timeout=120)
+    except subprocess.TimeoutExpired:
+        pr.kill(); pr.communicate()
+        p_unreadable.append((rel, "--plant-check TIMED OUT (120 s)"))
+        continue
+    lines = out.split("\n")
+    summ = [l for l in lines if l.startswith("plant-check: ")]
+    rows = [l.split("\t") for l in lines if l and not l.startswith("plant-check: ")]
+    if err.strip() or pr.returncode not in (0, 1) or len(summ) != 1 \
+            or any(len(r) != 5 for r in rows):
+        why = (err.strip().splitlines() or ["exit %d, %d summary line(s)" % (pr.returncode, len(summ))])[-1]
+        p_unreadable.append((rel, "--plant-check UNREADABLE: " + why[:70]))
+        continue
+    try:
+        P, E, Bn = [int(x.split()[0]) for x in summ[0][len("plant-check: "):].split(", ")]
+    except ValueError:
+        p_unreadable.append((rel, "--plant-check SUMMARY UNREADABLE: " + summ[0][:60]))
+        continue
+    bad = [r for r in rows if r[2] != "OK"]
+    ids = {r[0] for r in rows if r[2] != "ORPHAN"}
+    if len(ids) != P or len(bad) != Bn or (pr.returncode == 0) != (Bn == 0):
+        p_unreadable.append((rel, "--plant-check INCONSISTENT: %d ids, summary %s" % (len(ids), summ[0])))
+        continue
+    nplants += P
+    nedits += E
+    for r in bad:
+        p_bad.append((rel, r))
+print("runner plants checked: %d (%d edits, %d runners), floor %d"
+      % (nplants, nedits, len(runners), PLANT_FLOOR))
+if p_unreadable:
+    print("UNREADABLE RUNNERS:", len(p_unreadable), "-- the plant pass is BLIND to these")
+    for rel, why in p_unreadable:
+        print("  %-42s %s" % (rel, why))
+if nplants < PLANT_FLOOR:
+    print("RUNNER PLANT POPULATION %d IS BELOW ITS FLOOR %d -- a runner left discovery "
+          "or lost its list; the plants were not all read" % (nplants, PLANT_FLOOR))
+if p_bad:
+    print("BAD RUNNER PLANTS:", len(p_bad))
+    for rel, (pid, edit, st, c, path) in p_bad:
+        print("  %-30s %-6s edit %-4s %-13s count %s  %s" % (rel, pid, edit, st, c, path))
+p_fail = bool(p_unreadable or p_bad or nplants < PLANT_FLOOR)
+if not p_fail:
+    print("all runner plants apply")
+sys.exit(1 if (unreadable or stale or p_fail) else 0)

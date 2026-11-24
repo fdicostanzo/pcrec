@@ -33,13 +33,6 @@ ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
 . "$ROOT/tests/lib/timeout_bin.sh"
 P="$ROOT/build/pcrec"
 JOBS="${JOBS:-16}"
-# THE BOX LOCK (scripts/boxlock): ~160 compiles and a tree build per copy is
-# over the sweep cap, so the run takes the lock unless its caller holds it
-if ! bash "$ROOT/scripts/boxlock" held; then
-    exec bash "$ROOT/scripts/boxlock" run --label wreply -- bash "${BASH_SOURCE[0]}" "$@"
-fi
-WORK="$(mktemp -d "${TMPDIR:-/tmp}/wreply.XXXXXX")"
-trap 'rm -rf "$WORK"' EXIT
 pass=0 fail=0
 ok()  { pass=$((pass + 1)); }
 bad() { echo "FAIL: $*"; fail=$((fail + 1)); }
@@ -88,24 +81,35 @@ plant_spec() {
 }
 PLANTS="S1413 S1414"
 
-# Applies FILE@@FROM@@TO specs ("\n" a newline) to tree copy $1.
+# Applies FILE@@FROM@@TO specs ("\n" a newline) to tree copy $1, in order, through
+# THE ONE APPLIER (tests/lib/plants.py, dialect `wreply`; lane plantfix: FUW-12's class).
 apply() {
     local dir=$1; shift
-    local spec
-    for spec in "$@"; do
-        python3 -I - "$dir" "$spec" <<'EOF' || return 1
-import sys
-d, spec = sys.argv[1], sys.argv[2]
-f, a, b = spec.split("@@")
-a, b = a.replace("\\n", "\n"), b.replace("\\n", "\n")
-p = d + "/" + f
-s = open(p).read()
-if s.count(a) != 1:
-    sys.exit("%s: the text is found %d times" % (f, s.count(a)))
-open(p, "w").write(s.replace(a, b))
-EOF
-    done
+    python3 -I "$ROOT/tests/lib/plants.py" apply wreply "$dir" -- "$@"
 }
+# plant_edits ID: EDITS=(the edits plant ID's copy takes, in order: S1414 alone, every
+# other plant after both PERTS), or 1 if no plant ID. --plants builds exactly this list.
+plant_edits() {
+    local s; s="$(plant_spec "$1")" || return 1
+    if [ "$1" = S1414 ]; then EDITS=("$s"); else EDITS=("${PERTS[@]}" "$s"); fi
+}
+# --plant-check: every plant in PLANTS (with its PERTS) counted against today's tree,
+# never applied or built, no box lock (scripts/m6read_check_sab_anchors.py's plant pass)
+if [ "${1:-}" = "--plant-check" ]; then
+    args=()
+    for id in $PLANTS; do
+        if plant_edits "$id"; then args+=(--plant "$id" "${#EDITS[@]}" "${EDITS[@]}"); else args+=(--plant "$id" 0); fi
+    done
+    exec python3 -I "$ROOT/tests/lib/plants.py" check wreply "$ROOT" "$ROOT/tests/memfn/run_wreply.sh" -- "${args[@]}"
+fi
+# THE BOX LOCK (scripts/boxlock): ~160 compiles and a tree build per copy is
+# over the sweep cap, so the run takes the lock unless its caller holds it (taken
+# here, below the definitions, so --plant-check above takes none)
+if ! bash "$ROOT/scripts/boxlock" held; then
+    exec bash "$ROOT/scripts/boxlock" run --label wreply -- bash "${BASH_SOURCE[0]}" "$@"
+fi
+WORK="$(mktemp -d "${TMPDIR:-/tmp}/wreply.XXXXXX")"
+trap 'rm -rf "$WORK"' EXIT
 
 # A copy of the tree's tracked files as they stand, with specs applied, built:
 # $1 the copy's name, the rest its specs. Echoes the copy's build dir.
@@ -187,13 +191,13 @@ if [ "${1:-}" = "--plant" ] || [ "${1:-}" = "--plants" ]; then
     [ -n "$ids" ] || { echo "FAIL: --plant needs an id ($PLANTS)"; exit 2; }
     red=0
     for id in $ids; do
-        spec="$(plant_spec "$id")" || { echo "FAIL: no plant $id"; exit 2; }
+        plant_edits "$id" || { echo "FAIL: no plant $id"; exit 2; }
         before=$fail
         if [ "$id" = S1414 ]; then      # caught by the witnesses' stamps alone
-            bd="$(build_copy "plant_$id" "$spec")" || { echo "FAIL: $id: the planted copy does not build"; exit 2; }
+            bd="$(build_copy "plant_$id" "${EDITS[@]}")" || { echo "FAIL: $id: the planted copy does not build"; exit 2; }
             stamps "$bd/pcrec" "plant_$id" >"$WORK/plant_$id.log" 2>&1
         else
-            bd="$(build_copy "plant_$id" "${PERTS[@]}" "$spec")" || { echo "FAIL: $id: the planted copy does not build"; exit 2; }
+            bd="$(build_copy "plant_$id" "${EDITS[@]}")" || { echo "FAIL: $id: the planted copy does not build"; exit 2; }
             reach "$bd" "plant_$id" >"$WORK/plant_$id.log" 2>&1
         fi
         first="$(grep -m1 '^FAIL' "$WORK/plant_$id.log")"

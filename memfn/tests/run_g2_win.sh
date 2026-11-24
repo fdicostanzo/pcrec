@@ -202,8 +202,10 @@ plant_spec() {
     S1423) # D172 S3: D-hors's bound one short (job 581's own plant: `c + K > n` read
         # as `c + K - 1 > n`): the probe and the verify read s[n] (re-aimed at code review
         # r2 R2-7: the bound moved, verbatim but for its indent and `b`, into d_hors_head;
-        # re-aimed at the S3 final review's HOUSE-7: d_hors_head writes the shared bound)
-        echo 'window.c@@    int ih = plan_ix(w, w->hl);\n    kb_printf(b, "if (!(%s)) break; ", bound);@@    int ih = plan_ix(w, w->hl);\n    kb_printf(b, "if (%s + %d > %s) break; ", rc->C, w->chi, rc->N);' ;;
+        # re-aimed at the S3 final review's HOUSE-7: d_hors_head writes the shared bound;
+        # RE-AIMED 2026-11-24 (lane plantfix, FUW-12): d4b25d950 stored the probed index once,
+        # `int ih = w->hix;`, kept in FROM because find_head holds the same bound line)
+        echo 'window.c@@    int ih = w->hix;\n    kb_printf(b, "if (!(%s)) break; ", bound);@@    int ih = w->hix;\n    kb_printf(b, "if (%s + %d > %s) break; ", rc->C, w->chi, rc->N);' ;;
     # code review r1 C13 (S1424 was the S3 review's fix C plant, withdrawn with it: not reused)
     S1425) # code review r1 C13: D-hors's shift VALUE one too far (sh[b] + 1): a candidate
         # the window's last byte admits is skipped
@@ -262,7 +264,9 @@ plant_spec() {
     S3092) # 3.0b (AA): frame_row swapped E-find <-> E-generic on REPORT sites: G2's form class is red
         # RE-ANCHORED 2026-11-16 (lane span4k, MF_SITE_ABI 30): reply_frame writes the caller's rows
         # and returns a verdict, so the swap rides the answered branch
-        echo 'window.c@@            !reply_of(d, out, rows) \&\& !reply_frame(fp, out, rows))\n            rc = 0;\n        else@@            !reply_of(d, out, rows) \&\& !reply_frame(fp, out, rows)) {\n            rc = 0;\n            if (site->site_kind == MF_SK_REPORT \&\& (r == E_FIND || r == E_GENERIC)) snprintf(out->frame_row, sizeof out->frame_row, "%s", r == E_FIND ? "E-generic" : "E-find");\n        } else' ;;
+        # RE-AIMED 2026-11-24 (lane plantfix, FUW-12): 4d00fccfe (span4kfix SEAM-1) wrote the
+        # answered branch as statements, reply_frame then rc = 0; the swap follows them
+        echo 'window.c@@            reply_frame(fp, out, rows);\n            rc = 0;@@            reply_frame(fp, out, rows);\n            rc = 0;\n            if (site->site_kind == MF_SK_REPORT \&\& (r == E_FIND || r == E_GENERIC)) snprintf(out->frame_row, sizeof out->frame_row, "%s", r == E_FIND ? "E-generic" : "E-find");' ;;
     S3093) # 3.0b (AB): plan_test always OWN: G2's table_name population (the hook's own marker
         # g2w_t<id>_<ref>[ matched by offset) is red
         echo 'window.c@@            if (w->off[k] == d->poff[i]) fp->plan_test[i] = test_of(w, k);@@            if (w->off[k] == d->poff[i]) fp->plan_test[i] = MF_WTEST_OWN;' ;;
@@ -299,6 +303,19 @@ plant_spec() {
     esac
 }
 PLANTS="S1400 S1401 S1402 S1403 S1404 S1405 S1406 S1407 S1409 S1410 S1422 S1423 S1425 S1426 S1427 S1428 S1429 S1540 S1541 S1542 S1543 S1549 S2986 S2987 S2989 S2991 S3040 S3041 S3084 S3089 S3090 S3091 S3092 S3093 S3096 S3116 S3117 S3118"
+# plant_edits ID: EDITS=(the plant's FILE@@FROM@@TO edit, one), or 1 if no plant ID.
+# THE ONE APPLIER (tests/lib/plants.py, dialect `win`) decodes and applies it for
+# --plant/--plants, and counts it for --plant-check (lane plantfix: FUW-12's class).
+plant_edits() { local s; s="$(plant_spec "$1")" || return 1; EDITS=("$s"); }
+# --plant-check: every plant in PLANTS counted against today's memfn/src, never
+# applied or built (scripts/m6read_check_sab_anchors.py's plant pass runs this)
+if [ "${1:-}" = "--plant-check" ]; then
+    args=()
+    for id in $PLANTS; do
+        if plant_edits "$id"; then args+=(--plant "$id" 1 "${EDITS[@]}"); else args+=(--plant "$id" 0); fi
+    done
+    exec python3 -I "$ROOT/tests/lib/plants.py" check win "$ROOT/memfn/src" "$ROOT/memfn/tests/run_g2_win.sh" -- "${args[@]}"
+fi
 
 fail_setup() { echo "FAIL: $1"; echo "checks passed: 0"; echo "checks failed: 1"; exit 1; }
 
@@ -357,18 +374,10 @@ if [ "${1:-}" = "--plant" ] || [ "${1:-}" = "--plants" ]; then
     export G2W_NOASAN=1
     bad=0
     for id in $ids; do
-        spec="$(plant_spec "$id")" || fail_setup "no plant $id"
-        file="${spec%%@@*}"; rest="${spec#*@@}"; from="${rest%%@@*}"; to="${rest#*@@}"
+        plant_edits "$id" || fail_setup "no plant $id"
         rm -rf "$WORK/src"; cp -r "$ROOT/memfn/src" "$WORK/src"
-        python3 -I - "$WORK/src/$file" "$from" "$to" <<'EOF' || fail_setup "$id: the plant does not apply"
-import sys
-p, a, b = sys.argv[1], sys.argv[2].replace('\\n', '\n'), sys.argv[3].replace('\\n', '\n')
-a = a.replace('\\&', '&'); b = b.replace('\\&', '&')
-s = open(p).read()
-if s.count(a) != 1:
-    sys.exit("plant text found %d times" % s.count(a))
-open(p, 'w').write(s.replace(a, b))
-EOF
+        python3 -I "$ROOT/tests/lib/plants.py" apply win "$WORK/src" -- "${EDITS[@]}" \
+            || fail_setup "$id: the plant does not apply"
         kit_objs "$WORK/src" "$WORK/pk_$id" || fail_setup "$id: the planted kit does not compile"
         # a planted kit whose text no longer compiles warning-free is red too
         # (one_run says so on its own output; D172 S3: E-find declares F only
