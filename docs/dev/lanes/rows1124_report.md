@@ -9,3 +9,4 @@ Filed five plan rows from 2026-11-24 (docs only). No existing rows on these topi
 
 ## STATE AT HANDOFF
 `make -s test-plan-lint`: 0 violations. Rulings file empty (no entries applied). Nothing owed.
+OWED: none
