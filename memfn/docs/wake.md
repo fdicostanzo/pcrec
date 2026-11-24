@@ -25,7 +25,7 @@ The kit manager (`/pcrec-memfn-manager`). The kit branch is lane/memfn-k1108 (on
   - ubuntubudu is UNAVAILABLE, and there is no Mac cell.
   - **V stays CANDIDATE:** the official SIMD verdict is a pcrec-BENCH run (D155 item 2, D144 add. 4), and 760 was the kit's own cards (unofficial). Main put it to Frank as question simd-v-candidate (11-24); block_span.md keeps CANDIDATE until he rules. (The kit wrongly proposed a lift in d716c9d72; corrected here.)
 - **Nothing open here:** no kit queue jobs, no running lanes, heartbeat deleted.
-  - Leftover worktrees on the dev box: u6time (merged into the kit branch; prune with wtprune once main has it), bsu3/bsu3fix (pinned in .wtprune.keep).
+  - Leftover worktrees on the dev box: bsu3/bsu3fix only (pinned in .wtprune.keep); u6time and its branch were pruned 2026-11-24 03:13.
 - **NEXT (on the Mac):** [KIT-ARCH-STEP] stage 2. Frank's ruling, verbatim in the 11-22 journal: "kit-arch-step: yes but after existing effort completed. Then overall arch review of kit sections with suggestions. Possible refactors, favoring smaller items. Then arch reviews going forwards". Wait for main's charter; use the pcrec-architect skill and critic arch mode.
 - **Sabotage ids:** the next free id is S3570 (ledger worktrees/.mgr/sabotage_ids.txt on the dev box; it is gitignored and does not travel). Ask main for the ledger, or carry the number.
 - **Filed, not built:** mutb.py under parpool (27 min serial); run_g2_win.sh split by head (288 s critical path); r80 FIDELITY-6/7 (ideas.md).
