@@ -4945,3 +4945,4 @@ bsu3fix2 delivered (6cf672b6a on lane/bsu3fix; lanecheck DONE; TaskStop).
     - W29: G6's stack base and G3's x86 half (Linux) are owed;
     - the build depends on lane/memfn-plantcheck landing first.
   - Re-check r98 memfn-winsplit2 coordinator launched.
+- r98 memfn-winsplit2 (rev 2 re-check) RULED (79388197d): NOT READY as written; READY after rev 2.1 (14 FIX-NOW, 12 DOC, no answer-level findings). The gates G1 strict and G3 cannot be green on the Mac; binders.py --compile drops each peel's rows; the U24/U3/U4 lists are short; the census append plants after U1. Kit choice R13: kit_run_set and kit_run_at move to kit_pos.c. Fix lane wsplitd3 (opus) launched; a light §8 re-check after it (number asked of main).
