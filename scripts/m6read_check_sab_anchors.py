@@ -651,6 +651,7 @@ def unit_rows(t):
 
 def selftest(serial):
     scratch = os.environ.get("TMPDIR") or "/var/tmp/pcrec-%s" % os.environ.get("USER", "user")
+    os.makedirs(scratch, exist_ok=True)
     top = tempfile.mkdtemp(prefix="sabanchor-selftest.", dir=scratch)
     t0 = time.monotonic()
     try:
