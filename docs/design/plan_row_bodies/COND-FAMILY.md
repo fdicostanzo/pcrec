@@ -10403,3 +10403,55 @@ inside view and takes those two readings back for the outside view. It also meet
 lets an exported label be read from outside BY NAME (`pair.x`): "I must go through the tree" read literally
 would reverse it; not presumed, asked.
 Put to him as a ruling, slug label-tree.
+
+### 2026-11-23 OWNER, on label-tree: four rules covering paths within a single binding (a target and a start; no underscore label on the path unless it is the start; any label on the path may start; a middle label may be skipped where the target is unambiguous)
+tags: core/labels/rule core/labels/ownership core/labels/export core/labels/export/flat-read-outside core/labels/paths core/labels/paths/binding-prefix core/labels/paths/label-reference core/labels/export/arguments
+
+Asked **label-tree** (three lines: read directly inside the binding; the tree's paths from outside, every step
+open; `[_t = A]` is `[_ = [t = A]]`; the edge: the by-name read from outside). HIS WORDS, whole:
+
+"I can read your underscores in code blocks but I can't read mine curiously
+Label tree:
+"Inside X, both n.h and m.h read the digit." I thought about this and let me refine it.
+Rules covering paths within a single binding:
+1. in the label DAG there is a target label and a starting label. The starting label has at least one path to
+the target label
+2. the path may not contain any underscore labels full or prefix unless the underscore prefix label is the start
+3. within a binding, any label on the path may be used as a start label
+4. if a legal path exists a.b.c and c can be unambiguously referenced from a, then b can be skipped a.c
+Which we should extend for accessing across bindings.
+So your rule above works for reason 4. If there was an underscore label or underscore prefix in the path, that
+section could not be crossed. (Due to the local label equivalence)"
+
+Class: a PROPOSAL that REFINES label-tree ("let me refine it"): four rules, HIS, for paths within one binding,
+with a DIRECTION ("Which we should extend for accessing across bindings"). label-tree as the manager put it is
+NOT answered yes; it is replaced by these rules. NOT yet a ruling: the rules are put back to him with what they
+change and with the extension across bindings (slug path-rules). "the local label equivalence" is his
+`[_t = A]` equivalent to `[_ = [t = A]]` of the entry before.
+TESTED AGAINST THE PRINTED EXAMPLES before telling him (hand-applied to each line of core/labels/rule,
+core/labels/ownership and the pieces they cite; the answers quoted are the documents' printed runs):
+- `[n = [m = A]]`: `n.m.h` (the full path), `n.h` (rule 4), `m.h` (rule 3): all legal. The manager's closure
+  "never `n.m.h`" (withdrawn above) and the open piece stacked-chain's reading (a) are AGAINST rule 1; candidate
+  (b) of that piece is his.
+- "Outer the caller's, inner private", `[n = [_x = P]] & (n.d: <5)`: the path n, `_x`, d holds an underscore
+  label that is not the start: a COMPILE ERROR by rule 2 (printed legal today: the manager's reading (b) of
+  label-doors); the read is `_x.d`, `_x` the start.
+- "Outer private, inner the caller's", `[_x = [n = P]] & (n.d: <5)`: n is a start (rule 3), no underscore after
+  it: legal, as printed.
+- "A blank label in the stack", `[l = [_ = P]] & (l.d: <5)`: the path crosses the blank label: a COMPILE ERROR by
+  rule 2 (printed legal today: the manager's reading (c) of label-doors); nothing reads `d` there, which is
+  export statement 7's "not accessible locally to the binding".
+- his body `A(l:, P) := [l = [_x = P]] & (_x: 5)`: `_x` is the start: legal, as printed.
+- shorthand-is-callers' closing body, `B(A) & (A.d: <5)`, B(rx) := `/${[_ = rx]}xx/`: the caller's shorthand
+  label A is the start in the caller's binding and no underscore follows it: legal, as ruled; through the call
+  the path would cross the blank label: a compile error, as ruled.
+- the by-name read from outside (`pair.x`, `pub.h`; flat-read-outside, ruled 2026-11-22) is rule 4 with the
+  binding's name as the start: it STAYS. The manager's label-tree line "`X.m.h` from outside is a compile error"
+  is against rule 4 (skip `n`): withdrawn.
+The manager's readings (marked; put to him): (a) "any label on the path may be used as a start" means a label
+the binding's own text writes (label-reference, ruled: a label not written here is read with its source); (b)
+"unambiguously" is the existing rule (across `&` a name both sides surface is ambiguous; in a sequence the last
+mention; across `|` the branch taken); (c) the extension across bindings: the start is the binding's name, a
+macro's name at its call, or a label written on the use, then rules 1, 2 and 4 into its tree; a part USED ALONE
+inside that binding is crossed from outside as an underscore label is (default-export, ruled: protected), and is
+a start inside its own binding (the shorthand).
