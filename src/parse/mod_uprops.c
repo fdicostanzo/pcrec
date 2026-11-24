@@ -163,8 +163,8 @@
  * sweeps), while an ASCII fold of `\p{Lu}` would produce a set that is
  * neither. So the substitution IS the caseless rule, and no fold is applied
  * on top of it. */
-/* `ns` is the NAMESPACE the body's prefix selected — one of the three
- * `PCREC_UCD_NS_*` bits the generated table defines.  It is a parameter
+/* `ns` is the NAMESPACE the body's prefix selected — one of the six
+ * `PCREC_UCD_NS_*` bits `ucd_tables.h` defines.  It is a parameter
  * rather than a search over every row because the same NAME denotes different
  * sets in different namespaces: MEASURED ([M5.0] stage 5, and the generator's
  * own header carries the cell), `\p{Greek}` and `\p{scx=Greek}` are
@@ -247,7 +247,7 @@ static int uprops_fold(int c)
  * source moved from a human to the UCD.
  *
  * There is no `uprops_short_lookup` any more either: the one-letter axis is
- * `pcrec_ucd_find(&cx->arena, &folded, 1, ...)`, one call, at the one site that asks it. A
+ * `pcrec_ucd_find(.., &folded, 1, ...)` inside `uprops_produce`, the one site that asks it. A
  * wrapper whose whole body was a length-1 call would be the second home this
  * paragraph is about, one indirection smaller. */
 
@@ -279,11 +279,20 @@ bool pcrec_registry_uprops_recognise(const char *at, size_t avail,
  * time, so there is nothing to share but the mapping itself. */
 static ExtResult uprops_produce(Ctx *cx, ExtWant want, bool in_class,
                                 size_t at, size_t end,
-                                const PcrecCpRange *iv, int n, bool negate)
+                                const char *name, size_t len, unsigned ns,
+                                bool negate)
 {
     ExtResult res = { .what = in_class ? EXT_MEMBERS : EXT_NODE,
                       .at = at, .msg = "", .answered_at = want };
+    /* The decoded interval list is TRANSIENT (the class constructor copies it
+     * into its own set), so it lives in a scratch arena freed here rather than
+     * in the compile arena: a 4,000-item class keeps no 4,000 copies. */
+    Arena tmp = { NULL, cx };
+    int n = 0;
+    const PcrecCpRange *iv =
+        pcrec_ucd_find(&tmp, name, len, ns, cx->mods->caseless, &n);
     res.node = pcrec_ast_class_from_iv(cx, iv, n, negate);
+    pcrec_arena_free(&tmp);
     res.end  = end;
     return res;
 }
@@ -338,14 +347,14 @@ ExtResult pcrec_modport_uprops(Ctx *cx, const RegRow *rw, ExtWant want,
      * position; only the message differs). */
     if ((c0 >= 'A' && c0 <= 'Z') || (c0 >= 'a' && c0 <= 'z')) {
         char folded = (char)uprops_fold(c0);
-        int nv;
-        const PcrecCpRange *iv = pcrec_ucd_find(&cx->arena, &folded, 1, PCREC_UCD_NS_BARE,
-                                           cx->mods->caseless, &nv);
+        /* a probe pass asks only whether the name exists; the set is decoded
+         * only inside uprops_produce, when the result is wanted */
+        const bool known = pcrec_ucd_exists(&folded, 1, PCREC_UCD_NS_BARE);
         i++;
-        if (iv && want == WANT_RESULT)
-            return uprops_produce(cx, want, in_class, at, i, iv, nv,
-                                  sel == 'P');
-        if (iv)
+        if (known && want == WANT_RESULT)
+            return uprops_produce(cx, want, in_class, at, i, &folded, 1,
+                                  PCREC_UCD_NS_BARE, sel == 'P');
+        if (known)
             REFUSE(i, "\\%c requires module '%s'", sel, rw->module);
         if (want == WANT_RESULT)   /* gate open: no module to ask for */
             REFUSE(i, "\\%c: not a one-letter Unicode property code pcrec "
@@ -464,7 +473,6 @@ ExtResult pcrec_modport_uprops(Ctx *cx, const RegRow *rw, ExtWant want,
      * The CLOSED-gate texts are unchanged, byte for byte, which is what keeps
      * every pre-stage-3 `tests/reject/` pin green rather than re-baselined —
      * and the open-gate texts get their own `reject_gated` pins beside them. */
-    int nv = 0;
     /* THE PREFIX SPLIT ([M5.0] stage 5). Before it, any `=` meant "an axis
      * pcrec's table does not cover" and the lookup was skipped outright.
      * Now the two axes it DOES cover are read here, and everything else
@@ -478,13 +486,11 @@ ExtResult pcrec_modport_uprops(Ctx *cx, const RegRow *rw, ExtWant want,
         key = name + sep_at + 1;
         keylen = (size_t)(sig_count - sep_at - 1);
     }
-    const PcrecCpRange *iv =
-        ns == 0 ? NULL
-                : pcrec_ucd_find(&cx->arena, key, keylen, ns, cx->mods->caseless, &nv);
-    if (iv && want == WANT_RESULT)
-        return uprops_produce(cx, want, in_class, at, i, iv, nv,
+    const bool known = ns != 0 && pcrec_ucd_exists(key, keylen, ns);
+    if (known && want == WANT_RESULT)
+        return uprops_produce(cx, want, in_class, at, i, key, keylen, ns,
                               (sel == 'P') ^ caret);
-    if (iv)
+    if (known)
         REFUSE(i, "\\%c requires module '%s'", sel, rw->module);
 
     bool verifiable_axis = sep_at < 0 && sig_count <= 1;

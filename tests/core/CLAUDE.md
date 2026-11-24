@@ -20,7 +20,7 @@ be a second home for something that already has one, for zero gain.
 - `varexp_check.c` — [VAR] M1 (2026-09-23): the expansion grammar (`src/core/varexp.c`), checked below any artifact and below any match. 47 sub-checks: accept rows, refuse ...
 - **flag_access_check.py** -- [FLAG-ACCESS] (lane flagacc, 2026-10-10): THE OPTION WORD'S READER CENSUS AS A GATE, run as the last section of `run_core_tests.sh` (a source ...
 - **ksrc_deps_check.sh** -- [KNOW-SRC] K0 (lane ksrc, 2026-10-16): the knowledge module's DEPENDENCY RULE (`docs/design/measure_sets.md` rev 3 §9.2, sabotage S989).
-- **ucd_wall_check.sh** -- [DATA-PLAN] A1 (lane dpcompact, 2026-11-24): THE UCD WALL, one module (`src/parse/ucd_tables.c`) understands the Unicode tables' format; a text scan over the tree for the generated file's name and private symbols, a planted-include control, a population floor. Mech S3575-S3579.
+- **ucd_wall_check.sh** / **ucd_wall_check.py** -- [DATA-PLAN] A1 (lane dpcompact, 2026-11-24; hardened by dpfix after review r97): THE UCD WALL, one module (`src/parse/ucd_tables.c`) understands the Unicode tables' format. The .sh is a wrapper; the .py derives its needle from the module and its product, scans every non-prose file (docs/ code included), has a src/lib/cli population floor and a whole-pipeline planted control, and lists in its header what a text wall cannot see. Mech S3575-S3579, S3587-S3592.
 - **kindrow_check.sh** -- [INLINE-C] stage 1a (lane ic1a, 2026-10-26): `src/core/kindrow.def` is COMPLETE — the AKind/row census as text, a control, and four plants (new kind, deleted/swapped/duplicated row) that must fail to compile. Five `-fsyntax-only` runs on one subject, ksrc_deps_check.sh's shape.
 
 ## What this directory is for

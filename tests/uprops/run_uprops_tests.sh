@@ -350,7 +350,7 @@ for enc in ${ENC:-byte utf8}; do
     same   "$enc" '\p{^Greek}'       '\P{Greek}'      "caret negation works on a script"
     differ "$enc" '\p{sc=Greek}'     '\p{Greek}'      "sc= is NOT the bare spelling"
 done
-# THE CASELESS RULE, measured (ucd_tables.c's `pcrec_ucd_find`): under `-i`,
+# THE CASELESS RULE, measured (mod_uprops.c's one `pcrec_ucd_find` call, ucd_tables.h): under `-i`,
 # `Lu`/`Ll`/`Lt` ARE `L&` and every other property is unchanged.  Both
 # directions are asserted, because a build that ignored caselessness entirely
 # would pass the second set of cells alone.

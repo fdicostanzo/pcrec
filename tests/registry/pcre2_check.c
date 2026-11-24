@@ -3449,7 +3449,7 @@ static void check_gated_uprops_space(const char *set)
      *     could only ever agree with it or be stale.  So the population is
      *     read from the table (`pcrec_ucd_row_name`) and the ARBITER is
      *     libpcre2, which did not produce it.  That is the same independence
-     *     argument `pcrec_ucd_find`'s own comment makes, one level up.
+     *     argument mod_uprops.c's caseless-rule comment makes, one level up.
      *
      *     THE NAME AXIS DRIFTS BETWEEN UNICODE VERSIONS AND IT DID NOT
      *     BEFORE.  Every stage-3 name is a general category that has existed
@@ -3473,8 +3473,9 @@ static void check_gated_uprops_space(const char *set)
         unsigned ns = 0;
         const char *nm = pcrec_ucd_row_name(i, &ns);
         static const struct { unsigned bit; const char *prefix; } NSPFX[] = {
-            { 1u, "" }, { 2u, "sc=" }, { 4u, "scx=" }, { 8u, "bc=" },
-            { 16u, "blk=" }, { 32u, "age=" },
+            { PCREC_UCD_NS_BARE, "" }, { PCREC_UCD_NS_SC, "sc=" },
+            { PCREC_UCD_NS_SCX, "scx=" }, { PCREC_UCD_NS_BC, "bc=" },
+            { PCREC_UCD_NS_BLK, "blk=" }, { PCREC_UCD_NS_AGE, "age=" },
         };
         for (size_t k = 0; k < sizeof NSPFX / sizeof NSPFX[0]; k++) {
             if (!(ns & NSPFX[k].bit)) continue;
@@ -3483,7 +3484,7 @@ static void check_gated_uprops_space(const char *set)
             int p2 = pcre2_try(pat, strlen(pat), NULL, 0);
             char err2[256];
             int pc = pcrec_try(pat, err2, sizeof err2);
-            if (NSPFX[k].bit & (16u | 32u)) {
+            if (NSPFX[k].bit & (PCREC_UCD_NS_BLK | PCREC_UCD_NS_AGE)) {
                 /* THE EXTENSIONS BEYOND PCRE2 (D178): Block and Age.  pcrec
                  * must ACCEPT them and libpcre2 must REFUSE them -- if a
                  * libpcre2 ever accepts one, D26 makes PCRE2 the truth for

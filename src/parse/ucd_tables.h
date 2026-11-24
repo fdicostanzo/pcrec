@@ -16,8 +16,9 @@
  *
  * A "row" is one (name, namespace mask) entry.  Names are PRE-NORMALISED
  * (upper case; space, tab, hyphen, underscore removed), the form
- * `mod_uprops.c`'s scanner accumulates.  Row ORDER is the writer's and is not
- * a contract.
+ * `mod_uprops.c`'s scanner accumulates.  The writer guarantees AT MOST ONE row
+ * per (name, namespace bit), so a one-bit `ns` selects a row uniquely and row
+ * ORDER is unobservable; a caller passes ONE `PCREC_UCD_NS_*` bit.
  */
 #ifndef PCREC_UCD_TABLES_H
 #define PCREC_UCD_TABLES_H
@@ -37,17 +38,24 @@
 #define PCREC_UCD_NS_BLK  16u   /* pcrec extension: Block */
 #define PCREC_UCD_NS_AGE  32u   /* pcrec extension: Age */
 
-/* The first row named `name[0..len)` whose mask intersects `ns`, its set (the
+/* Is there a row named `name[0..len)` answering namespace bit `ns`?  Decodes
+ * nothing (a scan of the rows), for a pass that only asks whether a name
+ * exists. */
+bool pcrec_ucd_exists(const char *name, size_t len, unsigned ns);
+
+/* The row named `name[0..len)` answering namespace bit `ns`, its set (the
  * `-i` set when `caseless`).  NULL if there is no such row; a row whose set is
  * empty answers non-NULL with `*n == 0`.  The array is allocated from `a` and
  * lives as long as the arena.  Cost: a scan of the rows plus a decode linear
- * in `*n` (about 2 microseconds for `\p{L}`'s 677 intervals). */
+ * in `*n` (about 2 microseconds for `\p{L}`'s 677 intervals); call it only
+ * when the set is wanted (`pcrec_ucd_exists` answers presence). */
 const PcrecCpRange *pcrec_ucd_find(Arena *a, const char *name, size_t len,
                                    unsigned ns, bool caseless, int *n);
 
 /* Is `cp` in the BARE-namespace, case-sensitive set named `normname`?  1 or 0,
- * or -1 when no such row exists.  Allocates nothing (an early-exit decode), so
- * a per-character reader needs no arena. */
+ * or -1 when no such row exists.  Allocates nothing and does not decode the
+ * set: a binary search over the set's checkpoints plus at most one short run
+ * of intervals, so a per-character reader needs no arena and pays O(log n). */
 int pcrec_ucd_contains(const char *normname, unsigned cp);
 
 /* Row enumeration, for the checks that must ask the oracle about every name

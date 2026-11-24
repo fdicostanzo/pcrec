@@ -5,7 +5,7 @@ Three populations, each a list of (name, intervals) where `intervals` is the
 sorted, disjoint, non-adjacent code-point interval list pcrec's own
 `src/core/cpset.c` invariant maintains:
 
-  * `uprops()`   — the 312 DISTINCT sets behind module `unicode-props`' 717
+  * `uprops()`   — the 747 DISTINCT sets behind module `unicode-props`' 1,384
                    name rows, read out of the Unicode tables through
                    `tests/uprops/ucd_dump.c` (the module's own interface).
                    Never re-derived from the UCD: the study measures the sets
@@ -39,23 +39,15 @@ def _parse_inc(path=None):
     (name, ns, off, n, ci_off, ci_n).
 
     [DATA-PLAN] A1: the table's storage format belongs to ONE module
-    (`src/parse/ucd_tables.c`), so this no longer parses the generated file.
+    (behind `src/parse/ucd_tables.h`), so this no longer parses the generated file.
     It reads the TSV `tests/uprops/ucd_dump.c` writes through the module's
-    interface: `$UCD_DUMP` names the file, or `build/ucd_dump` (a binary built
-    from that source against `build/libpcrec.a`) is run.  Each row's two sets
+    interface: `$UCD_DUMP` names the file (required).  Each row's two sets
     are appended to one pool, so `off`/`n` index it as before."""
-    import subprocess
     path = path or os.environ.get("UCD_DUMP")
-    if path:
-        text = open(path, encoding="utf-8").read()
-    else:
-        exe = os.path.join(REPO, "build", "ucd_dump")
-        if not os.path.exists(exe):
-            raise SystemExit("clsets: set UCD_DUMP to the output of "
-                             "tests/uprops/ucd_dump.c (or build it to %s)"
-                             % exe)
-        text = subprocess.run([exe], check=True, capture_output=True,
-                              text=True).stdout
+    if not path:
+        raise SystemExit("clsets: set UCD_DUMP to the output of "
+                         "tests/uprops/ucd_dump.c (the clskit runner does)")
+    text = open(path, encoding="utf-8").read()
     def parse_set(s):
         if s == "-":
             return []
@@ -125,7 +117,8 @@ def k53():
             "ZZZZ": "Unknown(Zzzz)"}
     got = {}
     for name, ns, off, n, cio, cin in rows:
-        if name in want and want[name] not in got:
+        # the BARE namespace only (bit 1): `L` is also a Bidi_Class (bc=L) row
+        if name in want and (ns & 1) and want[name] not in got:
             got[want[name]] = _slice(ivs, off, n)
     missing = [v for v in want.values() if v not in got]
     if missing:

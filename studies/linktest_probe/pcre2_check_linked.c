@@ -2974,7 +2974,7 @@ static void check_gated_option_space(const char *set)
  * THE POPULATION IS THE ORACLE'S, NOT PCREC'S TABLE. The names swept are the
  * closed-gate sweep's own generated space plus a hand-written list of REAL
  * PCRE2 property families this stage does not ship — read from `man
- * pcre2pattern`, never from the generated Unicode table, because a
+ * pcre2pattern`, never from `src/parse/uprops_tables.inc`, because a
  * population derived from the table under test could not contain a name the
  * table forgot. Both floors below are what stop the arm going vacuous if the
  * gate silently fails to open. */

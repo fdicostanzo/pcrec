@@ -8,7 +8,7 @@ modules crosscheck.py also imports, plus their two transitive imports; the
 live studies/cls_tree_study/ is never imported here, docs/CLAUDE.md's
 "studies/ ... never built or tested by pcrec's make", clss1b's fix):
 
-  uprops  the 312 distinct `unicode-props` sets, parsed out of
+  uprops  the 747 distinct `unicode-props` sets, parsed out of
           the Unicode tables (via ucd_dump.c) by the frozen `clsets.uprops()`;
   k53     the six K53 sets and their complements (`clsets.k53()`);
   byte    the 41 distinct corpus byte classes (`clsets.byteclasses()`, from

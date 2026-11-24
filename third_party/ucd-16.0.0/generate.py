@@ -17,8 +17,9 @@ WHAT IT READS   `UnicodeData.txt`, `CaseFolding.txt`, `Scripts.txt`,
 WHAT IT WRITES  four GENERATED files, never hand-edited
                 (`src/parse/cls_bits.inc`'s precedent):
 
-  `src/parse/ucd_tables.inc`         the general-category interval tables
-                                     module `unicode-props` consults.
+  `src/parse/ucd_tables.inc`         the Unicode property tables (interval
+                                     sets and their names), read only through
+                                     `src/parse/ucd_tables.h`.
   `src/core/fold_tables.inc`         [M5.0 stage 4] the simple case-fold
                                      ORBIT relation `src/core/fold.c` walks
                                      to close a caseless class.
@@ -983,19 +984,28 @@ def varint(v):
     return out
 
 
+CK_STRIDE = 32   # a SEARCH checkpoint every this many intervals (see encode_set)
+
+
 def encode_set(ivs):
     """One interval list as delta varints: for each interval, `lo - previous
     hi` (previous hi is 0 before the first) then `hi - lo`.  The count is NOT
-    in the stream — the set table carries it.  THE FORMAT IS DOCUMENTED IN
-    `src/parse/ucd_tables.c`'s header comment and nowhere else; this is its
+    in the stream — the set table carries it.  Returns (bytes, checkpoints):
+    one checkpoint (lo, byte offset within the set, previous hi) for every
+    interval whose index is a multiple of CK_STRIDE other than 0, so a reader
+    can binary-search a long set without decoding it.  THE FORMAT IS DOCUMENTED
+    IN `src/parse/ucd_tables.c`'s header comment and nowhere else; this is its
     writer."""
     out = bytearray()
+    cks = []
     prev = 0
-    for lo, hi in ivs:
+    for i, (lo, hi) in enumerate(ivs):
+        if i and i % CK_STRIDE == 0:
+            cks.append((lo, len(out), prev))
         out += varint(lo - prev)
         out += varint(hi - lo)
         prev = hi
-    return out
+    return out, cks
 
 
 def c_list(vals, per_line=16):
@@ -1013,6 +1023,8 @@ def emit(built):
     # this family's table weight rather than a tidy-up.
     blob = bytearray()
     set_off, set_n = [], []          # one entry per DISTINCT set
+    set_ck = []                      # first checkpoint index of each set
+    ck_lo, ck_off, ck_prev = [], [], []
     sid, by_content = {}, {}
     for key in sorted(sets):
         content = tuple(sets[key])
@@ -1020,11 +1032,29 @@ def emit(built):
             by_content[content] = len(set_off)
             set_off.append(len(blob))
             set_n.append(len(content))
-            blob += encode_set(content)
+            enc, cks = encode_set(content)
+            set_ck.append(len(ck_lo))
+            for lo, off, prv in cks:
+                ck_lo.append(lo)
+                ck_off.append(len(blob) + off)
+                ck_prev.append(prv)
+            blob += enc
         sid[key] = by_content[content]
-    if max(set_n, default=0) > 0xFFFF or len(set_off) > 0xFFFF:
+    if max(set_n, default=0) > 0xFFFF or len(set_off) > 0xFFFF \
+            or len(ck_lo) > 0xFFFF:
         raise SystemExit("the set table no longer fits `unsigned short` — "
                          "widen the emitted arrays")
+
+    # THE INVARIANT `pcrec_ucd_find` relies on: at most one row per (name,
+    # namespace bit).  Row order is then unobservable through the interface.
+    seen = set()
+    for name, ns, _k, _c in rows:
+        for bit in (NS_BARE, NS_SC, NS_SCX, NS_BC, NS_BLK, NS_AGE):
+            if ns & bit:
+                if (name, bit) in seen:
+                    raise SystemExit("two rows named %r answer namespace "
+                                     "bit %d" % (name, bit))
+                seen.add((name, bit))
 
     # NAME BLOB: each distinct name once, NUL-terminated; rows point at it.
     names, name_off = bytearray(), {}
@@ -1043,7 +1073,7 @@ def emit(built):
     nsub = sum(1 for _n, _ns, k, ck in rows if k != ck)
     nivs = sum(set_n)
     nbytes = (len(blob) + len(names) + 4 * len(set_off) + 2 * len(set_n)
-              + 7 * len(rows))
+              + 2 * len(set_ck) + 12 * len(ck_lo) + 7 * len(rows))
     out = [BANNER.format(version=UNICODE_VERSION, nprops=len(rows),
                          nsets=len(set_off), nivs=nivs,
                          nbytes=nbytes, nsub=nsub)]
@@ -1054,13 +1084,21 @@ def emit(built):
                        ("BC", NS_BC), ("BLK", NS_BLK), ("AGE", NS_AGE)):
         out.append("#define UCD_GEN_NS_%s %du\n" % (label, val))
     out.append("\n#define UCD_GEN_NROWS %du\n" % len(rows))
-    out.append("#define UCD_GEN_NSETS %du\n" % len(set_off))
+    out.append("#define UCD_GEN_CK_STRIDE %du\n" % CK_STRIDE)
     out.append("\nstatic const unsigned char ucd_iv_blob[%d] = {\n%s};\n"
                % (len(blob), c_list(list(blob), 24)))
     out.append("\nstatic const unsigned ucd_set_off[%d] = {\n%s};\n"
                % (len(set_off), c_list(set_off)))
     out.append("\nstatic const unsigned short ucd_set_n[%d] = {\n%s};\n"
                % (len(set_n), c_list(set_n)))
+    out.append("\nstatic const unsigned short ucd_set_ck[%d] = {\n%s};\n"
+               % (len(set_ck), c_list(set_ck)))
+    out.append("\nstatic const unsigned ucd_ck_lo[%d] = {\n%s};\n"
+               % (len(ck_lo), c_list(ck_lo)))
+    out.append("\nstatic const unsigned ucd_ck_off[%d] = {\n%s};\n"
+               % (len(ck_off), c_list(ck_off)))
+    out.append("\nstatic const unsigned ucd_ck_prev[%d] = {\n%s};\n"
+               % (len(ck_prev), c_list(ck_prev)))
     # adjacent string literals, `\000` in its 3-digit form so a name that
     # BEGINS with a digit cannot extend the escape
     out.append("\nstatic const char ucd_name_blob[] =\n")
