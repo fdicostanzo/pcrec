@@ -166,6 +166,22 @@ else
 fi
 
 # ---------------------------------------------------------------------------
+# [K155] no heap builder on the compile path: every compile-path StrBuf is a
+# scratch (arena) builder, every private Arena and raw heap call is on the
+# allowlist with its reason, and every Job StrBuf is freed by job_cleanup.
+# A source scan, no build; its independent control is alloc_check.c's
+# stranded-heap property (test-alloc). See scratch_builder_check.py's header.
+# ---------------------------------------------------------------------------
+OUT6B="$WORKDIR/scratch_builder_check.out"
+python3 -I "$SCRIPT_DIR/scratch_builder_check.py" "$ROOT_DIR" | tee "$OUT6B"
+bin6b_rc="${PIPESTATUS[0]}"
+if [ "$bin6b_rc" -eq 0 ]; then
+    ok "scratch_builder_check: $(tail -1 "$OUT6B" | sed "s/^PASS: scratch_builder_check: //")"
+else
+    bad "scratch_builder_check: $(grep -c '^FAIL' "$OUT6B") finding(s) — see above"
+fi
+
+# ---------------------------------------------------------------------------
 # [KNOW-SRC] K0 the knowledge module's DEPENDENCY RULE (S989): the parts
 # (src/core/ksrc.c/.h) include libc + core/ksrc.h only and their object calls
 # nothing `pcrec_`. A text scan and a standalone compile + `nm -u`, with a
