@@ -15,6 +15,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <sys/stat.h>
 
 #include "core/ks_measures.h"
 #include "core/ksrc.h"
@@ -782,22 +783,27 @@ static int meas_write_decoded(const KsOut *o, const void *doc, KsErr *err)
 
 /* ---- the file probe (stop S2, and a FILE value) ------------------------ */
 
+/* The buffer is allocated BEFORE the file is opened, from the file's stat
+ * size: on the compile path `a->alloc` is the arena, whose failure longjmps
+ * (pcrec_ctx_nomem), and an open FILE live across it would be stranded with
+ * its descriptor (review r96 GENFORM-2; the K155 class: nothing unowned live
+ * across a refusal). Only a regular file is read; a file whose length moved
+ * between the stat and the read is "cannot read". */
 int pcrec_ks_meas_read_file(const KsAlloc *a, const char *path,
                             const KsMeasSet **out, KsErr *err)
 {
-    FILE *f = fopen(path, "rb");
-    char *buf;
-    long sz;
-    size_t got;
-    if (!f) return mfail(err, path, "cannot open");
-    if (fseek(f, 0, SEEK_END) || (sz = ftell(f)) < 0 || fseek(f, 0, SEEK_SET)) {
-        fclose(f);
+    struct stat st;
+    if (stat(path, &st)) return mfail(err, path, "cannot open");
+    if (!S_ISREG(st.st_mode) || st.st_size < 0)
         return mfail(err, path, "cannot read");
-    }
-    buf = a->alloc(a->ctx, (size_t)sz + 1);
-    got = fread(buf, 1, (size_t)sz, f);
+    size_t sz = (size_t)st.st_size;
+    char *buf = a->alloc(a->ctx, sz + 1);
+    FILE *f = fopen(path, "rb");
+    if (!f) return mfail(err, path, "cannot open");
+    size_t got = fread(buf, 1, sz, f);
+    int more = getc(f) != EOF;
     fclose(f);
-    if (got != (size_t)sz) return mfail(err, path, "cannot read");
+    if (got != sz || more) return mfail(err, path, "cannot read");
     return pcrec_ks_meas_parse(a, buf, got, path, out, err);
 }
 

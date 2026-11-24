@@ -720,7 +720,7 @@ const char *pcrec_cover_proof_diff(Ctx *cx, const PcrecCover *cv, const mf_class
 void pcrec_cover_listing_cells(Ctx *cx, const char *cells[4])
 {
     const PcrecCover *cv = cx->job->cover;
-    StrBuf sb = { 0 };
+    StrBuf sb = pcrec_sb_scratch(&cx->arena);
     if (!cv) {
         cells[0] = "unasked";
         cells[1] = cells[2] = "-";
@@ -733,7 +733,6 @@ void pcrec_cover_listing_cells(Ctx *cx, const char *cells[4])
     if (cv->why && !cover_width_bounded(cx)) { cells[2] = "-"; return; }
     if (!cv->exact_known) { cells[2] = "0"; return; }
     cells[2] = pcrec_sb_fragf(&cx->arena, "%u", (unsigned)cv->exact_len);
-    sb.cx = cx;
     for (int d = 0; d < cv->exact_len; d++) {
         int n = 0, one = 0;
         for (int b = 0; b < 256; b++)

@@ -1165,8 +1165,7 @@ static void emit_req_handoff_rest(Ctx *cx, StrBuf *c, const char *indent,
         pcrec_sb_cmt_close(c);
         pcrec_sb_printf(c, "%shandoff_position = %s;\n", indent, posvar);
     } else {
-        StrBuf round = { 0 };
-        round.cx = cx;
+        StrBuf round = pcrec_sb_scratch(&cx->arena);
         pcrec_emit_start_zero(cx, &round, dfa_fragf(cx, "%s    ", indent),
                               "handoff_position", subjvar, lenvar,
                               PCREC_START0_ROUNDUP);
@@ -3673,8 +3672,7 @@ static const PcrecEncSiteText *residual_sites(Ctx *cx, const PcrecEnc *enc,
     for (const PcrecEncEntry *t = enc->entries; t->decls; t++) {
         const PcrecEncSite *es = pcrec_enc_site(enc, t->id);
         if (!(m & t->id) || !t->inline_def || !es) continue;
-        StrBuf loop = { 0 };
-        loop.cx = cx;
+        StrBuf loop = pcrec_sb_scratch(&cx->arena);
         mf_hooks h;
         mf_site *s = pcrec_memfn_span_site(cx, es, &h);
         pcrec_memfn_emit(cx, DELEG_N7, s, &h, &loop);
@@ -5375,8 +5373,7 @@ static int scan_set_low(const Dfa *d, const DState *st)
 /* The scan set's classes as comment text: "class 3", or "classes 1, 2". */
 static const char *scan_set_text(Ctx *cx, const Dfa *d, const DState *st)
 {
-    StrBuf b = { 0 };
-    b.cx = cx;
+    StrBuf b = pcrec_sb_scratch(&cx->arena);
     int k = 0;
     for (int c = 0; c < d->ncls; c++)
         if (pcrec_scan_has(st, c)) pcrec_sb_printf(&b, "%s%d", k++ ? ", " : "", c);
@@ -8059,8 +8056,7 @@ static void emit_req_landmark_move(Ctx *cx, StrBuf *c, const char *ind,
     pcrec_sb_printf(c, "%s    }\n", ind);
     if (!pcrec_bound_bounded(kb))       /* [REQ-PAST-LAST] no move to make */
         return;
-    StrBuf round = { 0 };
-    round.cx = cx;
+    StrBuf round = pcrec_sb_scratch(&cx->arena);
     pcrec_emit_start_zero(cx, &round, dfa_fragf(cx, "%s        ", ind), pos,
                           "subject", "subject_length", PCREC_START0_ROUNDUP);
     emit_req_move_open(c, dfa_fragf(cx, "%s    ", ind), "landmark_position", pos, pos,
@@ -13249,8 +13245,7 @@ static const char *scan_test(const DfaForm *f, int head)
     scan_choice(f->cx, f->d, head, &ch);
     ClsTest t = pcrec_clskit_test(&ch);
     if (t == CLS_TEST_RANGE || t == CLS_TEST_FOLD) {
-        StrBuf c = { 0 };
-        c.cx = f->cx;
+        StrBuf c = pcrec_sb_scratch(&f->cx->arena);
         pcrec_clskit_emit_inline(&c, &ch, f->dir->peek);
         const char *text = dfa_fragf(f->cx, "%s", c.p ? c.p : "");
         pcrec_sb_free(&c);

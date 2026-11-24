@@ -1382,7 +1382,7 @@ else
             # belt-and-braces against the two ever disagreeing.
             bad "[F6(b)] [D110] the allocation-failure injector's own verdict is non-clean (rc=$ALLOCRC, both K60 classes are closed so this is a regression or a collapsed population) — see $ALLOCOUT: $(grep -E 'SUCCEEDED THROUGH|POPULATION fell|EMPTY message' "$ALLOCOUT" | head -3)"
         else
-            ok "[F6(b)] [D110] the allocation-failure injector's four witnesses: no forced allocation failure kills the process (K7's own promise holds), and none is silently absorbed (K60, both classes closed) — darwin-viable, no ulimit needed."
+            ok "[F6(b)] [D110] the allocation-failure injector's witnesses: no forced allocation failure kills the process (K7's own promise holds), and none is silently absorbed (K60, both classes closed) — darwin-viable, no ulimit needed."
         fi
     fi
 fi

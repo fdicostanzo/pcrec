@@ -127,19 +127,29 @@ static void vars_intern_tree(Ctx *cx, const VarExp *x)
  * dependency analysis of its own. */
 static int vars_intern_exp(Ctx *cx, const VarExp *x)
 {
+    /* Each key is rendered once, here, and kept beside its expansion
+     * (`Ctx.var_exp_keys`): a render per earlier expansion per lookup made
+     * the renders, and the arena memory they keep, quadratic in the number
+     * of expansions (review r96 COST-1). */
     const char *key = pcrec_varexp_render(&cx->arena, x);
     for (unsigned i = 0; i < cx->n_var_exps; i++)
-        if (strcmp(pcrec_varexp_render(&cx->arena, cx->var_exps[i]), key) == 0)
+        if (strcmp(cx->var_exp_keys[i], key) == 0)
             return (int)i;
 
     unsigned cap = 1;
     while (cap < cx->n_var_exps + 1) cap *= 2;
     if (cx->n_var_exps == 0 || (cx->n_var_exps & (cx->n_var_exps - 1)) == 0) {
         const VarExp **nv = pcrec_arena_alloc(&cx->arena, cap * sizeof *nv);
-        for (unsigned i = 0; i < cx->n_var_exps; i++) nv[i] = cx->var_exps[i];
+        const char **nk = pcrec_arena_alloc(&cx->arena, cap * sizeof *nk);
+        for (unsigned i = 0; i < cx->n_var_exps; i++) {
+            nv[i] = cx->var_exps[i];
+            nk[i] = cx->var_exp_keys[i];
+        }
         cx->var_exps = nv;
+        cx->var_exp_keys = nk;
     }
     cx->var_exps[cx->n_var_exps] = x;
+    cx->var_exp_keys[cx->n_var_exps] = key;
     return (int)cx->n_var_exps++;
 }
 
