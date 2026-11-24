@@ -4952,3 +4952,4 @@ bsu3fix2 delivered (6cf672b6a on lane/bsu3fix; lanecheck DONE; TaskStop).
   - Re-run green at the merged tip by the manager.
   - lane/memfn-plantcheck pushed at b451600bb; code PR #1 opened (review and Linux CI only; main merges locally).
   - OWED on Linux: the full make test and the 7 pres x86-SIMD plants.
+- main ran the 7 pres x86 plants at 6399dfd86 (job 200-main-pres7, Zen 4, 629 s): 6 of 7 DETECTED; S3012 GREEN (NOT DETECTED; oracle green, rows=84780). MY ERROR: the pass form I gave main was wrong. Lines read 'PLANT <id> RED', no '> ', and a detected plant exits rc 0. Doc fix to the runner header. PR #1 is HELD until S3012 is detected or argued equivalent. Main has queued S3012 at the base b9f81ef80 (100-main-s3012base). If it is GREEN at the base, it is pre-existing: PR #1 lands and S3012 becomes a kit K row. Triage lane s3012tri (opus) launched (D203: cause, class, siblings, fix shape).
