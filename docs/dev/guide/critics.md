@@ -11,7 +11,7 @@ A critic reviews a diff against the guide (`coding.md`, `architecture.md`,
 `style.md`, the area's `addenda/`). Critics are read-only and never run `make`
 (D6). Where a finding is already known, use blinded critics (D27). Label
 findings CONFIRMED (with repro) or SUSPECTED and carry a PROBED-AND-HELD list
-(`docs/dev/reviews/CLAUDE.md`).
+(`docs/dev/reviews/INDEX.md`, one line per round).
 
 ## Standing lenses
 1. **Design compliance.** Does the change follow `architecture.md`? Is each
