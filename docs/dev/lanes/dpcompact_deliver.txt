@@ -1,0 +1,5 @@
+report: docs/dev/lanes/dpcompact_report.md
+sections: Summary; Interface; Format; Measurement; Validation; STATE AT HANDOFF
+nonempty: all
+commit: yes
+owed: dpcompact-test dpcompact-mech dpcompact-sweep dpcompact-uprops-utf8
