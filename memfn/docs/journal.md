@@ -4943,3 +4943,9 @@ bsu3fix2 delivered (6cf672b6a on lane/bsu3fix; lanecheck DONE; TaskStop).
   The 7 pres x86-SIMD plants read "red but not by detector" on aarch64 (the same before and after), so they need a Linux run: the PR's CI does not run --plants, so that run stays OWED on the dev box.
 - r94 memfn-plantcheck handed back: no answer finding. S1423, S3064 and S1224 go red for their reasons; S3092 goes red by another class (CA-7). Design: no standing control (29/35 mutants survive); check and apply share decode() but not the apply loop. A grandchild hang (PAR-3) and mktemp leaks (PAR-1). RULED (c1efbe938): FIX-NOW CA-1..8, GF-1 (twin equality YES), GF-2 (runner plant S1540 -> S1544), PAR-1/2/3; PLAN items to main; GF-3 DOC. Coordinator stopped. Fix lane plantfix2 (opus) launched with the critic's 35-mutant harness as its acceptance gate.
 - main: S1544 is free; main's ledger records S1541-S1559 as the KIT's runner-plant range (main never allocates there); relayed to plantfix2 as R-1. The r94 BASE lesson is in pcrec-critic §3. PLAN (1), (2) and (4) are filed by main; (3) mut.py goes to the predicate manager. Push lane/memfn-plantcheck plus a code PR when plantfix2 delivers.
+- plantfix2 delivered (18c219c1b) and merged.
+  - Mutants: 63 of 65 killed, 2 argued equivalent, 0 survived. The live pass gives 81 at pins and 39 twins; the self-test is 56 cases + 11 unit rows.
+  - test-codegen: only the 3 known Mac reds; make strict: 0 warnings.
+  - Re-run green at the merged tip by the manager.
+  - lane/memfn-plantcheck pushed at b451600bb; code PR #1 opened (review and Linux CI only; main merges locally).
+  - OWED on Linux: the full make test and the 7 pres x86-SIMD plants.
