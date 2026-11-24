@@ -1,6 +1,6 @@
 # The memfn kit: architecture review of its sections (R-49, [KIT-ARCH-STEP] stage 2)
 
-STATUS: DRAFT rev 4, for the manager's acceptance. Rev 1 (lane archrev) was reviewed as r91 `memfn-archrev`
+STATUS: ACCEPTED (rev 4; the kit manager, 2026-11-24, after reviews r91, r92 and r93). Suggestions are FILED, not built; §9 goes to the owner via main. Rev 1 (lane archrev) was reviewed as r91 `memfn-archrev`
 (`docs/dev/reviews/2026-11-24-r91-memfn-archrev.md`); rev 2 (lane archrev2, a fresh architect) answered its findings
 F1-F20 and was re-checked as r92 `memfn-archrev2` (`docs/dev/reviews/2026-11-24-r92-memfn-archrev2.md`); rev 3 (lane
 archrev3, a third fresh architect) answered r92's G1-G12 and G14 and applied its RULING on G13 (§9 gained a sub-part),
