@@ -10316,3 +10316,17 @@ The manager's thoughts (told to him; marked; nothing applied):
   second kind of effect arrives (the array request being built), or the capture request needs one more fence.
 For the next fold (lane predfold1124): lib/structural/capture/in-set becomes ruled for `|` and `&`, its two other
 cases marked readings; the parked piece above.
+
+### 2026-11-23 OWNER, on exact-count-unspecified: "how about it matches 0 meaning the section is removed"
+tags: core/operators/bindings/unspecified core/holes/count lib/rx/repeat lib/modifiers/padded-to core/principles/conservative-first
+
+Asked **exact-count-unspecified** (the underscore where a body writes an exact count, `E(x, n) :=
+/(?:${x}){${n}}/`, `E(rx.digit, _)`: "error", by unspecified-rule (`{}` is no regex form), the documents'
+marked reading and the manager's leaning; or "zero-or-more", by count-unspecified, an exact count being both
+bounds). HIS WORDS, whole:
+
+"exact-count-unspecified: how about it matches 0 meaning the section is removed. There may be programmatic
+reasons someone doesn't want a stretch to exist. Although, theres probably better ways to express it."
+
+Class: a PROPOSAL as a question ("how about"), a THIRD candidate: the unspecified exact count is the count 0,
+the section removed; with his own doubt ("theres probably better ways to express it"). NOT a ruling.
