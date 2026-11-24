@@ -1,0 +1,17 @@
+NONSAME core.md 145 DIFF '/\\d+/ & /^\\d$/' | WHOLE `1` FAILS, `12` FAILS / SEARCHED `a12 1` FAILS / FIND-ALL `12 3` []
+NONSAME core.md 1011 DIFF '/\\d+/ & /^\\d$/' | WHOLE `1` FAILS, `12` FAILS / SEARCHED `a12 1` FAILS / FIND-ALL `12 3` []
+NONSAME core.md 252 DIFF 'wb SEQ digits SEQ wb' | WHOLE `12` FAILS, `x12` FAILS / SEARCHED `x12 34` FAILS / FIND-ALL `12 x34 56` []
+NONSAME core.md 303 DIFF '/(?=\\d*(?<l>\\d)\\b)(?<f>\\d)\\d*/ & (l: > $f)' | WHOLE `1234` FAILS, `4321` FAILS / SEARCHED `4321 1234` FAILS / FIND-ALL `1234 4321 77` []
+NONSAME core.md 336 DIFF '/(?:(?<h>\\d+)(?::(?<m>\\d\\d))?,)*\\k<m>/ & (m: "45")' | WHOLE `9:45,10:45,45` FAILS, `9:45,10,45` FAILS / SEARCHED `9:45,10,45 1:45,45` FAILS / FIND-ALL `9:45,10,45 1:45,45` []
+NONSAME core_details.md 541 DIFF '/(?:(?:(?<h>\\d);)+,)+/ & (h[2]: "5")' | WHOLE `3;4;,5;,` FAILS, `3;,5;,` HOLDS / SEARCHED `x3;4;,5;,` `4;,5;,`@3 / FIND-ALL `3;4;,5;, 3;,5;,` [`4;,5;,`@2, `3;,5;,`@9]
+NONSAME core_details.md 542 DIFF '/(?:(?<d>\\d)(?<d>\\d),)+/ & some((d: "7"))' | WHOLE `71,` HOLDS, `17,` HOLDS / SEARCHED `x71,` `71,`@1 / FIND-ALL `71, 17, 12,` [`71,`@0, `17,`@4]
+NONSAME core_details.md 543 DIFF '/(?<h>\\d);(?:(?<h>\\d);)*/ & some((h: "7"))' | WHOLE `7;` HOLDS, `1;7;` HOLDS / SEARCHED `x7;` `7;`@1 / FIND-ALL `7; 1;7; 1;` [`7;`@0, `1;7;`@3]
+NONSAME core_details.md 544 DIFF '/(?:(?<h>\\d):(?<m>\\d),)+/ & some((h: "5", m: "3"))' | WHOLE `5:1,2:3,` HOLDS, `5:3,` HOLDS, `2:1,` FAILS / SEARCHED `2:1, 5:1,2:3,` `5:1,2:3,`@5 / FIND-ALL `5:1,2:3, 2:1, 5:3,` [`5:1,2:3,`@0, `5:3,`@14]
+NONSAME core_details.md 545 DIFF '/(?:(?<d>\\d)?,)+/ & some(NOT (d: "7"))' | WHOLE `,` FAILS, `7,` FAILS, `1,` HOLDS / SEARCHED `7, ,` FAILS / FIND-ALL `, 7, 1,` [`1,`@5]
+NONSAME core.md 806 DIFF 'A SEQ B' | WHOLE `733` FAILS, `737` FAILS / SEARCHED `x737 733` FAILS / FIND-ALL `733 737 455` []
+NONSAME core.md 941 CRASH '[h = rx.digit] SEQ ((h: <5))?' | TypeError
+NONSAME core.md 1528 DIFF '/(?<h>a)-${q}\\k<h>/' | WHOLE `a-ba` FAILS, `a-bb` FAILS / SEARCHED `x a-bb a-ba` FAILS / FIND-ALL `a-ba a-bb a-ba` []
+NONSAME core.md 1764 DIFF 'rx.repeat(rx.digit, 3)' | WHOLE `1234` FAILS / SEARCHED `12345` `123`@0 / FIND-ALL `1234567` [`123`@0, `456`@3]
+NONSAME core_details.md 1426 unparsed '10:15' | 
+NONSAME core_details.md 1456 unparsed '(sum: <10)' | 
+NONSAME library_details.md 727 DIFF '/(?:(?<d>\\d)?,)+/ & some((d: "7")) & occurs.none(NOT (d: "7"))' | WHOLE `7,7,` HOLDS, `7,,` HOLDS, `7,1,` FAILS / SEARCHED `7,, 7,7,` `7,,`@0 / FIND-ALL `7,, 7,1, 7,7,` [`7,,`@0, `7,`@4, `7,7,`@9]

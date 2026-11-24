@@ -165,12 +165,18 @@ One table of severity by selector for the three warning controls.
 Trigger: the next design step on warnings or on `@options` (item 20), or any build of one of the three controls,
   whichever comes first.
 Source: the ideas file item 23 (its whole text in the details entry).
+- Its trigger has fired: the program options (lib/builtin/options) were a design step on `@options`. The table is
+  not made; its general form, one table of the file settings (what each governs, its reach, whether it crosses an
+  import or a hole, its strength), is planned, this table its warning column.
 modes: n/a (parked: not in the language)
 
-### For the user documentation: the things a reader will get wrong   [parked/ideas/user-doc-traps]   parked 2026-11-19
+### For the user documentation: the things a reader will get wrong   [parked/ideas/user-doc-traps]   parked 2026-11-22
 A list of the things a reader will get wrong unless told, for the user documentation.
 Trigger: the first user documentation of the predicate language (docs/guide/ tier); until then the manager appends.
 Source: the ideas file item 24 (its whole text in the details entry).
+- A user's macro passes none of its argument's labels on unless its author writes the export list on the spot: his
+  pair, `hide(x) := /${x}/` (none) and `identity(x) := /${[(=) = x]}/` (all), match alike and export differently;
+  the provided library's convention covers provided bodies only (lib/convention/argument-labels).
 modes: n/a (parked: not in the language)
 
 ### Label hygiene for libraries   [parked/ideas/label-hygiene]   parked 2026-11-22
@@ -255,6 +261,16 @@ Source: the ideas file item 34 (its whole text in the details entry).
 see: core/operators/bindings/macro-types
 - The THING is under construction as core/operators/bindings/macro-types, which supersedes this entry; kept as the
   ideas file's record.
+modes: n/a (parked: not in the language)
+
+### A pass-through mark in a macro's head   [parked/ideas/pass-through-mark]   parked 2026-11-23
+A parameter marked in the macro's head as passing its argument's labels on, in place of `[(=) = x]` on every spot.
+Trigger: the first user macro with two or more spots needing the list, or the spellings review.
+Source: a critic's unlock on the general form of core/principles/label-names-spot (the details entry).
+see: lib/convention/argument-labels parked/ideas/user-doc-traps
+- The general form: a name is visible where its spot is placed and listed. A mark in the head (a spelling such as
+  `(=)x`, a placeholder) is one opt-in per parameter in place of the list on each spot (list_of's three spots,
+  padded's width form), and makes `hide` and `identity` differ in the signature, not only in the body.
 modes: n/a (parked: not in the language)
 
 ### Number operations over a base given by a class   [parked/ideas/class-base]   parked 2026-11-19

@@ -1,0 +1,708 @@
+== library bodies (library.md): chars ([ch = /(?s:.)/])* ; length(S) := chars & (count((chars.ch: /(?s:.)/)): S) ; month_numbered(S) := months & (months.mname.index: S) ; between: >= lo & <= hi
+== months := [mname = [/Jan(?:uary)?/, /Feb(?:ruary)?/, /Mar(?:ch)?/, /Apr(?:il)?/, /May/, /June?/, /July?/, /Aug(?:ust)?/, /Sep(?:tember)?/, /Oct(?:ober)?/, /Nov(?:ember)?/, /Dec(?:ember)?/]]
+== CONTROL: the loaded matcher against python `re`
+PASS CONTROL: differing (WHOLE, SEARCHED, FIND-ALL): `"ab" | "a"` (0, 0, 0); `identity(A)` against `\d` (0, 0, 0) over 40 texts
+== ARGNAME (the ruling): the caller's read of an argument's label, the body using it alone, is refused
+PASS ARGNAME: refused naming argument-default: `B(A) & (A.d: <5)` B alone True; his example 1 `C := B(A) & (A.d: <100)` True; the body with its own d True; `pair` using it twice alone True; the spot labelled `[p = rx]`: `A.d` legal, against "the FIRST digit under 5" differing 0; both uses (alone and labelled): the labelled spot's, differing 0, over 40 texts
+   refusal: `A.d`: a label of an argument, which is a template and not a spot in the pattern (a compile error, core/labels/paths/argument-default)
+== ARGLABEL (reading (a)): a part label written ON an argument labels a template: refused
+PASS ARGLABEL: refused naming argument-default: `B([a = A]) & (a.d: ..)` True; `atomic([ab = B | A]) & (ab.l: <20)` True; `rx.repeat([a = rx.digit], min = 1) & (a: "3")` True; through a body that lists the spot, the caller's own `a.d` True (the call's path `B.a.d`: refused)
+   refusal: `ab.l`: a label of an argument, which is a template and not a spot in the pattern (a compile error, core/labels/paths/argument-default)
+== INPLACE (reading (b)): a group written in an argument in place is not the caller's; the body's is `B.d`
+PASS INPLACE: refused naming argument-default: bare `d` True, `x.d` on the argument True, `hits(..) & (g: "x")` True; `B.d` reads the body's own d, against "the SECOND digit under 5" differing 0 over 40 texts
+== ARGOWN (reading (c)): a read written inside the argument travels with the template
+PASS ARGOWN: `occurrences(/(?<n>\d+)/ & (n: <100))` legal True; WHOLE over ['1234', '123', '12', '1', '12345', '100']: [True, True, True, True, True, True] (every text splits into hits under 100)
+== SPOT (reading (d), wrapper-export): a spot the body labels or lists passes the argument's labels on
+PASS SPOT: legal: `B.dd.d` (his example 3's spot) / at C, `hits.hit.g`, `occurrences.hit.n`, `peek.d`, `atomic.l` over an expression, `endsWith.n`, `contains.n`, `padded.v`: [True, True, True, True, True, True, True, True, True]; `atomic(B | A) & (atomic.l: ..)` (bindings used alone in the argument export nothing) refused True; differing from direct predicates (`B.dd.d` under 100; the last hit's g is x; peek's first digit under 5; atomic's `l` under 20 is the 1x numbers; endsWith's greedy-gap last run is `3`): (0, 0, 0, 0, 0)
+== TWOSPOT (the cases): two spots of one argument, several arguments, a looped spot
+PASS TWOSPOT: differing from direct predicates: list_of's last item is 5 0; pair's two spots, the last mention (the second digit) 0; W's two arguments, one label, the last mention 0; rx.repeat's looped spot, the last item 0, a group question every item 0
+== USERMACRO (his pair): `identity` passes the labels on, `hide` none; both match what x matches
+PASS USERMACRO: `identity(A) & (identity.d: <5)` legal, differing 0; `hide(A) & (hide.d: <5)` refused (hide exports no `d`) True; `hide(A)` against `identity(A)` differing (0, 0, 0) over 40 texts
+   refusal: `hide.d`: `d` is not visible through `hide` (a compile error, core/labels/paths)
+== PLACES (the census): every provided body that places a parameter in a pattern hole writes the list or labels the spot
+   padded       rx    listed
+   padded       rx    listed
+   padded       n     count/name hole
+   any_case     rx    listed
+   length       S     not placed in a hole
+   month_numbered S     not placed in a hole
+   peek         A     listed
+   when         test  listed
+   when         then  listed
+   when         else  listed
+   atomic       X     listed
+   hits         r     spot-labelled
+   rx.range     a     class position (no pattern)
+   rx.range     b     class position (no pattern)
+   repeat       x     listed
+   repeat       n     count/name hole
+   repeat       x     listed
+   repeat       min   count/name hole
+   repeat       max   count/name hole
+   repeat       x     listed
+   repeat       min   count/name hole
+   capture      name  count/name hole
+   capture      x     listed
+   capture      x     listed
+   padded       rx    listed
+   quoted       S     listed
+   occurrences  x     spot-labelled
+   occurrences  min   count/name hole
+   contains     s     listed
+   startsWith   s     listed
+   endsWith     s     listed
+   anchored     s     listed
+   list_of      X     listed
+   list_of      S     listed
+PASS PLACES: 34 (body, parameter) pairs read from library.md's body texts (`name(..) := ..`): class position (no pattern) 2, count/name hole 7, listed 21, not placed in a hole 2, spot-labelled 2; a parameter placed alone in a hole: none
+== CONVENTION: the convention stated once; every covered body's piece points at it
+PASS CONVENTION: the convention sentence occurs 1 time(s) in library.md; covered pieces not pointing at lib/convention/argument-labels: none (of 13)
+== GRID: the name grid, spelling x occurrences of its source x read kind; each cell its deciding sentence
+   bare                   one  plain | `/(?<h>\d)/ & (h: "3")` | core/labels/paths/label-reference: "a bare name is a label the definition itself writes" | legal | WHOLE `3` HOLDS, `7` FAILS / SEARCHED `x3` `3`@1 / FIND-ALL `3 7` [`3`@0]
+      -> AGREE
+   bare                   one  $     | `(/(?<h>\d)/) SEQ $h` | core/labels/paths/label-reference: "a bare name is a label the definition itself writes" | legal | WHOLE `33` HOLDS, `77` HOLDS, `3` FAILS / SEARCHED `x33` `33`@1 / FIND-ALL `33 77 3` [`33`@0, `77`@3]
+      -> AGREE
+   bare                   one  group | `/(?<h>\d)/ & some((h: "3"))` | core/labels/labels-vs-captures/array-vs-passes: "The group questions (`some`, `count`, `occurs`) and the index `h[k]` read the array of a name's settings: every setting, in order" | legal | WHOLE `3` HOLDS, `7` FAILS / SEARCHED `x3` `3`@1 / FIND-ALL `3 7` [`3`@0]
+      -> AGREE
+   bare                   one  index | `/(?<h>\d)/ & (h[1]: "3")` | core/labels/labels-vs-captures/array-vs-passes: "The group questions (`some`, `count`, `occurs`) and the index `h[k]` read the array of a name's settings: every setting, in order" | legal | WHOLE `3` HOLDS, `7` FAILS / SEARCHED `x3` `3`@1 / FIND-ALL `3 7` [`3`@0]
+      -> AGREE
+   bare                   seq  plain | `/(?<h>\d)/ SEQ /(?<h>\d)/ & (h: "3")` | core/labels/flow: "Across the sequence operator a name both parts surface is one label, the last mention" | legal | WHOLE `33` HOLDS, `73` HOLDS, `37` FAILS / SEARCHED `x33` `33`@1 / FIND-ALL `33 73 37` [`33`@0, `73`@3]
+      -> AGREE
+   bare                   seq  $     | `(/(?<h>\d)/ SEQ /(?<h>\d)/) SEQ $h` | core/values/reads: "`$x` and `x:` never disagree" | legal | WHOLE `333` HOLDS, `377` HOLDS, `33` FAILS / SEARCHED `x333` `333`@1 / FIND-ALL `333 377 33` [`333`@0, `377`@4]
+      -> AGREE
+   bare                   seq  group | `/(?<h>\d)/ SEQ /(?<h>\d)/ & some((h: "3"))` | core/labels/labels-vs-captures/array-vs-passes: "The group questions (`some`, `count`, `occurs`) and the index `h[k]` read the array of a name's settings: every setting, in order" | legal | WHOLE `33` HOLDS, `37` HOLDS, `77` FAILS / SEARCHED `x33` `33`@1 / FIND-ALL `33 37 77` [`33`@0, `37`@3]
+      -> AGREE
+   bare                   seq  index | `/(?<h>\d)/ SEQ /(?<h>\d)/ & (h[1]: "3")` | core/labels/labels-vs-captures/array-vs-passes: "The group questions (`some`, `count`, `occurs`) and the index `h[k]` read the array of a name's settings: every setting, in order" | legal | WHOLE `33` HOLDS, `37` HOLDS, `73` FAILS / SEARCHED `x33` `33`@1 / FIND-ALL `33 37 73` [`33`@0, `37`@3]
+      -> AGREE
+   bare                   and  plain | `/(?<h>\d)\d/ & /\d(?<h>\d)/ & (h: "3")` | core/labels/flow: "Across `&` a name both sides surface is an ambiguous reference: a compile error where a condition or a `$` references it" | refused:core/labels/flow | REFUSED (`h`: both sides of `&` surface it, an ambiguous reference (core/labels/flow))
+      -> AGREE
+   bare                   and  $     | `(/(?<h>\d)\d/ & /\d(?<h>\d)/) SEQ $h` | core/labels/flow: "Across `&` a name both sides surface is an ambiguous reference: a compile error where a condition or a `$` references it" | refused:core/labels/flow | REFUSED (`h`: two sides of one `&` set it and the read can see both, an ambiguous reference (a compile error, core/labels/flow))
+      -> AGREE
+   bare                   and  group | `/(?<h>\d)\d/ & /\d(?<h>\d)/ & some((h: "3"))` | core/labels/flow: "A group question over a name both sides of `&` surface reads both sides' settings" | legal | WHOLE `33` HOLDS, `37` HOLDS, `77` FAILS / SEARCHED `x33` `33`@1 / FIND-ALL `33 37 77` [`33`@0, `37`@3]
+      -> AGREE
+   bare                   and  index | `/(?<h>\d)\d/ & /\d(?<h>\d)/ & (h[1]: "3")` | core/labels/paths: "the two sides of `&` are not ordered" | refused:core/labels/flow | REFUSED (`h`: two sides of one `&` set it and the read can see both, an ambiguous reference (a compile error, core/labels/flow))
+      -> AGREE
+   bare                   nest plain | `X & (h: "3")`, X := `/(?<h>\d)/ SEQ "!"` | core/labels/paths/label-reference: "A label not written in the text of the definition that references it is referenced with its source" | refused:with its source | REFUSED (label `h` is not written in this definition: reference it with its source)
+      -> AGREE
+   bare                   nest $     | `(X) SEQ $h`, X := `/(?<h>\d)/ SEQ "!"` | core/labels/paths/label-reference: "A label not written in the text of the definition that references it is referenced with its source" | refused:with its source | REFUSED (label `h` is not written in this definition: reference it with its source)
+      -> AGREE
+   bare                   nest group | `X & some((h: "3"))`, X := `/(?<h>\d)/ SEQ "!"` | core/labels/paths/label-reference: "A label not written in the text of the definition that references it is referenced with its source" | refused:with its source | REFUSED (label `h` is not written in this definition: reference it with its source)
+      -> AGREE
+   bare                   nest index | `X & (h[1]: "3")`, X := `/(?<h>\d)/ SEQ "!"` | core/labels/paths/label-reference: "A label not written in the text of the definition that references it is referenced with its source" | refused:with its source | REFUSED (label `h` is not written in this definition: reference it with its source)
+      -> AGREE
+   binding                one  plain | `A & (A.h: "3")`, A := `/(?<h>\d)/` | core/labels/paths/one-use-read: "With ONE use, a plain read through a binding's prefix (`A.h`) is legal" | legal | WHOLE `3` HOLDS, `7` FAILS / SEARCHED `x3` `3`@1 / FIND-ALL `3 7` [`3`@0]
+      -> AGREE
+   binding                one  $     | `(A) SEQ $A.h`, A := `/(?<h>\d)/` | core/labels/paths/one-use-read: "With ONE use, a plain read through a binding's prefix (`A.h`) is legal" | legal | WHOLE `33` HOLDS, `77` HOLDS, `3` FAILS / SEARCHED `x33` `33`@1 / FIND-ALL `33 77 3` [`33`@0, `77`@3]
+      -> AGREE
+   binding                one  group | `A & some((A.h: "3"))`, A := `/(?<h>\d)/` | core/labels/paths/binding-prefix: "a group question through it reads every use's settings, in order" | legal | WHOLE `3` HOLDS, `7` FAILS / SEARCHED `x3` `3`@1 / FIND-ALL `3 7` [`3`@0]
+      -> AGREE
+   binding                one  index | `A & (A.h[1]: "3")`, A := `/(?<h>\d)/` | core/labels/paths/binding-prefix: "The index `A.h[k]` through the prefix is in text order across sequenced uses; through uses joined by `&` it is a compile error for now" | legal | WHOLE `3` HOLDS, `7` FAILS / SEARCHED `x3` `3`@1 / FIND-ALL `3 7` [`3`@0]
+      -> AGREE
+   binding                seq  plain | `A SEQ A & (A.h: "3")`, A := `/(?<h>\d)/` | core/labels/paths/binding-prefix: "a plain read through it with the binding used twice or more is a compile error" | refused:used 2 times | REFUSED (`A.h`: A is used 2 times here; label the part (`[left = A]`) to read one use)
+      -> AGREE
+   binding                seq  $     | `(A SEQ A) SEQ $A.h`, A := `/(?<h>\d)/` | core/labels/paths/binding-prefix: "`$chars.ch` alike" | refused:used 2 times | REFUSED (`A.h`: A is used 2 times here; label the part (`[left = A]`) to read one use)
+      -> AGREE
+   binding                seq  group | `A SEQ A & some((A.h: "3"))`, A := `/(?<h>\d)/` | core/labels/paths/binding-prefix: "a group question through it reads every use's settings, in order" | legal | WHOLE `33` HOLDS, `37` HOLDS, `77` FAILS / SEARCHED `x33` `33`@1 / FIND-ALL `33 37 77` [`33`@0, `37`@3]
+      -> AGREE
+   binding                seq  index | `A SEQ A & (A.h[1]: "3")`, A := `/(?<h>\d)/` | core/labels/paths/binding-prefix: "The index `A.h[k]` through the prefix is in text order across sequenced uses; through uses joined by `&` it is a compile error for now" | legal | WHOLE `33` HOLDS, `37` HOLDS, `73` FAILS / SEARCHED `x33` `33`@1 / FIND-ALL `33 37 73` [`33`@0, `37`@3]
+      -> AGREE
+   binding                and  plain | `A & A & (A.h: "3")`, A := `/(?<h>\d)/` | core/labels/paths/binding-prefix: "a plain read through it with the binding used twice or more is a compile error" | refused:used 2 times | REFUSED (`A.h`: A is used 2 times here; label the part (`[left = A]`) to read one use)
+      -> AGREE
+   binding                and  $     | `(A & A) SEQ $A.h`, A := `/(?<h>\d)/` | core/labels/paths/binding-prefix: "`$chars.ch` alike" | refused:used 2 times | REFUSED (`A.h`: A is used 2 times here; label the part (`[left = A]`) to read one use)
+      -> AGREE
+   binding                and  group | `A & A & some((A.h: "3"))`, A := `/(?<h>\d)/` | core/labels/paths/binding-prefix: "a group question through it reads every use's settings, in order" | legal | WHOLE `3` HOLDS, `7` FAILS / SEARCHED `x3` `3`@1 / FIND-ALL `3 7` [`3`@0]
+      -> AGREE
+   binding                and  index | `A & A & (A.h[1]: "3")`, A := `/(?<h>\d)/` | core/labels/paths/binding-prefix: "The index `A.h[k]` through the prefix is in text order across sequenced uses; through uses joined by `&` it is a compile error for now" | refused:not ordered | REFUSED (`A.h[1]`: the uses of A are joined by `&`, which are not ordered (an index there is a compile error for now))
+      -> AGREE
+   binding                nest plain | `X & (X.A.h: "3")`, X := `A SEQ "!"`, A := `/(?<h>\d)/` | core/labels/paths/binding-prefix: "`X.D.h` is a compile error, D used alone in X" | refused:not visible through | REFUSED (`X.A.h`: `A.h` is not visible through `X` (a compile error, core/labels/paths))
+      -> AGREE
+   binding                nest $     | `(X) SEQ $X.A.h`, X := `A SEQ "!"`, A := `/(?<h>\d)/` | core/labels/paths/binding-prefix: "`X.D.h` is a compile error, D used alone in X" | refused:not visible through | REFUSED (`X.A.h`: `A.h` is not visible through `X` (a compile error, core/labels/paths))
+      -> AGREE
+   binding                nest group | `X & some((X.A.h: "3"))`, X := `A SEQ "!"`, A := `/(?<h>\d)/` | core/labels/paths/binding-prefix: "`X.D.h` is a compile error, D used alone in X" | refused:not visible through | REFUSED (`X.A.h`: `A.h` is not visible through `X` (a compile error, core/labels/paths))
+      -> AGREE
+   binding                nest index | `X & (X.A.h[1]: "3")`, X := `A SEQ "!"`, A := `/(?<h>\d)/` | core/labels/paths/binding-prefix: "`X.D.h` is a compile error, D used alone in X" | refused:not visible through | REFUSED (`X.A.h`: `A.h` is not visible through `X` (a compile error, core/labels/paths))
+      -> AGREE
+   macro                  one  plain | `B(/\d/) & (B.d: "3")`, B(rx) := `/${rx}(?<d>\d)/` | core/labels/paths/call-prefix: "called once in the definition, a plain read through the name is legal" | legal | WHOLE `33` HOLDS, `73` HOLDS, `37` FAILS / SEARCHED `x33` `33`@1 / FIND-ALL `33 73 37` [`33`@0, `73`@3]
+      -> AGREE
+   macro                  one  $     | `(B(/\d/)) SEQ $B.d`, B(rx) := `/${rx}(?<d>\d)/` | core/labels/paths/call-prefix: "called once in the definition, a plain read through the name is legal" | legal | WHOLE `333` HOLDS, `377` HOLDS, `33` FAILS / SEARCHED `x333` `333`@1 / FIND-ALL `333 377 33` [`333`@0, `377`@4]
+      -> AGREE
+   macro                  one  group | `B(/\d/) & some((B.d: "3"))`, B(rx) := `/${rx}(?<d>\d)/` | core/labels/paths/call-prefix: "called more than once, a plain read is the compile error saying to label the call, and a group question reads every call's settings, in order" | legal | WHOLE `33` HOLDS, `73` HOLDS, `37` FAILS / SEARCHED `x33` `33`@1 / FIND-ALL `33 73 37` [`33`@0, `73`@3]
+      -> AGREE
+   macro                  one  index | `B(/\d/) & (B.d[1]: "3")`, B(rx) := `/${rx}(?<d>\d)/` | core/labels/paths/binding-prefix: "a MACRO's name is a prefix too, under the same two rules" | legal | WHOLE `33` HOLDS, `73` HOLDS, `37` FAILS / SEARCHED `x33` `33`@1 / FIND-ALL `33 73 37` [`33`@0, `73`@3]
+      -> AGREE
+   macro                  seq  plain | `B(/\d/) SEQ B(/\d/) & (B.d: "3")`, B(rx) := `/${rx}(?<d>\d)/` | core/labels/paths/call-prefix: "called more than once, a plain read is the compile error saying to label the call, and a group question reads every call's settings, in order" | refused:used 2 times | REFUSED (`B.d`: B is used 2 times here; label the part (`[left = B]`) to read one use)
+      -> AGREE
+   macro                  seq  $     | `(B(/\d/) SEQ B(/\d/)) SEQ $B.d`, B(rx) := `/${rx}(?<d>\d)/` | core/labels/paths/binding-prefix: "a MACRO's name is a prefix too, under the same two rules" | refused:used 2 times | REFUSED (`B.d`: B is used 2 times here; label the part (`[left = B]`) to read one use)
+      -> AGREE
+   macro                  seq  group | `B(/\d/) SEQ B(/\d/) & some((B.d: "3"))`, B(rx) := `/${rx}(?<d>\d)/` | core/labels/paths/call-prefix: "called more than once, a plain read is the compile error saying to label the call, and a group question reads every call's settings, in order" | legal | WHOLE `3333` HOLDS, `3337` HOLDS, `3737` FAILS / SEARCHED `x3333` `3333`@1 / FIND-ALL `3333 3337 3737` [`3333`@0, `3337`@5]
+      -> AGREE
+   macro                  seq  index | `B(/\d/) SEQ B(/\d/) & (B.d[1]: "3")`, B(rx) := `/${rx}(?<d>\d)/` | core/labels/paths/binding-prefix: "a MACRO's name is a prefix too, under the same two rules" | legal | WHOLE `3333` HOLDS, `3337` HOLDS, `3733` FAILS / SEARCHED `x3333` `3333`@1 / FIND-ALL `3333 3337 3733` [`3333`@0, `3337`@5]
+      -> AGREE
+   macro                  and  plain | `B(/\d/) & B(/\d/) & (B.d: "3")`, B(rx) := `/${rx}(?<d>\d)/` | core/labels/paths/call-prefix: "called more than once, a plain read is the compile error saying to label the call, and a group question reads every call's settings, in order" | refused:used 2 times | REFUSED (`B.d`: B is used 2 times here; label the part (`[left = B]`) to read one use)
+      -> AGREE
+   macro                  and  $     | `(B(/\d/) & B(/\d/)) SEQ $B.d`, B(rx) := `/${rx}(?<d>\d)/` | core/labels/paths/binding-prefix: "a MACRO's name is a prefix too, under the same two rules" | refused:used 2 times | REFUSED (`B.d`: B is used 2 times here; label the part (`[left = B]`) to read one use)
+      -> AGREE
+   macro                  and  group | `B(/\d/) & B(/\d/) & some((B.d: "3"))`, B(rx) := `/${rx}(?<d>\d)/` | core/labels/paths/call-prefix: "called more than once, a plain read is the compile error saying to label the call, and a group question reads every call's settings, in order" | legal | WHOLE `33` HOLDS, `73` HOLDS, `37` FAILS / SEARCHED `x33` `33`@1 / FIND-ALL `33 73 37` [`33`@0, `73`@3]
+      -> AGREE
+   macro                  and  index | `B(/\d/) & B(/\d/) & (B.d[1]: "3")`, B(rx) := `/${rx}(?<d>\d)/` | lib/search/occurrences: "only the index `h[k]` across `&` is refused for now" | refused:not ordered | REFUSED (`B.d[1]`: the uses of B are joined by `&`, which are not ordered (an index there is a compile error for now))
+      -> AGREE
+   macro                  nest plain | `X & (X.B.d: "3")`, X := `B(/\d/) SEQ "!"`, B(rx) := `/${rx}(?<d>\d)/` | core/labels/paths: "an unlabelled use carries the implicit label of the binding's name, protected" | refused:not visible through | REFUSED (`X.B.d`: `B.d` is not visible through `X` (a compile error, core/labels/paths))
+      -> AGREE
+   macro                  nest $     | `(X) SEQ $X.B.d`, X := `B(/\d/) SEQ "!"`, B(rx) := `/${rx}(?<d>\d)/` | core/labels/paths: "an unlabelled use carries the implicit label of the binding's name, protected" | refused:not visible through | REFUSED (`X.B.d`: `B.d` is not visible through `X` (a compile error, core/labels/paths))
+      -> AGREE
+   macro                  nest group | `X & some((X.B.d: "3"))`, X := `B(/\d/) SEQ "!"`, B(rx) := `/${rx}(?<d>\d)/` | core/labels/paths: "an unlabelled use carries the implicit label of the binding's name, protected" | refused:not visible through | REFUSED (`X.B.d`: `B.d` is not visible through `X` (a compile error, core/labels/paths))
+      -> AGREE
+   macro                  nest index | `X & (X.B.d[1]: "3")`, X := `B(/\d/) SEQ "!"`, B(rx) := `/${rx}(?<d>\d)/` | core/labels/paths: "an unlabelled use carries the implicit label of the binding's name, protected" | refused:not visible through | REFUSED (`X.B.d`: `B.d` is not visible through `X` (a compile error, core/labels/paths))
+      -> AGREE
+   part-label             one  plain | `[x = A] & (x.h: "3")`, A := `/(?<h>\d)/` | core/labels/export: "through a public part label, the labels that part exports, by path" | legal | WHOLE `3` HOLDS, `7` FAILS / SEARCHED `x3` `3`@1 / FIND-ALL `3 7` [`3`@0]
+      -> AGREE
+   part-label             one  $     | `([x = A]) SEQ $x.h`, A := `/(?<h>\d)/` | core/labels/paths/label-reference: "`$x` reads alike" | legal | WHOLE `33` HOLDS, `77` HOLDS, `3` FAILS / SEARCHED `x33` `33`@1 / FIND-ALL `33 77 3` [`33`@0, `77`@3]
+      -> AGREE
+   part-label             one  group | `[x = A] & some((x.h: "3"))`, A := `/(?<h>\d)/` | core/labels/labels-vs-captures/array-vs-passes: "The group questions (`some`, `count`, `occurs`) and the index `h[k]` read the array of a name's settings: every setting, in order" | legal | WHOLE `3` HOLDS, `7` FAILS / SEARCHED `x3` `3`@1 / FIND-ALL `3 7` [`3`@0]
+      -> AGREE
+   part-label             one  index | `[x = A] & (x.h[1]: "3")`, A := `/(?<h>\d)/` | core/labels/labels-vs-captures/array-vs-passes: "The group questions (`some`, `count`, `occurs`) and the index `h[k]` read the array of a name's settings: every setting, in order" | legal | WHOLE `3` HOLDS, `7` FAILS / SEARCHED `x3` `3`@1 / FIND-ALL `3 7` [`3`@0]
+      -> AGREE
+   part-label             seq  plain | `[x = A] SEQ [x = A] & (x.h: "3")`, A := `/(?<h>\d)/` | core/labels/paths: "a part label mentioned more than once names its last mention where the reference is written" | legal | WHOLE `33` HOLDS, `73` HOLDS, `37` FAILS / SEARCHED `x33` `33`@1 / FIND-ALL `33 73 37` [`33`@0, `73`@3]
+      -> AGREE
+   part-label             seq  $     | `([x = A] SEQ [x = A]) SEQ $x.h`, A := `/(?<h>\d)/` | core/labels/paths/label-reference: "`$x` reads alike" | legal | WHOLE `333` HOLDS, `377` HOLDS, `33` FAILS / SEARCHED `x333` `333`@1 / FIND-ALL `333 377 33` [`333`@0, `377`@4]
+      -> AGREE
+   part-label             seq  group | `[x = A] SEQ [x = A] & some((x.h: "3"))`, A := `/(?<h>\d)/` | core/labels/labels-vs-captures/array-vs-passes: "The group questions (`some`, `count`, `occurs`) and the index `h[k]` read the array of a name's settings: every setting, in order" | legal | WHOLE `33` HOLDS, `37` HOLDS, `77` FAILS / SEARCHED `x33` `33`@1 / FIND-ALL `33 37 77` [`33`@0, `37`@3]
+      -> AGREE
+   part-label             seq  index | `[x = A] SEQ [x = A] & (x.h[1]: "3")`, A := `/(?<h>\d)/` | core/labels/labels-vs-captures/array-vs-passes: "The group questions (`some`, `count`, `occurs`) and the index `h[k]` read the array of a name's settings: every setting, in order" | legal | WHOLE `33` HOLDS, `37` HOLDS, `73` FAILS / SEARCHED `x33` `33`@1 / FIND-ALL `33 37 73` [`33`@0, `37`@3]
+      -> AGREE
+   part-label             and  plain | `[x = /(?<h>\d)\d/] & [x = /\d(?<h>\d)/] & (x.h: "3")` | core/labels/paths: "the two sides of `&` are not ordered" | refused:core/labels/flow | REFUSED (`x.h`: both sides of `&` surface it, an ambiguous reference (core/labels/flow))
+      -> AGREE
+   part-label             and  $     | `([x = /(?<h>\d)\d/] & [x = /\d(?<h>\d)/]) SEQ $x.h` | core/labels/flow: "Across `&` a name both sides surface is an ambiguous reference: a compile error where a condition or a `$` references it" | refused:core/labels/flow | REFUSED (`x.h`: two sides of one `&` set it and the read can see both, an ambiguous reference (a compile error, core/labels/flow))
+      -> AGREE
+   part-label             and  group | `[x = /(?<h>\d)\d/] & [x = /\d(?<h>\d)/] & some((x.h: "3"))` | core/labels/flow: "A group question over a name both sides of `&` surface reads both sides' settings" | legal | WHOLE `33` HOLDS, `37` HOLDS, `77` FAILS / SEARCHED `x33` `33`@1 / FIND-ALL `33 37 77` [`33`@0, `37`@3]
+      -> AGREE
+   part-label             and  index | `[x = /(?<h>\d)\d/] & [x = /\d(?<h>\d)/] & (x.h[1]: "3")` | core/labels/paths: "the two sides of `&` are not ordered" | refused:core/labels/flow | REFUSED (`x.h`: two sides of one `&` set it and the read can see both, an ambiguous reference (a compile error, core/labels/flow))
+      -> AGREE
+   part-label             nest plain | `X & (X.x.h: "3")`, X := `[x = A] SEQ "!"`, A := `/(?<h>\d)/` | core/labels/export: "through a public part label, the labels that part exports, by path" | legal | WHOLE `3!` HOLDS, `7!` FAILS / SEARCHED `x3!` `3!`@1 / FIND-ALL `3! 7!` [`3!`@0]
+      -> AGREE
+   part-label             nest $     | `(X) SEQ $X.x.h`, X := `[x = A] SEQ "!"`, A := `/(?<h>\d)/` | core/labels/export: "through a public part label, the labels that part exports, by path" | legal | WHOLE `3!3` HOLDS, `7!7` HOLDS, `3!` FAILS / SEARCHED `x3!3` `3!3`@1 / FIND-ALL `3!3 7!7 3!` [`3!3`@0, `7!7`@4]
+      -> AGREE
+   part-label             nest group | `X & some((X.x.h: "3"))`, X := `[x = A] SEQ "!"`, A := `/(?<h>\d)/` | core/labels/export: "through a public part label, the labels that part exports, by path" | legal | WHOLE `3!` HOLDS, `7!` FAILS / SEARCHED `x3!` `3!`@1 / FIND-ALL `3! 7!` [`3!`@0]
+      -> AGREE
+   part-label             nest index | `X & (X.x.h[1]: "3")`, X := `[x = A] SEQ "!"`, A := `/(?<h>\d)/` | core/labels/export: "through a public part label, the labels that part exports, by path" | legal | WHOLE `3!` HOLDS, `7!` FAILS / SEARCHED `x3!` `3!`@1 / FIND-ALL `3! 7!` [`3!`@0]
+      -> AGREE
+   export-list            one  plain | `[(=year) = i1] & (year: "3")`, i1 := `[year = /\d/] SEQ /\d/` | core/labels/export/export-list: "the binding takes the listed labels of the part as labels of its own (exported; read bare inside it)" | legal | WHOLE `33` HOLDS, `37` HOLDS, `73` FAILS / SEARCHED `x33` `33`@1 / FIND-ALL `33 37 73` [`33`@0, `37`@3]
+      -> AGREE
+   export-list            one  $     | `([(=year) = i1]) SEQ $year`, i1 := `[year = /\d/] SEQ /\d/` | core/labels/export/export-list: "the binding takes the listed labels of the part as labels of its own (exported; read bare inside it)" | legal | WHOLE `333` HOLDS, `373` HOLDS, `33` FAILS / SEARCHED `x333` `333`@1 / FIND-ALL `333 373 33` [`333`@0, `373`@4]
+      -> AGREE
+   export-list            one  group | `[(=year) = i1] & some((year: "3"))`, i1 := `[year = /\d/] SEQ /\d/` | core/labels/export/export-list: "A listed label is an alias of the part's label: the same settings and array" | legal | WHOLE `33` HOLDS, `37` HOLDS, `73` FAILS / SEARCHED `x33` `33`@1 / FIND-ALL `33 37 73` [`33`@0, `37`@3]
+      -> AGREE
+   export-list            one  index | `[(=year) = i1] & (year[1]: "3")`, i1 := `[year = /\d/] SEQ /\d/` | core/labels/export/export-list: "A listed label is an alias of the part's label: the same settings and array" | legal | WHOLE `33` HOLDS, `37` HOLDS, `73` FAILS / SEARCHED `x33` `33`@1 / FIND-ALL `33 37 73` [`33`@0, `37`@3]
+      -> AGREE
+   export-list            seq  plain | `[(=year) = i1] SEQ [(=year) = i1] & (year: "3")`, i1 := `[year = /\d/] SEQ /\d/` | core/labels/export/export-list: "Two lists that name one label give the same label, the last mention" | legal | WHOLE `3333` HOLDS, `3337` HOLDS, `3373` FAILS / SEARCHED `x3333` `3333`@1 / FIND-ALL `3333 3337 3373` [`3333`@0, `3337`@5]
+      -> AGREE
+   export-list            seq  $     | `([(=year) = i1] SEQ [(=year) = i1]) SEQ $year`, i1 := `[year = /\d/] SEQ /\d/` | core/labels/export/export-list: "Two lists that name one label give the same label, the last mention" | legal | WHOLE `33333` HOLDS, `33373` HOLDS, `3333` FAILS / SEARCHED `x33333` `33333`@1 / FIND-ALL `33333 33373 3333` [`33333`@0, `33373`@6]
+      -> AGREE
+   export-list            seq  group | `[(=year) = i1] SEQ [(=year) = i1] & some((year: "3"))`, i1 := `[year = /\d/] SEQ /\d/` | core/labels/export/export-list: "A listed label is an alias of the part's label: the same settings and array" | legal | WHOLE `3333` HOLDS, `3337` HOLDS, `7373` FAILS / SEARCHED `x3333` `3333`@1 / FIND-ALL `3333 3337 7373` [`3333`@0, `3337`@5]
+      -> AGREE
+   export-list            seq  index | `[(=year) = i1] SEQ [(=year) = i1] & (year[1]: "3")`, i1 := `[year = /\d/] SEQ /\d/` | core/labels/export/export-list: "A listed label is an alias of the part's label: the same settings and array" | legal | WHOLE `3333` HOLDS, `3337` HOLDS, `7333` FAILS / SEARCHED `x3333` `3333`@1 / FIND-ALL `3333 3337 7333` [`3333`@0, `3337`@5]
+      -> AGREE
+   export-list            and  plain | `[(=year) = i1] & [(=year) = i2] & (year: "3")`, i1 := `[year = /\d/] SEQ /\d/`, i2 := `/\d/ SEQ [year = /\d/]` | core/labels/flow: "Across `&` a name both sides surface is an ambiguous reference: a compile error where a condition or a `$` references it" | refused:core/labels/flow | REFUSED (`year`: both sides of `&` surface it, an ambiguous reference (core/labels/flow))
+      -> AGREE
+   export-list            and  $     | `([(=year) = i1] & [(=year) = i2]) SEQ $year`, i1 := `[year = /\d/] SEQ /\d/`, i2 := `/\d/ SEQ [year = /\d/]` | core/labels/flow: "Across `&` a name both sides surface is an ambiguous reference: a compile error where a condition or a `$` references it" | refused:core/labels/flow | REFUSED (`year`: two sides of one `&` set it and the read can see both, an ambiguous reference (a compile error, core/labels/flow))
+      -> AGREE
+   export-list            and  group | `[(=year) = i1] & [(=year) = i2] & some((year: "3"))`, i1 := `[year = /\d/] SEQ /\d/`, i2 := `/\d/ SEQ [year = /\d/]` | core/labels/flow: "A group question over a name both sides of `&` surface reads both sides' settings" | legal | WHOLE `33` HOLDS, `37` HOLDS, `77` FAILS / SEARCHED `x33` `33`@1 / FIND-ALL `33 37 77` [`33`@0, `37`@3]
+      -> AGREE
+   export-list            and  index | `[(=year) = i1] & [(=year) = i2] & (year[1]: "3")`, i1 := `[year = /\d/] SEQ /\d/`, i2 := `/\d/ SEQ [year = /\d/]` | core/labels/paths: "the two sides of `&` are not ordered" | refused:core/labels/flow | REFUSED (`year`: two sides of one `&` set it and the read can see both, an ambiguous reference (a compile error, core/labels/flow))
+      -> AGREE
+   export-list            nest plain | `X & (X.year: "3")`, X := `[(=year) = i1] SEQ "!"`, i1 := `[year = /\d/] SEQ /\d/` | core/labels/export/export-list: "the binding takes the listed labels of the part as labels of its own (exported; read bare inside it)" | legal | WHOLE `33!` HOLDS, `37!` HOLDS, `73!` FAILS / SEARCHED `x33!` `33!`@1 / FIND-ALL `33! 37! 73!` [`33!`@0, `37!`@4]
+      -> AGREE
+   export-list            nest $     | `(X) SEQ $X.year`, X := `[(=year) = i1] SEQ "!"`, i1 := `[year = /\d/] SEQ /\d/` | core/labels/export/export-list: "the binding takes the listed labels of the part as labels of its own (exported; read bare inside it)" | legal | WHOLE `33!3` HOLDS, `37!3` HOLDS, `33!` FAILS / SEARCHED `x33!3` `33!3`@1 / FIND-ALL `33!3 37!3 33!` [`33!3`@0, `37!3`@5]
+      -> AGREE
+   export-list            nest group | `X & some((X.year: "3"))`, X := `[(=year) = i1] SEQ "!"`, i1 := `[year = /\d/] SEQ /\d/` | core/labels/export/export-list: "the binding takes the listed labels of the part as labels of its own (exported; read bare inside it)" | legal | WHOLE `33!` HOLDS, `37!` HOLDS, `73!` FAILS / SEARCHED `x33!` `33!`@1 / FIND-ALL `33! 37! 73!` [`33!`@0, `37!`@4]
+      -> AGREE
+   export-list            nest index | `X & (X.year[1]: "3")`, X := `[(=year) = i1] SEQ "!"`, i1 := `[year = /\d/] SEQ /\d/` | core/labels/export/export-list: "the binding takes the listed labels of the part as labels of its own (exported; read bare inside it)" | legal | WHOLE `33!` HOLDS, `37!` HOLDS, `73!` FAILS / SEARCHED `x33!` `33!`@1 / FIND-ALL `33! 37! 73!` [`33!`@0, `37!`@4]
+      -> AGREE
+   argument               one  plain | `B(A) & (A.h: "3")`, A := `/(?<h>\d)/`, B(rx) := `/${rx}x/` | core/labels/paths/argument-default: "the caller's read of that argument's labels (`A.d` in `B(A)`, a group written in place) is a compile error: the argument is a template" | refused:core/labels/paths/argument-default | REFUSED (`A.h`: a label of an argument, which is a template and not a spot in the pattern (a compile error, core/labels/paths/argument-default)) | drill `B(rx) & (rx.h: "3")`, rx := `/(?<h>\d)/`, B(rx) := `/${rx}x/`: same
+      -> AGREE
+   argument               one  $     | `(B(A)) SEQ $A.h`, A := `/(?<h>\d)/`, B(rx) := `/${rx}x/` | core/labels/paths/argument-default: "the caller's read of that argument's labels (`A.d` in `B(A)`, a group written in place) is a compile error: the argument is a template" | refused:core/labels/paths/argument-default | REFUSED (`A.h`: a label of an argument, which is a template and not a spot in the pattern (a compile error, core/labels/paths/argument-default)) | drill `(B(rx)) SEQ $rx.h`, rx := `/(?<h>\d)/`, B(rx) := `/${rx}x/`: same
+      -> AGREE
+   argument               one  group | `B(A) & some((A.h: "3"))`, A := `/(?<h>\d)/`, B(rx) := `/${rx}x/` | core/labels/paths/argument-default: "the caller's read of that argument's labels (`A.d` in `B(A)`, a group written in place) is a compile error: the argument is a template" | refused:core/labels/paths/argument-default | REFUSED (`A.h`: a label of an argument, which is a template and not a spot in the pattern (a compile error, core/labels/paths/argument-default)) | drill `B(rx) & some((rx.h: "3"))`, rx := `/(?<h>\d)/`, B(rx) := `/${rx}x/`: same
+      -> AGREE
+   argument               one  index | `B(A) & (A.h[1]: "3")`, A := `/(?<h>\d)/`, B(rx) := `/${rx}x/` | core/labels/paths/argument-default: "the caller's read of that argument's labels (`A.d` in `B(A)`, a group written in place) is a compile error: the argument is a template" | refused:core/labels/paths/argument-default | REFUSED (`A.h`: a label of an argument, which is a template and not a spot in the pattern (a compile error, core/labels/paths/argument-default)) | drill `B(rx) & (rx.h[1]: "3")`, rx := `/(?<h>\d)/`, B(rx) := `/${rx}x/`: same
+      -> AGREE
+   argument               seq  plain | `B(A) SEQ B(A) & (A.h: "3")`, A := `/(?<h>\d)/`, B(rx) := `/${rx}x/` | core/labels/paths/argument-default: "the caller's read of that argument's labels (`A.d` in `B(A)`, a group written in place) is a compile error: the argument is a template" | refused:core/labels/paths/argument-default | REFUSED (`A.h`: a label of an argument, which is a template and not a spot in the pattern (a compile error, core/labels/paths/argument-default)) | drill `B(rx) SEQ B(rx) & (rx.h: "3")`, rx := `/(?<h>\d)/`, B(rx) := `/${rx}x/`: same
+      -> AGREE
+   argument               seq  $     | `(B(A) SEQ B(A)) SEQ $A.h`, A := `/(?<h>\d)/`, B(rx) := `/${rx}x/` | core/labels/paths/argument-default: "the caller's read of that argument's labels (`A.d` in `B(A)`, a group written in place) is a compile error: the argument is a template" | refused:core/labels/paths/argument-default | REFUSED (`A.h`: a label of an argument, which is a template and not a spot in the pattern (a compile error, core/labels/paths/argument-default)) | drill `(B(rx) SEQ B(rx)) SEQ $rx.h`, rx := `/(?<h>\d)/`, B(rx) := `/${rx}x/`: same
+      -> AGREE
+   argument               seq  group | `B(A) SEQ B(A) & some((A.h: "3"))`, A := `/(?<h>\d)/`, B(rx) := `/${rx}x/` | core/labels/paths/argument-default: "the caller's read of that argument's labels (`A.d` in `B(A)`, a group written in place) is a compile error: the argument is a template" | refused:core/labels/paths/argument-default | REFUSED (`A.h`: a label of an argument, which is a template and not a spot in the pattern (a compile error, core/labels/paths/argument-default)) | drill `B(rx) SEQ B(rx) & some((rx.h: "3"))`, rx := `/(?<h>\d)/`, B(rx) := `/${rx}x/`: same
+      -> AGREE
+   argument               seq  index | `B(A) SEQ B(A) & (A.h[1]: "3")`, A := `/(?<h>\d)/`, B(rx) := `/${rx}x/` | core/labels/paths/argument-default: "the caller's read of that argument's labels (`A.d` in `B(A)`, a group written in place) is a compile error: the argument is a template" | refused:core/labels/paths/argument-default | REFUSED (`A.h`: a label of an argument, which is a template and not a spot in the pattern (a compile error, core/labels/paths/argument-default)) | drill `B(rx) SEQ B(rx) & (rx.h[1]: "3")`, rx := `/(?<h>\d)/`, B(rx) := `/${rx}x/`: same
+      -> AGREE
+   argument               and  plain | `B(A) & B(A) & (A.h: "3")`, A := `/(?<h>\d)/`, B(rx) := `/${rx}x/` | core/labels/paths/argument-default: "the caller's read of that argument's labels (`A.d` in `B(A)`, a group written in place) is a compile error: the argument is a template" | refused:core/labels/paths/argument-default | REFUSED (`A.h`: a label of an argument, which is a template and not a spot in the pattern (a compile error, core/labels/paths/argument-default)) | drill `B(rx) & B(rx) & (rx.h: "3")`, rx := `/(?<h>\d)/`, B(rx) := `/${rx}x/`: same
+      -> AGREE
+   argument               and  $     | `(B(A) & B(A)) SEQ $A.h`, A := `/(?<h>\d)/`, B(rx) := `/${rx}x/` | core/labels/paths/argument-default: "the caller's read of that argument's labels (`A.d` in `B(A)`, a group written in place) is a compile error: the argument is a template" | refused:core/labels/paths/argument-default | REFUSED (`A.h`: a label of an argument, which is a template and not a spot in the pattern (a compile error, core/labels/paths/argument-default)) | drill `(B(rx) & B(rx)) SEQ $rx.h`, rx := `/(?<h>\d)/`, B(rx) := `/${rx}x/`: same
+      -> AGREE
+   argument               and  group | `B(A) & B(A) & some((A.h: "3"))`, A := `/(?<h>\d)/`, B(rx) := `/${rx}x/` | core/labels/paths/argument-default: "the caller's read of that argument's labels (`A.d` in `B(A)`, a group written in place) is a compile error: the argument is a template" | refused:core/labels/paths/argument-default | REFUSED (`A.h`: a label of an argument, which is a template and not a spot in the pattern (a compile error, core/labels/paths/argument-default)) | drill `B(rx) & B(rx) & some((rx.h: "3"))`, rx := `/(?<h>\d)/`, B(rx) := `/${rx}x/`: same
+      -> AGREE
+   argument               and  index | `B(A) & B(A) & (A.h[1]: "3")`, A := `/(?<h>\d)/`, B(rx) := `/${rx}x/` | core/labels/paths/binding-prefix: "The index `A.h[k]` through the prefix is in text order across sequenced uses; through uses joined by `&` it is a compile error for now" | refused:not ordered | REFUSED (`A.h[1]`: the uses of A are joined by `&`, which are not ordered (an index there is a compile error for now)) | drill `B(rx) & B(rx) & (rx.h[1]: "3")`, rx := `/(?<h>\d)/`, B(rx) := `/${rx}x/`: same
+      -> AGREE
+   argument               nest plain | `X & (X.A.h: "3")`, X := `B(A) SEQ "!"`, A := `/(?<h>\d)/`, B(rx) := `/${rx}x/` | core/labels/paths: "a call's label reaches no argument by the argument's name" | refused:not visible through | REFUSED (`X.A.h`: `A.h` is not visible through `X` (a compile error, core/labels/paths)) | drill `X & (X.A.h: "3")`, X := `B(rx) SEQ "!"`, rx := `/(?<h>\d)/`, B(rx) := `/${rx}x/`: same
+      -> AGREE
+   argument               nest $     | `(X) SEQ $X.A.h`, X := `B(A) SEQ "!"`, A := `/(?<h>\d)/`, B(rx) := `/${rx}x/` | core/labels/paths: "a call's label reaches no argument by the argument's name" | refused:not visible through | REFUSED (`X.A.h`: `A.h` is not visible through `X` (a compile error, core/labels/paths)) | drill `(X) SEQ $X.A.h`, X := `B(rx) SEQ "!"`, rx := `/(?<h>\d)/`, B(rx) := `/${rx}x/`: same
+      -> AGREE
+   argument               nest group | `X & some((X.A.h: "3"))`, X := `B(A) SEQ "!"`, A := `/(?<h>\d)/`, B(rx) := `/${rx}x/` | core/labels/paths: "a call's label reaches no argument by the argument's name" | refused:not visible through | REFUSED (`X.A.h`: `A.h` is not visible through `X` (a compile error, core/labels/paths)) | drill `X & some((X.A.h: "3"))`, X := `B(rx) SEQ "!"`, rx := `/(?<h>\d)/`, B(rx) := `/${rx}x/`: same
+      -> AGREE
+   argument               nest index | `X & (X.A.h[1]: "3")`, X := `B(A) SEQ "!"`, A := `/(?<h>\d)/`, B(rx) := `/${rx}x/` | core/labels/paths: "a call's label reaches no argument by the argument's name" | refused:not visible through | REFUSED (`X.A.h`: `A.h` is not visible through `X` (a compile error, core/labels/paths)) | drill `X & (X.A.h[1]: "3")`, X := `B(rx) SEQ "!"`, rx := `/(?<h>\d)/`, B(rx) := `/${rx}x/`: same
+      -> AGREE
+   spot-label             one  plain | `B(A) & (B.p.h: "3")`, A := `/(?<h>\d)/`, B(rx) := `/${[p = rx]}x/` | core/labels/paths/argument-default: "a spot the body labels exports the argument's exported labels through that label" | legal | WHOLE `3x` HOLDS, `7x` FAILS / SEARCHED `x3x` `3x`@1 / FIND-ALL `3x 7x` [`3x`@0] | drill `B(rx) & (B.p.h: "3")`, rx := `/(?<h>\d)/`, B(rx) := `/${[p = rx]}x/`: same
+      -> AGREE
+   spot-label             one  $     | `(B(A)) SEQ $B.p.h`, A := `/(?<h>\d)/`, B(rx) := `/${[p = rx]}x/` | core/labels/paths/argument-default: "a spot the body labels exports the argument's exported labels through that label" | legal | WHOLE `3x3` HOLDS, `7x7` HOLDS, `3x` FAILS / SEARCHED `x3x3` `3x3`@1 / FIND-ALL `3x3 7x7 3x` [`3x3`@0, `7x7`@4] | drill `(B(rx)) SEQ $B.p.h`, rx := `/(?<h>\d)/`, B(rx) := `/${[p = rx]}x/`: same
+      -> AGREE
+   spot-label             one  group | `B(A) & some((B.p.h: "3"))`, A := `/(?<h>\d)/`, B(rx) := `/${[p = rx]}x/` | core/labels/paths/call-prefix: "called more than once, a plain read is the compile error saying to label the call, and a group question reads every call's settings, in order" | legal | WHOLE `3x` HOLDS, `7x` FAILS / SEARCHED `x3x` `3x`@1 / FIND-ALL `3x 7x` [`3x`@0] | drill `B(rx) & some((B.p.h: "3"))`, rx := `/(?<h>\d)/`, B(rx) := `/${[p = rx]}x/`: same
+      -> AGREE
+   spot-label             one  index | `B(A) & (B.p.h[1]: "3")`, A := `/(?<h>\d)/`, B(rx) := `/${[p = rx]}x/` | core/labels/paths/binding-prefix: "a MACRO's name is a prefix too, under the same two rules" | legal | WHOLE `3x` HOLDS, `7x` FAILS / SEARCHED `x3x` `3x`@1 / FIND-ALL `3x 7x` [`3x`@0] | drill `B(rx) & (B.p.h[1]: "3")`, rx := `/(?<h>\d)/`, B(rx) := `/${[p = rx]}x/`: same
+      -> AGREE
+   spot-label             seq  plain | `B(A) SEQ B(A) & (B.p.h: "3")`, A := `/(?<h>\d)/`, B(rx) := `/${[p = rx]}x/` | core/labels/paths/call-prefix: "called more than once, a plain read is the compile error saying to label the call, and a group question reads every call's settings, in order" | refused:used 2 times | REFUSED (`B.p.h`: B is used 2 times here; label the part (`[left = B]`) to read one use) | drill `B(rx) SEQ B(rx) & (B.p.h: "3")`, rx := `/(?<h>\d)/`, B(rx) := `/${[p = rx]}x/`: same
+      -> AGREE
+   spot-label             seq  $     | `(B(A) SEQ B(A)) SEQ $B.p.h`, A := `/(?<h>\d)/`, B(rx) := `/${[p = rx]}x/` | core/labels/paths/binding-prefix: "a MACRO's name is a prefix too, under the same two rules" | refused:used 2 times | REFUSED (`B.p.h`: B is used 2 times here; label the part (`[left = B]`) to read one use) | drill `(B(rx) SEQ B(rx)) SEQ $B.p.h`, rx := `/(?<h>\d)/`, B(rx) := `/${[p = rx]}x/`: same
+      -> AGREE
+   spot-label             seq  group | `B(A) SEQ B(A) & some((B.p.h: "3"))`, A := `/(?<h>\d)/`, B(rx) := `/${[p = rx]}x/` | core/labels/paths/call-prefix: "called more than once, a plain read is the compile error saying to label the call, and a group question reads every call's settings, in order" | legal | WHOLE `3x3x` HOLDS, `3x7x` HOLDS, `7x7x` FAILS / SEARCHED `x3x3x` `3x3x`@1 / FIND-ALL `3x3x 3x7x 7x7x` [`3x3x`@0, `3x7x`@5] | drill `B(rx) SEQ B(rx) & some((B.p.h: "3"))`, rx := `/(?<h>\d)/`, B(rx) := `/${[p = rx]}x/`: same
+      -> AGREE
+   spot-label             seq  index | `B(A) SEQ B(A) & (B.p.h[1]: "3")`, A := `/(?<h>\d)/`, B(rx) := `/${[p = rx]}x/` | core/labels/paths/binding-prefix: "a MACRO's name is a prefix too, under the same two rules" | legal | WHOLE `3x3x` HOLDS, `3x7x` HOLDS, `7x3x` FAILS / SEARCHED `x3x3x` `3x3x`@1 / FIND-ALL `3x3x 3x7x 7x3x` [`3x3x`@0, `3x7x`@5] | drill `B(rx) SEQ B(rx) & (B.p.h[1]: "3")`, rx := `/(?<h>\d)/`, B(rx) := `/${[p = rx]}x/`: same
+      -> AGREE
+   spot-label             and  plain | `B(A) & B(A) & (B.p.h: "3")`, A := `/(?<h>\d)/`, B(rx) := `/${[p = rx]}x/` | core/labels/paths/call-prefix: "called more than once, a plain read is the compile error saying to label the call, and a group question reads every call's settings, in order" | refused:used 2 times | REFUSED (`B.p.h`: B is used 2 times here; label the part (`[left = B]`) to read one use) | drill `B(rx) & B(rx) & (B.p.h: "3")`, rx := `/(?<h>\d)/`, B(rx) := `/${[p = rx]}x/`: same
+      -> AGREE
+   spot-label             and  $     | `(B(A) & B(A)) SEQ $B.p.h`, A := `/(?<h>\d)/`, B(rx) := `/${[p = rx]}x/` | core/labels/paths/binding-prefix: "a MACRO's name is a prefix too, under the same two rules" | refused:used 2 times | REFUSED (`B.p.h`: B is used 2 times here; label the part (`[left = B]`) to read one use) | drill `(B(rx) & B(rx)) SEQ $B.p.h`, rx := `/(?<h>\d)/`, B(rx) := `/${[p = rx]}x/`: same
+      -> AGREE
+   spot-label             and  group | `B(A) & B(A) & some((B.p.h: "3"))`, A := `/(?<h>\d)/`, B(rx) := `/${[p = rx]}x/` | core/labels/paths/call-prefix: "called more than once, a plain read is the compile error saying to label the call, and a group question reads every call's settings, in order" | legal | WHOLE `3x` HOLDS, `7x` FAILS / SEARCHED `x3x` `3x`@1 / FIND-ALL `3x 7x` [`3x`@0] | drill `B(rx) & B(rx) & some((B.p.h: "3"))`, rx := `/(?<h>\d)/`, B(rx) := `/${[p = rx]}x/`: same
+      -> AGREE
+   spot-label             and  index | `B(A) & B(A) & (B.p.h[1]: "3")`, A := `/(?<h>\d)/`, B(rx) := `/${[p = rx]}x/` | lib/search/occurrences: "only the index `h[k]` across `&` is refused for now" | refused:not ordered | REFUSED (`B.p.h[1]`: the uses of B are joined by `&`, which are not ordered (an index there is a compile error for now)) | drill `B(rx) & B(rx) & (B.p.h[1]: "3")`, rx := `/(?<h>\d)/`, B(rx) := `/${[p = rx]}x/`: same
+      -> AGREE
+   spot-label             nest plain | `X & (X.B.p.h: "3")`, X := `B(A) SEQ "!"`, A := `/(?<h>\d)/`, B(rx) := `/${[p = rx]}x/` | core/labels/paths: "an unlabelled use carries the implicit label of the binding's name, protected" | refused:not visible through | REFUSED (`X.B.p.h`: `B.p.h` is not visible through `X` (a compile error, core/labels/paths)) | drill `X & (X.B.p.h: "3")`, X := `B(rx) SEQ "!"`, rx := `/(?<h>\d)/`, B(rx) := `/${[p = rx]}x/`: same
+      -> AGREE
+   spot-label             nest $     | `(X) SEQ $X.B.p.h`, X := `B(A) SEQ "!"`, A := `/(?<h>\d)/`, B(rx) := `/${[p = rx]}x/` | core/labels/paths: "an unlabelled use carries the implicit label of the binding's name, protected" | refused:not visible through | REFUSED (`X.B.p.h`: `B.p.h` is not visible through `X` (a compile error, core/labels/paths)) | drill `(X) SEQ $X.B.p.h`, X := `B(rx) SEQ "!"`, rx := `/(?<h>\d)/`, B(rx) := `/${[p = rx]}x/`: same
+      -> AGREE
+   spot-label             nest group | `X & some((X.B.p.h: "3"))`, X := `B(A) SEQ "!"`, A := `/(?<h>\d)/`, B(rx) := `/${[p = rx]}x/` | core/labels/paths: "an unlabelled use carries the implicit label of the binding's name, protected" | refused:not visible through | REFUSED (`X.B.p.h`: `B.p.h` is not visible through `X` (a compile error, core/labels/paths)) | drill `X & some((X.B.p.h: "3"))`, X := `B(rx) SEQ "!"`, rx := `/(?<h>\d)/`, B(rx) := `/${[p = rx]}x/`: same
+      -> AGREE
+   spot-label             nest index | `X & (X.B.p.h[1]: "3")`, X := `B(A) SEQ "!"`, A := `/(?<h>\d)/`, B(rx) := `/${[p = rx]}x/` | core/labels/paths: "an unlabelled use carries the implicit label of the binding's name, protected" | refused:not visible through | REFUSED (`X.B.p.h`: `B.p.h` is not visible through `X` (a compile error, core/labels/paths)) | drill `X & (X.B.p.h[1]: "3")`, X := `B(rx) SEQ "!"`, rx := `/(?<h>\d)/`, B(rx) := `/${[p = rx]}x/`: same
+      -> AGREE
+   export-list-on-spot    one  plain | `B(A) & (B.h: "3")`, A := `/(?<h>\d)/`, B(rx) := `/${[(=) = rx]}x/` | lib/convention/argument-labels: "the list on it, `[(=) = x]`, takes every label the argument exports as the body's own" | legal | WHOLE `3x` HOLDS, `7x` FAILS / SEARCHED `x3x` `3x`@1 / FIND-ALL `3x 7x` [`3x`@0] | drill `B(rx) & (B.h: "3")`, rx := `/(?<h>\d)/`, B(rx) := `/${[(=) = rx]}x/`: same
+      -> AGREE
+   export-list-on-spot    one  $     | `(B(A)) SEQ $B.h`, A := `/(?<h>\d)/`, B(rx) := `/${[(=) = rx]}x/` | lib/convention/argument-labels: "the list on it, `[(=) = x]`, takes every label the argument exports as the body's own" | legal | WHOLE `3x3` HOLDS, `7x7` HOLDS, `3x` FAILS / SEARCHED `x3x3` `3x3`@1 / FIND-ALL `3x3 7x7 3x` [`3x3`@0, `7x7`@4] | drill `(B(rx)) SEQ $B.h`, rx := `/(?<h>\d)/`, B(rx) := `/${[(=) = rx]}x/`: same
+      -> AGREE
+   export-list-on-spot    one  group | `B(A) & some((B.h: "3"))`, A := `/(?<h>\d)/`, B(rx) := `/${[(=) = rx]}x/` | core/labels/paths/call-prefix: "called more than once, a plain read is the compile error saying to label the call, and a group question reads every call's settings, in order" | legal | WHOLE `3x` HOLDS, `7x` FAILS / SEARCHED `x3x` `3x`@1 / FIND-ALL `3x 7x` [`3x`@0] | drill `B(rx) & some((B.h: "3"))`, rx := `/(?<h>\d)/`, B(rx) := `/${[(=) = rx]}x/`: same
+      -> AGREE
+   export-list-on-spot    one  index | `B(A) & (B.h[1]: "3")`, A := `/(?<h>\d)/`, B(rx) := `/${[(=) = rx]}x/` | core/labels/paths/binding-prefix: "a MACRO's name is a prefix too, under the same two rules" | legal | WHOLE `3x` HOLDS, `7x` FAILS / SEARCHED `x3x` `3x`@1 / FIND-ALL `3x 7x` [`3x`@0] | drill `B(rx) & (B.h[1]: "3")`, rx := `/(?<h>\d)/`, B(rx) := `/${[(=) = rx]}x/`: same
+      -> AGREE
+   export-list-on-spot    seq  plain | `B(A) SEQ B(A) & (B.h: "3")`, A := `/(?<h>\d)/`, B(rx) := `/${[(=) = rx]}x/` | core/labels/paths/call-prefix: "called more than once, a plain read is the compile error saying to label the call, and a group question reads every call's settings, in order" | refused:used 2 times | REFUSED (`B.h`: B is used 2 times here; label the part (`[left = B]`) to read one use) | drill `B(rx) SEQ B(rx) & (B.h: "3")`, rx := `/(?<h>\d)/`, B(rx) := `/${[(=) = rx]}x/`: same
+      -> AGREE
+   export-list-on-spot    seq  $     | `(B(A) SEQ B(A)) SEQ $B.h`, A := `/(?<h>\d)/`, B(rx) := `/${[(=) = rx]}x/` | core/labels/paths/binding-prefix: "a MACRO's name is a prefix too, under the same two rules" | refused:used 2 times | REFUSED (`B.h`: B is used 2 times here; label the part (`[left = B]`) to read one use) | drill `(B(rx) SEQ B(rx)) SEQ $B.h`, rx := `/(?<h>\d)/`, B(rx) := `/${[(=) = rx]}x/`: same
+      -> AGREE
+   export-list-on-spot    seq  group | `B(A) SEQ B(A) & some((B.h: "3"))`, A := `/(?<h>\d)/`, B(rx) := `/${[(=) = rx]}x/` | core/labels/paths/call-prefix: "called more than once, a plain read is the compile error saying to label the call, and a group question reads every call's settings, in order" | legal | WHOLE `3x3x` HOLDS, `3x7x` HOLDS, `7x7x` FAILS / SEARCHED `x3x3x` `3x3x`@1 / FIND-ALL `3x3x 3x7x 7x7x` [`3x3x`@0, `3x7x`@5] | drill `B(rx) SEQ B(rx) & some((B.h: "3"))`, rx := `/(?<h>\d)/`, B(rx) := `/${[(=) = rx]}x/`: same
+      -> AGREE
+   export-list-on-spot    seq  index | `B(A) SEQ B(A) & (B.h[1]: "3")`, A := `/(?<h>\d)/`, B(rx) := `/${[(=) = rx]}x/` | core/labels/paths/binding-prefix: "a MACRO's name is a prefix too, under the same two rules" | legal | WHOLE `3x3x` HOLDS, `3x7x` HOLDS, `7x3x` FAILS / SEARCHED `x3x3x` `3x3x`@1 / FIND-ALL `3x3x 3x7x 7x3x` [`3x3x`@0, `3x7x`@5] | drill `B(rx) SEQ B(rx) & (B.h[1]: "3")`, rx := `/(?<h>\d)/`, B(rx) := `/${[(=) = rx]}x/`: same
+      -> AGREE
+   export-list-on-spot    and  plain | `B(A) & B(A) & (B.h: "3")`, A := `/(?<h>\d)/`, B(rx) := `/${[(=) = rx]}x/` | core/labels/paths/call-prefix: "called more than once, a plain read is the compile error saying to label the call, and a group question reads every call's settings, in order" | refused:used 2 times | REFUSED (`B.h`: B is used 2 times here; label the part (`[left = B]`) to read one use) | drill `B(rx) & B(rx) & (B.h: "3")`, rx := `/(?<h>\d)/`, B(rx) := `/${[(=) = rx]}x/`: same
+      -> AGREE
+   export-list-on-spot    and  $     | `(B(A) & B(A)) SEQ $B.h`, A := `/(?<h>\d)/`, B(rx) := `/${[(=) = rx]}x/` | core/labels/paths/binding-prefix: "a MACRO's name is a prefix too, under the same two rules" | refused:used 2 times | REFUSED (`B.h`: B is used 2 times here; label the part (`[left = B]`) to read one use) | drill `(B(rx) & B(rx)) SEQ $B.h`, rx := `/(?<h>\d)/`, B(rx) := `/${[(=) = rx]}x/`: same
+      -> AGREE
+   export-list-on-spot    and  group | `B(A) & B(A) & some((B.h: "3"))`, A := `/(?<h>\d)/`, B(rx) := `/${[(=) = rx]}x/` | core/labels/paths/call-prefix: "called more than once, a plain read is the compile error saying to label the call, and a group question reads every call's settings, in order" | legal | WHOLE `3x` HOLDS, `7x` FAILS / SEARCHED `x3x` `3x`@1 / FIND-ALL `3x 7x` [`3x`@0] | drill `B(rx) & B(rx) & some((B.h: "3"))`, rx := `/(?<h>\d)/`, B(rx) := `/${[(=) = rx]}x/`: same
+      -> AGREE
+   export-list-on-spot    and  index | `B(A) & B(A) & (B.h[1]: "3")`, A := `/(?<h>\d)/`, B(rx) := `/${[(=) = rx]}x/` | lib/search/occurrences: "only the index `h[k]` across `&` is refused for now" | refused:not ordered | REFUSED (`B.h[1]`: the uses of B are joined by `&`, which are not ordered (an index there is a compile error for now)) | drill `B(rx) & B(rx) & (B.h[1]: "3")`, rx := `/(?<h>\d)/`, B(rx) := `/${[(=) = rx]}x/`: same
+      -> AGREE
+   export-list-on-spot    nest plain | `X & (X.B.h: "3")`, X := `B(A) SEQ "!"`, A := `/(?<h>\d)/`, B(rx) := `/${[(=) = rx]}x/` | core/labels/paths: "an unlabelled use carries the implicit label of the binding's name, protected" | refused:not visible through | REFUSED (`X.B.h`: `B.h` is not visible through `X` (a compile error, core/labels/paths)) | drill `X & (X.B.h: "3")`, X := `B(rx) SEQ "!"`, rx := `/(?<h>\d)/`, B(rx) := `/${[(=) = rx]}x/`: same
+      -> AGREE
+   export-list-on-spot    nest $     | `(X) SEQ $X.B.h`, X := `B(A) SEQ "!"`, A := `/(?<h>\d)/`, B(rx) := `/${[(=) = rx]}x/` | core/labels/paths: "an unlabelled use carries the implicit label of the binding's name, protected" | refused:not visible through | REFUSED (`X.B.h`: `B.h` is not visible through `X` (a compile error, core/labels/paths)) | drill `(X) SEQ $X.B.h`, X := `B(rx) SEQ "!"`, rx := `/(?<h>\d)/`, B(rx) := `/${[(=) = rx]}x/`: same
+      -> AGREE
+   export-list-on-spot    nest group | `X & some((X.B.h: "3"))`, X := `B(A) SEQ "!"`, A := `/(?<h>\d)/`, B(rx) := `/${[(=) = rx]}x/` | core/labels/paths: "an unlabelled use carries the implicit label of the binding's name, protected" | refused:not visible through | REFUSED (`X.B.h`: `B.h` is not visible through `X` (a compile error, core/labels/paths)) | drill `X & some((X.B.h: "3"))`, X := `B(rx) SEQ "!"`, rx := `/(?<h>\d)/`, B(rx) := `/${[(=) = rx]}x/`: same
+      -> AGREE
+   export-list-on-spot    nest index | `X & (X.B.h[1]: "3")`, X := `B(A) SEQ "!"`, A := `/(?<h>\d)/`, B(rx) := `/${[(=) = rx]}x/` | core/labels/paths: "an unlabelled use carries the implicit label of the binding's name, protected" | refused:not visible through | REFUSED (`X.B.h`: `B.h` is not visible through `X` (a compile error, core/labels/paths)) | drill `X & (X.B.h[1]: "3")`, X := `B(rx) SEQ "!"`, rx := `/(?<h>\d)/`, B(rx) := `/${[(=) = rx]}x/`: same
+      -> AGREE
+   argument-label         one  plain | `B([a = A]) & (a.h: "3")`, A := `/(?<h>\d)/`, B(rx) := `/${[(=) = rx]}x/` | core/labels/paths/argument-default: "a part label written ON an argument at a call labels a template, not a spot" | refused:core/labels/paths/argument-default | REFUSED (`a.h`: a label of an argument, which is a template and not a spot in the pattern (a compile error, core/labels/paths/argument-default)) | drill `B([a = rx]) & (a.h: "3")`, rx := `/(?<h>\d)/`, B(rx) := `/${[(=) = rx]}x/`: same
+      -> AGREE
+   argument-label         one  $     | `(B([a = A])) SEQ $a.h`, A := `/(?<h>\d)/`, B(rx) := `/${[(=) = rx]}x/` | core/labels/paths/argument-default: "a part label written ON an argument at a call labels a template, not a spot" | refused:core/labels/paths/argument-default | REFUSED (`a.h`: a label of an argument, which is a template and not a spot in the pattern (a compile error, core/labels/paths/argument-default)) | drill `(B([a = rx])) SEQ $a.h`, rx := `/(?<h>\d)/`, B(rx) := `/${[(=) = rx]}x/`: same
+      -> AGREE
+   argument-label         one  group | `B([a = A]) & some((a.h: "3"))`, A := `/(?<h>\d)/`, B(rx) := `/${[(=) = rx]}x/` | core/labels/paths/argument-default: "a part label written ON an argument at a call labels a template, not a spot" | refused:core/labels/paths/argument-default | REFUSED (`a.h`: a label of an argument, which is a template and not a spot in the pattern (a compile error, core/labels/paths/argument-default)) | drill `B([a = rx]) & some((a.h: "3"))`, rx := `/(?<h>\d)/`, B(rx) := `/${[(=) = rx]}x/`: same
+      -> AGREE
+   argument-label         one  index | `B([a = A]) & (a.h[1]: "3")`, A := `/(?<h>\d)/`, B(rx) := `/${[(=) = rx]}x/` | core/labels/paths/argument-default: "a part label written ON an argument at a call labels a template, not a spot" | refused:core/labels/paths/argument-default | REFUSED (`a.h`: a label of an argument, which is a template and not a spot in the pattern (a compile error, core/labels/paths/argument-default)) | drill `B([a = rx]) & (a.h[1]: "3")`, rx := `/(?<h>\d)/`, B(rx) := `/${[(=) = rx]}x/`: same
+      -> AGREE
+   argument-label         seq  plain | `B([a = A]) SEQ B([a = A]) & (a.h: "3")`, A := `/(?<h>\d)/`, B(rx) := `/${[(=) = rx]}x/` | core/labels/paths/argument-default: "a part label written ON an argument at a call labels a template, not a spot" | refused:core/labels/paths/argument-default | REFUSED (`a.h`: a label of an argument, which is a template and not a spot in the pattern (a compile error, core/labels/paths/argument-default)) | drill `B([a = rx]) SEQ B([a = rx]) & (a.h: "3")`, rx := `/(?<h>\d)/`, B(rx) := `/${[(=) = rx]}x/`: same
+      -> AGREE
+   argument-label         seq  $     | `(B([a = A]) SEQ B([a = A])) SEQ $a.h`, A := `/(?<h>\d)/`, B(rx) := `/${[(=) = rx]}x/` | core/labels/paths/argument-default: "a part label written ON an argument at a call labels a template, not a spot" | refused:core/labels/paths/argument-default | REFUSED (`a.h`: a label of an argument, which is a template and not a spot in the pattern (a compile error, core/labels/paths/argument-default)) | drill `(B([a = rx]) SEQ B([a = rx])) SEQ $a.h`, rx := `/(?<h>\d)/`, B(rx) := `/${[(=) = rx]}x/`: same
+      -> AGREE
+   argument-label         seq  group | `B([a = A]) SEQ B([a = A]) & some((a.h: "3"))`, A := `/(?<h>\d)/`, B(rx) := `/${[(=) = rx]}x/` | core/labels/paths/argument-default: "a part label written ON an argument at a call labels a template, not a spot" | refused:core/labels/paths/argument-default | REFUSED (`a.h`: a label of an argument, which is a template and not a spot in the pattern (a compile error, core/labels/paths/argument-default)) | drill `B([a = rx]) SEQ B([a = rx]) & some((a.h: "3"))`, rx := `/(?<h>\d)/`, B(rx) := `/${[(=) = rx]}x/`: same
+      -> AGREE
+   argument-label         seq  index | `B([a = A]) SEQ B([a = A]) & (a.h[1]: "3")`, A := `/(?<h>\d)/`, B(rx) := `/${[(=) = rx]}x/` | core/labels/paths/argument-default: "a part label written ON an argument at a call labels a template, not a spot" | refused:core/labels/paths/argument-default | REFUSED (`a.h`: a label of an argument, which is a template and not a spot in the pattern (a compile error, core/labels/paths/argument-default)) | drill `B([a = rx]) SEQ B([a = rx]) & (a.h[1]: "3")`, rx := `/(?<h>\d)/`, B(rx) := `/${[(=) = rx]}x/`: same
+      -> AGREE
+   argument-label         and  plain | `B([a = A]) & B([a = A]) & (a.h: "3")`, A := `/(?<h>\d)/`, B(rx) := `/${[(=) = rx]}x/` | core/labels/paths/argument-default: "a part label written ON an argument at a call labels a template, not a spot" | refused:core/labels/paths/argument-default | REFUSED (`a.h`: a label of an argument, which is a template and not a spot in the pattern (a compile error, core/labels/paths/argument-default)) | drill `B([a = rx]) & B([a = rx]) & (a.h: "3")`, rx := `/(?<h>\d)/`, B(rx) := `/${[(=) = rx]}x/`: same
+      -> AGREE
+   argument-label         and  $     | `(B([a = A]) & B([a = A])) SEQ $a.h`, A := `/(?<h>\d)/`, B(rx) := `/${[(=) = rx]}x/` | core/labels/paths/argument-default: "a part label written ON an argument at a call labels a template, not a spot" | refused:core/labels/paths/argument-default | REFUSED (`a.h`: a label of an argument, which is a template and not a spot in the pattern (a compile error, core/labels/paths/argument-default)) | drill `(B([a = rx]) & B([a = rx])) SEQ $a.h`, rx := `/(?<h>\d)/`, B(rx) := `/${[(=) = rx]}x/`: same
+      -> AGREE
+   argument-label         and  group | `B([a = A]) & B([a = A]) & some((a.h: "3"))`, A := `/(?<h>\d)/`, B(rx) := `/${[(=) = rx]}x/` | core/labels/paths/argument-default: "a part label written ON an argument at a call labels a template, not a spot" | refused:core/labels/paths/argument-default | REFUSED (`a.h`: a label of an argument, which is a template and not a spot in the pattern (a compile error, core/labels/paths/argument-default)) | drill `B([a = rx]) & B([a = rx]) & some((a.h: "3"))`, rx := `/(?<h>\d)/`, B(rx) := `/${[(=) = rx]}x/`: same
+      -> AGREE
+   argument-label         and  index | `B([a = A]) & B([a = A]) & (a.h[1]: "3")`, A := `/(?<h>\d)/`, B(rx) := `/${[(=) = rx]}x/` | core/labels/paths/argument-default: "a part label written ON an argument at a call labels a template, not a spot" | refused:core/labels/paths/argument-default | REFUSED (`a.h`: a label of an argument, which is a template and not a spot in the pattern (a compile error, core/labels/paths/argument-default)) | drill `B([a = rx]) & B([a = rx]) & (a.h[1]: "3")`, rx := `/(?<h>\d)/`, B(rx) := `/${[(=) = rx]}x/`: same
+      -> AGREE
+   argument-label         nest plain | `X & (X.a.h: "3")`, X := `B([a = A]) SEQ "!"`, A := `/(?<h>\d)/`, B(rx) := `/${[(=) = rx]}x/` | core/labels/paths: "an unlabelled use carries the implicit label of the binding's name, protected" | refused:not visible through | REFUSED (`X.a.h`: `a.h` is not visible through `X` (a compile error, core/labels/paths)) | drill `X & (X.a.h: "3")`, X := `B([a = rx]) SEQ "!"`, rx := `/(?<h>\d)/`, B(rx) := `/${[(=) = rx]}x/`: same
+      -> AGREE
+   argument-label         nest $     | `(X) SEQ $X.a.h`, X := `B([a = A]) SEQ "!"`, A := `/(?<h>\d)/`, B(rx) := `/${[(=) = rx]}x/` | core/labels/paths: "an unlabelled use carries the implicit label of the binding's name, protected" | refused:not visible through | REFUSED (`X.a.h`: `a.h` is not visible through `X` (a compile error, core/labels/paths)) | drill `(X) SEQ $X.a.h`, X := `B([a = rx]) SEQ "!"`, rx := `/(?<h>\d)/`, B(rx) := `/${[(=) = rx]}x/`: same
+      -> AGREE
+   argument-label         nest group | `X & some((X.a.h: "3"))`, X := `B([a = A]) SEQ "!"`, A := `/(?<h>\d)/`, B(rx) := `/${[(=) = rx]}x/` | core/labels/paths: "an unlabelled use carries the implicit label of the binding's name, protected" | refused:not visible through | REFUSED (`X.a.h`: `a.h` is not visible through `X` (a compile error, core/labels/paths)) | drill `X & some((X.a.h: "3"))`, X := `B([a = rx]) SEQ "!"`, rx := `/(?<h>\d)/`, B(rx) := `/${[(=) = rx]}x/`: same
+      -> AGREE
+   argument-label         nest index | `X & (X.a.h[1]: "3")`, X := `B([a = A]) SEQ "!"`, A := `/(?<h>\d)/`, B(rx) := `/${[(=) = rx]}x/` | core/labels/paths: "an unlabelled use carries the implicit label of the binding's name, protected" | refused:not visible through | REFUSED (`X.a.h`: `a.h` is not visible through `X` (a compile error, core/labels/paths)) | drill `X & (X.a.h[1]: "3")`, X := `B([a = rx]) SEQ "!"`, rx := `/(?<h>\d)/`, B(rx) := `/${[(=) = rx]}x/`: same
+      -> AGREE
+   part-label-on-call     one  plain | `[c = B(A)] & (c.p.h: "3")`, A := `/(?<h>\d)/`, B(rx) := `/${[p = rx]}x/` | core/labels/export: "through a public part label, the labels that part exports, by path" | legal | WHOLE `3x` HOLDS, `7x` FAILS / SEARCHED `x3x` `3x`@1 / FIND-ALL `3x 7x` [`3x`@0] | drill `[c = B(rx)] & (c.p.h: "3")`, rx := `/(?<h>\d)/`, B(rx) := `/${[p = rx]}x/`: same
+      -> AGREE
+   part-label-on-call     one  $     | `([c = B(A)]) SEQ $c.p.h`, A := `/(?<h>\d)/`, B(rx) := `/${[p = rx]}x/` | core/labels/paths/label-reference: "`$x` reads alike" | legal | WHOLE `3x3` HOLDS, `7x7` HOLDS, `3x` FAILS / SEARCHED `x3x3` `3x3`@1 / FIND-ALL `3x3 7x7 3x` [`3x3`@0, `7x7`@4] | drill `([c = B(rx)]) SEQ $c.p.h`, rx := `/(?<h>\d)/`, B(rx) := `/${[p = rx]}x/`: same
+      -> AGREE
+   part-label-on-call     one  group | `[c = B(A)] & some((c.p.h: "3"))`, A := `/(?<h>\d)/`, B(rx) := `/${[p = rx]}x/` | core/labels/labels-vs-captures/array-vs-passes: "The group questions (`some`, `count`, `occurs`) and the index `h[k]` read the array of a name's settings: every setting, in order" | legal | WHOLE `3x` HOLDS, `7x` FAILS / SEARCHED `x3x` `3x`@1 / FIND-ALL `3x 7x` [`3x`@0] | drill `[c = B(rx)] & some((c.p.h: "3"))`, rx := `/(?<h>\d)/`, B(rx) := `/${[p = rx]}x/`: same
+      -> AGREE
+   part-label-on-call     one  index | `[c = B(A)] & (c.p.h[1]: "3")`, A := `/(?<h>\d)/`, B(rx) := `/${[p = rx]}x/` | core/labels/labels-vs-captures/array-vs-passes: "The group questions (`some`, `count`, `occurs`) and the index `h[k]` read the array of a name's settings: every setting, in order" | legal | WHOLE `3x` HOLDS, `7x` FAILS / SEARCHED `x3x` `3x`@1 / FIND-ALL `3x 7x` [`3x`@0] | drill `[c = B(rx)] & (c.p.h[1]: "3")`, rx := `/(?<h>\d)/`, B(rx) := `/${[p = rx]}x/`: same
+      -> AGREE
+   part-label-on-call     seq  plain | `[c = B(A)] SEQ [c = B(A)] & (c.p.h: "3")`, A := `/(?<h>\d)/`, B(rx) := `/${[p = rx]}x/` | core/labels/paths: "a part label mentioned more than once names its last mention where the reference is written" | legal | WHOLE `3x3x` HOLDS, `7x3x` HOLDS, `3x7x` FAILS / SEARCHED `x3x3x` `3x3x`@1 / FIND-ALL `3x3x 7x3x 3x7x` [`3x3x`@0, `7x3x`@5] | drill `[c = B(rx)] SEQ [c = B(rx)] & (c.p.h: "3")`, rx := `/(?<h>\d)/`, B(rx) := `/${[p = rx]}x/`: same
+      -> AGREE
+   part-label-on-call     seq  $     | `([c = B(A)] SEQ [c = B(A)]) SEQ $c.p.h`, A := `/(?<h>\d)/`, B(rx) := `/${[p = rx]}x/` | core/labels/paths/label-reference: "`$x` reads alike" | legal | WHOLE `3x3x3` HOLDS, `3x7x7` HOLDS, `3x3x` FAILS / SEARCHED `x3x3x3` `3x3x3`@1 / FIND-ALL `3x3x3 3x7x7 3x3x` [`3x3x3`@0, `3x7x7`@6] | drill `([c = B(rx)] SEQ [c = B(rx)]) SEQ $c.p.h`, rx := `/(?<h>\d)/`, B(rx) := `/${[p = rx]}x/`: same
+      -> AGREE
+   part-label-on-call     seq  group | `[c = B(A)] SEQ [c = B(A)] & some((c.p.h: "3"))`, A := `/(?<h>\d)/`, B(rx) := `/${[p = rx]}x/` | core/labels/labels-vs-captures/array-vs-passes: "The group questions (`some`, `count`, `occurs`) and the index `h[k]` read the array of a name's settings: every setting, in order" | legal | WHOLE `3x3x` HOLDS, `3x7x` HOLDS, `7x7x` FAILS / SEARCHED `x3x3x` `3x3x`@1 / FIND-ALL `3x3x 3x7x 7x7x` [`3x3x`@0, `3x7x`@5] | drill `[c = B(rx)] SEQ [c = B(rx)] & some((c.p.h: "3"))`, rx := `/(?<h>\d)/`, B(rx) := `/${[p = rx]}x/`: same
+      -> AGREE
+   part-label-on-call     seq  index | `[c = B(A)] SEQ [c = B(A)] & (c.p.h[1]: "3")`, A := `/(?<h>\d)/`, B(rx) := `/${[p = rx]}x/` | core/labels/labels-vs-captures/array-vs-passes: "The group questions (`some`, `count`, `occurs`) and the index `h[k]` read the array of a name's settings: every setting, in order" | legal | WHOLE `3x3x` HOLDS, `3x7x` HOLDS, `7x3x` FAILS / SEARCHED `x3x3x` `3x3x`@1 / FIND-ALL `3x3x 3x7x 7x3x` [`3x3x`@0, `3x7x`@5] | drill `[c = B(rx)] SEQ [c = B(rx)] & (c.p.h[1]: "3")`, rx := `/(?<h>\d)/`, B(rx) := `/${[p = rx]}x/`: same
+      -> AGREE
+   part-label-on-call     and  plain | `[c = B(A)] & [c = B(A)] & (c.p.h: "3")`, A := `/(?<h>\d)/`, B(rx) := `/${[p = rx]}x/` | core/labels/paths: "the two sides of `&` are not ordered" | refused:core/labels/flow | REFUSED (`c.p.h`: both sides of `&` surface it, an ambiguous reference (core/labels/flow)) | drill `[c = B(rx)] & [c = B(rx)] & (c.p.h: "3")`, rx := `/(?<h>\d)/`, B(rx) := `/${[p = rx]}x/`: same
+      -> AGREE
+   part-label-on-call     and  $     | `([c = B(A)] & [c = B(A)]) SEQ $c.p.h`, A := `/(?<h>\d)/`, B(rx) := `/${[p = rx]}x/` | core/labels/flow: "Across `&` a name both sides surface is an ambiguous reference: a compile error where a condition or a `$` references it" | refused:core/labels/flow | REFUSED (`c.p.h`: two sides of one `&` set it and the read can see both, an ambiguous reference (a compile error, core/labels/flow)) | drill `([c = B(rx)] & [c = B(rx)]) SEQ $c.p.h`, rx := `/(?<h>\d)/`, B(rx) := `/${[p = rx]}x/`: same
+      -> AGREE
+   part-label-on-call     and  group | `[c = B(A)] & [c = B(A)] & some((c.p.h: "3"))`, A := `/(?<h>\d)/`, B(rx) := `/${[p = rx]}x/` | core/labels/flow: "A group question over a name both sides of `&` surface reads both sides' settings" | legal | WHOLE `3x` HOLDS, `7x` FAILS / SEARCHED `x3x` `3x`@1 / FIND-ALL `3x 7x` [`3x`@0] | drill `[c = B(rx)] & [c = B(rx)] & some((c.p.h: "3"))`, rx := `/(?<h>\d)/`, B(rx) := `/${[p = rx]}x/`: same
+      -> AGREE
+   part-label-on-call     and  index | `[c = B(A)] & [c = B(A)] & (c.p.h[1]: "3")`, A := `/(?<h>\d)/`, B(rx) := `/${[p = rx]}x/` | core/labels/paths: "the two sides of `&` are not ordered" | refused:core/labels/flow | REFUSED (`c.p.h`: two sides of one `&` set it and the read can see both, an ambiguous reference (a compile error, core/labels/flow)) | drill `[c = B(rx)] & [c = B(rx)] & (c.p.h[1]: "3")`, rx := `/(?<h>\d)/`, B(rx) := `/${[p = rx]}x/`: same
+      -> AGREE
+   part-label-on-call     nest plain | `X & (X.c.p.h: "3")`, X := `[c = B(A)] SEQ "!"`, A := `/(?<h>\d)/`, B(rx) := `/${[p = rx]}x/` | core/labels/export: "through a public part label, the labels that part exports, by path" | legal | WHOLE `3x!` HOLDS, `7x!` FAILS / SEARCHED `x3x!` `3x!`@1 / FIND-ALL `3x! 7x!` [`3x!`@0] | drill `X & (X.c.p.h: "3")`, X := `[c = B(rx)] SEQ "!"`, rx := `/(?<h>\d)/`, B(rx) := `/${[p = rx]}x/`: same
+      -> AGREE
+   part-label-on-call     nest $     | `(X) SEQ $X.c.p.h`, X := `[c = B(A)] SEQ "!"`, A := `/(?<h>\d)/`, B(rx) := `/${[p = rx]}x/` | core/labels/export: "through a public part label, the labels that part exports, by path" | legal | WHOLE `3x!3` HOLDS, `7x!7` HOLDS, `3x!` FAILS / SEARCHED `x3x!3` `3x!3`@1 / FIND-ALL `3x!3 7x!7 3x!` [`3x!3`@0, `7x!7`@5] | drill `(X) SEQ $X.c.p.h`, X := `[c = B(rx)] SEQ "!"`, rx := `/(?<h>\d)/`, B(rx) := `/${[p = rx]}x/`: same
+      -> AGREE
+   part-label-on-call     nest group | `X & some((X.c.p.h: "3"))`, X := `[c = B(A)] SEQ "!"`, A := `/(?<h>\d)/`, B(rx) := `/${[p = rx]}x/` | core/labels/export: "through a public part label, the labels that part exports, by path" | legal | WHOLE `3x!` HOLDS, `7x!` FAILS / SEARCHED `x3x!` `3x!`@1 / FIND-ALL `3x! 7x!` [`3x!`@0] | drill `X & some((X.c.p.h: "3"))`, X := `[c = B(rx)] SEQ "!"`, rx := `/(?<h>\d)/`, B(rx) := `/${[p = rx]}x/`: same
+      -> AGREE
+   part-label-on-call     nest index | `X & (X.c.p.h[1]: "3")`, X := `[c = B(A)] SEQ "!"`, A := `/(?<h>\d)/`, B(rx) := `/${[p = rx]}x/` | core/labels/export: "through a public part label, the labels that part exports, by path" | legal | WHOLE `3x!` HOLDS, `7x!` FAILS / SEARCHED `x3x!` `3x!`@1 / FIND-ALL `3x! 7x!` [`3x!`@0] | drill `X & (X.c.p.h[1]: "3")`, X := `[c = B(rx)] SEQ "!"`, rx := `/(?<h>\d)/`, B(rx) := `/${[p = rx]}x/`: same
+      -> AGREE
+   argument-no-such-label one  plain | `B(A) & (A.zz: "3")`, A := `/(?<h>\d)/`, B(rx) := `/${rx}x/` | core/labels/paths: "A path to a label NOT VISIBLE through its source is a compile error, a typo'd path (`c.e`) alike" | refused:not visible through | REFUSED (`A.zz`: `zz` is not visible through `A` (a compile error, core/labels/paths)) | drill `B(rx) & (rx.zz: "3")`, rx := `/(?<h>\d)/`, B(rx) := `/${rx}x/`: same
+      -> AGREE
+   argument-no-such-label one  $     | `(B(A)) SEQ $A.zz`, A := `/(?<h>\d)/`, B(rx) := `/${rx}x/` | core/labels/paths: "A path to a label NOT VISIBLE through its source is a compile error, a typo'd path (`c.e`) alike" | refused:not visible through | REFUSED (`A.zz`: `zz` is not visible through `A` (a compile error, core/labels/paths)) | drill `(B(rx)) SEQ $rx.zz`, rx := `/(?<h>\d)/`, B(rx) := `/${rx}x/`: same
+      -> AGREE
+   argument-no-such-label one  group | `B(A) & some((A.zz: "3"))`, A := `/(?<h>\d)/`, B(rx) := `/${rx}x/` | core/labels/paths: "A path to a label NOT VISIBLE through its source is a compile error, a typo'd path (`c.e`) alike" | refused:not visible through | REFUSED (`A.zz`: `zz` is not visible through `A` (a compile error, core/labels/paths)) | drill `B(rx) & some((rx.zz: "3"))`, rx := `/(?<h>\d)/`, B(rx) := `/${rx}x/`: same
+      -> AGREE
+   argument-no-such-label one  index | `B(A) & (A.zz[1]: "3")`, A := `/(?<h>\d)/`, B(rx) := `/${rx}x/` | core/labels/paths: "A path to a label NOT VISIBLE through its source is a compile error, a typo'd path (`c.e`) alike" | refused:not visible through | REFUSED (`A.zz`: `zz` is not visible through `A` (a compile error, core/labels/paths)) | drill `B(rx) & (rx.zz[1]: "3")`, rx := `/(?<h>\d)/`, B(rx) := `/${rx}x/`: same
+      -> AGREE
+   spot-argument-name     one  plain | `B(A) & (A.h: "3")`, A := `/(?<h>\d)/`, B(rx) := `/${[p = rx]}x/` | core/labels/paths/closed-argument: "open spot-read-name" | undecided:spot-read-name | WHOLE `3x` HOLDS, `7x` FAILS / SEARCHED `x3x` `3x`@1 / FIND-ALL `3x 7x` [`3x`@0] | drill `B(rx) & (rx.h: "3")`, rx := `/(?<h>\d)/`, B(rx) := `/${[p = rx]}x/`: same
+      -> UNDECIDED
+   spot-argument-name     one  $     | `(B(A)) SEQ $A.h`, A := `/(?<h>\d)/`, B(rx) := `/${[p = rx]}x/` | core/labels/paths/closed-argument: "open spot-read-name" | undecided:spot-read-name | WHOLE `3x3` HOLDS, `7x7` HOLDS, `3x` FAILS / SEARCHED `x3x3` `3x3`@1 / FIND-ALL `3x3 7x7 3x` [`3x3`@0, `7x7`@4] | drill `(B(rx)) SEQ $rx.h`, rx := `/(?<h>\d)/`, B(rx) := `/${[p = rx]}x/`: same
+      -> UNDECIDED
+   spot-argument-name     one  group | `B(A) & some((A.h: "3"))`, A := `/(?<h>\d)/`, B(rx) := `/${[p = rx]}x/` | core/labels/paths/closed-argument: "open spot-read-name" | undecided:spot-read-name | WHOLE `3x` HOLDS, `7x` FAILS / SEARCHED `x3x` `3x`@1 / FIND-ALL `3x 7x` [`3x`@0] | drill `B(rx) & some((rx.h: "3"))`, rx := `/(?<h>\d)/`, B(rx) := `/${[p = rx]}x/`: same
+      -> UNDECIDED
+   spot-argument-name     one  index | `B(A) & (A.h[1]: "3")`, A := `/(?<h>\d)/`, B(rx) := `/${[p = rx]}x/` | core/labels/paths/closed-argument: "open spot-read-name" | undecided:spot-read-name | WHOLE `3x` HOLDS, `7x` FAILS / SEARCHED `x3x` `3x`@1 / FIND-ALL `3x 7x` [`3x`@0] | drill `B(rx) & (rx.h[1]: "3")`, rx := `/(?<h>\d)/`, B(rx) := `/${[p = rx]}x/`: same
+      -> UNDECIDED
+   GRID SUMMARY: 168 cells: AGREE 164, DISAGREE 0, UNDECIDED 4 (declared: the 4 cells of the open spot-read-name); rename drill 88 cells, moved 0; deciding sentences not found in their piece: none
+PASS GRID: 168 cells (predspot's 144; a part label over a call 16; a label no text writes 4; the open spot-read-name 4): AGREE 164, DISAGREE 0 [], UNDECIDED 4 (each its open slug in its piece); rename drill (a binding named like the macro's parameter) 88 cells, moved 0 []; sentences missing from their piece none
+== AWAITS: no line or sentence of the three base files still awaits argument-default
+PASS AWAITS: "awaits argument-default" in the base files at the starting commit: 23 (`git show 75d2318bd:<file> | grep -c`); left now: none
+== SWEEP: every printed three-mode line (`rejected:` and history lines skipped), predspot's engine over the starting documents against this one over these; every non-same status DECLARED with its reason; no answer moves unless listed
+   DECLARED x1: `(?J)`: not modelled
+   DECLARED x1: `padded(rx, n)`: only `padded(rx)` is read
+   DECLARED x1: a condition bound alone and read where used: not modelled (t
+   DECLARED x2: a group number read as a label (core/labels/numbers): not mo
+   DECLARED x1: a name inside a value left of `:`: refused by the model for 
+   DECLARED x10: a name the line binds in its prose, not its tail (the sweep 
+   DECLARED x17: a provided body this model does not read (native, or not mod
+   DECLARED x1: a readings line quoting a run as printed before label-refere
+   DECLARED x1: a readings line quoting the draft's run of a form it marks N
+   DECLARED x7: a set, a negation or a conditional group as an operand: not 
+   DECLARED x4: a value list in a hole (`${[]}`, `${[2, 4] + ..}`): not mode
+   DECLARED x9: not modelled (the header's list); the printed line is RIGHT 
+   DECLARED x13: value arithmetic over a pattern or several strings: not mode
+   ADDED core.md:587 `[(=l) = atomic(/(?<l>\d)/)] & (l: <5)` ()
+   ADDED core.md:744 `B(A) & (B.p.d: <5)` (('A', '/(?<d>\\d)/'), ('B(rx)', '/${[p = rx]}-(?<d>\\d)/'))
+   ADDED library.md:465 `contains(/(?<n>\d)/)` ()
+   ADDED library.md:543 `prefix_in(3, /(?<a>ab)c|xy/) & (prefix_in.a: "ab")` ()
+PASS SWEEP: 216 printed lines now (CRASH 1, DIFF 9, REFUSED 57, same 160, unparsed 1), 212 at the starting commit under predspot's engine; every non-same status declared (10 line declarations, 10 rule rows): undeclared 0 []; answers moved 0 (listed: none); gone 0; added 4; stale declarations 0
+== NULLABLE: EVID-4's known limit: no program the checks ran has a loop whose body can match empty
+PASS NULLABLE: 538 programs run by the checks above (SWEEP's included), walked node by node: 0 with a loop whose body can match empty
+== SUCCESSOR: every earlier in-force model re-run; its LAST LINE read; each red declared superseded, with the digest of the red's own FAIL line (a red whose content changes under an unchanged name fails here)
+   predspot   last line: predspot_model: 27 checks, 3 failed (SWEEP, SUCCESSOR, FSWEEP)
+      FSWEEP [897084e37c9f]: superseded by OPENFLAGS, PATFLAGS and FSWEEP here: its six bad lines are this lane's candidate lines (an option hole, a constant under `@options`, an argument literal a library body places) and the `pattern($x)` line, which its flag engine does not read or answers one way
+         its FAIL line: FAIL FSWEEP: 4 flag lines at the starting commit (each reproduced under 2026-11-19's rule, then run under hole-flags: 4 stand, 0 changed); 16 flag lines now, each printed as hole-flags runs it; bad 6 [('core.md', 249, '/(?${o})${w}/', 'REFU
+      SUCCESSOR [9fd9cd62de81]: superseded by SUCCESSOR here: its one red, predcall's SCAN, is declared below with its new digest
+         its FAIL line: FAIL SUCCESSOR: 9 earlier models re-run one at a time, each last line read; every red declared superseded with an unchanged FAIL line: [('predcall', 'SCAN', 'CONTENT CHANGED')]
+      SWEEP [63d7d5d68877]: superseded by PREFIXIN and SWEEP here: its one bad line is prefix_in's "S's labels, through the call" (A5), which its engine, keeping prefix_in exempt from the list, refuses
+         its FAIL line: FAIL SWEEP: 224 printed lines now (CRASH 1, DIFF 6, REFUSED 65, same 150, unparsed 2), 215 at the starting commit under the old engine; in both with the same program and texts 206, answers moved 0; gone 9 (respelled 6, an error now 2), adde
+   predfix83  last line: predfix83_model: 25 checks, 4 failed (AWAITS, SUCCESSOR, MARKS, DOC)
+      AWAITS [2b8a870671e7]: superseded by AWAITS here: argument-default is ruled, so no line awaits it (0 marked lines)
+         its FAIL line: FAIL AWAITS: 0 marked lines; not (local same, error refused): none; 0 with no read
+      DOC [05476f118e2f]: superseded by predspot's fold rewrote the texts it looks for (argument-default ruled; the bodies restated) and SWEEP here (each gone line RESPELLED, ERROR NOW or DROPPED) and DOC here
+         its FAIL line: FAIL DOC: 7 lines; missing: 2
+      MARKS [6a4c7d7c60e5]: superseded by predspot's fold rewrote the texts it looks for (argument-default ruled; the bodies restated) and ARGNAME, ARGLABEL, INPLACE, SPOT, CONVENTION here (the new texts)
+         its FAIL line: FAIL MARKS: 38 dispositions found where they landed; missing: ['A3', 'A3', 'A8', 'A8', 'A8', 'D4']
+      SUCCESSOR [09beed319b16]: superseded by SUCCESSOR here: it re-runs the same eight models, each red declared below
+         its FAIL line: FAIL SUCCESSOR: 8 earlier models re-run, each last line read; every red declared superseded with an unchanged FAIL line: [('preddef', 'AWAITS', 'UNDECLARED'), ('preddef', 'DOC', 'UNDECLARED'), ('preddef', 'MARKS', 'CONTENT CHANGED'), ('pred
+   preddef    last line: preddef_model: 22 checks, 4 failed (AWAITS, SUCCESSOR, MARKS, DOC)
+      AWAITS [e8f86816cd7a]: superseded by AWAITS here, as predfix83's
+         its FAIL line: FAIL AWAITS: 0 marked lines; not (local same, error refused): none; 0 with no read; the piece's own line: (local) differing 0, (error) refused True
+      DOC [7fb8548abf05]: superseded by predspot's fold rewrote the texts it looks for (argument-default ruled; the bodies restated) and SWEEP here (the line "(local)" an ERROR NOW, the rejected candidate)
+         its FAIL line: FAIL DOC: 10 lines; missing: [('core/labels/paths/argument-default', '(local): WHOLE `3xx` HOLDS, `7xx` FAILS / SEARCHED `7xx 3xx` `3xx`@4 / FIND-ALL `3xx 7xx 4')]
+      MARKS [1eb81766853a]: superseded by predspot's fold rewrote the texts it looks for (argument-default ruled; the bodies restated) and ARGNAME, INPLACE and GRID here
+         its FAIL line: FAIL MARKS: 22 pieces of the fold found where they landed; missing: ['statement 3', 'call-prefix', 'argument-default', 'two-sources', 'form caveat', 'errors row']
+      SUCCESSOR [9ce8705eed79]: superseded by SUCCESSOR here
+         its FAIL line: FAIL SUCCESSOR: 7 earlier models re-run, each last line read; every red declared superseded: NO
+   predfix82  last line: predfix82_model: 22 checks, 4 failed (REPRINT, SUCCESSOR, MARKS, DOC)
+      DOC [b83b570b827a]: superseded by predspot's fold rewrote the texts it looks for (argument-default ruled; the bodies restated) and INPLACE here (two-sources' first shape settled) and SWEEP
+         its FAIL line: FAIL DOC: 15 lines; missing: [('two-sources', '(a) the label as it reaches the caller, an argument written in place: WHOLE `7-3` HOLDS, `'), ('two-sources', '(b) the source written here, as spelled with a part label: WHOLE `7-3` FAILS, `3-7
+      MARKS [84df29d69537]: superseded by predfix83's SUCCESSOR, which declared it, and predfix83's MARKS there, unchanged
+         its FAIL line: FAIL MARKS: 35 dispositions' texts found where they landed; missing: ['ANS-1', 'ANS-2a', 'ANS-2b', 'RULING-9']
+      REPRINT [49e1c7ae12f2]: superseded by predspot's fold rewrote the texts it looks for (argument-default ruled; the bodies restated) and SPOT here (example 1 revised; its spot-labelled line) and SWEEP
+         its FAIL line: FAIL REPRINT: 10 of 12 re-derived lines found verbatim in the documents (missing: ['nested-scope ex. 1', 'nested-scope ex. 3']); the set form against value-left's `(($a + $b): <10)` on the 100 digit pairs: 0 differ
+      SUCCESSOR [7af0ee27f19f]: superseded by SUCCESSOR here
+         its FAIL line: FAIL SUCCESSOR: 6 earlier models re-run, each last line read; every red declared superseded: NO
+   predcall   last line: predcall_model: 14 checks, 3 failed (SCAN, PREDREF, DOC)
+      DOC [ee72c84698ec]: superseded by predspot's fold rewrote the texts it looks for (argument-default ruled; the bodies restated) and ARGNAME and TWOSPOT here (call-prefix's lines re-spelled) and SWEEP
+         its FAIL line: FAIL DOC: 10 lines; missing: [('call-prefix', "A's own d, through the argument (case 2): WHOLE `7-3` FAILS, `3-7` HOLDS, `3-3` HOLDS / SE"), ('call-prefix', "d as the call surfaces it, the last mention (B's): WHOLE `7-3` HOLDS, `3-7` FAILS,
+      PREDREF [bdc1a3daaa39]: superseded by SUCCESSOR here: predref is now a traceback (below), so its expected red is gone
+         its FAIL line: FAIL PREDREF: red: [] (expected ['MARKS']: its MARKS looks for the call-prefix piece still open, covered by MARKS here, which looks for it ruled; its other 7 checks stay green on the folded documents)
+      SCAN [252edea9d2b0]: superseded by GRID and SPOT here, as predspot declared it (digest 5237c318c2b5): the same 33 spans flagged, the same four not on LEFT; 312 spans checked where predspot saw 309, the three this lane's new lines add
+         its FAIL line: FAIL SCAN: 312 program spans checked; 33 distinct spans read a label bare or through an unknown head, all on LEFT; not on LEFT: [('core.md', '<(10 - $b)'), ('core.md', '[(=d) = B(A)] & (d: <5)'), ('core.md', 'count((($a + $b): <10))'), ('co
+   predref    last line: CompileError: an undeclared name: (=) = X
+      TRACEBACK [654619d66d03]: superseded by SPOT and PLACES here: the provided bodies now write the export list on their spot (`atomic(X) := /(?>${[(=) = X]})/`, transform-export), which predref's lowerer, older than export-list, cannot read
+         its FAIL line: CompileError: an undeclared name: (=) = X
+   predbound  last line: CompileError: an undeclared name: (=) = x
+      TRACEBACK [f8b5d917c866]: superseded by SPOT and PLACES here, as predref's (its body reader meets `[(=) = x]`)
+         its FAIL line: CompileError: an undeclared name: (=) = x
+   predfix77  last line: AssertionError: `chars := (.*?)`, `nchars
+      TRACEBACK [455b59c946bc]: superseded by predfix83's SUCCESSOR, which declared it, and predfix82's REPRINT and predbound's checks, unchanged
+         its FAIL line: AssertionError: `chars := (.*?)`, `nchars
+   predarr    last line: AssertionError: `chars := (/.*?/)`
+      TRACEBACK [ce43d48c7e37]: superseded by predfix83's SUCCESSOR, which declared it, and predfix82's REPRINT and predref's HITS, unchanged
+         its FAIL line: AssertionError: `chars := (/.*?/)`
+   predscope  last line: AssertionError: `(repeat\(x, min\) := /\(\?:\$\{x\}\)\{\$\{min\},\}/)`
+      TRACEBACK [17ab1e47c179]: superseded by TWOSPOT here: its reader of rx.repeat's third body expects `${x}`; the body now writes `${[(=) = x]}` (transform-export)
+         its FAIL line: AssertionError: `(repeat\(x, min\) := /\(\?:\$\{x\}\)\{\$\{min\},\}/)`
+PASS SUCCESSOR: 10 earlier models re-run one at a time, each last line read; every red declared superseded with an unchanged FAIL line: yes
+== FCONTROL: the flag engine (no hole) against python `re`, each control written by hand
+PASS FCONTROL: 11 literals, each against its hand-written python `re` equivalent over 1111 texts: differing none
+== EXAMPLES: the weak example and the s example, the rule of hole-flags against the rule of 2026-11-19
+PASS EXAMPLES: the weak example under hole-flags reproduces the record's pasted line (b) True, under 2026-11-19's rule its line (a) True; `/(?i)id-${word}/` holds on all three True; the s example: `a\nb` FAILS now True, HELD under 2026-11-19's rule True, holds with `(?s)` in `dot` True
+== EXPLICIT (reading (a)): `(?i)`, `(?-i)`, `(?i:..)`, `/.../i` are explicit and pass a hole; a program option never does; any_case's body writes one
+   (?i)                                     WHOLE `AB` HOLDS (expected HOLDS)
+   (?i:..)                                  WHOLE `AB` HOLDS (expected HOLDS)
+   /.../i                                   WHOLE `AB` HOLDS (expected HOLDS)
+   (?-i) over a weakly insensitive library  WHOLE `AB` FAILS (expected FAILS)
+   (?-i:..) over it                         WHOLE `AB` FAILS (expected FAILS)
+   the library alone, weakly insensitive    WHOLE `AB` HOLDS (expected HOLDS)
+   a program option `@options(i)`           WHOLE `AB` FAILS (expected FAILS)
+   the program's own literal under it       WHOLE `AB` HOLDS (expected HOLDS)
+   any_case's body                          WHOLE `AB` HOLDS (expected HOLDS)
+PASS EXPLICIT: 9 settings over `${w}`, w := `/ab/` in a library file, on `AB`: wrong none
+== FILTER (reading (b), A2, A8): the sides of an `&` in a hole inherit an explicit `i` or `-i` only; for flags a binding is its expression where it is WRITTEN; the warning's trigger under `i` and under `-i`
+   the `-i` trigger: `/(?-i)${C}/`, C := `/[a-z]x/ & /Ax/` in a weakly insensitive library: differs on 4 of 20 texts: ['ax', 'aX', 'Ax', 'AX']
+PASS FILTER: trigger at `/(?i)${..}/`: `/[a-z]x/ & /[A-Z]x/` True (warns), `/[a-z]+/ & /b.*/` False (does not); a library C := `/[a-z]x/ & /[A-Z]x/` under a weakly insensitive program: `/${C}/` on `ax` False (no flag reaches the sides: nothing to warn of), `/(?i)${C}/` True; the same sides written in place in that program's own hole take its weak `i` as their own file's default: True; under an inherited `-i` the trigger fires True (A8); bound in a library, `/id-${C}/` on `id-BLAH` False, the same `&` written in the hole True (A2: for flags, where it is WRITTEN)
+== NOTINH (reading (c)): `x` and `n` stay not inherited; `m` and `s` no longer are (part 3)
+PASS NOTINH: `/(?x)${sp}/`, sp := `/a b/`: `ab` False, `a b` True (x not inherited); `/(?n)${g}/`, g := `/(a)/`: g's numbered groups 1 (n not inherited); `/(?s)${d}/` on a newline False; `/(?m)${e}\nb/`, e := `/a$/`, on `a\nb` False now, True under 2026-11-19's rule (m no longer inherited). U, xx, J: not modelled (U and xx not inherited as ruled; J unchanged, core/holes/same-name)
+== LEXICAL (reading (d)): the program options and the weak `i` are one table, from the statement on, the file's own literals
+PASS LEXICAL: one file: `a := /a./`, then `@options(s, m)`, then `b := /b./`: `a` on `a\n` False (written before the statement); `b` on `b\n` True (from the statement on); the program's own literal after it on `x\n` True; the weak `i` in the same table (at the top): a program file opening `@options(i)` with `a := /a/`, a library `c := /c/`: `/${a}${c}/` on `AC` False, on `Ac` True (the file's own literals only)
+== LIBFILE (reading (e), the brief's): a library keeps its own options; never across an import
+PASS LIBFILE: a library opening `@options(s)`: its `dot := /./` in `/a${dot}b/` on `a\nb` True; the program opening it instead: False (never across an import), the program's own `/a.b/` True; a binding of the SAME file inserted in a hole of that file has the same defaults (the record's reading (e)): `/x${w}/` on `XAB` True
+== NUMBERS (reading (f)): with n set, a plain `( )` is no capture and no numbered label
+PASS NUMBERS: `/(\d):(\d)/`: numbered groups under a file's `@options(n)` 0, without 2; `/(?<h>\d):(\d)/` under n 0 (a named group stays a capture and a label by its name)
+== FLAGGRID: flag x where it is set x what is read; each cell its deciding sentence and a run
+   i explicit on  | the literal itself          | own text                   | `/(?i)ab/` [no options] on `AB`: applies | core/patterns/flags: "A literal's flags are the ones it writes" | AGREE
+   i explicit on  | the literal itself          | inserted same-file binding | `/${p}/` [program: p := /(?i)ab/] on `AB`: applies | core/patterns/flags: "A literal's flags are the ones it writes" | AGREE
+   i explicit on  | the literal itself          | inserted library binding   | `/${p}/` [library: p := /(?i)ab/] on `AB`: applies | core/patterns/flags: "A literal's flags are the ones it writes" | AGREE
+   i explicit on  | the literal itself          | a side of `&` in a hole    | `/${/(?i)ab/ & /(?s:.*)/}/` [no options] on `AB`: applies | core/patterns/flags: "A literal's flags are the ones it writes" | AGREE
+   i explicit on  | up the hole                 | own text                   | dup: the own text is in no hole: the cell "the literal itself", own text (core/holes/flags: "What is inserted in a hole starts from its own file's defaults")
+   i explicit on  | up the hole                 | inserted same-file binding | `/(?i)${p}/` [program: p := /ab/] on `AB`: applies | core/holes/flags: "only an explicit `i` or `-i` in force at the hole is inherited" | AGREE
+   i explicit on  | up the hole                 | inserted library binding   | `/(?i)${p}/` [library: p := /ab/] on `AB`: applies | core/holes/flags: "only an explicit `i` or `-i` in force at the hole is inherited" | AGREE
+   i explicit on  | up the hole                 | a side of `&` in a hole    | `/(?i)${/ab/ & /(?s:.*)/}/` [no options] on `AB`: applies | core/holes/flags: "only an explicit `i` or `-i` in force at the hole is inherited" | AGREE
+   i explicit on  | the file's option           | own text                   | dup: the program `@options(i)` sets the WEAK value: the weak column's cell (lib/builtin/options: "a program option is never explicit")
+   i explicit on  | the file's option           | inserted same-file binding | dup: the program `@options(i)` sets the WEAK value: the weak column's cell (lib/builtin/options: "a program option is never explicit")
+   i explicit on  | the file's option           | inserted library binding   | dup: the program `@options(i)` sets the WEAK value: the weak column's cell (lib/builtin/options: "a program option is never explicit")
+   i explicit on  | the file's option           | a side of `&` in a hole    | dup: the program `@options(i)` sets the WEAK value: the weak column's cell (lib/builtin/options: "a program option is never explicit")
+   i explicit on  | the importing file's option | own text                   | dup: the program `@options(i)` sets the WEAK value: the weak column's cell (lib/builtin/options: "a program option is never explicit")
+   i explicit on  | the importing file's option | inserted same-file binding | dup: the program `@options(i)` sets the WEAK value: the weak column's cell (lib/builtin/options: "a program option is never explicit")
+   i explicit on  | the importing file's option | inserted library binding   | dup: the program `@options(i)` sets the WEAK value: the weak column's cell (lib/builtin/options: "a program option is never explicit")
+   i explicit on  | the importing file's option | a side of `&` in a hole    | dup: the program `@options(i)` sets the WEAK value: the weak column's cell (lib/builtin/options: "a program option is never explicit")
+   i explicit off | the literal itself          | own text                   | `/(?-i)ab/` [program: @options(i)] on `!AB`: applies | core/patterns/flags: "A literal's flags are the ones it writes" | AGREE
+   i explicit off | the literal itself          | inserted same-file binding | `/${p}/` [program: @options(i) p := /(?-i)ab/] on `!AB`: applies | core/patterns/flags: "A literal's flags are the ones it writes" | AGREE
+   i explicit off | the literal itself          | inserted library binding   | `/${p}/` [library: @options(i) p := /(?-i)ab/] on `!AB`: applies | core/patterns/flags: "A literal's flags are the ones it writes" | AGREE
+   i explicit off | the literal itself          | a side of `&` in a hole    | `/${/(?-i)ab/ & /(?s:.*)/}/` [program: @options(i)] on `!AB`: applies | core/patterns/flags: "A literal's flags are the ones it writes" | AGREE
+   i explicit off | up the hole                 | own text                   | dup: the own text is in no hole: the cell "the literal itself", own text (core/holes/flags: "What is inserted in a hole starts from its own file's defaults")
+   i explicit off | up the hole                 | inserted same-file binding | `/(?-i)${p}/` [program: @options(i) p := /ab/] on `!AB`: applies | core/holes/flags: "only an explicit `i` or `-i` in force at the hole is inherited" | AGREE
+   i explicit off | up the hole                 | inserted library binding   | `/(?-i)${p}/` [library: @options(i) p := /ab/] on `!AB`: applies | core/holes/flags: "only an explicit `i` or `-i` in force at the hole is inherited" | AGREE
+   i explicit off | up the hole                 | a side of `&` in a hole    | `/(?-i)${/ab/ & /(?s:.*)/}/` [program: @options(i)] on `!AB`: applies | core/holes/flags: "only an explicit `i` or `-i` in force at the hole is inherited" | AGREE
+   i explicit off | the file's option           | own text                   | dup: the program `@options(-i)` sets the WEAK value: the weak column's cell (lib/builtin/options: "a program option is never explicit")
+   i explicit off | the file's option           | inserted same-file binding | dup: the program `@options(-i)` sets the WEAK value: the weak column's cell (lib/builtin/options: "a program option is never explicit")
+   i explicit off | the file's option           | inserted library binding   | dup: the program `@options(-i)` sets the WEAK value: the weak column's cell (lib/builtin/options: "a program option is never explicit")
+   i explicit off | the file's option           | a side of `&` in a hole    | dup: the program `@options(-i)` sets the WEAK value: the weak column's cell (lib/builtin/options: "a program option is never explicit")
+   i explicit off | the importing file's option | own text                   | dup: the program `@options(-i)` sets the WEAK value: the weak column's cell (lib/builtin/options: "a program option is never explicit")
+   i explicit off | the importing file's option | inserted same-file binding | dup: the program `@options(-i)` sets the WEAK value: the weak column's cell (lib/builtin/options: "a program option is never explicit")
+   i explicit off | the importing file's option | inserted library binding   | dup: the program `@options(-i)` sets the WEAK value: the weak column's cell (lib/builtin/options: "a program option is never explicit")
+   i explicit off | the importing file's option | a side of `&` in a hole    | dup: the program `@options(-i)` sets the WEAK value: the weak column's cell (lib/builtin/options: "a program option is never explicit")
+   weak on        | the literal itself          | own text                   | n/a: no such program: a weak value is never written in a literal (lib/builtin/options: "a weak value is set only by a program option")
+   weak on        | the literal itself          | inserted same-file binding | n/a: no such program: a weak value is never written in a literal (lib/builtin/options: "a weak value is set only by a program option")
+   weak on        | the literal itself          | inserted library binding   | n/a: no such program: a weak value is never written in a literal (lib/builtin/options: "a weak value is set only by a program option")
+   weak on        | the literal itself          | a side of `&` in a hole    | n/a: no such program: a weak value is never written in a literal (lib/builtin/options: "a weak value is set only by a program option")
+   weak on        | up the hole                 | own text                   | n/a: no such program: a weak value is never written in a literal (lib/builtin/options: "a weak value is set only by a program option")
+   weak on        | up the hole                 | inserted same-file binding | n/a: no such program: a weak value is never written in a literal (lib/builtin/options: "a weak value is set only by a program option")
+   weak on        | up the hole                 | inserted library binding   | n/a: no such program: a weak value is never written in a literal (lib/builtin/options: "a weak value is set only by a program option")
+   weak on        | up the hole                 | a side of `&` in a hole    | n/a: no such program: a weak value is never written in a literal (lib/builtin/options: "a weak value is set only by a program option")
+   weak on        | the file's option           | own text                   | `/ab/` [program: @options(i)] on `AB`: applies; without the option: differs | lib/builtin/options: "applies to the literals written after it in the same file" | AGREE
+   weak on        | the file's option           | inserted same-file binding | `/${p}/` [program: @options(i) p := /ab/] on `AB`: applies; without the option: differs | lib/builtin/options: "applies to the literals written after it in the same file" | AGREE
+   weak on        | the file's option           | inserted library binding   | `/${p}/` [library: @options(i) p := /ab/] on `AB`: applies; without the option: differs | lib/builtin/options: "applies to the literals written after it in the same file" | AGREE
+   weak on        | the file's option           | a side of `&` in a hole    | `/${/ab/ & /(?s:.*)/}/` [program: @options(i)] on `AB`: applies; without the option: differs | lib/builtin/options: "applies to the literals written after it in the same file" | AGREE
+   weak on        | the importing file's option | own text                   | dup: the probe's file imports nothing: the cell "the file's option", same reader (lib/builtin/options: "applies to the literals written after it in the same file")
+   weak on        | the importing file's option | inserted same-file binding | dup: the probe's file imports nothing: the cell "the file's option", same reader (lib/builtin/options: "applies to the literals written after it in the same file")
+   weak on        | the importing file's option | inserted library binding   | `/${p}/` [program: @options(i); library: p := /ab/] on `AB`: does not apply | core/holes/flags: "A weak value does not propagate" | AGREE
+   weak on        | the importing file's option | a side of `&` in a hole    | `/${p & /(?s:.*)/}/` [program: @options(i); library: p := /ab/] on `AB`: does not apply | core/holes/flags: "A weak value does not propagate" | AGREE
+   weak off       | the literal itself          | own text                   | n/a: no such program: a weak value is never written in a literal (lib/builtin/options: "a weak value is set only by a program option")
+   weak off       | the literal itself          | inserted same-file binding | n/a: no such program: a weak value is never written in a literal (lib/builtin/options: "a weak value is set only by a program option")
+   weak off       | the literal itself          | inserted library binding   | n/a: no such program: a weak value is never written in a literal (lib/builtin/options: "a weak value is set only by a program option")
+   weak off       | the literal itself          | a side of `&` in a hole    | n/a: no such program: a weak value is never written in a literal (lib/builtin/options: "a weak value is set only by a program option")
+   weak off       | up the hole                 | own text                   | n/a: no such program: a weak value is never written in a literal (lib/builtin/options: "a weak value is set only by a program option")
+   weak off       | up the hole                 | inserted same-file binding | n/a: no such program: a weak value is never written in a literal (lib/builtin/options: "a weak value is set only by a program option")
+   weak off       | up the hole                 | inserted library binding   | n/a: no such program: a weak value is never written in a literal (lib/builtin/options: "a weak value is set only by a program option")
+   weak off       | up the hole                 | a side of `&` in a hole    | n/a: no such program: a weak value is never written in a literal (lib/builtin/options: "a weak value is set only by a program option")
+   weak off       | the file's option           | own text                   | `/ab/` [program: @options(i) @options(-i)] on `!AB`: candidate (a) applies, candidate (b) a compile error; the `-i` statement matters | lib/builtin/options: "open options-position" | UNDECIDED
+   weak off       | the file's option           | inserted same-file binding | `/${p}/` [program: @options(i) @options(-i) p := /ab/] on `!AB`: candidate (a) applies, candidate (b) a compile error; the `-i` statement matters | lib/builtin/options: "open options-position" | UNDECIDED
+   weak off       | the file's option           | inserted library binding   | `/${p}/` [library: @options(i) @options(-i) p := /ab/] on `!AB`: candidate (a) applies, candidate (b) a compile error; the `-i` statement matters | lib/builtin/options: "open options-position" | UNDECIDED
+   weak off       | the file's option           | a side of `&` in a hole    | `/${/ab/ & /(?s:.*)/}/` [program: @options(i) @options(-i)] on `!AB`: candidate (a) applies, candidate (b) a compile error; the `-i` statement matters | lib/builtin/options: "open options-position" | UNDECIDED
+   weak off       | the importing file's option | own text                   | dup: the probe's file imports nothing: the cell "the file's option", same reader (lib/builtin/options: "applies to the literals written after it in the same file")
+   weak off       | the importing file's option | inserted same-file binding | dup: the probe's file imports nothing: the cell "the file's option", same reader (lib/builtin/options: "applies to the literals written after it in the same file")
+   weak off       | the importing file's option | inserted library binding   | `/${p}/` [program: @options(-i); library: @options(i) p := /ab/] on `!AB`: does not apply | core/holes/flags: "A weak value does not propagate" | AGREE
+   weak off       | the importing file's option | a side of `&` in a hole    | `/${p & /(?s:.*)/}/` [program: @options(-i); library: @options(i) p := /ab/] on `!AB`: does not apply | core/holes/flags: "A weak value does not propagate" | AGREE
+   m              | the literal itself          | own text                   | `/(?m)a$\nb/` [no options] on `a\nb`: applies | core/patterns/flags: "A literal's flags are the ones it writes" | AGREE
+   m              | the literal itself          | inserted same-file binding | `/${p}/` [program: p := /(?m)a$\nb/] on `a\nb`: applies | core/patterns/flags: "A literal's flags are the ones it writes" | AGREE
+   m              | the literal itself          | inserted library binding   | `/${p}/` [library: p := /(?m)a$\nb/] on `a\nb`: applies | core/patterns/flags: "A literal's flags are the ones it writes" | AGREE
+   m              | the literal itself          | a side of `&` in a hole    | `/${/(?m)a$\nb/ & /(?s:.*)/}/` [no options] on `a\nb`: applies | core/patterns/flags: "A literal's flags are the ones it writes" | AGREE
+   m              | up the hole                 | own text                   | dup: the own text is in no hole: the cell "the literal itself", own text (core/holes/flags: "What is inserted in a hole starts from its own file's defaults")
+   m              | up the hole                 | inserted same-file binding | `/(?m)${p}/` [program: p := /a$\nb/] on `a\nb`: does not apply | core/holes/flags: "`m`, `s`, `x`, `xx`, `n`, `U` are not" | AGREE
+   m              | up the hole                 | inserted library binding   | `/(?m)${p}/` [library: p := /a$\nb/] on `a\nb`: does not apply | core/holes/flags: "`m`, `s`, `x`, `xx`, `n`, `U` are not" | AGREE
+   m              | up the hole                 | a side of `&` in a hole    | `/(?m)${/a$\nb/ & /(?s:.*)/}/` [no options] on `a\nb`: does not apply | core/holes/flags: "`m`, `s`, `x`, `xx`, `n`, `U` are not" | AGREE
+   m              | the file's option           | own text                   | `/a$\nb/` [program: @options(m)] on `a\nb`: applies; without the option: differs | lib/builtin/options: "applies to the literals written after it in the same file" | AGREE
+   m              | the file's option           | inserted same-file binding | `/${p}/` [program: @options(m) p := /a$\nb/] on `a\nb`: applies; without the option: differs | lib/builtin/options: "applies to the literals written after it in the same file" | AGREE
+   m              | the file's option           | inserted library binding   | `/${p}/` [library: @options(m) p := /a$\nb/] on `a\nb`: applies; without the option: differs | lib/builtin/options: "applies to the literals written after it in the same file" | AGREE
+   m              | the file's option           | a side of `&` in a hole    | `/${/a$\nb/ & /(?s:.*)/}/` [program: @options(m)] on `a\nb`: applies; without the option: differs | lib/builtin/options: "applies to the literals written after it in the same file" | AGREE
+   m              | the importing file's option | own text                   | dup: the probe's file imports nothing: the cell "the file's option", same reader (lib/builtin/options: "applies to the literals written after it in the same file")
+   m              | the importing file's option | inserted same-file binding | dup: the probe's file imports nothing: the cell "the file's option", same reader (lib/builtin/options: "applies to the literals written after it in the same file")
+   m              | the importing file's option | inserted library binding   | `/${p}/` [program: @options(m); library: p := /a$\nb/] on `a\nb`: does not apply | lib/builtin/options: "never across an import" | AGREE
+   m              | the importing file's option | a side of `&` in a hole    | `/${p & /(?s:.*)/}/` [program: @options(m); library: p := /a$\nb/] on `a\nb`: does not apply | lib/builtin/options: "never across an import" | AGREE
+   s              | the literal itself          | own text                   | `/(?s)a.b/` [no options] on `a\nb`: applies | core/patterns/flags: "A literal's flags are the ones it writes" | AGREE
+   s              | the literal itself          | inserted same-file binding | `/${p}/` [program: p := /(?s)a.b/] on `a\nb`: applies | core/patterns/flags: "A literal's flags are the ones it writes" | AGREE
+   s              | the literal itself          | inserted library binding   | `/${p}/` [library: p := /(?s)a.b/] on `a\nb`: applies | core/patterns/flags: "A literal's flags are the ones it writes" | AGREE
+   s              | the literal itself          | a side of `&` in a hole    | `/${/(?s)a.b/ & /(?s:.*)/}/` [no options] on `a\nb`: applies | core/patterns/flags: "A literal's flags are the ones it writes" | AGREE
+   s              | up the hole                 | own text                   | dup: the own text is in no hole: the cell "the literal itself", own text (core/holes/flags: "What is inserted in a hole starts from its own file's defaults")
+   s              | up the hole                 | inserted same-file binding | `/(?s)${p}/` [program: p := /a.b/] on `a\nb`: does not apply | core/holes/flags: "`m`, `s`, `x`, `xx`, `n`, `U` are not" | AGREE
+   s              | up the hole                 | inserted library binding   | `/(?s)${p}/` [library: p := /a.b/] on `a\nb`: does not apply | core/holes/flags: "`m`, `s`, `x`, `xx`, `n`, `U` are not" | AGREE
+   s              | up the hole                 | a side of `&` in a hole    | `/(?s)${/a.b/ & /(?s:.*)/}/` [no options] on `a\nb`: does not apply | core/holes/flags: "`m`, `s`, `x`, `xx`, `n`, `U` are not" | AGREE
+   s              | the file's option           | own text                   | `/a.b/` [program: @options(s)] on `a\nb`: applies; without the option: differs | lib/builtin/options: "applies to the literals written after it in the same file" | AGREE
+   s              | the file's option           | inserted same-file binding | `/${p}/` [program: @options(s) p := /a.b/] on `a\nb`: applies; without the option: differs | lib/builtin/options: "applies to the literals written after it in the same file" | AGREE
+   s              | the file's option           | inserted library binding   | `/${p}/` [library: @options(s) p := /a.b/] on `a\nb`: applies; without the option: differs | lib/builtin/options: "applies to the literals written after it in the same file" | AGREE
+   s              | the file's option           | a side of `&` in a hole    | `/${/a.b/ & /(?s:.*)/}/` [program: @options(s)] on `a\nb`: applies; without the option: differs | lib/builtin/options: "applies to the literals written after it in the same file" | AGREE
+   s              | the importing file's option | own text                   | dup: the probe's file imports nothing: the cell "the file's option", same reader (lib/builtin/options: "applies to the literals written after it in the same file")
+   s              | the importing file's option | inserted same-file binding | dup: the probe's file imports nothing: the cell "the file's option", same reader (lib/builtin/options: "applies to the literals written after it in the same file")
+   s              | the importing file's option | inserted library binding   | `/${p}/` [program: @options(s); library: p := /a.b/] on `a\nb`: does not apply | lib/builtin/options: "never across an import" | AGREE
+   s              | the importing file's option | a side of `&` in a hole    | `/${p & /(?s:.*)/}/` [program: @options(s); library: p := /a.b/] on `a\nb`: does not apply | lib/builtin/options: "never across an import" | AGREE
+   n              | the literal itself          | own text                   | `/(?n)(a)b/` [no options] on `(the numbered groups)`: applies | core/patterns/flags: "A literal's flags are the ones it writes" | AGREE
+   n              | the literal itself          | inserted same-file binding | `/${p}/` [program: p := /(?n)(a)b/] on `(the numbered groups)`: applies | core/patterns/flags: "A literal's flags are the ones it writes" | AGREE
+   n              | the literal itself          | inserted library binding   | `/${p}/` [library: p := /(?n)(a)b/] on `(the numbered groups)`: applies | core/patterns/flags: "A literal's flags are the ones it writes" | AGREE
+   n              | the literal itself          | a side of `&` in a hole    | `/${/(?n)(a)b/ & /(?s:.*)/}/` [no options] on `(the numbered groups)`: applies | core/patterns/flags: "A literal's flags are the ones it writes" | AGREE
+   n              | up the hole                 | own text                   | dup: the own text is in no hole: the cell "the literal itself", own text (core/holes/flags: "What is inserted in a hole starts from its own file's defaults")
+   n              | up the hole                 | inserted same-file binding | `/(?n)${p}/` [program: p := /(a)b/] on `(the numbered groups)`: does not apply | core/holes/flags: "`m`, `s`, `x`, `xx`, `n`, `U` are not" | AGREE
+   n              | up the hole                 | inserted library binding   | `/(?n)${p}/` [library: p := /(a)b/] on `(the numbered groups)`: does not apply | core/holes/flags: "`m`, `s`, `x`, `xx`, `n`, `U` are not" | AGREE
+   n              | up the hole                 | a side of `&` in a hole    | `/(?n)${/(a)b/ & /(?s:.*)/}/` [no options] on `(the numbered groups)`: does not apply | core/holes/flags: "`m`, `s`, `x`, `xx`, `n`, `U` are not" | AGREE
+   n              | the file's option           | own text                   | `/(a)b/` [program: @options(n)] on `(the numbered groups)`: applies; without the option: differs | lib/builtin/options: "applies to the literals written after it in the same file" | AGREE
+   n              | the file's option           | inserted same-file binding | `/${p}/` [program: @options(n) p := /(a)b/] on `(the numbered groups)`: applies; without the option: differs | lib/builtin/options: "applies to the literals written after it in the same file" | AGREE
+   n              | the file's option           | inserted library binding   | `/${p}/` [library: @options(n) p := /(a)b/] on `(the numbered groups)`: applies; without the option: differs | lib/builtin/options: "applies to the literals written after it in the same file" | AGREE
+   n              | the file's option           | a side of `&` in a hole    | `/${/(a)b/ & /(?s:.*)/}/` [program: @options(n)] on `(the numbered groups)`: applies; without the option: differs | lib/builtin/options: "applies to the literals written after it in the same file" | AGREE
+   n              | the importing file's option | own text                   | dup: the probe's file imports nothing: the cell "the file's option", same reader (lib/builtin/options: "applies to the literals written after it in the same file")
+   n              | the importing file's option | inserted same-file binding | dup: the probe's file imports nothing: the cell "the file's option", same reader (lib/builtin/options: "applies to the literals written after it in the same file")
+   n              | the importing file's option | inserted library binding   | `/${p}/` [program: @options(n); library: p := /(a)b/] on `(the numbered groups)`: does not apply | lib/builtin/options: "never across an import" | AGREE
+   n              | the importing file's option | a side of `&` in a hole    | `/${p & /(?s:.*)/}/` [program: @options(n); library: p := /(a)b/] on `(the numbered groups)`: does not apply | lib/builtin/options: "never across an import" | AGREE
+   x              | the literal itself          | own text                   | `/(?x)a b/` [no options] on `ab`: applies | core/patterns/flags: "A literal's flags are the ones it writes" | AGREE
+   x              | the literal itself          | inserted same-file binding | `/${p}/` [program: p := /(?x)a b/] on `ab`: applies | core/patterns/flags: "A literal's flags are the ones it writes" | AGREE
+   x              | the literal itself          | inserted library binding   | `/${p}/` [library: p := /(?x)a b/] on `ab`: applies | core/patterns/flags: "A literal's flags are the ones it writes" | AGREE
+   x              | the literal itself          | a side of `&` in a hole    | `/${/(?x)a b/ & /(?s:.*)/}/` [no options] on `ab`: applies | core/patterns/flags: "A literal's flags are the ones it writes" | AGREE
+   x              | up the hole                 | own text                   | dup: the own text is in no hole: the cell "the literal itself", own text (core/holes/flags: "What is inserted in a hole starts from its own file's defaults")
+   x              | up the hole                 | inserted same-file binding | `/(?x)${p}/` [program: p := /a b/] on `ab`: does not apply | core/holes/flags: "`m`, `s`, `x`, `xx`, `n`, `U` are not" | AGREE
+   x              | up the hole                 | inserted library binding   | `/(?x)${p}/` [library: p := /a b/] on `ab`: does not apply | core/holes/flags: "`m`, `s`, `x`, `xx`, `n`, `U` are not" | AGREE
+   x              | up the hole                 | a side of `&` in a hole    | `/(?x)${/a b/ & /(?s:.*)/}/` [no options] on `ab`: does not apply | core/holes/flags: "`m`, `s`, `x`, `xx`, `n`, `U` are not" | AGREE
+   x              | the file's option           | own text                   | `/a b/` [program: @options(x)] on `ab`: applies; without the option: differs | lib/builtin/options: "applies to the literals written after it in the same file" | AGREE
+   x              | the file's option           | inserted same-file binding | `/${p}/` [program: @options(x) p := /a b/] on `ab`: applies; without the option: differs | lib/builtin/options: "applies to the literals written after it in the same file" | AGREE
+   x              | the file's option           | inserted library binding   | `/${p}/` [library: @options(x) p := /a b/] on `ab`: applies; without the option: differs | lib/builtin/options: "applies to the literals written after it in the same file" | AGREE
+   x              | the file's option           | a side of `&` in a hole    | `/${/a b/ & /(?s:.*)/}/` [program: @options(x)] on `ab`: applies; without the option: differs | lib/builtin/options: "applies to the literals written after it in the same file" | AGREE
+   x              | the importing file's option | own text                   | dup: the probe's file imports nothing: the cell "the file's option", same reader (lib/builtin/options: "applies to the literals written after it in the same file")
+   x              | the importing file's option | inserted same-file binding | dup: the probe's file imports nothing: the cell "the file's option", same reader (lib/builtin/options: "applies to the literals written after it in the same file")
+   x              | the importing file's option | inserted library binding   | `/${p}/` [program: @options(x); library: p := /a b/] on `ab`: does not apply | lib/builtin/options: "never across an import" | AGREE
+   x              | the importing file's option | a side of `&` in a hole    | `/${p & /(?s:.*)/}/` [program: @options(x); library: p := /a b/] on `ab`: does not apply | lib/builtin/options: "never across an import" | AGREE
+   FLAGGRID SUMMARY: 128 cells: AGREE 74, DISAGREE 0, n/a 16 (no such program), dup 34 (a real program counted in the cell named), UNDECIDED 4 [('weak off', "the file's option", 'own text'), ('weak off', "the file's option", 'inserted same-file binding'), ('weak off', "the file's option", 'inserted library binding'), ('weak off', "the file's option", 'a side of `&` in a hole')]; an applying option that does not matter: none; deciding sentences not found in their piece: none
+PASS FLAGGRID: 128 cells (8 flags x 4 places it is set x 4 readers): AGREE 74, DISAGREE 0 [], n/a 16, dup 34, UNDECIDED 4 (the weak-off option of a file: it differs from the default only after an earlier `@options(i)`, a second statement, the open options-position); every applying option shown to matter (yes); sentences missing from their piece none
+   LINE [core/holes/flags] A library word under a weakly insensitive program: WHOLE `id-abc` HOLDS, `ID-abc` HOLDS, `ID-ABC` FAILS / SEARCHED `x ID-ABC id-abc` `id-abc`@9 / FIND-ALL `id-ab ID-AB Id-ab` [`id-ab`@0, `Id-ab`@12] (`/id-${word}/` in a program file opening `@options(i)`, word := `/[a-z]+/` in a library file that sets nothing)
+   LINE [core/holes/flags] The program writes the flag: WHOLE `id-abc` HOLDS, `ID-abc` HOLDS, `ID-ABC` HOLDS / SEARCHED `x ID-ABC id-abc` `ID-ABC`@2 / FIND-ALL `id-ab ID-AB Id-ab` [`id-ab`@0, `ID-AB`@6, `Id-ab`@12] (`/(?i)id-${word}/` in a program file opening `@options(i)`, word := `/[a-z]+/` in a library file that sets nothing)
+   LINE [core/holes/flags] An `s` the inserted literal does not write: WHOLE `a\nb` FAILS, `axb` HOLDS / SEARCHED `a\nb axb` `axb`@4 / FIND-ALL `a\nb axb ayb` [`axb`@4, `ayb`@8] (`/(?s)a${dot}b/`, dot := `/./`)
+   LINE [core/holes/flags] Written in the inserted literal: WHOLE `a\nb` HOLDS, `axb` HOLDS / SEARCHED `a\nb axb` `a\nb`@0 / FIND-ALL `a\nb axb ayb` [`a\nb`@0, `axb`@4, `ayb`@8] (`/(?s)a${dot}b/`, dot := `/(?s)./`)
+   LINE [core/holes/flags/in-filter] Bound in a library: WHOLE `id-blah` HOLDS, `id-BLAH` FAILS / SEARCHED `x id-BLAH id-blah` `id-blah`@10 / FIND-ALL `id-blah id-BLAH id-bx` [`id-blah`@0, `id-bx`@16] (`/id-${C}/` in a program file opening `@options(i)`, C := `/[a-z]+/ & /b.*/` in a library file that sets nothing)
+   LINE [core/holes/flags/in-filter] Written in the hole: WHOLE `id-blah` HOLDS, `id-BLAH` HOLDS / SEARCHED `x id-BLAH id-blah` `id-BLAH`@2 / FIND-ALL `id-blah id-BLAH id-bx` [`id-blah`@0, `id-BLAH`@8, `id-bx`@16] (`/id-${/[a-z]+/ & /b.*/}/` in a program file opening `@options(i)`)
+   LINE [lib/builtin/options] A library keeps its own options: WHOLE `a\nb` HOLDS, `axb` HOLDS / SEARCHED `a\nb axb` `a\nb`@0 / FIND-ALL `a\nb axb ayb` [`a\nb`@0, `axb`@4, `ayb`@8] (`/a${dot}b/`, dot := `/./` in a library file opening `@options(s)`)
+   LINE [lib/builtin/options] Never across an import: WHOLE `a\nb` FAILS, `axb` HOLDS / SEARCHED `a\nb axb` `axb`@4 / FIND-ALL `a\nb axb ayb` [`axb`@4, `ayb`@8] (`/a${dot}b/` in a program file opening `@options(s)`, dot := `/./` in a library file that sets nothing)
+== RENAME (B1): no answer depends on whether the caller's binding is named like a macro's parameter
+   `anchored(Z) & (Z.d: <5)` (Z) legal | `anchored(s) & (s.d: <5)` (s) legal | same
+   `anchored(Z) & (anchored.d: <5)` (Z) legal | `anchored(s) & (anchored.d: <5)` (s) legal | same
+   `atomic(Z) & (Z.d: <5)` (Z) legal | `atomic(X) & (X.d: <5)` (X) legal | same
+   `atomic(Z) & (atomic.d: <5)` (Z) legal | `atomic(X) & (atomic.d: <5)` (X) legal | same
+   `contains(Z) & (Z.d: <5)` (Z) legal | `contains(s) & (s.d: <5)` (s) legal | same
+   `contains(Z) & (contains.d: <5)` (Z) legal | `contains(s) & (contains.d: <5)` (s) legal | same
+   `endsWith(Z) & (Z.d: <5)` (Z) legal | `endsWith(s) & (s.d: <5)` (s) legal | same
+   `endsWith(Z) & (endsWith.d: <5)` (Z) legal | `endsWith(s) & (endsWith.d: <5)` (s) legal | same
+   `hits(Z) & (Z.d: <5)` (Z) legal | `hits(r) & (r.d: <5)` (r) legal | same
+   `hits(Z) & (hits.d: <5)` (Z) legal | `hits(r) & (hits.d: <5)` (r) legal | same
+   `padded(Z) & (Z.d: <5)` (Z) legal | `padded(rx) & (rx.d: <5)` (rx) legal | same
+   `padded(Z) & (padded.d: <5)` (Z) legal | `padded(rx) & (padded.d: <5)` (rx) legal | same
+   `peek(Z) & (Z.d: <5)` (Z) legal | `peek(A) & (A.d: <5)` (A) legal | same
+   `peek(Z) & (peek.d: <5)` (Z) legal | `peek(A) & (peek.d: <5)` (A) legal | same
+   `startsWith(Z) & (Z.d: <5)` (Z) legal | `startsWith(s) & (s.d: <5)` (s) legal | same
+   `startsWith(Z) & (startsWith.d: <5)` (Z) legal | `startsWith(s) & (startsWith.d: <5)` (s) legal | same
+PASS RENAME: 16 programs over the provided one-parameter bodies, each run with the caller's binding named Z and named like the parameter (peek's `A`, atomic's `X`, ...): moved 0 []
+== PARTPATH (B2): a two-step path through a part label over a binding or a call, as through its name
+   `[b = B(A)] & (b.p.h: "3")` legal | `B(A) & (B.p.h: "3")` legal
+   `[b = pub] & (b.a.h: "3")` legal | `pub & (pub.a.h: "3")` legal
+   `[b = hits(/a(?<g>x)?/)] & (b.hit.g: "x")` legal | `hits(/a(?<g>x)?/) & (hits.hit.g: "x")` legal
+PASS PARTPATH: through the part label legal, with the same answers as through the name (341 texts): [True, True, True]
+== ARGREF (B3): label-reference one argument deep
+PASS ARGREF: `B(A & (h: "3"))` refused naming label-reference True (as `A & (h: "3")` is: True); `B(A & (A.h: "3"))` legal True; the printed `/(?<h>\d)${inner((h: <5))}/` (the caller writes h) legal True
+   refusal: label `h` read in the argument `A & (h: "3")` is not written in the definition the argument is written in: reference it with its source (a compile error, core/labels/paths/label-reference)
+== LISTATOM (D3): a list through a call that passes its argument's labels on takes them
+PASS LISTATOM: `[(=l) = atomic(/(?<l>\d)/)] & (l: <5)` legal True, against "the digit under 5" differing 0; `[(=l) = atomic(B | A)]` refused True (`l`: a label of an argument, which is a template and not a spot in the pattern (a compile error, core/labels/paths/argument-default))
+== PREFIXIN (A5): prefix_in lays S into a hole as quoted does: S's labels pass on by the list
+PASS PREFIXIN: `prefix_in(3, /(?<a>ab)c|xy/) & (prefix_in.a: "ab")` legal True, WHOLE `abcz` True; the printed `prefix_in(2, /abc|xy/)` still runs, `xyz` True (the list moves no match); libpcre2, S then a lookbehind at 3 on `abcz`: a = 'ab'
+== CONTAINS (D5): the greedy leading gap: `contains.n` reads the LAST occurrence
+PASS CONTAINS: `contains(/(?<n>\d)/)` WHOLE on `a1b2`: n = '2' (this engine), '2' (libpcre2)
+== SPOTNAME (open spot-read-name): both candidates run; no answer applied
+PASS SPOTNAME: `B(A) & (A.d: <5)` through a body labelling the spot: candidate (a) legal, candidate (b) refused; under (b) `B(A) & (B.p.d: <5)` legal with (a)'s answers True
+== UPTO (B4): "from the statement on" for a call's argument and a macro's body
+PASS UPTO: an argument written before `@options(s)`: `b := mac(/a.b/)` on `a\nb` False; a macro body written before it: `mac(x) := /${..}./`, then `@options(s)`, then `b := mac(/a/)`, on `a\n` False; both after the statement: True
+== OPENFLAGS (option-hole-explicit, options-reach-constants, options-position): each candidate's run line
+   (b) `@options` below a binding or written twice in the program file (options-position, candidate (b): only at the top of a file)
+PASS OPENFLAGS: each open line's two candidates part on its witness: [('option-hole-explicit', '/(?${o})${w}/', True), ('options-reach-constants', '"ab"', True), ('options-reach-constants', 'atomic(/a.b/)', True), ('options-position', '/x${a}y/', True)]
+== PATFLAGS (A6 (4), a reading): `pattern($x)` carries the flags in force where the group is written
+PASS PATFLAGS: `/(?i)(?<x>ab),(?-i)${pattern($x)}/`: `ab,AB` True, `AB,ab` True, `ab,ac` False (x written under `(?i)`, inserted under `(?-i)`)
+== FSWEEP: every printed three-mode line resting on a flag: the starting documents under predspot's flag engine against these under this one (each open line under the candidate it names); `rejected:` and history lines skipped; no answer moves unless listed
+   core.md:240 `/a(?i)b/`: stands under this engine; printed now: yes
+   core.md:1471 `/(?i)id-${/blah/}/`: stands under this engine; printed now: yes
+   core.md:1472 `/id-${word}/`: stands under this engine; printed now: yes
+   core.md:1473 `/(?i)id-${word}/`: stands under this engine; printed now: yes
+   core.md:1474 `/(?s)a${dot}b/`: stands under this engine; printed now: yes
+   core.md:1475 `/(?s)a${dot}b/`: stands under this engine; printed now: yes
+   core.md:1498 `/(?i)id-${/[a-z]+/ & /b.*/}/`: stands under this engine; printed now: yes
+   core.md:1499 `/(?i)${C}/`: stands under this engine; printed now: yes
+   library.md:191 `/a${dot}b/`: stands under this engine; printed now: yes
+   ADDED core.md:249 `/(?${o})${w}/`
+   ADDED core.md:1521 `/id-${C}/`
+   ADDED core.md:1522 `/id-${/[a-z]+/ & /b.*/}/`
+   ADDED library.md:147 `/(?i)(?<x>ab),(?-i)${pattern($x)}/`
+   ADDED library.md:198 `"ab"`
+   ADDED library.md:200 `atomic(/a.b/)`
+   ADDED library.md:202 `/x${a}y/`
+PASS FSWEEP: 9 flag lines at the starting commit (each reproduced by predspot's flag engine, then run under this one: 9 stand, 0 changed); 16 flag lines now, each printed as this engine runs it; bad 0 []
+== QUOTES: every owner sentence this lane quotes occurs in the record and the documents; every cited title is one
+PASS QUOTES: 15 quoted sentences in the record and the documents, missing: none; 8 record titles cited whole, not a title or not cited: none
+== DOC: every line this model formats occurs verbatim in the documents
+PASS DOC: 37 lines; missing: 0
+predfix84_model: 37 checks, 0 failed

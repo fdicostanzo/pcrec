@@ -850,3 +850,155 @@ compile error; a group inside an in-place argument is not the caller's to read (
 shape). THE NEXT FOLD LANE (after predfix83 merges and P-21) carries FIVE rulings: argument-default,
 wrapper-export, transform-export, program-options, hole-flags; then its own critic round (ask main for the
 number). A principle piece for "a label is to the spot" (core/principles; his words; the name mine).
+
+## 2026-11-22 (very late, 3) — predfix83 merged; P-21 delivered; fold lane predspot running; r84 assigned
+
+Lane predfix83 delivered (rulings file empty; NAME-GRID 96 cells: 89 agree, 0 disagree, 7 undecided, all
+argument-default's; one answer changed by my A5 reading: `[a = A] SEQ A & (A.h: <5)` now reads the unlabelled
+use) and MERGED: lint 6,830 / 0, its model 25 / 0. Review r83 filed. P-21 written and sent to main (tip
+75d2318bd); main merges after the kit's U4 lands. Main gave review number **r84** for the next fold's round.
+Lane **predspot** (opus; `worktrees/predspot`, cut at 75d2318bd) RUNNING: the five rulings in two groups
+(labels: argument-default, wrapper-export, transform-export, the principle piece "a label names a spot"; flags:
+program-options, hole-flags), a model with the NAME-GRID decided and a FLAG-GRID. NEXT: accept, merge, lint;
+critic round r84 (design mode; subject = diff 75d2318bd..tip; lenses RULING, EXAMPLES, GENERAL, NAMES grid, a
+FLAGS grid lens, fix-induced); rule; fix lane; P-22.
+
+FOR THE r84 FIX LANE (spelling side; no meaning moves): his reading of `[a = A]` (the brackets are the array / grouping; `a = A` the label set of the expression language; `[a = A | b = B]`); my four precedence points (label set looser than SEQ and `&`, tighter than `|`; written only inside `[ ]` or directly in a hole, so `${=rx}`; never bare in `( )`): my syntax reading, not ruled; `[ab = B | A]` (six places in core.md) becomes `[ab = (B | A)]`; the comma form `[a, b, c]` kept for now as `a | b | c`; the precedence table row 9 restated. Also: `A(rx) := /${=rx}/`, `A.rx`, `A.rx.g` as the third small form beside hide / identity.
+
+2026-11-22 (latest): RULED capture-export in two parts (a named group in a part of a composed program is NOT a capture by default; the program-level `capture(path)` asks for one; explicit captures returned from the artifact against implicit ones the language needs). RECORD ONLY: predspot is running and r84 follows; this fold (export statement 5, labels-vs-captures, lib/structural/capture and its add-on, caller-ambiguous, the name table four cells) goes to the lane AFTER r84 with its own round, together with the label-set spelling notes if the r84 fix lane has not taken them.
+
+2026-11-22 (latest, 2): RULED zero-condition-binding: an error, to be reconsidered later (his reasons recorded). RECORD ONLY; a single-piece fold (core/holes/bare-condition zero-binding piece, the two candidate lines to rejected): by hand or with the capture-export lane after r84.
+
+## 2026-11-22 (night's end) — predspot merged; critic round r84 launched
+
+Lane predspot (nudged once after 25 quiet minutes on its background plant run) delivered and MERGED: tip
+e6e95a2c5, lint 7,034 / 0, its model 27 / 0 (29 plants caught), NAME-GRID 144 cells all agree, FLAG-GRID 128
+cells (78 agree, 0 disagree, 50 n/a). Folded: argument-default (an error), wrapper-export, transform-export, the
+principle piece, program-options, hole-flags. One answer changed in group 1 (the two-use body now reads the
+labelled spot); none of the printed flag lines (all four had an explicit `(?i)`). LAUNCHED: coordinator
+`crit-predspot1122` (opus, background), review r84, subject = diff 75d2318bd..e6e95a2c5, round dir
+`$PCREC_TMPDIR/scratch/crit-predspot1122/`, lenses RULING, EXAMPLES, NAMES grid, FLAGS grid, fix-induced +
+general. Subject FROZEN until the draft. NEXT: rule r84; ONE opus fix lane (files the review; ALSO the spelling
+notes: label set, `${=rx}`, `[ab = (B | A)]`, the comma form, the third small form `A(rx) := /${=rx}/`); merge;
+P-22. THEN a fold lane for capture-export and zero-condition-binding with its own round (ask main for a number).
+
+## 2026-11-22 (close) — /close at the owner's word: "Let's discuss these pain points next time."
+
+After the predspot merge and the r84 launch: RULED capture-export (two parts) and zero-condition-binding (an
+error for now), both RECORD ONLY; his reading of `[a = A]` and of arrays (spelling notes); his question
+`A(rx) := /${=rx}/` (legal: a label on the spot); and the JSONL EXERCISE he asked for (library updated, a search
+built, values returned for fields not searched on, run on a hand-lowered model; seven findings; record entry
+"2026-11-22 MANAGER — the JSONL capture exercise he asked for"). He closes with: discuss the pain points next
+time. wake.md REWRITTEN from scratch (the pain points first). IN FLIGHT AT THIS ENTRY: critic round r84
+(coordinator `crit-predspot1122`), NOT interrupted; the next line of this journal says whether its draft had
+arrived when the session closed.
+
+## 2026-11-22 (close, last line) — r84 DRAFTED, NOT RULED; coordinator stopped; session closed
+
+The coordinator handed back after the close paperwork: draft `$PCREC_TMPDIR/scratch/crit-predspot1122/review.md`
+(critic texts + verify.md in `review/`, process in `.coord/process.md`); freeze e6e95a2c5 (the branch moved to
+2a67e7f63 mid-round by record / journal entries only, mapped under its FREEZE NOTES). Its hand-back: evidence
+re-run green (predspot 27 / 0) but SWEEP passes over 9 printed lines the model answers wrongly (B7; the documents
+are right in those rows); answer-level in the documents: A1 (reading (e) false when `@options` comes mid-file), A2
+(a bound `&` in a hole under file options), A3 (the program option `x` revises a 2026-11-14 ruling without naming
+it; "No implicit extended mode" now false), A4 (reading (a) reverses his 2026-11-17 "yes" to
+`rx.repeat([a = rx.digit])`), A5 (`prefix_in` exempted though it places S), A6/A7 (neither root has ONE deciding
+statement; undecided cells listed); in the evidence: B1 (an answer flips when a binding is named like the macro's
+parameter), B2, B3 (label-reference bypassed inside an argument), B5 (grid arms that cannot fail). Proposed
+FIX-NOW: A1-A8, B1-B5, B7, C1-C8, D1-D7; four owner questions proposed (repeat-label, spot-read-name,
+option-hole-explicit / options-reach-constants, options-position). NOT RULED: first act of the next session, as
+wake.md says (read the draft WHOLE first; A4 is a ruled-words finding: read his 2026-11-17 entry before ruling).
+
+## 2026-11-23 — sixth session: wake
+
+- Registered (`session_role pred`); wake.md, the channel (nothing after M-2), core.md (first half whole, second half by
+  heading and statement), the record's last entries read. main merged into `lane/pred-rev28` cleanly (155 commits);
+  lint 7,049 / 0; `make -s test-plan-lint` green; P-21's tip 75d2318bd is on main. Main told (no reply asked).
+- r84 (`$PCREC_TMPDIR/scratch/crit-predspot1122/review.md`, 270 lines): still to rule; not read yet this session.
+- First question put to the owner: label-name-hole, with the run `$PCREC_TMPDIR/scratch/pred/label_name_hole.py`
+  (a path model of `[r = kv("ts", /\d+/)] & (r.ts: <5)`). Waiting on his answer.
+
+## 2026-11-23 — the label parameter (JSONL pain point 1) discussed; two rulings
+
+- label-name-hole as first put: withdrawn in half (his correction: no hole at the expression level); the k
+  restrictions proposed; his point that a hole-named label is not "textually defined" (true of the ruled name hole
+  too; my hole-named-label proposal set aside by his two approaches).
+- WORKING DIRECTION (tentative, his): a macro takes a LABEL (`A(l:) := /(?<:${l}>\d+)/`, `A(x:) & (x: 5)`;
+  `row(dt:, "date", isodate) & (dt.year: 2000)`). Same label twice: the standard rules (run).
+- RULED: label-parameter-omitted (`_` is the unspecified label; no argument omitted under the current call rules;
+  label args not special by position or requirement); label-parameter-default (yes, a label may be an optional
+  parameter; spelling lean `l = ts:`). IDEA to park: the empty position `row(,"level", ..)`.
+- NOT FOLDED: all of it (record only). Fold lane's list grows: capture-export, zero-condition-binding, the label
+  parameter (label-variables piece, the name hole taking a label, the JSONL sketch), the parked empty position.
+- Asked next: capture-place. r84 still to rule.
+
+## 2026-11-23 — captures and labels in arguments: seven more rulings (record only)
+
+- capture-place: his LEAN (a), an `&` operand taking a label reference; early capture "no crime".
+- RULED: capture-twice (a); label-kinds (one mark = the setting kind; references native-only); capture-name (a);
+  array-capture (yes: `capture(x)` the label, `capture(@x)` the array, unbuilt; capture-as-pcre dropped;
+  capture-loop-value closed as the label; plan rows [CAPTURE-ARRAY] / [ARRAY-CAPTURE] found; P-23 notice to main);
+  argument-export (yes, by his "this aligns with my understanding": told to him as the reading taken);
+  label-in-argument (a sent label is ok, passes `_`: "an accepted backdoor"); argument-label (yes: my readings (a),
+  (b) of argument-default withdrawn).
+- MY CORRECTION: "ts.year is a compile error as the rules stand" was over-claimed; withdrawn the same turn he asked.
+- OPEN with him: what he meant by threading the label to `string`; the optional-member idiom; duplicate keys; what
+  is left of ambiguity-per-name; a label pre-defined as a symbol; the empty argument position (to park).
+- NOT DONE: r84 dispositions; nothing of 2026-11-22 (late) or 2026-11-23 is folded. The fold is now a LANE (many
+  pieces: label-variables, name hole, argument-default, two-sources, closed-argument, capture, capture/add-on,
+  capture-export, caller-ambiguous, labels-vs-captures, zero-binding, lib/json sketch, parked empty position).
+
+## 2026-11-23 — the capture shape moved to the set side; optional-label ruled
+
+- His proposal `(isodate.year: capture("year"))`; capture-absent; his `capture("h")?`; his `(h?: capture("h"))`.
+- RULED: optional-label (`(h?: S)` holds when h is absent or in S). The capture shape is now set-side
+  (`capture("name")` = `anything` with a request); it REPLACES the morning's `capture(path)` operand (his lean) and
+  the `name =` keyword of capture-name (a). capture-twice (a) and array-capture carry over.
+- FLAG filed at his word: optional-label-general (special form or general; `(h+: blah)`).
+- MY ERROR: one run line and a note were written into the record before the run was read; corrected by an appended
+  correction entry the same turn; the owner was shown the run's output only. Rule: paste run output, never pre-write it.
+
+## 2026-11-23 — close (/close)
+
+- Nothing in flight. wake.md rewritten; owner.md current; the record holds every word of the day. r84 NOT ruled;
+  nothing of 2026-11-22 late or 2026-11-23 folded. P-24 posted; main told.
+
+## 2026-11-23 — seventh session: wake; r84 ruled; lane predfix84 launched
+
+- Registered; wake.md, the channel (nothing after M-2), core.md / library.md / parked.md WHOLE (in parts), the record
+  from "label-name-hole as first put" to the end, r84's draft whole. main merged cleanly; lint 7,185 / 0; plan-lint green.
+- r84 RULED (record entry "2026-11-23 MANAGER — review r84 (predspot1122)"): the flags group and the evidence fixes
+  to FIX lane predfix84; A4, A7, C3, C4, C5, D2 OVERTAKEN by argument-label and handed to the fold lane; repeat-label
+  not asked (the record answers it); four owner questions queued (options-position, option-hole-explicit,
+  options-reach-constants, spot-read-name).
+- LAUNCHED: lane predfix84 (opus, worktree `worktrees/predfix84`, cut at 2d6270c10; deliver + empty rulings file
+  written first; `lanewatch --follow` armed). Main told; review number r86 reserved for the fold (predfold1123).
+- Found while preparing the first question: an optional mark on the label (`m?`) existed on 2026-11-16 and was
+  DROPPED by him the same day ("drop-mark: YES"); its meaning then was "some value the label could have had" (not a
+  test of one row). The mark ruled on 2026-11-23 is a one-row test (absent or in S). Parked pieces that say "there
+  is no optional mark" (default-set, empty-value, macro-warning) move at the fold. To tell him.
+- ASKED: optional-label-general, with the run `$PCREC_TMPDIR/scratch/pred/optional_general.py`. Waiting on him;
+  predfix84 in flight.
+
+## 2026-11-23 — seventh session: the entry operator `?:`; label-forward ruled
+
+- optional-label-general: his lean "a special case"; optional-place answered "Before the colon" (my reading: the
+  place is ruled); his PROPOSAL / lean: a second entry operator `?:` beside `:` (so `?` has one meaning). I write it
+  that way in the fold unless he objects; `h+` / `h*` and `(a?, b)` then do not arise. Ideas recorded, not ruled:
+  `?` for optional macro parameters without defaults (meets call-forms (b)); a value left of `:` with no label
+  (`("Frank": S)`: legal by the sentence as written, my reading).
+- string-label: his intent recorded (the row's label on the data, sent through to `string`).
+- RULED: label-forward: yes. Answered with runs: a filter over two rows at the line; several keys in one row.
+- ASKED: capture-negated. predfix84 still in flight.
+- Scratch models of the day: optional_general, optional_place, label_forward, line_combined, capture_negated
+  (`$PCREC_TMPDIR/scratch/pred/`): hand-lowered; the fold lane rebuilds them mechanically.
+
+## 2026-11-23 — predfix84 delivered and merged; P-25 done: to main
+
+- Lane predfix84 (nudged once: it idled on a sabotage run that had finished) delivered: lanecheck DONE, tip
+  97549667e; MERGED into `lane/pred-rev28`; lint 0 failed; plan-lint green; model 37 / 0, 43 plants caught, 0 answers
+  moved over 216 printed lines. Review r84 FILED. Lane stopped. P-25 `done:` posted; main told.
+- Since the last entry: capture-negated RULED, broadened by him (no effect macro under a negation); two-sources'
+  second shape CLOSED on label-reference at his question; zero-in-loop ASKED (waiting).
+- NEXT: the FOLD lane (r86, predfold1123) for 2026-11-22 late + 2026-11-23, with the six overtaken r84 findings and
+  the lane report's LEFT FOR THE FOLD LANE list; brief after his zero-in-loop answer or at the next pause.
