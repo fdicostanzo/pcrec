@@ -1119,19 +1119,22 @@ static void emit_empty(StrBuf *c, const char *fn)
  * global bound, balanced dispatch and leaves (the study's `emit.py`
  * shape). `cp_max` is the largest argument a caller can pass (0xFF for a
  * byte, `UINT_MAX` for a code point), which only the bound reads. Its
- * scratch text lives in a private arena freed on return. */
+ * scratch text lives in the compile's arena ([K155]: a private arena's
+ * blocks were stranded by a refusal on `c` while it was live); a buffer
+ * outside a compile (no Ctx) keeps a private one, freed on return. */
 void pcrec_clskit_emit_kit(StrBuf *c, const char *fn, const ClsKit *k,
                            unsigned cp_max)
 {
-    Arena a = { NULL, c->cx };
+    Arena own = { 0 };
+    Arena *a = c->cx ? &c->cx->arena : &own;
     if (k->nsec <= 0) { emit_empty(c, fn); return; }
     for (int s = 0; s < k->nsec; s++)
-        emit_leaf_tables(c, &a, fn, s, k->iv, &k->sec[s]);
+        emit_leaf_tables(c, a, fn, s, k->iv, &k->sec[s]);
     pcrec_sb_printf(c, "static inline int %s(unsigned cp)\n{\n", fn);
     emit_bound(c, k->iv[0].lo, k->iv[k->n - 1].hi, cp_max);
-    emit_tree(c, &a, fn, k, 0, k->nsec - 1, "    ");
+    emit_tree(c, a, fn, k, 0, k->nsec - 1, "    ");
     pcrec_sb_puts(c, "}\n");
-    pcrec_arena_free(&a);
+    pcrec_arena_free(&own);
 }
 
 /* A WHOLE-SET MATCHER (`P3`, `P2` or `B1`): its tables, then `FN`'s bound

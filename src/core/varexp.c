@@ -309,9 +309,7 @@ static void vx_render_into(StrBuf *b, const VarExp *x)
  * the PARSE rather than on the input text. */
 const char *pcrec_varexp_render(Arena *a, const VarExp *x)
 {
-    StrBuf b;
-    memset(&b, 0, sizeof b);
-    b.cx = a->cx;
+    StrBuf b = pcrec_sb_scratch(a);
     vx_render_into(&b, x);
     const char *out = pcrec_sb_fragf(a, "%s", b.p ? b.p : "");
     pcrec_sb_free(&b);

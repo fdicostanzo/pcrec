@@ -544,7 +544,7 @@ static PcrecAttr layout_attr(int layout)
 static const char *stamp_value(Ctx *cx)
 {
     const PcrecPartLayout *pl = &cx->job->pl;
-    StrBuf v = { .cx = cx };
+    StrBuf v = pcrec_sb_scratch(&cx->arena);
     const char *sep = "";
     if (pl->residual) {
         pcrec_sb_printf(&v, "%sresidual=%s", sep, value_tok[pl->residual]);
@@ -590,14 +590,15 @@ static int hexval(char c)
     return -1;
 }
 
-/* Rewrites `sb`'s marks into a fresh buffer and swaps it in, counting each
- * subject's head marks into `seen`. A mark with no record, or a stamp mark
+/* Rewrites `sb`'s marks into a scratch builder ([K155]: no heap builder is
+ * live across this function's refusals) whose text then replaces `sb`'s
+ * (pcrec_sb_replace), counting each subject's head marks into `seen`. A mark with no record, or a stamp mark
  * where none was written, is an internal error. */
 static void render_buf(Ctx *cx, StrBuf *sb, unsigned char seen[PCREC_ENTRY_N + 1])
 {
     if (!sb->p || !memchr(sb->p, PCREC_PREFIX_LEAD, sb->len)) return;
     const PcrecPartLayout *pl = &cx->job->pl;
-    StrBuf o = { .cx = cx };
+    StrBuf o = pcrec_sb_scratch(&cx->arena);
     size_t i = 0;
     while (i < sb->len) {
         const char *q = memchr(sb->p + i, PCREC_PREFIX_LEAD, sb->len - i);
@@ -640,12 +641,8 @@ static void render_buf(Ctx *cx, StrBuf *sb, unsigned char seen[PCREC_ENTRY_N + 1
         }
         i = at + 4;
     }
-    char *old = sb->p;
-    sb->p = o.p;
-    sb->len = o.len;
-    sb->cap = o.cap;
+    pcrec_sb_replace(sb, &o);
     sb->layout_bytes = 0;
-    free(old);
 }
 
 void pcrec_part_layout_render(Ctx *cx)
@@ -676,7 +673,7 @@ void pcrec_part_layout_facts(Ctx *cx, StrBuf *ctl, StrBuf *parts, const char *en
 {
     const PcrecPartLayout *pl = &cx->job->pl;
     if (!pl->resolved) return;
-    StrBuf rows = { .cx = cx };
+    StrBuf rows = pcrec_sb_scratch(&cx->arena);
     for (int i = 0; i < pl->narow; i++)
         pcrec_sb_printf(&rows, "%s%s", i ? "," : "", art_rows[pl->arow[i]].id);
     const char *cells[9];

@@ -12748,9 +12748,7 @@ static void vm_var_emit_eval(Vm *v, StrBuf *c, int slot, const VarExp *x,
         wp = pcrec_sb_fragf(&v->cx->arena, "run->var_value[%d]", ns);
         wl = pcrec_sb_fragf(&v->cx->arena, "run->var_length[%d]", ns);
     } else {
-        StrBuf lit;
-        memset(&lit, 0, sizeof lit);
-        lit.cx = v->cx;
+        StrBuf lit = pcrec_sb_scratch(&v->cx->arena);
         size_t total = 0;
         for (size_t i = 0; i < x->nword; i++) {
             pcrec_sb_ctext(&lit, x->word[i].lit, x->word[i].litlen, PCREC_CTEXT_STRING);

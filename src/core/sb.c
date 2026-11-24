@@ -710,7 +710,7 @@ static void sb_stampv(StrBuf *c, const char *upper, const char *name,
         /* [COMPOUND] the compile's stamp filter (`Ctx.stamp_filter`) sees
          * the formatted value and answers the one to write; the line's shape
          * is this function's either way. */
-        StrBuf v = { .cx = c->cx };
+        StrBuf v = pcrec_sb_scratch(&c->cx->arena);
         pcrec_sb_vprintf(&v, valfmt, ap);
         const char *nv = c->cx->stamp_filter(c->cx, name, v.p ? v.p : "");
         pcrec_sb_puts(c, nv ? nv : v.p ? v.p : "");

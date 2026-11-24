@@ -131,6 +131,7 @@
 #include <string.h>
 #include <stdarg.h>
 #include <unistd.h>
+#include <malloc.h>
 #include <sys/wait.h>
 
 /* core/internal.h (not just pcrec.h): pcrec_enabled_set_spec, the W3
@@ -148,6 +149,12 @@ static int sustained = 0;
  * later allocation fails too, and the site that matters is the one the
  * compile first had to cope with. */
 static char fail_site[96];
+/* [K155] THE LIVE HEAP of the injected tree: every block its malloc/calloc/
+ * realloc/strdup handed out, less every one its free gave back, counted in
+ * `malloc_usable_size` (the same block measured on both sides). A compile
+ * that returns -1 must leave it where it started: a nonzero balance is a
+ * block stranded by the refusal's longjmp. */
+static long long live_bytes = 0;
 
 /* [W5] THE ALLOCATION-SITE TRACE, off except in W5's three profiling passes:
  * every call's `__FILE__`/`__LINE__` in order, so two runs of the same
@@ -174,29 +181,100 @@ static int inject_should_fail(const char *file, int line)
     return 1;
 }
 
+/* [K155] THE LIVE BLOCKS' OWN ALLOCATION SITES, in a small open-addressed
+ * table (pointer -> the `file:line` that allocated it): what tells a FILED
+ * stranding (every stranded block from a KNOWN_STRANDED file, below) from a
+ * new one, and what --sites prints for each stranded trial. */
+#define LIVE_CAP 65536
+static int show_sites = 0;   /* --sites */
+
+/* [K155] THE FILED STRANDINGS: a trial whose stranded blocks ALL come from
+ * one of these files is the filed defect, counted and named, not a FAIL.
+ * Each entry must be REACHED by the run (a fixed defect leaves a stale
+ * exception, which FAILS: learnings.md section 3, an allowlist entry that
+ * stops matching). Empty the list when its row is fixed. */
+static const struct { const char *file, *row; } known_stranded[] = {
+    /* the DFA minimizer's seven heap tables are live across its arena
+     * allocations (an OOM-only stranding); the arena would hold them for the
+     * whole compile, a measured peak-memory choice the row owns */
+    { "src/opt/minimize.c", "[MINIMIZE-ARENA-LEAK]" },
+};
+#define N_KNOWN_STRANDED (sizeof known_stranded / sizeof known_stranded[0])
+static long long known_stranded_seen[N_KNOWN_STRANDED];
+static struct { void *p; const char *file; int line; } live_tab[LIVE_CAP];
+static size_t live_slot(void *p)
+{
+    size_t h = ((size_t)p >> 4) * 2654435761u % LIVE_CAP;
+    while (live_tab[h].p && live_tab[h].p != p) h = (h + 1) % LIVE_CAP;
+    return h;
+}
+static void live_note(void *p, const char *file, int line)
+{
+    if (!p) return;
+    size_t h = live_slot(p);
+    live_tab[h].p = p; live_tab[h].file = file; live_tab[h].line = line;
+}
+static void live_forget(void *p)
+{
+    if (!p) return;
+    size_t h = live_slot(p);
+    if (!live_tab[h].p) return;
+    /* backward-shift delete keeps every probe chain whole */
+    live_tab[h].p = NULL;
+    for (size_t j = (h + 1) % LIVE_CAP; live_tab[j].p; j = (j + 1) % LIVE_CAP) {
+        void *q = live_tab[j].p;
+        const char *f = live_tab[j].file;
+        int l = live_tab[j].line;
+        live_tab[j].p = NULL;
+        size_t k = live_slot(q);
+        live_tab[k].p = q; live_tab[k].file = f; live_tab[k].line = l;
+    }
+}
+
+/* [K155] counts a block the real allocator returned into the live heap */
+static void *live_add_at(void *p, const char *file, int line)
+{
+    if (p) live_bytes += (long long)malloc_usable_size(p);
+    live_note(p, file, line);
+    return p;
+}
+#define live_add(p) live_add_at((p), file, line)
+
 void *pcrec_inject_malloc_at(size_t sz, const char *file, int line)
 {
     call_n++;
     if (inject_should_fail(file, line)) return NULL;
-    return malloc(sz);
+    return live_add(malloc(sz));
 }
 void *pcrec_inject_calloc_at(size_t n, size_t sz, const char *file, int line)
 {
     call_n++;
     if (inject_should_fail(file, line)) return NULL;
-    return calloc(n, sz);
+    return live_add(calloc(n, sz));
 }
 void *pcrec_inject_realloc_at(void *p, size_t sz, const char *file, int line)
 {
     call_n++;
     if (inject_should_fail(file, line)) return NULL;
-    return realloc(p, sz);
+    long long old = p ? (long long)malloc_usable_size(p) : 0;
+    live_forget(p);   /* before the call: `p` is not read after it */
+    void *np = realloc(p, sz);
+    if (!np) { live_note(p, file, line); return NULL; }   /* `p` still live */
+    live_bytes -= old;
+    return live_add(np);
 }
 char *pcrec_inject_strdup_at(const char *s, const char *file, int line)
 {
     call_n++;
     if (inject_should_fail(file, line)) return NULL;
-    return strdup(s);
+    return live_add(strdup(s));
+}
+void pcrec_inject_free_at(void *p, const char *file, int line)
+{
+    (void)file; (void)line;
+    if (p) live_bytes -= (long long)malloc_usable_size(p);
+    live_forget(p);
+    free(p);
 }
 
 static int pass_n, fail_n;
@@ -264,6 +342,8 @@ typedef struct {
  * one read — a pipe protocol a reader can check by eye. */
 typedef struct {
     long long total;
+    long long leaked;   /* [K155] the live heap's balance after the compile */
+    int       known;    /* [K155] the filed stranding's index, or negative */
     char      site[96];
 } ChildReport;
 
@@ -275,6 +355,8 @@ static void child_attempt(const Witness *w, long long n, int sust, int fd)
     fail_at = n;
     sustained = sust;
     call_n = 0;
+    live_bytes = 0;
+    memset(live_tab, 0, sizeof live_tab);   /* nothing inherited from the parent */
     fail_site[0] = 0;
 
     pcrec_options opt;
@@ -291,24 +373,45 @@ static void child_attempt(const Witness *w, long long n, int sust, int fd)
     pcrec_output out; memset(&out, 0, sizeof out);
     pcrec_error err; memset(&err, 0, sizeof err);
     int rc = pcrec_compile(w->pattern, &opt, &out, &err);
+    long long total = call_n;
+    /* [K155] the caller's output goes back before the balance is read: on
+     * either answer the compile must leave the live heap where it found it */
+    if (rc == 0) pcrec_output_free(&out);
 
     ChildReport rep;
     memset(&rep, 0, sizeof rep);
-    rep.total = call_n;
+    rep.total = total;
+    rep.leaked = live_bytes;
     memcpy(rep.site, fail_site, sizeof rep.site);
+
+    /* [K155] which filed stranding, if every stranded block is one file's */
+    int known = -1;
+    if (live_bytes)
+        for (size_t h = 0; h < LIVE_CAP; h++) {
+            if (!live_tab[h].p) continue;
+            if (show_sites)
+                printf("  LIVE %s N=%lld block %zu bytes from %s:%d\n", w->name, n,
+                       malloc_usable_size(live_tab[h].p), live_tab[h].file,
+                       live_tab[h].line);
+            int k = -1;
+            for (size_t j = 0; j < N_KNOWN_STRANDED; j++)
+                if (strstr(live_tab[h].file, known_stranded[j].file)) k = (int)j;
+            known = known == -2 || k < 0 || (known >= 0 && known != k) ? -2 : k;
+        }
+    rep.known = known;
     if (fd >= 0) { ssize_t wr = write(fd, &rep, sizeof rep); (void)wr; }
-
+    fflush(stdout);
     if (n == 0) {
-        /* profiling pass: the total is the report; the compile must succeed */
-        if (rc == 0) pcrec_output_free(&out);
-        _exit(rc == 0 ? 0 : 1);
+        /* profiling pass: the total is the report; the compile must succeed
+         * and give back every block */
+        _exit(rc == 0 && live_bytes == 0 ? 0 : 1);
     }
 
-    if (rc == 0) {
-        pcrec_output_free(&out);
+    if (rc == 0)
         _exit(2);   /* forced failure at N was not on the path taken -- success is fine, but flag it for the caller to note */
-    }
-    _exit(err.msg[0] ? 0 : 3);
+    if (!err.msg[0]) _exit(3);
+    /* [K155] diagnosed, but a block was stranded: a filed one (5) or new (4) */
+    _exit(!live_bytes ? 0 : known >= 0 ? 5 : 4);
 }
 
 /* Measure K: the total allocation count over a run where nothing fails.
@@ -317,6 +420,8 @@ static long long profile(const Witness *w)
 {
     int pipefd[2];
     if (pipe(pipefd) != 0) return -1;
+    fflush(stdout);   /* a child must not inherit (and re-print) the parent's buffer */
+    fflush(stderr);
     pid_t pid = fork();
     if (pid < 0) { close(pipefd[0]); close(pipefd[1]); return -1; }
     if (pid == 0) {
@@ -341,10 +446,13 @@ static long long profile(const Witness *w)
  *   100+signum = killed by a signal, -1 = wait() anomaly.
  * `site_out` (optional) receives the forced allocation's own file:line. */
 static int trial(const Witness *w, long long n, int sust,
-                 char *site_out, size_t site_cap)
+                 char *site_out, size_t site_cap, long long *leaked_out,
+                 int *known_out)
 {
     int pipefd[2];
     if (pipe(pipefd) != 0) return -1;
+    fflush(stdout);   /* a child must not inherit (and re-print) the parent's buffer */
+    fflush(stderr);
     pid_t pid = fork();
     if (pid < 0) { close(pipefd[0]); close(pipefd[1]); return -1; }
     if (pid == 0) {
@@ -357,6 +465,8 @@ static int trial(const Witness *w, long long n, int sust,
     memset(&rep, 0, sizeof rep);
     ssize_t r = read(pipefd[0], &rep, sizeof rep);
     close(pipefd[0]);
+    if (leaked_out) *leaked_out = r == (ssize_t)sizeof rep ? rep.leaked : 0;
+    if (known_out) *known_out = r == (ssize_t)sizeof rep ? rep.known : -1;
     if (site_out && site_cap) {
         /* A child killed by a signal never wrote its report — say so rather
          * than leaving the caller a stale or empty string. */
@@ -375,20 +485,24 @@ static int trial(const Witness *w, long long n, int sust,
 typedef struct {
     long long total, n_succeeded, n_silent, n_signalled, n_anomaly;
     long long first_succeeded_n, first_silent_n, first_signal_n, first_signal_code;
+    /* [K155] diagnosed refusals that stranded heap: how many, the first N,
+     * its byte balance and the forced allocation's site */
+    long long n_leaked, first_leaked_n, first_leaked_bytes, n_known_stranded;
+    char      first_leaked_site[96];
 } Tally;
 
-static int show_sites = 0;
 
 /* Returns 0 if the profiling pass failed (nothing was swept). */
 static int sweep_mode(const Witness *w, int sust, Tally *t)
 {
     memset(t, 0, sizeof *t);
     t->first_succeeded_n = t->first_silent_n = t->first_signal_n = -1;
+    t->first_leaked_n = -1;
     t->first_signal_code = -1;
 
     long long total = profile(w);
     if (total <= 0) {
-        bad("%s: profiling pass did not succeed cleanly (K=%lld) -- cannot sweep", w->name, total);
+        bad("%s: profiling pass did not succeed cleanly (K=%lld; a failed compile, or one that left heap live after pcrec_output_free) -- cannot sweep", w->name, total);
         return 0;
     }
     t->total = total;
@@ -399,11 +513,29 @@ static int sweep_mode(const Witness *w, int sust, Tally *t)
      * population is which without re-running the sweep by hand. */
     for (long long n = 1; n <= total; n++) {
         char site[96];
-        int code = trial(w, n, sust, site, sizeof site);
+        long long leaked = 0;
+        int known = -1;
+        int code = trial(w, n, sust, site, sizeof site, &leaked, &known);
         if (code != 0 && show_sites)
-            printf("  SITE %s mode=%s N=%lld code=%d at %s\n",
-                   w->name, sust ? "sustained" : "single", n, code, site);
+            printf("  SITE %s mode=%s N=%lld code=%d at %s%s\n",
+                   w->name, sust ? "sustained" : "single", n, code, site,
+                   code == 4 ? " (stranded heap)" :
+                   code == 5 ? " (stranded heap, filed)" : "");
         if (code == 0) continue;
+        if (code == 5 && known >= 0 && (size_t)known < N_KNOWN_STRANDED) {
+            known_stranded_seen[known]++;
+            t->n_known_stranded++;
+            continue;
+        }
+        if (code == 4) {
+            if (t->first_leaked_n < 0) {
+                t->first_leaked_n = n;
+                t->first_leaked_bytes = leaked;
+                snprintf(t->first_leaked_site, sizeof t->first_leaked_site, "%s", site);
+            }
+            t->n_leaked++;
+            continue;
+        }
         if (code == 2) { t->n_succeeded++; if (t->first_succeeded_n < 0) t->first_succeeded_n = n; }
         else if (code == 3) { t->n_silent++; if (t->first_silent_n < 0) t->first_silent_n = n; }
         else if (code >= 100) { t->n_signalled++; if (t->first_signal_n < 0) { t->first_signal_n = n; t->first_signal_code = code - 100; } }
@@ -420,7 +552,8 @@ static int sweep_mode(const Witness *w, int sust, Tally *t)
 static void report(const Witness *w, const Tally *t, int sust)
 {
     const char *tag = sust ? " [sustained]" : "";
-    long long bad_n = t->n_succeeded + t->n_silent + t->n_signalled + t->n_anomaly;
+    long long bad_n = t->n_succeeded + t->n_silent + t->n_signalled + t->n_anomaly
+                    + t->n_leaked;
     /* [D110] THE POPULATION FLOOR, checked before any verdict: a witness
      * that stopped reaching the compile, or whose allocation shape
      * collapsed, reports "every forced failure was diagnosed" over a
@@ -445,8 +578,12 @@ static void report(const Witness *w, const Tally *t, int sust)
             "same change (%s)",
             w->name, tag, t->n_succeeded, t->total, want,
             w->absorbed_why ? w->absorbed_why : "no filed defect is recorded for this witness");
+    if (t->n_known_stranded)
+        printf("NOTE: %s%s: %lld of %lld forced allocations stranded heap in a FILED place only "
+               "(the known_stranded table: every stranded block from its file)\n",
+               w->name, tag, t->n_known_stranded, t->total);
     if (bad_n == 0) {
-        ok("%s%s: every one of %lld forced allocation failures was diagnosed (rc == -1, non-empty message), never abort/signal/success",
+        ok("%s%s: every one of %lld forced allocation failures was diagnosed (rc == -1, non-empty message), never abort/signal/success, no new stranded heap",
            w->name, tag, t->total);
         return;
     }
@@ -469,6 +606,16 @@ static void report(const Witness *w, const Tally *t, int sust)
     }
     if (t->n_anomaly) {
         bad("%s%s: %lld of %lld forced allocations produced a wait() anomaly", w->name, tag, t->n_anomaly, t->total);
+    }
+    if (t->n_leaked) {
+        /* [K155] the rule this reads: a builder live across a refusal is
+         * arena-backed (src/core/CLAUDE.md); a heap one strands its block
+         * on the longjmp. Rerun with --sites for every N's forced site. */
+        bad("%s%s: %lld of %lld forced allocations were diagnosed but STRANDED HEAP -- first at N=%lld, "
+            "%lld bytes still live after pcrec_compile returned -1 (forced failure at %s): a heap "
+            "block was live across the refusal's longjmp",
+            w->name, tag, t->n_leaked, t->total, t->first_leaked_n, t->first_leaked_bytes,
+            t->first_leaked_site);
     }
 }
 
@@ -610,6 +757,8 @@ static int w5_trial(long long n, char *site_out, size_t site_cap)
 {
     int pipefd[2];
     if (pipe(pipefd) != 0) return -1;
+    fflush(stdout);   /* a child must not inherit (and re-print) the parent's buffer */
+    fflush(stderr);
     pid_t pid = fork();
     if (pid < 0) { close(pipefd[0]); close(pipefd[1]); return -1; }
     if (pid == 0) {
@@ -845,6 +994,19 @@ int main(int argc, char **argv)
                      100.0 * (double)sust[i].n_succeeded / (double)sust[i].total);
             printf("%-28s %8lld %14s %14s\n", witnesses[i].name, single[i].total, a, b);
         }
+    }
+
+    /* [K155] every filed stranding must still be reached: one no witness
+     * strands any more is fixed (or out of reach), and its exception is
+     * stale -- the allowlist that quietly stops matching. */
+    for (size_t j = 0; j < N_KNOWN_STRANDED; j++) {
+        if (known_stranded_seen[j])
+            ok("known stranding %s (%s): reached, %lld trial(s)", known_stranded[j].row,
+               known_stranded[j].file, known_stranded_seen[j]);
+        else
+            bad("known stranding %s (%s) was NOT REACHED by any witness: fixed, or out of "
+                "reach -- remove its known_stranded entry (and close the row) or re-aim a witness",
+                known_stranded[j].row, known_stranded[j].file);
     }
 
     /* [W5] single-shot only, see its comment block. */

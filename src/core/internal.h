@@ -341,12 +341,25 @@ typedef struct ABlock {
     char mem[];
 } ABlock;
 
+/* [K155] A heap block the arena OWNS: freed with it (pcrec_arena_free). */
+typedef struct AOwn { struct AOwn *next; void *p; } AOwn;
+
 /* `cx` is the owning compile, or NULL for an arena with no error channel to
- * report through (there are none today; every Arena is a Ctx's own). */
-typedef struct { ABlock *head; Ctx *cx; } Arena;
+ * report through (there are none today; every Arena is a Ctx's own).
+ * `owned` lists the heap blocks handed to it (pcrec_arena_own). */
+typedef struct { ABlock *head; Ctx *cx; AOwn *owned; } Arena;
 
 void *pcrec_arena_alloc(Arena *a, size_t sz);   /* zeroed, 16-aligned */
 void  pcrec_arena_free(Arena *a);
+/* [K155] HANDING A HEAP RESULT TO THE ARENA, in two steps so nothing can
+ * strand it: `pcrec_arena_own_slot` takes the record from the arena BEFORE
+ * the heap block exists (the one step that can fail, while there is nothing
+ * to lose), and `pcrec_arena_own` links the block into it and allocates
+ * nothing, so no refusal can fall between the block's birth and its owner.
+ * For a result a callee returns on the heap (a part compile's text) that
+ * must live, and die, with the compile's arena. */
+AOwn *pcrec_arena_own_slot(Arena *a);
+void  pcrec_arena_own(Arena *a, AOwn *slot, void *heap);
 
 /* ---- the C-stack rule for a recursive walk ([DD-10]) ----
  *
@@ -9108,8 +9121,9 @@ void pcrec_compound_walk(Ctx *cx, const struct Ast *root);
  * (compound.md §A.5, §B.2). The emitter writes P's own prologue, stamps,
  * residuals, `rx_info` and `main` -- the compound's ONE artifact -- and in
  * place of P's engine and entries the parts' texts and the controller
- * (src/gen/emit_compound.c). Owned by `Job.comp_shell`; the texts are heap
- * (`pcrec_output.c_src`) and `job_cleanup` frees them. */
+ * (src/gen/emit_compound.c). Owned by `Job.comp_shell`; the shell is
+ * arena, and so are the texts: each part's heap output is handed to the
+ * arena as its compile returns (`pcrec_arena_own`, [K155]). */
 #define PCREC_COMP_MAXPARTS 2
 typedef struct PcrecCompShell {
     const char *row;                          /* the admitted row's name */

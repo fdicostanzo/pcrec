@@ -248,7 +248,7 @@ static bool splice_mark(StrBuf *sb, const char *mark, const char *text)
     const char *m = sb->p ? strstr(sb->p, mark) : NULL;
     if (!m || strstr(m + 1, mark)) return false;
     size_t at = (size_t)(m - sb->p), cut = strlen(mark);
-    StrBuf tail = { .cx = sb->cx };
+    StrBuf tail = pcrec_sb_scratch(&sb->cx->arena);
     pcrec_sb_puts(&tail, sb->p + at + cut);
     sb->len = at;
     sb->p[at] = 0;
@@ -310,7 +310,7 @@ static void ks_stamps_render(Ctx *cx)
     const char *value = pcrec_find_stamp(cx, ks_consulted(cx));
     const char *meas = meas_stamp(cx);
     for (size_t m = 0; m < sizeof ks_marks / sizeof ks_marks[0]; m++) {
-        StrBuf line = { .cx = cx };
+        StrBuf line = pcrec_sb_scratch(&cx->arena);
         pcrec_emit_findings_line(cx, &line, (PcrecKsMark)m, value);
         pcrec_emit_measures_line(cx, &line, (PcrecKsMark)m, meas);
         (void)splice_mark(c, ks_marks[m], line.p ? line.p : "");
@@ -340,7 +340,7 @@ static void target_headers_render(Ctx *cx)
     size_t at = (size_t)(strstr(c->p, PCREC_TARGET_HEADERS_MARK) - c->p);
     const char *after = c->p + at + strlen(PCREC_TARGET_HEADERS_MARK);
     /* pass 1: the held lines, in text order */
-    StrBuf lines = { .cx = cx };
+    StrBuf lines = pcrec_sb_scratch(&cx->arena);
     size_t nheld = 0;
     for (const char *h = strstr(after, held); h; h = strstr(h + 1, held)) {
         const char *line = h + strlen(held), *eol = strchr(line, '\n');
@@ -402,7 +402,7 @@ void pcrec_memfn_stamps_render(Ctx *cx)
     Job *job = cx->job;
     mf_art *art = pcrec_memfn_art(cx);
     target_headers_render(cx);
-    StrBuf lines = { .cx = cx };
+    StrBuf lines = pcrec_sb_scratch(&cx->arena);
     StampSink ss = { &lines, pcrec_sb_upper(&cx->arena, cx->opt->prefix) };
     mf_sink sink = { .u = &ss, .stamp = sink_stamp,
                      .stamp_int = sink_stamp_int };
