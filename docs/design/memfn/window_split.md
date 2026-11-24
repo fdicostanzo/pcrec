@@ -125,8 +125,8 @@ text: comments, string literals and prototype lines blanked, member names after 
 - 19 names already in kit.h cross (no header cost).
 
 The arch review's C-39 counts (25 at its 2-file cut) are a CEILING that counts comments; this
-census at C-39's own 2-file cut reads 16 statics, and the 9 differences are comment-only (checked by
-hand; listed in the lane report). The biggest boundaries (`== BOUNDARY name cost`): find -> frame 14
+census at C-39's own 2-file cut reads 16 statics; the 10 names only C-39 counts cross that cut in
+comments or forward declarations only (checked by hand; listed in the lane report). The biggest boundaries (`== BOUNDARY name cost`): find -> frame 14
 (the renderer rows' functions, named by the tables' initializers), text -> find 11 and text -> floor 7
 (the text primitives), cands -> decide 7, frame -> ask 7, stop -> margin 6, cands -> plan 6.
 
