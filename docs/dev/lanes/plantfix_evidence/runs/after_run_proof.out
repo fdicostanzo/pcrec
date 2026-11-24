@@ -1,0 +1,6 @@
+PLANT S1221 RED   (proof_check / proof_run passed failed: 40 3 / 159 48734): FAIL: B proven[0] (generic): byte 0x00 proven, not expected
+PLANT S1224 RED   (proof_check / proof_run passed failed: 42 101 / 401 0): FAIL: C site 2 C-PROOF: proven[] differs across the layers
+PLANT S1225 RED   (proof_check / proof_run passed failed: 43 0 / 363 17290): FAIL: site 8 EXACT: lo 0 got -1 want 2 subject "aaaa"
+PLANT S1419 RED   (proof_check / proof_run passed failed: 42 1 / 401 0): FAIL: A refuse a window site stating plan_hint: rendered; expected a refusal naming `plan_hint`
+PLANT S1408 RED   (proof_check / proof_run passed failed: 43 0 / 299 123298): FAIL: site 0 READS: a fault (guard at s + n), n 1 from 0
+PLANT S3242 RED   (proof_check / proof_run passed failed: 19 308 / 100 1): FAIL: A accept span 0 BOUNDED: refused: mf_define: the proof range ends before the statement's following offset

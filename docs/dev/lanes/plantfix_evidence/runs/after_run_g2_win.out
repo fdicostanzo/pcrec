@@ -1,0 +1,38 @@
+PLANT S1400 RED   (driver passed failed: x x): FAIL: plant_S1400: the generated family does not compile warning-free
+PLANT S1401 RED   (driver passed failed: 6909 31): FAIL: site random#191 DECIDE: the compare at plan[3] (C-run/C-pin grouping)
+PLANT S1402 RED   (driver passed failed: 6725 215): FAIL: site 1: table_name: the stop (offset 0, offer 0): stop_test 2
+PLANT S1403 RED   (driver passed failed: 6509 431): FAIL: site 2813: span loop pin: head 64: loops; G2's [64,66)
+PLANT S1404 RED   (driver passed failed: 6855 85): FAIL: site 2801: span loop pin: head 64: loops; G2's [65,67)
+PLANT S1405 RED   (driver passed failed: x x): FAIL: site 179: the framed ask refused: window family: a RUN term's position 2 has no (T, K) spelling (one member or a two-member cube)
+PLANT S1406 RED   (driver passed failed: 6262 678): FAIL: site part#4 DECIDE: the compare at plan[1] (C-run/C-pin grouping)
+PLANT S1407 RED   (driver passed failed: 5975 965): FAIL: site parked#0 PROOF: proven[1] does not hold (layout U n 2 lo 0 F 0: got 0 wrote 1 missed 0, want 0)
+PLANT S1409 RED   (driver passed failed: 6940 0): FAIL: site 6: two runs: an alternative stating two R spans or two whole-compared verify-YES spans was decided
+PLANT S1410 RED   (driver passed failed: 6724 216): FAIL: site pair#8 DECIDE: plan of 1, the reference 0
+PLANT S1422 RED   (driver passed failed: 6940 0): FAIL: site -1: control: no-window-search: a REPORT site rendered (or ask and define disagree)
+PLANT S1423 RED   (driver passed failed: 6780 160): FAIL: site parked#107 PLAN: layout U n 1 lo 0 F 0: got 0 wrote 1 missed 0, want -1
+PLANT S1425 RED   (driver passed failed: 6843 97): FAIL: site parked#107 PLAN: layout U n 3 lo 0 F 0: got 18446744073709551615 wrote 1 missed 1, want 1
+PLANT S1426 RED   (driver passed failed: 6860 80): FAIL: site mass#331 PLAN: layout U n 11 lo 0 F 0: got 10 wrote 1 missed 0, want 7
+PLANT S1427 RED   (driver passed failed: 6881 59): FAIL: site 55: table_name: B-walk's stop_test TABLE, the stop's marker not read
+PLANT S1428 RED   (driver passed failed: 6797 143): FAIL: site mass#61 PLAN: layout U n 9 lo 0 F 0: got 9 wrote 1 missed 0, want 2
+PLANT S1429 RED   (driver passed failed: 6931 9): FAIL: site report#1947 PLAN: layout U n 3 lo 0 F 0: got 3 wrote 1 missed 1, want 0
+PLANT S1540 RED   (driver passed failed: 6788 152): FAIL: site mass#61 PLAN: layout U n 9 lo 0 F 0: got 9 wrote 1 missed 0, want 2
+PLANT S1541 RED   (driver passed failed: 6529 411): FAIL: site mass#61 READS: a fault in layout U (n 7 lo 0 F 0)
+PLANT S1542 RED   (driver passed failed: 6940 0): FAIL: site 2501: D-hors scope: a skip table over a window wholly below the candidate
+PLANT S1543 RED   (driver passed failed: 6862 78): FAIL: site report#5 READS: a fault in layout L (n 3 lo 0 F 0)
+PLANT S1549 RED   (driver passed failed: 6940 0): FAIL: site -1: control: a dense window renders no D-hors table
+PLANT S2986 RED   (driver passed failed: 6940 0): FAIL: site -1: control: a dense window renders no D-hors table
+PLANT S2987 RED   (driver passed failed: 6520 420): FAIL: site part#11 PLAN: layout U n 1 lo 0 F 0: got 18446744073709551615 wrote 1 missed 1, want 1
+PLANT S2989 RED   (driver passed failed: 5234 0): FAIL: site -1: control: no-window-search: a DFA_SCAN site not on the floor
+PLANT S2991 RED   (driver passed failed: x x): FAIL: plant_S2991: the generated family does not compile warning-free
+PLANT S3040 RED   (driver passed failed: 6888 52): FAIL: site 1941: D-hors scope: a skip table over a window wholly below the candidate
+PLANT S3041 RED   (driver passed failed: 6821 43): FAIL: site 2601: the framed ask refused: window family: the run ranking's first position 4 is not the run member (offset 3, term at 3)
+PLANT S3084 RED   (driver passed failed: 6940 0): FAIL: site 0: reply id: method `WALK` names no FIND row
+PLANT S3089 RED   (driver passed failed: 6940 0): FAIL: site 11: cell: stream MASK (no frame renders it)
+PLANT S3090 RED   (driver passed failed: 6940 0): FAIL: site 61: reply id: method `R7w` picks WALK, search is PAIR
+PLANT S3091 RED   (driver passed failed: 6940 0): FAIL: site 1901: text class: fused FN is not exactly a call of _ofsskip
+PLANT S3092 RED   (driver passed failed: 6940 0): FAIL: site 40: reply id: method's emptiness is not exactly the rows no T-FIND row decides
+PLANT S3093 RED   (driver passed failed: 6940 0): FAIL: site 5: table_name: plan[1] (offset 0, offer 1): plan_test 1 (fused 1 search 1)
+PLANT S3096 RED   (driver passed failed: 6940 0): FAIL: site 55: table_name: the stop (offset 0, offer 1): stop_test 1
+PLANT S3116 RED   (driver passed failed: 6737 203): FAIL: site random#6 DECIDE: run 0 member 0 stretch 0+0, the reference 1 2 0+3
+PLANT S3117 RED   (driver passed failed: 6797 143): FAIL: site random#20 DECIDE: run 1 member 8 stretch 8+3, the reference 1 6 6+1
+PLANT S3118 RED   (driver passed failed: 6940 0): FAIL: site 76: two runs: an alternative stating two R spans or two whole-compared verify-YES spans was decided
