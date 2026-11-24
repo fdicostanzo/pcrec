@@ -4935,3 +4935,13 @@ bsu3fix2 delivered (6cf672b6a on lane/bsu3fix; lanecheck DONE; TaskStop).
 - Observation for main: scripts/lanewatch reports a lane QUIET (rc 10) when its long runs write only to scratch (wsplitd's census rounds, plantfix's --plants runs); both QUIETs were false. Possible fix: lanewatch also reads $PCREC_TMPDIR/scratch/NAME/ mtimes.
 - r95 memfn-winsplit (design) handed back: 5 opus critics + a verifier (18 HOLDS, 1 PARTLY). NOT READY: the cut does not compile as a literal move (W15-W17); no gate executes a re-aimed G2 plant (W22); the identity sweep never reaches the V w32 block (W28); the census counts cannot hold through U5 (W23); the ARV-7 order (W4). Every binder population reproduced. RULED (a0742283a): all FIX-NOW, DOC folded in; W8 PLAN to main; W11 NOTED. O1-O7 ruled AS RECOMMENDED as applications of D204 (O1 SPLIT frame/ren); the owner sees them with numbers in the build-go summary. Lesson 1 is applied now: rev 2 commits a CUT ASSEMBLER and -fsyntax-only's every assembled file. Fresh lane wsplitd2 (opus) launched. Re-check (1-2 critics) after it; number from main.
 - main: r98 / memfn-winsplit2 is the re-check of rev 2. W8 is done on main ([IR-FORM] (4) points at D204). r95's three move-design checks are accepted into pcrec-critic. lanewatch's false QUIET on scratch-only runs is filed with main's watcher fixes.
+- wsplitd2 delivered window_split.md rev 2 (d408626c5), merged as cd4900f6f (docs only, so make strict is not needed).
+  - It answers r95 W1-W37 by id and applies O1-O7.
+  - 21 window-family files + kit_pos.c, kit_pick.c and kit_kb.c; kit.h grows from 134 to 137 names.
+  - The CUT ASSEMBLER passes gcc-16 -fsyntax-only on 82/82: 39 files plain, 39 with -DMF_TRACE, and 4 drivers. Controls: base 40/40; the pure move without the edits fails 38/82.
+  - W2's two-file reading is CONFIRMED by the kit manager as an application of D204's table rule. kit_pos.c gets the position questions + kit_run_member + kit_mass; kit_pick.c gets the TIE table + its searchers.
+  - Open:
+    - W28: the v3 reach floor is pinned at the first base run;
+    - W29: G6's stack base and G3's x86 half (Linux) are owed;
+    - the build depends on lane/memfn-plantcheck landing first.
+  - Re-check r98 memfn-winsplit2 coordinator launched.
