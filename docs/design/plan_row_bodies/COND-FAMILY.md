@@ -10132,3 +10132,63 @@ brackets (or label-only groups) nested directly; anything between makes two spot
 path through its own label pass a body's private label stacked on the same spot (`n.d` through `[n = [_x = P]]`),
 which "each step passed by the previous one" (export statement 3) did not; (c) a blank or private label stacked
 on a spot closes only its own door, so `[l = [_ = P]]` still opens P's labels through `l`.
+
+### 2026-11-23 MANAGER — review r88 (predfold1123b): the dispositions; no owner words
+tags: core/labels/rule core/labels/ownership core/labels/paths/label-reference core/labels/paths/argument-default core/operators/bindings/unspecified core/operators/bindings/call-forms core/operators/bindings/label-omitted core/labels/export core/holes/option core/holes/name lib/rx/repeat lib/modifiers/padded-to
+
+The draft is `$PCREC_TMPDIR/scratch/crit-predfold1123b/review.md` (frozen at d3ca4a5ef; 28 consolidated items,
+A1-A18 and B1-B10, from six critics and a verifier; no finding REFUTED; none REJECTED here). Lane predfix88
+applies them and files the review. Every "reading" below is the manager's, marked as such in the documents; no
+answer of the owner's is changed by this entry.
+
+THE MANAGER'S OWN ERRORS the round found:
+- B1: the wake and the launch prompt said the evidence model's full run is "over ten minutes". Re-measured at the
+  freeze it is 6 s, because all 13 predecessor models die at load and are declared superseded: the fold's
+  "18 / 0" checked no earlier ruling. The manager accepted the lane's SUCCESSOR declaration without reading the
+  per-model last lines.
+- A2: the pattern line of the unspecified piece ("a pattern position has no form without the part") was the
+  manager's convenience, printed as a ground.
+
+FIX-NOW, lane predfix88 (documents):
+- A1: label-reference's sentence on an argument that is a binding: the shorthand where no label is made on the
+  spot, otherwise the call's path; pointer to the ownership table.
+- A2: the unspecified piece as ONE rule plus a visible conservative overlay marked the manager's reading (a set, a
+  pattern position, a whole count, a comparison bound: compile errors for now); the pattern line re-grounded as
+  conservative, not formless. OPEN line, slug exact-count-unspecified (`_` into `{${n}}`: `{0,}` by the ruled
+  bound sentence, or a compile error); for now the compile error stays, marked.
+- A3: one sentence in call-forms, a reading: a default naming an earlier parameter names that parameter's VALUE in
+  the copy being made, so `rx.repeat(x, n)` with n an array is exact per member, as the in-force count ruling of
+  2026-11-17 has it ("an exact count of n is `\d{2}|\d{4}`"); a run line both ways; the stale three-bodies
+  readings line retired.
+- A4: "Written out, `B(A)` is `B([A = A])`" limited to a body that places its argument once; the reversed-order
+  line printed (alone first, labelled second: the two part); the contradicting details reading marked superseded;
+  the open both-uses named in the base piece.
+- A5: a marked reading: the shorthand label is protected, as statement 2's implicit label is (it adds no export
+  the caller did not write); the expansion is "the same READ"; a run line.
+- A6: label-omitted's statement and label-default's "optional (keyword)" brought under call-forms line 4.
+- A7: the stacked-is-one-step clause in export statement 3, flat-read-outside and the reading it rests on. A
+  marked reading with its run: two PUBLIC stacked labels do not chain (`n.h` and `m.h`, not `n.m.h`); OPEN line,
+  slug stacked-chain.
+- A8: every reading-backed cell of the ownership table marked; "the one cell" dropped.
+- A9: forwarding moved out of the spot axis into the writer rows; a sentence (a marked reading, conservative) for
+  a body that passes its PATTERN parameter on to another macro, with an OPEN line, slug nested-made (does
+  condition 4 look through nested bodies); the caller row's `A.h` refusal with a printed line; the listed cell's
+  ground cited as transform-export; the modes stated; "every case" narrowed to what the table has.
+- A10: one sentence, a marked reading, defining the spot a label is "on", applied to condition 4 and line 5 alike.
+- A11: an option bullet for `_` in core/holes/option; a marked reading for `_` in a capturing group's whole-name
+  hole: `(...)`, regex's group with no name.
+- A12, A13, A14, A15, A17: as proposed (details lines marked REVERSED or SUPERSEDED; padded_to's own rulings and
+  needs; the leftover clauses; the parked triggers; the two misquotes and the three manager wordings printed as his).
+- A16, G4 only: one per-position table (one value, several values, zero values, the underscore), absorbing A2's
+  and A11's cells.
+- A18: U1 and U6 re-grounded; U4 dropped (from memory, unmeasured).
+FIX-NOW, lane predfix88 (the successor evidence model): B1 (each predecessor re-run against the library of its
+own start commit; each real red declared by its own FAIL-line text with a reason; a load-time traceback is never
+"superseded"), B2, B3, B4, B5, B6, B7, B8 (the engine refuses loudly, "not modelled", where it cannot run a case;
+the same-name list fixed; the messages corrected), B9.
+PLAN (no lane now): A16's G3 (one optionality table: with optional-entry-edges and optional-label-general);
+A10's NAMES-5 (the never-placed argument: with nested-made); B10 (after B1, re-measure; over about 2 minutes, an
+order-preserving pool with byte-identical output as its control).
+OWNER QUESTIONS queued: exact-count-unspecified; stacked-chain; nested-made. Still open and asked or queued
+before: list-is-label (ASKED this session; the documents keep reading (b), marked), both-uses, pair-twice-alone.
+The round's three lessons and three proposed skill changes go to main (to_main.md).
