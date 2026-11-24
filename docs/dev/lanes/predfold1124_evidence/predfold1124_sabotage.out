@@ -1,0 +1,62 @@
+p1 -> CONTROL (the control's direct regex for the chain `n.m.d` written for the SECOND digit): caught (2 s)
+   last line: predfold1124_model: 20 checks, 1 failed (CONTROL)
+   its FAIL line: FAIL CONTROL: differing (WHOLE, SEARCHED, FIND-ALL) against python `re` over 341 texts: [('[n = [m = P]] & (n.m.d: <5)', (2, 9, 9)), ('[n = [_x = P]] & (_x.d: <5)', (0, 0, 0)), ('X & (X.n.m.h: <5)', (0, 0, 0)), ('B(A) & (A.h: <5)', (0, 0, 0)), ('B(A) & (A.h: <5)', (0, 0, 0)), ('B(A) & (A.d: <5)', (0
+p2 -> SHORTHAND (the shorthand reverted to condition 4 counting the body's labels (predfix88's engine)): caught (2 s)
+   last line: predfold1124_model: 20 checks, 9 failed (CONTROL, SHORTHAND, TABLE, NAMEGRID, LIBLINES, EXPAND, READINGS, SWEEP, DOC)
+   its FAIL line: FAIL SHORTHAND: arms failing: ['every body: the shorthand and `B([A = A])` alike', 'labelled `A.d`', 'listed', 'closed', '`_p`', 'alone first: the last mention, the labelled spot', 'alone first written out alike', 'example 1 labelled'] (bodies differing: ['labelled', 'listed', 'closed', '`_p`', 'sta
+p3 -> PATHS (rule 2 off: a path may cross an underscore label): caught (2 s)
+   last line: predfold1124_model: 20 checks, 5 failed (SHORTHAND, PATHS, TABLE, NAMEGRID, ERRSWEEP)
+   its FAIL line: FAIL PATHS: arms failing: ['a private label inside the start refused', 'a blank label refused', 'something between refused', 'through a call, `_x` in the body'] (refusals: None; None)
+p4 -> STACKCHAIN (the chain normalisation off: `n.m.d` left to the loaded engine, which refuses it): caught (2 s)
+   last line: predfold1124_model: 20 checks, 5 failed (CONTROL, STACKCHAIN, NAMEGRID, EXPAND, SWEEP)
+   its FAIL line: FAIL STACKCHAIN: inside: `n.m.d`, `n.d`, `m.d`, the nested form DIFFER; from outside `X.n.m.h`, `X.h`, `X.n.h`, `X.m.h` DIFFER/REFUSED; the piece ruled True
+p5 -> TABLE (one cell of the ownership table changed to the opposite legality in core.md as read): caught (2 s)
+   last line: predfold1124_model: 20 checks, 1 failed (TABLE)
+   its FAIL line: FAIL TABLE: 5 rows read (5 writers), 5 columns from the header and the column sentence, 39 reads run against the cells' legality and the piece's three-mode answer; disagreeing: [('R1', 'alone', 'h', '/(?<h>\\d)/ SEQ /xx/ & (h: <5)', 'legal')]
+p6 -> NAMEGRID (one decided cell's expected verdict flipped): caught (2 s)
+   last line: predfold1124_model: 20 checks, 1 failed (NAMEGRID)
+   its FAIL line: FAIL NAMEGRID: 39 cells: decided 38, not modelled 1 ([('A.h', 'never placed', 'core/labels/paths/argument-default')]); disagreeing: [('A.h', 'once, alone', 'plain', 'refused', 'legal', True, '')]
+p7 -> LIBLINES (the written-out form of the provided bodies' shorthand read as `[_ = A]`): caught (2 s)
+   last line: predfold1124_model: 20 checks, 1 failed (LIBLINES)
+   its FAIL line: FAIL LIBLINES: 5 provided bodies read by the argument's name, each against its written-out form over the texts of `37x`: differing ['identity', 'peek', 'atomic', 'hits']; the labelled call's name refused True
+p8 -> EXACTCOUNT (the ruled sentence of exact-count-unspecified dropped from core.md as read): caught (2 s)
+   last line: predfold1124_model: 20 checks, 1 failed (EXACTCOUNT)
+   its FAIL line: FAIL EXACTCOUNT: `E(rx.digit, _)` refused True (`_` passed for `n` of E: the construct at that position has no form without the part (a compile error, unspecified-rule)); `0` [True, False, False, False]; left out [False, False, False, False]; `_, _` [True, True, True, True]; his count-0 proposal in 
+p9 -> CAPSET (lib/structural/capture/in-set read with its old status `open capture-in-set`): caught (2 s)
+   last line: predfold1124_model: 20 checks, 1 failed (CAPSET)
+   its FAIL line: FAIL CAPSET: status line `### A capture request inside a set   [lib/structural/capture/in-set]   open capture-in-set`; `|` refused True (a capture request inside a set operator (`h: "3" | capture("h")`): a compile err), `&` refused True; the plain request legal True
+p10 -> OPTIONS (the position reading's sentence dropped from library.md as read): caught (2 s)
+   last line: predfold1124_model: 20 checks, 1 failed (OPTIONS)
+   its FAIL line: FAIL OPTIONS: the position reading, the argument reading and the ruled constant half found in lib/builtin/options: False; an open options line left: False
+p11 -> PARKED (the parked piece's trigger dropped from parked.md as read): caught (2 s)
+   last line: predfold1124_model: 20 checks, 1 failed (PARKED)
+   its FAIL line: FAIL PARKED: parked/ideas/effect-form present, parked, its trigger and his words in the details: False
+p12 -> EXPAND (argument-default's written-out form read as `B([_ = A])` (core.md altered as read)): caught (2 s)
+   last line: predfold1124_model: 20 checks, 2 failed (SHORTHAND, EXPAND)
+   its FAIL line: FAIL EXPAND: 10 bodies: `B(A)` against the written-out form read from the documents (B([_ = A])), every mode over 12 texts; differing: [('B(rx) := /${rx}-(?<d>\\d)/', 'B([_ = A]) & (A.d: <5)', None, "`A.`: the caller's own label `_` is made on the spot where B places `A` (a compile error, binding-as
+p13 -> READINGS (a reading's run moved: the FIRST spot's digit read in place of the last mention): caught (2 s)
+   last line: predfold1124_model: 20 checks, 1 failed (READINGS)
+   its FAIL line: FAIL READINGS: 7 readings run: ["shorthand-is-callers (a): placed twice, the caller's label at every spot, the last mention (alone first: the labelled spot)"]
+p14 -> SWEEP (one printed answer of the documents moved under an unchanged key): caught (2 s)
+   last line: predfold1124_model: 20 checks, 1 failed (SWEEP)
+   its FAIL line: FAIL SWEEP: 320 printed lines now (DIFF 9, REFUSED 61, same 273, unparsed 1), 307 at the starting commit under predfix88's engine; undeclared 1; moved or gone and not declared 0; declared moves 7; added 19; stale declarations 0
+p15 -> ERRSWEEP (one printed compile-error line made a legal program (core.md altered as read)): caught (2 s)
+   last line: predfold1124_model: 20 checks, 1 failed (ERRSWEEP)
+   its FAIL line: FAIL ERRSWEEP: 52 compile-error lines now, each refused with no crash: bad 1; of the starting commit's 56, 11 changed legality under the ruled rules (listed)
+p16 -> NULLABLE (one program with a nullable loop run (`rx.repeat(/a?/)`)): caught (2 s)
+   last line: predfold1124_model: 20 checks, 1 failed (NULLABLE)
+   its FAIL line: FAIL NULLABLE: 721 programs run by the checks above (SWEEP's included), walked node by node: 1 with a loop whose body can match empty: [('rx_repeat_u1(/a?/)', ('rx_repeat_u1(x) := /(?:${[(=) = x]}){0,}/',))]
+p17 -> SUCCESSOR (one declared red's text altered): caught (65 s)
+   last line: predfold1124_model: 20 checks, 1 failed (SUCCESSOR)
+   its FAIL line: FAIL SUCCESSOR: 15 earlier models re-run (63 s in all), each red against its declared FAIL line verbatim (50 declared): [('predarr', 'DOC', 'TEXT CHANGED')]
+p18 -> QUOTES (path rule 2 altered in the base piece only): caught (2 s)
+   last line: predfold1124_model: 20 checks, 3 failed (PATHS, NAMEGRID, QUOTES)
+   its FAIL line: FAIL QUOTES: 18 quoted sentences, each in the record at 172930848 AND in its own piece, missing: [('2. the path may not contain any underscore labels full or pr', 'core/labels/rule/paths', True)]; 4 record titles cited whole as a `rulings:` item's record, not a title or not cited: none
+p19 -> DOC (a formatted line altered): caught (2 s)
+   last line: predfold1124_model: 20 checks, 1 failed (DOC)
+   its FAIL line: FAIL DOC: 58 lines, each in its own piece; missing: 1
+p20 -> FLAGS (the option hole read as weak (R-2 reversed)): caught (2 s)
+   last line: predfold1124_model: 20 checks, 2 failed (FLAGS, DOC)
+   its FAIL line: FAIL FLAGS: pins True; 5 runs: ['R-2 the ruling: an `i` through an option']
+   each plant turned its target check FAIL, with no traceback and no engine crash
+predfold1124_sabotage: 20 plants, 0 not caught

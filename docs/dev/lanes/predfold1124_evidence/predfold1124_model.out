@@ -289,7 +289,122 @@ PASS ERRSWEEP: 52 compile-error lines now, each refused with no crash: bad 0; of
 == NULLABLE: EVID-4's known limit: no program the extended engine ran has a loop whose body can match empty
 PASS NULLABLE: 720 programs run by the checks above (SWEEP's included), walked node by node: 0 with a loop whose body can match empty
 == SUCCESSOR: every earlier in-force model re-run with library.md served from its PINNED delivery commit (predfix88's runner, unchanged; nested runs routed to their own pins); each red declared by its FAIL line VERBATIM with a reason; a traceback is never declared
-PASS SUCCESSOR: 0 earlier models re-run (0 s in all), each red against its declared FAIL line verbatim (0 declared): every red declared, its text unchanged; no traceback
+   predfix88     (library at 50a39f8e4, 2.8 s) last line: predfix88_model: 25 checks, 8 failed (UNSPEC, SHORTHAND, STACKCHAIN, SPOTON, TABLE, NAMEGRID, SWEEP, DOC)
+      DOC declared: documents moved: lines this model formats were re-worded or retired by this fold (each missing line is in the FAIL text); not an engine answer
+         its FAIL line: FAIL DOC: 75 lines, each in its own piece; missing: 19
+      NAMEGRID declared: ruled since: the deciding sentences it reads were replaced, and its four undecided slugs (both-uses, list-is-label, pair-twice-alone, stacked-chain) were answered by shorthand-is-callers and path-rules
+         its FAIL line: FAIL NAMEGRID: 24 cells: decided 17, UNDECIDED 4 (both-uses, list-is-label, pair-twice-alone, stacked-chain), not modelled 3; disagreeing: [('A.h', 'both uses', 'legal', 'legal', 'both-uses'), ('B.n.m.h', 'two public stacked', 'refused', 'r
+      SHORTHAND declared: ruled since: shorthand-is-callers (2026-11-23): condition 4 counts only the caller's labels; its engine refuses `A.d` where the body labels or closes the spot, and the rule sentences it pins were re-worded
+         its FAIL line: FAIL SHORTHAND: arms failing: ['pins'] (labelled: `A.`: a label is already made on the spot where B places `A` (the body labels the spot `p`; a compile error, binding-as-label condition 4); caller's label: `A.`: the caller's own label `a` i
+      SPOTON declared: documents moved: the manager's reading "the spot a label is ON" and its line "A label over a wider spot" retired (no use once condition 4 counts only the caller's labels, shorthand-is-callers)
+         its FAIL line: FAIL SPOTON: `[p = rx SEQ /x/]`: `A.h` [True, False]; `[p = rx]` directly: refused True
+      STACKCHAIN declared: ruled since: path-rules (2026-11-23) answers stacked-chain, the chain legal (rule 1); its engine holds candidate (a), `n.m.d` refused
+         its FAIL line: FAIL STACKCHAIN: `n.d` [True, False], `m.d` [True, False], `n.m.d` refused True (`n.m.d`: `m.d` is not visible through `n` (a compile error, core/labels/paths)), the nested form [True, False]
+      SWEEP declared: documents moved: its sweep compares its own starting commit's documents with today's, and the lines added or re-worded since (this fold) are not in its declaration tables
+         its FAIL line: FAIL SWEEP: 316 printed lines now (DIFF 9, REFUSED 70, same 260, unparsed 1), 295 at the starting commit under predfold1123b's engine; undeclared 10; moved or gone and not declared 2; declared moves 0; added 23; stale declarations 0 (predfi
+      TABLE declared: ruled since: the ownership table's cells re-ruled by shorthand-is-callers (an argument's binding row legal in every column) and path-rules (the stacked cells by rule 2); its engine runs the earlier rules
+         its FAIL line: FAIL TABLE: 5 rows read (5 writers), 5 columns from the header and the column sentence, 39 reads run against the cells' legality and the piece's three-mode answer; disagreeing: [('R1', 'stacked', 'n.h', '[n = [_x = /(?<h>\\d)/]] SEQ /xx/ & 
+      UNSPEC declared: documents moved: exact-count-unspecified ruled "agree error" (2026-11-23): the overlay sentence it pins ("a whole count") and the open bullet were re-worded by this fold
+         its FAIL line: FAIL UNSPEC: arms failing: ['pins']
+   predfold1123b (library at d82b1ad36, 3.3 s) last line: predfold1123b_model: 18 checks, 2 failed (SWEEP, DOC)
+      DOC declared: documents moved: lines this model formats were re-worded or retired by later folds and fixes (each missing line is in the FAIL text); not an engine answer
+         its FAIL line: FAIL DOC: 62 lines, each in its own piece; missing: 16
+      SWEEP declared: documents moved: its sweep compares its own starting commit's documents with today's, and the lines added or re-worded since are not in its declaration tables
+         its FAIL line: FAIL SWEEP: 315 printed lines now (DIFF 9, REFUSED 71, same 258, unparsed 1), 274 at the starting commit under predfix86's engine; undeclared 12; moved or gone and not declared 0; declared moves 7; added 47; stale declarations 0
+   predfix86     (library at 3d38aa9f8, 2.1 s) last line: predfix86_model: 29 checks, 2 failed (SWEEP, DOC)
+      DOC declared: documents moved: lines this model formats were re-worded or retired by later folds and fixes (each missing line is in the FAIL text); not an engine answer
+         its FAIL line: FAIL DOC: 86 lines, each in its own piece; missing: 4
+      SWEEP declared: documents moved: its sweep compares its own starting commit's documents with today's, and the lines added or re-worded since are not in its declaration tables
+         its FAIL line: FAIL SWEEP: 311 printed lines now (DIFF 9, REFUSED 90, same 230, unparsed 1), 263 at the starting commit under predfold1123's engine; undeclared 20; moved or gone and not declared 1; declared moves 1; added 50; stale declarations 0
+   predfold1123  (library at 69cb9a344, 3.6 s) last line: predfold1123_model: 18 checks, 3 failed (SWEEP, NULLABLE, DOC)
+      DOC declared: documents moved: lines this model formats were re-worded or retired by later folds and fixes (each missing line is in the FAIL text); not an engine answer
+         its FAIL line: FAIL DOC: 65 lines; missing: 4
+      NULLABLE declared: a program of today's documents run by its SWEEP has a loop whose body can match empty (`/(?:(?<h>\d)?)*x/`); this model's own NULLABLE runs its programs (the SWEEP's included) and is the check of record
+         its FAIL line: FAIL NULLABLE: 469 programs run by the checks above (SWEEP's included), walked node by node: 1 with a loop whose body can match empty: [('/(?:(?<h>\\d)?)*x/ & (h: OPT{<5})', ())]
+      SWEEP declared: documents moved: its sweep compares its own starting commit's documents with today's, and the lines added or re-worded since are not in its declaration tables
+         its FAIL line: FAIL SWEEP: 306 printed lines now (DIFF 11, REFUSED 89, same 224, unparsed 1), 216 at the starting commit under predfix84's engine; undeclared 22; moved or gone and not declared 1; declared moves 6; added 94; stale declarations 0
+   predfix84     (library at 97549667e, 5.0 s) last line: predfix84_model: 37 checks, 3 failed (GRID, SWEEP, DOC)
+      DOC declared: documents moved: lines this model formats were re-worded or retired by later folds and fixes (each missing line is in the FAIL text); not an engine answer
+         its FAIL line: FAIL DOC: 37 lines; missing: 6
+      GRID declared: documents moved: the deciding sentences it pins (ad-rule, ad-d: the reversed argument-default sentence) were replaced by binding-as-label
+         its FAIL line: FAIL GRID: 168 cells (predspot's 144; a part label over a call 16; a label no text writes 4; the open spot-read-name 4): AGREE 164, DISAGREE 0 [], UNDECIDED 4 (each its open slug in its piece); rename drill (a binding named like the macro's
+      SWEEP declared: documents moved: its sweep compares its own starting commit's documents with today's, and the lines added or re-worded since are not in its declaration tables
+         its FAIL line: FAIL SWEEP: 296 printed lines now (CRASH 2, DIFF 13, REFUSED 124, same 175, unparsed 1), 0 at the starting commit under predspot's engine; every non-same status declared (10 line declarations, 10 rule rows): undeclared 51 [('UNDECLARED', 'c
+   predspot      (library at e451772d4, 2.7 s) last line: predspot_model: 27 checks, 3 failed (GRID, FSWEEP, DOC)
+      DOC declared: documents moved: lines this model formats were re-worded or retired by later folds and fixes (each missing line is in the FAIL text); not an engine answer
+         its FAIL line: FAIL DOC: 22 lines; missing: 3
+      FSWEEP declared: documents moved: flag lines added later use an option hole its flag reader does not parse (FErr: unsupported group)
+         its FAIL line: FAIL FSWEEP: 4 flag lines at the starting commit (each reproduced under 2026-11-19's rule, then run under hole-flags: 4 stand, 0 changed); 16 flag lines now, each printed as hole-flags runs it; bad 5 [('core.md', 264, '/(?${o})${w}/', 'REFU
+      GRID declared: documents moved: the deciding sentences it pins (ad-rule, ad-d: the reversed argument-default sentence) were replaced by binding-as-label
+         its FAIL line: FAIL GRID: 144 cells (9 spellings x 4 occurrences x 4 read kinds; predfix83's 96 and 48 new): AGREE 144, DISAGREE 0 [], UNDECIDED 0; sentences missing [('argument', 'one', 'plain', 'ad-rule'), ('argument', 'one', '$', 'ad-rule'), ('argument
+   predfix83     (library at 595ff0d6b, 14.9 s) last line: predfix83_model: 25 checks, 5 failed (UNMARKED, SWEEP, SUCCESSOR, MARKS, DOC)
+      DOC declared: documents moved: lines this model formats were re-worded or retired by later folds and fixes (each missing line is in the FAIL text); not an engine answer
+         its FAIL line: FAIL DOC: 7 lines; missing: 2
+      MARKS declared: documents moved: the texts it looks for where its fold landed were re-worded or moved by later folds (each missing mark in the FAIL text)
+         its FAIL line: FAIL MARKS: 38 dispositions found where they landed; missing: ['A3', 'A3', 'A8', 'A8', 'D4', 'D8']
+      SUCCESSOR declared: the nested re-run of ITS predecessors: their reds are the documents-moved reds declared one by one in this table, which its own (older) table does not hold
+         its FAIL line: FAIL SUCCESSOR: 8 earlier models re-run, each last line read; every red declared superseded with an unchanged FAIL line: [('preddef', 'DOC', 'UNDECLARED'), ('preddef', 'MARKS', 'CONTENT CHANGED'), ('preddef', 'SUCCESSOR', 'UNDECLARED'), ('p
+      SWEEP declared: documents moved: its sweep compares its own starting commit's documents with today's, and the lines added or re-worded since are not in its declaration tables
+         its FAIL line: FAIL SWEEP: 338 printed lines (old engine 338: CRASH 2, DIFF 21, REFUSED 145, same 168, unparsed 2); the fixed engine (local): CRASH 2, DIFF 21, REFUSED 145, same 168, unparsed 2; moved and not listed: 4 [(('core.md', 711), 'local', 'same',
+      UNMARKED declared: documents moved: lines folded since (binding-as-label, call-forms) are refused under its (error) reading, a reading the owner's later rulings settled otherwise
+         its FAIL line: FAIL UNMARKED: 167 unmarked lines reproduced under (local); moved under (error): [(('core.md', 318), 'same', 'REFUSED'), (('core.md', 738), 'same', 'REFUSED'), (('core.md', 739), 'same', 'REFUSED'), (('core.md', 740), 'same', 'REFUSED'), ((
+   preddef       (library at ed37dc43a, 11.9 s) last line: preddef_model: 22 checks, 5 failed (UNMARKED, SUCCESSOR, SWEEP, MARKS, DOC)
+      DOC declared: documents moved: lines this model formats were re-worded or retired by later folds and fixes (each missing line is in the FAIL text); not an engine answer
+         its FAIL line: FAIL DOC: 10 lines; missing: [('core/labels/paths/argument-default', '(local): WHOLE `3xx` HOLDS, `7xx` FAILS / SEARCHED `7xx 3xx` `3xx`@4 / FIND-ALL `3xx 7xx 4'), ('core/labels/export/capture-export', 'WHOLE `3!` HOLDS, `33!` FAILS / SEARC
+      MARKS declared: documents moved: the texts it looks for where its fold landed were re-worded or moved by later folds (each missing mark in the FAIL text)
+         its FAIL line: FAIL MARKS: 22 pieces of the fold found where they landed; missing: ['statement 3', 'statement 5', 'flow', 'call-prefix', 'argument-default', 'capture-export', 'two-sources', 'form caveat', 'errors row']
+      SUCCESSOR declared: the nested re-run of ITS predecessors: their reds are the documents-moved reds declared one by one in this table, which its own (older) table does not hold
+         its FAIL line: FAIL SUCCESSOR: 7 earlier models re-run, each last line read; every red declared superseded: NO
+      SWEEP declared: documents moved: its sweep compares its own starting commit's documents with today's, and the lines added or re-worded since are not in its declaration tables
+         its FAIL line: FAIL SWEEP: 338 printed lines (old engine 338: CRASH 2, DIFF 21, REFUSED 147, same 166, unparsed 2); the rule: CRASH 2, DIFF 21, REFUSED 145, same 168, unparsed 2; reproduced by the old engine and not the rule: 2 [('core.md', 317), ('core.m
+      UNMARKED declared: documents moved: lines folded since (binding-as-label, call-forms) are refused under its (error) reading, a reading the owner's later rulings settled otherwise
+         its FAIL line: FAIL UNMARKED: 167 unmarked lines reproduced under (local); moved under (error): [(('core.md', 318), 'same', 'REFUSED'), (('core.md', 711), 'same', 'REFUSED'), (('core.md', 738), 'same', 'REFUSED'), (('core.md', 739), 'same', 'REFUSED'), ((
+   predfix82     (library at b5ed9b10d, 10.9 s) last line: predfix82_model: 22 checks, 4 failed (SUCCESSOR, SWEEP, MARKS, DOC)
+      DOC declared: documents moved: lines this model formats were re-worded or retired by later folds and fixes (each missing line is in the FAIL text); not an engine answer
+         its FAIL line: FAIL DOC: 15 lines; missing: [('two-sources', '(a) the label as it reaches the caller, an argument written in place: WHOLE `7-3` HOLDS, `'), ('two-sources', '(b) the source written here, as spelled with a part label: WHOLE `7-3` FAILS, `3-7
+      MARKS declared: documents moved: the texts it looks for where its fold landed were re-worded or moved by later folds (each missing mark in the FAIL text)
+         its FAIL line: FAIL MARKS: 35 dispositions' texts found where they landed; missing: ['ANS-1', 'ANS-2a', 'ANS-2b', 'ANS-5', 'EVID-1', 'RULING-4', 'RULING-9', 'GENERAL-5']
+      SUCCESSOR declared: the nested re-run of ITS predecessors: their reds are the documents-moved reds declared one by one in this table, which its own (older) table does not hold
+         its FAIL line: FAIL SUCCESSOR: 6 earlier models re-run, each last line read; every red declared superseded: NO
+      SWEEP declared: ruled since: the line "Closed by a `_` part label" is legal by shorthand-is-callers (2026-11-23); its fixed engine closes the caller's `A.d` under a `_p` part label, as closed-argument (a) ruled then (core.md:916 in the FAIL text)
+         its FAIL line: FAIL SWEEP: 338 printed lines (old engine 338); the fixed engine: CRASH 2, DIFF 21, REFUSED 147, same 166, unparsed 2; lines the old engine reproduced and the fixed one does not: 1 [('core.md', 916)]; lines only the fixed engine reproduces:
+   predcall      (library at 6f1fe4e84, 1.0 s) last line: predcall_model: 14 checks, 5 failed (CLOSED, MARKS, SCAN, PREDREF, DOC)
+      CLOSED declared: ruled since: shorthand-is-callers (2026-11-23) reverses closed-argument (a)'s second sentence, so the documents print `A.d` under a closing body legal; its check asserts the compile-error line closed-argument (a) ruled then
+         its FAIL line: FAIL CLOSED: where B closes its argument (`[_ = rx]`) `A.d` refused and `c.d` refused, the call itself matching as `\dxx` ((0, 0, 0) differing over 31 texts); through an open B `A.d` legal, its line the record's A.d line; the compile-error 
+      DOC declared: documents moved: lines this model formats were re-worded or retired by later folds and fixes (each missing line is in the FAIL text); not an engine answer
+         its FAIL line: FAIL DOC: 10 lines; missing: [('call-prefix', "A's own d, through the argument (case 2): WHOLE `7-3` FAILS, `3-7` HOLDS, `3-3` HOLDS / SE"), ('call-prefix', "d as the call surfaces it, the last mention (B's): WHOLE `7-3` HOLDS, `3-7` FAILS,
+      MARKS declared: documents moved: the texts it looks for where its fold landed were re-worded or moved by later folds (each missing mark in the FAIL text)
+         its FAIL line: FAIL MARKS: call-prefix ruled yes; closed-argument ruled (R-1) NO; no 'not a prefix' statement yes; the ruled statement NO; c.A in the paths piece yes; standard's line yes; macro types d.year yes; errors index row NO; no 'lean' left for cas
+      PREDREF declared: it asserts which of predref's checks are red; predref's reds are now the documents-moved ones declared here
+         its FAIL line: FAIL PREDREF: red: ['DOC', 'MARKS', 'SCAN'] (expected ['MARKS']: its MARKS looks for the call-prefix piece still open, covered by MARKS here, which looks for it ruled; its other 7 checks stay green on the folded documents)
+      SCAN declared: documents moved: spans added by later folds read labels its scanner (older than label-doors) classes as not on LEFT
+         its FAIL line: FAIL SCAN: 385 program spans checked; 53 distinct spans read a label bare or through an unknown head, all on LEFT; not on LEFT: [('core.md', '/(?<:${l}>\\d)/ & (l: <5)'), ('core.md', '<(10 - $b)'), ('core.md', 'A(x:) & (A.x: 5)'), ('core.md
+   predref       (library at 9518f758e, 0.3 s) last line: predref_model: 8 checks, 3 failed (SCAN, MARKS, DOC)
+      DOC declared: documents moved: lines this model formats were re-worded or retired by later folds and fixes (each missing line is in the FAIL text); not an engine answer
+         its FAIL line: FAIL DOC: 14 lines; missing: [('core/patterns/alternation', 'WHOLE `25` HOLDS (l = `2`), `7` FAILS / SEARCHED `25` `25`@0 (l = `2`) / FIND-ALL `25 13` '), ('core/patterns/atomic', 'WHOLE `25` FAILS, `13` HOLDS / SEARCHED `25` FAILS / FIND-A
+      MARKS declared: documents moved: the texts it looks for where its fold landed were re-worded or moved by later folds (each missing mark in the FAIL text)
+         its FAIL line: FAIL MARKS: label-only group under construction yes; parked piece gone yes; was: line on the new entry yes; call-prefix open NO; no statement says read flat yes; flat-read-outside statement yes; bodies label-only yes; no provided body calle
+      SCAN declared: documents moved: spans added by later folds read labels its scanner (older than label-doors) classes as not on LEFT
+         its FAIL line: FAIL SCAN: 381 program spans checked; 53 distinct spans still read a label bare, all on LEFT (? 24, F 16, Q 3, R 7, W 3); not on LEFT: [('core.md', '/(?<:${l}>\\d)/ & (l: <5)'), ('core.md', '<(10 - $b)'), ('core.md', 'A(x:) & (A.x: 5)'), ('
+   predbound     (library at 1c52080a4, 1.5 s) last line: predbound_model: 21 checks, 2 failed (MARKS, DOC)
+      DOC declared: documents moved: lines this model formats were re-worded or retired by later folds and fixes (each missing line is in the FAIL text); not an engine answer
+         its FAIL line: DOC       FAIL 25 lines; missing: [('zero-binding', '(b) sealed, its own `0`: WHOLE `7x` FAILS, `77x` FAILS / SEARCHED `a7x` FAILS / FIND-ALL `7x 12x 8x` [] (the same program)'), ('metadata', 'WHOLE `Tue` HOLDS, `Mon` FAILS / SEARCHED `Mon 
+      MARKS declared: documents moved: the texts it looks for where its fold landed were re-worded or moved by later folds (each missing mark in the FAIL text)
+         its FAIL line: MARKS     FAIL ['zero-binding open', 'label-variables u-c']
+   predfix77     (library at 1c768eb40, 1.1 s) last line: predfix77_model: 20 checks, 2 failed (MARKS, DOC)
+      DOC declared: documents moved: lines this model formats were re-worded or retired by later folds and fixes (each missing line is in the FAIL text); not an engine answer
+         its FAIL line: DOC       FAIL 37 lines (7 in the report); missing: [('nested-scope', 'Example 1: WHOLE `42xx` HOLDS, `100xx` FAILS, `042xx` FAILS / SEARCHED `x100xx 42xx` `0xx`@3 / FIND-ALL `100xx 42xx 7xx 300xx` [`0xx`@2, `42xx`@6, `7xx`@11, `0xx`@17] (`
+      MARKS declared: documents moved: the texts it looks for where its fold landed were re-worded or moved by later folds (each missing mark in the FAIL text)
+         its FAIL line: MARKS     FAIL bound-condition readers [('core/conditions/pass-start-read', True), ('core/values/computed-labels', True), ('core/labels/labels-vs-captures/array-vs-passes', False), ('lib/counting/count', True), ('lib/modifiers/length', True
+   predarr       (library at 5133528c6, 2.6 s) last line: predarr_model: 17 checks, 1 failed (DOC)
+      DOC declared: documents moved: lines this model formats were re-worded or retired by later folds and fixes (each missing line is in the FAIL text); not an engine answer
+         its FAIL line: DOC       FAIL 28 lines (4 in the report); missing: [('array-vs-passes', 'Same item, on the item: WHOLE `5:3,` HOLDS, `5:1,2:3,` FAILS, `5,2:3,` FAILS, `2:3,5,` FAILS / SEARCHED `x5,2:3,` FAILS / FIND-ALL `5:3, 5,2:3, 2:3,5, 5:1,2:3,` [`5:3
+   predscope     (library at 6d2dd2a0e, 0.6 s) last line: predscope_model: 20 checks, 2 failed (CLOSEDB, DOC)
+      CLOSEDB declared: documents moved: it reads B's printed line from the documents, re-ruled since (closing-own-label, nested-scope); its closed variant is its own engine's
+         its FAIL line: CLOSEDB  FAIL composed (the documents): WHOLE `73` HOLDS, `37` FAILS / SEARCHED `37 73` `73`@3 / FIND-ALL `73 37 51` [`73`@0, `51`@6] (`A SEQ B`, A := `/(?<c>\d)/`, B := `/${(c: >= 5)}(?<c>\d)/`) | closed: WHOLE `73` FAILS, `37` FAILS / SEA
+      DOC declared: documents moved: lines this model formats were re-worded or retired by later folds and fixes (each missing line is in the FAIL text); not an engine answer
+         its FAIL line: DOC      FAIL 11 lines; missing: ['flat-read-outside', 'flat-read-outside', 'nested-scope', 'nested-scope', 'nested-scope', 'bare-condition']
+PASS SUCCESSOR: 15 earlier models re-run (64 s in all), each red against its declared FAIL line verbatim (50 declared): every red declared, its text unchanged; no traceback
 == QUOTES: the owner's sentences, each PINNED to the piece (or details entry) that quotes it, and in the record at the pinned start commit; the rulings' titles cited whole
 PASS QUOTES: 18 quoted sentences, each in the record at 172930848 AND in its own piece, missing: none; 4 record titles cited whole as a `rulings:` item's record, not a title or not cited: none
 == DOC: every line this model formats occurs verbatim in the piece its tag names

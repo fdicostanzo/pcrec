@@ -56,7 +56,7 @@ PLANTS9 = [   # (plant, its target check, what it plants: each changes the ENGIN
     ("p10", "OPTIONS", "the position reading's sentence dropped from library.md as read"),
     ("p11", "PARKED", "the parked piece's trigger dropped from parked.md as read"),
     ("p12", "EXPAND", "argument-default's written-out form read as `B([_ = A])` (core.md altered as read)"),
-    ("p13", "READINGS", "a reading's run moved: the caller's shorthand set on the FIRST spot only of a two-spot body"),
+    ("p13", "READINGS", "a reading's run moved: the FIRST spot's digit read in place of the last mention"),
     ("p14", "SWEEP", "one printed answer of the documents moved under an unchanged key"),
     ("p15", "ERRSWEEP", "one printed compile-error line made a legal program (core.md altered as read)"),
     ("p16", "NULLABLE", "one program with a nullable loop run (`rx.repeat(/a?/)`)"),
@@ -819,7 +819,7 @@ check("EXPAND", not xd9 and _wo is not None and chain_same, "%d bodies: `B(A)` a
 unit9("READINGS", "the manager's readings a run can decide (shorthand-is-callers (a)-(d); path-rules (d)-(g))")
 P_ra = run("B(A) & (A.d: <5)", [A_D, B_AF])[0]
 if s9("p13"):
-    P_ra = run("B([A = A]) & (A.d: <5)", [A_D, "B(rx) := /${[A = rx]}-${[p = rx]}/"])[0]
+    P_ra = run('/(?<d>\\d)/ SEQ "-" SEQ /\\d/ & (d: <5)')[0]          # the FIRST spot's digit read
 P_rb = run("[pub = B(A)] & (pub.A.d: <5)", [A_D, B_XX])[0]
 P_rc = [run("B(A) & (A.h: <5)", [A_H, bb])[0] for bb in (B_XX, B_PH, B_LS, B_CL, B_ST)]
 P_rd = run("[a = A] SEQ \"!\" & (A.h: <5)", [A_H])[0]
