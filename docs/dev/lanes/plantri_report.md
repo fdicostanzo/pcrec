@@ -179,7 +179,8 @@ claim the copies falsify.
   (`plant_census.py` header says evidence, not a check; `census.tsv` its output at 1ec619bdf).
 - Rulings file `docs/dev/lanes/plantri_rulings.md`: read by name before the commit and before the
   report; empty (0 bytes), so no R-n applied.
-- No heavy run, nothing OWED. Tracked-file edits: this report, the evidence dir, and one line in
+OWED: none
+- No heavy run. Tracked-file edits: this report, the evidence dir, and one line in
   `docs/dev/history/claude_md/docs__dev__lanes.md`.
 - Not measured: whether the other 38 twin rows' texts still equal their runner copies; whether the
   semantics of the 77 OK plants still go red (needs `--plants`, run by a box job).
