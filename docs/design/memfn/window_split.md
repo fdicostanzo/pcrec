@@ -1,408 +1,673 @@
 # The window family split: window.c and the position primitives into small files, once
 
-DESIGN, lane wsplitd, 2026-11-24. Not a build go. Architecture: `memfn/docs/arch_review_2026-11.md`
-(ACCEPTED rev 4), ARV-9 (the split), ARV-16 (the primitives' home) and ARV-5 (the set family), one
-unit. This note makes the choices that review left to the design step: §8 H1 (the cut and every
-section's home), H2 (the primitives' home), H3 (the set family) and H8's placement half (where the
-public entries live). Everything here is measured at T = a0f13ad83 (the arch review's T; the lane
-base 4d25fda9a differs from it in no file under `memfn/src`, `memfn/include`, `tests/`, `memfn/tests`).
+DESIGN rev 2, lane wsplitd2, 2026-11-24 (rev 1: lane wsplitd, same day). Not a build go.
+Architecture: `memfn/docs/arch_review_2026-11.md` (ACCEPTED rev 4): ARV-9 (the split), ARV-16 (the
+primitives' home), ARV-5 (the set family) and ARV-7's text-buffer leaf, as one unit. This note
+makes the choices that review left to the design step: §8 H1 (the cut and every section's home),
+H2 (the primitives' home), H3 (the set family) and H8's placement half (where the public entries
+live).
 
-Owner rulings this design applies (2026-11-24, verbatim):
+**Read §R2 first.** Rev 2 answers review r95 (`docs/dev/reviews/2026-11-24-r95-memfn-winsplit.md`)
+item by item, applies its RULING (O1-O7 as recommended) and carries the round's lesson 1: the cut is
+no longer a name census only, it is ASSEMBLED into the actual files by a committed assembler and
+every assembled file is compiled (`gcc-16 -fsyntax-only`, with and without `MF_TRACE`), §11.
+
+**Base.** B = `a0742283a` (lane/memfn-wsplit). Its code equals rev 1's T `a0f13ad83`
+(`git diff --stat a0f13ad83 a0742283a -- memfn/src memfn/include tests memfn/tests Makefile`: empty),
+so every `window.c:N` cite below reads the same at both. Commands run from the repo root at B, with
+`D=docs/design/memfn/window_split`, `W=memfn/src`, and `S=$PCREC_TMPDIR/scratch/<lane>` the scratch
+dir the assembler writes (`S/asm`, never `memfn/src`).
+
+**Numbers convention.** Every count names its command and says CENSUS (the whole population, exact)
+or FLOOR. The instruments are committed in `window_split/` (own CLAUDE.md).
+
+## §R2 — what rev 2 changes, by review id
+
+| r95 id | disposition | where |
+|---|---|---|
+| W1 frame's grain (O1) | APPLIED: frame / ren split; the {frame, ren} SCC removed by per-table checks | §3, §5 O1, §12 |
+| W2 kit_pick.c's names | FIXED: two-file reading stated for main to confirm; `kit_mass`, `kit_run_member` to kit_pos.c; `sets_at` family-private; `kit_run_set` ruled | §6.2 |
+| W3 family vocabulary in stop | FIXED: window.h's shared section; `use_nothing` a `static const` there | §4.1 |
+| W4 ARV-7's order | FIXED: C0b, ARV-7's text-buffer leaf `kit_kb.c`, before the split | §6.4, §8 |
+| W5 finder <-> family loop | FIXED: stated as the H1 outcome, with its reason and trigger | §6.5 |
+| W6 H8 placement half | FIXED: `mf_pres_ports` placed (presence.c, outside the cut) | §6.6 |
+| W7 D204 attribution and limits | FIXED | §0 |
+| W8 [IR-FORM] member (4) | PLAN, main's: recorded only | §13 |
+| W9 general form, unlocks | FIXED: `kit_<family>.c` | §6.3 |
+| W10 "only one" | FIXED: `kit_pos_count(s) == 1`, one spelling | §6.1 |
+| W11 A4 beside ren_find | NOTED: recorded as a noted deviation, in the code comment | §5 A4 |
+| W12 U2b population | FIXED: widened list; R-1 exclusions named | §6.1 |
+| W13 kit.h names | FIXED: §10's rule with the H3/TIE exception; three names leave kit.h | §4.3 |
+| W14 V block widths | DOC: they live in window.h | §9 |
+| W15 complete header types | FIXED: window.h derived by assembly and compiled | §4, §11 |
+| W16 forward declarations | FIXED: assembler rule R4; every prototype homed | §11.1 |
+| W17 range boundaries | FIXED in cut.spec | §3 |
+| W18 `run_member` | FIXED: not renamed; a census blind spot | §4.2, §13 |
+| W19 accessors not all moves | FIXED: each one's kind and signature | §5 |
+| W20 commit counts | FIXED | §8.1 |
+| W21 missing prototypes, MF_TRACE | FIXED: G1 carries `-Wmissing-prototypes` and an `MF_TRACE` pass | §8.2 |
+| W22 no gate executes a plant | FIXED: static apply check per commit, `--plants` at the tip; dependency on lane/memfn-plantcheck stated | §7.3, §8.2 |
+| W23 decider census counts | FIXED: per-commit pins, counted from the assembled tip | §7.2 |
+| W24 purity NEVER anchor | FIXED in U1 | §7.4 |
+| W25 re-spell lists | FIXED: derived by `binders.py`'s re-spell table | §7.5 |
+| W26 SAB_AFTER compile claim | FIXED: probed, 186 + 1 + 75 | §7.5, §11 |
+| W27 G1's scope | FIXED | §8.2 |
+| W28 V w32 block arm | FIXED: x86-64-v3 arm; runs on the Mac (text emission) | §8.2 |
+| W29 gates by box | FIXED | §8.3 |
+| W30 file-name readers | DOC: 50 files, CENSUS | §7.7 |
+| W31 O4 | DOC: the unsupported "halves" claim withdrawn | §12 |
+| W32 instrument blind spots | FIXED/STATED beside each number | §13.1 |
+| W33 published numbers | DOC: re-measured | §2, §7, §13 |
+| W34 §4 cells | DOC | §4.4, §6.6 |
+| W35 F1's NOTES.md | DOC: memfn/NOTES.md | §13 F1 |
+| W36 Goal 1's population | FIXED: one instrument, both ends | §1, §4.4 |
+| W37 evidence outside the subject | DOC: `spec_v4` and `fields.py` numbers dropped | §13 F4 |
+
+## §0 — Rulings applied
+
+The owner's rulings, D204 (2026-11-24, verbatim):
 
 1. "Split: how do you plan to split? If you anticipate this file growing, splitting out once rather
    then multiple times would be best. I'd rather have many small concisely defined files than larger
-   sprawling ones".
+   sprawling ones"
 2. "Split: yes on trigger but once you do split, make it count. Consider where reasonable the
    interface of the file. If there is a table and functions that search it specifically, they belong
    together in that file. Then the public names are just those functions."
 
-Kit manager's reading, adopted: the split lands at NEON V's trigger (R-48), BEFORE NEON V; the
-primitives move once, to their final file, and that file takes `kit_mass`, so the presence<->window
-pair edge goes. Main's R-1: `formhash.c` and `k1_ref.c` stay as they are (not this unit).
+Main's accepted readings (D204; rev 1 wrongly called them the kit manager's): the split lands at
+NEON V's trigger (R-48), BEFORE NEON V; the primitives move ONCE, to their final file, with
+`kit_mass`; the file-interface rule is general. D204's limits, kept: [IR-FORM] member (4) is
+overtaken for window.c at this trigger only; its "emitter-shaped SIMD forms" clause stays and binds
+§9; the [SP1D-KITSPLIT-SEAMS] seam-facts half stays. Main's R-1: `formhash.c` and `k1_ref.c` are not
+this unit.
 
-Numbers convention: every count names its command and says CENSUS (exact, the whole population) or
-FLOOR. The instruments are committed beside this note in `window_split/` (own CLAUDE.md); below,
-`D=docs/design/memfn/window_split` and `W=memfn/src`, run from the repo root at T.
+Review r95's RULING (kit manager): every FIX-NOW and DOC item in this revision; O1-O7 as recommended
+(§12); W8 PLAN (main's), W11 NOTED.
 
 ## 1. GOALS
 
 Ranked; each measurable.
 
-1. **One table, one file, and only the searchers public** (owner ruling 2). Measure: §4's table
-   census reads 0 declared tables named in a function body outside the file that defines them, after
-   the §5 accessors (`python3 -I $D/census.py $W $D/cut.spec --bodies`, restricted to table objects;
-   at the pure move it is 11 tables, §4).
-2. **Split once, final grain** (ruling 1). 21 files of 54-737 lines replace window.c (4,672) and take
-   `kit_mass` from presence.c; NEON V adds text to `window_vform.c` and a table beside
-   `targets_c.def` (§9) and adds no file to the family and moves no line between its files.
-   Measure: R-48's diff touches no family file except `window_vform.c` (and a header line).
-3. **Answer- and byte-identical at every commit.** Measure: §8's gates, per commit, against T.
-4. **No file cycle inside the family, and presence.c calls down only** (ARV-16's deletion claim).
-   Measure: `kitgraph.py` with every other kit file dropped prints no CYCLE (§6.4).
-5. **Every binding check still binds, re-aimed in the commit that moves its text.** Measure: §7's
-   censuses re-read at the tip equal T's populations (58 mech files / 59 window.c anchors, 55 census
-   rows, 41 window.c G2 plants, the purity population), each now naming its new file.
+1. **One table, one file, and only the searchers public** (ruling 2). Measure: `tables.py` (W36's
+   one population: every file-scope table or object of the family, and every family function body
+   that names one outside the file defining it). At the pure move (`assemble.py --pure`) 13 of 30
+   are named in another file's function bodies; at the tip 2: `wf_find_arm` and `wf_floor_arm`, the
+   arm objects, which are not searched tables (§4.4). Comparison: tip <= 2, and each of the 2 named.
+2. **Split once, final grain** (ruling 1). 22 new `.c` files of 81-428 lines and the private header
+   `window.h` (561 lines) replace window.c (4,672), take `kit_mass` and `kit_run_member`, and take
+   compose.c's text buffer (C0b). Measure: R-48's diff (NEON V) touches no family file except
+   `window_vform.c`, plus at most one line of `window.h` (§9).
+3. **Answer- and byte-identical at every commit.** Measure: §8's gates per commit against the
+   unit's base.
+4. **No file cycle inside the family, and presence.c calls down only.** Measure: `kitgraph.py` over
+   the assembled tip with every kit file but the family and presence.c dropped prints no CYCLE
+   (§6.5; held at the tip).
+5. **Every binding check still binds, re-aimed in the commit that moves its text.** Measure:
+   `binders.py` over the assembled tip finds every binder's text exactly once (mech 187 sites,
+   G2 75 plants, purity 49, census 57; all OK, §7), and every re-pointed SAB_AFTER and plant TO
+   compiles in its new file (§7.5).
 
-Non-goals: no behaviour change, no new form, no NEON V design (§9 places it, designs nothing), no
-change to `formhash.c`/`k1_ref.c` (R-1), no change to the layer order's TEXT (ARV-7/H8's other half),
-no re-cite of the 784 `window.c:N` line cites in docs (H11's question; §10 F6).
+Non-goals: no behaviour change; no new form; no NEON V design (§9 places it); `formhash.c`/
+`k1_ref.c` untouched (R-1); the layer order's TEXT (H8's other half) untouched beyond C0b's leaf;
+no re-cite of docs' `window.c:N` cites (§13 F6).
 
 The three standing questions (docs/design/CLAUDE.md):
 
-- (1) Measurement regime: none applies. The unit moves compile-time code only; byte identity of
-  every emitted artifact is the speed proof (an identical artifact runs identically). The one
-  compile-time quantity the split can change is the kit's own stack frame, because cross-file
-  calls stop inlining: it is measured, `-fstack-usage` (§8 G6).
-- (2) Independent control: `scripts/emit_sweep.py` ([BSWEEP]) compares the emitted bytes of T's
-  binary with each commit's over the corpus, a source the split does not touch; G2 checks the
-  family against `k1_ref.c` and the generated predicate space, and `k1_ref.c` is outside the family
-  (R-1), so the reference cannot move with the subject.
-- (3) Regenerated data: none. No `data/*` file, `.def` row or measured set is regenerated.
+- (1) Measurement regime: none applies. Compile-time moves only; byte identity of every emitted
+  artifact is the speed proof. The one quantity the split can move is the kit's own stack frames
+  (cross-file calls stop inlining): measured by G6, which owes a base run (§8.2).
+- (2) Independent control: `scripts/emit_sweep.py` compares the base binary's emitted bytes with
+  each commit's over the corpus, a source the split does not touch; G2/G3 check the family against
+  `k1_ref.c`, outside the family (R-1). The assembler's compile evidence has its own control: the
+  same files assembled WITHOUT the edits fail (38 of 82, §11.2), and B's own tree passes (40/40).
+- (3) Regenerated data: none (no `data/*`, `.def` row or measured set is regenerated).
 
 ## 2. Premise and today
 
-- `wc -l memfn/src/window.c` = 4672 (CENSUS). arch §8 H1's section table exists (the brief's
-  premise test; both TRUE at T).
-- Entities at T: `python3 -I $D/ents.py $W/window.c` (CENSUS of top-level entities, comments and
-  strings blanked).
-- At T the kit's file graph has one large cycle through window.c:
-  `DROP="compose.c gate.c" python3 -I $D/kitgraph.py $W <(echo 'window.c <- window.c 1-4672')`
-  prints the SCC {finder, generic, mismatch, ofsskip, presence, window}; window.c's edges into it
-  are presence.c -> window.c (`kit_pick_takes kit_pos_spelled kit_run_member kit_tie_member_key`),
-  mismatch.c -> window.c (`shape`), ofsskip.c -> window.c (`count`), finder.c -> window.c
-  (`wf_renders`) (CENSUS of names used in function bodies).
+- `wc -l memfn/src/window.c` = 4672 (CENSUS).
+- At B the kit's file graph (`python3 -I $D/kitgraph.py $W <(echo 'window.c <- window.c 1-4672')`,
+  function bodies) has one SCC of 9 files: compose, finder, gate, generic, mismatch, ofsskip,
+  presence, runcmp, window (CENSUS). Its edges into window.c include presence.c -> window.c
+  (`kit_pick_takes kit_pos_spelled kit_run_member kit_tie_member_key`), mismatch.c (`shape`),
+  ofsskip.c (`count`), finder.c (`wf_renders`). Rev 1's "SCC of 6" was with compose.c and gate.c
+  dropped; kitgraph reads locals and parameters as calls (W32), which r95 found adds 2 false edges
+  there; no conclusion below rests on that run.
+- `window.c:N` cites in the tree: 819 in 186 files (`git grep -c -E 'window\.c:[0-9]+' | awk`
+  summed, CENSUS at B; rev 1's 784/179 matched no tree, W33).
 
 ## 3. The file list
 
-The cut, as a pure move (`$D/cut.spec`; an entity belongs to the file whose range holds its first
-line; `census.py` reports any line no range names as `window.c(rest)`, and there is none: the 21
-files' entity lines sum to 4,681 = 4,672 + `kit_mass`'s 9). PUBLIC = names another kit file outside
-the family calls (kit.h or memfn.h); the private header's names are §4.
+The cut is `$D/cut.spec` (rev 2; census-readable, `NEW <- SRC a-b ...`), with W17's boundaries
+corrected: ask ends at :2876 (`wstream_of` whole), text at :3879, floor starts at :3880 (its
+comment), efind takes :2649, vform :4321, floor :4608, `kit_mass` takes presence.c :56-83 (its
+contract comment). `window.h <-` lines name the text the header takes (types, the family's
+vocabulary, the family comment). `-` lines are dropped heads (window.c's SPDX/Provenance/title,
+:1-7, :66-71; the old TIE comment :132-139, rewritten by O3). Every window.c line is homed exactly
+once (assembler rule R1, §11.1; `window.c` keeps 0 lines).
 
-| file | today's lines (T) | holds | PUBLIC (count: names) | why the cut falls here |
-|---|---|---|---|---|
-| `kit_pos.c` | :231-284 | the set family (H3): membership, count, shape, two, full, `kit_pos_class_of`, `kit_pos_spelled` | 8: `kit_pos_in kit_pos_count kit_pos_first kit_pos_two kit_pos_full kit_pos_shape kit_pos_class_of kit_pos_spelled` + "only one" spelled `kit_pos_class_of(s) == KIT_POS_ONE` (no ninth name; H3's choice); `kit_pos_class_of`/`kit_pos_spelled` are kit.h names today, so 6 are new | a leaf every planner file and four other kit files read (ARV-5); names nothing |
-| `kit_pick.c` | :78-151, :936-968; presence.c `kit_mass` (:75-83) | the TIE table `wf_ties` and its searchers `kit_tie_takes`, `kit_tie_member_key`, `kit_pick_takes`, the accessor `kit_tie_rule` (§5 A1); `kit_run_member`; `sets_at` (as `kit_sets_at`); `kit_mass` | 7: `kit_tie_takes kit_tie_member_key kit_tie_rule kit_pick_takes kit_run_member kit_sets_at kit_mass` | H2: the table and its searchers together; takes `kit_mass` so presence.c and the planner both call DOWN (A-s5) |
-| `window_cands.c` | :152-230, :285-459 | the decision's working state, the candidate list (`cands`, `rd_set`, `rd_core`, `wf_extent`, `run_role`, `pinned_yes`) | 0 | the planner's input record; read by every planner file |
-| `window_check.c` | :460-580 | the statement rules (`wf_check`) | 1: `wf_check` | one question, one entry |
-| `window_stop.c` | :1-77, :581-836 | the cost table, Table A (stop pick) with its rows, contracts and walk; accessors A2 (§5) | 0 (+ private A2) | Table A and every function that searches it |
-| `window_margin.c` | :837-901 | Table M (MARGIN) and `m_margin_holds`, `m_pair`; accessor A3 | 0 (+ private A3) | Table M and its searcher |
-| `window_verify.c` | :902-935, :969-1229 | Table C (verify) and `c_plan` | 0 | Table C and its searcher |
-| `window_decide.c` | :1230-1374 | THE DECISION (`decide`, `rows_hold`, `reply_of`) | 0 | the one walker over A, M, C through their accessors; the last commit's `git mv window.c` |
-| `window_plan.c` | :1375-1555, :4511-4610 | THE PLAN (`offer_at`), the span forms' plan (`plan_of`), the `wf_plan_*` accessors except `wf_plan_bren` | 7: `wf_plan_brow wf_plan_class wf_plan_frame wf_plan_reads_table wf_plan_row wf_stated_offsets` + `wf_plan_bren` moves to frame (it reads a renderer row's `k.id`) | the plan record's writer and its external accessors (accessor rule) |
-| `window_legacy.c` | :1556-1775 | Table E's legacy rows' helpers (`legacy_ok`, `run_bytes`, `run_rank`, `translate`) | 0 | one concern; called by frame, ask and parts |
-| `window_frame.c` | :1776-1892, :2193-2651, :2691-2839, :2876-2887 | Table E (T-FRAME), the renderer tables (`ren_skel/search/stream/check/fused`) with `ren_find`, Table S (`table_s`, `wf_srows`), the support table, `wf_renders`, `wf_plan_site`, `wf_prepare`, `wf_find_decide`, `wf_arm_pick`, `wf_tables_check`; accessor A4 | 9: `wf_prepare wf_frame_name wf_ren_arm wf_renders wf_stmt_row wf_stream_refusal wf_tables_check wf_support_rows wf_plan_bren` | the owner's rule: these tables are searched by these functions and no others (§4); 737 lines, the largest file: OPEN CHOICE O1 |
-| `window_efind.c` | :2066-2192, :2652-2690, :4083-4089 | E-find's plan (`wf_find_prepare`, `pieces_libc`, `hors_window`, `b_hors_prepare`, `s_shift_prepare`, `plan_ix`) | 0 | E-find's facts, written before its text |
-| `window_span.c` | :1893-2065, :3706-3730 | the span form table `wf_spanrows` (wfS) and its searchers (`s_ct/s_holds/s_opt`, `wf_stretches`); accessors A5 | 0 (+ private A5) | the table and its searchers; `wf_test_to`, `wf_find_define` and `wf_tables_check` reach it through A5 |
-| `window_ask.c` | :2840-2875, :2888-3266 | THE FRAMED ASK: `mf_wdecide` (memfn.h), `wf_frame_of`, `wf_agree` (MF_TRACE) | 2: `mf_wdecide` (pcrec-facing), `wf_agree` | H8's placement: the public entry in its own file, which reads the decision and the frame only through names (§5 A4) |
-| `window_parts.c` | :3267-3538 | THE PARTS | 3: `wf_has_parts wf_parts_check wf_parts_prepare` (+ `wf_part_site` if compose.c keeps calling it) | one concern; compose.c's three entries |
-| `window_text.c` | :3539-3705, :3731-3766, :3847-3880, :3897-3965 | `wf_rc` and the text primitives (`wf_open wf_close wf_put wf_need wf_cand wf_frame wf_at wf_bound wf_member wf_member_of wf_rc_init wf_lower wf_pos_test resume_next`), the H form (`wf_loop`, `wf_span_h`) | 0 | the text kit every renderer calls: its names ARE its interface |
-| `window_test.c` | :3779-3846 | `wf_test_to`, `wf_test`, `c_find_test`, `c_floor_test` | 0 | the candidate test text, shared by find and floor |
-| `window_floor.c` | :3881-3896, :3966-4035, :4611-4641 | THE FLOOR ROW's text and its contract (`wf_floor_arm`, `wf_floor_ct`) | 1: `wf_floor_arm` (kit.h) | an arm and its contract together (H1's last row) |
-| `window_find.c` | :4036-4082, :4090-4323, :4471-4510, :4642-4672 | E-FIND's text (B-walk, B-pair, B-memchr, D-hors rows' functions) and its contract (`wf_find_arm`, `wf_find_ct`) | 1: `wf_find_arm` (kit.h) | an arm and its contract together |
-| `window_vform.c` | :3767-3778, :4324-4470 | the V form (`wf_span_v`, `wf_span_v_define`, the level admission block :4459-4468) | 0 | where NEON V's text lands (§9) |
+Tip numbers: `python3 -I $D/assemble.py . $S/asm` prints each file's lines and exports; PUBLIC =
+names in kit.h or memfn.h (CENSUS of the `#define X MF_NS(..)` lines naming a definition of the
+file); FAMILY = names in window.h; STATIC = file-static functions/tables/objects.
 
-Twenty files from window.c plus `kit_pick.c`'s presence.c share. Per-file entity lines and function
-counts: `python3 -I $D/census.py $W $D/cut.spec --calls` section `== files` (kit_pick 116, kit_pos 54,
-ask 415, cands 254, check 121, decide 145, efind 173, find 352, floor 117, frame 737, legacy 220,
-margin 65, parts 272, plan 281, span 198, stop 333, test 68, text 306, verify 295, vform 159). PUBLIC
-names: `== PUBLIC per new file` of the same run (CENSUS of names other `memfn/src` files use); the
-`kit_pos_*`/`kit_pick` rows add H3's and A1's new names. No file keeps the name `window.c` (O4).
+| file | from (B) | lines | PUBLIC | FAMILY | STATIC | holds |
+|---|---|---|---|---|---|---|
+| `kit_pos.c` | window.c :231-284, :937-962; presence.c :56-83 | 128 | 10 | 0 | 0 | the position questions: the set family (`kit_pos_in count shape two full first class_of spelled`), `kit_run_member`, `kit_mass` |
+| `kit_pick.c` | window.c :78-131, :140-151 | 83 | 3 | 0 | 2 | the TIE table `wf_ties` and its searchers: `kit_pick_takes`, `kit_tie_exchanges`, `kit_tie_reseeds`; `kit_tie_takes` static |
+| `kit_kb.c` | compose.c :27-115 | 100 | 8 | 0 | 1 | ARV-7's text-buffer leaf (`kb_*`, `kit_out`, `kit_fail`, `kit_flush`, `kit_sink_ok`) |
+| `window_cands.c` | :152-230, :285-459 | 188 | 0 | 6 | 7 | the candidate list (`cands`, `rd_set`, `rd_core`, `wf_extent`, `run_role`, `pinned_yes`) |
+| `window_check.c` | :460-580 | 133 | 1 | 0 | 2 | the statement rules (`wf_check`) |
+| `window_stop.c` | :72-77, :581-836 | 254 | 0 | 3 | 22 | the cost table, Table A with its rows and walk; A2 |
+| `window_margin.c` | :837-901 | 98 | 0 | 1 | 12 | Table M, `m_margin_holds`, `m_pair`; A3 (O5) |
+| `window_verify.c` | :902-936, :963-1229 | 314 | 0 | 4 | 23 | Table C and `c_plan` |
+| `window_decide.c` | :1230-1374 | 135 | 0 | 3 | 1 | THE DECISION: walks A, M, C through their searchers |
+| `window_plan.c` | :1375-1555, :4511-4607 | 216 | 7 | 2 | 0 | THE PLAN (`offer_at`), `plan_of`, the `wf_plan_*` accessors (O2) |
+| `window_legacy.c` | :1556-1775 | 221 | 0 | 4 | 0 | the legacy rows' helpers |
+| `window_frame.c` | :1776-1892, :2564-2606, :2691-2839 | 277 | 3 | 1 | 12 | Table E (T-FRAME) and its searchers, `wf_plan_site`, `wf_prepare`, `wf_tables_check` (O1) |
+| `window_ren.c` | :2193-2563, :2607-2648, :2877-2887 | 415 | 5 | 5 | 16 | THE TRIPLE: the renderer tables with `ren_find`, Table S, the support table, `wf_renders`, `wf_arm_pick`, `wf_find_decide`; O1's two, A4 |
+| `window_span.c` | :1893-2065, :3706-3730 | 227 | 0 | 4 | 23 | the span form table (wfS) and its searchers; A5 |
+| `window_efind.c` | :2066-2192, :2649-2690, :4083-4089 | 191 | 0 | 5 | 5 | E-find's plan |
+| `window_ask.c` | :2840-2876, :2888-3266 | 428 | 2 | 0 | 15 | THE FRAMED ASK: `mf_wdecide` (memfn.h), `wf_agree` (MF_TRACE) |
+| `window_parts.c` | :3267-3538 | 286 | 3 | 0 | 4 | THE PARTS (`wf_part_site` now static, W13) |
+| `window_text.c` | :3539-3705, :3731-3766, :3847-3879, :3897-3965 | 302 | 0 | 15 | 3 | `wf_rc`'s primitives and the H form |
+| `window_test.c` | :3779-3846 | 81 | 0 | 2 | 2 | the candidate test text |
+| `window_floor.c` | :3880-3896, :3966-4035, :4608-4641 | 133 | 0 | 3 | 4 | THE FLOOR ROW's text and contract, `wf_floor_arm` |
+| `window_find.c` | :4036-4082, :4090-4320, :4471-4510, :4642-4672 | 360 | 0 | 16 | 7 | E-FIND's text and contract, `wf_find_arm` |
+| `window_vform.c` | :3767-3778, :4321-4470 | 175 | 0 | 2 | 6 | the V form and its level block (§9) |
+| `window.h` | the `window.h <-` lines | 561 | - | 76 | - | the family's private header (§4) |
+
+Sums (CENSUS from the table): 22 new `.c` files; PUBLIC 42 names (of which new to kit.h: the 6 set
+family names and the 2 TIE predicates, §4.3); FAMILY 76. Lines 81-428; 4,745 lines in the 22 files
+(each file's new prologue included, R5). No file keeps the name `window.c` (O4).
 
 ## 4. The private header and the owner's rule
 
-**The header.** `memfn/src/window.h`: one family header, one section per file listing that file's
-names other family files use, then the shared types. It joins Makefile KITHDRS (:140, a hand list;
-`KITSRCS` is a wildcard and takes the new `.c` files), carries C16's SPDX line and a PROVENANCE row,
-and every name in it is spelled `#define name MF_NS(name)` as kit.h's are (C15). Only family files
-include it; kit.h keeps every name another kit file calls.
+### 4.1 window.h
 
-**Census at the pure move** (`python3 -I $D/census.py $W $D/cut.spec --calls`, CENSUS of code
-text: comments, string literals and prototype lines blanked, member names after `.`/`->` skipped):
+`memfn/src/window.h` is assembled (R3, R5): SPDX/Provenance head, the family comment (:8-65), the
+guard `MF_WINDOW_H` and `#include "kit.h"`, then the moved types in source order (`@TYPES@`), then
+one section of declarations per defining file (`@DECLS@`), then the two arms. It joins Makefile
+KITHDRS (a hand list; KITSRCS is a wildcard), carries C16's lines and a PROVENANCE row, and every
+name is spelled `#define name MF_NS(name)` (C15). Only family files include it.
 
-- 79 statics cross a file boundary and lose `static` (section `== STATICS crossing`);
-- 34 types, macros and enumerators cross (section `== TYPES/MACROS/ENUMERATORS`);
-- 19 names already in kit.h cross (no header cost).
+W15 made the header's content a COMPILE question, not a name count: the five renderer row types,
+`ren_key` and the `wf_rc` body are complete in it (30 dereference lines in efind, ask, floor, find,
+plan need them), and the `-fsyntax-only` of every includer is the binding check (§11). Composition
+(`python3 -I $D/ents.py $S/asm/memfn/src/window.h`, CENSUS of top-level entities): 76 MF_NS names
+with their 72 prototypes and 4 extern objects, 13 typedefs, 3 structs, 7 enumerator groups, 14 other
+macros, and 1 table: `use_nothing`.
 
-The arch review's C-39 counts (25 at its 2-file cut) are a CEILING that counts comments; this
-census at C-39's own 2-file cut reads 16 statics; the 10 names only C-39 counts cross that cut in
-comments or forward declarations only (checked by hand; listed in the lane report). The biggest boundaries (`== BOUNDARY name cost`): find -> frame 14
-(the renderer rows' functions, named by the tables' initializers), text -> find 11 and text -> floor 7
-(the text primitives), cands -> decide 7, frame -> ask 7, stop -> margin 6, cands -> plan 6.
+W3, the family vocabulary: the row contracts' vocabulary (:757-790, :792: `WF_SERVES_*`, `NU`,
+`use_nothing`) is not Table A's, so it is window.h's shared section, not stop's. `use_nothing` is a
+`static const` array in the header: `NU()` takes its `sizeof`, which an `extern` declaration cannot
+give (r95 RDCODE-4), and the alternatives (a bound stated twice, or a copy per user) state its
+length in two places. Each includer gets its own copy of a one-row read-only array; no code compares use-list
+addresses (CENSUS: `grep -n -E '(==|!=) *&?use_|->uses *(==|!=)' memfn/src/*.[ch]`: 0), and its
+only readers are contract initializers (`WF_CT_A(.., use_nothing, ..)` twice in stop, `NU(use_nothing)`
+in span). `use_entry` stays in stop (its only user).
 
-**The owner's rule, table by table.** For every declared table (window.c, presence.c, the
-primitives), its readers by grep (`python3 -I $D/census.py $W $D/cut.spec --bodies -v` lists each
-crossing name's users; the table rows below are the function bodies that name the table, from
-`grep -n -E '\bTABLE\b' $W/window.c` checked against `ents.py`'s function ranges):
+### 4.2 Crossing names, pure move and tip
 
-| table | readers (function bodies) | home | crosses after §5? |
-|---|---|---|---|
-| `wf_ties` (TIE) | `kit_tie_takes`; `a_model_choose` (:652), `m_margin_holds` (:865) | kit_pick.c | no: A1 |
-| `wf_arows`, `wf_atable` (Table A) | `a_ct`, `a_holds`, `decide`, `c_model_holds`, `m_margin_holds` | window_stop.c | no: A2 |
-| `wf_mrows`, `wf_mtable` (Table M) | `m_ct`, `m_holds`, `decide` (with `M_MARGIN`/`M_PARKED`, `m_pair`) | window_margin.c | no: A3 |
-| `wf_crows` (Table C) | `c_plan` | window_verify.c | no |
-| `wf_erows`, `wf_etable` (Table E) | `e_ct`/`e_holds`/`e_opt`, `wf_tables_check`, `wf_plan_site` | window_frame.c | no |
-| `ren_skel`, `ren_check` | `wf_plan_site` | window_frame.c | no |
-| `ren_search` | `wf_arm_pick`, `wf_find_decide`, `wf_renders`, `wf_stmt_row`, `wf_tables_check` | window_frame.c | no |
-| `ren_stream` | `table_s`, `wf_plan_site`, `wf_frame_of` (ask), `wf_agree` (ask) | window_frame.c | no: A4 |
-| `ren_fused` | `wf_find_decide`, `wf_tables_check`, `wf_frame_of` (ask), `wf_agree` (ask) | window_frame.c | no: A4 |
-| `wf_srows` (Table S), `wf_support` | `table_s`, `wf_plan_site`, `wf_stream_refusal`, `wf_support_rows` | window_frame.c | no |
-| `wf_spanrows`, `wf_spantable` (wfS) | `s_ct/s_holds/s_opt`, `wf_stretches`; `wf_test_to` (:3802, test), `wf_find_define` (:4487-4488, find), `wf_tables_check` (:2583-2606, frame) | window_span.c | no: A5 |
-| `wf_wsearch` | `wsearch_of` | window_find.c | no |
-| `nop_decl_rows` | `emit_use_refused` | window_ask.c | no |
-| `wr_members` (MF_TRACE) | `wr_first_diff` | window_ask.c | no |
-| `wf_param_decl` | `wf_floor_define` | window_floor.c | no |
-| use lists (`use_entry`, `use_alts`, `use_e_none`, `wf_floor_uses`, `wf_find_uses`) | their contracts only | beside the contract | no |
-| `use_nothing` | the A contracts (stop) and the S contracts (span) | window_stop.c | YES: 1 name, by data (two contracts share one list) |
-| presence.c's tables | presence.c declares no file-scope table (`grep -c -E '^static const [^=]*\[\] *=' $W/presence.c`: 0) | | |
-| the primitives | `kit_pos.c` holds no table; `kit_pick.c` holds `wf_ties` (above) | | |
+- Pure move, family only (`python3 -I $D/census.py $W <family spec> --calls`, the cut.spec with the
+  header, sink, kit_kb and presence lines removed; CENSUS of code text): 86 statics, 40
+  types/macros/enumerators and 10 kit.h names cross; no file cycle over calls. (Rev 1: 79/34/19,
+  at a coarser cut and before W17.)
+- Tip (`census.py` over the assembled files, one `F <- F 1-99999` line each): 1 static crosses,
+  `run_member`, and it is the W18 false positive (`WR_M(run_member)` names `mf_wreply`'s member in
+  a macro argument); 0 types; the rest are window.h/kit.h names.
+- `run_member` is NOT renamed (W18: rev 1's `wf_run_member` rename is withdrawn); its real use is a
+  member, and MF_NS does not apply to members. The other rev 1 collision worry (`count`, `shape`,
+  `full` as members) is gone with H3's renames (`kit_pos_*`), and syntax-only compile of every
+  includer is the check (§11).
 
-No table is searched from 4 or more natural homes, so the STOP RULE does not fire. Two tables are
-read from more than one natural home and need a cut choice: the renderer tables (frame's selection
-and the framed ask's legacy-stream read; proposed: frame, with A4 for the ask) and wfS (span's walk,
-test's and find's renderer call, frame's self-check; proposed: span, with A5).
+### 4.3 kit.h (W13)
 
-## 5. The accessors (the interface rule applied)
+kit.h keeps only names with a caller outside the family, plus ONE stated exception: the set family
+(`kit_pos_*`, H3) and the TIE predicates are kit-wide VOCABULARY (ARV-5 names other kit files as
+their users; U2b makes them so: compose, finder, ofsskip, precheck, presence, pffind, generic call
+`kit_pos_*` at the tip). Changes (CENSUS: `diff` of the sorted `#define X MF_NS` names, B vs tip):
++6 (`kit_pos_in count shape two full first`), +2 (`kit_tie_exchanges`, `kit_tie_reseeds`), -2
+(`kit_tie_takes`, now static; `kit_tie_member_key`, moved static to presence.c beside `member_key`,
+its one caller), -3 (`wf_find_arm`, `wf_floor_arm` to window.h: no non-family file names them;
+`wf_part_site` static in parts). `wf_support_rows` stays (test caller `arm_fixtures.c`). 134 -> 137
+names.
 
-Each is a pure move of existing lines into a function in the table's file: same statements, same
-order, so the bytes are identical. Each says which binding text it re-spells.
+### 4.4 The owner's rule, table by table (W36, W34)
 
-- **A1 `kit_tie_rule(int r)`** (kit_pick.c, kit.h; `enum wf_tie_to` joins kit.h beside `T_*`,
-  :512-513; kit.h's comment at :509-511, which says window.c reads `wf_ties` directly, is re-written
-  in the same commit): replaces `wf_ties[T_CMODEL].to` (:652) and `wf_ties[T_MARGIN].to` (:865). The
-  question-shaped alternative (`kit_tie_exchanges(T_CMODEL)`, `kit_tie_reseeds(T_MARGIN)`) costs one
-  more name and keeps the enum private: O3. Re-spells :865, so it re-binds mech S1417 (SAB_BEFORE
-  and SAB_AFTER), G2 plant S1402 (`run_g2_win.sh:168`) and purity row MARGIN (`purity_rows.tsv:19`).
-- **A2 Table A's three** (window_stop.c): `wf_a_choose` (decide's Table A walk and choose lines),
-  `wf_a_path(arow)` and `wf_a_is_model(arow)` (for `c_model_holds`' `wf_arows[..].ct == &ct_a_model`
-  and `m_margin_holds`). Removes `wf_arows wf_atable ct_a_model WF_NAROWS` from the header (4 names
-  for 3).
-- **A3 `wf_m_choose`** (window_margin.c): Table M's walk and its MARGIN/PARKED branch, taking
-  decide's `gate_tctx` so `trace_cands` reads the same trace record. Removes `wf_mtable m_pair
-  M_MARGIN M_PARKED` (4 for 1).
-- **A4 `wf_legacy_stream(wf_frame_row)`** (window_frame.c): the four direct row reads of the framed
-  ask (`ren_fused[RF_FN].stream`, `ren_stream[RS_CALLER].k.keys` in `wf_frame_of` :2968/:2973 and
-  `wf_agree` :3248/:3253). Removes `ren_fused ren_stream RF_FN RS_CALLER` (4 for 1). `wf_arm_pick`
-  (:2876-2887, ren_search's reader) is already in frame by the cut.
-- **A5 wfS's three** (window_span.c): `wf_span_render(rc, t, st)` (:3802), `wf_span_define(rc, st,
-  out)` (:4487-4488), `wf_span_check()` (wfS's part of `wf_tables_check`, :2583-2606, including
-  `render == wf_span_v`). Removes `wf_spanrows WF_NSROWS` and frame's use of `wf_span_v` (2 for 3:
-  the rule costs one name here, the price of keeping the table static).
-- **`wf_plan_bren` moves to frame**: it is the one plan accessor that reads a renderer row's fields;
-  then `struct wf_plan`'s five renderer-row pointers need only the struct TAGS in the header
-  (`struct ren_skel_row;` ...), not the row types.
+`tables.py DIR FILES..` (CENSUS: every file-scope `table`/`obj` entity of the files, static or not,
+and every function body naming one outside its defining file; comments, strings and members
+blanked):
 
-After §5 the header carries, by subtraction from the pure-move census: statics 79 - 9 removed
-(`wf_ties wf_arows wf_atable ct_a_model wf_mtable m_pair ren_fused ren_stream wf_spanrows`) + 8
-added (A2's 3, A3, A4, A5's 3; A1's goes to kit.h) = **78**; types 34 - 6 (`WF_NAROWS M_MARGIN
-M_PARKED RF_FN RS_CALLER WF_NSROWS`) = **28**, of which 5 are bare struct tags. That is the result of
-the owner's rule here: it does not shrink the header's NAME count much, it changes WHAT crosses. At
-the tip no table crosses a file boundary except `use_nothing` (data shared by two contracts); every
-crossing name is a function, a contract object Table E's initializer takes the address of
-(`wf_find_ct`, `wf_floor_ct`), or a type. A re-run of `census.py` on the tip tree (one SPEC line per
-file, `NEW <- NEW 1-99999`) is the binding count; the numbers above are this design's prediction.
+- pure move (`cd $S/pure/memfn/src && python3 -I $D/tables.py . window_*.c kit_pos.c kit_pick.c
+  window.h`): 30 declared, 13 named elsewhere: `ren_check ren_fused ren_search ren_skel ren_stream
+  wf_arows wf_atable wf_find_arm wf_floor_arm wf_mtable wf_spanrows wf_srows wf_ties`;
+- tip (same command in `$S/asm`): 30 declared, 2 named elsewhere: `wf_find_arm` (in `wf_agree`,
+  `wf_find_prepare`, `wf_plan_bren`, `wf_plan_brow`) and `wf_floor_arm` (in `plan_of`).
 
-**What the remaining names are**, by kind (the irreducible part, and why):
+The two are ARM OBJECTS (`const arm`), Table E's actions, read by address (`p->arm == &wf_find_arm`
+identity tests and the plan's arm field), not tables searched; the rule's "table and the functions
+that search it" does not reach them, and an accessor per identity test would be a second mechanism
+for one comparison. They are declared in window.h (W13). Rev 1's "11 tables" counted any use; this
+is the one population, measured the same way at both ends.
 
-- the renderer rows' action functions (find -> frame 14, floor -> frame 2, test -> frame 2,
-  efind -> frame 5): a declared table names its actions (architecture.md "act through the row");
-  the tables sit with their searchers, the actions with their text;
-- the text primitives (text -> find/floor/test/vform, 14 distinct): the text kit's interface;
-- the planner's record (`wf_dec wf_alt wf_pos WF_LO rd_set`...): the stage-to-stage record.
+The tables and their homes at the tip (r95 W34 corrections folded in):
 
-**`struct wf_plan` crossing.** Accessors "where reasonable": the struct stays in window.h, because
-it is the record the planner hands the emitter, read field by field by 11 family files (`== TYPES`
-row `wf_plan`); per-field accessors inside the family would be ~40 one-line functions and are not
-reasonable. Outside the family it is already behind the `wf_plan_*` accessors. Its field writers
-(field census: `python3 -I $D/fields.py` in the lane scratch; the result recorded here): plan
-(geometry, `plan_of`), efind (E-find facts), frame (`skel strm chk libc includes`), span (`nstr str`).
-Six fields have two writers, an initializer then a refinement (`row libc includes grp hix skip`):
-a finding against the "one writer per stage-to-stage field" corollary, recorded (F4), not fixed
-here. `wf_dec` is written only by planner files (decide, verify; `wf_alt` by cands and stop) and
-read by emitter files: clean.
+| table | home | searchers (function bodies) |
+|---|---|---|
+| `wf_ties` (TIE) | kit_pick.c | `kit_tie_takes`, `kit_tie_exchanges`, `kit_tie_reseeds` |
+| `wf_arows`, `wf_atable` (A) | window_stop.c | `a_ct`, `a_holds`, `wf_a_choose`, `wf_a_path`, `wf_a_is_model` |
+| `wf_mrows`, `wf_mtable` (M) | window_margin.c | `m_ct`, `m_holds`, `wf_m_choose` |
+| `wf_crows` (C) | window_verify.c | `c_plan` |
+| `wf_erows`, `wf_etable` (E) | window_frame.c | `e_ct`/`e_holds`/`e_opt`, `wf_plan_site`, `wf_tables_check` |
+| `ren_skel/search/stream/check/fused`, `wf_srows` (S), `wf_support` | window_ren.c | `ren_find`, `table_s`, `wf_ren_pieces`, `wf_ren_check`, `wf_renders`, `wf_stmt_row`, `wf_stream_refusal`, `wf_support_rows`, `wf_arm_pick`, `wf_find_decide`, `wf_legacy_stream` |
+| `wf_spanrows`, `wf_spantable` (wfS) | window_span.c | `s_ct/s_holds/s_opt`, `wf_stretches`, `wf_span_render`, `wf_span_define`, `wf_span_check` |
+| `wf_wsearch` | window_ask.c (W34: `wsearch_of` is ask's, not find's) | `wsearch_of` |
+| `nop_decl_rows`, `wr_members` (MF_TRACE) | window_ask.c | `emit_use_refused`, `wr_first_diff` |
+| `wf_param_decl` | window_floor.c | `wf_floor_define` |
+| use lists | beside their contracts | their contracts only |
+| `use_nothing` | window.h (shared vocabulary, §4.1) | none (data in contracts) |
 
-**Name collisions under `MF_NS`.** A name that loses `static` is `#define`d to `pcrec_mf_NAME`,
-which also renames any struct member or local of that spelling in a file including the header.
-CENSUS (`grep -c -E '(\.|->)\s*NAME\b'` over `memfn/src/*.[ch] memfn/include/*.h` per crossing
-name): `count` 6, `shape` 5, `full` 3, `run_member` 2 (the real one: `mf_wreply.run_member`,
-memfn.h, written at :1367), `legacy_ok` 1 (a comment). H3's renames take the first three;
-`run_member` (verify) becomes `wf_run_member`. gcc's `-fsyntax-only` on every family file is the
-binding check at build.
+`wf_rc`'s typedef is frame's text at B and its body text's (W34); both go to window.h (`window.h <-
+3559-3573`). presence.c's interface is OUTSIDE this cut (W34): it declares `run_modes[]` (:192, a
+first-match table the one-line grep missed) and 9 public names that do not all search it; its own
+split under ruling 2 is a later unit, trigger: the next presence.c table row or the kit's stage-2
+architecture review's refactor list ([KIT-ARCH-STEP]), whichever comes first.
 
-## 6. The primitives (H2, H3) and the cycle
+**STOP RULE check.** No file needs a second mechanism for the interface rule: every searched table
+is static in its file at the tip, and the two crossing objects are arms (above). The rule does not
+fire.
 
-1. **H3**: the set family is `kit_pos.c`, a `.c` with kit.h prototypes (not static inlines: one copy,
-   and C15's symbol check sees it), names in the existing `kit_pos_*` family (§3). ARV-5's other
-   files' private copies (compose.c :705/:775/:806/:813; finder.c `popcount256` :583-588, :927,
-   :939; ofsskip.c `set_count` :64-69, :75, :135, :216, :889; precheck.c `single_byte` :61-68, :56;
-   presence.c `set_first_member` :95, `one_member` :191, :80, :194) re-spell to the family in their
-   own commit (U2b). Their bindings: mech S804 (precheck.c:67, inside `single_byte`) only; no G2 plant
-   quotes those lines (`python3 -I $D/plants.py .` lists every window.c/presence.c plant; the other
-   files' plants by `git grep -n -E '(compose|finder|ofsskip|precheck)\.c@@'`, 26, none on those
-   lines). Whether U2b is inside the unit is O6.
-2. **H2**: `kit_pick.c`, taking `wf_ties` with `kit_tie_takes` (A1) and `kit_mass` from presence.c.
-   `kit_mass` carries no mech anchor and no G2 plant (anchor_map's presence.c rows: 20, none in
-   :75-83; plants.py: 8 presence.c plants, none in it).
-3. After the move: `kit_pick.c -> kit_pos.c` only; `kit_pos.c` calls nothing; `presence.c ->
-   kit_pick.c, kit_pos.c, finder.c, options.c` (`kitgraph.py $W $D/cut.spec finder.c presence.c
-   kit_pick.c kit_pos.c`).
-4. **The cycle claim, exactly**: `DROP="<every kit .c but window.c, presence.c>" python3 -I
-   $D/kitgraph.py $W $D/cut.spec` prints no CYCLE (CENSUS over function bodies): the family and
-   presence.c form a DAG, and the presence<->window pair edge is gone. With finder.c kept, an SCC
-   {finder, presence, frame, efind, ...} remains: presence.c -> finder.c (`fd_pres_run`, :291),
-   finder.c -> presence.c (7 names) and finder.c -> `wf_renders` (A8). Those edges exist at T
-   without window.c and are not this unit's (ARV-7/H8's layer order); the claim is the pair edge,
-   not "the kit has no cycle".
+## 5. The accessors (W19: which are moves)
+
+All in `edits.spec` (the assembler applies them; each block's FROM is found exactly once, R7).
+Byte identity is claimed for every one (same values, same order of observable effects); G2 is the
+proof, the assembled compile the precondition.
+
+- **O3 the TIE predicates** (kit_pick.c, kit.h). NEW one-line reads: `int kit_tie_exchanges(int r)
+  { return wf_ties[r].to == TIE_EXCHANGE; }`, `int kit_tie_reseeds(int r) { return wf_ties[r].to ==
+  TIE_RESEED; }`; the enum stays private. Call sites: stop's C-model `if (kit_tie_exchanges(T_CMODEL))`,
+  margin's `kit_tie_reseeds(T_MARGIN)`. kit.h's "NOT through it" TIE comment is rewritten. Replaces
+  rev 1's A1 `kit_tie_rule`.
+- **A2** (window_stop.c). `void wf_a_choose(const mf_art *art, const mf_site *s, int quiet, wf_dec *d,
+  unsigned ai)`: a MOVE of decide's Table A walk and choose lines. `const char *wf_a_path(size_t
+  arow)` and `int wf_a_is_model(size_t arow)`: NEW one-line reads replacing the expressions
+  `wf_arows[..].path` (decide's snprintf) and `wf_arows[..].ct == &ct_a_model` (verify's
+  `c_model_holds`, margin's `m_margin_holds`).
+- **A3** (window_margin.c). `void wf_m_choose(wf_dec *d, const gate_in *in, const gate_tctx *tc)`: a
+  MOVE of Table M's walk and its MARGIN/PARKED branch with `m_pair`. decide keeps `f`, `in` and
+  `tc` (r95: `trace_cands` reads `tc`) and passes `&in, &tc`.
+- **A4** (window_ren.c). `unsigned wf_legacy_stream(wf_frame_row f)`: `f == E_FUNC ?
+  ren_fused[RF_FN].stream : ren_stream[RS_CALLER].k.keys`. NOT a move: it MERGES the 4 read pairs
+  of `wf_frame_of` and `wf_agree` into one function; those sites become
+  `wstream_of(wf_legacy_stream(E_FUNC/E_STMT))` (lines disappear; HITS moves, §7.2). W11, NOTED: it
+  reads the tables by index beside "THE ONE ACCESSOR" `ren_find`, a deviation recorded in its own
+  comment (an index read cannot go through `ren_find` and stay byte-identical).
+- **O1** (window_ren.c). `const char *wf_ren_pieces(struct wf_plan *w, wf_frame_row f, const
+  ren_fused_row *fu, fd_form search)`: a MOVE of `wf_plan_site`'s piece selection (Table S, skeleton,
+  and stream/check under `ST_ONE && !fu`), returning Table S's `why`; `wf_plan_site` keeps the
+  refusal text and asks `wf_frame_name` itself (pure; order-free). `const char *wf_ren_check(void)`:
+  a MOVE of `wf_tables_check`'s `ren_search` and `ren_fused` loops.
+- **A5** (window_span.c). `int wf_span_render(wf_rc *rc, kb *t, const struct wf_stretch *st)` and
+  `int wf_span_define(wf_rc *rc, const struct wf_stretch *st, mf_sink *out)`: wrappers of the row's
+  `render`/`define` calls; each ADDS return propagation at its caller (`if (wf_span_render(..))
+  return -1;`). `const char *wf_span_check(void)`: a MOVE of wfS's part of `wf_tables_check` (:2587-2595
+  at B: the two loops and the last-row check, including `render == wf_span_v`).
+- After O1 + A5, `wf_tables_check` (frame) is the E loop, then `wf_span_check()`, then
+  `wf_ren_check()`: B's order (E, wfS, ren_search, ren_fused) kept.
+- `wf_plan_bren` stays in plan (W15: `wf_plan_frame` also reads `w->skel->k.id`, so moving it buys
+  nothing; the row types are complete in window.h anyway).
+
+## 6. The primitives (H2, H3), the leaf and the cycles
+
+1. **H3, the set family** (`kit_pos.c`, kit.h prototypes, one copy, C15 sees it). Names:
+   `kit_pos_in count shape two full first`, with the existing `kit_pos_class_of` and
+   `kit_pos_spelled`. W10: "only one" is spelled `kit_pos_count(s) == 1`, one spelling everywhere;
+   rev 1's `kit_pos_class_of(..) == KIT_POS_ONE` claim is withdrawn. `kit_pos_first(s)` (least
+   member, or -1) is born for U2b's callers.
+   **U2b, inside the unit (O6), widened per W12** (each copy deleted, its callers re-spelled):
+   finder.c `popcount256` (its count, and :940's first-member loop -> `kit_pos_first`, `kit_pos_in`);
+   ofsskip.c `set_count`/`set_first`; precheck.c `only_byte`/`single_byte`'s reads; presence.c
+   `set_first_member` and `one_member` (callers -> `kit_pos_count(X) == 1`); compose.c's two counts,
+   `part_is_byte`'s membership and `span_byte`; pffind.c `set_size` (count + first member);
+   generic.c `kit_set_test` (:110-111, membership); `kit_mass`'s own open read. Kept byte for byte:
+   S452's anchor (finder.c `if (m == 1)`) and S804's (precheck.c `return n == 1;`). Excluded by R-1,
+   named: `formhash.c:493`, `k1_ref.c`.
+2. **H2, the final file(s)** (W2). The two-file reading, for main to confirm: D204's "their final
+   file" is read as one file PER QUESTION FAMILY, because ruling 2 puts a table with its searchers
+   and nothing else:
+   - `kit_pos.c` = the position questions: the set family, `kit_run_member` and `kit_mass` (the
+     final file that takes `kit_mass`, so presence.c and the planner both call DOWN into it);
+   - `kit_pick.c` = the TIE table and its searchers only (`kit_pick_takes` and the predicates
+     public, `kit_tie_takes` static).
+   Placed by rule: `kit_tie_member_key` -> presence.c, static (its one caller, `member_key`; S1094
+   re-points there); `sets_at` stays family-private in verify (all its callers are family files,
+   so no kit.h name; not renamed: S3006 needs no re-spell); `kit_run_set`, `kit_run_at`,
+   `kit_wspan_at` stay in presence.c (readers of presence's span records, which presence.c owns;
+   [SP1D-KITSPLIT-SEAMS]'s seam fact for `kit_run_set` stays as written); `meet_at` stays stop's
+   (static, Table A's callback). If main reads "final file" as ONE file, the cost is the TIE table
+   sharing a file with non-searchers (`kit_mass`, the set family): ruling 2 against D204's word,
+   main's to weigh.
+3. **W9, the general form.** `kit_<family>.c` is the general form for a kit-wide question family
+   that more than one kit area asks: `kit_pos.c`, `kit_pick.c`, `kit_kb.c`. Unlocks: [SP1D-ARGMIN]'s
+   argmin goes to `kit_pick.c` on its own trigger (its next argmin site); a new position question
+   (NEON V's lane masks, if they need a set query) joins `kit_pos.c`.
+4. **W4, ARV-7's order.** C0b moves ARV-7's text-buffer leaf (`kit_kb.c <- compose.c 27-115`, B-s3)
+   before the split, so the plan rows' "ARV-7 before or with it" holds. Effect, measured on the
+   assembled tip: `kit_kb.c` is in no cycle (`python3 -I $D/kitgraph.py $S/asm/memfn/src <tip spec>`
+   prints one SCC of 24 files that does not contain `kit_kb.c`); the remaining full-kit SCC runs
+   through compose.c's services (`kit_walk`, `fd_find`, ...), which is H8's layer-order register row
+   and not this unit.
+5. **W5, the cycles exactly.** With every kit file but the family and presence.c dropped
+   (`DROP=<the 17 others> python3 -I $D/kitgraph.py $S/asm/memfn/src <tip spec>`): no CYCLE. The
+   family and presence.c form a DAG; the presence <-> window pair edge is gone. With compose.c and
+   gate.c dropped instead, one SCC of 15 remains (CENSUS, same run): its loops are presence.c <->
+   finder.c (`fd_pres_run` / `kit_pres_*`, a B-era pair outside the family) and finder.c <->
+   window_ren.c (`wf_renders` / `fd_find`). The second is the H1 OUTCOME, not ARV-7's: `wf_renders`
+   is `ren_search`'s searcher, so ruling 2 puts it in ren, and `fd_find` is T-FIND's one walk, which
+   `wf_find_decide` asks; the arch note's A8 gives finder <-> frame to H1. Reason it stays: breaking
+   it needs `fd_find` to take the renderable set as a stated fact rather than asking for it, a
+   behaviour change outside a move unit. Trigger: the first unit that changes T-FIND's asker
+   interface (the plan_frame line's successor), or H8's layer-order row, whichever lands first.
+6. **W6, H8's placement half.** `mf_pres_ports` (memfn.h; presence.c :252) stays in presence.c: it is
+   presence's pure query over the presence spans, read by pcrec's trace build; presence.c's split
+   is the later unit of §4.4. `mf_wdecide` is window_ask.c's; `wf_check` window_check.c's.
 
 ## 7. The binding checks that move
 
-Each with its census command; each re-aimed IN THE COMMIT that moves its text.
+`binders.py ROOT TREE [RUNNERS_ROOT] [--compile]` is the re-aim table: for every binder that quotes
+text in a file the unit changes, where that text is in TREE (OK file, STALE, AMBIGUOUS), after the
+unit's own re-spellings (its RENAMES/LITERAL table, `OK*`), and with `--compile` whether the
+binder's AFTER/TO compiles in its new file. Its control is B itself: run with TREE = ROOT it must
+find every binder in its present file.
 
-- **Mech sabotage rows.** `python3 -I tools/review/anchor_map.py .` (CENSUS): 59 anchors in
-  window.c over 58 sabotage files naming `memfn/src/window.c` (`grep -l 'memfn/src/window.c'
-  tests/mech/sabotages/* | wc -l`). By new file (`awk -F'\t' '$2=="memfn/src/window.c"{print $1"\t"$3}'
-  | python3 -I $D/bucket.py $D/cut.spec`): ask 16, span 9, parts 7, vform 6, text 4, legacy 3,
-  kit_pick 2, verify 2, frame 2, find 2, and 1 each check, stop, margin, decide, plan, efind. S3121
-  has two files (SAB_FILE ask :3098, SAB_FILE2 legacy :1762). Text re-spelled by the unit: S3106 and
-  S3525 (H3's `count`/`in_set`), S1417 (A1). SAB_AFTER texts that name a moved function must still
-  compile in the new file (a sabotage that fails to compile reads as killed): S3006 adds a call to
-  `kit_run_member` (kit.h: fine), S3250 to `reply_of` (decide -> ask: in window.h) (CENSUS: a script
-  diffing each SAB_AFTER's identifiers against SAB_BEFORE's, lane scratch; these 2 are all).
-  [SABANCHOR] `scripts/m6read_check_sab_anchors.py` is the per-commit check.
-- **Decider census.** `tests/memfn/decider_census.tsv`: 55 rows keyed window.c or presence.c
-  (`grep -v '^#' tests/memfn/decider_census.tsv | awk -F'\t' '$1 ~ /^(window|presence)\.c$/' | wc -l`);
-  by new file (`... {print $2}' | python3 -I $D/home.py $W $D/cut.spec`): frame 16, stop 9, kit_pick 6,
-  cands 5, presence 5, margin 4, legacy 2, efind 2, ask 2, span 2, verify 1, decide 1. The exact
-  counts `HITS = 68` and `MEMBER_COUNT = 72` (decider_census.py) must read the same at every commit:
-  an accessor moves a `kit_walk(` line, never copies it. `RUN_CALLERS` names functions, not files:
-  unchanged. FINDING F2: the self-check plants at :431-433 name window.c/presence.c by text, and
-  :458/:479 APPEND to window.c with `open(..., "a")`; with window.c gone they would create a new
-  window.c and still pass. U1 re-aims them by content to the file that holds the text, and fails if
-  that file does not exist.
-- **G2 plants.** `python3 -I $D/plants.py .` (CENSUS): 41 window.c plants (run_g2_win.sh,
-  run_g2_pres.sh, run_proof.sh), 2 stale at T (S1423 `run_g2_win.sh:206`, S3092 `:265`: FROM text
-  matches no line; FUW-12). By file: ask 6, parts 5, find 4, cands 3, check 3, frame 3, stop 3,
-  verify 3, kit_pick 2, efind 2, plan 2, text 2, margin 1. Re-spelled text: S1402 (A1), S1410 and
-  S1427 (H3: S1427's TO text calls `count` and `in_set`, which must read `kit_pos_count`/`kit_pos_in`),
-  S3106 (`run_g2_pres.sh:291`, H3), the plants at `run_g2_win.sh:177` and `:222` (H3: `count`,
-  `two`). `run_g2_win.sh` :7, :238, :527 and `run_g2_pres.sh` :257 name window.c in comments or
-  build lines: re-read in the same commit.
-- **rows_check.py** plants (`tests/memfn/rows_check.py` :587 S2983 frame, :598 S2988 frame); its
-  :92/:118 name window.c in prose.
-- **Purity.** `tests/memfn/run_purity_reach.sh` reads one file (`win=.../window.c`, :27): its
-  population (WF_CT_A/M, C rows, E, R[KBSCF], support, ST) and plants require the text exactly once
-  in window.c and rebuild `window.o`. U1 makes the population the FAMILY FILE LIST (the
-  `window*.c kit_pick.c kit_pos.c` glob) with the rule "exactly once across the list", and the plant
-  rebuilds the file that holds it. The NEVER functions (`pur_never_x/d/v/u`) need `wf_x`/`wf_dec`:
-  they include window.h. `purity_rows.tsv` (65 lines) row MARGIN quotes :865 (A1). `run_finder.sh`'s
-  `purity_plant` (:196-231, rows a-mass and m-parked) rewrites window.c: re-aimed in U1 by content.
-- **C15/C16, PROVENANCE.** `tests/memfn/run_link_checks.sh`: every new external symbol is
-  `pcrec_mf_*` (the MF_NS defines); every new `.c`/`.h` carries the SPDX line and provenance header.
-  `memfn/PROVENANCE.md` row 54 (window.c: A-model/C-model transcribe `prefix_k.c`) splits into the
-  stop and verify files' rows, the rest "kit original"; row 53 (presence.c) notes `kit_mass`'s move.
-- **Makefile.** KITHDRS (:140) gains `memfn/src/window.h`; `KITSRCS` is a wildcard. No other
-  Makefile line names window.c (`grep -n 'window\.c' Makefile`: 0).
-- **File-name readers, comments only** (re-read, not binding): rows_check.py, renderer_rows.tsv,
-  g2_win_gen.c, g2_pres_gen.c, rows.tsv, row_map.tsv, mass_check.c, cards.py, stream_support.tsv,
-  span_pins.py, run_rows.sh, row_floors.tsv, reach_equal.py, arm_fixtures.c, run_skip_pins.sh,
-  run_encoding_checks.sh, g2_win_ref.c (`git grep -l 'window\.c' -- tests memfn/tests`, FLOOR: a
-  reader that spells the name differently is missed).
+Results (CENSUS; `$S/binders_*.txt`):
+
+| population | rows | at B (TREE = B, runners of B) | tip (runners of B) | tip (runners of lane/memfn-plantcheck 8bd727eab) |
+|---|---|---|---|---|
+| mech sites (SAB_BEFORE, SAB_BEFORE2) | 187 in 177 files | 187 OK | 187 OK (3 `OK*`) | 187 OK |
+| G2 plants (run_g2_win, run_g2_pres, run_proof) | 75 | 71 OK, 4 STALE | 71 OK (5 `OK*`), 4 STALE | 75 OK |
+| purity `old` texts | 49 (of 53 rows; 4 are `-`) | 49 OK | 49 OK (1 `OK*`) | 49 OK |
+| decider census rows (window/presence/compose.c) | 57 | 57 OK | 57 OK | 57 OK |
+
+The 4 STALE are S1423, S3092 (window.c) and S3064, S1224 (compose.c): stale AT B, so the split
+inherits them; lane/memfn-plantcheck re-aims all four (FUW-12), which is C0. Re-keyed by the split
+(moved to a new file): mech 59 sites in 58 files (window.c; S1094 among them, to presence.c); G2 41; purity 49; census 50.
+`run_wreply.sh`'s plants name only `src/gen/emit_dfa.c` (CENSUS: `grep -n '@@'`), none in the unit.
+
+### 7.1 Mech sabotage rows
+
+By new file (`binders_tip_cc.txt`, the moved window.c sites): ask 16, span 9, parts 7, vform 6,
+text 4, legacy 3, verify 2, ren 2, find 2, and 1 each stop, margin, efind, decide, check, kit_pos,
+window.h (S3285), presence.c (S1094). S3285's anchor (`WF_SPAN_HEAD`) is in window.h: a header
+sabotage builds into every includer; probed: planted, all 19 family files compile (§11). [SABANCHOR]
+(`scripts/m6read_check_sab_anchors.py`) is the per-commit check of SAB_FILE.
+
+### 7.2 Decider census (W23)
+
+Per-commit edits of `tests/memfn/decider_census.tsv` and the pins in `decider_census.py`, counted
+from the assembled tip (the tip map is `python3 -I $D/rekey.py . $S/binders_tip_cc.txt`, run
+`decider_census.py --root . --src $S/asm/memfn/src --map MAP --no-plants` with the pins below:
+97 checks passed, 0 failed; with B's pins it fails exactly the two pin checks):
+
+| commit | map edit | MEMBER_COUNT | HITS (where the backstop lines go) |
+|---|---|---|---|
+| B | - | 72 | 68 |
+| U3 | `kit_tie_exchanges`, `kit_tie_reseeds` rows added; kit.h's `kit_tie_takes` prototype row deleted (O3 makes it static); `kit_tie_member_key` re-keyed presence.c; TIE rows re-keyed kit_pick.c | 73 | 66 (O3: kit.h -2, stop -1, margin -1, kit_pick +2) |
+| U5 | rows for `wf_a_choose`, `wf_m_choose`, `wf_legacy_stream`, `wf_ren_pieces` (fn) and `wf_ren_check` (excluded) | 78 | 62 (A2/A3 0: decide -2, stop +1, margin +1; A4 -3: ask -4, ren +1; O1+A5 -1: frame -7, ren +6) |
+| each peel | its rows re-keyed to its file | unchanged | unchanged |
+
+The HITS deltas are per edit block (`edits.spec`'s FROM vs TO lines holding a BACKSTOP shape;
+sum -6 = 62 - 68, CENSUS). `RUN_CALLERS` names functions, unchanged (the tip run's D section holds).
+F2 (rev 1): the census's self-check plants name window.c by text and append to it; at the tip they
+fail with FileNotFoundError (measured), so U1 re-aims them by content to the file holding the text.
+
+### 7.3 G2 plants (W22)
+
+How the build reads plants at the tip: each plant is `FILE@@FROM@@TO` under the runner's dialect,
+FILE a path under the copied `memfn/src`. On lane/memfn-plantcheck the runners apply through ONE
+applier, `tests/lib/plants.py` (`apply`/`check`; statuses OK/STALE/AMBIGUOUS/MISSING FILE/NO
+SPEC/ORPHAN), whose FILE is any name (no window.c in its code), and `--plant-check` counts without
+building. So at the tip a plant keyed `window_margin.c@@...` is read the same way as today's
+`window.c@@...`; rev 1's `plants.py` (this directory's, window.c/presence.c regex) is superseded by
+`binders.py` for the design and by the branch's applier for the build.
+
+Dependency, stated: **the build depends on lane/memfn-plantcheck landing first** (C0). Without it,
+(a) 4 plants are stale at B and one stale plant ends a `--plants` run, (b) there is no per-commit
+static plant check: the runners' private heredocs apply only in `--plant`/`--plants` modes, which no
+gate runs. With it, G1 runs each runner's `--plant-check` per commit (seconds) and
+[SABANCHOR]'s plant pass (its floor 81) counts through the same applier. The executing gate is G3's
+three `--plants` runs at the tip (a box job, §8.3).
+
+Re-spelled plants (`OK*`, the FROM changes): S1402 (O3), S1405, S1428, S3106 (H3), S1410 (H3
+`full`). TO-only: S1427 (its TO calls `count`: re-spelled `kit_pos_count`; unre-spelled it FAILS to
+compile in window_find.c, measured in an earlier probe run, the fail direction of §7.5).
+
+### 7.4 Purity (W24)
+
+`run_purity_reach.sh` reads `window.c` for its population and inserts the NEVER functions before
+`wf_arows[]`. U1, on the unsplit tree: the population greps the FAMILY LIST (`window*.c kit_pick.c
+kit_pos.c`) with "exactly once across the list"; each row's plant and NEVER insertion go into the
+file that holds the row's `old` text (tip homes, `binders.py`: ren 26, verify 12, stop 4, frame 4,
+margin 3), and the link line excludes THAT file's object, not `window.o`. The NEVER functions
+include window.h. `purity_rows.tsv` row MARGIN is re-spelled by O3. `run_finder.sh`'s
+`purity_plant` (rows a-mass and m-parked) is re-aimed by content in U1 (`make test-memfn-finder`
+runs it, G1).
+
+### 7.5 Re-spell lists and the AFTER/TO compile probe (W25, W26)
+
+The re-spell lists, derived (not hand-listed) by `binders.py`'s table (H3's renames; O3's and A2's
+expressions):
+
+- mech: S1417 (O3; SAB_BEFORE and SAB_AFTER), S3106, S3525 (H3);
+- G2: S1402, S1405, S1410, S1428, S3106, and S1427 TO-only (§7.3);
+- purity: MARGIN (O3).
+- Not re-spelled, checked: S3006 (`sets_at` is not renamed), S452 and S804 (U2b keeps both anchor
+  lines byte for byte), S3250 (calls `reply_of`, in window.h).
+
+W26's correction: a non-compiling sabotage is a loud BUILD-FAILED anomaly in mech, not a kill; the
+real gap is that nothing compiles a re-pointed AFTER before the next full mech run. The probe
+(`binders.py . $S/asm <plantcheck runners> --compile`): each SAB_AFTER (with the row's other site
+when both are in one file) and each plant's TO set (all edits of one plant label together) applied
+to its NEW file alone and `gcc-16 -fsyntax-only`-ed: mech 186 PASS + 1 header (S3285, probed through
+its 19 includers: 19 PASS); G2 75 PASS. At B: the same, all PASS (control of the probe's setup; its
+fail direction is S1427 above).
+
+### 7.6 The rest
+
+- **rows_check.py** plants S2983/S2988 (frame at B): their text is in `window_ren.c` / `window_frame.c`
+  at the tip; re-aimed by content in the peel that moves it.
+- **C15/C16, PROVENANCE.** `run_link_checks.sh` (`make test-memfn-link`): every new external symbol
+  `pcrec_mf_*`; every new file's SPDX and Provenance lines (assembler R5 writes them). PROVENANCE row
+  54 (window.c: A-model/C-model transcribe `prefix_k`) splits into window_stop.c's and
+  window_verify.c's rows (`files.spec`'s `prov` lines), the rest "kit original"; row 53 (presence.c)
+  notes `kit_mass`'s move; compose.c's row notes `kit_kb.c`.
+- **Makefile.** KITHDRS gains `memfn/src/window.h`; `KITSRCS` is a wildcard; no Makefile line names
+  window.c (`grep -n 'window\.c' Makefile`: 0).
+
+### 7.7 File-name readers (W30)
+
+Not binding (re-read, re-worded in the commit that moves the text they describe): `git grep -l
+'window\.c' -- tests memfn scripts Makefile`, outside `tests/mech/sabotages/`: 50 files (CENSUS of
+that spelling; a reader spelling it differently is missed, so a FLOOR of readers). They include r95's
+six (run_decide_check.c's comments, run_pres_picks.sh, tests/memfn/CLAUDE.md, memfn/tests/NOTES.md,
+kit.h/memfn.h/.def comments), `scripts/gestalt` and `scripts/statusline.sh`.
 
 ## 8. Commit order and gates
 
-**Order.** Every commit is byte-identical to T on its own and green on its own.
+### 8.1 Order (W20)
 
-- **C0 (prerequisite, outside the unit):** FUW-12, the stale plants S1423 and S3092 re-aimed or
-  retired, so U-commits do not inherit two plants that bind nothing.
-- **U1 checks first, on the unsplit tree:** run_purity_reach.sh's family list, `purity_plant`,
-  decider_census.py's plants (F2). Green at T with the list = {window.c}.
-- **U2 ARV-5:** `kit_pos.c` born, window.c's callers re-spelled to H3's names (S3106, S3525, plants
-  S1410, S1427, :177, :222, `run_g2_pres.sh:291`). **U2b:** the other files' copies (O6).
-- **U3 ARV-16:** `kit_pick.c` born with `wf_ties`, the searchers, A1, `kit_run_member`,
-  `kit_sets_at`, `kit_mass` from presence.c (S1094, S1417, S3106's file, plants S1402/S1403/S3106,
-  census 6 rows, purity MARGIN, PROVENANCE rows).
-- **U4 window.h born:** the shared types only; window.c includes it; KITHDRS; C16.
-- **U5 the accessors in place** (A2-A5, `wf_plan_bren`, `wf_run_member`), still one file.
-- **U6..U21 the peel, one file per commit**, emitter end first (each moves its ranges, drops
-  `static` from its crossing names, declares them in window.h, re-points its own mech rows, census
-  rows, G2 plants, rows_check plants and PROVENANCE row): vform, find, floor, test, text, span,
-  efind, frame, legacy, parts, ask, plan, check, cands, verify, margin, stop. The last commit
-  `git mv window.c window_decide.c` (what remains IS the decision), so blame follows the decider.
+Every commit is byte-identical to the base and green on its own.
 
-**Gates.**
+- **C0 (outside the unit):** lane/memfn-plantcheck lands (FUW-12: S1423, S3092, S1224, S3064
+  re-aimed; the one applier; `--plant-check`).
+- **C0b:** ARV-7's leaf, `kit_kb.c <- compose.c 27-115` (W4).
+- **U1 checks first, on the unsplit tree:** purity's family list and per-file insertion (W24),
+  `purity_plant`, decider census self-plants by content (F2). Green at B with the list {window.c}.
+- **U2 ARV-5:** `kit_pos.c` born with the set family and `kit_pos_first`; window.c's callers
+  re-spelled (S3106, S3525; plants S1405, S1410, S1427, S1428, S3106). **U2b:** the other files'
+  copies (§6.1).
+- **U3 ARV-16:** `kit_pos.c` takes `kit_run_member` and `kit_mass`; `kit_pick.c` born (TIE + O3);
+  `kit_tie_member_key` to presence.c (S1094; S1417, S1402, purity MARGIN re-spelled; census U3 row).
+- **U4 window.h born:** the shared types and the vocabulary (W3), `#include`d by window.c; KITHDRS;
+  C16; the two arms' declarations leave kit.h, `wf_part_site` static (W13).
+- **U5 the accessors in place** (A2, A3, A4, O1, A5), still in one file; census U5 row.
+- **U6..U23, the peel, 18 commits, one file each, emitter end first:** vform, find, floor, test,
+  text, span, efind, ren, frame, legacy, parts, ask, plan, check, cands, verify, margin, stop. Each
+  moves its ranges, drops `static` from the names that cross IN EITHER DIRECTION between the new
+  file and the remainder and declares them in window.h, deletes the moved names' forward
+  declarations (R4), and re-points its own mech rows, census rows, plants, rows_check plants and
+  PROVENANCE row. U23 (stop) also replaces window.c's head with window_decide.c's prologue.
+- **U24:** `git mv memfn/src/window.c memfn/src/window_decide.c`, no content change (a 100 %
+  rename, so `git log --follow` keeps the decider's history; W20's threshold problem is avoided by
+  not mixing the rename with a peel).
 
-- G1 per commit: `make strict` (gcc-16 on the Mac; every family file under `-Werror`, which catches
-  a missing prototype or a `MF_NS` collision), [SABANCHOR], `make test-memfn-rows`,
-  decider_census.py, run_purity_reach.sh.
-- G2 byte identity per commit: `scripts/emit_sweep.py --ref a0f13ad83 --tree-rev <commit>` over the
-  corpus, and with `--extra=-fmemfn-simd=x86-64` (both layers); queued as one box job over the
-  commit list (`scripts/boxqueue batch`), never inline.
-- G3 G2 at both layers at the tip: `memfn/tests/run_g2.sh` (with `-fmemfn-simd` and without),
-  `run_g2_win.sh`, `run_g2_pres.sh`, `tests/memfn/run_proof.sh`, `memfn/tests/g2_vspan.py`.
-- G4 symbols at the tip: `run_link_checks.sh` (C15: every external symbol `pcrec_mf_*`; C16), and
-  `nm -g build/libpcrec.a` diffed against T's: the additions are exactly window.h's names under
-  `pcrec_mf_`, and nothing pcrec-facing changes.
-- G5 REACH_ONLY mech over the re-pointed rows, then `make test` at the tip.
-- G6 `-fstack-usage` re-read at the tip (run_link_checks.sh's recipe): no frame over 4 KB (peak at T
-  `wf_parts_prepare` 3,488 B); a frame that GREW past 3 KB is named in the delivery (cross-file
-  calls stop inlining, so frames move both ways).
-- G7 stamps unchanged: `MF_SITE_ABI` 30, `MF_CLASS_V` 11, `MF_VOCAB` 4, pcrec's abi, the
+19 family `.c` files + window.h = 20 new family files; with kit_pos.c, kit_pick.c, kit_kb.c, 23.
+
+### 8.2 Gates
+
+- **G1, per commit** (W21, W27): `make CC=gcc-16 strict test-memfn-rows test-memfn-finder
+  test-memfn-link` on the Mac (`CC=gcc-16` spelled: bare gcc there is Apple clang); [SABANCHOR];
+  decider_census.py; run_purity_reach.sh; each runner's `--plant-check` (C0); `syncheck.sh` over the
+  commit's tree (the strict flags plus `-Wmissing-prototypes`, and a `-DMF_TRACE` pass strict never
+  compiles; write-free) and `unused.py` over the family (syntax-only does not report an unused
+  static); `binders.py --compile` (the W26 probe; seconds).
+- **G2, byte identity per commit:** `scripts/emit_sweep.py --ref <the unit's base> --tree-rev
+  <commit>` (W28: `--ref` the base the unit is cut from, not T), three arms: default;
+  `--extra=-fmemfn-simd=x86-64` (vrun@w16); and `--extra=-fmemfn-simd=x86-64-v3 --no-differ-floor`,
+  which renders the V form's w32 level block (window_vform.c, B :4459-4468, mech S3535's code).
+  The third arm's reach floor: the count of corpus patterns whose emitted text holds the w32 level
+  stamp at the base, measured by the gate's first run on the base and pinned; a commit's run below
+  it is red. **Where it runs (W28):** emit_sweep emits text only, and an explicit-family arm reads
+  the same on every host ([XARCH-DEV] U3: "the cells read the same on every host"), so all three
+  arms run on this aarch64 Mac; nothing in G2 is owed on Linux. Compiling or RUNNING the emitted
+  x86-64-v3 code is G3's and is Linux's.
+- **G3, at the tip:** `memfn/tests/run_g2.sh` (with and without `-fmemfn-simd`), `run_g2_win.sh`,
+  `run_g2_pres.sh`, `tests/memfn/run_proof.sh`, each also `--plants` (the gate that EXECUTES the
+  re-aimed plants, W22), and `memfn/tests/g2_vspan.py`.
+- **G4, symbols at the tip:** `run_link_checks.sh` (C15, C16) and `nm -g build/libpcrec.a` diffed
+  against the base's: the additions are exactly the new kit.h/window.h names under `pcrec_mf_`.
+- **G5:** REACH_ONLY mech over the re-pointed rows, then `make test` at the tip.
+- **G6:** `-fstack-usage` (run_link_checks.sh's recipe) at the base AND the tip: no frame over 4 KB,
+  and every frame that grew past 3 KB from its base value named in the delivery. The base run is
+  owed (W29: rev 1 had no baseline; this lane runs no compile).
+- **G7, stamps unchanged:** `MF_SITE_ABI`, `MF_CLASS_V`, `MF_VOCAB`, pcrec's abi, the
   `_MEMFN_FORMS`/`_MEMFN_LIBC` stamps (`make test-memfn-stamps`).
+
+### 8.3 By box (W29)
+
+| gate | the Mac (aarch64, gcc-16; the Mac suite lock, not boxqueue) | Linux (x86, boxqueue) |
+|---|---|---|
+| G1 | yes, every commit | yes |
+| G2 | yes, all three arms (text only) | yes |
+| G3 | `run_g2*.sh`, `run_proof.sh` and their `--plants` at ONE SIMD layer only (the host renders no x86 SIMD row); `g2_vspan.py` is red by construction here and is NOT run (a SKIP would read as a pass) | REQUIRED: both layers, `g2_vspan.py` |
+| G4, G6, G7 | yes | yes |
+| G5 | `make test` yes; mech yes | yes |
+
+`scripts/boxqueue` needs flock and /proc (Linux); on the Mac heavy stages take the Mac suite lock.
+The r95 FREEZE NOTE's `targets-check` warning on aarch64 predates the unit and does not touch G2's
+explicit-family arms; it is why G3's x86 half is Linux's.
 
 ## 9. Anticipated growth: NEON V's places (designs nothing of NEON V)
 
-- The V form's text and its level admission block (:4459-4468, which R-48's admission fact
-  replaces; mech S3535 binds it) are `window_vform.c`. NEON V's text lands there and nowhere else
-  in the family.
-- ARV-11's per-instruction-level C-spelling table (H4) is a `.def` beside `targets_c.def`
-  (`levels_c.def`, D146 add. 1's facts/C-spellings split), compiled into `levels.c` (71 lines, which
-  already includes `levels.def` and holds `mf_levels`/`kit_level`): the table `static` there, its
-  lookup the only public name, by the owner's rule; `window_vform.c` and vrun.c call the lookup. It
-  joins KITHDRS and check_targets.sh's file list (arch ARV-11). Its key and vocabulary are H4's.
+- The V form's text and its level admission block (B :4459-4468; mech S3535) are `window_vform.c`.
+  NEON V's text lands there and nowhere else in the family.
+- W14: the block widths `WF_VBLK_MIN/MAX` are in window.h (read by vform's renderer and span's two
+  `_Static_assert`s, so neither file owns them); a NEON width is one window.h line, inside Goal 2's
+  "at most one header line". D204's binding clause applies here: [IR-FORM]'s "emitter-shaped SIMD
+  forms" — NEON V adds a form row, not a new family file.
+- ARV-11's per-level C-spelling table (H4) is a `.def` beside `targets_c.def`, compiled into
+  `levels.c`: static there, its lookup the only public name (ruling 2); vform and vrun.c call it.
 
 ## 10. What the build must not do
 
-- Change a statement, its order, or a constant: the unit is moves, renames, accessors made of the
-  moved lines, and `static` dropped. A commit with an emit_sweep difference is reverted, not
-  re-pinned.
-- Copy a `kit_walk(` or a table read: an accessor MOVES the line (the census's exact `HITS`).
-- Re-point a binder in a later commit than the one that moves its text; leave a binder naming
-  `window.c` after the last commit; let decider_census's append-plants create a file.
-- Add a name to window.h that no other family file uses, or to kit.h that no outside file uses.
-- Touch `formhash.c`, `k1_ref.c` (R-1), the layer order's text (ARV-7), or any NEON V row.
-- Re-cite docs' `window.c:N` line cites (784 in 179 files, `git grep -c -E 'window\.c:[0-9]+'`,
-  CENSUS): historical records stay as written (F6).
+- Change a statement, its order or a constant beyond §5's stated accessor shapes; a commit with an
+  emit_sweep difference is reverted, not re-pinned.
+- Copy a `kit_walk(` or a table read: §7.2's HITS are exact.
+- Re-point a binder in a later commit than the one moving its text; leave a binder naming window.c
+  after U24; let the census's self-plants create a file.
+- Add a name to window.h no other family file uses, or to kit.h no outside file uses — except the
+  stated kit-wide vocabulary (§4.3).
+- Touch `formhash.c`, `k1_ref.c` (R-1), the layer order's text beyond C0b, or any NEON V row.
+- Re-cite docs' `window.c:N` line cites (§13 F6).
 
-## 11. Open choices
+## 11. Assembler evidence (r95 lesson 1)
 
-- **O1 frame's grain.** `window_frame.c` is 737 lines because Table E, the renderer tables, Table S
-  and the support table are searched by one set of functions (§4). The finer cut measured
-  (frame 308 + a `window_ren.c` 384, `spec_v4` in the lane report) costs 86 statics / 41 types at the
-  pure move and makes an efind <-> ren cycle (`census.py --calls`), unless `wf_plan_site`'s
-  piece-selection lines (:2766-2776) and `wf_find_decide`'s reads become ren accessors (about 4
-  names). Proposed: one frame file (the rule holds, no cycle); the alternative is the owner's.
-- **O2 the planner's grain.** Stop (333), margin (65), verify (295), decide (145) separately, at the
-  price of A2/A3 (4 names); or one ~840-line planner file with none. Proposed: separate.
-- **O3 `kit_tie_rule`'s shape**: the enum exported to kit.h (1 name) or two question-shaped
-  predicates (2 names, enum private).
-- **O4 the name window.c.** Proposed: no file keeps it (every binder re-points and an un-re-pointed
-  one fails loudly, after F2's fix); keeping it on one part halves the re-point work but leaves a
-  file named for the whole family.
-- **O5 MARGIN's own file** (65 lines) or inside stop (A3 then is stop's).
-- **O6 ARV-5's other-file copies (U2b)** inside the unit, or after it on their own trigger (one mech
-  re-bind, S804).
-- **O7 `find -> frame` 14 names**: merging find into frame (1,089 lines) removes them; proposed: keep
-  them (the actions sit with their text).
+### 11.1 The assembler
 
-## 12. Findings (recorded, not silently added)
+`assemble.py ROOT OUT [--pure]` reads `cut.spec`, `files.spec` (titles, provenance), `window_h.in`
+(the header template and its `@export`/`@new` list) and `edits.spec` (renames and FROM/TO blocks),
+and writes `OUT/memfn/{src,include}` as the tree at the unit's tip, window.c removed. It refuses an
+OUT inside the repo's `memfn/src`. Its rules: R1 every source line to exactly one file (a
+`window.h <-` item wins over a file range; `-` drops); R2 `ent:NAME` takes the entity and its
+comment; R3 an `@export` loses `static` and window.h gets `#define N MF_NS(N)` plus a declaration
+cut from the definition (a function's head to its body's `{`, `;`; an object `extern` + its
+declarator); R4 a static forward declaration of an exported name is deleted, one of a non-exported
+name moves to its definition's file (W16: e.g. `plan_ix`'s); R5 each file's prologue (SPDX,
+Provenance, title, the std includes, kit.h, window.h for window_*); R6 code-token renames (comments
+and strings untouched, members skipped); R7 edit blocks, each FROM exactly once. `--pure` skips the
+edits and accessors (the controls below).
 
-- F1 `memfn/src/CLAUDE.md` is 12,277 B against a 12,288 B limit (11 B headroom): the file list for
-  21 files needs window.c's detail moved to a new `memfn/src/NOTES.md` or to this note, in U4.
-- F2 decider_census.py's append-plants (§7).
-- F3 two stale G2 plants (S1423, S3092; FUW-12), C0.
-- F4 six `struct wf_plan` fields with two writers (§5).
-- F5 the finder/presence cycle survives the split (§6.4); the arch review's deletion claim is the
-  pair edge only.
-- F6 784 `window.c:N` cites in 179 files go stale by line, as every refactor's do (H11).
-- F7 no `__FILE__`/`__LINE__`/`__func__` in `memfn/src` (`grep -c`: 0), so no file name can reach
-  an artifact or a trace record: the moves cannot move bytes through location macros.
+### 11.2 The compile, every file, both defines
+
+Command: `TMPDIR=$S/tmp python3 -I $D/assemble.py . $S/asm && bash $D/syncheck.sh $S/asm gcc-16`
+(gcc-16 = Homebrew GCC 16.2.0). Flags: `-O2 -g -Wall -Wextra -std=gnu11 -Wshadow -Werror
+-Wmissing-prototypes -fsyntax-only`, every `OUT/memfn/src/*.c`, plain and `-DMF_TRACE`; then the four
+white-box drivers that include kit.h (`tests/memfn/arm_fixtures.c`, `mass_check.c`,
+`proven_check.c`, `run_decide_check.c`) with KITFLAGS against the assembled kit.h.
+
+| run | result |
+|---|---|
+| tip, plain | 39/39 PASS (the 22 new files and the 17 others, edited ones included) |
+| tip, `-DMF_TRACE` | 39/39 PASS |
+| tip, the 4 drivers | 4/4 PASS |
+| **total** | **`syncheck: 82 PASS, 0 FAIL (gcc-16)`** |
+| control: B's own tree (`memfn/src` copied) | `40 PASS, 0 FAIL` (18 files x 2 + 4) |
+| control: `--pure` (the cut without edits.spec) | `44 PASS, 38 FAIL`: all 19 family files fail, both defines (no guard/include edit, no accessors) |
+| `unused.py` over the family + every edited file, tip | 0 UNUSED (B's window.c/presence.c/compose.c: 0) |
+| S3285 planted in the tip's window.h | 19/19 family files compile |
+
+Iterations: rev 2's cut reached 82/82 after fixing, in order, an edit FROM that R3 had already
+de-`static`ed, single-line ranges, and the unused statics syntax-only does not report (hence
+`unused.py`). What the assembly does NOT prove: each intermediate commit's tree (U2-U23) compiles;
+that is G1's per commit, with the same `syncheck.sh`.
+
+## 12. Open choices: as ruled (r95 RULING), with numbers
+
+| O | applied | numbers |
+|---|---|---|
+| O1 frame's grain | SPLIT: `window_frame.c` 277 + `window_ren.c` 415 (rev 1: one 737-line file) | pure move 86 statics / 40 types (family census, §4.2); r95's {frame, ren} SCC through `wf_erows` in `wf_tables_check` removed by A5's per-table form (`wf_span_check`, `wf_ren_check`): frame -> ren 3 calls (`wf_find_decide`, `wf_ren_pieces`, `wf_ren_check`), ren -> frame 0 (`kitgraph.py`, tip) |
+| O2 planner's grain | separate: stop 254, margin 98, verify 314, decide 135 | A2's 3 + A3's 1 names |
+| O3 TIE's shape | two predicates, enum private | kit.h +2 -2 |
+| O4 the name window.c | no file keeps it; U24 renames the remainder | r95 W31: keeping it saves at most 24 of ~150 binders; rev 1's "halves" withdrawn |
+| O5 MARGIN | own file, 98 lines | A3 |
+| O6 U2b | inside, widened (§6.1) | 7 other files edited, all compile (§11) |
+| O7 find -> frame names | kept: they are row payload (actions); find's FAMILY names 16 | - |
+
+## 13. Findings and records
+
+- F1 (W35) `memfn/src/CLAUDE.md` is 12,277 B against 12,288: the file list for 22 files moves
+  window.c's detail to `memfn/NOTES.md` (there is no notes file in memfn/src: C16), in U4.
+- F2 decider census self-plants (§7.2).
+- F3 four stale plants at B (S1423, S3092, S1224, S3064): C0.
+- F4 (W37) rev 1's "six `struct wf_plan` fields with two writers" rested on an uncommitted
+  `fields.py`; withdrawn from this note, the question left for a committed instrument. Rev 1's O1
+  numbers from `spec_v4` are replaced by the committed cut (§12). C-39's 10 names: r95 re-derived
+  them (HOLDS); not restated.
+- F5 the finder loops survive (§6.5).
+- F6 819 `window.c:N` cites in 186 files go stale by line (§2), as every refactor's do (H11).
+- F7 no `__FILE__`/`__LINE__`/`__func__` in `memfn/src`: no file name can reach an artifact.
+- W8 (PLAN, main's): append the D204 pointer to [IR-FORM] member (4). Recorded only.
+
+### 13.1 Instrument blind spots (W32), beside the numbers they touch
+
+- `census.py`/`kitgraph.py` read a macro argument as a use (`WR_M(run_member)`: §4.2's 1 tip
+  static) and kitgraph reads locals/params as calls (§2's B SCC may hold false edges; the tip DAG
+  claim of §6.5 has no edge to be false about).
+- Name counts cannot see type completeness (dereference, `sizeof`), prototypes (blanked) or comment
+  boundaries: these are now the assembler's and the compiler's (§11), which is why §4's header is
+  derived, not counted.
+- `ents.py` takes the first entity's owner per range and drops `typedef enum` enumerators: no tip
+  number in this note is an `ents.py` enumerator count except window.h's composition (§4.1).
+- `tables.py` blanks members after `.`/`->`, so a table reached only through a struct field is not
+  a crossing; at the tip no table is held in a field outside its file (the arms are by address).
+- `binders.py`'s compile probe compiles the planted file alone; a header plant is probed through
+  its includers by hand (S3285).
