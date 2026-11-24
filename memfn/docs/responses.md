@@ -3798,3 +3798,28 @@ Reports: docs/dev/lanes/forms*_report.md, formsfixl_report.md, formsfixm_report.
     - (3) Commit the round's anchor_map.py (sabotage anchor -> enclosing function; now in the review dir) as a reusable tool under scripts/ or tools/review/.
     - (4) pcrec-architect self-check: a count built from a NAME LIST is a floor; say so, or grep by shape.
   - **Mac portability finding (main's scripts):** scripts/gestalt uses GNU-only `xargs -d` and prints a false "GONE: kit" on the Mac; scripts/monread assumes monitor.log exists.
+
+- **done: R-49 ([KIT-ARCH-STEP] stage 2, the kit's overall architecture review)** (2026-11-24, kit). Branch lane/memfn-arch @ 51f177e6d. Note memfn/docs/arch_review_2026-11.md, ACCEPTED rev 4.
+  - **Reviews:** r91 memfn-archrev (5 critics, 21 findings), r92 memfn-archrev2 (4 critics, 14), r93 memfn-archrev3 (1 critic, 9). Each was ruled, and each fix pass was a FRESH architect lane (archrev2, 3, 4). Records: docs/dev/reviews/2026-11-24-r9{1,2,3}-*.md. The manager checked r93's fixes at acceptance and read §9 in full.
+  - **Validation:** docs only. No code moved (C-56: an empty diff from T a0f13ad83 over the code paths). Every lane's lanecheck printed DONE rc=0.
+  - **The suggestions** (18, FILED, not built; smaller first):
+    - S doc/bookkeeping: ARV-1, 18, 3, 4, 2.
+    - S no-movers: ARV-6, 7, 5, 16.
+    - M: ARV-8, 11, 10.
+    - L: ARV-9, 12.
+    - Leave-its: ARV-13, 14, 15, 17.
+    Each carries its size, gate and trigger, and §8 H1-H11 holds what the design step decides. Register rows are PROPOSED in §6 (main's to file). ARV-10 and ARV-8 also need amendments: Q-M1b-1 and plan_frame R5 (the kit's), and registry.md §6¶7 for an options row (main's).
+  - **OWNER QUESTION, §9 window-file-split (for main to put to Frank), in two parts:**
+    - (1) When a feature next adds a planner or renderer table to window.c: (A) split window.c first, as its own answer-identical unit (ARV-9, L); or (B) keep one file until the kit split. Leaning (A), at the trigger only.
+    - (2) ARV-16 (move the position primitives out of window.c): (C) go ahead on its own trigger; or (D) wait, as [SP1D-KITSPLIT-SEAMS] does, for the kit split. No leaning.
+  - **Charter vs committed:**
+    - SCOPE (planner, emitter + form tables + per-CPU dispatch, cards, seam): note §2-§5.
+    - METHOD (goals, judgement, register, the kit memories): §2-§6, §10. The memories were unreadable on the Mac, so the note relies on R-49's wording (a FREEZE NOTE in r91).
+    - Suggestions ranked smaller-first and FILED: §7.
+    - Critic round r91 in arch mode: done, plus r92 and r93.
+    - Owner summary: the question above, plus the list.
+  - **OWED:**
+    - The register rows and plan rows for the ARVs main accepts (main's).
+    - The kit triage lane for runner PLANTS (FUW-12 class; after R-49, accepted by main).
+    - The process proposal from r93 (for main): an architect self-check that re-runs every record a review finding cites before writing it in.
+  - **Next for the kit:** R-48's NEON V design (design note, critic round, then a build go via main), after Frank's pick.
