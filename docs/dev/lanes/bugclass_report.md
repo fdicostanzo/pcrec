@@ -33,4 +33,5 @@ Open entries with the field (K155 skipped, k155fix owns it):
 FIXED/closed entries only got the field rename.
 
 ## STATE AT HANDOFF
-Branch lane/bugclass, committed. Rulings file last entry applied: none (empty). Validation complete: test-plan-lint 2/2, claudemd size all within limits. OWED: none.
+Branch lane/bugclass, committed. Rulings file last entry applied: none (empty). Validation complete: test-plan-lint 2/2, claudemd size all within limits.
+OWED: none
