@@ -751,10 +751,18 @@ fail, so it is not listed for that box.
      ends with `memfn/tests/check_targets.sh || exit 1`, which exits 1 on aarch64 whatever the
      compiler, so on the Mac it is red at every commit, base included, and (without `-k`) runs no
      target after it;
-  2. `make CC=gcc-16 test-memfn-rows test-memfn-finder test-memfn-link` (Linux: plain `make`);
+  2. on the Mac `make CC=gcc-16 test-memfn-rows test-memfn-link`; on Linux `make test-memfn-rows
+     test-memfn-finder test-memfn-link`. [rev2.1] STOP RULE, measured at the base (§8.4):
+     `test-memfn-finder` is RED on the Mac at the base, so it is LINUX's (OPEN CHOICE OC1, §8.4):
+     its purity-reach section (`tests/memfn/run_purity_reach.sh`, which run_finder.sh runs) passes
+     the four NEVER lines to awk as one `-v nv=` value, and macOS's awk (20200816) refuses a
+     newline in a `-v` string (`awk: newline in string`), so all 49 REACH/UNREACHED rows read
+     "its text does not occur exactly once in window.c" (`checks passed: 28889`, `checks failed:
+     49`, every failure a purity-reach row);
   3. [SABANCHOR] `python3 scripts/m6read_check_sab_anchors.py`;
   4. `python3 tests/memfn/decider_census.py --root .` (test-memfn-rows runs it too);
-  5. `bash tests/memfn/run_purity_reach.sh`;
+  5. the purity reach table: no command of its own (run_purity_reach.sh takes ROOT WORK CC FX from
+     run_finder.sh); it runs inside test-memfn-finder, so on Linux only until OC1 is ruled;
   6. each runner's `--plant-check` (C0): `memfn/tests/run_g2_win.sh`, `memfn/tests/run_g2_pres.sh`,
      `tests/memfn/run_proof.sh`, `tests/memfn/run_wreply.sh` (static: no build, any host);
   7. `python3 -I $D/unused.py memfn/src <the family files + every edited file>` (syntax-only does
@@ -812,17 +820,20 @@ fail, so it is not listed for that box.
   `MF_VOCAB` = memfn/include/memfn.h's three `#define`s, equal at base and tip (`grep -E '^#define
   (MF_SITE_ABI|MF_CLASS_V|MF_VOCAB) ' memfn/include/memfn.h`, diffed; memfn.h's other edits are
   comments only, `git diff BASE -- memfn/include/memfn.h`); the `_MEMFN_FORMS`/`_MEMFN_LIBC` stamps
-  by `make test-memfn-stamps` (run_libc_census.sh, which reads none of the three defines); pcrec's
-  abi by G2 (every artifact's first line).
+  by `make test-memfn-stamps` (run_libc_census.sh, which reads none of the three defines), on
+  LINUX only ([rev2.1] STOP RULE: red on the Mac at the base, `FAIL: FORMS movers: 0 SIMD-on
+  movers < floor 1`: its SIMD-on population is empty on an aarch64 host; OC2, §8.4); pcrec's abi
+  by G2 (every artifact's first line).
 
 ### 8.3 By box (W29), plant by plant
 
 | gate | the Mac (aarch64, gcc-16; the Mac suite lock, not boxqueue) | Linux (x86, boxqueue) |
 |---|---|---|
-| G1 | arms 1 (syncheck.sh) and 2-8, every commit; NOT `make strict` | `make strict` + arms 1-8, every commit |
+| G1 | arms 1 (syncheck.sh), 2 (`test-memfn-rows test-memfn-link`), 3, 4, 6, 7, 8, every commit; NOT `make strict`, NOT `test-memfn-finder` (with its purity reach, arm 5: OC1) | `make strict` + arms 1-8 with `test-memfn-finder`, every commit |
 | G2 | all three arms + w32reach.py (text only) | yes |
 | G3 | `run_g2_win.sh --plants` (33 plants), `run_proof.sh` + `--plants` (S1419), `run_g2.sh --quick` | REQUIRED: plain `run_g2_win.sh` (with g2_vspan), `run_g2_pres.sh` + `--plants` (its 7 plants), `run_g2.sh`, `g2_vspan.py`, mech S3525/S3526 (g2v) and S3515/S3530/S3532-S3536 (simdfloor) executed |
-| G4, G6, G7 | yes | yes |
+| G4, G6 | yes | yes |
+| G7 | the three defines (grep); NOT `make test-memfn-stamps` (OC2) | the defines + `make test-memfn-stamps` |
 | G5 | not listed (no base run: ~100 min) | REQUIRED at the tip |
 
 `scripts/boxqueue` needs flock and /proc (Linux); on the Mac heavy stages take the Mac suite lock.

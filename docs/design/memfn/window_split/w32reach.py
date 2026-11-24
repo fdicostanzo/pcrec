@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-# w32reach.py BIN TREE [--floor=byte=N,utf8=M] : G2 arm 3's REACH COUNTER (window_split.md rev 2.1
+# w32reach.py BIN TREE [--floor=byte=N,utf8=M] [--extra=FLAG] : G2 arm 3's REACH COUNTER (window_split.md rev 2.1
 # §8.2, r98 R11). Over the corpus population emit_sweep's arms use (distinct pattern bytes of
 # every TREE/tests .rxt, enumerated by BIN, emit_sweep.enumerate_corpus + distinct_patterns), it
 # compiles each pattern ONCE per base (byte, utf8) exactly as emit_sweep's stream 1 does at arm 3
@@ -24,6 +24,9 @@ import emit_sweep as es
 
 pats = es.distinct_patterns(es.enumerate_corpus(binp, tree, 30))
 ARM = ['-fmemfn-simd=x86-64-v3']
+# --extra=FLAG appends one flag to every compile: the counter's DRILL (`--extra=--memfn=no-span-vector`
+# denies the V form, so the count must fall below its floor and the run go red)
+ARM += [a.split('=', 1)[1] for a in sys.argv[1:] if a.startswith('--extra=')]
 TOKEN = b'span-vector@w32'
 res = {}
 for base, bargs in (('byte', []), ('utf8', ['-e', 'utf8'])):
