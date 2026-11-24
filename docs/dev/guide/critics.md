@@ -346,3 +346,11 @@ Round 2026-11-20 r65, l3feat code round (`docs/dev/reviews/2026-11-20-r65-l3feat
 2. **A verifier that finds the evidence silent on a shape files it as a NEW item,** not as a refutation or a hold.
 3. **An evidence model never reads a BRANCH NAME:** it pins a commit (a lane rule).
 4. **A fold's conservative edges live in the ASKED statement:** the ruling lens diffs the asked text, edges included, against the documents, never the manager's summary of it (A1, A8).
+
+2026-11-23 r89, growth sweep code round grow9code (`docs/dev/reviews/2026-11-23-r89-grow9code.md`), accepted 2026-11-23 (manager). TOP PROCESS CHANGE: a lane that adds or changes a stage gate in a runner script runs a stubbed copy of the gate over every input case, under the script's own `set` flags, before delivering (`tests/growth/gate_check.sh` is the worked example); the review's parallelism lens gets the gate.
+1. **A shell stage gate is code.** A `case` whose pattern is built from the subject it tests is always true, and `set -u` turns an unset optional variable into a stage-killing exit (R89-1: every unsharded run lost two stages, every cloud shard ran the whole report). Stub the script and run it for unset, 1/1, K<N and N/N.
+2. **A measurement report that shares a pool with a verdict sweep inherits the pool's contention.** One compile read 1.86 to 3.40 s CPU inside one 8-wide batch; run measurements serial by default, or repeat-min the points near a threshold, and say which output is not `-j`-identical (R89-3).
+3. **A bound's guard is derived against the job that encloses it.** A wall guard of 10x a 300 s floor sat past the cloud job's 2700 s kill, so the cell was never named (R89-5); read each guard against the outer limit.
+4. **Two bounds of one process tree are headroom per bound, never a sum** (R89-6), and a "wall = CPU" bound is not a hang guard (R89-7).
+5. **A tier selected by a named-exception flag is not a cost test.** The occasional tier took 107 cells that were measured cheap, against the ruling's own condition ("stay costly"), and dropped the ratchet they carried (R89-11); a tier's membership is a measured figure.
+6. **A pool worker that dies names its cell, fails promptly and cleans its work dir** (R89-2; the dead-worker drill of r87 again).

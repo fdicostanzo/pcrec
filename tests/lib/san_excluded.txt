@@ -80,6 +80,7 @@ tests/findall/run_findall_tests.sh	TODO-WIRE	takes $GENCFLAGS but is absent from
 tests/findall/run_one_body.sh	DEFER-PLAIN	compiles with plain $CC, no $GENCFLAGS (compiler axis only if wired)
 tests/findings/run_findings_tests.sh	DEFER-PLAIN	compiles with plain $CC, no $GENCFLAGS (compiler axis only if wired)
 tests/fuzz/run_capturediff_gate.sh	DEFER-PLAIN	compiles with plain $CC, no $GENCFLAGS (compiler axis only if wired)
+tests/growth/run_growth.sh	OWN-TIER	opt-in make test-growth ([GROWTH-SWEEP]), a multi-hour sweep outside make san's budget; its library stage already runs ASan+LSan in-process, and its CLI stage is the compiler axis with caps and a watchdog
 tests/island/run_island_tests.sh	DEFER-PLAIN	compiles with plain $CC, no $GENCFLAGS (compiler axis only if wired)
 tests/knowledge/run_knowledge_tests.sh	DEFER-PLAIN	compiles with plain $CC, no $GENCFLAGS (compiler axis only if wired)
 tests/knowledge/run_measures_tests.sh	DEFER-PLAIN	compiles with plain $CC, no $GENCFLAGS (compiler axis only if wired)

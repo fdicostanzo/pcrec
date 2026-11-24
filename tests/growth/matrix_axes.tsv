@@ -1,0 +1,30 @@
+# matrix_axes.tsv - the survey's product ([GROWTH-SWEEP], growsurv_report.md "Suggested runner shape"):
+# construct kind K x quantifier Q x branch position P x core C, each cell nested to depth 250
+# (a LIMIT cell: must compile and run its matcher; except Q=plus, which a lower limit refuses near depth 12-16:
+# its @250 cell is a stability cell past that limit, paired through plus_edges.tsv) and 251 (its STABILITY twin: refused "too deeply nested"). Lookbehind x
+# bref has no cell (PCRE2 refuses it); a bref core on a kind that captures nothing gets a `(a)` in front. Columns: axis name a b (K and Q rows have no b).
+#   K: a = the group opener (nest repeats it per level).  Q: a = the quantifier after each `)`.
+#   P: a = text after the opener, b = text before the `)` ({A} {B} = the core's two branch literals).
+#   C: a = the two branch literals `A,B`, b = the innermost core.
+K	group	(
+K	ncgroup	(?:
+K	named	(?<n%d>
+K	atomic	(?>
+K	look	(?=
+K	neglook	(?!
+K	lookbehind	(?<=
+K	inline	(?i:
+Q	none	-
+Q	star	*
+Q	plus	+
+Q	lazy	*?
+Q	poss	*+
+Q	opt	?
+Q	cnt01	{0,1}
+P	sole	-	-
+P	first	-	|{B}
+P	second	{A}|	-
+P	last	{A}|{B}|	-
+C	lit	a,b	c
+C	bref	a,b	\1
+C	litalt	abc,abd	abe

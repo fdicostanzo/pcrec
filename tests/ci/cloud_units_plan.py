@@ -4,6 +4,7 @@
   python3 tests/ci/cloud_units_plan.py axes [--plan PLAN.txt] (--log AXES.log | --measured F..) [--shards N | --slots S] [--write]
   python3 tests/ci/cloud_units_plan.py san  [--measured F..] [--shards N | --slots S] [--write]
   python3 tests/ci/cloud_units_plan.py mech [--measured F..] [--shards N | --slots S] [--write]
+  python3 tests/ci/cloud_units_plan.py growth [--measured F..] [--shards N | --slots S] [--write]
 
 REWEIGH ([CLOUD-SUITE]; tests/ci/cloud_reweight.sh runs this): --measured = the committed measured files
 (tests/ci/measured_KIND.tsv, written by tests/ci/cloud_measure.py; several files = kinds sharing the table, a unit's
@@ -188,6 +189,79 @@ def plan_san(a):
     return items, tot, ["%d script(s) have no proxy and carry the default %gs" % (n_def, default)] if n_def else []
 
 
+# growth ([GROWTH-CLOUD]): a UNIT is one cell id of the growth sweep (`tests/growth/run_growth.py --list`, needs build/pcrec).
+# Weight = the cell's measured runner seconds (CLI runs summed + library compiles, tests/growth/run_growth.py --units); a cell
+# with no measurement takes its CLASS default (family/kind), labelled ESTIMATE.  The defaults are LOCAL measurements scaled to a
+# 4-core runner (see the comment at GROWTH_DEFAULT_S); the first cloud run replaces them with runner seconds.
+# Local sample (20 matrix cells, 2026-11-21, gcc 15.2, 16 cores): a matrix stability cell 0.41-0.46 s (5 CLI runs + 5 library
+# compiles), a matrix limit cell median 1.3 s but a heavy tail (7 s, 33 s and 105 s of 9 cells: the `poss`/`lazy` shapes), so
+# the limit default is 3 s, not the median.  The spine/memory/depth defaults come from the CLI walls of tests/growth's own
+# earlier sweeps (one run's wall x the 5 runs of a cell, rounded up), the ASan library stage included at the same weight.
+# ALL are ESTIMATEs: the first cloud run's units.tsv replaces them (make cloud-reweight KIND=growth MEASURE=1).
+GROWTH_DEFAULT_S = {"matrix/limit": 30.0, "matrix/stability": 3.0, "depth/limit": 11.0, "depth/stability": 0.5,
+                    "spine/limit": 90.0, "spine/stability": 1.0, "memory/stability": 26.0, "memory/limit": 26.0}
+GROWTH_FALLBACK_S = 10.0
+# cells known slow from earlier local sweeps (the slowest single CLI run, x about 4 for the cell's runs and its library compile)
+GROWTH_KNOWN_S = {"memory/calls_big@1000": 300.0, "memory/calls_big@320": 70.0, "spine/named_past@100000": 250.0,
+                  "spine/named@65535": 110.0, "spine/named_past@65536": 100.0}
+GROWTH_BUILD_S = 120.0   # the per-shard ASan+LSan build of build-asan/ (-jN on a 4-core runner), read from run 44931033374's step times roughly; `@build` in the measured file replaces it
+GROWTH_TARGET_S = 600    # [CLOUD-SUITE] requirement 9: ~10 min of wall per shard
+
+
+def growth_cells():
+    env = dict(os.environ)
+    r = subprocess.run([sys.executable, "-I", os.path.join(root, "tests/growth/run_growth.py"), "--list"],
+                       capture_output=True, text=True, env=env)
+    cells = [l.split("\t") for l in r.stdout.splitlines() if l and not l.startswith("#")]
+    if not cells:
+        sys.exit("cloud_units_plan: run_growth.py --list listed no cells (is build/pcrec built? `make`): " + r.stderr[-200:])
+    return cells
+
+
+def growth_class(cid, kind):
+    """The class an unmeasured cell takes its weight from: a matrix cell by (quantifier, kind) -- `poss` and `lazy` limit
+    cells cost 100x a `lit` stability cell (proof run 44931033374) -- every other cell by (family, kind)."""
+    fam = cid.split("/")[0]
+    if fam == "matrix":
+        return "matrix/%s/%s" % (cid.split("/")[1].split(".")[1], kind)
+    return "%s/%s" % (fam, kind)
+
+
+def plan_growth(a):
+    meas, mbasis = read_measured(a.measured) if a.measured else ({}, {})
+    items = []
+    cells = growth_cells()
+    # an unmeasured cell takes the MEAN of the measured cells of its class (when any), else the static default below
+    byclass = {}
+    for cid, kind, *_ in cells:
+        if cid in meas:
+            byclass.setdefault(growth_class(cid, kind), []).append(meas[cid])
+    for cid, kind, *_ in cells:
+        if cid in meas:
+            items.append([cid, meas[cid], 0, "runner %s" % mbasis[cid]])
+        elif cid in GROWTH_KNOWN_S:
+            items.append([cid, GROWTH_KNOWN_S[cid], 0, "ESTIMATE known-slow cell %gs" % GROWTH_KNOWN_S[cid]])
+        else:
+            cls = growth_class(cid, kind)
+            if cls in byclass:
+                d = sum(byclass[cls]) / len(byclass[cls])
+                items.append([cid, d, 0, "ESTIMATE mean of %d measured %s cell(s) %.1fs" % (len(byclass[cls]), cls, d)])
+            else:
+                d = GROWTH_DEFAULT_S.get(cls, GROWTH_FALLBACK_S)
+                items.append([cid, d, 0, "ESTIMATE class %s %gs" % (cls, d)])
+    global GROWTH_BUILD_S
+    if "@build" in meas:
+        GROWTH_BUILD_S = round(meas["@build"])
+    if not a.shards:    # the shard count that lands the slowest near the target: work + the build + setup <= target (more than
+        # max_parallel shards run in waves, as mech's do)
+        import math
+        a.shards = max(1, min(200, math.ceil(sum(i[1] for i in items) / max(1.0, GROWTH_TARGET_S - GROWTH_BUILD_S - a.setup))))
+    tot = lpt(items, a.shards)
+    n_def = sum(1 for i in items if "ESTIMATE" in i[3])
+    return items, tot, ["%d cell(s) have no measurement and carry their class default; the %gs per-shard ASan build is %s"
+                        % (n_def, GROWTH_BUILD_S, "measured" if "@build" in meas else "an ESTIMATE")] if n_def else []
+
+
 MECH_DEFAULT_S = 45.0   # UNMEASURED: the local battery's 7 h 6 min at PROCS=6 over 1225 rows, per row, scaled to a 4-core runner at 2 rows at once
 # A mech shard runs MECH_CONC rows at once (cloud_mech_shard.sh: PROCS = cores/2), so a row's recorded wall is ~MECH_CONC
 # shard-seconds' worth of the shard's wall: run 43108213213, 17 finished shards: sum(row seconds)/shard wall = 1.76-1.95.
@@ -211,7 +285,7 @@ def plan_mech(a):
 
 def main():
     ap = argparse.ArgumentParser()
-    ap.add_argument("mode", choices=["axes", "san", "mech"])
+    ap.add_argument("mode", choices=["axes", "san", "mech", "growth"])
     ap.add_argument("--plan"); ap.add_argument("--log")
     ap.add_argument("--shards", type=int)
     ap.add_argument("--slots", type=int, help="max shards (the kind's max_parallel); picks the smallest count near the best")
@@ -229,11 +303,12 @@ def main():
         open(a.plan, "w").write(r.stdout)
         if "plan-job" not in r.stdout:
             sys.exit("cloud_units_plan: run_axes.sh listed no jobs (is build/pcrec built? `make`): " + r.stderr[-200:])
-    plan = {"axes": plan_axes, "san": plan_san, "mech": plan_mech}[a.mode]
+    plan = {"axes": plan_axes, "san": plan_san, "mech": plan_mech, "growth": plan_growth}[a.mode]
     if a.waves and a.slots and not a.shards:
         a.shards = a.slots * a.waves
-    if a.shards:
+    if a.shards or a.mode == "growth":
         items, tot, notes = plan(a)
+        a.shards = a.shards or len(tot)
     else:    # smallest shard count within 5 % of the best the largest unit and the total allow
         a.shards = a.slots or (12 if a.mode == "san" else 20)
         items, tot, notes = plan(a)
@@ -247,11 +322,11 @@ def main():
             n -= 1
             items, tot, notes = items2, tot2, notes2
         a.shards = n
-    base = BASELINE_S if a.mode == "axes" else 0
+    base = {"axes": BASELINE_S, "growth": round(GROWTH_BUILD_S)}.get(a.mode, 0)
     big1 = max(items, key=lambda i: i[1])
     big = sorted(((i[1], i[0]) for i in items), reverse=True)[:3]
     head = ["# tests/ci/cloud_%s_shards.tsv -- the cloud %s kinds' shard table ([CLOUD-SUITE] C), GENERATED by"
-            % (a.mode, {"axes": "axes", "san": "ubsan/asan", "mech": "mech"}[a.mode]),
+            % (a.mode, {"axes": "axes", "san": "ubsan/asan", "mech": "mech", "growth": "growth"}[a.mode]),
             "# tests/ci/cloud_units_plan.py %s; weights are shard seconds on a 4-core runner: MEASURED where weight_source says runner, ESTIMATE otherwise." % a.mode,
             "# estimate: shards=%d, per-shard work min %.0fs max %.0fs%s; largest units: %s"
             % (a.shards, min(tot), max(tot), (" + baseline %ds per shard" % base) if base else "",
@@ -267,7 +342,7 @@ def main():
     head += ["# shards=%d" % a.shards]
     if base:
         head += ["# baseline_s=%d" % base]
-    head += ["%s\tshard\tweight_s\tweight_source" % {"axes": "unit", "san": "script", "mech": "sabotage"}[a.mode]]
+    head += ["%s\tshard\tweight_s\tweight_source" % {"axes": "unit", "san": "script", "mech": "sabotage", "growth": "cell"}[a.mode]]
     rows = ["%s\t%d\t%g\t%s" % (i[0], i[2], round(i[1], 1), i[3]) for i in sorted(items, key=lambda r: (r[2], r[0]))]
     text = "\n".join(head + rows) + "\n"
     out = os.path.join(here, "cloud_%s_shards.tsv" % a.mode)

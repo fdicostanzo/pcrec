@@ -2293,6 +2293,18 @@ test-axes: all
 	bash tests/axes/giveup1_key_check.sh
 	bash scripts/boxlock run --label test-axes -- bash -c 'bash tests/axes/run_axes.sh && PROCS=$${PROCS:-$$(bash tests/lib/procs_default.sh)} bash tests/codegen/run_form_census.sh && bash tests/memfn/run_d3floor.sh'
 
+# [GROWTH-SWEEP] extreme depth / length / memory cells that must REFUSE cleanly,
+# never crash (tests/growth/, docs/testing.md "Growth sweep"). OPT-IN like
+# test-axes: it is long (about 1,600 cells, up to 5 runs each (the count varies: a ladder rung is skipped under twice the pattern's bytes), then the library-mode
+# series under ASan+LSan), so it is NOT in `make test`; the depth arm alone is
+# in `make test-stackdepth`. Known-red cells (the `red` column of
+# tests/growth/cells.tsv) are listed, not failures; one that starts passing fails the sweep (the ratchet).
+# Two stages under ONE box-lock hold: the CLI-per-cell runner against build/,
+# then LIBRARY mode (one process, every cell, memory caps set in it) against
+# the ASan tree build-asan/ built the way `make asan` builds it.
+test-growth: all
+	bash scripts/boxlock run --label test-growth -- bash tests/growth/run_growth.sh
+
 # [ART-SIZE] THE K-SWEEP IDENTITY GATE. `--unroll=K` is a VALUE axis, not a
 # `PCREC_(NO|FORCE)_*` bit, so `run_axes.sh` — which derives its list from
 # those bits — has never swept it, and until this target NO gate proved any K

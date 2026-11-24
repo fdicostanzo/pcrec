@@ -1,0 +1,102 @@
+# plus_edges.tsv - the lower limit that binds a nested `+` cell ([GROWTH-SWEEP], lane grow5, 2026-11-21).
+# `+` replicates its body at every nesting level, so PCREC_MAX_NFA_STATES or PCREC_MAX_VM_NODES (limits.md 3.10
+# para 3) refuses it near depth 12-16, not at the depth limit's 250.  One row per matrix `+` cell (the
+# kind.plus.position.core id): E = the deepest nest that compiles WITH a main() (bisected 1..17-20 on the default
+# build, emit caps lifted as in the matrix cells; E + 1 is refused), the limit that refuses E + 1, the diagnostic
+# text that names it.  The edge varies with kind, position and core (atomic and the lookarounds sit 1-3 levels
+# below group), so there is no per-family shortcut: every cell is its own row.  run_growth.py makes, per row, a
+# limit cell at E, a stability cell at E + 1 and keeps the matrix@250 cell as the far-past member of the pair.
+# Columns (TAB): cid  E  limit  text  far_limit  far_text.  far_limit/far_text: the limit that refuses the matrix@250 cell (one
+# `--list-limits` name and its diagnostic; read by running every `+`@250 cell once: 40 rows NFA, 52 the replication product)
+group.plus.sole.lit	15	PCREC_MAX_NFA_STATES	NFA exceeds	PCREC_MAX_NFA_STATES	NFA exceeds
+group.plus.sole.bref	15	PCREC_MAX_VM_NODES	VM exceeds	PCREC_MAX_VM_REPLICATION_PRODUCT	nested bounded repeats would replicate
+group.plus.sole.litalt	14	PCREC_MAX_NFA_STATES	NFA exceeds	PCREC_MAX_NFA_STATES	NFA exceeds
+group.plus.second.lit	15	PCREC_MAX_NFA_STATES	NFA exceeds	PCREC_MAX_NFA_STATES	NFA exceeds
+group.plus.second.bref	14	PCREC_MAX_VM_NODES	VM exceeds	PCREC_MAX_VM_REPLICATION_PRODUCT	nested bounded repeats would replicate
+group.plus.second.litalt	14	PCREC_MAX_NFA_STATES	NFA exceeds	PCREC_MAX_NFA_STATES	NFA exceeds
+group.plus.last.lit	15	PCREC_MAX_NFA_STATES	NFA exceeds	PCREC_MAX_NFA_STATES	NFA exceeds
+group.plus.last.bref	14	PCREC_MAX_VM_NODES	VM exceeds	PCREC_MAX_VM_REPLICATION_PRODUCT	nested bounded repeats would replicate
+group.plus.last.litalt	14	PCREC_MAX_NFA_STATES	NFA exceeds	PCREC_MAX_NFA_STATES	NFA exceeds
+ncgroup.plus.sole.lit	15	PCREC_MAX_NFA_STATES	NFA exceeds	PCREC_MAX_NFA_STATES	NFA exceeds
+ncgroup.plus.sole.bref	15	PCREC_MAX_VM_NODES	VM exceeds	PCREC_MAX_VM_REPLICATION_PRODUCT	nested bounded repeats would replicate
+ncgroup.plus.sole.litalt	14	PCREC_MAX_NFA_STATES	NFA exceeds	PCREC_MAX_NFA_STATES	NFA exceeds
+ncgroup.plus.second.lit	15	PCREC_MAX_NFA_STATES	NFA exceeds	PCREC_MAX_NFA_STATES	NFA exceeds
+ncgroup.plus.second.bref	14	PCREC_MAX_VM_NODES	VM exceeds	PCREC_MAX_VM_REPLICATION_PRODUCT	nested bounded repeats would replicate
+ncgroup.plus.second.litalt	14	PCREC_MAX_NFA_STATES	NFA exceeds	PCREC_MAX_NFA_STATES	NFA exceeds
+ncgroup.plus.last.lit	15	PCREC_MAX_NFA_STATES	NFA exceeds	PCREC_MAX_NFA_STATES	NFA exceeds
+ncgroup.plus.last.bref	14	PCREC_MAX_VM_NODES	VM exceeds	PCREC_MAX_VM_REPLICATION_PRODUCT	nested bounded repeats would replicate
+ncgroup.plus.last.litalt	14	PCREC_MAX_NFA_STATES	NFA exceeds	PCREC_MAX_NFA_STATES	NFA exceeds
+named.plus.sole.lit	15	PCREC_MAX_NFA_STATES	NFA exceeds	PCREC_MAX_NFA_STATES	NFA exceeds
+named.plus.sole.bref	15	PCREC_MAX_VM_NODES	VM exceeds	PCREC_MAX_VM_REPLICATION_PRODUCT	nested bounded repeats would replicate
+named.plus.sole.litalt	14	PCREC_MAX_NFA_STATES	NFA exceeds	PCREC_MAX_NFA_STATES	NFA exceeds
+named.plus.second.lit	15	PCREC_MAX_NFA_STATES	NFA exceeds	PCREC_MAX_NFA_STATES	NFA exceeds
+named.plus.second.bref	14	PCREC_MAX_VM_NODES	VM exceeds	PCREC_MAX_VM_REPLICATION_PRODUCT	nested bounded repeats would replicate
+named.plus.second.litalt	14	PCREC_MAX_NFA_STATES	NFA exceeds	PCREC_MAX_NFA_STATES	NFA exceeds
+named.plus.last.lit	15	PCREC_MAX_NFA_STATES	NFA exceeds	PCREC_MAX_NFA_STATES	NFA exceeds
+named.plus.last.bref	14	PCREC_MAX_VM_NODES	VM exceeds	PCREC_MAX_VM_REPLICATION_PRODUCT	nested bounded repeats would replicate
+named.plus.last.litalt	14	PCREC_MAX_NFA_STATES	NFA exceeds	PCREC_MAX_NFA_STATES	NFA exceeds
+atomic.plus.sole.lit	15	PCREC_MAX_NFA_STATES	NFA exceeds	PCREC_MAX_NFA_STATES	NFA exceeds
+atomic.plus.sole.bref	15	PCREC_MAX_VM_NODES	VM exceeds	PCREC_MAX_VM_REPLICATION_PRODUCT	nested bounded repeats would replicate
+atomic.plus.sole.litalt	14	PCREC_MAX_NFA_STATES	NFA exceeds	PCREC_MAX_NFA_STATES	NFA exceeds
+atomic.plus.second.lit	14	PCREC_MAX_NFA_STATES	NFA exceeds	PCREC_MAX_NFA_STATES	NFA exceeds
+atomic.plus.second.bref	14	PCREC_MAX_VM_NODES	VM exceeds	PCREC_MAX_VM_REPLICATION_PRODUCT	nested bounded repeats would replicate
+atomic.plus.second.litalt	13	PCREC_MAX_NFA_STATES	NFA exceeds	PCREC_MAX_NFA_STATES	NFA exceeds
+atomic.plus.last.lit	13	PCREC_MAX_NFA_STATES	NFA exceeds	PCREC_MAX_NFA_STATES	NFA exceeds
+atomic.plus.last.bref	13	PCREC_MAX_VM_NODES	VM exceeds	PCREC_MAX_VM_REPLICATION_PRODUCT	nested bounded repeats would replicate
+atomic.plus.last.litalt	12	PCREC_MAX_NFA_STATES	NFA exceeds	PCREC_MAX_NFA_STATES	NFA exceeds
+look.plus.sole.lit	15	PCREC_MAX_VM_NODES	VM exceeds	PCREC_MAX_VM_REPLICATION_PRODUCT	nested bounded repeats would replicate
+look.plus.sole.bref	15	PCREC_MAX_VM_NODES	VM exceeds	PCREC_MAX_VM_REPLICATION_PRODUCT	nested bounded repeats would replicate
+look.plus.sole.litalt	14	PCREC_MAX_VM_NODES	VM exceeds	PCREC_MAX_VM_REPLICATION_PRODUCT	nested bounded repeats would replicate
+look.plus.second.lit	14	PCREC_MAX_VM_NODES	VM exceeds	PCREC_MAX_VM_REPLICATION_PRODUCT	nested bounded repeats would replicate
+look.plus.second.bref	14	PCREC_MAX_VM_NODES	VM exceeds	PCREC_MAX_VM_REPLICATION_PRODUCT	nested bounded repeats would replicate
+look.plus.second.litalt	13	PCREC_MAX_VM_NODES	VM exceeds	PCREC_MAX_VM_REPLICATION_PRODUCT	nested bounded repeats would replicate
+look.plus.last.lit	14	PCREC_MAX_VM_NODES	VM exceeds	PCREC_MAX_VM_REPLICATION_PRODUCT	nested bounded repeats would replicate
+look.plus.last.bref	13	PCREC_MAX_VM_NODES	VM exceeds	PCREC_MAX_VM_REPLICATION_PRODUCT	nested bounded repeats would replicate
+look.plus.last.litalt	12	PCREC_MAX_VM_NODES	VM exceeds	PCREC_MAX_VM_REPLICATION_PRODUCT	nested bounded repeats would replicate
+neglook.plus.sole.lit	15	PCREC_MAX_VM_NODES	VM exceeds	PCREC_MAX_VM_REPLICATION_PRODUCT	nested bounded repeats would replicate
+neglook.plus.sole.bref	15	PCREC_MAX_VM_NODES	VM exceeds	PCREC_MAX_VM_REPLICATION_PRODUCT	nested bounded repeats would replicate
+neglook.plus.sole.litalt	14	PCREC_MAX_VM_NODES	VM exceeds	PCREC_MAX_VM_REPLICATION_PRODUCT	nested bounded repeats would replicate
+neglook.plus.second.lit	14	PCREC_MAX_VM_NODES	VM exceeds	PCREC_MAX_VM_REPLICATION_PRODUCT	nested bounded repeats would replicate
+neglook.plus.second.bref	14	PCREC_MAX_VM_NODES	VM exceeds	PCREC_MAX_VM_REPLICATION_PRODUCT	nested bounded repeats would replicate
+neglook.plus.second.litalt	13	PCREC_MAX_VM_NODES	VM exceeds	PCREC_MAX_VM_REPLICATION_PRODUCT	nested bounded repeats would replicate
+neglook.plus.last.lit	14	PCREC_MAX_VM_NODES	VM exceeds	PCREC_MAX_VM_REPLICATION_PRODUCT	nested bounded repeats would replicate
+neglook.plus.last.bref	13	PCREC_MAX_VM_NODES	VM exceeds	PCREC_MAX_VM_REPLICATION_PRODUCT	nested bounded repeats would replicate
+neglook.plus.last.litalt	12	PCREC_MAX_VM_NODES	VM exceeds	PCREC_MAX_VM_REPLICATION_PRODUCT	nested bounded repeats would replicate
+lookbehind.plus.sole.lit	15	PCREC_MAX_VM_NODES	VM exceeds	PCREC_MAX_VM_REPLICATION_PRODUCT	nested bounded repeats would replicate
+lookbehind.plus.sole.litalt	14	PCREC_MAX_VM_NODES	VM exceeds	PCREC_MAX_VM_REPLICATION_PRODUCT	nested bounded repeats would replicate
+lookbehind.plus.second.lit	15	PCREC_MAX_VM_NODES	VM exceeds	PCREC_MAX_VM_REPLICATION_PRODUCT	nested bounded repeats would replicate
+lookbehind.plus.second.litalt	13	PCREC_MAX_VM_NODES	VM exceeds	PCREC_MAX_VM_REPLICATION_PRODUCT	nested bounded repeats would replicate
+lookbehind.plus.last.lit	14	PCREC_MAX_VM_NODES	VM exceeds	PCREC_MAX_VM_REPLICATION_PRODUCT	nested bounded repeats would replicate
+lookbehind.plus.last.litalt	12	PCREC_MAX_VM_NODES	VM exceeds	PCREC_MAX_VM_REPLICATION_PRODUCT	nested bounded repeats would replicate
+inline.plus.sole.lit	15	PCREC_MAX_NFA_STATES	NFA exceeds	PCREC_MAX_NFA_STATES	NFA exceeds
+inline.plus.sole.bref	15	PCREC_MAX_VM_NODES	VM exceeds	PCREC_MAX_VM_REPLICATION_PRODUCT	nested bounded repeats would replicate
+inline.plus.sole.litalt	14	PCREC_MAX_NFA_STATES	NFA exceeds	PCREC_MAX_NFA_STATES	NFA exceeds
+inline.plus.second.lit	15	PCREC_MAX_NFA_STATES	NFA exceeds	PCREC_MAX_NFA_STATES	NFA exceeds
+inline.plus.second.bref	14	PCREC_MAX_VM_NODES	VM exceeds	PCREC_MAX_VM_REPLICATION_PRODUCT	nested bounded repeats would replicate
+inline.plus.second.litalt	14	PCREC_MAX_NFA_STATES	NFA exceeds	PCREC_MAX_NFA_STATES	NFA exceeds
+inline.plus.last.lit	15	PCREC_MAX_NFA_STATES	NFA exceeds	PCREC_MAX_NFA_STATES	NFA exceeds
+inline.plus.last.bref	14	PCREC_MAX_VM_NODES	VM exceeds	PCREC_MAX_VM_REPLICATION_PRODUCT	nested bounded repeats would replicate
+inline.plus.last.litalt	14	PCREC_MAX_NFA_STATES	NFA exceeds	PCREC_MAX_NFA_STATES	NFA exceeds
+group.plus.first.lit	15	PCREC_MAX_NFA_STATES	NFA exceeds	PCREC_MAX_NFA_STATES	NFA exceeds
+group.plus.first.bref	14	PCREC_MAX_VM_NODES	VM exceeds	PCREC_MAX_VM_REPLICATION_PRODUCT	nested bounded repeats would replicate
+group.plus.first.litalt	14	PCREC_MAX_NFA_STATES	NFA exceeds	PCREC_MAX_NFA_STATES	NFA exceeds
+ncgroup.plus.first.lit	15	PCREC_MAX_NFA_STATES	NFA exceeds	PCREC_MAX_NFA_STATES	NFA exceeds
+ncgroup.plus.first.bref	14	PCREC_MAX_VM_NODES	VM exceeds	PCREC_MAX_VM_REPLICATION_PRODUCT	nested bounded repeats would replicate
+ncgroup.plus.first.litalt	14	PCREC_MAX_NFA_STATES	NFA exceeds	PCREC_MAX_NFA_STATES	NFA exceeds
+named.plus.first.lit	15	PCREC_MAX_NFA_STATES	NFA exceeds	PCREC_MAX_NFA_STATES	NFA exceeds
+named.plus.first.bref	14	PCREC_MAX_VM_NODES	VM exceeds	PCREC_MAX_VM_REPLICATION_PRODUCT	nested bounded repeats would replicate
+named.plus.first.litalt	14	PCREC_MAX_NFA_STATES	NFA exceeds	PCREC_MAX_NFA_STATES	NFA exceeds
+atomic.plus.first.lit	14	PCREC_MAX_NFA_STATES	NFA exceeds	PCREC_MAX_NFA_STATES	NFA exceeds
+atomic.plus.first.bref	14	PCREC_MAX_VM_NODES	VM exceeds	PCREC_MAX_VM_REPLICATION_PRODUCT	nested bounded repeats would replicate
+atomic.plus.first.litalt	13	PCREC_MAX_NFA_STATES	NFA exceeds	PCREC_MAX_NFA_STATES	NFA exceeds
+look.plus.first.lit	14	PCREC_MAX_VM_NODES	VM exceeds	PCREC_MAX_VM_REPLICATION_PRODUCT	nested bounded repeats would replicate
+look.plus.first.bref	14	PCREC_MAX_VM_NODES	VM exceeds	PCREC_MAX_VM_REPLICATION_PRODUCT	nested bounded repeats would replicate
+look.plus.first.litalt	13	PCREC_MAX_VM_NODES	VM exceeds	PCREC_MAX_VM_REPLICATION_PRODUCT	nested bounded repeats would replicate
+neglook.plus.first.lit	14	PCREC_MAX_VM_NODES	VM exceeds	PCREC_MAX_VM_REPLICATION_PRODUCT	nested bounded repeats would replicate
+neglook.plus.first.bref	14	PCREC_MAX_VM_NODES	VM exceeds	PCREC_MAX_VM_REPLICATION_PRODUCT	nested bounded repeats would replicate
+neglook.plus.first.litalt	13	PCREC_MAX_VM_NODES	VM exceeds	PCREC_MAX_VM_REPLICATION_PRODUCT	nested bounded repeats would replicate
+lookbehind.plus.first.lit	15	PCREC_MAX_VM_NODES	VM exceeds	PCREC_MAX_VM_REPLICATION_PRODUCT	nested bounded repeats would replicate
+lookbehind.plus.first.litalt	13	PCREC_MAX_VM_NODES	VM exceeds	PCREC_MAX_VM_REPLICATION_PRODUCT	nested bounded repeats would replicate
+inline.plus.first.lit	15	PCREC_MAX_NFA_STATES	NFA exceeds	PCREC_MAX_NFA_STATES	NFA exceeds
+inline.plus.first.bref	14	PCREC_MAX_VM_NODES	VM exceeds	PCREC_MAX_VM_REPLICATION_PRODUCT	nested bounded repeats would replicate
+inline.plus.first.litalt	14	PCREC_MAX_NFA_STATES	NFA exceeds	PCREC_MAX_NFA_STATES	NFA exceeds
