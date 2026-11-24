@@ -24,6 +24,11 @@
 #             the clean tree compiling it.
 #   --plant ID / --plants: the same run with one more planted defect in the
 #   copy (the table below); the run must go red. Writes only its work dir.
+#   THE PASS FORM (lane s3012fix; this runner spells it with a colon): a DETECTED
+#   plant prints `PLANT <id>: RED (<its first FAIL line>)`, then `plants: R of N red`;
+#   the run exits 0 only when R = N. `PLANT <id>: GREEN (not caught)` means NOT
+#   DETECTED and makes the run exit 1: GREEN is the FAILING answer here, never a
+#   pass. A setup failure prints `FAIL: ...` and exits 2.
 #
 # Takes the box lock (scripts/boxlock) unless its caller holds it.
 # Env: TMPDIR (the work dir's parent), JOBS (the copy's make -j, default 16).

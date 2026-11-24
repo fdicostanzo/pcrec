@@ -26,6 +26,13 @@
 #   --plant NAME   the same run over a COPY of memfn/src with one planted
 #                  defect (the table below): the run must go red. --plants
 #                  runs them all. Writes only the work directory.
+#                  THE PASS FORM (lane s3012fix): a DETECTED plant prints `PLANT <id>
+#                  RED   (driver passed failed: P F): <a FAIL line>` (its plant_expect
+#                  line where it names one); the run exits 0 only when every plant
+#                  named is detected. `PLANT <id> GREEN (NOT DETECTED; ...)` means NOT
+#                  DETECTED, as does `RED BUT NOT BY ITS DETECTOR`: either makes the
+#                  run exit 1. GREEN is the FAILING answer here, never a pass. A setup
+#                  failure prints `FAIL: ...` and exits 1.
 #
 # G2W_TRACE=1 (plan_frame.md 3.0b, run by run_g2.sh against
 # libpcrec_mftrace.a): the TRACED pass. LIB is an MF_TRACE kit, the plant

@@ -51,6 +51,15 @@
 #   --plant ID / --plants   the same passes over a COPY of memfn/src with one
 #                           planted defect (the table below); no ASan, except
 #                           a plant plant_asan names (its asan.log is read).
+#                           THE PASS FORM (lane s3012fix): a DETECTED plant prints
+#                           `PLANT <id> RED   (<detector>; <oracle state>): <its
+#                           expected FAIL line>`; the run exits 0 only when every
+#                           plant named is detected. `PLANT <id> GREEN (NOT
+#                           DETECTED; ...)` means NOT DETECTED, as do `RED BUT NOT
+#                           BY ITS DETECTOR`, `OWED` and `MOVED A PASS IT MUST LEAVE
+#                           UNCHANGED`: each makes the run exit 1. GREEN is the
+#                           FAILING answer here, never a pass. A setup failure
+#                           prints `FAIL: ...` and exits 1.
 #   --reach                 the mech rows' witness probe: renders the default
 #                           and lever generic passes and prints one REACH
 #                           token per plant site the text reaches.

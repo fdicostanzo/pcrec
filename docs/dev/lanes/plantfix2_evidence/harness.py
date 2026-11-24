@@ -7,7 +7,8 @@ Q1-Q20 on the applier, P1-P15 on the pass). The critic's FAULTS F1-F14 now live 
 pass's own `--selftest` (scripts/m6read_check_sab_anchors.py's CASES), so this file keeps
 only the MUTANTS, each re-spelled onto the fixed code's site for the same clause (where
 CA-6 merged check and apply into one loop, several originals land on ONE site: said per
-row), plus N* mutants on the clauses the fix added.
+row), plus N* mutants on the clauses the fix added, and (lane s3012fix) T* mutants on the twin
+check's DETECTOR clause and the explicit PLANT_TWINS declaration.
 
 A mutant is KILLED iff, applied to a copy of the tree, the LIVE run
 (`python3 -I scripts/m6read_check_sab_anchors.py`, both halves, what [SABANCHOR] runs) or
@@ -92,6 +93,22 @@ MUTANTS = {
     "N23": (S, "        if dump_ids != check_ids:", "        if False:", "check and dump naming different plants not red"),
     "N24": (S, "            if os.path.normpath(r[3]) != os.path.normpath(sf):", "            if False:", "twin file not compared"),
     "N25": (S, "        if len(sites) != len(rows):", "        if False:", "twin edit count not compared"),
+    # --- clauses lane s3012fix added (S3012, GF-1's hole: the twin's DETECTOR; the explicit declaration) ---
+    "T1": (S, "        if not set(suites) & mine:\n", "        if False:\n", "the twin's detector (SAB_SUITES vs the runner's arms) not compared"),
+    "T2": (S, "        suites = parts[8].split() if len(parts) > 8 else []", "        suites = sorted(runs.get(rel, set()))", "the row's SAB_SUITES never read (taken as the runner's own arms)"),
+    "T3": (S, "'\"$SAB_FILE2\" \"$SAB_BEFORE2\" \"${SAB_COUNT2:-1}\" \"$SAB_AFTER\" \"$SAB_AFTER2\" \"$SAB_SUITES\"' % path", "'\"$SAB_FILE2\" \"$SAB_BEFORE2\" \"${SAB_COUNT2:-1}\" \"$SAB_AFTER\" \"$SAB_AFTER2\" \"g2pres g2win memfnfinder\"' % path", "read_row's SAB_SUITES replaced by every runner's arm"),
+    "T4": (S, "        mine = runs.get(rel, set())", "        mine = set().union(*runs.values())", "any arm counts, not the arms that run THIS runner"),
+    "T5": (S, "(?:[<>]|2>|$)'", "'", "the DEFAULT-mode rule dropped: an arm passing a mode (g2v) counts"),
+    "T6": (S, "                todo += [(c, seen | {rel}) for c in", "                todo += [] and [(c, seen | {rel}) for c in", "the closure dropped (memfnfinder -> run_finder.sh -> run_proof.sh not followed)"),
+    "T7": (S, "        if \"score_arm \" not in m.group(2):\n            continue\n", "", "blocks that score no arm read as arms"),
+    "T8": (S, "    if not narms:\n", "    if False:\n", "a table that yields no arm not unreadable"),
+    "T9": (S, "    if not os.path.isfile(mp):\n        return \"%s MISSING\" % MATRIX, {}\n", "    if not os.path.isfile(mp):\n        return None, {}\n", "a missing arm table not unreadable"),
+    "T10": (S, "        p_unreadable.append((MATRIX, \"ARM TABLE UNREADABLE: \" + why))", "        pass", "an unreadable arm table not recorded"),
+    "T11": (S, "    if n != 1 or len(lit) != 1:", "    if len(lit) != 1:", "the ONE-assignment rule dropped (a second, blanket PLANT_TWINS after the literal)"),
+    "T12": (S, "    if n != 1 or len(lit) != 1:", "    if n != 1:", "the LITERAL rule dropped (PLANT_TWINS=\"$PLANTS\" accepted)"),
+    "T13": (S, "    if declared != set(ids):", "    if False:", "the dump's twins not held to the literal (the mode passes $PLANTS)"),
+    "T14": (S, "        explicit_twins(rel, dump, p_bad)\n", "", "the explicit-declaration check never called"),
+    "T15": (S, "    for m in ARM_BLOCK.finditer(", "    for m in list(ARM_BLOCK.finditer(", "HARNESS SELF-CHECK: a syntax error (must be killed)"),
 }
 
 

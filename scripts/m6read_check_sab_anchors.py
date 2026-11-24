@@ -353,7 +353,9 @@ def explicit_twins(rel, dump, p_bad):
     n = len(TWINS_ASSIGN.findall(src))
     lit = TWINS_LITERAL.findall(src)
     ids = lit[0].split() if len(lit) == 1 else []
-    if n != 1 or len(lit) != 1 or not all(re.fullmatch(r"S[0-9]+", i) for i in ids):
+    # (an id-shaped token is not asked here: any other token reaches the dump as a declared
+    # twin PLANTS does not list, TWIN NOT IN PLANTS)
+    if n != 1 or len(lit) != 1:
         p_bad.append((rel, ("-", "-", "TWINS NOT EXPLICIT", "0",
                             "PLANT_TWINS must be ONE literal id list (`PLANT_TWINS=\"S1 S2\"`): "
                             "%d assignment(s), %d literal" % (n, len(lit)))))
