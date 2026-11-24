@@ -559,7 +559,8 @@ CASES = [
     ("--plant-check dump dies", lambda c: c.mode(PROOF, '    [ "${2:-check}" = dump ] && exit 3'), 1, [PROOF, "dump UNREADABLE"], None, None),
     ("--plant-check reads only the first id", lambda c: c.sub(PROOF, "    for id in $PLANTS; do\n        if plant_edits", "    for id in ${PLANTS%% *}; do\n        if plant_edits"), 1, [PROOF, "ORPHAN"], None, None),
     ("--plant-check hangs (exec'd)", lambda c: c.mode(PROOF, "    exec sleep 300"), 1, [PROOF, "TIMED OUT"], 20, "3"),
-    ("--plant-check's grandchild hangs holding the pipes (PAR-3)", lambda c: c.mode(PROOF, "    sleep 300; exit 0"), 1, [PROOF, "TIMED OUT"], 20, "3"),
+    ("--plant-check's grandchild hangs holding the pipes (PAR-3)", lambda c: c.mode(PROOF, '    ( while :; do date > "$PLANT_ALIVE"; sleep 0.2; done ); exit 0'), 1, [PROOF, "TIMED OUT"], 20, "3"),
+    ("a grandchild escapes the group, holding the pipes", lambda c: c.mode(PROOF, "    python3 -c 'import os, time; os.setsid(); time.sleep(30)' & exit 0"), 1, [PROOF, "PIPES STILL HELD"], 15, "3"),
     ("two runners hang: one shared deadline (PAR-2)", lambda c: (c.mode(PROOF, "    exec sleep 300"), c.mode(WIN, "    exec sleep 300")), 1, [PROOF, WIN, "TIMED OUT"], 20, "3"),
     ("twin drift: the runner's TO moved (proof S1221)", lambda c: c.sub(PROOF, "@@long d = (long)t->offset + j + (t->kind == MF_T_RUN);'", "@@long d = (long)t->offset + j + 2 * (t->kind == MF_T_RUN);'"), 1, ["S1221", "TWIN DRIFT"], None, None),
     ("twin drift: the mech row's FROM moved (S3045)", lambda c: c.wr(c.row("S3045"), c.rd(c.row("S3045")) + '\nSAB_BEFORE="${SAB_BEFORE}x"\n'), 1, ["S3045", "TWIN DRIFT"], None, None),
@@ -573,8 +574,8 @@ CASES = [
 
 def unit_rows(t):
     """plants.py's own rules, driven directly: [(name, ok, detail)]."""
-    py = os.path.join(t, "tests/lib/plants.py")
-    d = os.path.join(t, "unit")
+    py = os.path.join(root, "tests/lib/plants.py")
+    d = t
     os.makedirs(d)
     out = []
 
@@ -625,9 +626,10 @@ def unit_rows(t):
             "--plant", "S1", "2", "f.c@@A@@C", "f.c@@C B@@D")
     out.append(("check: the same loop, cumulative, in memory only",
                 r.returncode == 0 and "S1\t2/2\tOK\t1\t" in r.stdout and got() == "A B\n", r.stdout.strip()))
+    fc = os.path.normpath(os.path.join(d, "f.c"))
     r = run("dump", "win", d, os.path.join(d, "r.sh"), "--twins", "S1", "--", "--plant", "S1", "1", "f.c@@A\\n@@B@@C")
     out.append(("dump: decoded FILE/FROM/TO, the twin field",
-                r.returncode == 0 and r.stdout.split("\t")[1:] == ["1/1", "twin", "unit/f.c", '"A\\n"', '"B@@C"\n'],
+                r.returncode == 0 and r.stdout.split("\t")[1:] == ["1/1", "twin", fc if not fc.startswith(root + os.sep) else os.path.relpath(fc, root), '"A\\n"', '"B@@C"\n'],
                 r.stdout.strip()))
     return out
 
@@ -671,7 +673,7 @@ def selftest(serial):
                 fault(Case(t))
             except Exception as e:     # a fixture that no longer applies is a red case
                 return name, False, "FIXTURE: %s" % e
-            env = dict(os.environ, TMPDIR=os.path.join(t, "tmp"))
+            env = dict(os.environ, TMPDIR=os.path.join(t, "tmp"), PLANT_ALIVE=os.path.join(t, "alive"))
             if tmo:
                 env["PLANT_CHECK_TIMEOUT"] = tmo
             s0 = time.monotonic()
@@ -679,6 +681,13 @@ def selftest(serial):
                                 "--plant-only"], capture_output=True, text=True, env=env, timeout=600)
             wall = time.monotonic() - s0
             out = r.stdout + r.stderr
+            alive = os.path.join(t, "alive")
+            if os.path.exists(alive):     # a hang fixture's heartbeat: the pass must have killed it
+                m1 = os.stat(alive).st_mtime_ns
+                time.sleep(1.0)
+                if os.stat(alive).st_mtime_ns != m1:
+                    out += "\nSELFTEST: the hung runner's process group is STILL ALIVE after the pass"
+                    words = words + ["<the group killed>"]
             miss = [w for w in words if w not in out]
             ok = r.returncode == want_rc and not miss and (bound is None or wall < bound) \
                 and not os.listdir(os.path.join(t, "tmp"))
@@ -692,11 +701,15 @@ def selftest(serial):
         idx = list(range(len(CASES)))
         if serial:
             res = [one(i) for i in idx]
-        else:
-            with ThreadPoolExecutor(max_workers=min(len(idx), max(2, os.cpu_count() or 2))) as ex:
-                res = list(ex.map(one, idx))
+        else:       # the slow (hang) cases first, so they overlap the rest; output in case order
+            with ThreadPoolExecutor(max_workers=min(len(idx) + 1, max(2, os.cpu_count() or 2))) as ex:
+                uf = ex.submit(unit_rows, os.path.join(top, "units"))
+                futs = {i: ex.submit(one, i) for i in sorted(idx, key=lambda i: CASES[i][4] is None)}
+                res = [futs[i].result() for i in idx]
+                units = uf.result()
         print("selftest: base copy %.1f s, cases %.1f s" % (t1 - t0, time.monotonic() - t1), file=sys.stderr)
-        units = unit_rows(os.path.join(top, "c00"))
+        if serial:
+            units = unit_rows(os.path.join(top, "units"))
     finally:
         shutil.rmtree(top, ignore_errors=True)
     nbad = 0

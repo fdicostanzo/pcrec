@@ -39,7 +39,9 @@ lane's retro-diff of `build/mech_m64.log` (99 rows) against
 `build/mech_m65.log` (118 rows) found ZERO rows flipping DETECTED ->
 UNDETECTED without their own `SAB_FILE`/definition changing across 99 rows
 in common — the measurement the ruling's risk acceptance rests on. The
-tripwire is `python3 scripts/m6read_check_sab_anchors.py`; the rows for a
+tripwire is `python3 scripts/m6read_check_sab_anchors.py` (its second half, the
+RUNNER PLANT pass, reads the four shell runners' own plants and holds each
+shared id to its row as a declared twin; `--selftest` is its control); the rows for a
 changed-files list are `bash tests/mech/rows_for.sh <path>...` (above).
 Full tiers table, the anchor-drift/new-row accounting for the two
 exceptions the retro-diff DID find (`S48`'s anchor-count fix, `S107`/
