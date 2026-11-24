@@ -4947,3 +4947,9 @@ bsu3fix2 delivered (6cf672b6a on lane/bsu3fix; lanecheck DONE; TaskStop).
   - Re-check r98 memfn-winsplit2 coordinator launched.
 - r98 memfn-winsplit2 (rev 2 re-check) RULED (79388197d): NOT READY as written; READY after rev 2.1 (14 FIX-NOW, 12 DOC, no answer-level findings). The gates G1 strict and G3 cannot be green on the Mac; binders.py --compile drops each peel's rows; the U24/U3/U4 lists are short; the census append plants after U1. Kit choice R13: kit_run_set and kit_run_at move to kit_pos.c. Fix lane wsplitd3 (opus) launched; a light §8 re-check after it (number asked of main).
 - main: r99 memfn-winsplit3 is the LIGHT re-check of rev 2.1. The gate-green-at-base-per-box lesson is in pcrec-critic; kit_run_set/kit_run_at to kit_pos.c accepted. After r99, the go summary for Frank goes to main with the O1-O7 numbers. Process gap: r98's coordinator skipped the separate verifier (it self-checked: 9 held, 1 partly held); r99's brief requires one.
+- wsplitd3 delivered rev 2.1 (5e32aed4b), merged as 8a5b8f0f4.
+  - syncheck 82/82. R13 applied: kit_run_set and kit_run_at go to kit_pos.c (22 files, 4,763 lines).
+  - Mac base runs of the gate arms G1/G2/G3/G4/G7 are all green, with their last lines in the report.
+  - binders drill: a re-keyed broken AFTER goes red, and a row leaving the selection goes red.
+  - OC1-OC3: three arms are red on the Mac at the base and move to Linux: test-memfn-finder (BSD awk -v newline), test-memfn-stamps (0 SIMD-on movers), test-memfn-g2 (x86 text).
+  - r99 memfn-winsplit3 launched: one sonnet critic + a verifier, §8 only.
