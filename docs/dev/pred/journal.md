@@ -1162,3 +1162,21 @@ wake.md says (read the draft WHOLE first; A4 is a ruled-words finding: read his 
 
 - Main: P-28 (0dda97065) merged on main (push follows CI). Review number r90 is reserved for predfold1124's round.
 - Last REVIEWED tip is now 0dda97065. Waiting on the owner: label-tree, then options-reach-constants.
+
+## 2026-11-23 — path-rules RULED; fold lane predfold1124 launched (review r90 to follow)
+
+- His four path rules (a start and a target in the label DAG; no underscore label on the path unless it is the
+  start; any label of the binding may start; a middle label may be skipped where unambiguous) + my two readings +
+  rules 5 and 6 across bindings: RULED ("path-rules: yes"). It replaces label-tree and my readings (b), (c) of
+  label-doors; stacked-chain answered (the chain is legal); two printed lines become compile errors.
+- LAUNCHED lane predfold1124 (opus; worktree `worktrees/predfold1124`, cut at 172930848; deliver + empty rulings
+  first; lanewatch armed). Scope: shorthand-is-callers, capture-in-set, exact-count-unspecified, path-rules, two
+  standing closures (options mid-file; an argument literal takes the caller's file's options), the parked
+  effects piece. Not ruled, kept open: the constant half of options-reach-constants (ASKED).
+- NEXT: at its delivery: merge, lints, coordinator `crit-predfold1124` for r90 (design; ruling lens on the ASKED
+  statements, examples + expansion drill, fix-induced + general form, names grid over the path rules, check
+  adequacy incl. the header-mutation drill), rule, fix lane, P-29.
+- LESSON (third time this session a closure or extension of mine was overturned by his next message: by anyone
+  the body included; never chain; X.m.h an error): when I "apply his sentence literally" I keep extending it
+  past the case it was asked on. Before closing a queued question on the record, check WHICH CASE his sentence
+  was asked about and say so; a closure outside that case is asked, in one line, not closed.
