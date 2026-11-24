@@ -120,6 +120,7 @@ check that every `RX_DFA_SCAN` value is a row or a named non-choice (`empty`, `a
 ## STATE AT HANDOFF
 
 - Rulings file `docs/dev/lanes/b152attr_rulings.md`: empty at last read, no entry applied.
-- All three tasks answered. Nothing OWED. Scratch worktree `$PCREC_TMPDIR/scratch/b152attr/wt` (registered in the main repo's
+OWED: none
+- All three tasks answered. Scratch worktree `$PCREC_TMPDIR/scratch/b152attr/wt` (registered in the main repo's
   worktree list) is still there; remove it with `scripts/wtprune`.
 - Not done: lane-commit resolution inside the four named merges (`git log MERGE^1..MERGE^2`); no timing.
