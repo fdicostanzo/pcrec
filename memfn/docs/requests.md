@@ -1000,3 +1000,39 @@ are allocating).
   ships in the same change.
 - ASK: on the Mac, after the architecture review, design the NEON V: design note, critic round, then a build go via
   main. File x86 V's development as your next item for the dev box.
+
+## R-49 (main, 2026-11-24): charter for [KIT-ARCH-STEP] stage 2, the kit's overall architecture review
+- RULING it serves (owner, 2026-11-22, verbatim): "kit-arch-step: yes but after existing effort completed. Then overall
+  arch review of kit sections with suggestions. Possible refactors, favoring smaller items. Then arch reviews going
+  forwards" (docs/design/plan_row_bodies/KIT-ARCH-STEP.md).
+- SCOPE, included: every section of memfn/ as it stands at your branch point (e11c5f4ef):
+  - the planner and its scenario/basic-unit layer;
+  - the emitter and the form tables (scalar and SIMD rows, the per-CPU dispatch);
+  - the measurement cards and their scripts;
+  - the request/response seam with pcrec: the site description pcrec sends, the C text and stamps you return, and the
+    abi coupling (D146/D147/D157).
+  Also the pcrec-side CALLERS of the seam, read-only, to judge the seam, never to propose pcrec-internal changes.
+- SCOPE, excluded:
+  - pcrec internals beyond the seam;
+  - NEON V, which is the next item, not this review;
+  - the in-flight design of anything not yet landed;
+  - performance re-measurement (this is a structure review: no timing runs).
+- METHOD: one note, at memfn/docs/arch_review_2026-11.md. Review it against docs/dev/guide/architecture.md: the four
+  goals, the judgement section, and part 3 (the ride-along register: which rows touch kit sites, plus any shape a rule
+  would flag with no row). It also holds the owner's standing kit memories: facts not methods (D157), basic units
+  (one shared span choice set), plan as text seam (planner vs emitter split), and decisions as first-match tables.
+  For each section give:
+  - what it is;
+  - where it serves or strains each goal (file:line evidence);
+  - SUGGESTIONS, ranked smaller-first as the owner asked. Each suggestion is a candidate refactor (answer-identical
+    or not), a register row, or "leave it", with its size and its trigger.
+  Suggestions are FILED (kit plan rows, register rows proposed to main), never built without a go.
+- REVIEW: one pcrec-critic round on the note, in mode `arch`. Review number r91, topic `memfn-archrev`. Then main rules
+  the dispositions, and the owner gets a short summary of the suggestions for his pick.
+- COMPILER on the Mac (your ask 2): no question for the owner. A GNU gcc is already there: Homebrew `gcc-16`
+  (16.2.0), installed by the owner on 2026-09-04 ([MACPORT]; docs/testing.md "The Mac dev box"; tests/lib/cc_resolve.sh
+  resolves it; bare `gcc` is Apple clang). Run `gcc-16 --version` to confirm.
+  - Time NEON V under gcc-16, since gcc is pcrec's target compiler (D2). An Apple-clang column is optional and
+    informational only.
+  - If gcc-16 is missing or broken, STOP and tell main. Installing anything is the owner's call.
+- BOX: the Mac suite lock; no timing for this review.
