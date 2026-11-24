@@ -5537,3 +5537,118 @@ still running, the worktree's HEAD differs from the run's commit or is dirty (th
 `docs/dev/artifact_size_log.tsv` is tolerated: measured, `make test` touches it), a summary that names a stage
 green with no green record, nothing left to run, simulated/real mismatch. Tests: `scripts/tests/fullsuite_resume.test`
 (offline, simulated). Staged real test: docs/dev/lanes/suiteresume_report.md.
+
+## Growth sweep (`make test-growth`, [GROWTH-SWEEP], 2026-11-21)
+
+Opt-in, like `make test-axes`: NOT in `make test` (1,600 cells, all in the default tier; the occasional tier is empty today, up to 5 runs each: the
+ladder skips a rung under twice the pattern's bytes, and the run reports the count; plus a library-mode series under ASan+LSan). Its depth arm alone rides
+`make test-stackdepth`. The owner's rulings of 2026-11-21 (growth-compile-cells:
+"the purpose of that section is to test limits and look for crashes. If it
+compiles, it's not testing limits"; limit-test-criteria, in
+docs/design/plan_row_bodies/GROWTH-SWEEP.md) give every cell a declared KIND,
+a closed set with no default:
+
+- **stability**: sized PAST a named limit. PASS = a clean refusal by THAT limit
+  (its diagnostic text); a crash, abort, hang, timeout, runaway memory, a
+  different refusal or a compile is FAIL.
+- **limit**: sized JUST BEFORE a named limit. PASS = it compiles AND its matcher
+  runs (the emitted C is built and run on a small fixed set of subjects, exit 0
+  or 1, no crash); a refusal of any kind is FAIL (the limit fired early).
+
+Crossing over is red either way (a stability cell that compiles, a limit cell
+that refuses), which is the alert for a cell that used to refuse and no longer
+does (`run_growth.py --selftest` shows both directions). Each limit cell has a
+stability twin across the same limit and value (depth 250/251 is the model;
+`--pairs` lists the pairs and any unpaired cell; a cell with no twin declares why in the `pair` column,
+`none=REASON`, and a run lists only the unexplained ones). The memory ladder (below) is not a kind:
+there is no sharp "just before" a memory cap. A LIMIT cell under a cap passes on a compile or a clean
+out-of-memory refusal (its own count limit firing under a cap is red: a cap must not move a count limit);
+a STABILITY cell passes on any clean refusal (its limit's text or out of memory). A timeout is a
+crash.
+There is no correctness oracle. Files, columns and rules: tests/growth/CLAUDE.md.
+Cloud: the kind `growth` runs the same two stages sharded (`GROWTH_SHARD=K/N`; tests/growth/CLAUDE.md "Cloud"); the runner's gcc is
+recorded per shard and stack-depth headroom is read per compiler.
+
+- **Cells.** `tests/growth/depth_families.tsv` is the one depth table (33
+  families: a `limit` cell at depth 250 on the 442,368-byte budget thread and its
+  `stability` twin at 251, refused by PCREC_MAX_GROUP_DEPTH; `run_compile_stack.sh` reads it through the
+  runner); `matrix_axes.tsv` is the construct x quantifier x position x core
+  product at 250/251; `cells.tsv` holds the spine-length, width and memory
+  cells (a `stability` row names its limit's diagnostic in `refuse:`; a `limit` row is `compile` and names the limit it sits just before).
+- **Matcher run.** A `limit` cell's uncapped run also builds the emitted C (`gcc -O0`) and runs it on
+  three subjects (exit 0 or 1). The exception is a NAMED one (owner ruling limit-cell-matcher-cost,
+  2026-11-21): the NFA-state / VM-node edge cells (13 in cells.tsv, 92 matrix `+` edges, the `cnt` and
+  `cnt_nest` count edges: 107) are `compile:norun=limit-cell-matcher-cost`: at those
+  sizes (the size limits lifted, `raise 1`) the emitted C is tens of MB (25 MB on z_cls; 22 to 119 MB on the
+  `+` edges) and gcc needs about 10 minutes and 3.4 GB per cell, so they are
+  compile-only; an unnamed `compile:norun` is a table error and every run prints the count per name.
+  The same ruling adds limit tests at the SHIPPED generated-code size limits (`raise 0`, buildable,
+  the matcher runs). Each edge pair's two halves sit at the exact edge of their OWN mode: the limit cell
+  carries a main() (which counts toward the emit cap), the twin has none, so the twin sits one unit past
+  the NO-main edge (`alt_cap_emit`: no-main 801 compiles, 802 is refused; with main 800 is refused): PCREC_MAX_VM_EMIT_CODE_BYTES at
+  `alt_lit` 70657, `alt_cap_emit` 799, `cat_grp_emit` 1007, `named_emit` 990 units, and PCREC_MAX_NFA_STATES
+  at `lit_ship` 131069 and `anchors_ship` 131070 (the `lit_ship` / `anchors_ship` NFA-edge pairs are the
+  growth lane's addition, not part of the ruling, which names only the generated-code size limit; the
+  `cnt`, `cnt_nest` and `calls` pairs likewise: count-limit edges 9,362/9,363 NFA states, 10/11 nested
+  `{2,3}` (NFA states) and 14/15 chained calls (emitted-code cap)). No shipped-cap edge cell exists for the other NFA/VM
+  families: z_b, z_look, z_nlook, z_lookb and z_cilook crash (K148) between 8,000 and 16,000 units, before
+  the emit cap refuses; z_cls, cat_ncgrp and uni run away in memory (K150) near 8,000. PCREC_MAX_EMIT_BYTES
+  (the whole artifact) was not reached by any family tried: the code cap binds first.
+- **`+` pairs.** Nested `+` replicates its body per level, so PCREC_MAX_NFA_STATES or PCREC_MAX_VM_NODES
+  refuses it near depth 12 to 16, not at the depth limit. `plus_edges.tsv` holds each of the 92 cells'
+  bisected edge E; `run_growth.py` makes a limit cell at E, a stability twin at E + 1, and the matrix@250
+  cell is the pair's far-past stability member. The edge depends on kind, position and core (so one row
+  per cell). The 92 edge limit cells sit at the NFA-state / VM-node edge too, so they are compile-only
+  under the same exception name, `limit-cell-matcher-cost` (a sample matcher build timed out at the 180 s
+  wall). The @250 cell names the limit that really refuses it (`far_limit`, `far_text` in plus_edges.tsv:
+  the NFA-state limit for 40 rows, PCREC_MAX_VM_REPLICATION_PRODUCT for 52) and accepts only that text; the
+  52 replication-product cells cannot join their edge pair (a pair names one limit) and are declared
+  unpaired (`far-limit-differs`). The @251 `+` cells stay UNPAIRED (`no-depth-half-for-plus`): the
+  depth limit has no limit-test half for `+`.
+- **Empty and option-only runs.** `spine/empty` (`(?:)` x 1,000,000) and `spine/inl` (`(?i)(?-i)` x
+  1,000,000) are ordinary stability cells at the SHIPPED limits: PASS = the emitted-code cap refuses them
+  ("emitted code", PCREC_MAX_VM_EMIT_CODE_BYTES); K156 closed as not a defect, since the shipped cap refuses both.
+  The caps-lifted variants were dropped.
+- **Memory ladder.** Every cell also runs under RLIMIT_DATA caps of 2, 8, 32 and
+  128 MB; PASS = compiled, or refused by the cell's own limit text or by out of
+  memory; FAIL = an `internal error:` refusal, a thread that never started,
+  crash, abort, hang, timeout. Why those four: LADDER in run_growth.py.
+- **Library mode.** `run_growth.py --lib`: ONE process (the ASan+LSan build)
+  compiles the series (a red cell's UNCAPPED run is left out: it is a known
+  runaway), caps set in-process, then must exit 0 with no leak
+  report, answer every cell, and compile a control pattern identically before
+  and after the series and run its matcher on a known subject. Each in-process
+  compile has its OWN CPU bound (a seventh series column, `growth_driver`'s
+  ITIMER_PROF; a wall guard of 10x it, capped at 2400 s so it sits under the cloud job's 2700 s kill, is only a hang guard): max(300 s, 20 x that cell's slowest CLI-stage compile CPU), the CLI stage
+  writing its CPU seconds to `$PCREC_TMPDIR/growth-cpus-<tree key>.tsv` (`GROWTH_CPUS`; one file per tree
+  root, and the library stage prints the file and how many cells it covered); a cell
+  over its bound is a FAIL (a timeout is a crash), the driver prints
+  `cell N TIMEOUT ...` and exits, so the series stops with the cell named; a
+  `begin N` progress line precedes every compile, a `wall=` follows it; the runner streams the `begin` lines (`library mode: begin cell ID`), so a job cut by its limit still names the cell it was on.
+- **Known red.** A cell with a `red` (the `red` column of cells.tsv, `ID:KIND`)
+  is listed, not a failure, while it fails in that KIND; a different kind fails
+  the sweep, and so does a pass, until its `red` is removed. K155 is the
+  library stage's whole-stage red; no cell carries it.
+- Every cell runs under `scripts/watchdog` (CPU 300 s, a WALL hang guard of 1500 s, RSS 3 GB; owner ruling
+  growth-time-bound: the bound is CPU seconds, wall only guards a hang, and a red names which fired; values and
+  their derivation: `run_growth.py --bounds`); run it through the box queue (`scripts/boxqueue`), it is heavy.
+- **Per-doubling report.** `run_growth.py --doubling` (and a last cloud shard / an unsharded `make test-growth`):
+  for each growth axis (spine series n = 500 doubling up to the largest doubling of 500 under the limit cell's n, so the limit
+  n itself is not a point; the nested-`+` depths up to the edge; the matrix depth axes 16, 32, 64, 128 and the depth limit
+  250, a step of x1.95 that the ratio normalises to a doubling) it prints the compile CPU per size and its ratio to the half-size
+  neighbour per doubling (~x2 linear, ~x4 quadratic), and a `REPORT:` line (never a red) for a ratio over x3.0 at >= 0.25 CPU s.
+  A REFUSED point is a FAIL (every axis point sits at or under its compiling edge) and a point with no CPU figure never pairs
+  with its next neighbour. The report runs SERIAL (`--jobs` / `DOUBLING_JOBS` override): CPU is inflated by pool contention
+  (one compile read 1.86 to 3.40 s CPU inside one 8-wide batch), so its REPORT lines are the one output that is not
+  `-j`-identical, and a line near the threshold is a pointer to re-run at -j 1, never a verdict. Axes absent today: memory cells,
+  the `depth_families` depths, the cnt01/lazy/opt quantifiers (plan row [GROWTH-AXES]).
+  Measured 2026-11-23 on the dev box: nested `+` is ~x2 per level after K159; the possessive/star depth nests are about
+  x12-15 per doubling (group.poss.last.lit 0.33 s at depth 64, 5.2 s at 128, 45 s at 250 under -j8); the character spines
+  (`lit`, `[ab]`, `(?:a|b)`, `\p{L}` classes) are quadratic from n=1000 to 4000, then drop at 8000.
+- **Tiers.** The default tier is every cell but the OCCASIONAL ones, the cells MEASURED costly by nature
+  (`OCCASIONAL_COSTLY` in run_growth.py; owner ruling growth-time-bound (3): "edge cells that stay costly by nature after the fix").
+  The tier is EMPTY today: the 107 named compile-only cells (`limit-cell-matcher-cost`) measured at most 25 s CPU after K159, so
+  they run in the default tier (r89 R89-11; dropping them lost the K148 ratchet and the edge pairs' limit halves). Only the default
+  tier is sharded to the cloud. `GROWTH_TIER=occasional bash tests/growth/run_growth.sh` (or `run_growth.py --tier occasional`) would run
+  the tier with CPU 3600 s / wall 14400 s, CLI stage only. `tests/growth/gate_check.sh` runs a stubbed copy of run_growth.sh over the
+  stage gates (unset, 1/1, K<N, N/N shard): the doubling report runs unsharded and on the LAST shard only.

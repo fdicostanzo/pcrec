@@ -329,3 +329,28 @@ Round 2026-11-20 r65, l3feat code round (`docs/dev/reviews/2026-11-20-r65-l3feat
 2. **A check arm for a route the same change declines is either reached or deleted** (r65 l3feat C): [5.12l]'s K < 0 arm ran zero times and was red on correct text when planted.
 3. **When a design restates a premise in a code comment, grep the spec for the same premise** (r65 l3feat G): tuning ¶7a/¶8b were the spec twin of the restated presence comment.
 4. **The abi grep's hits are a checklist, ticked in the report** (r65 l3feat D): the grep listed the identity gate's pin and it was still missed.
+
+2026-11-23 r80, kit code round memfn-bsu6 (`docs/dev/reviews/2026-11-23-r80-memfn-bsu6.md`), accepted 2026-11-23 (kit manager):
+1. **A harness's "fresh" or "new" claim is stated in the SAME descriptor its own proof uses** (F-1: new by bytes vs new by layout).
+2. **A DRY or synthetic probe keys its readings on the exe it is HANDED, not on the cell label,** or every wiring fault is invisible (F-2/C-3, found independently by two lenses).
+3. **A selftest that RECOMPUTES a command's exit code instead of calling the command shares its source with what it checks** (C-7).
+4. **A no-launch guard checks the inherited environment, not only explicit arguments** (C-5).
+
+2026-11-22 r84, predicate design round predspot1122 (`docs/dev/reviews/2026-11-22-r84-predspot1122.md`), accepted 2026-11-23 (predicate manager):
+1. **An "every printed line" sweep must FAIL on any non-same status not declared.** A sweep that only counts the same ones passes while answers move.
+2. **Drill a rename for name grids:** rename a binding to collide with a parameter name and rerun the grid.
+3. **A convention ruled "for provided bodies only" must not hold a language rule.** A rule the language needs is stated for every body.
+
+2026-11-23 r86, predicate design round predfold1123 (`docs/dev/reviews/2026-11-23-r86-predfold1123.md`), accepted 2026-11-23 (predicate manager):
+1. **Run an EXPANSION drill:** every sugar form against its written-out expansion.
+2. **A verifier that finds the evidence silent on a shape files it as a NEW item,** not as a refutation or a hold.
+3. **An evidence model never reads a BRANCH NAME:** it pins a commit (a lane rule).
+4. **A fold's conservative edges live in the ASKED statement:** the ruling lens diffs the asked text, edges included, against the documents, never the manager's summary of it (A1, A8).
+
+2026-11-23 r89, growth sweep code round grow9code (`docs/dev/reviews/2026-11-23-r89-grow9code.md`), accepted 2026-11-23 (manager). TOP PROCESS CHANGE: a lane that adds or changes a stage gate in a runner script runs a stubbed copy of the gate over every input case, under the script's own `set` flags, before delivering (`tests/growth/gate_check.sh` is the worked example); the review's parallelism lens gets the gate.
+1. **A shell stage gate is code.** A `case` whose pattern is built from the subject it tests is always true, and `set -u` turns an unset optional variable into a stage-killing exit (R89-1: every unsharded run lost two stages, every cloud shard ran the whole report). Stub the script and run it for unset, 1/1, K<N and N/N.
+2. **A measurement report that shares a pool with a verdict sweep inherits the pool's contention.** One compile read 1.86 to 3.40 s CPU inside one 8-wide batch; run measurements serial by default, or repeat-min the points near a threshold, and say which output is not `-j`-identical (R89-3).
+3. **A bound's guard is derived against the job that encloses it.** A wall guard of 10x a 300 s floor sat past the cloud job's 2700 s kill, so the cell was never named (R89-5); read each guard against the outer limit.
+4. **Two bounds of one process tree are headroom per bound, never a sum** (R89-6), and a "wall = CPU" bound is not a hang guard (R89-7).
+5. **A tier selected by a named-exception flag is not a cost test.** The occasional tier took 107 cells that were measured cheap, against the ruling's own condition ("stay costly"), and dropped the ratchet they carried (R89-11); a tier's membership is a measured figure.
+6. **A pool worker that dies names its cell, fails promptly and cleans its work dir** (R89-2; the dead-worker drill of r87 again).

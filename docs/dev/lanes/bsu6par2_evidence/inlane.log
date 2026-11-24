@@ -1,0 +1,18 @@
++ parpool selftest
+ok   parpool: serial and 4 workers byte-identical (9 lines; values [0, 1, 2, 3, 4, 5, 6, 7, 28])
+ok   parpool: CONTROL: the planted shared scratch DIFFERS from serial (6 of 8 race lines changed)
+ok   parpool: a failing unit is an error naming it, the units before it written, none after ('before\n')
+ok   parpool: a worker killed with os._exit fails the run in 0.0 s, naming its unit ('unit 1 (dies): its worker died without a result (exit code 7)')
+ok   parpool: one fork per unit: six units on two workers each see a fresh interpreter state
+ok   parpool: longest-first submission (started 4 3 2 1 0) with the output still in list order
+ok   parpool: closure of a depth-3 needs chain from its last unit: [0, 1, 2, 3]
+ok   parpool: -j parsing [(5, ['x']), (3, ['x']), (7, []), (2, []), (4, [])], refusals 3 of 3
+parpool selftest: 0 failed
+subset -j 1: rc 0, 60 lines, wall 153.45 s; selftest (SUBSET 41 of 218 units): 59 checks, 0 failed
+subset -j 4: rc 0, 60 lines, wall 40.232 s; selftest (SUBSET 41 of 218 units): 59 checks, 0 failed
+SUBSET label: ok (selftest (SUBSET 41 of 218 units): 59 checks, 0 failed)
+units 168 -j 4: rc 0; selftest (SUBSET 5 of 218 units): 1 checks, 0 failed
+IDENTITY subset: -j 1 and -j 4 byte-identical after masking 1 (r44 E) draws line; raw diff lines: 8 bytes differ (that line only: 1)
+VS 757: 59 subset rows; 59 found in order; 0 out of order; 0 not in 757's log
+PLANT shared-scratch on the cards subset: IDENTICAL (cards' units name no fixed scratch file: every temp dir is mkdtemp-unique)
+INLANE DONE rc=0

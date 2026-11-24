@@ -57,7 +57,7 @@ gives a build go in his own words; a build then goes THROUGH MAIN (architecture 
    files by session id; the monitor hook is silent for you; unregistered, they inject nothing).
 2. Read `docs/dev/pred/wake.md` (your branch's copy if `worktrees/pred` exists), then
    `docs/dev/pred/from_main.md` (every entry after the last one your `to_main.md` acknowledges).
-3. Read the THREE PRIMARY PREDICATE FILES, whole, in this order (each uses only what is before it):
+3. Read the THREE PRIMARY PREDICATE FILES, whole (core.md no longer fits one read call, about 90k tokens: read it IN PARTS), in this order (each uses only what is before it):
    `docs/design/predicates/core.md` (syntax and meaning; the owner's principles first),
    `docs/design/predicates/library.md` (every call-form name, marked defined in the language or native),
    `docs/design/predicates/parked.md` (ideas, each with a trigger). Your branch's copies if `worktrees/pred`
@@ -68,7 +68,7 @@ gives a build go in his own words; a build then goes THROUGH MAIN (architecture 
 4. Tail of `docs/dev/pred/journal.md`; `git log --oneline -10 main` for what main merged.
 5. Bring `worktrees/pred` up to date with main (merge ALONE; read the result).
 6. Tell main you are up (one SendMessage: your branch, what you are about to discuss or revise).
-7. Refresh `docs/dev/pred/owner.md` (section 3) and offer Frank the first question.
+7. Refresh `docs/dev/pred/owner.md` (section 3). START any pending dispositions of an earlier round, and their fix lane, BEFORE the first question to Frank, so the lane runs while he answers; then offer him the first question.
 
 ## 2. Talking with the owner (the always-on rules; each was paid for)
 
@@ -78,6 +78,8 @@ gives a build go in his own words; a build then goes THROUGH MAIN (architecture 
   before saying ruled, confirmed or undefined, grep the record AND read the same day's later entries.
   "I thought we said" is a recollection:
   check the record. Say which reading of a bare "agree" or "yes" you took.
+- **A rule you induce from his EXAMPLES** is tested against every printed example of the documents before it is told to him, or is told as "fits these examples, untested" (predscope refuted "the closed answer for labels" on 7 of 17 printed definitions).
+- **A conclusion reached before a ruling changed its premise is re-derived**, not carried over.
 - **Every consequence YOU derive is marked "the manager's reading"** in the record and is LISTED for
   the next revision lane to test (supported / not supported / untestable, with the run or the record
   line). Measured: 3 of 24, then 2 of 18, of such readings failed their test.
@@ -87,10 +89,10 @@ gives a build go in his own words; a build then goes THROUGH MAIN (architecture 
   each answer. ONE question per turn, concluded before written; lettered options are not the closed
   space.
 - **Before asking anything, grep the record** (COND-FAMILY.md, the draft's ruled list, decisions.md)
-  for a ruling that already answers it, and quote what you find. A question the record answers is not
+  for a ruling that already answers it, and quote what you find. Grep the LIBRARY's ruled bodies as well as the record (condition-argument was answered by `when`'s ruled test). A question the record answers is not
   asked ("we've covered this ground several times", 2026-11-18).
 - **Every factual sentence about what a pattern matches is RUN before it is said** (python `re`,
-  libpcre2 through the evidence scripts), or is marked hand-worked. A rule sentence used in an example
+  libpcre2 through the evidence scripts), or is marked hand-worked. A record line that states a run's output is PASTED from the output, never written ahead of it, and no run line is written before the run is read. A sentence of the form "X and Y are the same" about two spellings is run on a parting case before it is said (the owner found the case in one line). A rule sentence used in an example
   is QUOTED from the draft, never paraphrased. This covers REASONS given to him too.
 - **His method** (quote, do not improve): regex behaviour is the default and exceptions are explicit
   ("Plain rx in particular should work like pcre when we can"); ask what an expression DENOTES; "a
@@ -100,6 +102,7 @@ gives a build go in his own words; a build then goes THROUGH MAIN (architecture 
   acknowledged, never "illegal".
 - **Spellings in his examples are placeholders** (D193 addendum 4): record the meaning, mark the
   spelling for the spellings review. Syntax details of ours are your call; semantics are his.
+- **A lone underscore vanishes in his chat UI** (`_` was eaten): show it in a fenced code block or write the word.
 - **Plain words, not item numbers**; no "still waiting on you" lines in chat (the owner view carries
   them); never the question UI. Odd word swaps in his messages are phone autocorrect: read for the
   intended word.
@@ -133,11 +136,13 @@ revision lane (which also files the review) -> merge into your branch -> deliver
 - **A revision brief carries**: the record entries to fold (first and last, by title); the rulings
   quoted; what is NOT ruled (kept as questions, never applied: proposals, observations); the list of
   manager's readings to test; the premise test (the previous evidence re-runs byte-identical); the
-  evidence rules of section 2; "do not do the planned full restructuring" unless this IS the full
+  evidence rules of section 2; the asked statement of EACH ruling QUOTED, edges included (a manager's summary of a ruling is not a source: r86 A1 and A8); that every printed program is legal predicate language (inside `${...}` an rx is written `/.../`: the owner caught `/${[${c}] + 1}/`, passed by a lane, r61 and the lint); "do not do the planned full restructuring" unless this IS the full
   revision. Its report has: STATE AT HANDOFF; RULINGS FOLDED; MANAGER READINGS TESTED; ANSWERS CHANGED
   (his earlier words, where the draft states them, what they become, follows-or-reading); WHAT MOVED;
   DRAFT READINGS ADDED; OWNER QUESTIONS LEFT; EVIDENCE AND COMMANDS. Evidence = model scripts with
   committed outputs and one sabotage per check, in `docs/dev/lanes/<lane>_evidence/`.
+- **Evidence models**: the newest model carries a committed NAME-GRID check (spelling x occurrences x read kind; each cell its deciding sentence and a run; an undecided cell printed, not skipped). Every model exits non-zero IFF its last line reports a failure. A fold lane re-runs EVERY in-force evidence model and re-greens it or names its red in a SUCCESSOR declaration that carries the red's own FAIL-line text and compares it (four older models were red or crashing at the r82 freeze, undeclared). After a DIRECT fold (no lane), re-run every evidence DOC check that reads the folded pieces, in the same commit.
+- **A brief says "never wait for a notification"**: a predicate lane's single-process EVIDENCE run (a model or sabotage run of 2-40 min in the middle of its brief, whose output the report quotes; no box job) is polled by the lane itself with SHORT BOUNDED waits (a foreground poll of at most ~4 min per call, log tail or `scripts/watchrun --log F` under `timeout`), never by idling on a notification: the turns stay under the 5-min cache life. This is the predicate lanes' EXCEPTION to BOILERPLATE's DO-THEN-FINISH (main 2026-11-23, at the predicate manager's request); box-queue jobs and full suites still follow DO-THEN-FINISH. An evidence run over ~10 min also gets the critic skill's **parallelism** review (two lanes idled on finished or running jobs, 2026-11-23, 25 min once).
 - **Settle scope before briefing**; a late ruling to a RUNNING lane goes into its worktree's
   `<lane>_rulings.md` as R-n and is verified in the delivery; a bigger change is a fresh lane.
 - **Watch lanes with `scripts/lanewatch --follow NAME`** (one name per watcher, background); a lane's

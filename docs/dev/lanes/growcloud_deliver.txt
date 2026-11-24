@@ -1,0 +1,5 @@
+report: docs/dev/lanes/growcloud_report.md
+sections: Summary; Kind row and shards; Per-shard bounds; Compiler note; Cloud proof run; Local path unchanged; STATE AT HANDOFF
+nonempty: all
+commit: yes
+owed: none

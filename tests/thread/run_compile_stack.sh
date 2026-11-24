@@ -13,7 +13,9 @@
 # PATTERN rather than as deep as it (a concatenation, an alternation, a run of
 # assertions) must be walked iteratively. So:
 #
-#   DEPTH  each nesting family at depth 250 compiles on a COMPILE_STACK-byte
+#   DEPTH  (tests/growth/depth_families.tsv, run by tests/growth/run_growth.py
+#          --depth-only: [GROWTH-SWEEP] absorbed the table, which is not
+#          kept here any more) each nesting family at depth 250 compiles on a COMPILE_STACK-byte
 #          thread, and at 251 is refused by name ("parentheses are too deeply
 #          nested"), never a crash. The families are the shapes measured worst
 #          per level, plus the calls and the compound route (limits.md §3.10
@@ -111,6 +113,18 @@ if ! $CC -O2 -std=gnu11 -Wall -Wextra -I"$ROOT_DIR/lib" -o "$DRIVER" \
     summary
 fi
 
+# The DEPTH arm and the CONTROL run on tests/growth/growth_driver.c: the control
+# must exercise the driver whose guard it vouches for (r73 HOUSE-1). The WIDTH
+# and UNBUILT arms still use compile_stack_driver.c (their deletion is a plan row).
+GDRIVER="$WORKDIR/growth_driver"
+# shellcheck disable=SC2086
+if ! $CC -O2 -std=gnu11 -Wall -Wextra -I"$ROOT_DIR/lib" -o "$GDRIVER" \
+        "$ROOT_DIR/tests/growth/growth_driver.c" "$LIBPCREC" -lpthread -lm \
+        >"$WORKDIR/gdriver.log" 2>&1; then
+    bad "[DD-10] could not build tests/growth/growth_driver.c against $LIBPCREC: $(head -3 "$WORKDIR/gdriver.log")"
+    summary
+fi
+
 # rep <string> <count> — <string> repeated <count> times.
 rep() { local s="" i; for ((i = 0; i < $2; i++)); do s+="$1"; done; printf '%s' "$s"; }
 
@@ -175,99 +189,45 @@ run() {
 }
 
 # ---- DEPTH ----------------------------------------------------------------
-# name;pre;open;core;close;post;features;engine (pre/post: nest's)
-#   callouter/callinner call the whole nest and its innermost group again;
-#   brefrep/brefsrep/litrep are possessify's FIRST shapes (K147, K149): a
-#   backreference at the core re-enters the fold through the capture fact,
-#   once (`\1`) or once per group (`\1\2…\N`), and litrep reaches it with no
-#   reference at all;
-#   altpos/altpospost/brefpost are the possessive wrap `*+` (a distinct
-#   arm), and every `*post` row carries one literal element beside the nest:
-#   the nest's worst POSITION is not the end of the pattern (r64 k147fix F3,
-#   before K152's fix: one trailing `d` moved `(abc|abd…abe)*` from 317,504
-#   to 440,560 bytes and `(a|b…c)*` from 257,552 to 344,560; after it the
-#   element costs a few hundred bytes; limits.md §3.10¶3);
-#   nclitrep/litpost/nclitpost/litcompound are the multi-atom-branch nest
-#   (K152): its peak was the NFA builder's `compile_ast`, whose inlined arms
-#   paid about 1.7 KB per level until each arm got its own frame;
-#   litcompound is the same nest on the compound route (the review r64
-#   witness `^(?i:…)|b$`'s route, checked to reach it below); of these four
-#   only litcompound dies at BASE (before the K152 fix) and on the S3470
-#   plant: it is the undo witness; nclitrep/litpost/nclitpost were GREEN at
-#   BASE and guard headroom against another compiler (litpost died on CI);
-#   capwrap/longwrap (r67 F3) are the CAPTURING nest under the same `^…|b$`
-#   wrapper (not the compound route: the reach check below does not cover
-#   them) and its long distinct-letter-atoms form, the measured WORST of
-#   every family (319,504 bytes at depth 250, gcc 15.2.0, the same before
-#   and after K152: a wrapper alternative and distinct letters in the atoms
-#   cost most);
-#   compound puts the nest in an arm of a pattern the compound route takes
-#   (two compiles, one inside the other: compile_driver -> pcrec_compound_walk
-#   -> part_compile -> compile_driver), checked below to reach that route.
-DEPTH_FAMILIES='
-grp;;(;a;);;all;0
-ncgrp;;(?:;a;);;all;0
-altnest;;(a|;b;);;all;0
-starnest;;(?:;a;)*;;all;0
-optnest;;(a;;)?;;all;0
-optnest-vm;;(?:a;;)?;;all;2
-look;;(?=;a;);;all;0
-lookrep;;(?=a|b;c;)*+;;all;0
-altrep;;(a|b;c;)*;;all;0
-ncaltrep;;(?:a|b;c;)*;;all;0
-brefrep;;(a|b;\1;)*;;all;0
-brefsrep;;(a|b;\\%d;)*;;all;0
-litrep;;(abc|abd;abe;)*;;all;0
-nclitrep;;(?:abc|abd;abe;)*;;all;0
-litpost;;(abc|abd;abe;)*;d;all;0
-nclitpost;;(?:abc|abd;abe;)*;d;all;0
-altpos;;(a|b;c;)*+;;all;0
-altpost;;(a|b;c;)*;d;all;0
-ncaltpost;;(?:a|b;c;)*;d;all;0
-optaltpost;;(?:a|b;c;)?;d;all;0
-altpospost;;(a|b;c;)*+;d;all;0
-brefpost;;(a|b;\1;)*+;d;all;0
-optpost;;(a;;)?;d;all;0
-lookbehind;;(?<=;a;);;all;0
-atomic;;(?>;a;);;all;0
-inlineopt;;(?i:;a;);;all;0
-named;;(?<n%d>;a;);;all;0
-callouter;;(;a;);(?1);all;0
-callinner;;(;a;);(?%d);all;0
-compound;^;(?i:;a;);|b$;all;0
-litcompound;^;(?:abc|abd;abe;)*;|b$;all;0
-capwrap;^;(abc|abd;abe;)*;|b$;all;0
-longwrap;^;(abcdefghijklmnopqrstuvwxyz|abcdefghijklmnopqrstuvwxy_;abe;)*;|b$;all;0
-'
-while IFS=';' read -r name pre open core close post feat eng; do
-    [ -n "$name" ] || continue
-    for d in "$DEPTH" $((DEPTH + 1)); do
-        pf="$WORKDIR/depth-$name-$d.pat"
-        nest "$open" "$core" "$close" "$d" "$pre" "$post" > "$pf"
-        run "$name@$d" "$COMPILE_STACK" "$pf" "$feat" "$eng"
-        if [ "$HOW" = died ]; then
-            bad "[DD-10] $name nested $d deep KILLED pcrec_compile ($RC_LINE) on a $COMPILE_STACK-byte thread: the compiler's stack use at the nesting cap exceeds limits.md §3.10's budget"
-        elif [ "$HOW" = error ]; then
-            bad "[DD-10] $name nested $d deep: the driver did not run to completion ($RC_LINE)"
-        elif [ "$d" -eq "$DEPTH" ]; then
-            case "$RC_LINE" in
-                rc=0\ *) ok "$name nested $d deep compiles on a $COMPILE_STACK-byte thread" ;;
-                *) bad "[DD-10] $name nested $d deep was REFUSED on a $COMPILE_STACK-byte thread: $RC_LINE (the family no longer reaches the passes it was chosen to load)" ;;
-            esac
-        else
-            case "$RC_LINE" in
-                *"too deeply nested"*) ok "$name nested $d deep is refused by name, not a crash" ;;
-                *) bad "[DD-10] $name nested $d deep was not refused as too deeply nested: $RC_LINE" ;;
-            esac
-        fi
-    done
-done <<< "$DEPTH_FAMILIES"
+# The depth table is tests/growth/depth_families.tsv ([GROWTH-SWEEP]: one table,
+# not two; its header carries what each family is for). Every row is a pair
+# (owner ruling limit-test-criteria): a LIMIT cell at depth 250 that must compile on the
+# COMPILE_STACK-byte thread and run its matcher, and its STABILITY twin at 251 that must be
+# refused by name ("parentheses are too deeply nested"); tests/growth/run_growth.py runs them
+# (uncapped column only; the memory ladder is `make test-growth`'s).
+growth_out="$("$TIMEOUT_BIN" 3000 python3 -I "$ROOT_DIR/tests/growth/run_growth.py" --depth-only 2>&1)"
+growth_rc=$?
+printf '%s\n' "$growth_out" | grep -E '^(RECORD|FAIL|KNOWN-RED|FIXED-RED):'
+gp="$(printf '%s\n' "$growth_out" | sed -n 's/^runs passed: //p')"
+gf="$(printf '%s\n' "$growth_out" | sed -n 's/^runs failed: //p')"
+# THE POPULATION IS COUNTED (learnings §3, populations nobody counts): two cells
+# per table row, and never fewer than DEPTH_FLOOR, so a deleted row, a stale
+# ONLY= or an empty selection cannot read as a smaller green. Each count line
+# is tested on its own (a missing line must not vanish into the other's
+# digits), and the runner's own exit status is a verdict too.
+DEPTH_FLOOR=66
+depth_rows="$(grep -cvE '^(#|$)' "$ROOT_DIR/tests/growth/depth_families.tsv")"
+case "$gp" in ''|*[!0-9]*) gp_bad=1 ;; *) gp_bad=0 ;; esac
+case "$gf" in ''|*[!0-9]*) gf_bad=1 ;; *) gf_bad=0 ;; esac
+if [ "$gp_bad" -eq 1 ] || [ "$gf_bad" -eq 1 ]; then
+    bad "[DD-10] the depth arm (tests/growth/run_growth.py --depth-only) printed no \"runs passed\" / \"runs failed\" count (rc $growth_rc): $(printf '%s' "$growth_out" | tail -3)"
+elif [ "$growth_rc" -ne 0 ] && [ "$gf" -eq 0 ]; then
+    bad "[DD-10] the depth arm exited $growth_rc with no failed cell counted: $(printf '%s' "$growth_out" | tail -3)"
+elif [ $((gp + gf)) -ne $((2 * depth_rows)) ] || [ $((gp + gf)) -lt "$DEPTH_FLOOR" ]; then
+    bad "[DD-10] the depth arm ran $((gp + gf)) cells; the table has $depth_rows rows (2 cells each, floor $DEPTH_FLOOR): the population shrank or the selection is empty"
+else
+    pass=$((pass + gp)); fail=$((fail + gf))
+    [ "$gf" -eq 0 ] && echo "PASS: $gp depth cells (every family at $DEPTH compiles on a $COMPILE_STACK-byte thread, at $((DEPTH + 1)) is refused by name)"
+fi
+
+# pattern <cell id> — a depth cell's pattern, from the same table.
+cell_pattern() { python3 -I "$ROOT_DIR/tests/growth/run_growth.py" --pattern "$1"; }
 
 # The compound families' REACH: each depth-250 pattern must take the
 # compound route, or the family measures a plain compile under another name.
 for name in compound litcompound; do
     if "$TIMEOUT_BIN" 300 "$PCREC" -p rx --features all -o "$WORKDIR/$name.c" \
-            --pattern "$(cat "$WORKDIR/depth-$name-$DEPTH.pat")" 2>/dev/null &&
+            --pattern "$(cell_pattern "depth/$name@$DEPTH")" 2>/dev/null &&
        grep -q '"compound"' "$WORKDIR/$name.c"; then
         ok "$name nested $DEPTH deep takes the compound route (its stamps read \"compound\")"
     else
@@ -280,7 +240,7 @@ unbuilt_case() {   # <name> <pattern-file>
     run "$1" "$COMPILE_STACK" "$2"
     case "$HOW:$RC_LINE" in
         ran:rc=-1\ *"not implemented"*) ok "$1: refused as not implemented, not a crash" ;;
-        ran:rc=0\ *) bad "[DD-10] $1 now COMPILES: the construct has landed, so move it to DEPTH_FAMILIES and measure it against limits.md §3.10" ;;
+        ran:rc=0\ *) bad "[DD-10] $1 now COMPILES: the construct has landed, so move it to tests/growth/depth_families.tsv and measure it against limits.md §3.10" ;;
         *) bad "[DD-10] $1: $HOW, $RC_LINE" ;;
     esac
 }
@@ -309,11 +269,20 @@ rep 'a' 20000           > "$WORKDIR/w3.pat";   width_case "a 20000-byte literal"
 { printf '(?<='; chain '%dx' 2000 '|'; printf ')y'; } > "$WORKDIR/w7.pat"; width_case "a lookbehind of 2000 alternatives" "$WORKDIR/w7.pat"
 
 # ---- CONTROL --------------------------------------------------------------
-run "control" "$CONTROL_STACK" "$WORKDIR/depth-grp-$DEPTH.pat"
-case "$HOW" in
-    died) ok "control: the same compile on a $CONTROL_STACK-byte thread dies by signal ($RC_LINE), so the guard catches an overflow" ;;
-    ran) bad "[DD-10] control: a compile on a $CONTROL_STACK-byte thread did NOT die ($RC_LINE) — either the compiler's baseline fell below it (lower CONTROL_STACK) or the driver is not running the compile on the thread it sized" ;;
-    *) bad "[DD-10] control: the driver did not run to completion ($RC_LINE), which says nothing about the guard" ;;
-esac
+# The depth-250 pattern on a CONTROL_STACK thread, through growth_driver (the
+# driver the depth cells run on): `one CAP STACK RAISE FEATURES ENGINE PATFILE`
+# with the depth cells' own settings (no cap, raise 1, all features, engine 0).
+cell_pattern "depth/grp@$DEPTH" > "$WORKDIR/control.pat"
+cout="$("$TIMEOUT_BIN" 300 "$GDRIVER" one 0 "$CONTROL_STACK" 1 all 0 "$WORKDIR/control.pat" 2>"$WORKDIR/control.err")"
+crc=$?
+if [ "$crc" -ge 128 ]; then
+    ok "control: the same compile on a $CONTROL_STACK-byte thread dies by signal (exit $crc), so the guard catches an overflow"
+elif [ "$crc" -eq 0 ] && case "$cout" in rc=-9\ *) true;; *) false;; esac; then
+    bad "[DD-10] control: the driver's thread never started (${cout%% msg=*}) on a $CONTROL_STACK-byte stack: the control tested nothing (check CONTROL_STACK against the system's minimum thread stack), not a guard result"
+elif [ "$crc" -eq 0 ] && [ -n "$cout" ]; then
+    bad "[DD-10] control: a compile on a $CONTROL_STACK-byte thread did NOT die (${cout%% msg=*}) — either the compiler's baseline fell below it (lower CONTROL_STACK) or the driver is not running the compile on the thread it sized"
+else
+    bad "[DD-10] control: the driver did not run to completion (exit $crc: $(head -2 "$WORKDIR/control.err")), which says nothing about the guard"
+fi
 
 summary

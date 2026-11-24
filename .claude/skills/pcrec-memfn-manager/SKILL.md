@@ -227,6 +227,8 @@ pcrec-manager/SKILL.md` §3 is the long form; memory
   - A lane never hands off a CHECK change it has not run, even when the box is busy: it waits for the lock or STOPS.
   - Critic launches quote verbatim every in-scope item whose only record is denied, and require the separate verifier.
   - (2026-11-22) An in-lane run longer than a few seconds first checks `scripts/boxlock status`: if a TIMING job holds or is about to take the box, it waits or runs under the lock (bsu4fix overlapped 200-k159fix-timing for ~50 s).
+- **(2026-11-23, owner via main) A test runner that runs long or repeatedly is reviewed for PARALLELISM** (Frank: "if its a test to be run repeatedly or it takes a long time it should be reviewed for parallelism"): a pool sized to nproc or -j, output identical to the serial run as its control. Every kit code round on a test runner asks it.
+- **(2026-11-23) Ask main for a review number before launching a round** (r86 collided with the predicate manager's): numbers are main's to assign across sessions; a dir listing does not show numbers assigned but not yet filed.
 - **Up to 3 concurrent lanes, disjoint**; their heavy runs are queue
   jobs (§3), which the queue orders against main's.
 - **Model tier:** sonnet wherever it fits (measurement runs, sweeps,
