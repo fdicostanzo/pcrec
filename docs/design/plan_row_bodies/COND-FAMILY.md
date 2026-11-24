@@ -10495,3 +10495,28 @@ CALLER's binding: starts there (rule 3), whatever the body stacks around them (s
 closing-own-label, the backdoor); (f) from outside, through a call, the body's labels are the tree: `B.p.d`,
 and `B.d` by rule 4 where unambiguous; (g) his equivalence, `[_t = A]` is `[_ = [t = A]]`, is the picture of
 rule 2 (a wall with a start inside), not a second spelling: no label `t` is made.
+
+### 2026-11-23 OWNER RULING — options-reach-constants: yes (a file's weak `i` reaches a string constant)
+tags: lib/builtin/options core/patterns/flags core/holes/flags core/values/one-type
+
+ASKED AS A RULING (slug options-reach-constants, the constant half: "Does a file's weak `i` reach a string
+constant?", `"ab"` in a program file opening `@options(i)`; "Yes": WHOLE `ab` HOLDS, `AB` HOLDS / SEARCHED
+`x AB ab` `AB`@2 / FIND-ALL `ab AB` [`ab`@0, `AB`@3]; "No": WHOLE `ab` HOLDS, `AB` FAILS / SEARCHED `x AB ab`
+`ab`@5 / FIND-ALL `ab AB` [`ab`@0] (the printed candidate lines of lib/builtin/options); the forces: for yes,
+`"ab"` and `/ab/` one pattern in two spellings, `(h: "ab")` rejecting `AB` in a case-insensitive file a
+surprise; for no, strings are also keys and separators, `row(m:, "msg")` in such a file would match a `"MSG"`
+key; "The `x` option never applies to a string under either answer"; earlier in the same question: `m`, `s`,
+`n` have nothing to act on in a string, and names not matched against the subject (a capture's name, a
+warning's name) are unaffected; the manager's leaning yes). HIS WORDS, whole:
+
+"options-reach-constants: yes"
+
+Class: a RULING: a file's weak `i` is the default of the string constants written after the statement in that
+file, as of its rx literals; `x` never applies to a string. With it the ARGUMENT half stands as the manager
+closed it (a literal the caller writes as an argument takes the caller's file's options), told to him twice
+with "say if either needs asking properly"; he did not object: a closure, not his words.
+The manager's readings (marked; for the fold to test): (a) a string constant is weakly insensitive exactly as
+the literal of its text would be: the weak value does not propagate through a hole or across an import
+(hole-flags); (b) a string used as a name that is not matched against the subject (`capture("name")`, a warning
+selector's names, a parameter name) is unaffected; (c) a key or separator that IS matched (`row(m:, "msg")`,
+`sep = ","`) follows the file's `i`, the cost named to him.
