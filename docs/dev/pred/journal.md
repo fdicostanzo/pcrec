@@ -1142,3 +1142,18 @@ wake.md says (read the draft WHOLE first; A4 is a ruled-words finding: read his 
 - ASKED the owner: capture-in-set.
 - LESSON: a reading of mine attached to HIS condition and carried inside the statement he says yes to is still
   mine; a table derived through it must say which rows rest on the reading (he ruled the table, not the intent).
+
+## 2026-11-23 — predfix88 delivered and merged; P-28 posted; label-tree asked
+
+- Lane predfix88 delivered (lanecheck DONE; R-1 applied; delivery pins for the predecessors ACCEPTED): MERGED;
+  lint 8,650 / 0; plan-lint green; model 25 / 0, 39 plants caught; full run 62 s (B10's trigger not met). Review
+  r88 filed. Lane stopped. P-28 `done:` posted, main told, a review number asked for predfold1124.
+- RULED by the owner since: capture-in-set: error; exact-count-unspecified: error (his count-0 proposal not taken
+  by his own answer). His discussion on the shared operators recorded; a parked piece is owed (a form of its own
+  for effects; a condition operator).
+- My closure of stacked-chain WITHDRAWN at his objection; his framing (flat inside a binding, the tree from
+  outside; `[_t = A]` is `[_ = [t = A]]`) put back to him as the ruling label-tree, with the by-name read from
+  outside as the edge. ASKED; also waiting: options-reach-constants (asked before his framing arrived).
+- NEXT: fold lane predfold1124 once label-tree is answered (scope: shorthand-is-callers, capture-in-set,
+  exact-count-unspecified, label-tree, the three closures that stand (options-position's position half, the
+  argument half of options-reach-constants), the parked effects piece).
