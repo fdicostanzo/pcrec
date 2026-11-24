@@ -50,7 +50,8 @@ Commands not tied to a finding but re-run: C-56 (empty at b38579676); `tools/rev
   `docs/dev/history/claude_md/docs__dev__lanes.md` (the archrev4 line), and this report.
 - RULINGS FILE `docs/dev/lanes/archrev4_rulings.md`: re-read before each commit and before this report. It is empty,
   so no entry was applied.
-- Nothing is owed. No build was run, and none was needed (documents only).
+OWED: none
+- No build was run, and none was needed (documents only).
 - For the manager's acceptance: read §9 yourself for H1, as the r93 RULING says. The kit manager has to accept two
   proposals. (1) `ren_fused`'s carrying event (A-s4). (2) P2's census row, a check change that ARV-18 makes when it
   is filed.
