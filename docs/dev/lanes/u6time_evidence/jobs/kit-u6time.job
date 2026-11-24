@@ -59,7 +59,7 @@ case "${1:-}" in
         echo "boxqueue: idle-ok"
         echo 'boxqueue: expect done=1 lines=^cards: time: DONE rc=0$'
         echo 'boxqueue: expect truncated=0 lines=^cards: time: TRUNCATED$'
-        echo 'boxqueue: expect verdict=3 lines=^C6c? [a-z-]+: (TRUNCATED: )?(NO LOSS|LOSS|VOID|INCONCLUSIVE)'
+        echo 'boxqueue: expect verdict=3 lines=^C6c? [a-z-]+: (TRUNCATED: )?(NO LOSS|LOSS|VOID|INCONCLUSIVE); readable'
         exit 0 ;;
     --ready)
         gate; rc=$?; [ $rc -eq 0 ] || exit $rc
@@ -76,7 +76,7 @@ CARDS_RUN() { ( cd "$W" && "$@" ); }
 echo "u6time: PREPARE"
 CARDS_RUN env JOBS=12 python3 -I -B memfn/tests/span_forms/cards.py time "$RUNDIR" --prepare --cards C6,C6c || { echo "u6time: prepare failed"; exit 1; }
 CARDS_RUN python3 -I -B memfn/tests/span_forms/cards.py time "$RUNDIR" --dry --dry-model tie > "$S/dry_tie.log" 2>&1; drc=$?
-tail -3 "$S/dry_tie.log"
+echo "u6time: no-clock rehearsal rc $drc (its lines are in $S/dry_tie.log, never in this log)"
 { [ $drc -eq 0 ] && grep -q 'clock calls 0' "$S/dry_tie.log" && grep -q '^cards: time: DONE rc=0$' "$S/dry_tie.log"; } || { echo "u6time: the no-clock rehearsal failed (rc $drc)"; exit 1; }
 echo "u6time: QUIET"
 SLOT_TREE="$W" python3 -I "$WAITQUIET" "$SLOTDIR" "$RUNDIR" || { echo "u6time: the quiet wait failed"; exit 5; }
@@ -86,5 +86,5 @@ CARDS_RUN env CPU=$CPU_PIN nice -n 5 python3 -I -B memfn/tests/span_forms/cards.
 rc=$?
 res=$(ls -t "$RUNDIR"/results_c6_*.tsv 2>/dev/null | head -1)
 echo "u6time: c6decide read-back of $res (time rc=$rc)"
-[ -n "$res" ] && CARDS_RUN python3 -I -B memfn/tests/span_forms/cards.py c6decide "$res"
+[ -n "$res" ] && { CARDS_RUN python3 -I -B memfn/tests/span_forms/cards.py c6decide "$res" > "$RUNDIR/c6decide.txt" 2>&1; echo "u6time: c6decide rc $? -> $RUNDIR/c6decide.txt (the time stage printed the same read-back above)"; }
 exit $rc

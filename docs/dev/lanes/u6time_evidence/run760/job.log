@@ -1,0 +1,98 @@
+u6time: tree eabf2edadb4931b26f11ea4a9c661f1fdc882505, CPU 15 sibling 7, window stop 2026-11-24T01:45:00, job start 1795500019
+u6time: PREPARE
+cards: time: prepare: C6 deny and reach check: 14 (pattern, layer) pairs, failures 0
+cards: time: prepare: 84 pools built and proved (first pass and re-time, 336 exes) over 14 (pattern, layer) texts, 70 layout-disjoint pairs checked, refused 0
+cards: time: prepared /var/tmp/pcrec-pcrec/scratch/u6time/run/c6_prepared.json: 92 cells (168 timed arm cells), 84 pools, harness 0c3674cd272dc615; `time` compiles nothing
+C6c off-os: re-time NOT-RUN (the window closed; RE-TIME: a reading LOSS stands, a WIN counts as a TIE, an A/A non-TIE stands): none
+approx (VOID BY METHOD, never timed): 28 cells
+cards: time: DONE rc=0
+u6time: QUIET
+waitquiet: quiet
+u6time: TIME
+cards: time: run 83fd4fd63765bed1 -> /var/tmp/pcrec-pcrec/scratch/u6time/run/results_c6_83fd4fd63765bed1.tsv; population 92 cells (8 N/A, 28 void by method), 168 timed arm cells, 840 first-pass launches; deadline 1795502700 (min(stop-at 1795502700, job-start 1795500019 + cap 3600 - 600))
+cards: time: QUIET SAMPLE BUSY: CPU7_MAX capped at 20 % (sample max 17.8 %)
+cards: time: quiet sample: CPU7_MAX 0.200, NIVCSW_MAX 10 per 0.054 s launch (calibration C6/c6_hex32/H64/hit-dense/on)
+cards: time: first pass done, 18 cells owe a re-time (fresh pools), 4 void launches; arm rows NOT-RUN: first 0, re-time 0
+cards: time: the record read back (c6decide /var/tmp/pcrec-pcrec/scratch/u6time/run/results_c6_83fd4fd63765bed1.tsv):
+C6 on: NO LOSS; readable 27 of 32; W/T/L 17/10/0; A/A: 0 standing non-TIE of 27 readable (rate 0.000, AA_VOID_MAX 0.050), 1 single-pass; N/A 4, HARNESS 0, NOISE 5, NOT-RUN 0
+C6c off-clang: NO LOSS; readable 11 of 12; W/T/L 0/11/0; A/A: 0 standing non-TIE of 11 readable (rate 0.000, AA_VOID_MAX 0.050), 1 single-pass; N/A 2, HARNESS 0, NOISE 1, NOT-RUN 0
+C6c off-os: NO LOSS; readable 12 of 12; W/T/L 0/12/0; A/A: 0 standing non-TIE of 12 readable (rate 0.000, AA_VOID_MAX 0.050), 0 single-pass; N/A 2, HARNESS 0, NOISE 0, NOT-RUN 0
+C6 on: A/A single-pass rate 0.037 (1 of 27)
+C6 on: W/T/L per pattern: c6_dig25 2/0/0, c6_dig32 2/1/0, c6_dig65 2/0/0, c6_hex1001 2/2/0, c6_hex17 3/1/0, c6_hex32 2/2/0, c6_hex33 2/2/0, c6_hexb32 2/2/0
+C6 on: W/T/L per regime: hit-dense 8/0/0, miss-heavy 1/5/0, near-miss 4/0/0, near-miss-in 4/0/0, random 0/5/0
+C6 on: N/A (0 span calls): c6_hex32/near-miss c6_hexb32/near-miss c6_hex17/near-miss c6_hex33/near-miss
+C6 on: LOSS (standing): none
+C6 on: INCONCLUSIVE-NOISE: c6_dig32/random c6_dig25/miss-heavy c6_dig25/random c6_dig65/miss-heavy c6_dig65/random
+C6 on: INCONCLUSIVE-HARNESS: none
+C6 on: NOT-RUN: none
+C6 on: standing WINs (information; a WIN gates nothing): c6_hex32/hit-dense c6_hex32/near-miss-in c6_hexb32/hit-dense c6_hexb32/near-miss-in c6_dig32/hit-dense c6_dig32/near-miss c6_hex17/hit-dense c6_hex17/miss-heavy c6_hex17/near-miss-in c6_hex33/hit-dense c6_hex33/near-miss-in c6_hex1001/hit-dense c6_hex1001/near-miss c6_dig25/hit-dense c6_dig25/near-miss c6_dig65/hit-dense c6_dig65/near-miss
+C6 on: not repeated: c6_hex17/miss-heavy A/A WIN not repeated
+C6 on: standing on a single pass (re-time noisy or NOT-RUN): none
+C6 on: re-time NOT-RUN (the window closed; RE-TIME: a reading LOSS stands, a WIN counts as a TIE, an A/A non-TIE stands): none
+C6c off-clang: A/A single-pass rate 0.091 (1 of 11)
+C6c off-clang: W/T/L per pattern: c6_dig32 0/3/0, c6_hex32 0/4/0, c6_hexb32 0/4/0
+C6c off-clang: W/T/L per regime: hit-dense 0/3/0, miss-heavy 0/2/0, near-miss 0/1/0, near-miss-in 0/2/0, random 0/3/0
+C6c off-clang: N/A (0 span calls): c6_hex32/near-miss c6_hexb32/near-miss
+C6c off-clang: LOSS (standing): none
+C6c off-clang: INCONCLUSIVE-NOISE: c6_dig32/miss-heavy
+C6c off-clang: INCONCLUSIVE-HARNESS: none
+C6c off-clang: NOT-RUN: none
+C6c off-clang: standing WINs (information; a WIN gates nothing): none
+C6c off-clang: not repeated: c6_dig32/random A/A LOSS not repeated
+C6c off-clang: standing on a single pass (re-time noisy or NOT-RUN): none
+C6c off-clang: re-time NOT-RUN (the window closed; RE-TIME: a reading LOSS stands, a WIN counts as a TIE, an A/A non-TIE stands): none
+C6c off-os: A/A single-pass rate 0.000 (0 of 12)
+C6c off-os: W/T/L per pattern: c6_dig32 0/4/0, c6_hex32 0/4/0, c6_hexb32 0/4/0
+C6c off-os: W/T/L per regime: hit-dense 0/3/0, miss-heavy 0/3/0, near-miss 0/1/0, near-miss-in 0/2/0, random 0/3/0
+C6c off-os: N/A (0 span calls): c6_hex32/near-miss c6_hexb32/near-miss
+C6c off-os: LOSS (standing): none
+C6c off-os: INCONCLUSIVE-NOISE: none
+C6c off-os: INCONCLUSIVE-HARNESS: none
+C6c off-os: NOT-RUN: none
+C6c off-os: standing WINs (information; a WIN gates nothing): none
+C6c off-os: not repeated: none
+C6c off-os: standing on a single pass (re-time noisy or NOT-RUN): none
+C6c off-os: re-time NOT-RUN (the window closed; RE-TIME: a reading LOSS stands, a WIN counts as a TIE, an A/A non-TIE stands): none
+approx (VOID BY METHOD, never timed): 28 cells
+cards: time: DONE rc=0
+u6time: c6decide read-back of /var/tmp/pcrec-pcrec/scratch/u6time/run/results_c6_83fd4fd63765bed1.tsv (time rc=0)
+C6 on: NO LOSS; readable 27 of 32; W/T/L 17/10/0; A/A: 0 standing non-TIE of 27 readable (rate 0.000, AA_VOID_MAX 0.050), 1 single-pass; N/A 4, HARNESS 0, NOISE 5, NOT-RUN 0
+C6c off-clang: NO LOSS; readable 11 of 12; W/T/L 0/11/0; A/A: 0 standing non-TIE of 11 readable (rate 0.000, AA_VOID_MAX 0.050), 1 single-pass; N/A 2, HARNESS 0, NOISE 1, NOT-RUN 0
+C6c off-os: NO LOSS; readable 12 of 12; W/T/L 0/12/0; A/A: 0 standing non-TIE of 12 readable (rate 0.000, AA_VOID_MAX 0.050), 0 single-pass; N/A 2, HARNESS 0, NOISE 0, NOT-RUN 0
+C6 on: A/A single-pass rate 0.037 (1 of 27)
+C6 on: W/T/L per pattern: c6_dig25 2/0/0, c6_dig32 2/1/0, c6_dig65 2/0/0, c6_hex1001 2/2/0, c6_hex17 3/1/0, c6_hex32 2/2/0, c6_hex33 2/2/0, c6_hexb32 2/2/0
+C6 on: W/T/L per regime: hit-dense 8/0/0, miss-heavy 1/5/0, near-miss 4/0/0, near-miss-in 4/0/0, random 0/5/0
+C6 on: N/A (0 span calls): c6_hex32/near-miss c6_hexb32/near-miss c6_hex17/near-miss c6_hex33/near-miss
+C6 on: LOSS (standing): none
+C6 on: INCONCLUSIVE-NOISE: c6_dig32/random c6_dig25/miss-heavy c6_dig25/random c6_dig65/miss-heavy c6_dig65/random
+C6 on: INCONCLUSIVE-HARNESS: none
+C6 on: NOT-RUN: none
+C6 on: standing WINs (information; a WIN gates nothing): c6_hex32/hit-dense c6_hex32/near-miss-in c6_hexb32/hit-dense c6_hexb32/near-miss-in c6_dig32/hit-dense c6_dig32/near-miss c6_hex17/hit-dense c6_hex17/miss-heavy c6_hex17/near-miss-in c6_hex33/hit-dense c6_hex33/near-miss-in c6_hex1001/hit-dense c6_hex1001/near-miss c6_dig25/hit-dense c6_dig25/near-miss c6_dig65/hit-dense c6_dig65/near-miss
+C6 on: not repeated: c6_hex17/miss-heavy A/A WIN not repeated
+C6 on: standing on a single pass (re-time noisy or NOT-RUN): none
+C6 on: re-time NOT-RUN (the window closed; RE-TIME: a reading LOSS stands, a WIN counts as a TIE, an A/A non-TIE stands): none
+C6c off-clang: A/A single-pass rate 0.091 (1 of 11)
+C6c off-clang: W/T/L per pattern: c6_dig32 0/3/0, c6_hex32 0/4/0, c6_hexb32 0/4/0
+C6c off-clang: W/T/L per regime: hit-dense 0/3/0, miss-heavy 0/2/0, near-miss 0/1/0, near-miss-in 0/2/0, random 0/3/0
+C6c off-clang: N/A (0 span calls): c6_hex32/near-miss c6_hexb32/near-miss
+C6c off-clang: LOSS (standing): none
+C6c off-clang: INCONCLUSIVE-NOISE: c6_dig32/miss-heavy
+C6c off-clang: INCONCLUSIVE-HARNESS: none
+C6c off-clang: NOT-RUN: none
+C6c off-clang: standing WINs (information; a WIN gates nothing): none
+C6c off-clang: not repeated: c6_dig32/random A/A LOSS not repeated
+C6c off-clang: standing on a single pass (re-time noisy or NOT-RUN): none
+C6c off-clang: re-time NOT-RUN (the window closed; RE-TIME: a reading LOSS stands, a WIN counts as a TIE, an A/A non-TIE stands): none
+C6c off-os: A/A single-pass rate 0.000 (0 of 12)
+C6c off-os: W/T/L per pattern: c6_dig32 0/4/0, c6_hex32 0/4/0, c6_hexb32 0/4/0
+C6c off-os: W/T/L per regime: hit-dense 0/3/0, miss-heavy 0/3/0, near-miss 0/1/0, near-miss-in 0/2/0, random 0/3/0
+C6c off-os: N/A (0 span calls): c6_hex32/near-miss c6_hexb32/near-miss
+C6c off-os: LOSS (standing): none
+C6c off-os: INCONCLUSIVE-NOISE: none
+C6c off-os: INCONCLUSIVE-HARNESS: none
+C6c off-os: NOT-RUN: none
+C6c off-os: standing WINs (information; a WIN gates nothing): none
+C6c off-os: not repeated: none
+C6c off-os: standing on a single pass (re-time noisy or NOT-RUN): none
+C6c off-os: re-time NOT-RUN (the window closed; RE-TIME: a reading LOSS stands, a WIN counts as a TIE, an A/A non-TIE stands): none
+approx (VOID BY METHOD, never timed): 28 cells
