@@ -9199,8 +9199,10 @@ static PCREC_OWN_FRAME void vm_var(Vm *v, int entry, const Ast *a, int next)
                  "not declared engine-callable, so it cannot be routed "
                  "through the seam from an engine body");
     v->enc_mask |= seam_entry;
+    /* The expansion's intern key (its canonical render, made once per
+     * expansion), not a render per reference (review r96 COST-1's class). */
     vm_lbl(v, entry, vm_rolef(v, "caller variable %s%s",
-                              pcrec_varexp_render(&v->cx->arena, a->u.var.exp),
+                              v->cx->var_exp_keys[a->u.var.slot],
                               a->u.var.caseless ? ", caseless" : ""));
     /* The SAME `vm_work` primitive and the same charge expression the
      * backreference uses: `took` on success, and on failure the entry's
