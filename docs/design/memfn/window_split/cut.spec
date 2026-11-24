@@ -2,6 +2,8 @@
 # bucket.py, home.py: `window.h` is then one more "file", the header's moved type text).
 # Rev 2 corrections (r95): W17 boundaries (ask 2840-2876 / ren 2877-; text -3879 / floor 3880-;
 # efind from 2649, vform from 4321, floor from 4608; presence.c 56-83 with kit_mass's comment);
+# rev 2.1 (r98 R13, ruled): kit_run_set (presence.c 84-91, with its leading blank) and kit_run_at
+# (112-118, its comment and leading blank) join kit_pos.c, the position questions;
 # O1 frame / ren split; W2 primitives (kit_pos.c takes kit_mass and kit_run_member, kit_pick.c
 # is the TIE table and its searchers); W3 the family vocabulary into window.h.
 # `-` is no file: lines the prologues replace (window.c's SPDX/provenance head, :1-7, and its
@@ -11,7 +13,7 @@ window.h         <- window.c 8-65 73-76 152-229 583-584 757-790 792-792 1377-144
 window.h         <- window.c 1778-1796 1890-1890 1926-1933 1991-1991 2300-2304 2334-2346 2385-2393
 window.h         <- window.c 2412-2419 2436-2445 3559-3573
 kit_pos.c        <- window.c 231-284 937-962
-kit_pos.c        <- presence.c 56-83
+kit_pos.c        <- presence.c 56-91 112-118
 kit_pick.c       <- window.c 78-131 140-151
 -                <- window.c 1-7 66-71 132-139
 window_cands.c   <- window.c 152-230 285-459
