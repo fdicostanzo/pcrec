@@ -10374,3 +10374,32 @@ Each ruled sentence applied literally before asking (told to him in one line eac
   WRITTEN in the program file, so the program's options are its defaults (candidate (a)); core/holes/flags has
   "What is inserted in a hole starts from its own file's defaults". The constant half (`"ab"` under
   `@options(i)`) is ASKED.
+
+### 2026-11-23 OWNER, on "stacked labels do not chain": a refinement framing: flat inside the binding, the tree's paths from outside; "[_t = A ] is equivalent to [_ = [t = A ]]"
+tags: core/labels/rule core/labels/ownership core/labels/export core/labels/export/flat-read-outside core/labels/paths core/labels/export/arguments core/principles/label-names-spot
+
+Said on the manager's closure of stacked-chain (the entry above: `n.h` and `m.h`, never `n.m.h`, "object if I
+read it wrong"). HIS WORDS, whole:
+
+"Stacked labels do not chain: let me suggest a refinement framing. Within a binding, I can create any tree of
+labels in my expression and, within that binding, see all of those labels flat. That's what allows things like
+labeling a macro argument. However, outside that binding, I must go through the tree using the paths as defined.
+So the stacked labels would matter referencing into the binding.
+Another way of looking at it is that [_t = A ] is equivalent to [_ = [t = A ]]"
+
+Class: a PROPOSAL ("let me suggest a refinement framing") that OBJECTS to the closure: NOT a ruling by these
+words. Its three parts: (1) inside a binding every label its expression writes is seen flat, whatever the tree
+(his ground for labelling a macro argument); (2) from outside the binding a reference goes through the tree, by
+the paths as written, so the nesting of stacked labels matters there; (3) an equivalence: `[_t = A]` is
+`[_ = [t = A]]`.
+The manager's closure of stacked-chain is WITHDRAWN (it applied line 5 to reads from outside).
+CHECKED AGAINST THE RECORD: label-doors line 5, ruled the same day, says "their order does not matter". His
+question that made it ("would the nesting order of the labels matter? By my reading no") was asked on his body
+`A(l:,A) := [l =[_x = A]] &(_x: 5)`, a read INSIDE the binding that writes both labels; the manager's answer
+then carried it to paths from outside (readings (b) and (c) of label-doors: a caller's path passes a private
+label stacked on the spot; `[l = [_ = P]]` still opens P's labels through `l`). The framing keeps line 5 for the
+inside view and takes those two readings back for the outside view. It also meets flat-read-outside, ruled
+2026-11-22 ((a): "a flat read outside a binding follows the inside rules; the path says which part"), which
+lets an exported label be read from outside BY NAME (`pair.x`): "I must go through the tree" read literally
+would reverse it; not presumed, asked.
+Put to him as a ruling, slug label-tree.
