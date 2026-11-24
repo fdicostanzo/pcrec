@@ -13,4 +13,5 @@ Under [KIT-ARCH-STEP] (now: stage 2 DONE, stage 3 in force), as children, state 
 architecture.md part 3, rows 31-51: 2 noted (ARV-1), 10 implement-then-replace (ARV-18, rows 33-42), 43 KIT-WINSPLIT, 44 spelling/selector, 45 layer order, 46 REACH, 47 deny, 48 renderer interface, 49-51 noted (ARV-14). KINDS OF ROW sentence updated. No existing ruling changed; the note's row-10 WHERE drift is already correct in the register (memfn.h:308). Noted rows' commit column reads "commit at landing" for main to fill.
 
 ## STATE AT HANDOFF
-Done; complete. Rulings file arvfile_rulings.md was empty at the last re-read. Nothing owed.
+OWED: none
+Done; complete. Rulings file arvfile_rulings.md was empty at the last re-read.
