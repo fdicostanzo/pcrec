@@ -17,6 +17,7 @@
 #include "core/internal.h"
 #include "enc/enc.h"
 #include "parse_mods.h"
+#include "ucd_tables.h"
 
 /* Builds this module's refusal ExtResult carrying `msg` at `at`. */
 static ExtResult ucp_refuse(Ctx *cx, ExtWant want, size_t at, const char *msg)
@@ -68,7 +69,7 @@ ExtResult pcrec_ucpport_ucp(Ctx *cx, const RegRow *rw, ExtWant want,
  * Every right-hand side is a SET EQUALITY measured against libpcre2 10.46
  * under UTF|UCP ([O] `docs/design/ucp_measurements/out/ucp_sets_10.46.txt`,
  * 57 relations, 0 off expectation). A property term is a unicode-props
- * bare-namespace name (normalised) read through `pcrec_uprops_span`, so a UCP
+ * bare-namespace name (normalised) read through `pcrec_ucd_find`, so a UCP
  * set is the same generated table `\p{..}` is; a range term is a code-point
  * run. `[:graph:]`/`[:print:]` are COMPLEMENTS whose carve-out code points are
  * all `Cf`, which is what makes "not in these" equal to the measured formula
@@ -146,7 +147,8 @@ void pcrec_setdef_build(Ctx *cx, const PcrecSetDef *d, PcrecCpSet *s)
             continue;
         }
         int n = 0;
-        const PcrecCpRange *iv = pcrec_uprops_span(t->prop, &n);
+        const PcrecCpRange *iv = pcrec_ucd_find(&cx->arena, t->prop, strlen(t->prop),
+                                           PCREC_UCD_NS_BARE, false, &n);
         if (!iv)
             pcrec_ctx_fail(cx, cx->pos, "internal error: UCP set '%s' names "
                            "property '%s', which unicode-props does not ship",

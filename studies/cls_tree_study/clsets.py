@@ -6,8 +6,8 @@ sorted, disjoint, non-adjacent code-point interval list pcrec's own
 `src/core/cpset.c` invariant maintains:
 
   * `uprops()`   — the 312 DISTINCT sets behind module `unicode-props`' 717
-                   name rows, parsed straight out of `src/parse/
-                   uprops_tables.inc` (the [M5.0] stage-3/5 generated table).
+                   name rows, read out of the Unicode tables through
+                   `tests/uprops/ucd_dump.c` (the module's own interface).
                    Never re-derived from the UCD: the study measures the sets
                    pcrec ACTUALLY builds, the same discipline
                    `studies/form_char_twins` used when it parsed byte sets off
@@ -28,33 +28,50 @@ import sys
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 REPO = os.path.abspath(os.path.join(HERE, "..", ".."))
-INC = os.path.join(REPO, "src", "parse", "uprops_tables.inc")
 
 MAX_CP = 0x10FFFF
 
 
 # ---------------------------------------------------------------- parsing
 
-def _parse_inc(path=INC):
+def _parse_inc(path=None):
     """Return (intervals, rows). intervals: list of (lo,hi). rows: list of
-    (name, ns, off, n, ci_off, ci_n)."""
-    text = open(path, encoding="utf-8").read()
+    (name, ns, off, n, ci_off, ci_n).
 
-    m = re.search(r"pcrec_uprop_iv\[\]\s*=\s*\{(.*?)\n\};", text, re.S)
-    if not m:
-        raise SystemExit("clsets: interval array not found in %s" % path)
-    ivs = [(int(a, 16), int(b, 16))
-           for a, b in re.findall(r"\{0x([0-9A-Fa-f]+),0x([0-9A-Fa-f]+)\}",
-                                  m.group(1))]
-
-    m = re.search(r"pcrec_uprop_names\[\]\s*=\s*\{(.*?)\n\};", text, re.S)
-    if not m:
-        raise SystemExit("clsets: name array not found in %s" % path)
-    rows = []
-    for name, ns, off, n, cio, cin in re.findall(
-            r'\{\s*"([^"]+)"\s*,\s*(\d+)\s*,\s*(\d+)\s*,\s*(\d+)\s*,'
-            r'\s*(\d+)\s*,\s*(\d+)\s*\}', m.group(1)):
-        rows.append((name, int(ns), int(off), int(n), int(cio), int(cin)))
+    [DATA-PLAN] A1: the table's storage format belongs to ONE module
+    (`src/parse/ucd_tables.c`), so this no longer parses the generated file.
+    It reads the TSV `tests/uprops/ucd_dump.c` writes through the module's
+    interface: `$UCD_DUMP` names the file, or `build/ucd_dump` (a binary built
+    from that source against `build/libpcrec.a`) is run.  Each row's two sets
+    are appended to one pool, so `off`/`n` index it as before."""
+    import subprocess
+    path = path or os.environ.get("UCD_DUMP")
+    if path:
+        text = open(path, encoding="utf-8").read()
+    else:
+        exe = os.path.join(REPO, "build", "ucd_dump")
+        if not os.path.exists(exe):
+            raise SystemExit("clsets: set UCD_DUMP to the output of "
+                             "tests/uprops/ucd_dump.c (or build it to %s)"
+                             % exe)
+        text = subprocess.run([exe], check=True, capture_output=True,
+                              text=True).stdout
+    def parse_set(s):
+        if s == "-":
+            return []
+        return [(int(a, 16), int(b, 16))
+                for a, b in (p.split("-") for p in s.split(","))]
+    ivs, rows = [], []
+    for line in text.splitlines():
+        if not line or line.startswith("#"):
+            continue
+        name, ns, cs, ci = line.split("\t")
+        off = len(ivs)
+        ivs.extend(parse_set(cs))
+        n = len(ivs) - off
+        cio = len(ivs)
+        ivs.extend(parse_set(ci))
+        rows.append((name, int(ns), off, n, cio, len(ivs) - cio))
     return ivs, rows
 
 

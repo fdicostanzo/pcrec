@@ -12,5 +12,5 @@ SAB_DESC='the group-name rule takes a non-ASCII digit first'
 SAB_DOC_FIGURE='Owed: lane substr1fix queued this row (docs/dev/lanes/substland_report.md, substr1fix STATE AT HANDOFF). Exact re-run command: bash tests/mech/run_sabotage_matrix.sh S1583.'
 SAB_EXPECT=DETECTED
 SAB_COUNT=1
-SAB_BEFORE='    return r != 0 || first ? r : ng_in_prop("ND", cp);'
-SAB_AFTER='    return r != 0 ? r : ng_in_prop("ND", cp);   /* SABOTAGE S1583 */'
+SAB_BEFORE='    return r != 0 || first ? r : pcrec_ucd_contains("ND", cp);'
+SAB_AFTER='    return r != 0 ? r : pcrec_ucd_contains("ND", cp);   /* SABOTAGE S1583 */'

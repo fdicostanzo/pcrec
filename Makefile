@@ -186,7 +186,7 @@ $(BUILD_DIR)/targets.check: memfn/src/targets.def memfn/src/targets_c.def memfn/
 # recompiled) and `pcrec --list-limits` still report 20,000 — one binary
 # carrying two values of one constant. A lane that changed only a limit and
 # then ran `make test` would have tested the OLD number and read green.
-# src/parse/uprops_tables.inc joined at [M5.0] stage 3, AND IT IS THE SAME
+# src/parse/ucd_tables.inc (then uprops_tables.inc) joined at [M5.0] stage 3, AND IT IS THE SAME
 # DEFECT A THIRD TIME — caught the same way, within minutes of the table
 # growing a row: `\p{Lc}` was added to the generated .inc, `make` printed a
 # clean build, and `pcrec --features unicode-props '\p{Lc}'` still answered
@@ -230,7 +230,7 @@ FACTS_HDRS := src/facts/facts.h src/facts/facts_derive.h src/facts/facts.def \
               src/facts/walk_arms.def src/facts/desc.h \
               src/core/findings.h src/core/ksrc.h src/core/ctxfn.def \
               src/core/kindrow.def src/parse/codelang.def
-GEN_TABLES := src/parse/uprops_tables.inc src/core/fold_tables.inc \
+GEN_TABLES := src/parse/ucd_tables.inc src/core/fold_tables.inc \
               src/enc/utf8_fold_pairs.inc
 
 $(BUILD_DIR)/obj/%.o: src/%.c src/core/internal.h src/core/ksrc.h src/core/ks_measures.h src/core/limits.h src/core/limits.def src/core/axes.def src/parse/rxt_schema.def $(FACTS_HDRS) lib/pcrec.h src/parse/cls_bits.inc $(GEN_TABLES)

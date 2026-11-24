@@ -182,6 +182,22 @@ else
 fi
 
 # ---------------------------------------------------------------------------
+# [DATA-PLAN] A1 THE UCD WALL (S3575-S3579): one module (src/parse/
+# ucd_tables.c) understands the Unicode tables' storage format; no other file
+# names the generated file or its symbols. Text scan + a planted-include
+# control + a population floor; see ucd_wall_check.sh's header.
+# ---------------------------------------------------------------------------
+OUT9="$WORKDIR/ucd_wall_check.out"
+mkdir -p "$WORKDIR/ucdwall"
+bash "$SCRIPT_DIR/ucd_wall_check.sh" "$ROOT_DIR" "$WORKDIR/ucdwall" | tee "$OUT9"
+bin9_rc="${PIPESTATUS[0]}"
+if [ "$bin9_rc" -eq 0 ]; then
+    ok "ucd_wall_check: $(grep -c '^PASS' "$OUT9") sub-checks green"
+else
+    bad "ucd_wall_check: $(grep -c '^FAIL' "$OUT9") sub-check(s) failed — see above"
+fi
+
+# ---------------------------------------------------------------------------
 # [INLINE-C] stage 1a THE PER-KIND ATTRIBUTE ROW IS COMPLETE (no mech row: a
 # missing row is a compile error, so it is checked by compiling plants): the
 # AKind/KIND_ROW census as text, a live-tree control, and four plants (a new

@@ -68,6 +68,7 @@
 #include <stdlib.h>
 
 #include "core/internal.h"
+#include "parse/ucd_tables.h"
 #include "pcrec.h"
 
 static Pcre2Abi pcre2;
@@ -3304,7 +3305,7 @@ static void converse_cell(const char *pat, long *accept, long *refuse, long *mis
  * THE POPULATION IS THE ORACLE'S, NOT PCREC'S TABLE. The names swept are the
  * closed-gate sweep's own generated space plus the converse list of clause
  * (2), read from the vendored UCD alias files and never from
- * `src/parse/uprops_tables.inc`, because a population derived from the table
+ * the generated Unicode tables (`src/parse/ucd_tables.h`), because a population derived from the table
  * under test could not contain a name the table forgot. Both floors below are what stop the arm going vacuous if the
  * gate silently fails to open. */
 static void check_gated_uprops_space(const char *set)
@@ -3446,9 +3447,9 @@ static void check_gated_uprops_space(const char *set)
      *     values in four spellings across three namespaces, and a hand list
      *     of those would be a second copy of the generator's output that
      *     could only ever agree with it or be stale.  So the population is
-     *     read from the table (`pcrec_uprops_row_name`) and the ARBITER is
+     *     read from the table (`pcrec_ucd_row_name`) and the ARBITER is
      *     libpcre2, which did not produce it.  That is the same independence
-     *     argument `uprops_lookup`'s own comment makes, one level up.
+     *     argument `pcrec_ucd_find`'s own comment makes, one level up.
      *
      *     THE NAME AXIS DRIFTS BETWEEN UNICODE VERSIONS AND IT DID NOT
      *     BEFORE.  Every stage-3 name is a general category that has existed
@@ -3464,13 +3465,13 @@ static void check_gated_uprops_space(const char *set)
      *     `tests/uprops/uprops_compare.py`. */
     char oracle_uni[64] = "", pin_uni[64] = "";
     pcre2_abi_unicode_version(&pcre2, oracle_uni, sizeof oracle_uni);
-    snprintf(pin_uni, sizeof pin_uni, "%s", pcrec_uprops_unicode_version());
+    snprintf(pin_uni, sizeof pin_uni, "%s", pcrec_ucd_unicode_version());
     bool same_unicode = strcmp(oracle_uni, pin_uni) == 0;
     long shipped_names = 0, name_drift = 0, name_under = 0;
     long ext_names = 0, ext_clash = 0;
-    for (size_t i = 0; i < pcrec_uprops_row_count(); i++) {
+    for (size_t i = 0; i < pcrec_ucd_row_count(); i++) {
         unsigned ns = 0;
-        const char *nm = pcrec_uprops_row_name(i, &ns);
+        const char *nm = pcrec_ucd_row_name(i, &ns);
         static const struct { unsigned bit; const char *prefix; } NSPFX[] = {
             { 1u, "" }, { 2u, "sc=" }, { 4u, "scx=" }, { 8u, "bc=" },
             { 16u, "blk=" }, { 32u, "age=" },

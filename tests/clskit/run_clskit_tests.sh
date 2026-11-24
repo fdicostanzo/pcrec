@@ -60,6 +60,14 @@ if ! unit_build "$DRV" "$SCRIPT_DIR/clskit_driver.c"; then
     bad "clskit_driver.c did not build"
     finish
 fi
+# [DATA-PLAN] A1: the `uprops` population is read through the Unicode-table
+# module's interface (ucd_dump.c), never off the generated file.
+if ! unit_build "$WORKDIR/ucd_dump" "$ROOT_DIR/tests/uprops/ucd_dump.c" \
+   || ! "$WORKDIR/ucd_dump" > "$WORKDIR/ucd_dump.tsv"; then
+    bad "ucd_dump.c did not build or run"
+    finish
+fi
+export UCD_DUMP="$WORKDIR/ucd_dump.tsv"
 POP="$WORKDIR/pop.txt"
 if ! python3 "$SCRIPT_DIR/populations.py" "$POP"; then
     bad "populations.py failed"

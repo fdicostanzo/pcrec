@@ -5,7 +5,7 @@
 # SIX SECTIONS (§6 is [UPROP-MORE]'s, below §5), each asking something none of the others can:
 #
 #   §1 THE GENERATED TABLE IS NOT STALE. `third_party/ucd-16.0.0/generate.py
-#      --check` re-derives `src/parse/uprops_tables.inc` from the vendored UCD
+#      --check` re-derives the generated Unicode table from the vendored UCD
 #      and fails if the committed file is not what the generator produces.
 #      `src/parse/cls_bits.inc`'s precedent, made mechanical: the .inc's own
 #      banner says "never hand-edited" and this is what makes that true.
@@ -130,16 +130,24 @@ BYTE_SCRIPT_CONTROLS="Cyrillic Hiragana Katakana Kawi Thaana Unknown"
 
 echo "== §1 the generated table is not stale =="
 if python3 "$ROOT_DIR/third_party/ucd-16.0.0/generate.py" --check; then
-    ok "src/parse/uprops_tables.inc matches what the generator produces from the vendored UCD"
+    ok "the generated Unicode table matches what the generator produces from the vendored UCD"
 else
-    bad "src/parse/uprops_tables.inc is STALE — regenerate it (the message above says how)"
+    bad "the generated Unicode table is STALE — regenerate it (the message above says how)"
+fi
+
+# [DATA-PLAN] A1: everything below that needs the table's CONTENTS reads this
+# program's output (the interface's own rows), never the generated file.
+. "$ROOT_DIR/tests/lib/unit_cc.sh"
+if ! { unit_build "$WORKDIR/ucd_dump" "$SCRIPT_DIR/ucd_dump.c" \
+       && "$WORKDIR/ucd_dump" > "$WORKDIR/ucd_dump.tsv"; }; then
+    bad "ucd_dump.c did not build or run (no table to read below)"
 fi
 
 echo "== §2 the shipped name set =="
 if [ -z "${UPROPS_NAMES:-}" ]; then
     if UPROPS_BINARY="$NAMES_BINARY" UPROPS_BC="$BC_VALUES" \
             python3 "$SCRIPT_DIR/uprops_names.py" "$ROOT_DIR/third_party/ucd-16.0.0" \
-            "$ROOT_DIR/src/parse/uprops_tables.inc" $CATEGORIES; then
+            "$WORKDIR/ucd_dump.tsv" $CATEGORIES; then
         pass=$((pass+4))   # the script prints its own four ok: lines
     else
         bad "the shipped name set and the promise disagree (above)"
@@ -226,8 +234,7 @@ else
     ver_line=$("$WORKDIR/uprops_oracle" --version)
     lib_ver=$(printf '%s' "$ver_line" | cut -f1)
     uni_ver=$(printf '%s' "$ver_line" | cut -f2)
-    pin=$(sed -n 's/^#define PCREC_UPROPS_UNICODE_VERSION "\(.*\)"$/\1/p' \
-             "$ROOT_DIR/src/parse/uprops_tables.inc")
+    pin=$("$WORKDIR/ucd_dump" --version)
     echo "  oracle: libpcre2 $lib_ver, Unicode $uni_ver; pcrec pinned at Unicode $pin"
     for enc in ${ENC:-byte utf8}; do
         # `-fno-premul-table` is an ANSWER-IDENTICAL axis (D82, and
@@ -343,7 +350,7 @@ for enc in ${ENC:-byte utf8}; do
     same   "$enc" '\p{^Greek}'       '\P{Greek}'      "caret negation works on a script"
     differ "$enc" '\p{sc=Greek}'     '\p{Greek}'      "sc= is NOT the bare spelling"
 done
-# THE CASELESS RULE, measured (mod_uprops.c's `uprops_lookup`): under `-i`,
+# THE CASELESS RULE, measured (ucd_tables.c's `pcrec_ucd_find`): under `-i`,
 # `Lu`/`Ll`/`Lt` ARE `L&` and every other property is unchanged.  Both
 # directions are asserted, because a build that ignored caselessness entirely
 # would pass the second set of cells alone.
@@ -478,7 +485,8 @@ echo "== §7 the generator's coverage check is live ([UPROP-MORE]) =="
 sab="$WORKDIR/sab"
 mkdir -p "$sab/third_party" "$sab/src/parse" "$sab/src/core" "$sab/src/enc"
 cp -R "$ROOT_DIR/third_party/ucd-16.0.0" "$sab/third_party/ucd-16.0.0"
-for f in src/parse/uprops_tables.inc src/core/fold_tables.inc src/core/case_tables.inc src/enc/utf8_fold_pairs.inc; do
+# the generator names its own products (--list-products), so no file name is repeated here
+for f in $(python3 "$ROOT_DIR/third_party/ucd-16.0.0/generate.py" --list-products); do
     cp "$ROOT_DIR/$f" "$sab/$f"
 done
 gen_sab() { python3 "$sab/third_party/ucd-16.0.0/generate.py" --check 2>&1; }
