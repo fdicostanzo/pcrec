@@ -441,7 +441,8 @@ typedef struct { size_t total, prose, tables; } PcrecEmitSize;
  * builder live across anything that can reach `pcrec_ctx_fail` or
  * `pcrec_ctx_nomem` is a scratch one (src/core/CLAUDE.md), so a refused
  * compile's longjmp strands nothing: the arena it lives in is freed by
- * job_cleanup. `tests/core/scratch_builder_check.py` holds the line. */
+ * job_cleanup. `tests/core/scratch_builder_check.py` holds the line; its
+ * allowlist names the heap builders still waiting on [ARENA-SCOPES]. */
 typedef struct {
     char *p; size_t len, cap; Ctx *cx; size_t abort_over;
     Arena *ar;

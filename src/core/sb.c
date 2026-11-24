@@ -16,7 +16,7 @@ static char *sb_store(StrBuf *sb, size_t n)
 
 /* [K155] Gives back storage sb_store made: the heap's to free, a scratch
  * builder's to the arena it came from (freed wholesale at the compile's
- * end, never here: coding_guide §1.6). */
+ * end, never here: docs/dev/guide/coding.md 1.6). */
 static void sb_unstore(const StrBuf *sb, char *p)
 {
     if (!sb->ar) free(p);
