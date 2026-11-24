@@ -459,6 +459,13 @@ done <<< "$anchored"
 #     kit's MF_MEASURE_MAX with equality asserted at build time. It is part of
 #     a data format's grammar, like a schema version, not a policy a caller
 #     raises; changing it is a format revision.
+#   A TENTH KIND — NAMESPACE BITS OF A GENERATED TABLE'S ROW MASK:
+#     PCREC_UCD_NS_BARE / _SC / _SCX / _BC / _BLK / _AGE (src/parse/ucd_tables.h,
+#     [DPCOMPACT]): which bit of a property row's namespace mask means which
+#     `\p` prefix (none, sc=, scx=, bc=, blk=, age=). A file-private bit set in
+#     the SIXTH kind's shape, forced by the representation and asserted equal to
+#     the generator's own numbers (ucd_tables.c); nothing is measured against
+#     a bit position.
 SCAN_FLOOR=30
 
 TMP3="$(mktemp -d "${TMPDIR:-/tmp}/limits_check.XXXXXX")"
@@ -626,7 +633,13 @@ PCREC_PART_ROLE_MAX
 PCREC_COMP_MAXPARTS
 COMP_LEVER_ATTEMPTS
 LMWALK_K_HIT_UNMEASURED
-KS_MEAS_MAX"
+KS_MEAS_MAX
+PCREC_UCD_NS_BARE
+PCREC_UCD_NS_SC
+PCREC_UCD_NS_SCX
+PCREC_UCD_NS_BC
+PCREC_UCD_NS_BLK
+PCREC_UCD_NS_AGE"
 
 TABLE_NAMES="$NAMES"
 SCANNED_NAMES="$(cut -f2 "$TMP3/scan.txt" | sort -u)"
