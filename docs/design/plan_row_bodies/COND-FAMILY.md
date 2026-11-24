@@ -10353,3 +10353,24 @@ of the entry above (the count 0) is not taken, by his own answer; the removed se
 count left out of the body; `rx.repeat(x, _, _)`); `padded_to`'s refusal of `_` for its width stands on it.
 The manager's reading that follows (marked): "the quantifier not written" (the literal reading of
 unspecified-rule at this position) is not the meaning either: the position's line is the error.
+
+### 2026-11-23 MANAGER — three queued questions closed on the record, not asked (stacked-chain; the position half of options-position; the argument half of options-reach-constants); no owner words
+tags: core/labels/rule core/labels/ownership lib/builtin/options core/patterns/flags core/holes/flags
+
+Each ruled sentence applied literally before asking (told to him in one line each; he may object):
+- stacked-chain (review r88 A7: do two PUBLIC stacked labels chain, `[n = [m = A]]`, `n.m.h`): label-doors line
+  5, ruled, as told to him: "Labels stacked on one spot, with nothing between them, are equal names of that
+  spot. Each is its own door to what the spot holds." and "their order does not matter". A chain `n.m.h` would
+  make the order matter (`m.n.h` is the other order) and what the spot holds is A's labels, not the other name.
+  So `n.h` and `m.h`, never `n.m.h`: it FOLLOWS (the manager's reading, marked as following from line 5). NOT asked.
+- options-position, the position half (may `@options` stand below a binding of its file): his idea's words, "you
+  did a @options() to set them such that literals were interpreted that way in future bindings", and the
+  statement he ruled ("program-options: yes": "applies to the literals written after it in the same file"): it
+  may stand mid-file and applies from the statement on (candidate (a)). The rest is the manager's reading
+  (marked; a syntax-grain point): a later statement applies from its own place on; turning a flag off is written
+  as PCRE writes it (`@options(-s)`).
+- options-reach-constants, the argument half (a literal the caller writes as an argument, placed by a library
+  body: `atomic(/a.b/)` in a program opening `@options(s)`): the same ruled statement decides it: the literal is
+  WRITTEN in the program file, so the program's options are its defaults (candidate (a)); core/holes/flags has
+  "What is inserted in a hole starts from its own file's defaults". The constant half (`"ab"` under
+  `@options(i)`) is ASKED.
