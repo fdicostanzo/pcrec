@@ -415,7 +415,7 @@ where the house rule says to propose the unification
 
 | stage | what | lanes | trigger |
 |---|---|---|---|
-| **A1-compact** | `generate.py` writes delta-varint interval lists and a string-blob name table (fold links too if they carry over); `mod_uprops` decodes at lookup. Byte-identical artifacts (the compiler's output does not change) | 1 sonnet lane, after `upropb` lands (no addendum to the running lane) | **already met**: [UPROP-MORE] takes UCD data from 11% to ~20% of the compiler (A2's 15% line), measured on `upropb`'s build. Expected: ~305 → ~90 KB, back to ~6% |
+| **A1-compact** (BUILT, lane dpcompact, 2026-11-24, owner GO "data-plan-compact: yes. Have it be modular so the format is only understood to the module which provides an interface") | `generate.py` writes delta-varint interval lists and a name blob; `src/parse/ucd_tables.{h,c}` is the ONE module that decodes them and the only file that includes `ucd_tables.inc` (wall check `tests/core/ucd_wall_check.sh`, S3575-S3579). Measured: the property data object 254,012 -> 85,150 bytes (-66%), `libpcrec.a` 15,475,760 -> 15,338,982 (-136,778), `build/pcrec` 7,741,408 -> 7,562,920 (-178,488); compile time unchanged (non-official sample). Byte-identical artifacts (the compiler's output does not change). Fold tables did not carry over (different shape) | 1 sonnet lane, after `upropb` lands (no addendum to the running lane) | **already met**: [UPROP-MORE] takes UCD data from 11% to ~20% of the compiler (A2's 15% line), measured on `upropb`'s build. Expected: ~305 → ~90 KB, back to ~6% |
 | A-groups | build-time data groups | — | a library embedder asks |
 | A-record | the compiler derives sets from the [UCD-RECORD] table | — | [UCD-RECORD] is built for artifacts |
 

@@ -2580,7 +2580,7 @@ static const unsigned short ucd_set_n[747] = {
     13,1,2,7,3,2,1,1,11,3,2,
 };
 
-static const char ucd_name_blob[9419] =
+static const char ucd_name_blob[] =
     "1.1\000"
     "10.0\000"
     "11.0\000"

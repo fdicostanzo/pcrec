@@ -1063,7 +1063,7 @@ def emit(built):
                % (len(set_n), c_list(set_n)))
     # adjacent string literals, `\000` in its 3-digit form so a name that
     # BEGINS with a digit cannot extend the escape
-    out.append("\nstatic const char ucd_name_blob[%d] =\n" % len(names))
+    out.append("\nstatic const char ucd_name_blob[] =\n")
     for nm in sorted(name_off, key=name_off.get):
         out.append('    "%s\\000"\n' % nm.replace("\\", "\\\\"))
     out.append(";\n")
