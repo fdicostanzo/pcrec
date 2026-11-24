@@ -10192,3 +10192,39 @@ order-preserving pool with byte-identical output as its control).
 OWNER QUESTIONS queued: exact-count-unspecified; stacked-chain; nested-made. Still open and asked or queued
 before: list-is-label (ASKED this session; the documents keep reading (b), marked), both-uses, pair-twice-alone.
 The round's three lessons and three proposed skill changes go to main (to_main.md).
+
+### 2026-11-23 OWNER, on list-is-label: "My intention of the rule was that if rx was labeled in B, you couldn't access rx directly shorthand through, or in, B. But the read is that you can't access it at al, even through A."
+tags: core/labels/rule core/labels/ownership core/labels/paths/argument-default core/labels/paths/closed-argument core/labels/paths/call-prefix core/labels/paths/binding-prefix core/labels/export/arguments lib/convention/argument-labels
+
+Asked **list-is-label** (under binding-as-label's condition 4, has a body that LISTS its spot made a label; the
+manager's leaning yes; with the run lines of the list body and of the two-argument parting case). HIS WORDS,
+whole:
+
+"List is label: there is an unintended read here that I'm trying to put my finger on.
+
+"Under yes: B(A) & (A.d: <5) is a compile error, and the read is B(A) & (B.d: <5)"
+A.d is a compiler error because d was set in B.
+My intention of the rule was that if rx was labeled in B, you couldn't access rx directly shorthand through, or
+in,  B. But the read is that you can't access it at al, even through A.
+Thoughts?"
+
+Class: DISCUSSION ("Thoughts?"), with a statement of his INTENTION for his fourth condition ("a label on the
+binding has not already been made", 2026-11-23). NOT a ruling; list-is-label is not answered by these words. His
+intention as the manager reads it (marked): a label made on the parameter INSIDE B stops the shorthand through B
+or in B (the body, having written `[p = rx]`, reads `p.d`; from outside the read through the call is `B.p.d`,
+never B with the argument's name); it was not meant to stop the CALLER's read through A's own name.
+CHECKED AGAINST THE RECORD: it is NOT what was ruled the same day. "binding-as-label: yes" answered a statement
+that carried the manager's reading "already been made is by anyone on that use, the body included" and the table
+"labels the spot: a compile error, read `B.p.d`; closes the spot: a compile error". The reading "by anyone, the
+body included" was the manager's (the entry "a fourth condition": "taken from 'based on your examples'"), told
+to him, not his words. It also meets closed-argument (a)'s second sentence, ruled 2026-11-22 ("Where B closes
+the argument, `A.d` is a compile error"), and his belief of the door example ("an error regardless I believe").
+The manager's thoughts (told to him; marked; nothing applied): his intention is the cleaner rule. Under it the
+shorthand is the CALLER's own label: `B(A)` with `A.d` read is `B([A = A])` in every case, legal by
+argument-label and closing-own-label whatever the body does, and by label-doors line 5 a label the body stacks
+on the same spot is an equal name that closes nothing. Condition 4 then counts labels made in the text that
+uses the shorthand (the caller's `B([a = A])`; `[a = A] SEQ "!" & (A.h: ..)` inside one definition). What it
+dissolves: list-is-label, both-uses, pair-twice-alone, nested-made, review r88's A4 (the shorthand and its
+written-out form no longer part) and A9's nested-body cell; the caller no longer needs to know B's body. What it
+reverses: the table ruled with binding-as-label for a body that labels the spot, and closed-argument (a)'s
+second sentence for a body that closes it. Put to him as a ruling, slug shorthand-is-callers.
