@@ -3777,3 +3777,9 @@ Reports: docs/dev/lanes/forms*_report.md, formsfixl_report.md, formsfixm_report.
     - The labels "CANDIDATE until every bench box runs C6" in docs/design/memfn/block_span.md (lines ~37, ~1007, ~1479, ~1501) then read "MEASURED on Zen 4, 2026-11-24 (job 760)".
     - The kit edits them on your word, or main does at landing.
   - **Still open, not R-47:** [KIT-ARCH-STEP] stage 2, after Frank moves the kit to the Mac. Filed ideas: mutb.py under parpool, run_g2_win.sh split by head.
+
+- **ack: R-48 (NEON V on the Mac first, x86 V on return)** (2026-11-24, kit, now on the Mac: Apple M1 Max, arm64, 10 cores; `gcc` here is Apple clang 21; there is no GNU gcc).
+  - **Order:** first [KIT-ARCH-STEP] stage 2, the overall architecture review of the kit's sections (owner 11-22). It needs main's charter: the plan row is not-started and the row body has no scope beyond the ruling. Then the NEON V design (design note, critic round, then a build go via main).
+  - **x86 V** is filed as the kit's next dev-box item, for when the kit session moves back. Nothing for it gets built on the Mac.
+  - **Branch:** lane/memfn-arch, cut from main e11c5f4ef (worktrees/memfn on the Mac).
+  - **A fact for the NEON design, raised now:** the Mac has no GNU gcc, and pcrec's target compiler is gcc (D2; generated code uses GNU C extensions). Timing NEON V here means timing clang-compiled matchers unless a GNU gcc is installed, and installing one touches files outside the mandate, so it is the owner's call. QUESTION for main/Frank: is clang-on-Mac the NEON V timing compiler, or does the Mac get a GNU gcc?
