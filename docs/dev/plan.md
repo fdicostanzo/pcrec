@@ -593,6 +593,21 @@ Owner waits: a row or stage waiting on the OWNER (a charter, a build go, an answ
   status (2026-11-22): filed; nothing built. cmpeq->cmpgt or loadu->load hashes the same. Fix: keep intrinsic families in kept[]; cost: every stored hash goes stale (a re-measure event)
   trigger: the next formhash shape touch, or any card verdict that rests on a SIMD-form hash
   refs: docs/design/memfn/block_span.md §8; kit review r79 (F15); [BSPAN-CLANG-DIFF]
+- [B152-REGR] STATE:not-started — three bench-measured slowdowns since 11-02, each tied to one landed change (bench b152, O-122)
+  filed: 2026-11-24 manager, from lane b152attr (objdump attribution over cb32eda28..d6c5e71a5)
+  status (2026-11-24): grp-cap/grp-named/grp-named-quote/qnt-poss-plus/rec-fwd +13-17% (null +4-7%): only 51481d1b3 (S1 min-width guard + attempt bound). cls-range +18.6%, slack-webhook +15.3%: 9cecc3caa (rx_reqrun prefilter). dig-exact-8: no code change (bench/box)
+  next: ONE bounded pass per change (memory one-pass-loss-chasing): a decline-predicate survey for the S1 guard and the reqrun prefilter on these shapes, then accept or file the predicate; dig-exact-8 goes back to the bench as a non-program mover
+  refs: docs/dev/lanes/b152attr_report.md "Regression attribution"; pcrec-bench O-122; [RUN-POS-SET]; [B152-REGR-DIG] (none: bench side)
+- [LANDWALK-SHARE] STATE:not-started — the walk's verify machine reuses the anchored machine's tables instead of a second copy
+  filed: 2026-11-24 lane b152attr2
+  status (2026-11-24): b152 username-password-pair nocaps: walk +44,304 B, of which 36,281 B (82%) are lmverify tables byte-identical to rx_anchored's; 4,767 B reverse tables; 3,256 B code
+  trigger: a measured size or compile-cost mover; size-cap refusals of landmark-walk artifacts in [LANDWALK-CENSUS]
+  refs: docs/dev/lanes/b152attr_report.md "Landmark walk size"; docs/spec/tuning.md §2.54¶1/¶5; docs/spec/limits.md §8.4; [LANDWALK-CENSUS]; abi event + identity re-pin when built (D76/D94)
+- [LOCATE-CHARSTEP-ROW] STATE:not-started — `char-step` is a locate choice the axes listing never shows (cand_rows[] entry lacks .list/.desc)
+  filed: 2026-11-24 manager, from lane b152attr (bench prep question, O-122)
+  status (2026-11-24): omission confirmed (lane b152attr); no test covers RX_DFA_SCAN values; draft row in the report; not built
+  next: a small lane lists char-step on the locate axis (order 1, the others 2..5), re-pins registry expectations and registry.md §6 by grep, and adds a check that every RX_DFA_SCAN value is a row or a named non-choice (empty, attempt)
+  refs: docs/dev/lanes/b152attr_report.md "char-step locate row"; src/gen/emit_dfa.c cand_rows[]; src/dump/axes_dump.c; tests/registry/axes_registry_check.sh; docs/spec/registry.md §6
 - [WIDTH-PATH-BOUND] STATE:not-started — the width walk is still quadratic on acyclic and late-cycle patterns (path form is O(n+edges))
   filed: 2026-11-22 lane k159r81, from review r81 COMPLEXITY-1 (docs/dev/reviews/2026-11-22-r81-k159fix.md)
   status (2026-11-22): filed; nothing built. `q(?:a|bc){N}` walk 0.089/0.333/1.338 s at N=2000/4000/8000 (x4 per doubling), same on BASE. The path form is TIGHTER where a live cycle cannot reach accept: an ANSWER CHANGE for the width fact
