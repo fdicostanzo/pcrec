@@ -590,26 +590,26 @@ static int hexval(char c)
     return -1;
 }
 
-/* Rewrites `sb`'s marks into a scratch builder ([K155]: no heap builder is
- * live across this function's refusals) whose text then replaces `sb`'s
- * (pcrec_sb_replace), counting each subject's head marks into `seen`. A mark with no record, or a stamp mark
+/* Rewrites `sb`'s marks into the Job's rewrite buffer ([K155] Job.rwsb)
+ * and moves its storage into `sb`, counting each subject's head marks into
+ * `seen`. A mark with no record, or a stamp mark
  * where none was written, is an internal error. */
 static void render_buf(Ctx *cx, StrBuf *sb, unsigned char seen[PCREC_ENTRY_N + 1])
 {
     if (!sb->p || !memchr(sb->p, PCREC_PREFIX_LEAD, sb->len)) return;
     const PcrecPartLayout *pl = &cx->job->pl;
-    StrBuf o = pcrec_sb_scratch(&cx->arena);
+    StrBuf *o = pcrec_sb_rewrite_buf(cx);
     size_t i = 0;
     while (i < sb->len) {
         const char *q = memchr(sb->p + i, PCREC_PREFIX_LEAD, sb->len - i);
         size_t at = q ? (size_t)(q - sb->p) : sb->len;
-        if (at > i) pcrec_sb_printf(&o, "%.*s", (int)(at - i), sb->p + i);
+        if (at > i) pcrec_sb_printf(o, "%.*s", (int)(at - i), sb->p + i);
         if (!q) break;
         int h1 = at + 3 < sb->len ? hexval(sb->p[at + 2]) : -1;
         int h0 = at + 3 < sb->len ? hexval(sb->p[at + 3]) : -1;
         if (at + 1 >= sb->len || sb->p[at + 1] != 'L' || h1 < 0 || h0 < 0) {
             /* not a layout mark: the prefix placeholder, rendered later */
-            pcrec_sb_putc(&o, sb->p[at]);
+            pcrec_sb_putc(o, sb->p[at]);
             i = at + 1;
             continue;
         }
@@ -617,7 +617,7 @@ static void render_buf(Ctx *cx, StrBuf *sb, unsigned char seen[PCREC_ENTRY_N + 1
         if (id == PCREC_ENTRY_N) {
             if (!pl->stamp_marked)
                 pcrec_ctx_fail(cx, 0, "internal error: part layout: a stamp mark nobody wrote");
-            stamp_lines(cx, &o);
+            stamp_lines(cx, o);
             seen[PCREC_ENTRY_N]++;
             if (at + 4 < sb->len && sb->p[at + 4] == '\n') i = at + 5;   /* the mark's line */
             else pcrec_ctx_fail(cx, 0, "internal error: part layout: a stamp mark not on a line of its own");
@@ -636,12 +636,12 @@ static void render_buf(Ctx *cx, StrBuf *sb, unsigned char seen[PCREC_ENTRY_N + 1
             if (at < 7 || memcmp(sb->p + at - 7, "static ", 7) != 0)
                 pcrec_ctx_fail(cx, 0, "internal error: part layout: a mark on a "
                                "definition that is not static (entry %u)", id);
-            pcrec_sb_puts(&o, pcrec_attr_text(layout_attr(p->layout)));
+            pcrec_sb_puts(o, pcrec_attr_text(layout_attr(p->layout)));
             seen[id]++;
         }
         i = at + 4;
     }
-    pcrec_sb_replace(sb, &o);
+    pcrec_sb_move_text(sb, o);
     sb->layout_bytes = 0;
 }
 
