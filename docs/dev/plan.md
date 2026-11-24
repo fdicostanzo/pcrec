@@ -598,6 +598,11 @@ Owner waits: a row or stage waiting on the OWNER (a charter, a build go, an answ
   status (2026-11-24): grp-cap/grp-named/grp-named-quote/qnt-poss-plus/rec-fwd +13-17% (null +4-7%): only 51481d1b3 (S1 min-width guard + attempt bound). cls-range +18.6%, slack-webhook +15.3%: 9cecc3caa (rx_reqrun prefilter). dig-exact-8: no code change (bench/box)
   next: ONE bounded pass per change (memory one-pass-loss-chasing): a decline-predicate survey for the S1 guard and the reqrun prefilter on these shapes, then accept or file the predicate; dig-exact-8 goes back to the bench as a non-program mover
   refs: docs/dev/lanes/b152attr_report.md "Regression attribution"; pcrec-bench O-122; [RUN-POS-SET]; [B152-REGR-DIG] (none: bench side)
+- [ARENA-SCOPES] STATE:not-started — scoped arenas registered on the Ctx: freed LIFO on the way out, all at once on a longjmp
+  filed: 2026-11-24 manager, from the owner's direction during K155 (D203)
+  status (2026-11-24): proposed, nothing built. Clients known: minimize.c's 7 heap tables ([MINIMIZE-ARENA-LEAK]), the local Arena in src/gen/clskit.c:1126 (unregistered, leaks on longjmp), large scratch StrBufs if k155fix's peak gate trips, possibly job_cleanup's hand-kept free() list
+  next: after k155fix lands: a short design (API, LIFO discipline, what job_cleanup's list becomes) + critic round, then build
+  refs: owner 2026-11-24 "the arena memory system is in my mind a stack memory extension system"; src/core/arena.c; src/core/compile.c job_cleanup; known_issues K155; D203
 - [LANDWALK-SHARE] STATE:not-started — the walk's verify machine reuses the anchored machine's tables instead of a second copy
   filed: 2026-11-24 lane b152attr2
   status (2026-11-24): b152 username-password-pair nocaps: walk +44,304 B, of which 36,281 B (82%) are lmverify tables byte-identical to rx_anchored's; 4,767 B reverse tables; 3,256 B code
