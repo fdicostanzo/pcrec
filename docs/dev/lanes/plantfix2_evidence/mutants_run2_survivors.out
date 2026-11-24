@@ -1,0 +1,6 @@
+CONTROL  GREEN     36 s   
+Q19      KILLED    54 s   selftest rc 1, 1 failed: case an undecodable edit (wreply, a fourth @@ fiel  [UNDECODABLE not counted bad]
+P4       KILLED    56 s   selftest rc 1, 2 failed: case --plant-check writes stderr; case a grandchild escapes the group, holding the p  [check's stderr ignored]
+P15      SURVIVED  53 s     [nplants from the rows, not the summary]
+N15      SURVIVED  54 s     [a per-runner timeout, not the shared deadline (PAR-2)]
+mutants: 4, killed 2, survived 2 ['P15', 'N15'], harness errors 0 []
