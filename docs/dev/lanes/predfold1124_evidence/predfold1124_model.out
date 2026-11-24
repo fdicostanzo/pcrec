@@ -1,0 +1,412 @@
+== library bodies (library.md): chars ([ch = /(?s:.)/])* ; length(S) := chars & (count((chars.ch: /(?s:.)/)): S) ; month_numbered(S) := months & (months.mname.index: S) ; between: >= lo & <= hi
+== months := [mname = [/Jan(?:uary)?/, /Feb(?:ruary)?/, /Mar(?:ch)?/, /Apr(?:il)?/, /May/, /June?/, /July?/, /Aug(?:ust)?/, /Sep(?:tember)?/, /Oct(?:ober)?/, /Nov(?:ember)?/, /Dec(?:ember)?/]]
+== CONTROL: the extended engine's new answers against python `re` (each program's meaning written directly)
+PASS CONTROL: differing (WHOLE, SEARCHED, FIND-ALL) against python `re` over 341 texts: [('[n = [m = P]] & (n.m.d: <5)', (0, 0, 0)), ('[n = [_x = P]] & (_x.d: <5)', (0, 0, 0)), ('X & (X.n.m.h: <5)', (0, 0, 0)), ('B(A) & (A.h: <5)', (0, 0, 0)), ('B(A) & (A.h: <5)', (0, 0, 0)), ('B(A) & (A.d: <5)', (0, 0, 0))]
+== SHORTHAND: shorthand-is-callers (ruled): `B(A)` read through `A.d` is `B([A = A])` whatever the body does with the spot; condition 1 kept; condition 4 counts only the caller's own labels
+   4 rule sentences pinned for SHORTHAND, 0 missing
+   alone: the shorthand legal, the written-out form legal, alike
+   labelled: the shorthand legal, the written-out form legal, alike
+   listed: the shorthand legal, the written-out form legal, alike
+   closed: the shorthand legal, the written-out form legal, alike
+   `_p`: the shorthand legal, the written-out form legal, alike
+   stacked: the shorthand legal, the written-out form legal, alike
+   two public stacked: the shorthand legal, the written-out form legal, alike
+   LINE [core/labels/paths/closed-argument] The body labelling the spot: WHOLE `7-3` FAILS, `3-7` HOLDS, `3-3` HOLDS / SEARCHED `7-3 3-7` `3-7`@4 / FIND-ALL `7-3 3-7 1-2 9-9` [`3-7`@4, `1-2`@8] (`B(A) & (A.d: <5)`, A := `/(?<d>\d)/`, B(rx) := `/${[p = rx]}-(?<d>\d)/`)
+   LINE [core/labels/paths/call-prefix] A's own d, the body labelling the spot (case 2): WHOLE `7-3` FAILS, `3-7` HOLDS, `3-3` HOLDS / SEARCHED `7-3 3-7` `3-7`@4 / FIND-ALL `7-3 3-7 1-2 9-9` [`3-7`@4, `1-2`@8] (`B(A) & (A.d: <5)`, A := `/(?<d>\d)/`, B(rx) := `/${[p = rx]}-(?<d>\d)/`)
+   LINE [core/labels/paths/closed-argument] The body listing the spot: WHOLE `3xx` HOLDS, `7xx` FAILS / SEARCHED `7xx 3xx` `3xx`@4 / FIND-ALL `3xx 7xx 4xx` [`3xx`@0, `4xx`@8] (`B(A) & (A.d: <5)`, A := `/(?<d>\d)/`, B(rx) := `/${[(=) = rx]}xx/`)
+   LINE [core/labels/paths/closed-argument] Closed by the macro: WHOLE `3xx` HOLDS, `7xx` FAILS / SEARCHED `7xx 3xx` `3xx`@4 / FIND-ALL `3xx 7xx 4xx` [`3xx`@0, `4xx`@8] (`B(A) & (A.d: <5)`, A := `/(?<d>\d)/`, B(rx) := `/${[_ = rx]}xx/`)
+   LINE [core/labels/rule] The caller's own shorthand, under a closing body: WHOLE `3xx` HOLDS, `7xx` FAILS / SEARCHED `7xx 3xx` `3xx`@4 / FIND-ALL `3xx 7xx 4xx` [`3xx`@0, `4xx`@8] (`B(A) & (A.d: <5)`, A := `/(?<d>\d)/`, B(rx) := `/${[_ = rx]}xx/`)
+   LINE [core/labels/paths/closed-argument] Through the call, closed: modes: a compile error (`[c = B(A)] & (c.d: <5)`, A := `/(?<d>\d)/`, B(rx) := `/${[_ = rx]}xx/`: the path crosses the blank label (core/labels/rule/paths rule 2); `B(A) & (B.d: <5)` alike).
+      (refusal: `c.d`: the path crosses the underscore label `_`, not the start (a compile error, path-rules rule 2))
+   RUN `B(A) & (B.d: <5)`, A := `/(?<d>\d)/`, B(rx) := `/${[_ = rx]}xx/`: refused: `B.d`: the path crosses the underscore label `_`, not the start (a compile error, path-rules rule 2)
+   LINE [core/labels/paths/closed-argument] Closed by a `_` part label: WHOLE `3xx` HOLDS, `7xx` FAILS / SEARCHED `7xx 3xx` `3xx`@4 / FIND-ALL `3xx 7xx 4xx` [`3xx`@0, `4xx`@8] (`B(A) & (A.d: <5)`, A := `/(?<d>\d)/`, B(rx) := `/${[_p = rx]}xx/`)
+   RUN `B(A) & (B.d: <5)`, A := `/(?<d>\d)/`, B(rx) := `/${[_p = rx]}xx/`: refused: `B.d`: the path crosses the underscore label `_p`, not the start (a compile error, path-rules rule 2)
+   LINE [core/labels/paths/closed-argument] The body using the argument alone: WHOLE `7-3` FAILS, `3-7` HOLDS, `3-3` HOLDS / SEARCHED `7-3 3-7` `3-7`@4 / FIND-ALL `7-3 3-7 1-2 9-9` [`3-7`@4, `1-2`@8] (`B(A) & (A.d: <5)`, A := `/(?<d>\d)/`, B(rx) := `/${rx}-(?<d>\d)/`)
+   LINE [core/labels/paths/closed-argument] Through the body's path: WHOLE `7-3` FAILS, `3-7` HOLDS, `3-3` HOLDS / SEARCHED `7-3 3-7` `3-7`@4 / FIND-ALL `7-3 3-7 1-2 9-9` [`3-7`@4, `1-2`@8] (`B(A) & (B.p.d: <5)`, A := `/(?<d>\d)/`, B(rx) := `/${[p = rx]}-(?<d>\d)/`)
+   LINE [core/labels/paths/closed-argument] Through the call, the list: WHOLE `3xx` HOLDS, `7xx` FAILS / SEARCHED `7xx 3xx` `3xx`@4 / FIND-ALL `3xx 7xx 4xx` [`3xx`@0, `4xx`@8] (`B(A) & (B.d: <5)`, A := `/(?<d>\d)/`, B(rx) := `/${[(=) = rx]}xx/`)
+   LINE [core/labels/paths/closed-argument] The caller's own label, under a closing body: WHOLE `3xx` HOLDS, `7xx` FAILS / SEARCHED `7xx 3xx` `3xx`@4 / FIND-ALL `3xx 7xx 4xx` [`3xx`@0, `4xx`@8] (`B([a = A]) & (a.h: <5)`, A := `/(?<h>\d)/`, B(rx) := `/${[_ = rx]}xx/`)
+   LINE [core/labels/ownership] The caller's label, then the binding's name: modes: a compile error (`B([a = A]) & (A.h: <5)`, A := `/(?<h>\d)/`, B(rx) := `/${rx}xx/`: the caller's label `a` is made on the spot (condition 4); the read is `a.h`).
+      (refusal: `A.`: the caller's own label `a` is made on the spot where B places `A` (a compile error, binding-as-label condition 4); the read is `a.`)
+   LINE [core/labels/paths/argument-default] Used twice in the caller's text: modes: a compile error (`B(A) SEQ A & (A.d: <5)`, A := `/(?<d>\d)/`, B(rx) := `/${rx}xx/`: the binding is not referenced unambiguously (condition 1); label the uses).
+      (refusal: `A.`: the binding `A` is used 2 times in this definition, so its name is no shorthand for a label (a compile error, binding-as-label condition 1))
+   LINE [core/labels/paths/argument-default] The caller's read through the shorthand: WHOLE `3xx` HOLDS, `7xx` FAILS / SEARCHED `7xx 3xx` `3xx`@4 / FIND-ALL `3xx 7xx 4xx` [`3xx`@0, `4xx`@8] (`B(A) & (A.d: <5)`, A := `/(?<d>\d)/`, B(rx) := `/${rx}xx/`)
+   LINE [core/labels/paths/argument-default] Written out: WHOLE `3xx` HOLDS, `7xx` FAILS / SEARCHED `7xx 3xx` `3xx`@4 / FIND-ALL `3xx 7xx 4xx` [`3xx`@0, `4xx`@8] (`B([A = A]) & (A.d: <5)`, A := `/(?<d>\d)/`, B(rx) := `/${rx}xx/`)
+   LINE [core/labels/export/arguments] The body using its argument alone: WHOLE `3xx` HOLDS, `7xx` FAILS / SEARCHED `7xx 3xx` `3xx`@4 / FIND-ALL `3xx 7xx 4xx` [`3xx`@0, `4xx`@8] (`B(A) & (A.d: <5)`, A := `/(?<d>\d)/`, B(rx) := `/${rx}xx/`)
+   LINE [core/labels/paths/argument-default] Both uses: WHOLE `7-3` HOLDS, `3-7` FAILS / SEARCHED `7-3 3-7` `7-3`@0 / FIND-ALL `7-3 3-7 1-2 9-9` [`7-3`@0, `1-2`@8] (`B(A) & (A.d: <5)`, B(rx) := `/${[p = rx]}-${rx}/`, A := `/(?<d>\d)/`)
+   LINE [core/labels/paths/argument-default] Alone first: WHOLE `3-7` FAILS, `7-3` HOLDS / SEARCHED `7-3 3-7` `7-3`@0 / FIND-ALL `7-3 3-7 1-2 9-9` [`7-3`@0, `1-2`@8] (`B(A) & (A.d: <5)`, B(rx) := `/${rx}-${[p = rx]}/`, A := `/(?<d>\d)/`): the last mention, the labelled spot
+   LINE [core/labels/paths/argument-default] Alone first, written out: WHOLE `3-7` FAILS, `7-3` HOLDS / SEARCHED `7-3 3-7` `7-3`@0 / FIND-ALL `7-3 3-7 1-2 9-9` [`7-3`@0, `1-2`@8] (`B([A = A]) & (A.d: <5)`, B(rx) := `/${rx}-${[p = rx]}/`, A := `/(?<d>\d)/`)
+   LINE [core/labels/paths/argument-default] From outside: modes: a compile error (`[pub = B(A)] & (pub.A.h: <5)`, A := `/(?<h>\d)/`, B(rx) := `/${rx}xx/`: the shorthand label is protected: it adds no export (the manager's reading (b))).
+      (refusal: `pub.A.h`: `A.h` is not visible through `pub` (a compile error, core/labels/paths))
+   LINE [core/labels/paths/call-prefix] Used twice alone, the last mention: WHOLE `7,3` HOLDS, `3,7` FAILS / SEARCHED `3,7 7,3` `7,3`@4 / FIND-ALL `7,3 3,7 1,2` [`7,3`@0, `1,2`@8] (`pair(A) & (A.d: <5)`, A := `/(?<d>\d)/`, pair(p) := `/${p},${p}/`)
+   LINE [core/holes/bare-condition/nested-scope] Example 1, the spot labelled, by the argument's name: WHOLE `42xx` HOLDS, `100xx` FAILS, `042xx` FAILS / SEARCHED `x100xx 42xx` `0xx`@3 / FIND-ALL `100xx 42xx 7xx 300xx` [`0xx`@2, `42xx`@6, `7xx`@11, `0xx`@17] (`B(A) & (A.d: <100)`, A := `[d = rx.digits]`, B(rx) := `/${[dd = rx]}xx/`)
+PASS SHORTHAND: arms failing: none (bodies differing: none)
+== PATHS: path-rules (ruled): rule 2 (no underscore label crossed unless it is the start), rule 3 (any label a start), rule 4 (skip), rules 5 and 6 (from outside)
+   7 rule sentences pinned for PATHS, 0 missing
+   LINE [core/labels/rule/paths] Outer the caller's, inner private: modes: a compile error (`[n = [_x = P]] & (n.d: <5)`, P := `/(?<d>\d)\d/`: the path crosses `_x`, not its start (rule 2); the read is `_x.d`).
+      (refusal: `n.d`: the path crosses the underscore label `_x`, not the start (a compile error, path-rules rule 2))
+   LINE [core/labels/rule/paths] The private label as the start: WHOLE `37` HOLDS, `73` FAILS, `3` FAILS / SEARCHED `73 37` `37`@3 / FIND-ALL `37 73 14` [`37`@0, `14`@6] (`[n = [_x = P]] & (_x.d: <5)`, P := `/(?<d>\d)\d/`)
+   LINE [core/labels/rule/paths] Outer private, inner the caller's: WHOLE `37` HOLDS, `73` FAILS, `3` FAILS / SEARCHED `73 37` `37`@3 / FIND-ALL `37 73 14` [`37`@0, `14`@6] (`[_x = [n = P]] & (n.d: <5)`, P := `/(?<d>\d)\d/`)
+   LINE [core/labels/rule/paths] A blank label in the stack: modes: a compile error (`[l = [_ = P]] & (l.d: <5)`, P := `/(?<d>\d)\d/`: the path crosses the blank label (rule 2); no label reads `d` there).
+      (refusal: `l.d`: the path crosses the underscore label `_`, not the start (a compile error, path-rules rule 2))
+   LINE [core/labels/rule/paths] Something between the two labels: modes: a compile error (`[n = [_x = P] SEQ "!"] & (n.d: <5)`, P := `/(?<d>\d)\d/`: the path crosses `_x` (rule 2)).
+      (refusal: `n.d`: the path crosses the underscore label `_x`, not the start (a compile error, path-rules rule 2))
+   LINE [core/labels/rule/paths] Through a call, a private label in the body: modes: a compile error (`B(A) & (B.n.h: <5)`, A := `/(?<h>\d)/`, B(rx) := `/${[n = [_x = rx]]}xx/`: the path crosses the body's `_x` (rules 5 and 2); `B(A) & (B.h: <5)` alike).
+      (refusal: `B.n.h`: the path crosses the underscore label `_x`, not the start (a compile error, path-rules rule 2))
+   RUN `B(A) & (B.h: <5)`, A := `/(?<h>\d)/`, B(rx) := `/${[n = [_x = rx]]}xx/`: refused: `B.h`: the path crosses the underscore label `_x`, not the start (a compile error, path-rules rule 2)
+   RUN `B(A) & (B._x.h: <5)`, A := `/(?<h>\d)/`, B(rx) := `/${[n = [_x = rx]]}xx/`: refused: `B._x.h`: the path crosses the underscore label `_x`, not the start (a compile error, path-rules rule 2)
+   LINE [core/labels/rule/paths] Through a call, the middle label skipped: WHOLE `3xx` HOLDS, `7xx` FAILS / SEARCHED `7xx 3xx` `3xx`@4 / FIND-ALL `3xx 7xx 4xx` [`3xx`@0, `4xx`@8] (`B(A) & (B.h: <5)`, A := `/(?<h>\d)/`, B(rx) := `/${[p = rx]}xx/`): rule 4 (the manager's reading (f))
+   LINE [core/labels/rule/paths] The caller's label, a start whatever the body stacks: WHOLE `3xx` HOLDS, `7xx` FAILS / SEARCHED `7xx 3xx` `3xx`@4 / FIND-ALL `3xx 7xx 4xx` [`3xx`@0, `4xx`@8] (`B([a = A]) & (a.h: <5)`, A := `/(?<h>\d)/`, B(rx) := `/${[n = [_x = rx]]}xx/`): the manager's reading (e)
+   LINE [core/labels/rule/paths] From outside, a part used alone: modes: a compile error (`X2 & (X2.h: <5)`, A := `/(?<h>\d)/`, X2 := `A SEQ "!"`: A is used alone in X2 (rule 6); `X2 & (X2.A.h: <5)` alike; inside X2 `A.h` is legal).
+      (refusal: `X2.h`: `h` is not visible through `X2` (a compile error, core/labels/paths))
+   RUN `X2 & (X2.A.h: <5)`, A := `/(?<h>\d)/`, X2 := `A SEQ "!"`: refused: `X2.A.h`: `A.h` is not visible through `X2` (a compile error, core/labels/paths)
+PASS PATHS: arms failing: none (refusals: `n.d`: the path crosses the underscore label `_x`, not the start (a compile error, path-rules rule 2); `l.d`: the path crosses the underscore label `_`, not the start (a compile error, path-rules rule 2))
+== STACKCHAIN: stacked-chain ANSWERED by path-rules: two public stacked labels chain (rule 1); `n.d` by rule 4, `m.d` by rule 3; from outside, rule 5
+   LINE [core/labels/rule/stacked-chain] The chain: WHOLE `3xx` HOLDS, `7xx` FAILS / SEARCHED `7xx 3xx` `3xx`@4 / FIND-ALL `3xx 7xx 4xx` [`3xx`@0, `4xx`@8] (`[n = [m = P]] & (n.m.d: <5)`, P := `/(?<d>\d)xx/`): rule 1
+   LINE [core/labels/rule/stacked-chain] The first name: WHOLE `3xx` HOLDS, `7xx` FAILS / SEARCHED `7xx 3xx` `3xx`@4 / FIND-ALL `3xx 7xx 4xx` [`3xx`@0, `4xx`@8] (`[n = [m = P]] & (n.d: <5)`, P := `/(?<d>\d)xx/`): rule 4
+   LINE [core/labels/rule/stacked-chain] The second name: WHOLE `3xx` HOLDS, `7xx` FAILS / SEARCHED `7xx 3xx` `3xx`@4 / FIND-ALL `3xx 7xx 4xx` [`3xx`@0, `4xx`@8] (`[n = [m = P]] & (m.d: <5)`, P := `/(?<d>\d)xx/`): rule 3
+   LINE [core/labels/rule/stacked-chain] Two spots, the nested form: WHOLE `3xx` HOLDS, `7xx` FAILS / SEARCHED `7xx 3xx` `3xx`@4 / FIND-ALL `3xx 7xx 4xx` [`3xx`@0, `4xx`@8] (`[n = ([m = P])] & (n.m.d: <5)`, P := `/(?<d>\d)xx/`)
+   LINE [core/labels/rule/stacked-chain] From outside, the chain: WHOLE `3!` HOLDS, `7!` FAILS / SEARCHED `7! 3!` `3!`@3 / FIND-ALL `3! 7! 4!` [`3!`@0, `4!`@6] (`X & (X.n.m.h: <5)`, A := `/(?<h>\d)/`, X := `[n = [m = A]] SEQ "!"`)
+   LINE [core/labels/rule/stacked-chain] From outside, by name: WHOLE `3!` HOLDS, `7!` FAILS / SEARCHED `7! 3!` `3!`@3 / FIND-ALL `3! 7! 4!` [`3!`@0, `4!`@6] (`X & (X.h: <5)`, A := `/(?<h>\d)/`, X := `[n = [m = A]] SEQ "!"`): rule 4
+PASS STACKCHAIN: inside: `n.m.d`, `n.d`, `m.d`, the nested form alike; from outside `X.n.m.h`, `X.h`, `X.n.h`, `X.m.h` alike; the piece ruled True
+== TABLE: the ownership table READ from core.md (header, column sentence, rows, cells), every read run
+   R1 alone    `h`: legal
+   R1 labelled `h`: legal
+   R1 labelled `p.h`: legal
+   R1 listed   `h`: legal
+   R1 closed   `h`: legal
+   R1 stacked  `h`: legal
+   R1 stacked  `_x.h`: legal
+   R1 stacked  `n.h`: refused: `n.h`: the path crosses the underscore label `_x`, not the start (a compile error, path-ru
+   R2 alone    `A.h`: legal
+   R2 labelled `A.h`: legal
+   R2 labelled `B.p.h`: legal
+   R2 listed   `A.h`: legal
+   R2 listed   `B.h`: legal
+   R2 closed   `A.h`: legal
+   R2 closed   `B.h`: refused: `B.h`: the path crosses the underscore label `_`, not the start (a compile error, path-rul
+   R2 stacked  `A.h`: legal
+   R2 stacked  `B.n.h`: refused: `B.n.h`: the path crosses the underscore label `_x`, not the start (a compile error, path-
+   R3 alone    `B.h`: refused: `B.h`: `h` is not visible through `B` (a compile error, core/labels/paths)
+   R3 labelled `B.p.h`: legal
+   R3 labelled `B.h`: legal
+   R3 listed   `B.h`: legal
+   R3 closed   `B.h`: refused: `B.h`: the path crosses the underscore label `_`, not the start (a compile error, path-rul
+   R3 stacked  `B.n.h`: refused: `B.n.h`: the path crosses the underscore label `_x`, not the start (a compile error, path-
+   R3 stacked  `B._x.h`: refused: `B._x.h`: the path crosses the underscore label `_x`, not the start (a compile error, path
+   R4 alone    `a.h`: legal
+   R4 alone    `A.h`: refused: `A.`: the caller's own label `a` is made on the spot where B places `A` (a compile error, 
+   R4 labelled `a.h`: legal
+   R4 labelled `A.h`: refused: `A.`: the caller's own label `a` is made on the spot where B places `A` (a compile error, 
+   R4 listed   `a.h`: legal
+   R4 listed   `A.h`: refused: `A.`: the caller's own label `a` is made on the spot where B places `A` (a compile error, 
+   R4 closed   `a.h`: legal
+   R4 closed   `A.h`: refused: `A.`: the caller's own label `a` is made on the spot where B places `A` (a compile error, 
+   R4 stacked  `a.h`: legal
+   R4 stacked  `A.h`: refused: `A.`: the caller's own label `a` is made on the spot where B places `A` (a compile error, 
+   R5 alone    `x`: legal
+   R5 labelled `x`: legal
+   R5 listed   `x`: legal
+   R5 closed   `x`: legal
+   R5 stacked  `x`: legal
+PASS TABLE: 5 rows read (5 writers), 5 columns from the header and the column sentence, 39 reads run against the cells' legality and the piece's three-mode answer; disagreeing: none
+   LINE [core/labels/ownership] A blank label in the stack: modes: a compile error (`[l = [_ = P]] & (l.d: <5)`, P := `/(?<d>\d)\d/`: the path crosses the blank label (core/labels/rule/paths rule 2)).
+      (refusal: `l.d`: the path crosses the underscore label `_`, not the start (a compile error, path-rules rule 2))
+   LINE [core/labels/ownership] The caller's label, then the binding's name: modes: a compile error (`B([a = A]) & (A.h: <5)`, A := `/(?<h>\d)/`, B(rx) := `/${rx}xx/`: the caller's label `a` is made on the spot (condition 4); the read is `a.h`).
+      (refusal: `A.`: the caller's own label `a` is made on the spot where B places `A` (a compile error, binding-as-label condition 4); the read is `a.`)
+   LINE [core/labels/ownership] The caller's list: WHOLE `3xx` HOLDS, `7xx` FAILS / SEARCHED `7xx 3xx` `3xx`@4 / FIND-ALL `3xx 7xx 4xx` [`3xx`@0, `4xx`@8] (`[(=) = A] SEQ /xx/ & (h: <5)`, A := `/(?<h>\d)/`)
+== NAMEGRID: the name grid over the six path rules and the shorthand: spelling x occurrences x read kind; each cell its deciding sentence READ from its piece and a run; an undecided cell printed
+   DECIDED `A.h` once, alone (plain): legal [core/labels/paths/argument-default "whatever B's body does with the spot"]
+   DECIDED `A.h` once, labelled (plain): legal [core/labels/paths/argument-default "whatever B's body does with the spot"]
+   DECIDED `A.h` once, listed (plain): legal [core/labels/paths/argument-default "whatever B's body does with the spot"]
+   DECIDED `A.h` once, closed (plain): legal [core/labels/paths/argument-default "whatever B's body does with the spot"]
+   DECIDED `A.h` once, `_p` (plain): legal [core/labels/paths/argument-default "whatever B's body does with the spot"]
+   DECIDED `A.h` once, stacked (plain): legal [core/labels/paths/argument-default "whatever B's body does with the spot"]
+   DECIDED `A.h` once, two public stacked (plain): legal [core/labels/paths/argument-default "whatever B's body does with the spot"]
+   DECIDED `A.h` twice, alone (plain): legal [core/labels/paths/argument-default "the same-label-twice rules"]
+   DECIDED `A.h` twice, alone (group): legal [core/labels/paths/argument-default "the same-label-twice rules"]
+   DECIDED `A.h` labelled, then alone (plain): legal [core/labels/paths/argument-default "the same-label-twice rules"]
+   DECIDED `A.h` alone, then labelled (plain): legal [core/labels/paths/argument-default "the same-label-twice rules"]
+   NOT MODELLED `A.h` never placed (plain): decided by [core/labels/paths/argument-default] "never placed, the never-pass warning" (found); the engine runs it refused
+   DECIDED `A.h` the caller's own label too (plain): refused [core/labels/paths/argument-default "the caller's own `B([a = A])` makes `A.d` a compile error"]
+   DECIDED `A.h` used twice by the caller (plain): refused [core/labels/paths/argument-default "Condition 1"]
+   DECIDED `A.h` from outside, through the caller's label (plain): refused [core/labels/paths/argument-default "it adds no export"]
+   DECIDED `B.h` alone (plain): refused [core/labels/ownership "no label: `B.h` a compile error"]
+   DECIDED `B.p.h` labelled (plain): legal [core/labels/ownership "`B.p.h` (rule 5)"]
+   DECIDED `B.h` labelled (plain): legal [core/labels/rule/paths "`B.d` by rule 4 where unambiguous"]
+   DECIDED `B.h` listed (plain): legal [core/labels/ownership "`B.h` (transform-export)"]
+   DECIDED `B.h` closed (plain): refused [core/labels/ownership "none: `B.h` a compile error (rule 2)"]
+   DECIDED `B.n.h` stacked (plain): refused [core/labels/rule/paths "the path crosses the body's `_x`"]
+   DECIDED `B._x.h` stacked (plain): refused [core/labels/ownership "`B._x.h` a compile error"]
+   DECIDED `B.n.m.h` two public stacked (plain): legal [core/labels/rule/stacked-chain "rule 1"]
+   DECIDED `B.m.h` two public stacked (plain): legal [core/labels/rule/stacked-chain "rule 1"]
+   DECIDED `B.p.h` called twice (plain): refused [core/labels/paths/call-prefix "called more than once, a plain read is the compile error"]
+   DECIDED `B.p.h` called twice (group): legal [core/labels/paths/call-prefix "a group question reads every call's settings"]
+   DECIDED `a.h` closed (plain): legal [core/labels/ownership "`a.h`: another door"]
+   DECIDED `a.h` stacked (plain): legal [core/labels/rule/paths "whatever the body stacks around them"]
+   DECIDED `x` a sent label, stacked (plain): legal [core/labels/ownership "`x` bare"]
+   DECIDED `n.d` inside, outer public, inner private (plain): refused [core/labels/rule/paths "2. the path may not contain any underscore labels"]
+   DECIDED `_x.d` inside, the private label the start (plain): legal [core/labels/rule/paths "unless the underscore prefix label is the start"]
+   DECIDED `n.d` inside, outer private (plain): legal [core/labels/rule/paths "3. within a binding, any label on the path may be used as a "]
+   DECIDED `l.d` inside, a blank layer (plain): refused [core/labels/rule/paths "underscore labels full or prefix"]
+   DECIDED `l.d` inside, a blank layer (group): refused [core/labels/rule/paths "underscore labels full or prefix"]
+   DECIDED `n.m.d` inside, two public (plain): legal [core/labels/rule/stacked-chain "rule 1"]
+   DECIDED `X.n.m.h` from outside (plain): legal [core/labels/rule/stacked-chain "rule 5"]
+   DECIDED `X.h` from outside (plain): legal [core/labels/rule/stacked-chain "rule 4"]
+   DECIDED `X2.h` from outside, a part used alone (plain): refused [core/labels/rule/paths "6. A part used alone inside a binding is crossed from outsid"]
+   DECIDED `A.h` inside X2, a part used alone (plain): legal [core/labels/rule/paths "is a start inside its own binding"]
+PASS NAMEGRID: 39 cells: decided 38, not modelled 1 ([('A.h', 'never placed', 'core/labels/paths/argument-default')]); disagreeing: none
+== LIBLINES: the library's provided bodies under the caller's shorthand (shorthand-is-callers): each `A.d` through a provided call against its written-out `[A = A]`
+   LINE [lib/convention/argument-labels] The same read through the argument's name: WHOLE `3` HOLDS, `7` FAILS / SEARCHED `7 3` `3`@2 / FIND-ALL `3 7 4` [`3`@0, `4`@4] (`identity(A) & (A.d: <5)`, A := `/(?<d>\d)/`, identity(x) := `/${[(=) = x]}/`)
+   identity: `identity(A) & (A.d: <5)` against `identity([A = A]) & (A.d: <5)`: alike
+   LINE [lib/control/peek] Through the argument's name: WHOLE `3` HOLDS, `7` FAILS / SEARCHED `7 3` `3`@2 / FIND-ALL `3 7 4` [`3`@0, `4`@4] (`peek(A) SEQ /\d/ & (A.d: <5)`, A := `/(?<d>\d)/`)
+   peek: `peek(A) SEQ /\d/ & (A.d: <5)` against `peek([A = A]) SEQ /\d/ & (A.d: <5)`: alike
+   LINE [lib/control/when] Through the argument's name: WHOLE `3` HOLDS, `7` FAILS / SEARCHED `7 3` `3`@2 / FIND-ALL `3 7 4` [`3`@0, `4`@4] (`W(A, (A.h: <5))`, W(a, b) := `[(=) = a] SEQ [(=) = b]`, A := `/(?<h>\d)/`)
+   when: `W(A, (A.h: <5))` against `W([A = A], (A.h: <5))`: alike
+   LINE [lib/control/atomic] Through the argument's name: WHOLE `3` HOLDS, `7` FAILS / SEARCHED `7 3` `3`@2 / FIND-ALL `3 7 4` [`3`@0, `4`@4] (`atomic(A) & (A.d: <5)`, A := `/(?<d>\d)/`)
+   atomic: `atomic(A) & (A.d: <5)` against `atomic([A = A]) & (A.d: <5)`: alike
+   LINE [lib/search/hits] Through the argument's name: WHOLE `a1b3` HOLDS, `a3b9` FAILS, `ab` FAILS / SEARCHED `x9 3` `x9 3`@0 / FIND-ALL `a9b3 c7` [] (`hits(A) & (A.d: <5)`, A := `/(?<d>\d)/`)
+   hits: `hits(A) & (A.d: <5)` against `hits([A = A]) & (A.d: <5)`: alike
+   LINE [core/labels/paths/call-prefix] A labelled call, through the macro's name: modes: a compile error (`[h = hits(/\d+/)] & (hits.hit: 3)`: a label is made on that use (condition 4, a reading); the read is `h.hit`).
+      (refusal: `hits.`: the caller labels the call of hits, a label made on that use (a compile error, binding-as-label condition 4, the manager's reading); the read is through the caller's label)
+PASS LIBLINES: 5 provided bodies read by the argument's name, each against its written-out form over the texts of `37x`: differing none; the labelled call's name refused True
+== EXACTCOUNT: exact-count-unspecified (ruled, "agree error"): `_` into a whole count is the compile error; the three explicit spellings run
+   3 rule sentences pinned for EXACTCOUNT, 0 missing
+   LINE [core/operators/bindings/unspecified] An exact count: modes: a compile error (`E(rx.digit, _)`, E(x, n) := `/(?:${x}){${n}}/`: his ruling, exact-count-unspecified).
+      (refusal: `_` passed for `n` of E: the construct at that position has no form without the part (a compile error, unspecified-rule))
+   LINE [core/operators/bindings/unspecified] The count 0: WHOLE `` HOLDS, `12` FAILS, `123` FAILS, `123456` FAILS / SEARCHED `x1234567` ``@0 / FIND-ALL `1234567 12` [``@0, ``@1, ``@2, ``@3, ``@4, ``@5, ``@6, ``@7, ``@8, ``@9, ``@10] (`E(rx.digit, 0)`, E(x, n) := `/(?:${x}){${n}}/`): the section removed
+   LINE [core/operators/bindings/unspecified] The count left out of the body: WHOLE `` FAILS, `12` FAILS, `123` FAILS, `123456` FAILS / SEARCHED `x1234567` `1`@1 / FIND-ALL `1234567 12` [`1`@0, `2`@1, `3`@2, `4`@3, `5`@4, `6`@5, `7`@6, `1`@8, `2`@9] (`E0(rx.digit)`, E0(x) := `/(?:${x})/`)
+   LINE [core/operators/bindings/unspecified] Both bounds unspecified: WHOLE `` HOLDS, `12` HOLDS, `123` HOLDS, `123456` HOLDS / SEARCHED `x1234567` ``@0 / FIND-ALL `1234567 12` [`1234567`@0, ``@7, `12`@8, ``@10] (`rx.repeat(rx.digit, _, _)`)
+   LINE [lib/modifiers/padded-to] The width unspecified: modes: a compile error (`padded_to(rx.digit, _)`: the body writes the width as an exact count (exact-count-unspecified)).
+      (refusal: `_` passed for `n` of padded_to: the construct at that position has no form without the part (a compile error, unspecified-rule))
+PASS EXACTCOUNT: `E(rx.digit, _)` refused True (`_` passed for `n` of E: the construct at that position has no form without the part (a compile error, unspecified-rule)); `0` [True, False, False, False]; left out [False, False, False, False]; `_, _` [True, True, True, True]; his count-0 proposal in the details as not taken True
+== CAPSET: capture-in-set (ruled: error) for `|` and `&`; the two other cases the manager's readings
+   2 rule sentences pinned for CAPSET, 0 missing
+   LINE [lib/structural/capture/in-set] Inside a union: modes: a compile error (`/(?<h>\d)?x/ & (h: "3" | capture("h"))`: his ruling; `(h: <5 & capture("h"))` alike).
+      (refusal: a capture request inside a set operator (`h: "3" | capture("h")`): a compile error for now (the conservative reading; open capture-in-set))
+   LINE [lib/structural/capture/in-set] Inside an intersection: modes: a compile error (`/(?<h>\d)?x/ & (h: <5 & capture("h"))`: his ruling).
+      (refusal: a capture request inside a set operator (`h: <5 & capture("h")`): a compile error for now (the conservative reading; open capture-in-set))
+   RUN `/(?<h>\d)?x/ & ($a: capture("h"))`: refused: a capture request with a value left of `:` (`$a: capture("h")`): a compile error for now (open capture-in-set)
+   RUN `/(?<h>\d)?x/ & some((h: capture("h")))`: refused: a capture request inside a group question: a compile error for now (open capture-in-set)
+   LINE [lib/structural/capture/in-set] The plain request: WHOLE `3x` HOLDS, `5x` HOLDS, `x` FAILS / SEARCHED `5x 3x` `5x`@0 / FIND-ALL `3x 5x x` [`3x`@0, `5x`@3] (`/(?<h>\d)?x/ & (h: capture("h"))`)
+PASS CAPSET: status line `### A capture request inside a set   [lib/structural/capture/in-set]   ruled 2026-11-23`; `|` refused True (a capture request inside a set operator (`h: "3" | capture("h")`): a compile err), `&` refused True; the plain request legal True
+== OPTIONS: the manager's two closures that stand, marked readings following from ruled words; the constant half ruled (R-1)
+   3 rule sentences pinned for OPTIONS, 0 missing
+PASS OPTIONS: the position reading, the argument reading and the ruled constant half found in lib/builtin/options: True; an open options line left: False
+== FLAGS: R-1 options-reach-constants (ruled: yes) and R-2 option-hole-explicit (ruled: explicit), on predfix84's flag engine, and the manager's readings each names
+   5 rule sentences pinned for FLAGS, 0 missing
+   LINE [core/patterns/flags] Through an option hole: WHOLE `ab` HOLDS, `AB` HOLDS / SEARCHED `x AB ab` `AB`@2 / FIND-ALL `ab AB Ab` [`ab`@0, `AB`@3, `Ab`@6] (`/(?${o})${w}/`, o := `"i"`, w := `/ab/` in a library file that sets nothing)
+   LINE [lib/builtin/options] A string constant: WHOLE `ab` HOLDS, `AB` HOLDS / SEARCHED `x AB ab` `AB`@2 / FIND-ALL `ab AB` [`ab`@0, `AB`@3] (`"ab"` in a program file opening `@options(i)`)
+   LINE [lib/builtin/options] A string from a library file: WHOLE `xab` HOLDS, `XAB` FAILS, `Xab` HOLDS / SEARCHED `xAB Xab` `Xab`@4 / FIND-ALL `xab xAB Xab` [`xab`@0, `Xab`@8] (`/x${c}/` in a program file opening `@options(i)`, c := `"ab"` in a library file that sets nothing)
+   LINE [core/patterns/flags] Another letter through an option hole: WHOLE `a\nb` FAILS, `axb` HOLDS / SEARCHED `a\nb axb` `axb`@4 / FIND-ALL `a\nb axb` [`axb`@4] (`/(?${o})${w}/`, o := `"s"`, w := `/a.b/` in a library file that sets nothing)
+   SUPPORTED: R-2 the ruling: an `i` through an option hole passes into `w`
+   SUPPORTED: R-1 the ruling: `"ab"` under `@options(i)` matches `AB`
+   SUPPORTED: R-1 (a): the weak value on a string does not propagate across an import (a library string in a weakly insensitive program's hole: `xAB` FAILS, `Xab` HOLDS)
+   SUPPORTED: R-1 (c): a matched key the caller writes follows the caller's file's `i` (`K("msg")`, K(k) := `/${k}=1/` in a library file: `MSG=1` HOLDS)
+   SUPPORTED: R-2 (b): another letter through an option hole (`s`) is not inherited at the hole: `a\nb` FAILS
+   NOT MODELLED: R-2 (a) for a macro's parameter: the flag engine resolves an option hole's name as a binding only; the binding route is the ruled line itself (o := `"i"`)
+   UNTESTABLE: R-1 (b), a string used as a name not matched against the subject (`capture("name")`, a warning selector's names) is unaffected: the flag engine runs no capture request or selector
+PASS FLAGS: pins True; 5 runs: all as ruled and read
+== PARKED: the parked piece (his discussion on capture-in-set): a form of its own for effects, a condition operator; trigger and source
+PASS PARKED: parked/ideas/effect-form present, parked, its trigger and his words in the details: True
+== EXPAND: the expansion drill: each sugar form against its written-out form READ from the documents
+   AGREE `B(rx) := /${rx}-(?<d>\d)/` / `B([A = A]) & (A.d: <5)`
+   AGREE `B(rx) := /${[p = rx]}-(?<d>\d)/` / `B([A = A]) & (A.d: <5)`
+   AGREE `B(rx) := /${[(=) = rx]}xx/` / `B([A = A]) & (A.d: <5)`
+   AGREE `B(rx) := /${[_ = rx]}xx/` / `B([A = A]) & (A.d: <5)`
+   AGREE `B(rx) := /${[_p = rx]}xx/` / `B([A = A]) & (A.d: <5)`
+   AGREE `B(rx) := /${[n = [_x = rx]]}xx/` / `B([A = A]) & (A.d: <5)`
+   AGREE `B(rx) := /${[n = [m = rx]]}xx/` / `B([A = A]) & (A.d: <5)`
+   AGREE `B(rx) := /${[p = rx]}-${rx}/` / `B([A = A]) & (A.d: <5)`
+   AGREE `B(rx) := /${rx}-${[p = rx]}/` / `B([A = A]) & (A.d: <5)`
+   AGREE `B(rx) := /${rx},${rx}/` / `B([A = A]) & (A.d: <5)`
+PASS EXPAND: 10 bodies: `B(A)` against the written-out form read from the documents (B([A = A])), every mode over 12 texts; differing: none; the chain against its skip: alike
+== READINGS: the manager's readings a run can decide (shorthand-is-callers (a)-(d); path-rules (d)-(g))
+   SUPPORTED: shorthand-is-callers (a): placed twice, the caller's label at every spot, the last mention (alone first: the labelled spot)
+   SUPPORTED: shorthand-is-callers (b): the shorthand label protected (no export through the caller's label)
+   SUPPORTED: shorthand-is-callers (c): the row "an argument's binding" reads `A.h` in every spot column
+   SUPPORTED: shorthand-is-callers (d): inside the definition that makes the label, the labelled use is read by its label only
+   SUPPORTED: path-rules (e): a caller's label is a start whatever the body stacks
+   SUPPORTED: path-rules (f): through a call `B.h` by rule 4 where unambiguous
+   SUPPORTED: path-rules (f): `B.d` with two `d` in a sequence: the last mention, the body's own
+   UNTESTABLE: path-rules (d), the blank label is never a start: `_` has no name a path can begin with, so no program writes it (the reading follows from the spelling)
+   UNTESTABLE: path-rules (g), the equivalence is a picture, not a spelling: nothing runs `t` as a label
+   NOT MODELLED: shorthand-is-callers (a), never placed: the never-pass warning (the engine models no warning)
+PASS READINGS: 7 readings run: all SUPPORTED
+== SWEEP: every printed three-mode line (`rejected:` and history skipped): predfix88's engine (the 1124 extensions off) over the starting commit's documents against this one over these; every non-same status and every moved or gone answer DECLARED
+   DECLARED x1: `(?J)`: not modelled
+   DECLARED x4: a JSON sketch line: its bodies (`row`, `value`, `string`, ...) are in 
+   DECLARED x1: a condition bound alone and read where used: not modelled (the fold la
+   DECLARED x2: a group number read as a label (core/labels/numbers): not modelled
+   DECLARED x12: a name the line binds in its prose, not its tail (the sweep reads the 
+   DECLARED x16: a provided body this model does not read (native, or not modelled)
+   DECLARED x1: a readings line quoting a run as printed before label-reference (its S
+   DECLARED x1: a readings line quoting the draft's run of a form it marks NOT SUPPORT
+   DECLARED x7: a set, a negation or a conditional group as an operand: not parsed by 
+   DECLARED x4: a value list in a hole (`${[]}`, `${[2, 4] + ..}`): not modelled
+   DECLARED x7: not modelled (the header's list); the printed line is RIGHT (review r8
+   DECLARED x1: the lowered `(\d)x` holds an unnamed group, which the label engine doe
+   DECLARED x13: value arithmetic over a pattern or several strings: not modelled
+   ADDED core.md:364 `B(A) & (A.d: <5)`
+   ADDED core.md:391 `[n = [_x = P]] & (_x.d: <5)`
+   ADDED core.md:396 `B(A) & (B.h: <5)`
+   ADDED core.md:397 `B([a = A]) & (a.h: <5)`
+   ADDED core.md:408 `[n = [m = P]] & (n.m.d: <5)`
+   ADDED core.md:412 `X & (X.n.m.h: <5)`
+   ADDED core.md:413 `X & (X.h: <5)`
+   ADDED core.md:883 `B(A) & (A.d: <5)`
+   ADDED core.md:912 `B(A) & (A.d: <5)`
+   ADDED core.md:916 `B(A) & (A.d: <5)`
+   ADDED core.md:1955 `B(A) & (A.d: <100)`
+   ADDED core.md:2268 `E(rx.digit, 0)`
+   ADDED core.md:2269 `E0(rx.digit)`
+   ADDED library.md:53 `identity(A) & (A.d: <5)`
+   ADDED library.md:348 `peek(A) SEQ /\d/ & (A.d: <5)`
+   ADDED library.md:377 `W(A, (A.h: <5))`
+   ADDED library.md:416 `atomic(A) & (A.d: <5)`
+   ADDED library.md:487 `hits(A) & (A.d: <5)`
+   ADDED library.md:885 `/(?<h>\d)?x/ & (h: capture("h"))`
+   ANSWER MOVED OR LINE GONE (declared): `/(?<h>\d)?x/ & (h: "3" | capture("h"))`: capture-in-set ruled "error": candidate (b)'s union line retired (to `rejected:`)
+   ANSWER MOVED OR LINE GONE (declared): `/(?<h>\d)?x/ & (h: <5 & capture("h"))`: capture-in-set ruled "error": candidate (b)'s intersection line retired (to `rejected:`)
+   ANSWER MOVED OR LINE GONE (declared): `B(A) & (A.d: <5)`: shorthand-is-callers (ruled) with reading (a): a body placing the argument alone first and labelled second reads the last mention, the labelled spot (the line "Alone first")
+   ANSWER MOVED OR LINE GONE (declared): `B(A) & (A.h: <5)`: the line "A label over a wider spot" retired: the reading it showed (a label ON the spot, for condition 4) has no use once condition 4 counts only the caller's own labels
+   ANSWER MOVED OR LINE GONE (declared): `EB(rx.digit, _)`: exact-count-unspecified ruled "agree error": its candidate (a) line retired from the base (to `rejected:` in the details)
+   ANSWER MOVED OR LINE GONE (declared): `[l = [_ = P]] & (l.d: <5)`: path-rules rule 2 (ruled): the path crosses the blank label; now a compile error line
+   ANSWER MOVED OR LINE GONE (declared): `[n = [_x = P]] & (n.d: <5)`: path-rules rule 2 (ruled): the path crosses `_x`; now the compile error line "Outer the caller's, inner private" (core/labels/rule/paths)
+PASS SWEEP: 320 printed lines now (DIFF 8, REFUSED 61, same 274, unparsed 1), 307 at the starting commit under predfix88's engine; undeclared 0; moved or gone and not declared 0; declared moves 7; added 19; stale declarations 0
+== ERRSWEEP: every printed compile-error line of the base files whose program and bindings parse: refused under this engine, no crash; each line whose legality CHANGED against predfix88's engine over the starting commit listed
+   LEGALITY CHANGED (a line of the starting commit) core.md:379 `[n = [m = P]] & (n.m.d: <5)`: refused -> legal
+   LEGALITY CHANGED (a line of the starting commit) core.md:851 `B(A) & (A.d: <5)`: refused -> legal
+   LEGALITY CHANGED (a line of the starting commit) core.md:883 `B(A) & (A.d: <5)`: refused -> legal
+   LEGALITY CHANGED (a line of the starting commit) core.md:885 `B(A) & (A.d: <5)`: refused -> legal
+   LEGALITY CHANGED (a line of the starting commit) core.md:887 `B(A) & (A.d: <5)`: refused -> legal
+   LEGALITY CHANGED (a line of the starting commit) core.md:888 `B(A) & (A.d: <5)`: refused -> legal
+   LEGALITY CHANGED (a line of the starting commit) library.md:53 `identity(A) & (A.d: <5)`: refused -> legal
+   LEGALITY CHANGED (a line of the starting commit) library.md:339 `peek(A) SEQ /\d/ & (A.d: <5)`: refused -> legal
+   LEGALITY CHANGED (a line of the starting commit) library.md:368 `W(A, (A.h: <5))`: refused -> legal
+   LEGALITY CHANGED (a line of the starting commit) library.md:407 `atomic(A) & (A.d: <5)`: refused -> legal
+   LEGALITY CHANGED (a line of the starting commit) library.md:478 `hits(A) & (A.d: <5)`: refused -> legal
+PASS ERRSWEEP: 52 compile-error lines now, each refused with no crash: bad 0; of the starting commit's 56, 11 changed legality under the ruled rules (listed)
+== NULLABLE: EVID-4's known limit: no program the extended engine ran has a loop whose body can match empty
+PASS NULLABLE: 720 programs run by the checks above (SWEEP's included), walked node by node: 0 with a loop whose body can match empty
+== SUCCESSOR: every earlier in-force model re-run with library.md served from its PINNED delivery commit (predfix88's runner, unchanged; nested runs routed to their own pins); each red declared by its FAIL line VERBATIM with a reason; a traceback is never declared
+   predfix88     (library at 50a39f8e4, 2.8 s) last line: predfix88_model: 25 checks, 8 failed (UNSPEC, SHORTHAND, STACKCHAIN, SPOTON, TABLE, NAMEGRID, SWEEP, DOC)
+      DOC declared: documents moved: lines this model formats were re-worded or retired by this fold (each missing line is in the FAIL text); not an engine answer
+         its FAIL line: FAIL DOC: 75 lines, each in its own piece; missing: 19
+      NAMEGRID declared: ruled since: the deciding sentences it reads were replaced, and its four undecided slugs (both-uses, list-is-label, pair-twice-alone, stacked-chain) were answered by shorthand-is-callers and path-rules
+         its FAIL line: FAIL NAMEGRID: 24 cells: decided 17, UNDECIDED 4 (both-uses, list-is-label, pair-twice-alone, stacked-chain), not modelled 3; disagreeing: [('A.h', 'both uses', 'legal', 'legal', 'both-uses'), ('B.n.m.h', 'two public stacked', 'refused', 'r
+      SHORTHAND declared: ruled since: shorthand-is-callers (2026-11-23): condition 4 counts only the caller's labels; its engine refuses `A.d` where the body labels or closes the spot, and the rule sentences it pins were re-worded
+         its FAIL line: FAIL SHORTHAND: arms failing: ['pins'] (labelled: `A.`: a label is already made on the spot where B places `A` (the body labels the spot `p`; a compile error, binding-as-label condition 4); caller's label: `A.`: the caller's own label `a` i
+      SPOTON declared: documents moved: the manager's reading "the spot a label is ON" and its line "A label over a wider spot" retired (no use once condition 4 counts only the caller's labels, shorthand-is-callers)
+         its FAIL line: FAIL SPOTON: `[p = rx SEQ /x/]`: `A.h` [True, False]; `[p = rx]` directly: refused True
+      STACKCHAIN declared: ruled since: path-rules (2026-11-23) answers stacked-chain, the chain legal (rule 1); its engine holds candidate (a), `n.m.d` refused
+         its FAIL line: FAIL STACKCHAIN: `n.d` [True, False], `m.d` [True, False], `n.m.d` refused True (`n.m.d`: `m.d` is not visible through `n` (a compile error, core/labels/paths)), the nested form [True, False]
+      SWEEP declared: documents moved: its sweep compares its own starting commit's documents with today's, and the lines added or re-worded since (this fold) are not in its declaration tables
+         its FAIL line: FAIL SWEEP: 316 printed lines now (DIFF 9, REFUSED 70, same 260, unparsed 1), 295 at the starting commit under predfold1123b's engine; undeclared 10; moved or gone and not declared 2; declared moves 0; added 23; stale declarations 0 (predfi
+      TABLE declared: ruled since: the ownership table's cells re-ruled by shorthand-is-callers (an argument's binding row legal in every column) and path-rules (the stacked cells by rule 2); its engine runs the earlier rules
+         its FAIL line: FAIL TABLE: 5 rows read (5 writers), 5 columns from the header and the column sentence, 39 reads run against the cells' legality and the piece's three-mode answer; disagreeing: [('R1', 'stacked', 'n.h', '[n = [_x = /(?<h>\\d)/]] SEQ /xx/ & 
+      UNSPEC declared: documents moved: exact-count-unspecified ruled "agree error" (2026-11-23): the overlay sentence it pins ("a whole count") and the open bullet were re-worded by this fold
+         its FAIL line: FAIL UNSPEC: arms failing: ['pins']
+   predfold1123b (library at d82b1ad36, 3.3 s) last line: predfold1123b_model: 18 checks, 2 failed (SWEEP, DOC)
+      DOC declared: documents moved: lines this model formats were re-worded or retired by later folds and fixes (each missing line is in the FAIL text); not an engine answer
+         its FAIL line: FAIL DOC: 62 lines, each in its own piece; missing: 16
+      SWEEP declared: documents moved: its sweep compares its own starting commit's documents with today's, and the lines added or re-worded since are not in its declaration tables
+         its FAIL line: FAIL SWEEP: 315 printed lines now (DIFF 9, REFUSED 71, same 258, unparsed 1), 274 at the starting commit under predfix86's engine; undeclared 12; moved or gone and not declared 0; declared moves 7; added 47; stale declarations 0
+   predfix86     (library at 3d38aa9f8, 2.1 s) last line: predfix86_model: 29 checks, 2 failed (SWEEP, DOC)
+      DOC declared: documents moved: lines this model formats were re-worded or retired by later folds and fixes (each missing line is in the FAIL text); not an engine answer
+         its FAIL line: FAIL DOC: 86 lines, each in its own piece; missing: 4
+      SWEEP declared: documents moved: its sweep compares its own starting commit's documents with today's, and the lines added or re-worded since are not in its declaration tables
+         its FAIL line: FAIL SWEEP: 311 printed lines now (DIFF 9, REFUSED 90, same 230, unparsed 1), 263 at the starting commit under predfold1123's engine; undeclared 20; moved or gone and not declared 1; declared moves 1; added 50; stale declarations 0
+   predfold1123  (library at 69cb9a344, 3.6 s) last line: predfold1123_model: 18 checks, 3 failed (SWEEP, NULLABLE, DOC)
+      DOC declared: documents moved: lines this model formats were re-worded or retired by later folds and fixes (each missing line is in the FAIL text); not an engine answer
+         its FAIL line: FAIL DOC: 65 lines; missing: 4
+      NULLABLE declared: a program of today's documents run by its SWEEP has a loop whose body can match empty (`/(?:(?<h>\d)?)*x/`); this model's own NULLABLE runs its programs (the SWEEP's included) and is the check of record
+         its FAIL line: FAIL NULLABLE: 469 programs run by the checks above (SWEEP's included), walked node by node: 1 with a loop whose body can match empty: [('/(?:(?<h>\\d)?)*x/ & (h: OPT{<5})', ())]
+      SWEEP declared: documents moved: its sweep compares its own starting commit's documents with today's, and the lines added or re-worded since are not in its declaration tables
+         its FAIL line: FAIL SWEEP: 306 printed lines now (DIFF 11, REFUSED 89, same 224, unparsed 1), 216 at the starting commit under predfix84's engine; undeclared 22; moved or gone and not declared 1; declared moves 6; added 94; stale declarations 0
+   predfix84     (library at 97549667e, 5.0 s) last line: predfix84_model: 37 checks, 3 failed (GRID, SWEEP, DOC)
+      DOC declared: documents moved: lines this model formats were re-worded or retired by later folds and fixes (each missing line is in the FAIL text); not an engine answer
+         its FAIL line: FAIL DOC: 37 lines; missing: 6
+      GRID declared: documents moved: the deciding sentences it pins (ad-rule, ad-d: the reversed argument-default sentence) were replaced by binding-as-label
+         its FAIL line: FAIL GRID: 168 cells (predspot's 144; a part label over a call 16; a label no text writes 4; the open spot-read-name 4): AGREE 164, DISAGREE 0 [], UNDECIDED 4 (each its open slug in its piece); rename drill (a binding named like the macro's
+      SWEEP declared: documents moved: its sweep compares its own starting commit's documents with today's, and the lines added or re-worded since are not in its declaration tables
+         its FAIL line: FAIL SWEEP: 296 printed lines now (CRASH 2, DIFF 13, REFUSED 124, same 175, unparsed 1), 0 at the starting commit under predspot's engine; every non-same status declared (10 line declarations, 10 rule rows): undeclared 51 [('UNDECLARED', 'c
+   predspot      (library at e451772d4, 2.7 s) last line: predspot_model: 27 checks, 3 failed (GRID, FSWEEP, DOC)
+      DOC declared: documents moved: lines this model formats were re-worded or retired by later folds and fixes (each missing line is in the FAIL text); not an engine answer
+         its FAIL line: FAIL DOC: 22 lines; missing: 3
+      FSWEEP declared: documents moved: flag lines added later use an option hole its flag reader does not parse (FErr: unsupported group)
+         its FAIL line: FAIL FSWEEP: 4 flag lines at the starting commit (each reproduced under 2026-11-19's rule, then run under hole-flags: 4 stand, 0 changed); 16 flag lines now, each printed as hole-flags runs it; bad 5 [('core.md', 264, '/(?${o})${w}/', 'REFU
+      GRID declared: documents moved: the deciding sentences it pins (ad-rule, ad-d: the reversed argument-default sentence) were replaced by binding-as-label
+         its FAIL line: FAIL GRID: 144 cells (9 spellings x 4 occurrences x 4 read kinds; predfix83's 96 and 48 new): AGREE 144, DISAGREE 0 [], UNDECIDED 0; sentences missing [('argument', 'one', 'plain', 'ad-rule'), ('argument', 'one', '$', 'ad-rule'), ('argument
+   predfix83     (library at 595ff0d6b, 14.9 s) last line: predfix83_model: 25 checks, 5 failed (UNMARKED, SWEEP, SUCCESSOR, MARKS, DOC)
+      DOC declared: documents moved: lines this model formats were re-worded or retired by later folds and fixes (each missing line is in the FAIL text); not an engine answer
+         its FAIL line: FAIL DOC: 7 lines; missing: 2
+      MARKS declared: documents moved: the texts it looks for where its fold landed were re-worded or moved by later folds (each missing mark in the FAIL text)
+         its FAIL line: FAIL MARKS: 38 dispositions found where they landed; missing: ['A3', 'A3', 'A8', 'A8', 'D4', 'D8']
+      SUCCESSOR declared: the nested re-run of ITS predecessors: their reds are the documents-moved reds declared one by one in this table, which its own (older) table does not hold
+         its FAIL line: FAIL SUCCESSOR: 8 earlier models re-run, each last line read; every red declared superseded with an unchanged FAIL line: [('preddef', 'DOC', 'UNDECLARED'), ('preddef', 'MARKS', 'CONTENT CHANGED'), ('preddef', 'SUCCESSOR', 'UNDECLARED'), ('p
+      SWEEP declared: documents moved: its sweep compares its own starting commit's documents with today's, and the lines added or re-worded since are not in its declaration tables
+         its FAIL line: FAIL SWEEP: 338 printed lines (old engine 338: CRASH 2, DIFF 21, REFUSED 145, same 168, unparsed 2); the fixed engine (local): CRASH 2, DIFF 21, REFUSED 145, same 168, unparsed 2; moved and not listed: 4 [(('core.md', 711), 'local', 'same',
+      UNMARKED declared: documents moved: lines folded since (binding-as-label, call-forms) are refused under its (error) reading, a reading the owner's later rulings settled otherwise
+         its FAIL line: FAIL UNMARKED: 167 unmarked lines reproduced under (local); moved under (error): [(('core.md', 318), 'same', 'REFUSED'), (('core.md', 738), 'same', 'REFUSED'), (('core.md', 739), 'same', 'REFUSED'), (('core.md', 740), 'same', 'REFUSED'), ((
+   preddef       (library at ed37dc43a, 11.9 s) last line: preddef_model: 22 checks, 5 failed (UNMARKED, SUCCESSOR, SWEEP, MARKS, DOC)
+      DOC declared: documents moved: lines this model formats were re-worded or retired by later folds and fixes (each missing line is in the FAIL text); not an engine answer
+         its FAIL line: FAIL DOC: 10 lines; missing: [('core/labels/paths/argument-default', '(local): WHOLE `3xx` HOLDS, `7xx` FAILS / SEARCHED `7xx 3xx` `3xx`@4 / FIND-ALL `3xx 7xx 4'), ('core/labels/export/capture-export', 'WHOLE `3!` HOLDS, `33!` FAILS / SEARC
+      MARKS declared: documents moved: the texts it looks for where its fold landed were re-worded or moved by later folds (each missing mark in the FAIL text)
+         its FAIL line: FAIL MARKS: 22 pieces of the fold found where they landed; missing: ['statement 3', 'statement 5', 'flow', 'call-prefix', 'argument-default', 'capture-export', 'two-sources', 'form caveat', 'errors row']
+      SUCCESSOR declared: the nested re-run of ITS predecessors: their reds are the documents-moved reds declared one by one in this table, which its own (older) table does not hold
+         its FAIL line: FAIL SUCCESSOR: 7 earlier models re-run, each last line read; every red declared superseded: NO
+      SWEEP declared: documents moved: its sweep compares its own starting commit's documents with today's, and the lines added or re-worded since are not in its declaration tables
+         its FAIL line: FAIL SWEEP: 338 printed lines (old engine 338: CRASH 2, DIFF 21, REFUSED 147, same 166, unparsed 2); the rule: CRASH 2, DIFF 21, REFUSED 145, same 168, unparsed 2; reproduced by the old engine and not the rule: 2 [('core.md', 317), ('core.m
+      UNMARKED declared: documents moved: lines folded since (binding-as-label, call-forms) are refused under its (error) reading, a reading the owner's later rulings settled otherwise
+         its FAIL line: FAIL UNMARKED: 167 unmarked lines reproduced under (local); moved under (error): [(('core.md', 318), 'same', 'REFUSED'), (('core.md', 711), 'same', 'REFUSED'), (('core.md', 738), 'same', 'REFUSED'), (('core.md', 739), 'same', 'REFUSED'), ((
+   predfix82     (library at b5ed9b10d, 10.9 s) last line: predfix82_model: 22 checks, 4 failed (SUCCESSOR, SWEEP, MARKS, DOC)
+      DOC declared: documents moved: lines this model formats were re-worded or retired by later folds and fixes (each missing line is in the FAIL text); not an engine answer
+         its FAIL line: FAIL DOC: 15 lines; missing: [('two-sources', '(a) the label as it reaches the caller, an argument written in place: WHOLE `7-3` HOLDS, `'), ('two-sources', '(b) the source written here, as spelled with a part label: WHOLE `7-3` FAILS, `3-7
+      MARKS declared: documents moved: the texts it looks for where its fold landed were re-worded or moved by later folds (each missing mark in the FAIL text)
+         its FAIL line: FAIL MARKS: 35 dispositions' texts found where they landed; missing: ['ANS-1', 'ANS-2a', 'ANS-2b', 'ANS-5', 'EVID-1', 'RULING-4', 'RULING-9', 'GENERAL-5']
+      SUCCESSOR declared: the nested re-run of ITS predecessors: their reds are the documents-moved reds declared one by one in this table, which its own (older) table does not hold
+         its FAIL line: FAIL SUCCESSOR: 6 earlier models re-run, each last line read; every red declared superseded: NO
+      SWEEP declared: ruled since: the line "Closed by a `_` part label" is legal by shorthand-is-callers (2026-11-23); its fixed engine closes the caller's `A.d` under a `_p` part label, as closed-argument (a) ruled then (core.md:916 in the FAIL text)
+         its FAIL line: FAIL SWEEP: 338 printed lines (old engine 338); the fixed engine: CRASH 2, DIFF 21, REFUSED 147, same 166, unparsed 2; lines the old engine reproduced and the fixed one does not: 1 [('core.md', 916)]; lines only the fixed engine reproduces:
+   predcall      (library at 6f1fe4e84, 1.0 s) last line: predcall_model: 14 checks, 5 failed (CLOSED, MARKS, SCAN, PREDREF, DOC)
+      CLOSED declared: ruled since: shorthand-is-callers (2026-11-23) reverses closed-argument (a)'s second sentence, so the documents print `A.d` under a closing body legal; its check asserts the compile-error line closed-argument (a) ruled then
+         its FAIL line: FAIL CLOSED: where B closes its argument (`[_ = rx]`) `A.d` refused and `c.d` refused, the call itself matching as `\dxx` ((0, 0, 0) differing over 31 texts); through an open B `A.d` legal, its line the record's A.d line; the compile-error 
+      DOC declared: documents moved: lines this model formats were re-worded or retired by later folds and fixes (each missing line is in the FAIL text); not an engine answer
+         its FAIL line: FAIL DOC: 10 lines; missing: [('call-prefix', "A's own d, through the argument (case 2): WHOLE `7-3` FAILS, `3-7` HOLDS, `3-3` HOLDS / SE"), ('call-prefix', "d as the call surfaces it, the last mention (B's): WHOLE `7-3` HOLDS, `3-7` FAILS,
+      MARKS declared: documents moved: the texts it looks for where its fold landed were re-worded or moved by later folds (each missing mark in the FAIL text)
+         its FAIL line: FAIL MARKS: call-prefix ruled yes; closed-argument ruled (R-1) NO; no 'not a prefix' statement yes; the ruled statement NO; c.A in the paths piece yes; standard's line yes; macro types d.year yes; errors index row NO; no 'lean' left for cas
+      PREDREF declared: it asserts which of predref's checks are red; predref's reds are now the documents-moved ones declared here
+         its FAIL line: FAIL PREDREF: red: ['DOC', 'MARKS', 'SCAN'] (expected ['MARKS']: its MARKS looks for the call-prefix piece still open, covered by MARKS here, which looks for it ruled; its other 7 checks stay green on the folded documents)
+      SCAN declared: documents moved: spans added by later folds read labels its scanner (older than label-doors) classes as not on LEFT
+         its FAIL line: FAIL SCAN: 385 program spans checked; 53 distinct spans read a label bare or through an unknown head, all on LEFT; not on LEFT: [('core.md', '/(?<:${l}>\\d)/ & (l: <5)'), ('core.md', '<(10 - $b)'), ('core.md', 'A(x:) & (A.x: 5)'), ('core.md
+   predref       (library at 9518f758e, 0.3 s) last line: predref_model: 8 checks, 3 failed (SCAN, MARKS, DOC)
+      DOC declared: documents moved: lines this model formats were re-worded or retired by later folds and fixes (each missing line is in the FAIL text); not an engine answer
+         its FAIL line: FAIL DOC: 14 lines; missing: [('core/patterns/alternation', 'WHOLE `25` HOLDS (l = `2`), `7` FAILS / SEARCHED `25` `25`@0 (l = `2`) / FIND-ALL `25 13` '), ('core/patterns/atomic', 'WHOLE `25` FAILS, `13` HOLDS / SEARCHED `25` FAILS / FIND-A
+      MARKS declared: documents moved: the texts it looks for where its fold landed were re-worded or moved by later folds (each missing mark in the FAIL text)
+         its FAIL line: FAIL MARKS: label-only group under construction yes; parked piece gone yes; was: line on the new entry yes; call-prefix open NO; no statement says read flat yes; flat-read-outside statement yes; bodies label-only yes; no provided body calle
+      SCAN declared: documents moved: spans added by later folds read labels its scanner (older than label-doors) classes as not on LEFT
+         its FAIL line: FAIL SCAN: 381 program spans checked; 53 distinct spans still read a label bare, all on LEFT (? 24, F 16, Q 3, R 7, W 3); not on LEFT: [('core.md', '/(?<:${l}>\\d)/ & (l: <5)'), ('core.md', '<(10 - $b)'), ('core.md', 'A(x:) & (A.x: 5)'), ('
+   predbound     (library at 1c52080a4, 1.5 s) last line: predbound_model: 21 checks, 2 failed (MARKS, DOC)
+      DOC declared: documents moved: lines this model formats were re-worded or retired by later folds and fixes (each missing line is in the FAIL text); not an engine answer
+         its FAIL line: DOC       FAIL 25 lines; missing: [('zero-binding', '(b) sealed, its own `0`: WHOLE `7x` FAILS, `77x` FAILS / SEARCHED `a7x` FAILS / FIND-ALL `7x 12x 8x` [] (the same program)'), ('metadata', 'WHOLE `Tue` HOLDS, `Mon` FAILS / SEARCHED `Mon 
+      MARKS declared: documents moved: the texts it looks for where its fold landed were re-worded or moved by later folds (each missing mark in the FAIL text)
+         its FAIL line: MARKS     FAIL ['zero-binding open', 'label-variables u-c']
+   predfix77     (library at 1c768eb40, 1.1 s) last line: predfix77_model: 20 checks, 2 failed (MARKS, DOC)
+      DOC declared: documents moved: lines this model formats were re-worded or retired by later folds and fixes (each missing line is in the FAIL text); not an engine answer
+         its FAIL line: DOC       FAIL 37 lines (7 in the report); missing: [('nested-scope', 'Example 1: WHOLE `42xx` HOLDS, `100xx` FAILS, `042xx` FAILS / SEARCHED `x100xx 42xx` `0xx`@3 / FIND-ALL `100xx 42xx 7xx 300xx` [`0xx`@2, `42xx`@6, `7xx`@11, `0xx`@17] (`
+      MARKS declared: documents moved: the texts it looks for where its fold landed were re-worded or moved by later folds (each missing mark in the FAIL text)
+         its FAIL line: MARKS     FAIL bound-condition readers [('core/conditions/pass-start-read', True), ('core/values/computed-labels', True), ('core/labels/labels-vs-captures/array-vs-passes', False), ('lib/counting/count', True), ('lib/modifiers/length', True
+   predarr       (library at 5133528c6, 2.6 s) last line: predarr_model: 17 checks, 1 failed (DOC)
+      DOC declared: documents moved: lines this model formats were re-worded or retired by later folds and fixes (each missing line is in the FAIL text); not an engine answer
+         its FAIL line: DOC       FAIL 28 lines (4 in the report); missing: [('array-vs-passes', 'Same item, on the item: WHOLE `5:3,` HOLDS, `5:1,2:3,` FAILS, `5,2:3,` FAILS, `2:3,5,` FAILS / SEARCHED `x5,2:3,` FAILS / FIND-ALL `5:3, 5,2:3, 2:3,5, 5:1,2:3,` [`5:3
+   predscope     (library at 6d2dd2a0e, 0.6 s) last line: predscope_model: 20 checks, 2 failed (CLOSEDB, DOC)
+      CLOSEDB declared: documents moved: it reads B's printed line from the documents, re-ruled since (closing-own-label, nested-scope); its closed variant is its own engine's
+         its FAIL line: CLOSEDB  FAIL composed (the documents): WHOLE `73` HOLDS, `37` FAILS / SEARCHED `37 73` `73`@3 / FIND-ALL `73 37 51` [`73`@0, `51`@6] (`A SEQ B`, A := `/(?<c>\d)/`, B := `/${(c: >= 5)}(?<c>\d)/`) | closed: WHOLE `73` FAILS, `37` FAILS / SEA
+      DOC declared: documents moved: lines this model formats were re-worded or retired by later folds and fixes (each missing line is in the FAIL text); not an engine answer
+         its FAIL line: DOC      FAIL 11 lines; missing: ['flat-read-outside', 'flat-read-outside', 'nested-scope', 'nested-scope', 'nested-scope', 'bare-condition']
+PASS SUCCESSOR: 15 earlier models re-run (64 s in all), each red against its declared FAIL line verbatim (50 declared): every red declared, its text unchanged; no traceback
+== QUOTES: the owner's sentences, each PINNED to the piece (or details entry) that quotes it, and in the record at the pinned start commit; the rulings' titles cited whole
+PASS QUOTES: 18 quoted sentences, each in the record at 172930848 AND in its own piece, missing: none; 4 record titles cited whole as a `rulings:` item's record, not a title or not cited: none
+== DOC: every line this model formats occurs verbatim in the piece its tag names
+PASS DOC: 58 lines, each in its own piece; missing: 0
+predfold1124_model: 20 checks, 0 failed
