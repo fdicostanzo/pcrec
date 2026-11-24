@@ -692,6 +692,7 @@ CASES = [
     ("S3012's row to g2v (a MODE of its runner, not it)", lambda c: suites(c, "S3012", "g2v"), 1, ["S3012", "TWIN DETECTOR MOVED", "g2v"], None, None),
     ("S1221's row with no SAB_SUITES", lambda c: suites(c, "S1221", ""), 1, ["S1221", "TWIN DETECTOR MOVED", "none"], None, None),
     ("run_finder.sh runs run_proof.sh in a mode (the closure)", lambda c: c.sub("tests/memfn/run_finder.sh", 'bash "$ROOT/tests/memfn/run_proof.sh" >', 'bash "$ROOT/tests/memfn/run_proof.sh" --reach >'), 1, ["S1221", "TWIN DETECTOR MOVED", PROOF], None, None),
+    ("a non-arm block (scores no arm) running the runner", lambda c: (c.sub(MATRIX, "\n            g2pres)\n", '\n            zzfake)\n                bash "$tree/tests/memfn/run_proof.sh" > "$work/zz.log" 2>&1\n                ;;\n            g2pres)\n'), suites(c, "S1221", "zzfake")), 1, ["S1221", "TWIN DETECTOR MOVED", "zzfake"], None, None),
     ("the arm table gone", lambda c: os.remove(os.path.join(c.t, MATRIX)), 1, ["ARM TABLE UNREADABLE", "MISSING"], None, None),
     ("the arm table yields no arm", lambda c: c.wr(MATRIX, "#!/usr/bin/env bash\n:\n"), 1, ["ARM TABLE UNREADABLE", "NO ARM READ"], None, None),
     ("blanket PLANT_TWINS=\"$PLANTS\" (pres)", lambda c: c.wr(PRES, re.sub(r'^PLANT_TWINS="[^"]*"$', 'PLANT_TWINS="$PLANTS"', c.rd(PRES), count=1, flags=re.M)), 1, ["TWINS NOT EXPLICIT", PRES, "0 literal"], None, None),
