@@ -28,15 +28,15 @@ sabdir = os.path.join(root, "tests/mech/sabotages")
 
 def read_row(path):
     """One mech row's SAB_* values, asked of bash (the shell that will run them):
-    (None, [FILE, BEFORE, COUNT, FILE2, BEFORE2, COUNT2, AFTER, AFTER2, '']) or (why, None).
-    The mech half and the plant pass's twin check both read rows through this."""
+    (None, [FILE, BEFORE, COUNT, FILE2, BEFORE2, COUNT2, AFTER, AFTER2, SUITES, '']) or
+    (why, None). The mech half and the plant pass's twin check both read rows through this."""
     out = subprocess.run(
         ["bash", "-c",
          'set -a; SAB_ID=; SAB_FILE=; SAB_BEFORE=; SAB_AFTER=; SAB_COUNT=; '
-         'SAB_FILE2=; SAB_BEFORE2=; SAB_AFTER2=; SAB_COUNT2=; . "%s"; '
-         'printf "%%s\\x00%%s\\x00%%s\\x00%%s\\x00%%s\\x00%%s\\x00%%s\\x00%%s\\x00" '
+         'SAB_FILE2=; SAB_BEFORE2=; SAB_AFTER2=; SAB_COUNT2=; SAB_SUITES=; . "%s"; '
+         'printf "%%s\\x00%%s\\x00%%s\\x00%%s\\x00%%s\\x00%%s\\x00%%s\\x00%%s\\x00%%s\\x00" '
          '"$SAB_FILE" "$SAB_BEFORE" "${SAB_COUNT:-1}" '
-         '"$SAB_FILE2" "$SAB_BEFORE2" "${SAB_COUNT2:-1}" "$SAB_AFTER" "$SAB_AFTER2"' % path],
+         '"$SAB_FILE2" "$SAB_BEFORE2" "${SAB_COUNT2:-1}" "$SAB_AFTER" "$SAB_AFTER2" "$SAB_SUITES"' % path],
         capture_output=True, text=True)
     if out.returncode != 0 or out.stderr.strip():
         why = (out.stderr.strip().splitlines() or ["exit %d" % out.returncode])[-1]
@@ -186,14 +186,27 @@ def mech_pass():
 #               the runner's `--plant-check dump`, plants.py's decoder) equal to the
 #               row's SAB_FILE/BEFORE/AFTER (and site 2) once C comments (the
 #               row's `/* SABOTAGE Sxxxx */` marker among them), `#` comments in a
-#               .py target, and whitespace runs are normalised.
+#               .py target, and whitespace runs are normalised. A twin is the same plant
+#               with the same DETECTOR too (lane s3012fix, S3012: its row moved to arm g2win
+#               while the runner copy stayed in run_g2_pres.sh, GREEN for 11 days): the
+#               twin's runner must be run, in its DEFAULT mode, by an arm among its row's
+#               SAB_SUITES -- else TWIN DETECTOR MOVED. Which arm runs which runner is READ
+#               from run_sabotage_matrix.sh's arm table (each `NAME)` block that scores an
+#               arm, its `bash "$tree/X"` calls with no argument), closed over the scripts
+#               those run (`bash "$ROOT/X"`, no argument: memfnfinder -> run_finder.sh ->
+#               run_proof.sh); an arm passing a mode (g2v: run_g2_win.sh --v) runs another
+#               detector and does not count. A table that yields no arm is UNREADABLE.
+#   explicit    PLANT_TWINS is ONE literal assignment of ids (`PLANT_TWINS="S1 S2"`), and
+#               the dump's declared twins are exactly its ids: `"$PLANTS"` (S3012's
+#               declaration: every new plant a twin unasked) or any other spelling is
+#               TWINS NOT EXPLICIT.
 #
 # The runners run CONCURRENTLY, each in its own session, under ONE shared deadline
 # (r94 PAR-2/PAR-3): on the deadline the whole process group is killed and the
 # pipes read with a bound, so a grandchild holding them cannot hang the pass.
-PLANT_PINS = {   # exact plant count per runner (lane plantfix2, 2026-11-24)
-    "memfn/tests/run_g2_win.sh": 38,
-    "memfn/tests/run_g2_pres.sh": 35,
+PLANT_PINS = {   # exact plant count per runner (lane plantfix2, 2026-11-24; S3012 pres -> win, lane s3012fix)
+    "memfn/tests/run_g2_win.sh": 39,
+    "memfn/tests/run_g2_pres.sh": 34,
     "tests/memfn/run_proof.sh": 6,
     "tests/memfn/run_wreply.sh": 2,
 }
@@ -295,8 +308,66 @@ def norm(text, path):
     return " ".join(text.split())
 
 
-def twin_check(rel, dump, p_bad):
-    """GF-1 over one runner's dump rows: (ids, twins compared). Appends findings to p_bad."""
+MATRIX = "tests/mech/run_sabotage_matrix.sh"
+ARM_BLOCK = re.compile(r"^ {12}([A-Za-z0-9_|-]+)\)[ \t]*\n(.*?)^ {16};;[ \t]*$", re.M | re.S)
+# a DEFAULT-mode call: the quoted script, then (past a continuation) a redirect or the line's end
+DEFAULT_CALL = r'^[^#\n]*\bbash "\$%s/([^"]+)"[ \t]*(?:\\\n[ \t]*)?(?:[<>]|2>|$)'
+
+
+def arm_runners():
+    """(why, {script rel: {arm}}): every matrix arm and the scripts it runs in DEFAULT mode,
+    closed over the scripts those run. why is None, or the reason the table is unreadable."""
+    mp = os.path.join(root, MATRIX)
+    if not os.path.isfile(mp):
+        return "%s MISSING" % MATRIX, {}
+    runs = {}
+    narms = 0
+    for m in ARM_BLOCK.finditer(open(mp, errors="replace").read()):
+        if "score_arm " not in m.group(2):
+            continue
+        narms += 1
+        todo = [(c, set()) for c in re.findall(DEFAULT_CALL % "tree", m.group(2), re.M)]
+        while todo:
+            rel, seen = todo.pop()
+            rel = os.path.normpath(rel)
+            if rel in seen:
+                continue
+            for arm in m.group(1).split("|"):
+                runs.setdefault(rel, set()).add(arm)
+            fp = os.path.join(root, rel)
+            if os.path.isfile(fp):
+                todo += [(c, seen | {rel}) for c in
+                         re.findall(DEFAULT_CALL % "ROOT", open(fp, errors="replace").read(), re.M)]
+    if not narms:
+        return "%s: NO ARM READ (no `NAME)` block that scores an arm)" % MATRIX, {}
+    return None, runs
+
+
+TWINS_ASSIGN = re.compile(r"^[ \t]*(?:export[ \t]+|declare[^\n=]*[ \t])?PLANT_TWINS\+?=", re.M)
+TWINS_LITERAL = re.compile(r'^PLANT_TWINS="([^"$`\\]*)"[ \t]*(?:#[^\n]*)?$', re.M)
+
+
+def explicit_twins(rel, dump, p_bad):
+    """(lane s3012fix) PLANT_TWINS one literal id list, and the dump's twins exactly it."""
+    src = open(os.path.join(root, rel), errors="replace").read()
+    n = len(TWINS_ASSIGN.findall(src))
+    lit = TWINS_LITERAL.findall(src)
+    ids = lit[0].split() if len(lit) == 1 else []
+    if n != 1 or len(lit) != 1 or not all(re.fullmatch(r"S[0-9]+", i) for i in ids):
+        p_bad.append((rel, ("-", "-", "TWINS NOT EXPLICIT", "0",
+                            "PLANT_TWINS must be ONE literal id list (`PLANT_TWINS=\"S1 S2\"`): "
+                            "%d assignment(s), %d literal" % (n, len(lit)))))
+        return
+    declared = {r[0] for r in dump if r[2] == "twin"}
+    if declared != set(ids):
+        p_bad.append((rel, ("-", "-", "TWINS NOT EXPLICIT", "0",
+                            "the dump declares %d twin(s), the PLANT_TWINS literal %d (the mode "
+                            "does not pass the literal)" % (len(declared), len(set(ids))))))
+
+
+def twin_check(rel, dump, p_bad, runs):
+    """GF-1 over one runner's dump rows: (ids, twins compared). Appends findings to p_bad.
+    runs: arm_runners()'s map, the arms that run each script in its default mode."""
     plants, twins, notlisted = {}, set(), []
     for r in dump:
         if r[2] == "twin":
@@ -335,6 +406,13 @@ def twin_check(rel, dump, p_bad):
         if parts[3].strip():
             sites.append((parts[3].strip(), parts[4], parts[7]))
         ncmp += 1
+        suites = parts[8].split() if len(parts) > 8 else []
+        mine = runs.get(rel, set())
+        if not set(suites) & mine:
+            p_bad.append((rel, (pid, "-", "TWIN DETECTOR MOVED", "0",
+                                "%s's SAB_SUITES (%s) run no arm that runs this runner (%s)"
+                                % (mech[0], " ".join(suites) or "none",
+                                   " ".join(sorted(mine)) or "no arm does"))))
         if len(sites) != len(rows):
             p_bad.append((rel, (pid, "-", "TWIN DRIFT", "0", "%d edits, its row %d sites" % (len(rows), len(sites)))))
             continue
@@ -356,6 +434,9 @@ def twin_check(rel, dump, p_bad):
 def plant_pass():
     runners, p_unreadable = discover()
     p_bad = []
+    why, runs = arm_runners()
+    if why:
+        p_unreadable.append((MATRIX, "ARM TABLE UNREADABLE: " + why))
     nplants = nedits = ntwins = 0
     counts, seen = {}, {}
     cmds = []
@@ -409,7 +490,8 @@ def plant_pass():
             check_ids = ids
         if bad_here:
             continue
-        dump_ids, ncmp = twin_check(rel, dump, p_bad)
+        explicit_twins(rel, dump, p_bad)
+        dump_ids, ncmp = twin_check(rel, dump, p_bad, runs)
         if dump_ids != check_ids:
             p_unreadable.append((rel, "--plant-check check and dump name different plants"))
             continue
@@ -449,7 +531,7 @@ def plant_pass():
             print("  %-30s %-6s edit %-4s %-18s count %s  %s" % (rel, pid, edit, st, c, path))
     p_fail = bool(p_unreadable or p_bad or pins)
     if not p_fail:
-        print("all runner plants apply, every shared id is an equal declared twin")
+        print("all runner plants apply, every shared id is an equal declared twin of a row whose suites run its runner")
     return p_fail
 
 
@@ -464,7 +546,7 @@ def plant_pass():
 # dialect rules and the apply loop's refusals, r94 CA-6).
 SELFTEST_TREE = ("scripts/m6read_check_sab_anchors.py", "tests/lib", "tests/memfn", "memfn/src",
                  "memfn/tests", "docs/design/memfn/span_pick", "src/gen/emit_dfa.c",
-                 "tests/mech/sabotages") + tuple(sorted(NOT_RUNNERS))
+                 "tests/mech/sabotages", MATRIX) + tuple(sorted(NOT_RUNNERS))
 # of tests/mech/sabotages, only the rows whose id a pinned runner's text names (every
 # twin and collision candidate; the other ~1350 rows are the mech half's, not read here)
 WIN, PRES, PROOF, WREPLY = ("memfn/tests/run_g2_win.sh", "memfn/tests/run_g2_pres.sh",
@@ -527,9 +609,26 @@ def plants_line(c, rel):
     return re.search(r'^PLANTS="([^"]*)"', c.rd(rel), re.M).group(1)
 
 
+def s3012_to_pres(c):
+    """S3012 put back where it was before lane s3012fix: out of the window runner (its case,
+    PLANTS, PLANT_TWINS), into the presence runner's, its edit unchanged (the GF-1 hole)"""
+    w = c.rd(WIN)
+    m = re.search(r"\n    S3012\) #.*?\n(        echo [^\n]*;;)\n", w, re.S)
+    c.wr(WIN, w[:m.start() + 1] + w[m.end():])
+    c.sub(WIN, " S3118 S3012\"", " S3118\"")
+    c.sub(WIN, 'PLANT_TWINS="S3012"', 'PLANT_TWINS=""')
+    c.case_line(PRES, "    S3012) " + m.group(1).strip())
+    c.sub(PRES, 'PLANTS="S3007 ', 'PLANTS="S3012 S3007 ')
+    c.sub(PRES, 'PLANT_TWINS="S3007 ', 'PLANT_TWINS="S3012 S3007 ')
+
+
+def suites(c, pid, val):
+    c.wr(c.row(pid), c.rd(c.row(pid)) + '\nSAB_SUITES="%s"\n' % val)
+
+
 # (name, fault, rc, words that must ALL be printed, wall bound or None, PLANT_CHECK_TIMEOUT)
 CASES = [
-    ("clean copy", lambda c: None, 0, ["all runner plants apply", "runner plants checked: 81 "], None, None),
+    ("clean copy", lambda c: None, 0, ["all runner plants apply", "runner plants checked: 81 ", "runner plant twins checked: 39 "], None, None),
     ("stale FROM (win, its plant_spec)", lambda c: c.sub(WIN, "echo 'ofsskip.c@@    const int m[2] = { a, b };", "echo 'ofsskip.c@@    const int m[2] = { a, bXYZZY };"), 1, ["STALE", WIN], None, None),
     ("stale FROM (pres edit 2 of 2, the source moved)", lambda c: c.sub("memfn/src/compose.c", 'return kit_fail(art, "mf_define: the presence decision refuses this site: %s", pw);', 'return kit_fail(art, "mf_define: THE presence decision refuses this site: %s", pw);'), 1, ["S3064", "edit 2/2", "STALE"], None, None),
     ("stale @c0/ FROM (census0.py moved)", lambda c: c.sub("docs/design/memfn/span_pick/census0.py", 'off, kind, val = t.split(":", 2)', 'off, kind, val = t.split(":", 2)  # moved'), 1, ["STALE", "census0.py"], None, None),
@@ -584,6 +683,18 @@ CASES = [
     ("the S1540 collision restored (GF-2)", lambda c: (c.sub(WIN, "    S1544) # code review r2", "    S1540) # code review r2"), c.sub(WIN, " S1544 S1541 ", " S1540 S1541 ")), 1, ["S1540", "ID COLLISION"], None, None),
     ("declared twin without a row", lambda c: c.sub(PROOF, 'PLANT_TWINS="S1221 ', 'PLANT_TWINS="S1408 S1221 '), 1, ["S1408", "TWIN WITHOUT ROW"], None, None),
     ("declared twin not in PLANTS", lambda c: c.sub(PROOF, 'PLANT_TWINS="S1221 ', 'PLANT_TWINS="S9990 S1221 '), 1, ["S9990", "TWIN NOT IN PLANTS"], None, None),
+    # the DETECTOR half of a twin and the EXPLICIT declaration (lane s3012fix; S3012's GF-1 hole)
+    ("S3012 restored to pres (its row's arm is g2win)", s3012_to_pres, 1, ["S3012", "TWIN DETECTOR MOVED", PRES], None, None),
+    ("S3044's row re-aimed to g2win, the runner not", lambda c: suites(c, "S3044", "g2win"), 1, ["S3044", "TWIN DETECTOR MOVED", "g2win"], None, None),
+    ("S3044's row to g2pres-asan (the same runner: green)", lambda c: suites(c, "S3044", "g2pres-asan"), 0, ["all runner plants apply"], None, None),
+    ("S3012's row to g2v (a MODE of its runner, not it)", lambda c: suites(c, "S3012", "g2v"), 1, ["S3012", "TWIN DETECTOR MOVED", "g2v"], None, None),
+    ("S1221's row with no SAB_SUITES", lambda c: suites(c, "S1221", ""), 1, ["S1221", "TWIN DETECTOR MOVED", "none"], None, None),
+    ("run_finder.sh runs run_proof.sh in a mode (the closure)", lambda c: c.sub("tests/memfn/run_finder.sh", 'bash "$ROOT/tests/memfn/run_proof.sh" >', 'bash "$ROOT/tests/memfn/run_proof.sh" --reach >'), 1, ["S1221", "TWIN DETECTOR MOVED", PROOF], None, None),
+    ("the arm table gone", lambda c: os.remove(os.path.join(c.t, MATRIX)), 1, ["ARM TABLE UNREADABLE", "MISSING"], None, None),
+    ("the arm table yields no arm", lambda c: c.wr(MATRIX, "#!/usr/bin/env bash\n:\n"), 1, ["ARM TABLE UNREADABLE", "NO ARM READ"], None, None),
+    ("blanket PLANT_TWINS=\"$PLANTS\" (pres)", lambda c: c.wr(PRES, re.sub(r'^PLANT_TWINS="[^"]*"$', 'PLANT_TWINS="$PLANTS"', c.rd(PRES), count=1, flags=re.M)), 1, ["TWINS NOT EXPLICIT", PRES, "0 literal"], None, None),
+    ("a second, blanket PLANT_TWINS after the literal (pres)", lambda c: c.sub(PRES, "\n# --plant-check [check|dump]", '\nPLANT_TWINS="$PLANTS"\n# --plant-check [check|dump]'), 1, ["TWINS NOT EXPLICIT", PRES, "2 assignment"], None, None),
+    ("the mode passes $PLANTS, not the literal (win)", lambda c: c.sub(WIN, '--twins "$PLANT_TWINS"', '--twins "$PLANTS"'), 1, ["TWINS NOT EXPLICIT", WIN, "does not pass"], None, None),
     ("one id in two runners", lambda c: (c.case_line(WREPLY, "        S1221) echo 'src/gen/emit_dfa.c@@x@@y' ;;"), c.sub(WREPLY, 'PLANTS="S1413 S1414"', 'PLANTS="S1413 S1414 S1221"')), 1, ["S1221", "DUPLICATE ID"], None, None),
 ]
 

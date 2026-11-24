@@ -193,9 +193,11 @@ FLOOR_D3="pop:502 unspelled:750 everypos:9"
 # THE PLANTS: id, then one line FILE@@FROM@@TO per edit (FILE under
 # memfn/src; FROM replaced by TO, `\n` a newline, `\\n` the C escape, `\&`
 # an ampersand), then the detector. Ids from the top of the mech free range
-# (S3005/S3006 the highest at K38-1): S3007-S3009, then S3010-S3012 (review
+# (S3005/S3006 the highest at K38-1): S3007-S3009, then S3010-S3011 (review
 # 2026-11-10 r2 k382a's fixes, lane k382afix). The mech rows
-# tests/mech/sabotages/S3007-S3012 plant the same text.
+# tests/mech/sabotages/S3007-S3011 plant the same text. S3012 (FAM-5, the in-run
+# stop's filter) MOVED to memfn/tests/run_g2_win.sh (lane s3012fix, 2026-11-24): since
+# [RUN-POS-SET] stage 3 this family never calls a_mass_choose, so it could not red it.
 plant_spec() {
     case "$1" in
     S3007) # A: the run part drops one compare of its extent (the words form never
@@ -220,10 +222,6 @@ plant_spec() {
         # more than one bit loses its lowest): a near-miss on that bit is
         # yielded as an occurrence; EXTENT's per-bit near-misses red
         echo 'runcmp.c@@            t[i] = skip ? 0x00 : r->t[at + i];@@            t[i] = skip ? 0x00 : r->t[at + i];\n            if (k[i] != 0xFF \&\& (k[i] \& (k[i] - 1))) { k[i] \&= (uint8_t)(k[i] - 1); t[i] \&= k[i]; }' ;;
-    S3012) # FAM-5: a_mass_choose's in-run filter deleted (the in-run stop no longer
-        # the run decision's): the lever pass's layouts are refused by
-        # mf_define (decider_census D cannot see it: it counts the call)
-        echo 'window.c@@        if (r \&\& p->stretch \&\& o >= r->start \&\& o < r->start + r->len \&\& o != rs)\n            continue;                   /* inside R: the run decision'"'"'s one */@@        (void)o; (void)rs;' ;;
     # R-38 K38-2 (lane k382; ids from the lane's range S3040-S3069): the
     # §3.5 witnesses' plants, and C2's decision plant (§2.4)
     S3060) # W-L1: the CANDIDATE floor is the origin `lo`, not max(0, lo + omin)
@@ -355,7 +353,6 @@ plant_expect() {
     case "$1" in
     S3007|S3011|S3064) echo ': EXTENT: ' ;;
     S3009) echo ': LEVER: ' ;;
-    S3012) echo 'mf_define' ;;
     S3060) echo ': W-L1: ;: W-L1b: ' ;;
     S3061) # F16: W-K1b (scan k 0 < N - origin) moves its ANSWER: on the generic
         # pass in layout U, on the precheck pass in layout L (in U the wrapped
@@ -395,7 +392,7 @@ plant_expect() {
     *) echo '' ;;
     esac
 }
-PLANTS="S3007 S3008 S3009 S3010 S3011 S3012 S3043 S3044 S3045 S3046 S3047 S3060 S3061 S3062 S3063 S3064 S3098 S3099 S3100 S3101 S3102 S3103 S3106 S3107 S3108 S3109 S3110 S3111 S3112 S3113 S3114 S3119 S3125 S3126 S3127"
+PLANTS="S3007 S3008 S3009 S3010 S3011 S3043 S3044 S3045 S3046 S3047 S3060 S3061 S3062 S3063 S3064 S3098 S3099 S3100 S3101 S3102 S3103 S3106 S3107 S3108 S3109 S3110 S3111 S3112 S3113 S3114 S3119 S3125 S3126 S3127"
 # plant_edits ID: EDITS=(the plant's edits, one per plant_spec output line, in order),
 # or 1 if no plant ID. THE ONE APPLIER (tests/lib/plants.py, dialect `pres`: `\\n` the
 # C escape, `@c0/X` the census copy) applies them for --plant/--plants and counts them
@@ -410,7 +407,10 @@ C0_SRC="$ROOT/docs/design/memfn/span_pick"
 C0_FILES="census0.py"
 # PLANT_TWINS: the PLANTS ids that are the same plant as the tests/mech/sabotages row of
 # that id; any other shared id is a collision. The plant pass holds both (review r94 GF-1).
-PLANT_TWINS="$PLANTS"
+# An EXPLICIT literal id list, never an expansion (lane s3012fix: `"$PLANTS"` declared every
+# new plant a twin unasked, and kept S3012 a "twin" after its row's detector left this
+# runner); the pass also holds this runner among the arms each twin's SAB_SUITES run.
+PLANT_TWINS="S3007 S3008 S3009 S3010 S3011 S3043 S3044 S3045 S3046 S3047 S3060 S3061 S3062 S3063 S3064 S3098 S3099 S3100 S3101 S3102 S3103 S3106 S3107 S3108 S3109 S3110 S3111 S3112 S3113 S3114 S3119 S3125 S3126 S3127"
 # --plant-check [check|dump]: every plant in PLANTS run through the applier's loop over an
 # in-memory copy of today's memfn/src and the C0 copy (check), or decoded (dump), never
 # applied or built, no work directory (scripts/m6read_check_sab_anchors.py's plant pass)
@@ -621,7 +621,7 @@ if [ "${1:-}" = "--reach" ]; then
         > "$WORK/reach.g.log" 2>&1 || { echo "the generator failed (generic pass)"; exit 1; }
     m=$(grep -cE '_c[0-9]+ = \(g2p[0-9]+_mf[0-9]+_lo >= [0-9]+ \?' "$WORK/reach.g/g2p_sites.c")
     [ "${m:-0}" -ge 50 ] && echo "REACH-G2P-GENERIC-FLOOR n=$m"
-    # C (and S3012's in-run stop): the lever witnesses rendered in the run-tie-left pass
+    # C: the lever witnesses rendered in the run-tie-left pass
     m=$(grep -oE 'G2PGEN generic.lever sites=[0-9]+ rendered=[0-9]+' "$WORK/reach.1.log" | grep -oE '[0-9]+$')
     [ "${m:-0}" -ge 300 ] && grep -q '^g2_pres_gen failures: 0' "$WORK/reach.1.log" \
         && echo "REACH-G2P-LEVER-PASS rendered=$m"
