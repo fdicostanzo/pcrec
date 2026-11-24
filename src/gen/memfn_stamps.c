@@ -340,7 +340,7 @@ static void target_headers_render(Ctx *cx)
     size_t at = (size_t)(strstr(c->p, PCREC_TARGET_HEADERS_MARK) - c->p);
     const char *after = c->p + at + strlen(PCREC_TARGET_HEADERS_MARK);
     /* pass 1: the held lines, in text order */
-    StrBuf lines = pcrec_sb_scratch(&cx->arena);
+    StrBuf lines = pcrec_sb_scratch(&cx->arena);   /* the held lines */
     size_t nheld = 0;
     for (const char *h = strstr(after, held); h; h = strstr(h + 1, held)) {
         const char *line = h + strlen(held), *eol = strchr(line, '\n');
