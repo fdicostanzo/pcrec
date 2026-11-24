@@ -75,7 +75,7 @@ field. That journal is the only place a verdict reaches you from:
    the first new line for OWNER: one notification. Then `scripts/monread
    OWNER`, act, re-arm.
 3. A RED: launch a triage lane before reading the log yourself (§3 of the
-   skill, delegaudit rule 2). A PROBLEM: decide; the monitor never kills,
+   skill, delegaudit rule 2). Every triage lane, still no-fix, also reports the defect CLASS, the house rule or mechanism it breaks (or "none"), a sibling-site count with its grep, and a CLASS-LEVEL fix shape (D203; BRIEF_TEMPLATE.md). A PROBLEM: decide; the monitor never kills,
    cancels or retries.
 4. NEVER write a private watcher (a tail of queue.log, a done/-dir poll, a
    lock-label match) and NEVER run `scripts/queuewatch` by hand: queuemon owns
