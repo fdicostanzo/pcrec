@@ -89,6 +89,7 @@ For a light arch round (r91's ruling: ARV-9, ARV-10, ARV-12 and the owner questi
 - Rulings file: `docs/dev/lanes/archrev2_rulings.md`, re-read before each commit and before this report. Last entry
   applied: R-1 (2026-11-24, main's ruling of RUL-13: Q36 not superseded; ARV-14 on its own trigger).
 - Runs: greps and reads only, at T, on 2026-11-24. The scratch helpers (edges.sh, xcut.py, anchors.tsv) live under
-  $PCREC_TMPDIR/scratch/archrev2/ and are reproduced inline in note §11 (C-9, C-39). OWED: none.
+  $PCREC_TMPDIR/scratch/archrev2/ and are reproduced inline in note §11 (C-9, C-39).
+OWED: none
 - Not done, by brief: no edit to architecture.md's register (its rows are PROPOSED in note §6), no edit to the r91
   review files, nothing under src/ or memfn/src.
