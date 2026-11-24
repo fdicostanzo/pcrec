@@ -158,6 +158,7 @@ first-unit identity when the note lists remodels; 3-5 critics. The RULING lens i
 note and its requirements read-only into `R/subject/`, give the site-map critic the requirements first, and
 deny the architect lane's report (`docs/dev/lanes/<lane>*`). Arch mode states section 5's R/subject copy and findings-file pre-create explicitly, and builds no review worktree [pilot 2026-11-18, r49 C-7, r50 6].
 On a SECTION review (a note reviewing existing sections, not a feature), each suggestion's SIZE and GATE go to the first-unit identity lens ONLY; the other lenses do not re-derive them (r91: ARV-9's ranges were derived by 3 lenses, ARV-12's writers by 3).
+On a RE-CHECK of a section review, a NEW unit's claimed effect also goes to first-unit identity (beside its size and gate); the row-kind checks (state, trigger, register columns) go to ONE lens; every sentence of the note's owner-questions section goes to the ruling lens only [r92 memfn-archrev2: G1, G9, G12c each found twice].
 Arch-mode tree: build the review tree as a `git archive <T>` export under the round dir with the denylisted files removed, and point EVERY lens at it, instead of having each critic `git grep <T>` the repo with its pathspec excludes (r91: 0 leaks, 5 critics in 3-10 min).
 
 Staffing: a "strong" lens gets opus; with both in scope, at least one strong
