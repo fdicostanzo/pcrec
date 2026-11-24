@@ -1,20 +1,28 @@
 #!/usr/bin/env python3
-# binders.py ROOT ASM [RUNNERS_ROOT] : window_split.md rev 2 §7's re-aim table, over an assemble.py
-# tree. For every file-keyed binder whose text lives in a file the unit changes, at T (ROOT):
+# binders.py ROOT ASM [RUNNERS_ROOT] [--compile] : window_split.md rev 2.1 §7's re-aim table, over an
+# assemble.py tree (or, per commit, over the commit's own tree: ASM = ROOT). For every file-keyed
+# binder KEYED to a file of the unit's population (rev 2.1, r98 R3: B's eight edited files PLUS every
+# file the unit creates, read from cut.spec's left-hand sides, so a row a peel re-keys to its new
+# file STAYS in the population at every commit), read at ROOT:
 #   mech   every tests/mech/sabotages row (SAB_FILE/SAB_BEFORE and its second site), its fields
 #          read by SOURCING the row in bash as scripts/m6read_check_sab_anchors.py does;
 #   g2     every runner plant keyed <file>.c@@FROM@@TO in run_g2_win.sh, run_g2_pres.sh,
 #          run_proof.sh (read from RUNNERS_ROOT, default ROOT: pass a checkout of
 #          lane/memfn-plantcheck to count its re-aimed plants), decoded by each runner's dialect;
 #   purity every tests/memfn/purity_rows.tsv row's `old` text;
-#   census every tests/memfn/decider_census.tsv row keyed window.c / presence.c / compose.c
+#   census every tests/memfn/decider_census.tsv row keyed to a population file
 #          (its NAME's definition, found by ents.py);
+#   rows   every tests/memfn/rows_check.py PLANTS edit keyed to a population file (its own
+#          applier, outside tests/lib/plants.py; r98 R15), read by ast, never imported;
 # it prints where the text is found in ASM's memfn/src: `OK file` (found exactly the row's
 # count, in exactly one file: the binder's new key), or STALE (nowhere) / AMBIGUOUS (twice, or
 # in two files). Then, with --compile, the W26 probe: each mech SAB_AFTER and each g2 TO applied
 # to a copy of its NEW file and `gcc-16 -fsyntax-only`-ed there (the kit's flags), PASS/FAIL.
-# Last line per population: `binders: <pop> N rows, K OK, B bad`. Exit 1 iff any bad.
-import os, re, subprocess, sys, tempfile, shutil
+# Last line per population: `binders: <pop> N rows, K OK, B bad, floor F`. Exit 1 iff any bad OR
+# any population below its FLOOR (r98 R3: the population at B, 187/75/49/67/4; a selection that
+# silently drops rows reads red, not `0 bad`). CC comes from the environment ONLY (no box
+# default: gcc-16 on the Mac, gcc on Linux); --compile without CC is an error.
+import ast, os, re, subprocess, sys, tempfile, shutil
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 from ents import entities
 
@@ -22,10 +30,21 @@ args = [a for a in sys.argv[1:] if not a.startswith('--')]
 root, asm = args[0], args[1]
 rroot = args[2] if len(args) > 2 else root
 COMPILE = '--compile' in sys.argv
-CC = os.environ.get('CC', 'gcc-16')
+CC = os.environ.get('CC')
+if COMPILE and not CC: sys.exit('binders: --compile needs CC in the environment (gcc-16 on the Mac)')
 A = os.path.join(asm, 'memfn/src')
-CHANGED = {'window.c', 'presence.c', 'compose.c', 'finder.c', 'ofsskip.c', 'precheck.c',
-           'pffind.c', 'generic.c'}
+HERE = os.path.dirname(os.path.abspath(__file__))
+# THE POPULATION'S KEYS (r98 R3): B's eight files the unit edits, and every file it creates
+B_EDITED = {'window.c', 'presence.c', 'compose.c', 'finder.c', 'ofsskip.c', 'precheck.c',
+            'pffind.c', 'generic.c'}
+BORN = {l.split('<-')[0].strip() for l in open(os.path.join(HERE, 'cut.spec'))
+        if '<-' in l.split('#')[0] and l.split('<-')[0].strip() != '-'}
+CHANGED = B_EDITED | BORN
+# THE FLOORS: each population at B (window_split.md §7, CENSUS at a0742283a / 79388197d);
+# FLOOR_<POP>=N in the environment overrides one (the drill's control), never lowers silently
+FLOORS = {'mech': 187, 'g2': 75, 'purity': 49, 'census': 67, 'rows': 4}
+for k in FLOORS:
+    if os.environ.get('FLOOR_' + k.upper()): FLOORS[k] = int(os.environ['FLOOR_' + k.upper()])
 texts = {f: open(os.path.join(A, f)).read() for f in os.listdir(A) if f.endswith(('.c', '.h'))}
 FAMILY = sorted(f for f in texts if f.startswith(('window', 'kit_pos', 'kit_pick', 'kit_kb'))
                 or f in CHANGED)
@@ -85,7 +104,11 @@ def report(pop, rows):
     ok = sum(1 for r in rows if r[2] in ('OK', 'OK*') and not r[-1].startswith('FAIL'))
     for r in rows: print(pop + '\t' + '\t'.join(str(x) for x in r))
     b = len(rows) - ok; bad_total += b
-    print(f'binders: {pop} {len(rows)} rows, {ok} OK, {b} bad')
+    fl = FLOORS[pop]
+    if len(rows) < fl:
+        bad_total += 1
+        print(f'binders: {pop} POPULATION {len(rows)} BELOW FLOOR {fl} (rows left the selection)')
+    print(f'binders: {pop} {len(rows)} rows, {ok} OK, {b} bad, floor {fl}')
 
 # ---- mech
 rows = []
@@ -121,7 +144,7 @@ for rf, dec in (('memfn/tests/run_g2_win.sh', un_win), ('memfn/tests/run_g2_pres
     for i, l in enumerate(open(os.path.join(rroot, rf)).read().split('\n'), 1):
         m = re.match(r"\s*([A-Za-z0-9_|-]+)\)", l)
         if m: label = m.group(1)
-        m = re.search(r"echo '([A-Za-z0-9_]+\.c)@@(.*)'", l)
+        m = re.search(r"echo '([A-Za-z0-9_]+\.[ch])@@(.*)'", l)
         if not m or m.group(1) not in CHANGED: continue
         spec = m.group(2).replace("'\"'\"'", "'")
         frm, _, to = spec.partition('@@')
@@ -148,7 +171,7 @@ for l in open(os.path.join(root, 'tests/memfn/purity_rows.tsv')):
     c = l.rstrip('\n').split('\t')
     if c[1] == '-': continue          # an UNREACHED row plants nothing
     st, nf = where(c[1].replace('\\n', '\n'), 1, FAMILY)
-    rows.append((c[0], '-', st, nf or '', 'window.c', '-'))
+    rows.append((c[0], '-', st, nf or '', '(family)', '-'))
 report('purity', rows)
 
 # ---- decider census rows (keyed by file and NAME's definition)
@@ -165,9 +188,32 @@ rows = []
 for l in open(os.path.join(root, 'tests/memfn/decider_census.tsv')):
     if l.startswith('#') or not l.strip(): continue
     c = l.rstrip('\n').split('\t')
-    if c[0] not in ('window.c', 'presence.c', 'compose.c'): continue
+    if c[0] not in CHANGED: continue
     hs = sorted(defs.get(c[1].split(':')[0], ()))
     st = 'OK' if len(hs) == 1 else 'STALE' if not hs else 'AMBIGUOUS'
     rows.append((c[1], c[2], st, ','.join(hs), c[0], '-'))
 report('census', rows)
+
+# ---- rows_check.py's own plants (r98 R15), each edit's BEFORE found once; --compile applies the
+# plant's edits together in its new file
+src = open(os.path.join(root, 'tests/memfn/rows_check.py')).read()
+plants = None
+for node in ast.parse(src).body:
+    if isinstance(node, ast.Assign) and any(getattr(t_, 'id', '') == 'PLANTS' for t_ in node.targets):
+        plants = ast.literal_eval(node.value)
+if plants is None: sys.exit('binders: rows_check.py has no PLANTS tuple')
+rows = []
+for pid, _row, f, _det, eds in plants:
+    if f not in CHANGED: continue
+    found = [where(b, 1, orig=f) for b, _a in eds]
+    nfs = {nf for st, nf in found if st.startswith('OK')}
+    pr = '-'
+    if COMPILE and len(nfs) == 1 and all(st.startswith('OK') for st, _ in found):
+        nf = nfs.pop()
+        pr = probe(nf, eds[0][0], eds[0][1], tuple(eds[1:]))
+        nfs = {nf}
+    for i, ((b, a), (st, nf)) in enumerate(zip(eds, found)):
+        if st.startswith('OK') and len({n for s_, n in found}) != 1: st = 'SPLIT'
+        rows.append((pid, 'edit%d' % (i + 1), st, nf or '', f, pr))
+report('rows', rows)
 sys.exit(1 if bad_total else 0)

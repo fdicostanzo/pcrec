@@ -299,6 +299,17 @@ unsigned wf_legacy_stream(wf_frame_row f)
     return f == E_FUNC ? ren_fused[RF_FN].stream : ren_stream[RS_CALLER].k.keys;
 }
 >>>
+@@ window_ren.c  A4 (r98 R26): ren_find's "THE ONE ACCESSOR" comment states the by-index readers beside it
+<<<
+ * none does (the frame has no row for the piece: its caller refuses). */
+static const void *ren_find(
+===
+ * none does (the frame has no row for the piece: its caller refuses).
+ * The stated exceptions beside it (W11, r98 R26): wf_legacy_stream reads ONE
+ * named row by index and wf_arm_pick matches by arm identity, not by key;
+ * neither can go through it and stay byte-identical. */
+static const void *ren_find(
+>>>
 @@ window_ask.c  A4 (wf_frame_of)
 <<<
         fp->stream = wstream_of(ren_fused[RF_FN].stream);
