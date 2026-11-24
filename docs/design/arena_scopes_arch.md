@@ -317,3 +317,10 @@ Handed on, not decided here (the five the brief names first):
   ("deallocated down the stack") a goal equal to freeing everything on a refused compile? LEANING: yes, both. R-3
   already treated peak as binding, and your words name both directions. Records: the owner 2026-11-24; K155's
   status (R-3); plan row [ARENA-SCOPES].
+
+## STATE AT HANDOFF
+
+Lane arenaarch, 2026-11-24. T = 15e37b005 (the lane branch's base). Rulings file `arenaarch_rulings.md`: empty at
+every re-read, so no ruling was applied. Validation: every site-map command was re-run at T; `make -s
+test-plan-lint` passed (0 failed; plan.md not touched); `scripts/check_claudemd_size.sh --staged` passed. Owed:
+none. Next: the manager's `pcrec-critic` ARCHITECTURE round on this note.
