@@ -10048,3 +10048,358 @@ re-spelled with a named label (the lane's run: legal, the two forms agree); the 
 caller passes a name, a private `_x:` if it wants none exported). The JSON sketch is the manager's, under
 construction: that its filter-taking `row` refuses the blank label is a point of the LIBRARY's design, told to
 the owner, not asked as a language question.
+
+### 2026-11-23 OWNER, clarifying on label-doors: a body with two labels on one spot, its own and the user's: `A(l:,A) := [l =[_x = A]] &(_x: 5)`; "Do you agree?"
+tags: core/operators/bindings/label-variables core/labels/export core/labels/export/arguments core/labels/paths core/operators/bindings/call-forms lib/json/members
+
+Asked **label-doors** (the four-line general rule; not answered by these words). HIS WORDS, whole:
+
+"label-doors: I want to clarify, and it relates to json above:
+ A(l:,A) := [l =[_x = A]] &(_x: 5)
+I'm giving two labels. My internal one and a user provided one. If the user one was _ I'd nevertheless be able to
+apply my condition because both labels are visible to me.
+Do you agree?"
+
+Class: a CLARIFYING QUESTION with an example (DISCUSSION; nothing ruled; "relates to json above": the manager's
+note that a body which reads its label parameter refuses the blank label). His example's second parameter has the
+macro's own name (`A`); written `P` below (told to him; a placeholder).
+The manager's answer (told to him): AGREED, and by rules already ruled, no new one:
+- `_x` is written by the BODY's own text, so the body owns it and reads it bare (label-reference; line 1 of the
+  restated rule), whatever the caller passes for `l`.
+- With the user's label unspecified, unspecified-rule (ruled today) reads `[l = [_x = P]]` as the construct with
+  that part not written: `[_x = P]`; the body's test still has its label.
+- RUN (python `re`; the body lowered mechanically by a one-line function, a part label modelled as a named group;
+  output pasted): `A(n:, /\d/)` is `(?P<n>(?P<_x>\d))`: WHOLE `5` HOLDS, `7` FAILS, `55` FAILS / SEARCHED `7 5`
+  `5`@2 / FIND-ALL `5 7 5 3` [`5`@0, `5`@4]; labels the caller can name: n. `A(_:, /\d/)` is `(?P<_x>\d)`: the
+  same answers in every mode; labels the caller can name: none.
+- It is the way out of the JSON point: a `row` that tests its filter on a label of its OWN (`_d`) and places the
+  user's label beside it takes the blank label; reading (c) refuses only a body that reads the USER's label.
+A consequence the manager derives (marked; for the fold to test; told to him in one line): an unspecified label
+on a part is "the part with no label", NOT the blank mark `[_ = B]`. The manager's reading (a) of
+label-parameter-omitted (2026-11-23: "`[l = B]` with `_` is `[_ = B]`") is WITHDRAWN in favour of the ruled
+unspecified-rule; they differ for the shorthand of binding-as-label: with no label made, the caller's `P.d` is
+legal; with the blank mark made, it is not.
+Main's reply the same hour: P-26 merged; review number r88 reserved for the next fold (predfold1123b).
+
+### 2026-11-23 OWNER, on label-doors: "the only piece left is would the nesting order of the labels matter? By my reading no"
+tags: core/labels/paths core/labels/export core/labels/export/arguments core/principles/label-names-spot core/operators/bindings/label-variables
+
+HIS WORDS, whole: "label-doors: the only piece left is would the nesting order of the labels matter? By my
+reading no"
+
+Class: a QUESTION with his own READING ("By my reading no"); label-doors is otherwise accepted by implication
+("the only piece left"), NOT yet ruled: the reading taken, told to him, is that one yes to the rule with this
+piece added closes it.
+The manager's answer (told to him; marked): agreed for the VALUES in every case (both labels are on the same
+stretch). For PATHS it needs one sentence the documents do not have. Today a path goes "each step passed by the
+previous one" (core/labels/export statement 3), so with `[n = [_x = P]]` the caller's `n.d` would have to pass the
+body's private `_x`, which exports nothing, while with `[_x = [n = P]]` it would not: the order WOULD matter. His
+reading follows from his principle that a label names a SPOT (label-names-spot) and from "there may be other
+doors": labels stacked on one spot, nothing between them, are equal names of that spot; each is its own door to
+what the spot holds; one of them being private or blank closes only itself.
+RUN (python `re`, lowered mechanically, a part label modelled as a named group; P := `/(?<d>\d)\d/`; output
+pasted): `[n = [_x = P]] & (n.d: <5)` is `(?P<n>(?P<_x>(?P<d>\d)\d))`: WHOLE `37` HOLDS, `73` FAILS, `3` FAILS /
+SEARCHED `73 37` `37`@3 / FIND-ALL `37 73 14` [`37`@0, `14`@6]; `[_x = [n = P]] & (n.d: <5)` is
+`(?P<_x>(?P<n>(?P<d>\d)\d))`: the same answers in every mode; n and `_x` equal on every match in both.
+Put to him as the ruling label-doors, five lines (the four, and "labels stacked on one spot are equal names of
+it; their order does not matter").
+
+### 2026-11-23 OWNER RULING — label-doors: "agree. Yes" (the general rule of labels, five lines)
+tags: core/labels core/labels/paths core/labels/export core/labels/export/arguments core/labels/paths/binding-prefix core/labels/paths/label-reference core/labels/paths/closed-argument core/labels/paths/argument-default core/labels/paths/call-prefix core/principles/label-names-spot
+
+ASKED AS A RULING (slug label-doors, the statement put to him in five lines: "1. A label is owned by the text
+that writes its name; there it is read bare. 2. Any other label is read by a path, and a path is a chain of
+labels. 3. A binding's name may stand in a path for a skipped label, under your four conditions. 4. Each part
+decides the doors through itself, and closing one closes only that one. 5. Labels stacked on one spot are equal
+names of it; their order does not matter."; line 4's doors as told to him two entries before: a labelled spot
+opens through that label; an export list opens under the part's own names; a part used alone is open inside its
+definition and not exported; the blank mark is closed; a label keeps every other way to it, and its owner always
+reads it; line 5's sentence as told to him: "Labels stacked on one spot, with nothing between them, are equal
+names of that spot. Each is its own door to what the spot holds. One of them being private or blank closes only
+itself."; the manager's leaning yes). HIS WORDS, whole:
+
+"label-doors: agree. Yes"
+
+Class: a RULING: the five lines as put are the general rule of labels. Their grounds, each his: line 1:
+label-reference and argument-label; line 2: his "the general canonical form is that all labels are chains of only
+labels"; line 3: binding-as-label (his four conditions); line 4: his "It's closing that door but there may be
+other doors" (closing-own-label); line 5: his "would the nesting order of the labels matter? By my reading no".
+For the next fold: the five lines stand at the head of the labels section; ONE ownership table (who writes the
+name x what is done with the spot) is built under them and the pieces that say it piecemeal point at it (review
+r86 G1, whose trigger this is).
+The manager's readings (marked; for the fold to test): (a) "stacked ... with nothing between them" is label
+brackets (or label-only groups) nested directly; anything between makes two spots; (b) line 5 lets a caller's
+path through its own label pass a body's private label stacked on the same spot (`n.d` through `[n = [_x = P]]`),
+which "each step passed by the previous one" (export statement 3) did not; (c) a blank or private label stacked
+on a spot closes only its own door, so `[l = [_ = P]]` still opens P's labels through `l`.
+
+### 2026-11-23 MANAGER — review r88 (predfold1123b): the dispositions; no owner words
+tags: core/labels/rule core/labels/ownership core/labels/paths/label-reference core/labels/paths/argument-default core/operators/bindings/unspecified core/operators/bindings/call-forms core/operators/bindings/label-omitted core/labels/export core/holes/option core/holes/name lib/rx/repeat lib/modifiers/padded-to
+
+The draft is `$PCREC_TMPDIR/scratch/crit-predfold1123b/review.md` (frozen at d3ca4a5ef; 28 consolidated items,
+A1-A18 and B1-B10, from six critics and a verifier; no finding REFUTED; none REJECTED here). Lane predfix88
+applies them and files the review. Every "reading" below is the manager's, marked as such in the documents; no
+answer of the owner's is changed by this entry.
+
+THE MANAGER'S OWN ERRORS the round found:
+- B1: the wake and the launch prompt said the evidence model's full run is "over ten minutes". Re-measured at the
+  freeze it is 6 s, because all 13 predecessor models die at load and are declared superseded: the fold's
+  "18 / 0" checked no earlier ruling. The manager accepted the lane's SUCCESSOR declaration without reading the
+  per-model last lines.
+- A2: the pattern line of the unspecified piece ("a pattern position has no form without the part") was the
+  manager's convenience, printed as a ground.
+
+FIX-NOW, lane predfix88 (documents):
+- A1: label-reference's sentence on an argument that is a binding: the shorthand where no label is made on the
+  spot, otherwise the call's path; pointer to the ownership table.
+- A2: the unspecified piece as ONE rule plus a visible conservative overlay marked the manager's reading (a set, a
+  pattern position, a whole count, a comparison bound: compile errors for now); the pattern line re-grounded as
+  conservative, not formless. OPEN line, slug exact-count-unspecified (`_` into `{${n}}`: `{0,}` by the ruled
+  bound sentence, or a compile error); for now the compile error stays, marked.
+- A3: one sentence in call-forms, a reading: a default naming an earlier parameter names that parameter's VALUE in
+  the copy being made, so `rx.repeat(x, n)` with n an array is exact per member, as the in-force count ruling of
+  2026-11-17 has it ("an exact count of n is `\d{2}|\d{4}`"); a run line both ways; the stale three-bodies
+  readings line retired.
+- A4: "Written out, `B(A)` is `B([A = A])`" limited to a body that places its argument once; the reversed-order
+  line printed (alone first, labelled second: the two part); the contradicting details reading marked superseded;
+  the open both-uses named in the base piece.
+- A5: a marked reading: the shorthand label is protected, as statement 2's implicit label is (it adds no export
+  the caller did not write); the expansion is "the same READ"; a run line.
+- A6: label-omitted's statement and label-default's "optional (keyword)" brought under call-forms line 4.
+- A7: the stacked-is-one-step clause in export statement 3, flat-read-outside and the reading it rests on. A
+  marked reading with its run: two PUBLIC stacked labels do not chain (`n.h` and `m.h`, not `n.m.h`); OPEN line,
+  slug stacked-chain.
+- A8: every reading-backed cell of the ownership table marked; "the one cell" dropped.
+- A9: forwarding moved out of the spot axis into the writer rows; a sentence (a marked reading, conservative) for
+  a body that passes its PATTERN parameter on to another macro, with an OPEN line, slug nested-made (does
+  condition 4 look through nested bodies); the caller row's `A.h` refusal with a printed line; the listed cell's
+  ground cited as transform-export; the modes stated; "every case" narrowed to what the table has.
+- A10: one sentence, a marked reading, defining the spot a label is "on", applied to condition 4 and line 5 alike.
+- A11: an option bullet for `_` in core/holes/option; a marked reading for `_` in a capturing group's whole-name
+  hole: `(...)`, regex's group with no name.
+- A12, A13, A14, A15, A17: as proposed (details lines marked REVERSED or SUPERSEDED; padded_to's own rulings and
+  needs; the leftover clauses; the parked triggers; the two misquotes and the three manager wordings printed as his).
+- A16, G4 only: one per-position table (one value, several values, zero values, the underscore), absorbing A2's
+  and A11's cells.
+- A18: U1 and U6 re-grounded; U4 dropped (from memory, unmeasured).
+FIX-NOW, lane predfix88 (the successor evidence model): B1 (each predecessor re-run against the library of its
+own start commit; each real red declared by its own FAIL-line text with a reason; a load-time traceback is never
+"superseded"), B2, B3, B4, B5, B6, B7, B8 (the engine refuses loudly, "not modelled", where it cannot run a case;
+the same-name list fixed; the messages corrected), B9.
+PLAN (no lane now): A16's G3 (one optionality table: with optional-entry-edges and optional-label-general);
+A10's NAMES-5 (the never-placed argument: with nested-made); B10 (after B1, re-measure; over about 2 minutes, an
+order-preserving pool with byte-identical output as its control).
+OWNER QUESTIONS queued: exact-count-unspecified; stacked-chain; nested-made. Still open and asked or queued
+before: list-is-label (ASKED this session; the documents keep reading (b), marked), both-uses, pair-twice-alone.
+The round's three lessons and three proposed skill changes go to main (to_main.md).
+
+### 2026-11-23 OWNER, on list-is-label: "My intention of the rule was that if rx was labeled in B, you couldn't access rx directly shorthand through, or in, B. But the read is that you can't access it at al, even through A."
+tags: core/labels/rule core/labels/ownership core/labels/paths/argument-default core/labels/paths/closed-argument core/labels/paths/call-prefix core/labels/paths/binding-prefix core/labels/export/arguments lib/convention/argument-labels
+
+Asked **list-is-label** (under binding-as-label's condition 4, has a body that LISTS its spot made a label; the
+manager's leaning yes; with the run lines of the list body and of the two-argument parting case). HIS WORDS,
+whole:
+
+"List is label: there is an unintended read here that I'm trying to put my finger on.
+
+"Under yes: B(A) & (A.d: <5) is a compile error, and the read is B(A) & (B.d: <5)"
+A.d is a compiler error because d was set in B.
+My intention of the rule was that if rx was labeled in B, you couldn't access rx directly shorthand through, or
+in,  B. But the read is that you can't access it at al, even through A.
+Thoughts?"
+
+Class: DISCUSSION ("Thoughts?"), with a statement of his INTENTION for his fourth condition ("a label on the
+binding has not already been made", 2026-11-23). NOT a ruling; list-is-label is not answered by these words. His
+intention as the manager reads it (marked): a label made on the parameter INSIDE B stops the shorthand through B
+or in B (the body, having written `[p = rx]`, reads `p.d`; from outside the read through the call is `B.p.d`,
+never B with the argument's name); it was not meant to stop the CALLER's read through A's own name.
+CHECKED AGAINST THE RECORD: it is NOT what was ruled the same day. "binding-as-label: yes" answered a statement
+that carried the manager's reading "already been made is by anyone on that use, the body included" and the table
+"labels the spot: a compile error, read `B.p.d`; closes the spot: a compile error". The reading "by anyone, the
+body included" was the manager's (the entry "a fourth condition": "taken from 'based on your examples'"), told
+to him, not his words. It also meets closed-argument (a)'s second sentence, ruled 2026-11-22 ("Where B closes
+the argument, `A.d` is a compile error"), and his belief of the door example ("an error regardless I believe").
+The manager's thoughts (told to him; marked; nothing applied): his intention is the cleaner rule. Under it the
+shorthand is the CALLER's own label: `B(A)` with `A.d` read is `B([A = A])` in every case, legal by
+argument-label and closing-own-label whatever the body does, and by label-doors line 5 a label the body stacks
+on the same spot is an equal name that closes nothing. Condition 4 then counts labels made in the text that
+uses the shorthand (the caller's `B([a = A])`; `[a = A] SEQ "!" & (A.h: ..)` inside one definition). What it
+dissolves: list-is-label, both-uses, pair-twice-alone, nested-made, review r88's A4 (the shorthand and its
+written-out form no longer part) and A9's nested-body cell; the caller no longer needs to know B's body. What it
+reverses: the table ruled with binding-as-label for a body that labels the spot, and closed-argument (a)'s
+second sentence for a body that closes it. Put to him as a ruling, slug shorthand-is-callers.
+
+### 2026-11-23 OWNER RULING — shorthand-is-callers: "yes thats it exactly. Setting a label closes a path (through the shorthand in that binding) but doesn't block out the target."
+tags: core/labels/rule core/labels/ownership core/labels/paths/argument-default core/labels/paths/closed-argument core/labels/paths/call-prefix core/labels/paths/binding-prefix core/labels/paths/label-reference core/labels/export/arguments lib/convention/argument-labels lib/control/peek lib/control/when lib/control/atomic lib/search/hits lib/search/occurrences
+
+ASKED AS A RULING (slug shorthand-is-callers, the statement put to him: "The shorthand label is the caller's own:
+`B(A)` read through `A.d` means `B([A = A])`, whatever B's body does with the spot. Condition 4 counts only
+labels made in the text that writes the shorthand."; with two examples, A := `/(?<d>\d)/`: the body labels the
+spot, B(rx) := `/${[p = rx]}-(?<d>\d)/`, `B(A) & (A.d: <5)` legal and the same read as `B.p.d`: WHOLE `7-3`
+FAILS, `3-7` HOLDS, `3-3` HOLDS / SEARCHED `7-3 3-7` `3-7`@4 / FIND-ALL `7-3 3-7 1-2 9-9` [`3-7`@4, `1-2`@8];
+the body closes the spot, B(rx) := `/${[_ = rx]}xx/`, `B(A) & (A.d: <5)` legal: WHOLE `3xx` HOLDS, `7xx` FAILS /
+SEARCHED `7xx 3xx` `3xx`@4 / FIND-ALL `3xx 7xx 4xx` [`3xx`@0, `4xx`@8], "Through the call, `B.d` stays a compile
+error: that door is the one B closed" (both answer sets quoted from the documents' printed runs of the
+written-out forms, the lines "Through the body's path" and "The caller's own label, under a closing body" of
+core/labels/paths/closed-argument); the closing body named as the edge to decide, the manager's leaning "yes,
+including the closing body"; the two reversals named: the binding-as-label table for a body that labels the
+spot, and closed-argument (a)'s second sentence). HIS WORDS, whole:
+
+"shorthand-is-callers: yes thats it exactly. Setting a label closes a path (through the shorthand in that
+binding) but doesn't block out the target.
+This has been a good trajectory. We started out all open, then moved to mostly all closed. Now we are seeing the
+balance. Very Buddha"
+
+Class: a RULING: the statement as put, the closing body included ("yes thats it exactly", on a statement saying
+"whatever B's body does with the spot" with the closing example legal). His own sentence of the rule: "Setting a
+label closes a path (through the shorthand in that binding) but doesn't block out the target." An OBSERVATION on
+the course of the design ("all open ... mostly all closed ... the balance").
+It REVERSES: the table ruled with binding-as-label (2026-11-23) for a body that labels the spot (`A.d` was a
+compile error, read `B.p.d`: now `A.d` is legal and `B.p.d` stays legal, two names of one spot by label-doors
+line 5); closed-argument (a)'s second sentence (2026-11-22, "Where B closes the argument, `A.d` is a compile
+error": now legal; `B.d` and `c.d` through the call stay compile errors); the manager's reading (a) of
+binding-as-label ("by anyone on that use, the body included") is WITHDRAWN: condition 4 counts labels made in
+the text that writes the shorthand. It KEEPS: the four conditions as his; binding-prefix inside one definition
+(`[a = A] SEQ "!" & (A.h: ..)` a compile error; used more than once, condition 1); the caller's explicit label
+(`B([a = A])`: `a.d`, and then `A.d` a compile error); "[ c = B(A) ] does not allow c.A"; a parameter's name is
+not a label inside the body.
+It DISSOLVES (no question left to ask): list-is-label (the manager's reading (b) withdrawn: a list in the body
+does not touch the caller's `A.d`; `peek(A) & (A.d: ..)`, `atomic`, `when`, `identity`, `hits`, `occurrences`
+alike are legal again); spot-read-name's residue; review r88's nested-made and its A4 (the shorthand and its
+written-out form are one by definition).
+The manager's readings (marked; for the fold to test): (a) an argument the body places twice, or alone and
+labelled: the caller's shorthand label is set at every spot the template is placed, the same-label-twice rules
+(the last mention in a sequence, the branch taken, across `&` the ambiguous reference): this answers both-uses
+and pair-twice-alone without a question, and it CHANGES the printed line "Both uses" where the labelled spot
+comes last; never placed: the never-pass warning; (b) the shorthand label is protected, as export statement 2's
+implicit label is (review r88 A5 stands); (c) in the ownership table the row "an argument's binding, passed
+whole" reads `A.h` in every spot column, and the body row is unchanged; (d) "through the shorthand in that
+binding": inside the definition that makes the label, the labelled use is read by its label only (what
+binding-prefix's "the name reaches the UNLABELLED uses only" already says).
+NOT sent to the running lane predfix88 as work (a reversed design is a fresh lane's); its rulings file gets R-1,
+a notice. The fold is lane predfold1124's, after predfix88 delivers.
+
+### 2026-11-23 OWNER RULING — capture-in-set: error; and a DISCUSSION: "we are already pushing it by using the operators that we are ... it's a tool not a logical proofs language"
+tags: lib/structural/capture/in-set lib/structural/capture core/filters/and core/conditions/in-sequence core/filters/negation/effects core/principles/conservative-first
+
+ASKED AS A RULING (slug capture-in-set: a capture request combined with another set by `|` or `&` on the set
+side of an entry: "error", the compile error for both as the documents have it, the manager's leaning; "allow
+`&`", the intersection legal and `|` an error; or a meaning for the union; with the printed candidate lines of
+lib/structural/capture/in-set for `(h: "3" | capture("h"))` and `(h: <5 & capture("h"))`). HIS WORDS, whole:
+
+"capture-in-set: error.
+Discussion: we use "A & cond" or "A seq cond" because they work and mean that we don't have to come up with
+another op code. But really they are not the same thing as A & B, etc. we could for total logical consistency
+create a new operator for conditions to reflect its different relationship with patterns.
+My point is, are already pushing it by using the operators that we are. Then, we add capture() to the mix in the
+same-but-more manner to stretch the idea further because it's convenient and ultimately it's a tool not a
+logical proofs language.
+I feel like we should be grateful for what we have gotten away with and hope nothing cracks"
+
+Class: a RULING: capture-in-set: error: a capture request inside a set built with `|` or `&` (right of `:`) is a
+compile error. The two other cases the open piece lists (a request with a value left of `:`; inside a group
+question) were not in the question: they stay the manager's conservative readings, marked.
+And a DISCUSSION (his word; nothing ruled, no request): a condition joined to a pattern by `&` or by the sequence
+operator is "not the same thing as A & B"; a separate operator for conditions would be the logically consistent
+spelling; the shared operators and `capture()` on top of them are conveniences ("a tool not a logical proofs
+language"); "grateful for what we have gotten away with and hope nothing cracks".
+The manager's thoughts (told to him; marked; nothing applied):
+- Less stretched than it looks for conditions: the ruled piece core/filters/and has "`A & B` holds exactly when
+  `A & (0: B)` holds, on the same stretch; `&` also joins B's labels", so the pattern filter is the special case
+  (a test on the label `0`) and the condition is the general form; a condition in a sequence is a zero-width
+  test at its point, which regex already has (an assertion).
+- The real stretch is the capture request: it tests nothing, it is an effect written as a set. The measure of
+  strain is the number of fences one construct needs: ruled, no effect under a negation, none inside a set
+  operator, none on an open `0`; the manager's readings, none with a value left of `:`, none inside a group
+  question, none in `when`'s test.
+- A watch, not a build: a parked piece "a form of its own for effects (and a condition operator)", trigger: a
+  second kind of effect arrives (the array request being built), or the capture request needs one more fence.
+For the next fold (lane predfold1124): lib/structural/capture/in-set becomes ruled for `|` and `&`, its two other
+cases marked readings; the parked piece above.
+
+### 2026-11-23 OWNER, on exact-count-unspecified: "how about it matches 0 meaning the section is removed"
+tags: core/operators/bindings/unspecified core/holes/count lib/rx/repeat lib/modifiers/padded-to core/principles/conservative-first
+
+Asked **exact-count-unspecified** (the underscore where a body writes an exact count, `E(x, n) :=
+/(?:${x}){${n}}/`, `E(rx.digit, _)`: "error", by unspecified-rule (`{}` is no regex form), the documents'
+marked reading and the manager's leaning; or "zero-or-more", by count-unspecified, an exact count being both
+bounds). HIS WORDS, whole:
+
+"exact-count-unspecified: how about it matches 0 meaning the section is removed. There may be programmatic
+reasons someone doesn't want a stretch to exist. Although, theres probably better ways to express it."
+
+Class: a PROPOSAL as a question ("how about"), a THIRD candidate: the unspecified exact count is the count 0,
+the section removed; with his own doubt ("theres probably better ways to express it"). NOT a ruling.
+
+### 2026-11-23 OWNER RULING — exact-count-unspecified: "agree error"
+tags: core/operators/bindings/unspecified core/holes/count lib/rx/repeat lib/modifiers/padded-to core/principles/conservative-first
+
+ASKED AS A RULING (slug exact-count-unspecified, restated after his proposal of the count 0: "error, or do you
+want the count 0?"; the manager's leaning error, with: the removed section is already the count `0`, ruled
+(core/holes/count: "The count value zero, `x{${n}}` with n := 0, is `x{0}`: the object is absent and the rest
+matches"); the count 0 for the mark would duplicate `0` and split the count position against his "no maximum"
+for an unspecified upper bound; and four readings of `T(rx.digit, _)`, T(x, n) := `/a(?:${x}){${n}}b/`, RUN
+(python `re`, output pasted):
+`a(?:\d){0}b` : WHOLE `ab` HOLDS, `a1b` FAILS, `a12b` FAILS / SEARCHED `a12b a1b ab` `ab`@9 / FIND-ALL `ab a1b a12b ab` [`ab`@0, `ab`@12]
+`a(?:\d)b` : WHOLE `ab` FAILS, `a1b` HOLDS, `a12b` FAILS / SEARCHED `a12b a1b ab` `a1b`@5 / FIND-ALL `ab a1b a12b ab` [`a1b`@3]
+`a(?:\d){0,}b` : WHOLE `ab` HOLDS, `a1b` HOLDS, `a12b` HOLDS / SEARCHED `a12b a1b ab` `a12b`@0 / FIND-ALL `ab a1b a12b ab` [`ab`@0, `a1b`@3, `a12b`@7, `ab`@12]
+the fourth the compile error). HIS WORDS, whole:
+
+"exact-count-unspecified: agree error"
+
+Class: a RULING: the underscore where a body writes an exact count (`{${n}}`) is a compile error. His proposal
+of the entry above (the count 0) is not taken, by his own answer; the removed section is written with the count
+`0`. For the next fold: the open line becomes ruled; the three explicit spellings are named beside it (`0`; the
+count left out of the body; `rx.repeat(x, _, _)`); `padded_to`'s refusal of `_` for its width stands on it.
+The manager's reading that follows (marked): "the quantifier not written" (the literal reading of
+unspecified-rule at this position) is not the meaning either: the position's line is the error.
+
+### 2026-11-23 MANAGER — three queued questions closed on the record, not asked (stacked-chain; the position half of options-position; the argument half of options-reach-constants); no owner words
+tags: core/labels/rule core/labels/ownership lib/builtin/options core/patterns/flags core/holes/flags
+
+Each ruled sentence applied literally before asking (told to him in one line each; he may object):
+- stacked-chain (review r88 A7: do two PUBLIC stacked labels chain, `[n = [m = A]]`, `n.m.h`): label-doors line
+  5, ruled, as told to him: "Labels stacked on one spot, with nothing between them, are equal names of that
+  spot. Each is its own door to what the spot holds." and "their order does not matter". A chain `n.m.h` would
+  make the order matter (`m.n.h` is the other order) and what the spot holds is A's labels, not the other name.
+  So `n.h` and `m.h`, never `n.m.h`: it FOLLOWS (the manager's reading, marked as following from line 5). NOT asked.
+- options-position, the position half (may `@options` stand below a binding of its file): his idea's words, "you
+  did a @options() to set them such that literals were interpreted that way in future bindings", and the
+  statement he ruled ("program-options: yes": "applies to the literals written after it in the same file"): it
+  may stand mid-file and applies from the statement on (candidate (a)). The rest is the manager's reading
+  (marked; a syntax-grain point): a later statement applies from its own place on; turning a flag off is written
+  as PCRE writes it (`@options(-s)`).
+- options-reach-constants, the argument half (a literal the caller writes as an argument, placed by a library
+  body: `atomic(/a.b/)` in a program opening `@options(s)`): the same ruled statement decides it: the literal is
+  WRITTEN in the program file, so the program's options are its defaults (candidate (a)); core/holes/flags has
+  "What is inserted in a hole starts from its own file's defaults". The constant half (`"ab"` under
+  `@options(i)`) is ASKED.
+
+### 2026-11-23 OWNER, on "stacked labels do not chain": a refinement framing: flat inside the binding, the tree's paths from outside; "[_t = A ] is equivalent to [_ = [t = A ]]"
+tags: core/labels/rule core/labels/ownership core/labels/export core/labels/export/flat-read-outside core/labels/paths core/labels/export/arguments core/principles/label-names-spot
+
+Said on the manager's closure of stacked-chain (the entry above: `n.h` and `m.h`, never `n.m.h`, "object if I
+read it wrong"). HIS WORDS, whole:
+
+"Stacked labels do not chain: let me suggest a refinement framing. Within a binding, I can create any tree of
+labels in my expression and, within that binding, see all of those labels flat. That's what allows things like
+labeling a macro argument. However, outside that binding, I must go through the tree using the paths as defined.
+So the stacked labels would matter referencing into the binding.
+Another way of looking at it is that [_t = A ] is equivalent to [_ = [t = A ]]"
+
+Class: a PROPOSAL ("let me suggest a refinement framing") that OBJECTS to the closure: NOT a ruling by these
+words. Its three parts: (1) inside a binding every label its expression writes is seen flat, whatever the tree
+(his ground for labelling a macro argument); (2) from outside the binding a reference goes through the tree, by
+the paths as written, so the nesting of stacked labels matters there; (3) an equivalence: `[_t = A]` is
+`[_ = [t = A]]`.
+The manager's closure of stacked-chain is WITHDRAWN (it applied line 5 to reads from outside).
+CHECKED AGAINST THE RECORD: label-doors line 5, ruled the same day, says "their order does not matter". His
+question that made it ("would the nesting order of the labels matter? By my reading no") was asked on his body
+`A(l:,A) := [l =[_x = A]] &(_x: 5)`, a read INSIDE the binding that writes both labels; the manager's answer
+then carried it to paths from outside (readings (b) and (c) of label-doors: a caller's path passes a private
+label stacked on the spot; `[l = [_ = P]]` still opens P's labels through `l`). The framing keeps line 5 for the
+inside view and takes those two readings back for the outside view. It also meets flat-read-outside, ruled
+2026-11-22 ((a): "a flat read outside a binding follows the inside rules; the path says which part"), which
+lets an exported label be read from outside BY NAME (`pair.x`): "I must go through the tree" read literally
+would reverse it; not presumed, asked.
+Put to him as a ruling, slug label-tree.

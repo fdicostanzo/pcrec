@@ -209,9 +209,11 @@ modes: n/a (parked: not in the language)
 
 ### An empty argument position   [parked/ideas/empty-argument]   parked 2026-11-23
 A call that leaves a position empty, `row(,"level", ..)`, in place of passing every argument.
-Trigger: the first macro whose callers mostly leave one position unused, or the call-forms ruling.
+Trigger: the first macro whose callers mostly leave one position unused.
 Source: his words on label-parameter-omitted, "if we choose to allow that" (the details entry).
-see: core/operators/bindings/label-omitted core/operators/bindings/call-forms
+see: core/operators/bindings/label-omitted core/operators/bindings/call-forms core/operators/bindings/unspecified
+- call-forms is ruled: an argument written as `_` is a part not written (core/operators/bindings/unspecified); a
+  position left out of the record entirely stays this idea.
 modes: n/a (parked: not in the language)
 
 ### A reference kind of label parameter for users   [parked/ideas/reference-kind]   parked 2026-11-23
@@ -230,11 +232,33 @@ modes: n/a (parked: not in the language)
 
 ### Optional positional macro arguments without defaults   [parked/ideas/optional-arguments]   parked 2026-11-23
 A `?` mark in a macro's head for an optional positional argument with no default, so a head and a condition look closer.
-Trigger: the call-forms ruling (its absent setting for "no maximum", "no width").
+Trigger: a head parameter that must be optional with no default and no `_` meaning (a position whose construct has no form without the part, so `max = _` cannot stand in).
 Source: his question on optional-label-general (the details entry).
 - It would give `?` a second meaning, against his own reason for the `?:` operator: "then we aren't using ? For
   two different meanings" (core/conditions/form/optional-entry).
+- His `max?` in a head would be `max = _`, a default of "not written" (the manager's suggestion, the call-forms
+  play-out); call-forms is ruled without it.
 see: core/operators/bindings/call-forms core/conditions/form/optional-entry core/conditions/form/optional-general
+modes: n/a (parked: not in the language)
+
+### A compile-time conditional in an expression   [parked/ideas/compile-time-conditional]   parked 2026-11-23
+An expression that chooses between two values at compile time by a test (whether a set has a string, whether an argument is written), as his sketch of the repeat head's default.
+Trigger: the owner wants ONE name for two forms one head cannot express (his `padded(blah)` and `padded(blah, 4)`), or a second split like padded_to.
+Source: his sketch on label-hole-full, `max = ((min & 0)? _ :(min?min:))`, and the repeat-head ruling (the details entry).
+- Its `?` `:` spelling meets the optional entry operator `?:` (core/conditions/form/optional-entry): a spelling for
+  the spellings review, if it is taken up. The test exists today (`@assert.some`); the choosing expression does not.
+see: lib/rx/repeat lib/assert/assert core/conditions/form/optional-entry
+modes: n/a (parked: not in the language)
+
+### The head as a binding list, and the call forms beside it   [parked/ideas/call-head-forms]   parked 2026-11-23
+A macro's head read as a binding list a call binds against its record, with what that opens: a map written in place, a tuple or map spread over a head, variable arguments, and a macro taking a macro.
+Trigger: one example each: a call whose settings come as a map; a rest parameter a user body needs; a user macro that must call a macro it is given.
+Source: the manager's call-forms play-out, level 1 items 7 and 8 and level 2 items 9 to 12 (the details entry); none ruled.
+- A macro taking a macro needs a termination rule with it: an expansion budget with a compile error over it, or
+  parameter kinds declared in the head (core/operators/bindings/macro-types); the choice is his.
+- Positional entries after named ones (the play-out's interleaving, beyond call-forms line 2's "for now") belong
+  here; their trigger: the first call that reads better with a positional entry after a named one.
+see: core/operators/bindings/call-forms core/modules/binding-list core/values/tuples core/operators/bindings/macro-types
 modes: n/a (parked: not in the language)
 
 ### An explicit product of arrays   [parked/ideas/cartesian]   parked 2026-11-19
@@ -302,7 +326,7 @@ Source: a critic's unlock on the general form of core/principles/label-names-spo
 see: lib/convention/argument-labels parked/ideas/user-doc-traps
 - The general form: a name is visible where its spot is placed and listed. A mark in the head (a spelling such as
   `(=)x`, a placeholder) is one opt-in per parameter in place of the list on each spot (list_of's three spots,
-  padded's width form), and makes `hide` and `identity` differ in the signature, not only in the body.
+  padded_to), and makes `hide` and `identity` differ in the signature, not only in the body.
 modes: n/a (parked: not in the language)
 
 ### Number operations over a base given by a class   [parked/ideas/class-base]   parked 2026-11-19

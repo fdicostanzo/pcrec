@@ -1058,3 +1058,102 @@ wake.md says (read the draft WHOLE first; A4 is a ruled-words finding: read his 
   ASKED: unspecified-rule; WAITING: repeat-head. None of the call-forms material is folded (a later fold).
 - LESSON (his): a lone underscore VANISHES in his chat UI: fenced code blocks or the word (memory saved).
 - Queue additions from r86: closing-own-label, capture-in-set, optional-entry-edges.
+
+## 2026-11-23 — predfix86 delivered and merged; P-26 done: to main; six more rulings for the next fold
+
+- Lane predfix86 (one STOP on A2, answered as R2; R1 = closing-own-label) delivered: MERGED; lint 8,163 / 0;
+  plan-lint green; model 29 / 0, 36 plants caught. Review r86 FILED. P-26 `done:` posted, main told (asked for
+  the next review number, topic predfold1123b). Lane stopped; nothing in flight.
+- RULED since the fold's cut (record only; the NEXT FOLD): count-unspecified; unspecified-rule ("yes and
+  elegant"); call-forms (one head per name, four lines); repeat-head (head (i)); closing-own-label (folded by
+  predfix86 as R1; its `rulings:` items owed); binding-as-label (his four conditions; REVERSES argument-default's
+  error and the labelled-spot legal lines; answers spot-read-name). Also label-hole-full (folded by predfix86).
+- For the next fold's brief (r86 A1/A8 lesson): QUOTE each ruling's asked statement with its edges; do not
+  summarise. Pieces: call-forms, bindings (positional / named, defaults), lib/rx/repeat (one head), lib/modifiers/
+  padded (the width form renamed), core/holes/count (unspecified bounds), a piece for the unspecified mark,
+  binding-prefix / argument-default / closed-argument / call-prefix / arguments (the shorthand's four conditions
+  and the table), export statement 7's rulings item, the parked compile-time conditional, G1's ownership table if
+  label-doors is ruled.
+- ASKED, waiting: label-doors (the four-line general rule). Queue: capture-in-set; optional-entry-edges (stays as
+  ruled unless he wants it); the three flags questions; a map written in place; a user macro taking a macro.
+
+## 2026-11-23 — label-doors ruled; fold lane predfold1123b launched (review r88 to follow)
+
+- RULED: label-doors, five lines (owned by the text that writes it; a path is a chain of labels; a binding's name
+  as a skipped label under his four conditions; each part decides its doors, closing one closes only that one;
+  stacked labels are equal names of one spot). Before it: his two-label body (agreed, run); my reading (a) of
+  label-parameter-omitted WITHDRAWN (an unspecified label on a part is the part with no label, not the blank mark).
+- Main merged P-26 (7b61fd62a); r88 reserved for this fold's review.
+- LAUNCHED: lane predfold1123b (opus; worktree `worktrees/predfold1123b`, cut at 89d26b6b3; deliver + empty
+  rulings file first; lanewatch armed). Scope: every ruling after zero-open: count-unspecified, unspecified-rule,
+  call-forms, repeat-head, binding-as-label (reverses argument-default's error), label-doors with ONE ownership
+  table; rulings items for closing-own-label and label-hole-full; parked pieces for the play-out's level 2 and the
+  compile-time conditional. The brief makes each ruling's ASKED statement the source (the r86 lesson).
+- NEXT: at its delivery: merge, lints, coordinator `crit-predfold1123b` for r88 (design mode; the standing lenses
+  plus the EXPANSION drill and a grid over the ownership table), rule, fix lane, P-27.
+- Queue with the owner: capture-in-set; optional-entry-edges; the three flags questions; a map written in place; a
+  user macro taking a macro; the older list; the spellings review.
+
+## 2026-11-23 — close (/close): predfold1123b delivered and merged; r88 NOT launched
+
+- Lane predfold1123b delivered (lanecheck DONE; rulings file empty throughout; nudged once to poll its sabotage
+  run): MERGED (3c6462b24); lint 8,502 / 0; plan-lint green; model 18 / 0, 25 plants caught (its first plant run
+  missed 3: fixed and re-run). Lane stopped. It refuted two lines of my spot-read-name working (pre-condition-4);
+  neither was written.
+- NOT a delivery: the fold is unreviewed. r88 (reserved by main) is the FIRST act of the next session, before any
+  question to the owner; a parallelism lens on the evidence model joins it (the owner's item, via main).
+- Main, the same hour: P-17..P-26's skill edits merged (24 items); the polling exception for predicate lanes
+  granted; the [COND-FAMILY] row's next line updated.
+- wake.md REWRITTEN from scratch; owner.md current; P-27 (pausing) posted; main told. Nothing in flight; no cron.
+
+## 2026-11-23 — eighth session: wake
+
+- Registered (session_role pred); main merged into `lane/pred-rev28` (one routine conflict in the lanes history
+  index, both sides kept): tip d3ca4a5ef; lint 8,502 / 0; plan-lint green. Main told.
+- LAUNCHED review r88: coordinator `crit-predfold1123b` (opus, background), subject frozen at d3ca4a5ef, scope
+  `git diff 7b61fd62a..d3ca4a5ef -- docs/design/predicates/`, six lenses (ruling, examples + expansion drill,
+  fix-induced + general form, names grid over the ownership table, check adequacy, parallelism of the model).
+- Read whole: core.md, library.md, parked.md; the record from closing-own-label to the end.
+- ASKED the owner: list-is-label (run: the list body in three modes; the parting case of two arguments holding
+  one name, `W.h` the last mention against `A.h` A's own spot). Waiting on his answer and on r88's hand-back.
+
+## 2026-11-23 — review r88 ruled; fix lane predfix88 launched
+
+- r88 draft (28 items, A1-A18 / B1-B10; none refuted, none rejected): RULED in the record ("MANAGER — review r88
+  (predfold1123b): the dispositions"). Main evidence finding B1: the fold's SUCCESSOR check ran no predecessor
+  (13 models dead at load, declared superseded); my "over ten minutes" premise was wrong (6 s).
+- LAUNCHED lane predfix88 (opus; worktree `worktrees/predfix88`, cut at b63928b48; deliver + empty rulings file
+  first; lanewatch armed): documents A1-A18 (G4 table only), evidence B1-B9, files the review. PLAN: G3, NAMES-5,
+  B10 (re-measure after B1).
+- New owner questions queued: exact-count-unspecified, stacked-chain, nested-made.
+- Coordinator crit-predfold1123b stopped. Waiting: the owner's answer on list-is-label (if it arrives while the
+  lane runs: R-1 in its rulings file); the lane's delivery.
+- For main at P-28: three lessons + three proposed critic-skill changes from r88's process.md.
+
+## 2026-11-23 — shorthand-is-callers RULED (reverses my reading (a) of binding-as-label)
+
+- His question on list-is-label exposed that "made by anyone, the body included" was MY addition to his fourth
+  condition. RULED: the shorthand is the caller's own label, `B(A)` + `A.d` = `B([A = A])`, whatever the body
+  does, the closing body included. Dissolved: list-is-label, both-uses, pair-twice-alone, nested-made, r88 A4.
+- predfix88 (running) got R-1, a notice: do not fold it, skip nested-made, list what will be reversed.
+- NEXT: at predfix88's delivery: merge, lints, then fold lane predfold1124 (the ownership table's argument row,
+  argument-default, closed-argument, call-prefix, label-reference, the six library reads, the lines "Both uses");
+  it needs a review number from main before its critic round.
+- ASKED the owner: capture-in-set.
+- LESSON: a reading of mine attached to HIS condition and carried inside the statement he says yes to is still
+  mine; a table derived through it must say which rows rest on the reading (he ruled the table, not the intent).
+
+## 2026-11-23 — predfix88 delivered and merged; P-28 posted; label-tree asked
+
+- Lane predfix88 delivered (lanecheck DONE; R-1 applied; delivery pins for the predecessors ACCEPTED): MERGED;
+  lint 8,650 / 0; plan-lint green; model 25 / 0, 39 plants caught; full run 62 s (B10's trigger not met). Review
+  r88 filed. Lane stopped. P-28 `done:` posted, main told, a review number asked for predfold1124.
+- RULED by the owner since: capture-in-set: error; exact-count-unspecified: error (his count-0 proposal not taken
+  by his own answer). His discussion on the shared operators recorded; a parked piece is owed (a form of its own
+  for effects; a condition operator).
+- My closure of stacked-chain WITHDRAWN at his objection; his framing (flat inside a binding, the tree from
+  outside; `[_t = A]` is `[_ = [t = A]]`) put back to him as the ruling label-tree, with the by-name read from
+  outside as the edge. ASKED; also waiting: options-reach-constants (asked before his framing arrived).
+- NEXT: fold lane predfold1124 once label-tree is answered (scope: shorthand-is-callers, capture-in-set,
+  exact-count-unspecified, label-tree, the three closures that stand (options-position's position half, the
+  argument half of options-reach-constants), the parked effects piece).

@@ -471,3 +471,51 @@ Entries are `P-n`, dated, never deleted. `done:` lines name the branch tip and t
   running jobs today); section 2: "a lone underscore vanishes in the owner's chat UI: fenced code blocks or the
   word".
 - Worktrees free to prune after your merge: predfold1123, predfix86 (both merged into my branch).
+
+## P-27 (2026-11-23, predicate manager) — pausing (/close); NOT a delivery
+
+- Branch `lane/pred-rev28`, tip = the commit carrying this entry. It now ALSO carries lane predfold1123b's fold
+  (count-unspecified, unspecified-rule, call-forms, repeat-head, binding-as-label, label-doors with one ownership
+  table): MERGED into my branch, lint 0 failed, plan-lint green, NOT REVIEWED. 7b61fd62a (P-26, on main) stays the
+  last reviewed tip: please do not merge this tip.
+- Next predicate session, first act: critic round r88 (your number) on that fold, with a parallelism lens on the
+  evidence model as you passed on; then its fix lane and the real `done:` (P-28).
+- Nothing of mine in flight, in the box queue or on a cron. Worktree free to prune after r88 lands, not before:
+  predfold1123b (the review's fix lane is cut from my branch, but leave it until P-28).
+
+## P-28 (2026-11-23, predicate manager) — done: the fold of 2026-11-23 (after zero-open), with review r88 ruled, applied and filed; mergeable
+
+- done: branch `lane/pred-rev28`, tip = the commit carrying this entry. It holds lane predfold1123b's fold
+  (count-unspecified, unspecified-rule, call-forms, repeat-head, binding-as-label, label-doors with one ownership
+  table), its review r88 (your number) ruled by me, and lane predfix88 applying it. Reports
+  `docs/dev/lanes/predfold1123b_report.md`, `docs/dev/lanes/predfix88_report.md`; filed review
+  `docs/dev/reviews/2026-11-23-r88-predfold1123b.md` (+ directory, the NOTES.md line); evidence
+  `docs/dev/lanes/predfix88_evidence/` (`predfix88_model: 25 checks, 0 failed`; 39 plants, 0 not caught; the
+  SUCCESSOR check now re-runs all 14 earlier models, 40 reds declared by their verbatim FAIL lines; full run 62 s).
+  `pred_doc_lint` 8,650 / 0; `make -s test-plan-lint` green. Main was merged into the branch at d3ca4a5ef (one
+  routine conflict in the lanes history index, both sides kept). Please merge.
+- RECORD AHEAD OF THE DOCUMENTS (ruled 2026-11-23 after the fix lane's cut; the next fold, lane predfold1124, for
+  which I ask a review number below): shorthand-is-callers (REVERSES the binding-as-label table for a body that
+  labels the spot, and closed-argument's error: several sentences and one row of the ownership table this tip
+  still prints; the fix lane's report lists them under "WILL BE REVERSED"); capture-in-set: error;
+  exact-count-unspecified: error. ASKED, not ruled: label-tree (flat inside a binding, the tree's paths from
+  outside).
+- [COND-FAMILY] status line: "2026-11-23: r88 filed; the documents carry every ruling through label-doors; ruled
+  since and not folded: the shorthand label is the caller's own (shorthand-is-callers), capture-in-set: error,
+  exact-count-unspecified: error; label-tree asked; next fold pending".
+- REQUEST: a review number for the next fold's critic round (topic predfold1124). REPLY: one line, either way.
+- r88's three lessons for the critic guide (yours to place): (1) a successor model whose predecessors all end in a
+  load-time traceback is a dead chain, never "superseded": SUCCESSOR fails on a traceback; (2) a run time quoted in
+  a brief is re-measured at the freeze (here the gap exposed the dead chain); (3) a status-table check reads the
+  table's header and column-defining sentence from the document: a model holding its own column map checks the model.
+- r88's three PROPOSED CRITIC-SKILL CHANGES (docs/dev/reviews/2026-11-23-r88-predfold1123b/process.md, "Proposed
+  changes"): the coordinator reads each chain model's last line and re-measures a quoted time; the check-adequacy
+  lens mutates a status table's header and column sentence; COMMON says an evidence engine used as a grid's oracle
+  is itself under test.
+- PROPOSED SKILL EDITS, pcrec-predicate-manager: section 2: "a reading of the manager's attached to one of the
+  owner's conditions is named AS A SEPARATE LINE of the statement put to him, and a table derived through it says
+  which rows rest on it" (binding-as-label: he ruled a table whose rows rested on my 'by anyone, the body
+  included'; reversed the next day by shorthand-is-callers); section 4 (evidence): "a predecessor model is pinned
+  to its own DELIVERY commit" (my brief said start commit; the lane corrected it); section 2: "the underscore
+  vanishes inside inline code too: fenced blocks only" (he could not see `[_t = A]`).
+- Worktrees free to prune after your merge: predfold1123b, predfix88 (both merged into my branch).
