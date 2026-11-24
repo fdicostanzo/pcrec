@@ -212,8 +212,8 @@ Candidate (b) of options-position: modes: a compile error (`/x${a}y/` in a progr
 
 ### padded   [lib/modifiers/padded]   ruled 2026-11-22
 `padded(rx)` is the plain macro `/0*${[(=) = rx]}/`: any number of zeros before the value.
-needs: core/holes/pattern core/holes/count core/filters/and core/patterns/alternation lib/convention/argument-labels
-see: lib/sets/between lib/modifiers/limited
+needs: core/holes/pattern lib/convention/argument-labels
+see: lib/sets/between lib/modifiers/limited lib/modifiers/padded-to
 module: ?
 defined: language
 - The body: `padded(rx) := /0*${[(=) = rx]}/`, the argument in a hole (one entry: `/0*(?:${[(=) = rx]})/` writes
@@ -226,13 +226,14 @@ defined: language
 - The spelling, the parameter names and the pad character are placeholders.
 WHOLE `005` HOLDS, `50` FAILS / SEARCHED `x05` `05`@1 / FIND-ALL `5 x005 50` [`5`@0, `005`@3, `5`@7] (`/${padded("5")}/` is `0*(?:5)`)
 
-### padded_to   [lib/modifiers/padded-to]   reading 2026-11-23
+### padded_to   [lib/modifiers/padded-to]   ruled 2026-11-23
 `padded_to(rx, n) := ([(=) = rx] & /(?s:.){${n},}/) | (/0*${[(=) = rx]}/ & /(?s:.){${n}}/)`: zeros reach width n at least, the longer unpadded value tried first.
 needs: lib/modifiers/padded core/holes/count core/filters/and core/patterns/alternation core/operators/bindings/call-forms
 module: ?
 defined: language
 - The width form of padded under a name of its own, by call-forms' one head per name (his `padded(blah, 4)` had
-  the width by position); the name is a placeholder, the manager's, not his.
+  the width by position): the width form's rulings stand (padded-width, padded-order, padded-lazy-sparse); the
+  name is a placeholder, the manager's, not his.
 - n reaches the counts through count holes (a bare `n` inside the literal would be the text `n`); the any-length
   branch first. Each spot carries the list; the two spots give the same names, read in the branch taken.
 - The width is a MINIMUM: zeros reach out to n characters; a value already n or longer stands unpadded.
@@ -240,6 +241,7 @@ defined: language
   stated behaviour, not an error. An alternation of filtered copies imposes its own order (a reading).
 WHOLE `0129` HOLDS / SEARCHED `x0129` `0129`@1 / FIND-ALL `0129 0000 12` [`0129`@0, `0000`@5] (`/${padded_to(/(?:\d\d)+?/, 3)}/`)
 Two digits at least: WHOLE `5` FAILS, `05` HOLDS, `005` FAILS, `55` FAILS / SEARCHED `x5 07` `07`@3 / FIND-ALL `5 07 123` [`07`@2] (`padded_to(rx.digit, 2)`)
+Three digits at least, two zeros: WHOLE `005` HOLDS, `05` FAILS, `0005` FAILS / SEARCHED `x005` `005`@1 / FIND-ALL `5 005 0005` [`005`@2, `000`@6] (`padded_to(rx.digit, 3)`)
 
 ### quoted   [lib/modifiers/quoted]   reading 2026-11-22
 `quoted(S)` reads only the text inside double quotes: the body `/"${[(=) = S] & /[^"]*/}"/`, S matched whole on that text.
@@ -345,8 +347,9 @@ module: ?
 defined: language
 - A capture request in the test reaches the guard's `NOT peek(test)`: a compile error (a reading;
   core/filters/negation/effects).
-- `then` has no default: `when(x)` and `when(x, else = z)` are compile errors. The legal calls: `when(x, y)`,
-  `when(x, y, z)`, `when(x, then = y)`, `when(x, then = y, else = z)`, `when(x, y, else = z)`.
+- `then` has no default, so by call-forms (one head; positional entries, then named) `when(x)` and
+  `when(x, else = z)` are compile errors; `when(x, y)`, `when(x, y, z)`, `when(x, y, else = z)` and
+  `when(x, then = y, else = z)` are legal, among the calls those rules allow.
 - The missing else is `//`, the empty pattern: where the test does not hold, `when` holds and matches nothing.
 - The else-only behaviour is NOT on the test: `when(NOT (h: <5), z)`, `when(NOT peek(x), z)`.
 - What the test may be, and what each kind consumes: lib/control/when-test.
@@ -796,6 +799,8 @@ defined: language
   parked/ideas/compile-time-conditional.
 - Several values make the count hole's copies: one copy per combination, first hole slowest (the lift's loop:
   core/arrays/lift), an illegal copy (min above max) removed; one array mentioned twice is independent per mention (`rx.repeat(rx.digit, n, n + 1)`).
+  `max` unset names min's VALUE in each copy (the manager's reading, core/operators/bindings/call-forms): one
+  array count is exact per member, `rx.repeat(rx.digit, n)`, n := [2, 4], is `(?|\d{2,2}|\d{4,4})`.
 - An item's label passes on through the looped spot: a condition after the call reads the last item, a group
   question every item, through a label on the call (`[r = rx.repeat(/(?<a>\d)/, min = 1, max = _)]`, `r.a`); a part
   label written on the argument (`rx.repeat([a = rx.digit], min = 1, max = _)`, then `a`) is the caller's own, read bare

@@ -1,0 +1,119 @@
+p1 -> CONTROL (the control's python `re` for `repeat(D, 3, _)` written `(?:\d){3}`): caught (3 s)
+   last line: predfix88_model: 25 checks, 1 failed (CONTROL)
+   its FAIL line: FAIL CONTROL: differing (WHOLE, SEARCHED, FIND-ALL) against python `re` over 1093 texts, and libpcre2 against python `re` (the control's own control): [('rx.repeat(rx.digit)', (0, 0, 0), (0, 0, 0)), ('rx.repeat(rx.digit, 3)', (0, 0, 0), (0, 0, 0)), ('rx.repeat(rx.digit, 3, _)', (112, 320, 320), (0, 
+p2 -> CALLFORMS (a positional entry after a named one accepted): caught (3 s)
+   last line: predfix88_model: 25 checks, 1 failed (CALLFORMS)
+   its FAIL line: FAIL CALLFORMS: arms failing: ['positional after named'] (refusals: None; the default of `min` in R names `max`, not an earlier parameter (a compile error, call-forms line 3))
+p3 -> CALLFORMS (a default naming a LATER parameter accepted, bound to that parameter's value): caught (3 s)
+   last line: predfix88_model: 25 checks, 1 failed (CALLFORMS)
+   its FAIL line: FAIL CALLFORMS: arms failing: ['later default'] (refusals: a call of rx.repeat: a positional entry after a named one (a compile error for now, call-forms line 2); None)
+p4 -> CALLFORMS (call-forms line 3 in core.md altered ("never a later one" dropped)): caught (3 s)
+   last line: predfix88_model: 25 checks, 2 failed (CALLFORMS, QUOTES)
+   its FAIL line: FAIL CALLFORMS: arms failing: ['pins'] (refusals: a call of rx.repeat: a positional entry after a named one (a compile error for now, call-forms line 2); the default of `min` in R names `max`, not an earlier parameter (a compile error, call-forms line 3))
+p5 -> ARRAYCOUNT (a default naming an earlier parameter read as its TEXT (a second mention of the array)): caught (3 s)
+   last line: predfix88_model: 25 checks, 2 failed (ARRAYCOUNT, DOC)
+   its FAIL line: FAIL ARRAYCOUNT: the copies per value `(?|\d{2,2}|\d{2,4}|\d{4,4})`, per mention `(?|\d{2,2}|\d{2,4}|\d{4,4})`; arms failing: ['per value: 123 FAILS']
+p6 -> REPEAT (`_` taken as "use the default" (call-forms line 4 undone)): caught (3 s)
+   last line: predfix88_model: 25 checks, 2 failed (REPEAT, DOC)
+   its FAIL line: FAIL REPEAT: WHOLE over ['', '12', '123', '123456'] against the ruled table: [('rx.repeat(rx.digit)', True), ('rx.repeat(rx.digit, 3)', True), ('rx.repeat(rx.digit, 3, _)', False), ('rx.repeat(rx.digit, _, 5)', True), ('rx.repeat(rx.digit, 2, 5)', True), ('rx.repeat(rx.digit, 0)', True)]; unset `max
+p7 -> UNSPEC (`_` for a count's lower bound read as 1, not 0): caught (3 s)
+   last line: predfix88_model: 25 checks, 8 failed (CONTROL, REPEAT, UNSPEC, COUNT, EXPAND, READINGS, SWEEP, DOC)
+   its FAIL line: FAIL UNSPEC: arms failing: ['lower bound `_` is 0', 'candidate (a) `{0,}`', 'two positions']
+p8 -> UNSPEC (the overlay sentence in core.md made the rule ("It is not that the rule gives none" dropped)): caught (3 s)
+   last line: predfix88_model: 25 checks, 1 failed (UNSPEC)
+   its FAIL line: FAIL UNSPEC: arms failing: ['pins']
+p9 -> COUNT (libpcre2 run on `a{0,}` where the record's run reads `a{,}`): caught (3 s)
+   last line: predfix88_model: 25 checks, 1 failed (COUNT)
+   its FAIL line: FAIL COUNT: `rx.repeat(rx.digit, _, _)` is `{0,}` [True, True, True, True]; libpcre2 `a{,}` WHOLE ``, `aaa`, `a{,}`: [('', True), ('aaa', True), ('a{,}', False)]
+p10 -> SHORTHAND (condition 4 off: the shorthand also through a spot the body labels): caught (3 s)
+   last line: predfix88_model: 25 checks, 2 failed (SHORTHAND, DOC)
+   its FAIL line: FAIL SHORTHAND: arms failing: ['labelled refused', 'listed refused', 'closed refused', '`_p` refused', 'alone first (the alone spot)'] (labelled: None; caller's label: `A.`: the caller's own label `a` is made on the spot where B places `A` (a compile error, binding-as-label condition 4); the read is
+p11 -> SHORTHAND (condition 4 undone for the caller's own label: `B([a = A]) & (A.h: ..)` read as `a.h`): caught (3 s)
+   last line: predfix88_model: 25 checks, 3 failed (SHORTHAND, TABLE, NAMEGRID)
+   its FAIL line: FAIL SHORTHAND: arms failing: ["caller's label then `A.h` refused"] (labelled: `A.`: a label is already made on the spot where B places `A` (the body labels the spot `p`; a compile error, binding-as-label condition 4); caller's label: None)
+p12 -> SHORTHAND (condition 1 off: a binding used twice in the caller's text takes the shorthand): caught (3 s)
+   last line: predfix88_model: 25 checks, 1 failed (SHORTHAND)
+   its FAIL line: FAIL SHORTHAND: arms failing: ['used twice refused'] (labelled: `A.`: a label is already made on the spot where B places `A` (the body labels the spot `p`; a compile error, binding-as-label condition 4); caller's label: `A.`: the caller's own label `a` is made on the spot where B places `A` (a compi
+p13 -> NOLABEL (`_:` on a spot written out as the blank mark `[_ = v]` again (reading (a))): caught (3 s)
+   last line: predfix88_model: 25 checks, 1 failed (NOLABEL)
+   its FAIL line: FAIL NOLABEL: arms failing: ['lowered with no label']
+p14 -> NOLABEL (label-omitted's rule sentence in core.md reversed to the blank mark): caught (3 s)
+   last line: predfix88_model: 25 checks, 1 failed (NOLABEL)
+   its FAIL line: FAIL NOLABEL: arms failing: ['pins']
+p15 -> STACK (stacked labels read in nesting order: the outer one passes only what the inner one exports): caught (3 s)
+   last line: predfix88_model: 25 checks, 1 failed (STACK)
+   its FAIL line: FAIL STACK: arms failing: ['either order', '`n.d`', '`_x.d` alike']
+p16 -> STACK (a blank `_` in a stack closes the whole spot (the other label dropped with it)): caught (3 s)
+   last line: predfix88_model: 25 checks, 1 failed (STACK)
+   its FAIL line: FAIL STACK: arms failing: ['blank inner opens through `l`', 'blank outer opens through `l`']
+p17 -> STACKCHAIN (two public stacked labels chain (`n.m.d` legal, candidate (b) taken)): caught (3 s)
+   last line: predfix88_model: 25 checks, 1 failed (STACKCHAIN)
+   its FAIL line: FAIL STACKCHAIN: `n.d` [True, False], `m.d` [True, False], `n.m.d` refused False (None), the nested form [True, False]
+p18 -> SPOTON (a label over a wider spot counted as on the argument's spot (A10's reading undone)): caught (3 s)
+   last line: predfix88_model: 25 checks, 3 failed (SPOTON, NAMEGRID, SWEEP)
+   its FAIL line: FAIL SPOTON: `[p = rx SEQ /x/]`: `A.h` None; `[p = rx]` directly: refused True
+p19 -> OWNERBODY (the owner's two-label body: `_:` written out as the blank mark (his body refused)): caught (3 s)
+   last line: predfix88_model: 25 checks, 1 failed (OWNERBODY)
+   its FAIL line: FAIL OWNERBODY: with `n:` [True, False, False], with `_:` None; the caller's `n` read True
+p20 -> LIBLINES (padded_to's zeros `0*` read as `0?` (library.md's body altered as read)): caught (3 s)
+   last line: predfix88_model: 25 checks, 3 failed (LIBLINES, SWEEP, DOC)
+   its FAIL line: FAIL LIBLINES: arms failing: ['padded_to two zeros (`005`)']
+p21 -> TABLE (the ownership table's header: `used alone` and `labelled` swapped in core.md as read): caught (3 s)
+   last line: predfix88_model: 25 checks, 1 failed (TABLE)
+   its FAIL line: FAIL TABLE: 5 rows read (5 writers), 5 columns from the header and the column sentence, 36 reads run against the cells' legality and the piece's three-mode answer; disagreeing: [('R1', 'alone', 'p.h', '/(?<h>\\d)/ SEQ /xx/ & (p.h: <5)', 'path `p.h`: `p` is neither written nor a binding used in this 
+p22 -> TABLE (the table's column sentence: the alone and labelled bodies swapped in core.md as read): caught (3 s)
+   last line: predfix88_model: 25 checks, 1 failed (TABLE)
+   its FAIL line: FAIL TABLE: 5 rows read (5 writers), 5 columns from the header and the column sentence, 36 reads run against the cells' legality and the piece's three-mode answer; disagreeing: [('R1', 'labelled', 'p.h', '/(?<h>\\d)/ SEQ /xx/ & (p.h: <5)', 'path `p.h`: `p` is neither written nor a binding used in th
+p23 -> TABLE (a sixth row added to the table in core.md as read): caught (3 s)
+   last line: predfix88_model: 25 checks, 1 failed (TABLE)
+   its FAIL line: FAIL TABLE: 5 rows read (5 writers), 5 columns from the header and the column sentence, 36 reads run against the cells' legality and the piece's three-mode answer; disagreeing: [('a row of an unknown writer', 'a sixth writer')]
+p24 -> TABLE (one cell of the table changed to the opposite legality in core.md as read): caught (3 s)
+   last line: predfix88_model: 25 checks, 1 failed (TABLE)
+   its FAIL line: FAIL TABLE: 5 rows read (5 writers), 5 columns from the header and the column sentence, 36 reads run against the cells' legality and the piece's three-mode answer; disagreeing: [('R1', 'alone', 'h', '/(?<h>\\d)/ SEQ /xx/ & (h: <5)', 'legal')]
+p25 -> NESTED (the loud refusal off: a body passing its pattern parameter on runs silently): caught (3 s)
+   last line: predfix88_model: 25 checks, 2 failed (NESTED, NAMEGRID)
+   its FAIL line: FAIL NESTED: refused as not modelled: the binding's name False, a sent label False, the call's name False
+p26 -> SAMELIST (the same-name list's fix off (the loaded engine's rename)): caught (3 s)
+   last line: predfix88_model: 25 checks, 2 failed (SAMELIST, SWEEP)
+   its FAIL line: FAIL SAMELIST: `[(=) = A]` None, `[(=h) = A]` None, alike the literal written in place
+p27 -> CAPNAME (`_` into a capturing group's whole-name hole written `(?:...)`): caught (3 s)
+   last line: predfix88_model: 25 checks, 2 failed (CAPNAME, DOC)
+   its FAIL line: FAIL CAPNAME: `(?:\d)x`: 0 capture(s), WHOLE [True, False]
+p28 -> EXPAND (argument-default's written-out form read as `B([_ = A])` (core.md altered as read)): caught (3 s)
+   last line: predfix88_model: 25 checks, 1 failed (EXPAND)
+   its FAIL line: FAIL EXPAND: 10 sugar forms against their written-out forms, every mode over 21 texts; differing or refused: [('B(A) & (A.d: <5)', 'B([_ = A]) & (A.d: <5)', None, "`A.`: the caller's own label `_` is made on the spot where B places `A` (a compile error, binding-as-label condition 4); the read is `_.
+p29 -> READINGS (a reading's run moved: the shorthand set on EVERY spot of a body using the argument alone and labelled): caught (3 s)
+   last line: predfix88_model: 25 checks, 1 failed (READINGS)
+   its FAIL line: FAIL READINGS: 5 readings run: ['binding-as-label, both uses: the shorthand on the alone spot, labelled second', 'binding-as-label, both uses: the shorthand on the alone spot, alone first']
+p30 -> SWEEP (one printed answer of the documents moved under an unchanged key (the same-key arm)): caught (3 s)
+   last line: predfix88_model: 25 checks, 1 failed (SWEEP)
+   its FAIL line: FAIL SWEEP: 307 printed lines now (DIFF 9, REFUSED 61, same 257, unparsed 1), 295 at the starting commit under predfold1123b's engine; undeclared 1; moved or gone and not declared 1; declared moves 0; added 12; stale declarations 0 (predfix84's inherited ones included)
+p31 -> SWEEP (predfix84's stale `rx.repeat(rx.digit, 3)` declaration restored and a wrong line printed): caught (3 s)
+   last line: predfix88_model: 25 checks, 1 failed (SWEEP)
+   its FAIL line: FAIL SWEEP: 307 printed lines now (DIFF 8, REFUSED 61, same 258, unparsed 1), 295 at the starting commit under predfold1123b's engine; undeclared 0; moved or gone and not declared 0; declared moves 0; added 12; stale declarations 1 (predfix84's inherited ones included)
+p32 -> NULLABLE (one program with a nullable loop run (`rx.repeat(/a?/)`)): caught (3 s)
+   last line: predfix88_model: 25 checks, 1 failed (NULLABLE)
+   its FAIL line: FAIL NULLABLE: 647 programs run by the checks above (SWEEP's included), walked node by node: 1 with a loop whose body can match empty: [('rx_repeat_u1(/a?/)', ('rx_repeat_u1(x) := /(?:${[(=) = x]}){0,}/',))]
+p33 -> SUCCESSOR (one declared red's text altered): caught (61 s)
+   last line: predfix88_model: 25 checks, 1 failed (SUCCESSOR)
+   its FAIL line: FAIL SUCCESSOR: 14 earlier models re-run (58 s in all), each red against its declared FAIL line verbatim (40 declared): [('predarr', 'DOC', 'TEXT CHANGED')]
+p34 -> SUCCESSOR (a load-time traceback declared superseded): caught (3 s)
+   last line: predfix88_model: 25 checks, 1 failed (SUCCESSOR)
+   its FAIL line: FAIL SUCCESSOR: 1 earlier models re-run (0 s in all), each red against its declared FAIL line verbatim (39 declared): [('predbound', 'TRACEBACK')]
+p35 -> QUOTES (core/labels/rule's line 5 altered in the base piece only (its details copies kept)): caught (3 s)
+   last line: predfix88_model: 25 checks, 1 failed (QUOTES)
+   its FAIL line: FAIL QUOTES: 28 quoted sentences, each in the record at b63928b48 AND in its own piece, missing: [('5. Labels stacked on one spot are equal names of it; their o', 'core/labels/rule', True)]; 8 record titles cited whole as a `rulings:` item's record, not a title or not cited: none
+p36 -> DOC (a formatted line altered): caught (3 s)
+   last line: predfix88_model: 25 checks, 1 failed (DOC)
+   its FAIL line: FAIL DOC: 75 lines, each in its own piece; missing: 1
+p37 -> DOC (a line looked for under another piece's tag): caught (3 s)
+   last line: predfix88_model: 25 checks, 1 failed (DOC)
+   its FAIL line: FAIL DOC: 75 lines, each in its own piece; missing: 1
+p38 -> NAMEGRID (one decided cell's expected verdict flipped): caught (3 s)
+   last line: predfix88_model: 25 checks, 1 failed (NAMEGRID)
+   its FAIL line: FAIL NAMEGRID: 24 cells: decided 17, UNDECIDED 4 (both-uses, list-is-label, pair-twice-alone, stacked-chain), not modelled 3; disagreeing: [('A.h', 'alone', 'refused', 'legal', None)]
+p39 -> NAMEGRID (an undecided cell's open slug (both-uses) dropped from the documents (core.md altered as read)): caught (3 s)
+   last line: predfix88_model: 25 checks, 1 failed (NAMEGRID)
+   its FAIL line: FAIL NAMEGRID: 24 cells: decided 17, UNDECIDED 4 (both-uses, list-is-label, pair-twice-alone, stacked-chain), not modelled 3; disagreeing: [('A.h', 'both uses', 'legal', 'legal', 'both-uses')]
+   each plant turned its target check FAIL, with no traceback and no engine crash
+predfix88_sabotage: 39 plants, 0 not caught
