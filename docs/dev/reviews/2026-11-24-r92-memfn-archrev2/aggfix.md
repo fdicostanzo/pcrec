@@ -1,0 +1,89 @@
+# CRITIC aggfix: r92 memfn-archrev2
+
+## Findings
+
+
+### AGG-1: `translate:grouping` is a second mechanism, filed as a one-site NOTED row (ARV-1)
+CONFIRMED. Severity design; effort S (move one member from ARV-1 to ARV-18); blast radius §2 A-s1/A-s4, §6 two rows, §7 ARV-1/ARV-18 counts (3/8 -> 2/9). r91 F12.
+The census row (decider_census.tsv:65) is `EXC:translate's pterm grouping (T-VERIFY C-run)`, retiring when "a census shows its groups equal find_groups' on every B-fn site". span_pick.md:137 says what it is: a second spelling of C-run grouping beside `find_groups`/`run_group_ok` ("no core, cap or adjacency clause ... reading `run_group_ok` is not provably byte-identical"). span_pick.md:127 heads the table "each a second decider kept on purpose". Observed: ARV-1 (A-s1; §6 NOTED row) keeps it as a noted deviation, with the shape "One question, one primitive", which is the second-mechanism rule itself. Expected: the note applies its own test the same way to every row. It sends `pred_test:run-chain` (one part, "a second T-CMP") to ARV-18, and the guide (architecture.md:212) says "A small, local second walk is still a second mechanism". By the same test, `translate:grouping` (one part, a second C-run grouping) is an ARV-18 member. Judgement (e) (architecture.md:160): "A noted deviation is never a second mechanism". ARV-1 is then the 2 NONE-density rows.
+
+### AGG-2: the 11 EXC rows are a FLOOR of the ruled named exceptions; ARV-1 misses a sibling
+CONFIRMED (P2), SUSPECTED (scan_ok). Severity doc/design; effort S; blast radius §0 "one of 11 NAMED EXCEPTIONS", A-s1, §6 ARV-1 row. r91 F12 (population).
+span_pick.md:136 (`[1b fix R9]`) and presence.c:71-74 name P2's dominance compare (presence.c:352, `rate && lead >= 0 && rate[proof->byte] <= rate[lead]` inside `kit_pres_picks`) as a named exception: "Its density readers (HORS_MIN, MARGIN) are the named exception ..., and so is P2's dominance compare". The census has no EXC row for it: its `kit_pres_picks` parts are `set-pick` (T-PRES) and `landmark` only (decider_census.tsv:86, :91). It is the NONE-density family's third member, the same kind and trigger family as ARV-1's `hors_facts`/`m_margin_holds` ("presence joins the call, or a priced row on NONE"), and ARV-1 leaves it out. SUSPECTED as well: span_pick.md:131 puts "the RESEED KEY row's `scan_ok`" in the `fn_rows` BODY exception, but the census maps `scan_ok` to KEY (:43). Expected: the note says the census is a FLOOR of span_pick §The tables' named exceptions (the population it partitions), and either adds P2 to ARV-1 or says why it is out.
+
+### AGG-3: the ARV-1/ARV-18 rows do not take the guide's register shape: one row or eight, WHERE by reference, ARV-18's single home unstated, ruled record uncited
+CONFIRMED. Severity doc (method); effort S; blast radius §2 A-s1/A-s4, §6 rows 1-2, §7. r91 F12 (answered only in part).
+(i) A-s4 says "each becomes an open REMODEL row" and §7 ARV-18 says "Register rows" (plural). §6 proposes ONE row for all 8. (ii) KINDS OF ROW (architecture.md:601-605) asks for where = "file and function, verified by command", and (c) asks for a noted row with "where (file and function ...)". Both §6 rows give "decider_census.tsv, the N `EXC:` rows of C-55" instead. That is a form the guide does not have (row 12's by-reference is for roadmap areas, not noted rows). The members are 3 different files. (iii) The single home is stated for ARV-1 ("noted keeps one home (the row)"), not for ARV-18. Each member's trigger would then sit in three places: the census `retires` column, span_pick.md §The tables' named-exceptions table (:127-138) and the new register row. The note does not say which is canonical. (iv) RULINGS THIS NOTE CROSSES omits span_pick [rev3 P4] ("each a second decider kept on purpose") and rev5.1 R2/R4/R8 (span_pick.md:508-510, "FIXED, KEEP: U6 and translate's grouping named members"). ARV-18 re-files those ruled keeps as open remodels, so it must cite them. It also omits D197 (decisions.md:10262, the fused row "instrument only"; revisit when "the timing run reports") for the `ren_fused` member, whose census event ("a fused row's triple is rendered by its pieces' rows") is a different event. Expected: per-member rows (or one family row with each member's file:function), the canonical home stated, and the cited rulings.
+
+### AGG-4: ARV-14's NOTED row is not "small" by judgement (e): it spans three files
+CONFIRMED. Severity design; effort S; blast radius §4 C-s2, §6 ARV-14 row. Fix-induced from r91 F14.
+Judgement (e) (architecture.md:157-158): "SMALL means it touches one site, adds no new reader of another unit's structure, and changes no seam". KINDS OF ROW: size, gate = "why it was small (one site, ...)". §6's ARV-14 row reads "small: 3 files, no reader, no seam". C-s2 itself gives each member "its own reason" and a different event (vany.c's routing versus a measured size cost). Expected: three noted rows, one per file, each with its own reason and event. Otherwise the note must argue why one deviation across three files is small.
+
+### AGG-5: layout choices still FIXED outside §8, each contradicting the §8 item that hands it on
+CONFIRMED. Severity doc (method: the architect skill's self-check "no layout outside 'What the design step must decide'"); effort S; blast radius §2-§7 sentences named below. r91 F17 (answered in part).
+(i) ARV-16. A-s5 (rev2:159) moves ":78-151, with TIE `wf_ties`", §6's ARV-16 WHERE is "window.c :78-151", and H1's row :78-151 ("the TIE table and `kit_tie_*` ... leaves the file first (ARV-16)") all move `wf_ties` (defined at window.c:83-88, inside :78-151). H2 (rev2:582) hands on "whether `wf_ties` moves with `kit_tie_takes`".
+(ii) ARV-5. B-s1 (rev2:262-264) decides "membership, count, first member, and a writer" and "point every 'is it ONE?' spelling at `KIT_POS_ONE`". H3 (rev2:585-586) hands on "whether the writer (`add`) joins" and "whether 'only one' is `kit_pos_class_of(..) == KIT_POS_ONE` or a named predicate".
+(iii) ARV-2. D-s1 (rev2:423) and §7 (rev2:533) fix the home `memfn/include/NOTES.md`, and §7 fixes "re-cite the 75 ... by symbol". H11 (rev2:605-606) hands on "memfn/include/NOTES.md vs a history file" and "re-cite ... by symbol, or order ARV-4 after it". The NOTES.md home is a house rule (root CLAUDE.md Conventions), so H11 also hands on a choice that is already ruled. §7's ARV-4 row says "AFTER ARV-2 if ARV-2 lands first", and its ARV-2 row says "before ARV-4's re-pins" with no condition. The two order statements differ.
+(iv) ARV-11 (rev2:289): "a new `.def` joins Makefile KITHDRS". H4 (rev2:588-589) leaves the file open: "a `levels_c.def` ... or elsewhere".
+Expected: §2-§7 state the rule and the candidates, and the choice appears only in §8.
+
+### AGG-6: the owner question's EXAMPLE presumes the three-file cut that H1 hands on
+CONFIRMED. Severity design (the owner question frames the answer); effort S; blast radius §9 window-file-split EXAMPLE. Fix-induced from r91 F5(f)/F17.
+§9 (rev2:619-621): "Under (A), that change would have landed after a split, adding wfS to the frame file and the V form to the text file". H1 (rev2:562-564) leaves the cut open between "planner | emitter (2 files ...)" and "planner | frame | text (3 files ...)". Under the 2-file cut there is no "frame file": wfS (:1893-2065) and the V form both land in the emitter file. The example therefore puts before the owner a layout the design step has not chosen, and the cut it shows is the costlier one (54 names versus 25). Expected: the example states the outcome under both cuts, or names the cut as H1's.
+
+### AGG-7: two pairs of §8 items own the same choice, and §7's orders do not serialise them
+CONFIRMED. Severity design; effort S; blast radius §8 H1/H2/H3/H8, §7 order column (ARV-7, ARV-9).
+(i) The home of window.c :231-278 (`kit_pos_class_of`/`kit_pos_spelled` plus the set statics) is chosen twice. ARV-16 moves them "to a home that calls neither window.c nor finder.c", and H2 offers "presence.c or a new file". ARV-5 makes the same statics "the family's", and H3 offers "kit.h static inlines or a .c". If H3 picks kit.h inlines, ARV-16's :231-278 part, its §6 WHERE and its binding list change. Neither item says which one owns the range. The order "ARV-16 after or with ARV-5" implies H3 decides, but H2 does not say so.
+(ii) `mf_wdecide`'s home is chosen twice: H1 row :2840-3266 offers "frame, or its own entry file", and H8 asks "where public entries live (`mf_pres_ports`, `mf_wdecide`)". ARV-7's trigger is "ARV-9, or the next structural compose.c change", and H4 offers `kit_selector` a home in "ARV-7's leaf". Yet §7's ARV-9 order column says only "after ARV-5 and ARV-16", so ARV-7's place relative to ARV-9 is unstated.
+Expected: each choice in one H item, and the other item pointing at it. ARV-9's order column names ARV-7 (before, with, or after).
+
+### AGG-8: standing question for ARV-16 (sibling of a family): the general form is one home for ALL position primitives; with H2's "a new file" option the cycle moves rather than ending
+CONFIRMED. Severity design; effort S (state the form and constrain H2); blast radius §2 A-s5, §6 ARV-16 row, §8 H2.
+The note's own C-59 says "window.c's primitives call only each other and `kit_mass`". `kit_run_member`, in the moved range, calls `kit_mass(rate, set, 1, KIT_MASS_SUM)` (window.c:953), and `kit_mass` is defined in presence.c (:75). After ARV-16, presence.c calls the moved names (`kit_pick_takes`, `kit_pos_spelled`, `kit_run_member`, `kit_tie_member_key`). If H2 chooses "a new file", the new file calls `kit_mass` in presence.c, so a presence.c <-> new-file cycle remains. A-s5's "It DELETES the presence<->window cycle" holds only in the letter. The home constraint A-s5 states ("calls neither window.c nor finder.c") leaves presence.c out. The family is [SP1D-KITSPLIT-SEAMS]'s own wording (plan.md [row by tag]): "Primitives (kit_pick_takes, kit_tie_*) sit in window.c WHILE kit_mass and kit_run_set sit in presence.c". §1 lists presence.c's `kit_byte_rate`, `kit_mass`, `kit_run_set`, `kit_run_decide` and `kit_run_opts_of` as position primitives, and §2's Goal 2 strain is "no one home". The general form is one home for both halves. H2 does not hand on whether `kit_mass` (and its siblings) move, and A-s5 names no unlock (for example, A-PLAN's next step or ARV-9's smaller cut). Triggers are stated. Expected: either H2 = presence.c, or `kit_mass`'s move joins ARV-16. State the general form and its unlock.
+
+### AGG-9: r91 F9 answered in part: two of the per-level family's five parts belong to no item
+CONFIRMED. Severity design; effort S (file them inside the family, or as a leave-it with a trigger); blast radius §3 B-s2, §6 ARV-6+11 row, §8 H4. r91 F9.
+B-s2 (rev2:274-279) names five parts: choose the level (3 spellings, B6), open the block and report its includes (ofsskip.c:747-748, vany.c:162/:235, window.c:4412-4413, "two include-report shapes"), spell the ops (4 tables), close, and write the selector (2 writers). ARV-6 owns the selector writer. ARV-11 owns spelling only and is explicitly "BOUNDED: the unit stops at spelling" (level admission is R-48's). §6's ARV-6+11 row deletes "3 of 4 spelling tables; 1 selector writer". Level CHOICE (vany.c:193's top admitted bit, fn_rows' row order, window.c:4407) and block-open/include-report sit in no item's scope or deletes, and they are not filed as a leave-it. H4 asks "the shape of the include report", a choice for a part no unit builds. Expected: say which unit owns these parts, or leave them with a trigger. The likely trigger is the same R-48 event, so the family does not "move twice", which is the reason B-s2 gives for its one event.
+
+### AGG-10: r91 F12 answered in part: section B's site map and goal strains still omit ARV-18's emitter members
+CONFIRMED. Severity doc; effort S; blast radius §3 site map/Goal 1. r91 F12 ("§2/§3 do not list them").
+Rev 2 adds them to §2's Goal 1 STRAINS only (rev2:121-124). §3's Goal 1 strains (rev2:246-247) still read "B2 ..., B3 ..., B4, B5, B8 ..., B11". Section B's site map has no row for `select_arm`/`arms[]` as a frame selector, `fn_select`/`ofs_fn_serves` (fn_rows BODY/PREFIX), `vrun_kb`, `ren_fused` or `pred_test:run-chain`. All five live in emitter files (compose.c, ofsskip.c, vrun.c, window.c's renderers, generic.c). B12 names `select_arm` only as the legacy bridge's callee. A reader of section B (the emitter) does not find its largest goal-1 strains.
+
+### AGG-11: standing question for ARV-18 (general form + unlocks, with triggers): no unlock named; the SIMD-rung members are not linked to the per-level family's event
+SUSPECTED (confirm by reading R-48's note when written, or the census rule C9's text). Severity design; effort S; blast radius §2 A-s4, §6 ARV-18 row, §8 H9.
+General form: stated implicitly (each second decider joins the table in the census's `answers` column). H9 hands on "which table each joins". Triggers: each member's census trigger, inherited. Unlock: none named for any member. A-s4 sizes the remodels "M-L, not estimated" and says nothing on what each buys. `fn_select` (fn_rows PREFIX, "SIMD rungs") and `vrun_kb` ("vrun KA/KB (SIMD rungs)") retire at "the SIMD census rule (C9)". They live in vrun.c/ofsskip.c, the same files as ARV-11's spelling tables and ARV-6's selector. A next SIMD form (R-48's named event for ARV-6/ARV-11) is the likely event at which a new rung meets them. The note's goal-4 paragraph for section B (rev2:253-255) names B4/B5/B6 for R-48 but not these two exceptions. So a NEON V planner grepping the register finds ARV-11's row but not the SIMD-rung second mechanisms. This is r91 F16's complaint, repeated for the new row. Expected: ARV-18 states each member's unlock, or one unlock for the family, and cross-links the two SIMD-rung members to the per-level family's event.
+
+### r91 F1-F20 -> rev 2 (completeness map; sizes, ranges and binding counts NOT re-derived, per round rules)
+- F1 -> A-s2 (internal seam ADDED; private header; A3 reworded), A13, H1's full section table (contiguous :1-4672). ANSWERED.
+- F2 -> ARV-16 (new), A-s2 "does NOT delete the cycle", A8's disposition (leave it, triggers ARV-7/ARV-9), C-9 re-run by SHAPE. ANSWERED; fix-induced gap AGG-8 (kit_mass).
+- F3 -> A-s2's binding list (1)-(7), re-sized L. ANSWERED.
+- F4 -> A2 (SHARED), A-s2 ORDER after ARV-5/ARV-16. ANSWERED.
+- F5 (a)-(f) -> §9 re-posed (A)/(B) with leaning (A); D201 add. 2 quoted in full and disowned as a ground; D185 11-17/11-04, ARCH-STEP (3) and row 9 in RECORDS; triggers not claimed, "ALSO TO CONFIRM"; EXAMPLE from R-47. ANSWERED; fix-induced AGG-6.
+- F6 -> B8, B-s1 (kit_pos_* family, 8 loops SHAPE, k1_ref excluded, S3106/S3525 + 2 plants, 6 open reads). ANSWERED; AGG-5(ii).
+- F7 -> B11, D4, D-s3, H5. ANSWERED.
+- F8 -> D-s4 rides the R1 filing; D162 add. 3; 8 fields; G2 writes; L; layer seam (§5 header). ANSWERED.
+- F9 -> B5/B6, B-s2 (one family, D146 add. 1 third application, mfind_simd, bounded at spelling, S2996, targets_check.c), H4. PART: AGG-9; AGG-5(iv).
+- F10 -> B2, B3, B-s4, B-s5, H7. ANSWERED.
+- F11 -> B-s3 (order as a row with its violations), H8. ANSWERED; AGG-7(ii).
+- F12 -> ARV-1/ARV-18 split, §6 kinds and status. PART: AGG-1, AGG-2, AGG-3, AGG-10.
+- F13 -> D1, D-s2 (3 classes). ANSWERED.
+- F14 -> C3 family, C-s2 NOTED row, trigger per main's R-1 (not Q36). ANSWERED; fix-induced AGG-4.
+- F15 -> D2, D-s1 (under limit, not edited; include/NOTES.md; 75 cites), H11. ANSWERED; AGG-5(iii).
+- F16 -> §6 (rows 3, 14, 15, 19 cited; A-PLAN/A-KIND/H-SITES against Ride-along lines; 7b not drift; row 10 joined); §6 proposes rows for ARV-5/6/7/8/10/11 (event names R-48). ANSWERED; the new ARV-18 row repeats the gap (AGG-11).
+- F17 -> §8 H1-H11. PART: AGG-5, AGG-6, AGG-7.
+- F18 (a)-(d) -> ARV-17/C8; A3 (`wf_plan_class` a 6th reader); D11; B12. ANSWERED.
+- F19 -> B1 (9 over 8), C-20c re-written, KIT MEMORIES (journal/responses cite), A-s3 ground changed, §4 kit.md heading "measurement card" quoted, [SP1D-ARGMIN] trigger quoted in full. ANSWERED (quote wording is the ruling lens's).
+- F20 -> C-s1 / ARV-13 fire [LAYOUT-DRAW], H10. ANSWERED.
+- F21 not raised (main's), §6 lists it for the manager only: correct per COMMON.
+
+## PROBED-AND-HELD
+- The census's 11 EXC rows at T (C-55 re-run over R/tree): hors_facts, fd_pres, select_arm, fn_select, ofs_fn_serves, vrun_kb, m_margin_holds, translate:grouping, ren_fused, kit_pres_picks:landmark, pred_test:run-chain. ARV-1 (3) + ARV-18 (8) = 11: the partition is exhaustive and disjoint. 10 of 11 placements hold against judgement (e) (`kit_pres_picks:landmark` is one part, but it writes a public field pcrec reads (span_pick.md:135), so it is not small: ARV-18 is right). The exception is translate:grouping (AGG-1).
+- §6 states the kind and status for both new rows ("open" for remodels, "noted <commit>" for noted), as r91 F12 asked; KINDS OF ROW's status values are used correctly.
+- §8 covers every scoped suggestion's open choices: H1 (ARV-9), H2 (ARV-16), H3 (ARV-5), H4 (ARV-6/11), H5 (ARV-10), H6 (ARV-12), H7 (ARV-8), H8 (ARV-7), H9 (ARV-18), H10 (ARV-13), H11 (ARV-2). No H item decides something R-49 excludes: H4 leaves the V form's level-admission fact to R-48.
+- H1's section table covers window.c :1-4672 with no gap (12 rows). Its :1375 boundary differs from A1/A-s2's ":152-1375" by one line, which is cosmetic.
+- Orders ARV-5 -> ARV-16 -> ARV-9 agree across A-s1/A-s5/A-s2, §6 and §7 (3 statements). ARV-10 serialises with [FLAG-DEMOTE] in D-s3, §6 and §7.
+- §9 asks one question; its (A)/(B) polarity and leaning agree (r91 F5(a) fixed). The note says ARV-16/ARV-5 do not need the answer, consistent with §7.
+- A8's disposition hands entry placement to H8 rather than deciding it.
+- ARV-14's trigger follows main's ruling of 2026-11-24 (own trigger, not "Q36 extraction") in C-s2, §6 and §7.
+
+CRITIC COMPLETE

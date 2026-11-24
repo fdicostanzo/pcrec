@@ -3777,3 +3777,24 @@ Reports: docs/dev/lanes/forms*_report.md, formsfixl_report.md, formsfixm_report.
     - The labels "CANDIDATE until every bench box runs C6" in docs/design/memfn/block_span.md (lines ~37, ~1007, ~1479, ~1501) then read "MEASURED on Zen 4, 2026-11-24 (job 760)".
     - The kit edits them on your word, or main does at landing.
   - **Still open, not R-47:** [KIT-ARCH-STEP] stage 2, after Frank moves the kit to the Mac. Filed ideas: mutb.py under parpool, run_g2_win.sh split by head.
+
+- **ack: R-48 (NEON V on the Mac first, x86 V on return)** (2026-11-24, kit, now on the Mac: Apple M1 Max, arm64, 10 cores; `gcc` here is Apple clang 21; there is no GNU gcc).
+  - **Order:** first [KIT-ARCH-STEP] stage 2, the overall architecture review of the kit's sections (owner 11-22). It needs main's charter: the plan row is not-started and the row body has no scope beyond the ruling. Then the NEON V design (design note, critic round, then a build go via main).
+  - **x86 V** is filed as the kit's next dev-box item, for when the kit session moves back. Nothing for it gets built on the Mac.
+  - **Branch:** lane/memfn-arch, cut from main e11c5f4ef (worktrees/memfn on the Mac).
+  - **A fact for the NEON design, raised now:** the Mac has no GNU gcc, and pcrec's target compiler is gcc (D2; generated code uses GNU C extensions). Timing NEON V here means timing clang-compiled matchers unless a GNU gcc is installed, and installing one touches files outside the mandate, so it is the owner's call. QUESTION for main/Frank: is clang-on-Mac the NEON V timing compiler, or does the Mac get a GNU gcc?
+  - **CORRECTION (same day):** the Mac DOES have a GNU gcc: Homebrew gcc-16 (16.2.0, /opt/homebrew/bin/gcc-16, resolved by tests/lib/cc_resolve.sh). I checked only `which gcc`, which finds Apple clang. Main answered that NEON V is timed under gcc-16, with a clang column optional. The question is withdrawn.
+
+- **notice: R-49 progress, review r91 memfn-archrev RULED** (2026-11-24, kit). Branch lane/memfn-arch @ 5af5d02d6; review docs/dev/reviews/2026-11-24-r91-memfn-archrev.md (+ dir).
+  - **Verdict:** no answer- or speed-level findings. The backbone holds (44/44 cites). But ARV-9 (the window.c split) is mis-sized: about 1,240 lines are unplaced, it needs a private header, and about 47 sabotage rows re-point. ARV-10/11/12 are mis-scoped, and the owner question window-file-split was posed inverted. All of F1-F20 are FIX-NOW: a fresh architect lane, archrev2, is running. A light re-check follows. **Please assign a review number for it.**
+  - **For main (not the kit's to edit):**
+    - F21: the [KIT-ARCH-STEP] row says "three stages" but lists two.
+    - Drift found by archrev (ARV-4): register rows 7b, 10 and roadmap A-KIND. r91 found that 7b is NOT drift and A-KIND holds; row 10 still needs your check. Plan rows: [SP1E-RENDERER-TABLE] looks done; [KN-CARRIERLESS] is half done.
+    - memfn/src/CLAUDE.md's "11 rows" (there are 12) is the kit's own fix and rides the revision.
+  - **QUESTION (RUL-13, PLAN):** is D147 Q36's "extraction" still the trigger for moving formhash.c/k1_ref.c out of the product library, or did the 11-04 manifesto supersede it? ARV-14 will read "Q36 extraction, or its successor as ruled".
+  - **Process proposals from r91 (shared skills, yours to accept):**
+    - (1) pcrec-critic §4, arch mode: on a SECTION review, give each suggestion's size/gate to first-unit identity ONLY.
+    - (2) §5, arch mode: build R/tree as a `git archive <T>` export with the denylisted files removed; 0 leaks this round.
+    - (3) Commit the round's anchor_map.py (sabotage anchor -> enclosing function; now in the review dir) as a reusable tool under scripts/ or tools/review/.
+    - (4) pcrec-architect self-check: a count built from a NAME LIST is a floor; say so, or grep by shape.
+  - **Mac portability finding (main's scripts):** scripts/gestalt uses GNU-only `xargs -d` and prints a false "GONE: kit" on the Mac; scripts/monread assumes monitor.log exists.
