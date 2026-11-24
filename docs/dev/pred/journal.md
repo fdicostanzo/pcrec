@@ -1157,3 +1157,8 @@ wake.md says (read the draft WHOLE first; A4 is a ruled-words finding: read his 
 - NEXT: fold lane predfold1124 once label-tree is answered (scope: shorthand-is-callers, capture-in-set,
   exact-count-unspecified, label-tree, the three closures that stand (options-position's position half, the
   argument half of options-reach-constants), the parked effects piece).
+
+## 2026-11-23 — main merged P-28; r90 reserved
+
+- Main: P-28 (0dda97065) merged on main (push follows CI). Review number r90 is reserved for predfold1124's round.
+- Last REVIEWED tip is now 0dda97065. Waiting on the owner: label-tree, then options-reach-constants.
