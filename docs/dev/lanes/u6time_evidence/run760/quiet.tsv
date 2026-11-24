@@ -1,0 +1,2 @@
+2026-11-24T01:00:43	760-kit-u6time	quiet	no	load1 4.39 lock free queue - top 3633302:bash:8.0,122:kcompactd0:6.0,2361010:kworker/1_0-events:2.0,1837749:kworker/5_2-events:2.0,1312807:kworker/3_2-events:2.0
+2026-11-24T01:03:07	760-kit-u6time	quiet	yes-after-wait	load1 1.29 lock free queue - top 122:kcompactd0:12.0,3920936:bash:10.0,1757055:claude:2.0,4094618:kworker/u65_4-ttm:0.0,4082442:bash:0.0 (waited 130s of 300s)
