@@ -42,11 +42,74 @@ Owner waits: a row or stage waiting on the OWNER (a charter, a build go, an answ
   filed: 2026-11-17 Frank ("we discover over time that the feature is aggregated onto existing code and then have to go through a lengthy refactor ... requirements -> architecture-> design -> build Each with its own review and goals"; "I'd like to set up a plan with this"); manager wrote the row
   status (2026-11-18): A1-A5 DONE; A6 pilot ran (r49/r50, design r51), write-up in the body file, skill edits applied; owner KEPT the step and the size trigger (D200); A6 retro test owed
   next: the A6 blinded retro test; open with the owner: speed-gate, new-rules; units: docs/design/plan_row_bodies/ARCH-STEP.md
-- [KIT-ARCH-STEP] STATE:started — the memfn kit adopts the architecture step, in three stages
+- [KIT-ARCH-STEP] STATE:started — the memfn kit adopts the architecture step, in stages (stage 2 DONE; stage 3 in force)
   filed: 2026-11-22 owner (ruling kit-arch-step)
-  status (2026-11-24): stage 1 (the kit's in-flight effort) done; stage 2 (the ONE overall arch review of the kit's sections) runs on the Mac (R-49; review r91 ruled 2026-11-24, revision under r92); stage 3 (arch reviews for each new kit feature, the kit manager skill's trigger row) follows
-  next: stage 2's revision (r92) closes and its suggestions are filed as plan rows and register rows; then stage 3 (the kit manager skill's trigger-table row)
+  status (2026-11-24): stage 1 done; stage 2 DONE (R-49: note rev 4 accepted after r91-r93; its suggestions filed below, owner ruling window-file-split = D204); stage 3 (an arch review per new kit feature, the kit manager skill's trigger row) is IN FORCE
+  next: stage 3 runs per new kit feature; the children below each wait on their own trigger; [KIT-WINSPLIT] is first (NEON V's trigger)
   refs: [ARCH-STEP]; docs/design/plan_row_bodies/KIT-ARCH-STEP.md; memfn/docs/requests.md (R-49); .claude/skills/pcrec-memfn-manager; pcrec-architect; pcrec-critic (mode arch)
+  - [KIT-WINSPLIT] STATE:not-started — kit: split window.c once, one file per table and its search functions (ARV-5 + ARV-9 + ARV-16)
+    filed: 2026-11-24 kit arch review (R-49, note rev 4 accepted; suggestions filed, not built)
+    status (2026-11-24): direction ruled (D204: yes on trigger, split lands BEFORE NEON V, answer-identical); the position primitives move once, in the split, to a file taking kit_mass (the presence<->window cycle goes); design not written
+    waits: the design note, the r95 round, then owner — the build go (asked at design delivery); trigger is NEON V (R-48); NEON V's design waits for the split
+    next: the kit writes docs/design/memfn/window_split.md (per-file interfaces, private header, test re-points: H1/H2/H3/H8), then design round r95 (memfn-winsplit), then the kit asks the owner for the build go at design delivery
+    refs: D204; memfn/docs/arch_review_2026-11.md §7 ARV-5, ARV-9, ARV-16, §8 H1/H2/H3/H8, §9; architecture.md register row 43; memfn/docs/responses.md (OWNER RULING window-file-split)
+    Charter: owner 2026-11-24: "yes on trigger but once you do split, make it count. Consider where reasonable the interface of the file. If there is a table and functions that search it specifically, they belong together in that file. Then the public names are just those functions." ARV-5 (set questions join kit_pos_*), ARV-16 (primitives one home) and ARV-9 (the split) are one unit; ARV-7's text-buffer leaf goes before or with it.
+  - [ARV-1-NONE-NOTED] STATE:not-started — kit: noted-deviation register rows for the 2 NONE-density readers (hors_facts, m_margin_holds)
+    filed: 2026-11-24 kit arch review (R-49, note rev 4 accepted; suggestions filed, not built)
+    status (2026-11-24): the two register rows are written (architecture.md part 3) by lane arvfile; each retires at its own census trigger; no check is edited
+    next: main reviews the landed rows, then deletes this row (the work is the rows)
+    refs: memfn/docs/arch_review_2026-11.md §7 ARV-1, §6
+  - [ARV-2-KIT-HISTORY] STATE:not-started — kit: move memfn.h's changelog and include/CLAUDE.md's history to memfn/include/NOTES.md
+    filed: 2026-11-24 kit arch review (R-49, note rev 4 accepted; suggestions filed, not built)
+    status (2026-11-24): filed; the house rule says history goes to NOTES.md; 75 `memfn.h:N` cites must stay true (re-cite by symbol, or ARV-4 re-pins after)
+    trigger: the next MF_SITE_ABI bump, or now (doc only); when both ARV-2 and ARV-4 are taken, ARV-4's line re-pins land after ARV-2
+    refs: memfn/docs/arch_review_2026-11.md §7 ARV-2, H11
+  - [ARV-3-CALLER-CLASS] STATE:not-started — kit: state each public entry's caller class in memfn.h (3 classes)
+    filed: 2026-11-24 kit arch review (R-49, note rev 4 accepted; suggestions filed, not built)
+    status (2026-11-24): filed; doc only
+    trigger: the next entry added to memfn.h, or with ARV-2
+    refs: memfn/docs/arch_review_2026-11.md §7 ARV-3, D-s2
+  - [ARV-4-DRIFT] STATE:not-started — kit: bookkeeping drift (row 10 and A-KIND WHEREs, two half-done rows, 11 vs 12 fd_rows)
+    filed: 2026-11-24 kit arch review (R-49, note rev 4 accepted; suggestions filed, not built)
+    status (2026-11-24): filed; main's: row 10's WHERE (MF_MAX_BACK at memfn.h:308), A-KIND's (MF_SK_* at :513-514), [SP1E-RENDERER-TABLE] and [KN-CARRIERLESS] are HALF done, memfn/src/CLAUDE.md says 11 fd_rows, there are 12
+    next: main fixes the WHEREs and the CLAUDE.md count; if ARV-2 is also taken, these line re-pins land after ARV-2
+    refs: memfn/docs/arch_review_2026-11.md §7 ARV-4, §6 plan-row drift
+  - [ARV-6-SELECTOR-WRITER] STATE:not-started — kit: one selector writer (vany_selector through kit_selector), with ARV-11
+    filed: 2026-11-24 kit arch review (R-49, note rev 4 accepted; suggestions filed, not built)
+    status (2026-11-24): filed; no-mover; S2996 re-aims; targets_check.c becomes a reader
+    trigger: with ARV-11 (one event): R-48's architecture note, or the next change to a spelling table
+    refs: memfn/docs/arch_review_2026-11.md §7 ARV-6, B-s2
+  - [ARV-7-TEXTBUF-LEAF] STATE:not-started — kit: the text buffer gets its own leaf file; the layer order filed as a row
+    filed: 2026-11-24 kit arch review (R-49, note rev 4 accepted; suggestions filed, not built)
+    status (2026-11-24): filed; a pure move of compose.c :29-108 plus a declared layer order for memfn/src with its known violations
+    trigger: ARV-9 ([KIT-WINSPLIT]; ARV-7 before or with it), or the next structural compose.c change
+    refs: memfn/docs/arch_review_2026-11.md §7 ARV-7, B-s3
+  - [ARV-8-REACH-TABLES] STATE:not-started — kit: REACH from the declared tables, not a hand list; delete the 4 enumerators
+    filed: 2026-11-24 kit arch review (R-49, note rev 4 accepted; suggestions filed, not built)
+    status (2026-11-24): filed; M, harness; registration choice (H7) decides which readers go red; amends plan_frame.md R5 / r13 V-3's recorded scope (the kit manager's amendment)
+    trigger: the next new declared table (= ride-along register row 19's event)
+    refs: memfn/docs/arch_review_2026-11.md §7 ARV-8, B-s4
+  - [ARV-10-ONE-DENY] STATE:not-started — kit: one deny mechanism at the seam (the bit's 3 readers plus the reversed reader)
+    filed: 2026-11-24 kit arch review (R-49, note rev 4 accepted; suggestions filed, not built)
+    status (2026-11-24): filed; M, kit (MF_SITE_ABI) + pcrec edit in the same commit + G2 re-cut; serialises with [FLAG-DEMOTE]; needs the kit manager's amendment of Q-M1b-1
+    waits: [FLAG-DEMOTE]; main's amendment of docs/spec/registry.md §6 para 7 if an options row is taken
+    trigger: [FLAG-DEMOTE]'s opening, the next MF_SITE_ABI layout event, or a second MF_D_* bit. docs/spec/registry.md §6 para 7 is NOT amended here: MAIN amends it only if ARV-10 is taken with an options row (note §9)
+    refs: memfn/docs/arch_review_2026-11.md §7 ARV-10, D-s3, §9
+  - [ARV-11-SPELLING-HALF] STATE:not-started — kit: the level C-spelling half (D146 add. 1) for the 4 spelling tables, facts to the facts half
+    filed: 2026-11-24 kit arch review (R-49, note rev 4 accepted; suggestions filed, not built)
+    status (2026-11-24): filed; M, no-mover at x86; bounded at spelling (no level-admission fact, level choice or include report)
+    trigger: R-48's architecture note, or the next spelling-table change; one event with ARV-6
+    refs: memfn/docs/arch_review_2026-11.md §7 ARV-11, B-s2
+  - [ARV-12-RENDERER-IFACE] STATE:not-started — kit: the renderer interface leaves the public structs (rides the filed R1 item)
+    filed: 2026-11-24 kit arch review (R-49, note rev 4 accepted; suggestions filed, not built)
+    status (2026-11-24): filed; L, kit (MF_SITE_ABI) + harness; 5 mf_pred fields leave, 2 window-site value reservations move, end_back per H6; G2 route re-cut
+    trigger: the R1 filing's triggers ("a renderer change" may have fired) or Table E legacy rows retiring; D162 add. 3 for the ranking
+    refs: memfn/docs/arch_review_2026-11.md §7 ARV-12, D-s4, D-s5
+  - [ARV-18-SECOND-MECHS] STATE:not-started — kit: implement-then-replace register rows for the 10 second mechanisms the tables second-guess
+    filed: 2026-11-24 kit arch review (R-49, note rev 4 accepted; suggestions filed, not built)
+    status (2026-11-24): the ten register rows are written (architecture.md part 3) by lane arvfile; P2's dominance compare still needs its own census row, and `ren_fused`'s carrying event is proposed in A-s4
+    next: the kit adds P2's census row (a check change, doc + one census row); each remodel is M-L at its own census trigger
+    refs: memfn/docs/arch_review_2026-11.md §7 ARV-18, A-s4, §6
 - [OPTLOOP] STATE:ongoing — THE OPTIMIZATION LOOP
   filed: 2026-09-21 Frank
   status (2026-10-12): ROUND 1 CLOSED 2026-10-05 (batch gate complete, docs/dev/lanes/r1gclose_report.md); rounds 2 and 3 share one batch gate (D144 addendum 3); ROUND 3 SELECTED 2026-10-06 (docs/dev/optloop/round3_selection.md…
@@ -1304,12 +1367,12 @@ Owner waits: a row or stage waiting on the OWNER (a charter, a build go, an answ
   trigger: an optimization or fix that opens the DFA top level, start table or forward match (the ride-along rule), or Frank's go; A-REV S1 lands first and its record is the vocabulary this extends
   refs: [IR-FORM]; [VMREC]; docs/design/stream/roadmap.md areas A-REC, A-DFATOP, A-SEAM; docs/design/stream/arev.md
   Shape: byte-identical first step (records become the only writers, as [VMREC] (a)); one record vocabulary with the VM's where the kinds agree (A-REC); stamps derived from the records, not the engine verdict (A-DFATOP).
-- [SP1D-KITSPLIT-SEAMS] STATE:not-started — kit split: position primitives' home and the seam facts (rates snapshot, rules digest, alt=)
+- [SP1D-KITSPLIT-SEAMS] STATE:not-started — kit split: the seam facts (rates snapshot, rules digest, alt=)
   filed: 2026-11-05 land1105 (review 2026-11-05-r1, F10 + r2 F13, F12)
-  status (2026-11-05): filed; noted at 1d. Primitives (kit_pick_takes, kit_tie_*) sit in window.c while kit_mass and kit_run_set sit in presence.c; the rates are host-mutable and the trace names no rules version
-  trigger: the kit split (a planner file is the natural home)
-  refs: docs/dev/reviews/2026-11-05-r1-memfn-sp1d.md (F10, F12); docs/dev/reviews/2026-11-03-r2-memfn-spanpick5.md
-  Scope: move the position primitives to one home; snapshot the rates by (tag, version) at mf_art_begin; a rules digest in the trace; `alt=` on the per-alternative SEL/ROW/END lines.
+  status (2026-11-24): seam facts only: the rates are host-mutable and the trace names no rules version. The position-primitives half is OVERTAKEN by [KIT-WINSPLIT] (D204: they move once, in the window.c split)
+  trigger: the kit split (manifesto 2026-11-04: planning face to the planner, emitting face to the back end)
+  refs: D204; [KIT-WINSPLIT]; docs/dev/reviews/2026-11-05-r1-memfn-sp1d.md (F12); docs/dev/reviews/2026-11-03-r2-memfn-spanpick5.md
+  Scope: snapshot the rates by (tag, version) at mf_art_begin; a rules digest in the trace; `alt=` on the per-alternative SEL/ROW/END lines.
 - [SP1D-AMODEL-CANDS] STATE:not-started — span_pick: A-model reads the merged candidates, not the walked spans' own sets
   filed: 2026-11-05 land1105 (sp1d_report "Design deviation 1"; review 2026-11-05-r1)
   status (2026-11-05): filed; 1d left A-model reading each walked span's own set, because reading the merged candidates moves G2-visible decisions
@@ -2625,6 +2688,26 @@ Owner waits: a row or stage waiting on the OWNER (a charter, a build go, an answ
   BOONIES. The fold stays the default (D138 addendum 2026-09-30); its one real penalty is waf744 (+1.2% throughput, +28% match on a 21-byte subject), a forced-VM-only shape with a default-route population of 0. Research why.
 
 ## Deferred
+- [ARV-13-CARDS-PY] STATE:deferred — kit: LEAVE cards.py whole; split by card when the next card lands
+  filed: 2026-11-24 kit arch review (R-49, note rev 4 accepted; suggestions filed, not built)
+  status (2026-11-24): leave it; the layout pools go to [LAYOUT-DRAW]
+  trigger: the next card written into cards.py (then M, harness: split by card)
+  refs: memfn/docs/arch_review_2026-11.md §7 ARV-13, C-s1
+- [ARV-14-NOTED-LIBPCREC] STATE:deferred — kit: LEAVE formhash.c, k1_ref.c and vany.c in libpcrec, each with its reason
+  filed: 2026-11-24 kit arch review (R-49, note rev 4 accepted; suggestions filed, not built)
+  status (2026-11-24): leave it; the three noted-deviation rows are written (architecture.md part 3) by lane arvfile
+  trigger: its OWN trigger per member (not Q36): formhash.c a measured library-size or link cost (main's R-1); k1_ref.c the next change to G2's oracle or its linking; vany.c its routing
+  refs: memfn/docs/arch_review_2026-11.md §7 ARV-14, C-s2
+- [ARV-15-SETKEY-LEAVE] STATE:deferred — kit: LEAVE the set-key comparator and art->consulted; span_pick stage 3 row 1 uses or deletes them
+  filed: 2026-11-24 kit arch review (R-49, note rev 4 accepted; suggestions filed, not built)
+  status (2026-11-24): leave it
+  trigger: span_pick stage 3 row 1 ([PICK-IDIOM])
+  refs: memfn/docs/arch_review_2026-11.md §7 ARV-15, A-s3
+- [ARV-17-G2-POOLS] STATE:deferred — kit: LEAVE the 4 G2 runners' own pools; they join the filed mutb.py-under-parpool item
+  filed: 2026-11-24 kit arch review (R-49, note rev 4 accepted; suggestions filed, not built)
+  status (2026-11-24): leave it
+  trigger: the next change to one of those runners' pool
+  refs: memfn/docs/arch_review_2026-11.md §7 ARV-17, C-s3
 - [ROWCON-TABLE-ENGINE] STATE:deferred — the kit hosts the general first-match table engine (MF_NS utility) that pcrec tables may adopt
   filed: 2026-11-10 closea (HELD (a) of the closed [MEMFN-ROWCON]; Frank 2026-10-07 Q-ROW-4 AGREE)
   status (2026-11-10): ruled but not built; the cand_rows[] mapping stays as design evidence only
