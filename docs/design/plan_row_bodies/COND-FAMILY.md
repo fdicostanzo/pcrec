@@ -10520,3 +10520,21 @@ the literal of its text would be: the weak value does not propagate through a ho
 (hole-flags); (b) a string used as a name that is not matched against the subject (`capture("name")`, a warning
 selector's names, a parameter name) is unaffected; (c) a key or separator that IS matched (`row(m:, "msg")`,
 `sep = ","`) follows the file's `i`, the cost named to him.
+
+### 2026-11-23 OWNER RULING — option-hole-explicit: explicit (an `i` given through an option hole is explicit)
+tags: core/patterns/flags core/holes/option core/holes/flags lib/modifiers/any-case
+
+ASKED AS A RULING (slug option-hole-explicit: `/(?${o})${w}/`, o := `"i"`, w := `/ab/` in a library file that
+sets nothing: "Is that `i` explicit, so that it passes down into `w`?"; "Explicit": WHOLE `ab` HOLDS, `AB` HOLDS /
+SEARCHED `x AB ab` `AB`@2 / FIND-ALL `ab AB Ab` [`ab`@0, `AB`@3, `Ab`@6]; "Weak": WHOLE `ab` HOLDS, `AB` FAILS /
+SEARCHED `x AB ab` `ab`@5 / FIND-ALL `ab AB Ab` [`ab`@0], "The flag would cover the literal's own text and stop
+at the hole" (the printed candidate lines of core/patterns/flags); the manager's leaning explicit). HIS WORDS,
+whole:
+
+"option-hole-explicit: explicit"
+
+Class: a RULING: an `i` (or `-i`) that an option hole puts into a literal is EXPLICIT: it is inherited at a hole
+of that literal as a typed `(?i)` is. The manager's readings (marked; for the fold to test): (a) the same for
+every way the value reaches the option hole (a constant, a binding, a macro's parameter): what counts is that
+the literal's text has the option group; (b) the other letters an option hole may carry stay not inherited at a
+hole (hole-flags: only `i` and `-i`).
