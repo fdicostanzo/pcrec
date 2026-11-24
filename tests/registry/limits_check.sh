@@ -418,6 +418,11 @@ done <<< "$anchored"
 #     are the same kind of number as `VM_NRUNG`'s above: nothing is measured
 #     against a bit position, and the values are forced by the
 #     representation rather than chosen as a policy.
+#     PCREC_UCD_NS_BARE / _SC / _SCX / _BC / _BLK / _AGE (src/parse/ucd_tables.h,
+#     [DPCOMPACT]) are the same kind: which bit of a property row's namespace
+#     mask means which `\p` prefix. (The header is shared with the generator
+#     and ucd_tables.c asserts the numbers agree, which the SIXTH kind's
+#     file-private sets need not; nothing is measured against a bit position.)
 #     EM_ANY (src/facts/widths.c, [NULLABLE-ANCH]): the same kind, the mask
 #     set {mask 0} (`1u << EM_NONE`) that is the identity of `em_cat`'s
 #     set-of-masks product; a bit-set value forced by the representation,
@@ -459,13 +464,6 @@ done <<< "$anchored"
 #     kit's MF_MEASURE_MAX with equality asserted at build time. It is part of
 #     a data format's grammar, like a schema version, not a policy a caller
 #     raises; changing it is a format revision.
-#   A TENTH KIND — NAMESPACE BITS OF A GENERATED TABLE'S ROW MASK:
-#     PCREC_UCD_NS_BARE / _SC / _SCX / _BC / _BLK / _AGE (src/parse/ucd_tables.h,
-#     [DPCOMPACT]): which bit of a property row's namespace mask means which
-#     `\p` prefix (none, sc=, scx=, bc=, blk=, age=). A file-private bit set in
-#     the SIXTH kind's shape, forced by the representation and asserted equal to
-#     the generator's own numbers (ucd_tables.c); nothing is measured against
-#     a bit position.
 SCAN_FLOOR=30
 
 TMP3="$(mktemp -d "${TMPDIR:-/tmp}/limits_check.XXXXXX")"

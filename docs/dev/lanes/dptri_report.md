@@ -28,3 +28,6 @@ tests/registry/limits_check.sh: six names added to the NON-LIMIT allowlist and a
 - Uncommitted noise: docs/dev/artifact_size_log.tsv is a test-run byproduct, not committed.
 
 dirty-ok: docs/dev/lanes/dptri_deliver.txt
+
+## Why not a new kind
+PCREC_UCD_NS_* is the SIXTH kind (bit positions in a set), extended in place; no tenth kind. Ruled out: sentinels (no reserved value), API enum values (not in lib/pcrec.h), schema versions, cardinalities/ordinals (not a count or tag ordinal), newline width, test fixture size, interface shape (not a part need word), cost-model term, format bound (KS_MEAS_MAX). Superseding the "tenth kind" wording above.
