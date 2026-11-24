@@ -42,6 +42,11 @@ Owner waits: a row or stage waiting on the OWNER (a charter, a build go, an answ
   filed: 2026-11-17 Frank ("we discover over time that the feature is aggregated onto existing code and then have to go through a lengthy refactor ... requirements -> architecture-> design -> build Each with its own review and goals"; "I'd like to set up a plan with this"); manager wrote the row
   status (2026-11-18): A1-A5 DONE; A6 pilot ran (r49/r50, design r51), write-up in the body file, skill edits applied; owner KEPT the step and the size trigger (D200); A6 retro test owed
   next: the A6 blinded retro test; open with the owner: speed-gate, new-rules; units: docs/design/plan_row_bodies/ARCH-STEP.md
+- [KIT-ARCH-STEP] STATE:started — the memfn kit adopts the architecture step, in three stages
+  filed: 2026-11-22 owner (ruling kit-arch-step)
+  status (2026-11-24): stage 1 (the kit's in-flight effort) done; stage 2 (the ONE overall arch review of the kit's sections) runs on the Mac (R-49; review r91 ruled 2026-11-24, revision under r92); stage 3 (arch reviews for each new kit feature, the kit manager skill's trigger row) follows
+  next: stage 2's revision (r92) closes and its suggestions are filed as plan rows and register rows; then stage 3 (the kit manager skill's trigger-table row)
+  refs: [ARCH-STEP]; docs/design/plan_row_bodies/KIT-ARCH-STEP.md; memfn/docs/requests.md (R-49); .claude/skills/pcrec-memfn-manager; pcrec-architect; pcrec-critic (mode arch)
 - [OPTLOOP] STATE:ongoing — THE OPTIMIZATION LOOP
   filed: 2026-09-21 Frank
   status (2026-10-12): ROUND 1 CLOSED 2026-10-05 (batch gate complete, docs/dev/lanes/r1gclose_report.md); rounds 2 and 3 share one batch gate (D144 addendum 3); ROUND 3 SELECTED 2026-10-06 (docs/dev/optloop/round3_selection.md…
@@ -522,11 +527,6 @@ Owner waits: a row or stage waiting on the OWNER (a charter, a build go, an answ
 
 
 ## Candidates ([OPTLOOP])
-- [KIT-ARCH-STEP] STATE:not-started — the memfn kit adopts the architecture step, in three stages
-  filed: 2026-11-22 owner (ruling kit-arch-step)
-  status (2026-11-22): ruled, nothing started. Stages: (1) after the in-flight effort, ONE arch review of the kit's sections with suggestions + possible refactors, smaller items favored; (2) then the arch step for every new kit feature
-  trigger: the kit's in-flight effort completes (R-47 block span, U5 and after)
-  refs: [ARCH-STEP]; docs/design/plan_row_bodies/KIT-ARCH-STEP.md; .claude/skills/pcrec-memfn-manager; pcrec-architect; pcrec-critic (mode arch)
 - [FH-INTRIN] STATE:not-started — mf_form_hash alpha-renames _mm* intrinsics, so a SIMD form change can leave its hash unchanged
   filed: 2026-11-22 main (kit review r79 F15; block_span.md §8 "[U5, r79 F15] PLAN, not built")
   status (2026-11-22): filed; nothing built. cmpeq->cmpgt or loadu->load hashes the same. Fix: keep intrinsic families in kept[]; cost: every stored hash goes stale (a re-measure event)
@@ -1254,12 +1254,11 @@ Owner waits: a row or stage waiting on the OWNER (a charter, a build go, an answ
   refs: docs/design/memfn/span_pick.md rev 5 (With data, conditions (i)-(iv); §Cost cards); docs/dev/reviews/2026-11-02-r1-memfn-spanpick/MEAS.md (MEAS-5); [BENCH-WITHDATA]; [MEASURE-SET]
   Rev 5: the with-data guarantee (a with-data compile matches or beats the blind compile beyond noise) holds when (i) the cards' regime is the cell's, long subjects; per-call cells need this row's term. Cards are per-byte streaming while the bench's losses and the bar are per-call (review r1, MEAS-5).
 
-- [KN-CARRIERLESS] STATE:not-started — kit finder: KN_A/I/M/N bits and needs_names "PEAIMN" have no carrier
+- [KN-CARRIERLESS] STATE:not-started — kit finder: KN_A/I/M/N bits and needs_names letters A,I,M,N have no carrier
   filed: 2026-11-03 file1103 (review 2026-11-03-r4 CONTRACT-2, PLAN part)
-  status (2026-11-03): filed; nothing built. The comment part of CONTRACT-2 was FIX-NOW on lane/memfn-sp1f; the bits themselves were ruled PLAN.
-  next: drop the bits and the needs_names letters with no carrier (1a precedent: KN_H dropped "since no row carried them"), riding unit 1e's merged walk if 1e still runs; otherwise a small kit lane
-  refs: docs/dev/reviews/2026-11-03-r4-memfn-sp1f.md (CONTRACT-2); memfn/src/finder.c:60-61, :827; memfn/docs/responses.md
-  After 1f removed the last consumers, KN_A/KN_I/KN_M/KN_N and the needs_names string "PEAIMN" describe nothing any row carries. 1a already dropped KN_H on exactly that ground. Unscheduled; ride 1e.
+  status (2026-11-24): HALF true: KN_P and KN_E are carried (the fd_rows needs fields) and stay; KN_A/KN_I/KN_M/KN_N (memfn/src/finder.c enum) and the letters A, I, M, N in needs_names ("PEAIMN") are carried by no row and nothing is built
+  next: drop KN_A/KN_I/KN_M/KN_N and the letters A, I, M, N from needs_names, leaving "PE" (1a precedent: KN_H dropped "since no row carried them"); a small kit lane, or riding unit 1e's merged walk
+  refs: docs/dev/reviews/2026-11-03-r4-memfn-sp1f.md (CONTRACT-2); memfn/src/finder.c (the KN_ enum, needs_names); memfn/docs/responses.md
 - [FINDER-UNPAID] STATE:not-started — kit finder check: the `unpaid` form column and the stale LATER_FORMS schedule
   filed: 2026-11-03 file1103 (review 2026-11-03-r4 CHECK-6)
   status (2026-11-03): filed; nothing built. `fd_form unpaid` (finder.c:141) is FF_UNSTATED on every row and finder_check A:208 asserts "-"; nothing can set it.
@@ -1317,11 +1316,6 @@ Owner waits: a row or stage waiting on the OWNER (a charter, a build go, an answ
   status (2026-11-05): filed; 1d left A-model reading each walked span's own set, because reading the merged candidates moves G2-visible decisions
   trigger: a ruled change (it moves picks, so it needs its census)
   refs: docs/dev/lanes/sp1d_report.md (Design deviation 1); docs/dev/reviews/2026-11-05-r1-memfn-sp1d.md
-- [SP1E-RENDERER-TABLE] STATE:not-started — span_pick: one renderer table keyed by (frame, pick, layer), the asker fact derived from it
-  filed: 2026-11-06 land1106 (review 2026-11-05-r2, F5+F6+F9)
-  status (2026-11-06): filed; 1e declared the renderer rows (fd_renderers, 14 pairs) but the asker fact SF_ASKER_PAIR is still a separate declaration
-  trigger: span_pick unit 3.0
-  refs: docs/dev/reviews/2026-11-05-r2-memfn-sp1e.md (F5, F6, F9); docs/dev/lanes/sp1e_report.md
 - [SP1E-HORS-FLOOR] STATE:not-started — span_pick: measure the D-hors floor
   filed: 2026-11-06 land1106 (review 2026-11-05-r2, F10)
   status (2026-11-06): filed; D-hors is the first FIND row and its floor is unmeasured
