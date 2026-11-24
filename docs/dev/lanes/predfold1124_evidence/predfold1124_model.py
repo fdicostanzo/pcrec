@@ -63,6 +63,7 @@ PLANTS9 = [   # (plant, its target check, what it plants: each changes the ENGIN
     ("p17", "SUCCESSOR", "one declared red's text altered"),
     ("p18", "QUOTES", "path rule 2 altered in the base piece only"),
     ("p19", "DOC", "a formatted line altered"),
+    ("p20", "FLAGS", "the option hole read as weak (R-2 reversed)"),
 ]
 HEAVY9 = {"SUCCESSOR"}
 STRICT9 = re.compile(r"^predfold1124_model: (\d+) checks, (\d+) failed(?: \(([^)]*)\))?$")
@@ -727,17 +728,64 @@ check("CAPSET", cs_pin and " ruled " in cs_head and ok_cs1 and ok_cs2 and ok_cs3
           cs_head[:90], cs_r1[0] is None, (cs_r1[1] or "")[:80], cs_r2[0] is None, cs_r3 is not None))
 
 unit9("OPTIONS", "the manager's two closures that stand, marked readings following from ruled words; the constant "
-      "half still asked")
+      "half ruled (R-1)")
 OP_T = "lib/builtin/options"
 op_pin = pinned("OPTIONS", [(OP_T, "may stand mid-file and applies from the statement on"),
                             (OP_T, "A literal the caller writes as an argument takes the caller's file's options"),
-                            (OP_T, "open options-reach-constants")])
-op_open = " open options-reach-constants " in (piece8(OP_T).split("\n")[0] + " ") or \
-    "open options-reach-constants" in piece8(OP_T)
-check("OPTIONS", op_pin and op_open, "the position reading, the argument reading and the open constant half found in "
-      "%s: %s" % (OP_T, op_pin and op_open))
+                            (OP_T, "options-reach-constants: yes")])
+op_open = "open options-" in piece8(OP_T)
+check("OPTIONS", op_pin and not op_open, "the position reading, the argument reading and the ruled constant half "
+      "found in %s: %s; an open options line left: %s" % (OP_T, op_pin, op_open))
 
-unit9("PARKED", "the parked piece (his discussion on capture-in-set): a form of its own for effects, a condition "
+unit9("FLAGS", "R-1 options-reach-constants (ruled: yes) and R-2 option-hole-explicit (ruled: explicit), on predfix84's "
+      "flag engine, and the manager's readings each names")
+FL_T = "core/patterns/flags"
+fl_pin = pinned("FLAGS", [(OP_T, "Program options reach a string constant written after the statement in that file"),
+                          (OP_T, "`x` never applies to a string"),
+                          (FL_T, "or put into it by an option hole"),
+                          ("core/holes/option", "An `i` or `-i` it puts into the literal is explicit"),
+                          ("core/holes/flags", "An `i` or `-i` an option hole puts into a literal is explicit")])
+FCAND.update(opthole="explicit", const="reach", position="anywhere")
+if s9("p20"):
+    FCAND["opthole"] = "weak"
+OFT1 = ", o := `\"i\"`, w := `/ab/` in a library file that sets nothing"
+P_f1 = fr("/(?${o})${w}/", OFT1)
+fl("Through an option hole", "/(?${o})${w}/", OFT1, P_f1, ["ab", "AB"], "x AB ab", "ab AB Ab", FL_T)
+P_f2 = fr('"ab"', " in a program file opening `@options(i)`")
+fl("A string constant", '"ab"', " in a program file opening `@options(i)`", P_f2, ["ab", "AB"], "x AB ab", "ab AB",
+   OP_T)
+OFT3 = " in a program file opening `@options(i)`, c := `\"ab\"` in a library file that sets nothing"
+P_f3 = fr("/x${c}/", OFT3)
+fl("A string from a library file", "/x${c}/", OFT3, P_f3, ["xab", "XAB", "Xab"], "xAB Xab", "xab xAB Xab", OP_T)
+FMACROS["K"] = (["k"], "/${k}=1/", "library")
+P_f4 = fprog({"program": [("opt", {"i": True})], "library": []}, 'K("msg")')
+FMACROS.clear()
+OFT6 = ", o := `\"s\"`, w := `/a.b/` in a library file that sets nothing"
+P_f6 = fr("/(?${o})${w}/", OFT6)
+fl("Another letter through an option hole", "/(?${o})${w}/", OFT6, P_f6, ["a\nb", "axb"], "a\nb axb", "a\nb axb", FL_T)
+FCAND.update(opthole="explicit", const="reach", position="anywhere")
+for t_, L_ in LINES[-4:]:
+    print("   LINE [%s] %s" % (t_, L_))
+FR9 = [
+    ("R-2 the ruling: an `i` through an option hole passes into `w`", P_f1.whole("AB")),
+    ("R-1 the ruling: `\"ab\"` under `@options(i)` matches `AB`", P_f2.whole("AB") and P_f2.whole("ab")),
+    ("R-1 (a): the weak value on a string does not propagate across an import (a library string in a weakly "
+     "insensitive program's hole: `xAB` FAILS, `Xab` HOLDS)", not P_f3.whole("xAB") and P_f3.whole("Xab")),
+    ("R-1 (c): a matched key the caller writes follows the caller's file's `i` (`K(\"msg\")`, K(k) := `/${k}=1/` in a "
+     "library file: `MSG=1` HOLDS)", P_f4.whole("MSG=1") and P_f4.whole("msg=1")),
+    ("R-2 (b): another letter through an option hole (`s`) is not inherited at the hole: `a\\nb` FAILS",
+     not P_f6.whole("a\nb") and P_f6.whole("axb")),
+]
+for a, v in FR9:
+    print("   %s: %s" % ("SUPPORTED" if v else "NOT SUPPORTED", a))
+print("   NOT MODELLED: R-2 (a) for a macro's parameter: the flag engine resolves an option hole's name as a binding "
+      "only; the binding route is the ruled line itself (o := `\"i\"`)")
+print("   UNTESTABLE: R-1 (b), a string used as a name not matched against the subject (`capture(\"name\")`, a warning "
+      "selector's names) is unaffected: the flag engine runs no capture request or selector")
+check("FLAGS", fl_pin and all(v for _, v in FR9), "pins %s; %d runs: %s" % (
+    fl_pin, len(FR9), [a[:40] for a, v in FR9 if not v] or "all as ruled and read"))
+
+unit9("PARKED","the parked piece (his discussion on capture-in-set): a form of its own for effects, a condition "
       "operator; trigger and source")
 PK_T = "parked/ideas/effect-form"
 pk = piece8(PK_T)
@@ -1057,8 +1105,17 @@ for q, where in QQ9:
     home = entry8(where[8:]) if where.startswith("details:") else piece8(where)
     if ws(q) not in RW9 or ws(q) not in ws(home):
         q9_miss.append((q[:60], where, ws(q) in RW9))
+REVR9 = "db8382c63"                                         # lane/pred-rev28 with R-1/R-2's record entries, PINNED
+RWR9 = ws(_git8("docs/design/plan_row_bodies/COND-FAMILY.md", REVR9))
+for q, where in (("options-reach-constants: yes", OP_T), ("option-hole-explicit: explicit", FL_T)):
+    if ws(q) not in RWR9 or ws(q) not in ws(piece8(where)):
+        q9_miss.append((q, where, ws(q) in RWR9))
+TTR9 = ["2026-11-23 OWNER RULING — options-reach-constants: yes (a file's weak `i` reaches a string constant)",
+        "2026-11-23 OWNER RULING — option-hole-explicit: explicit (an `i` given through an option hole is explicit)"]
 DET9 = D8["core_details.md"] + D8["library_details.md"] + D8["parked_details.md"]
 t9_miss = [t_ for t_ in TT9 if ws(t_) not in heads8(REC9) or ws('(record: "%s")' % t_) not in ws(DET9)]
+t9_miss += [t_ for t_ in TTR9 if ws(t_) not in heads8(_git8("docs/design/plan_row_bodies/COND-FAMILY.md", REVR9))
+            or ws('(record "%s")' % t_) not in ws(DET9)]                # cited in history only: after this lane's cut
 check("QUOTES", not q9_miss and not t9_miss,
       "%d quoted sentences, each in the record at %s AND in its own piece, missing: %s; %d record titles cited whole "
       "as a `rulings:` item's record, not a title or not cited: %s" % (len(QQ9), START9, q9_miss or "none", len(TT9),

@@ -194,9 +194,14 @@ defined: native (compile-time effects: how a file's literals are read; the compi
   the literals written after it in the same file"; the line "Mid-file"); a later statement applies from its own
   place on, and turning a flag off is written as PCRE writes it, `@options(-s)` (the manager's reading).
 - A literal the caller writes as an argument takes the caller's file's options: it is written in the program file
-  (a reading following the same ruled sentence and core/holes/flags; the line "An argument literal").
-- Do program options reach a string constant (`"ab"`)? (open options-reach-constants: "Candidate (a)", they do,
-  and "Candidate (b)", they do not, a line each.)
+  (a reading following the same ruled sentence and core/holes/flags, told to him, not his words; the line "An
+  argument literal").
+- Program options reach a string constant written after the statement in that file, as they reach its rx
+  literals: his words "options-reach-constants: yes"; `x` never applies to a string (the line "A string constant").
+  Readings (the manager's): the weak value on a string does not propagate through a hole or across an import (the
+  line "A string from a library file"); a string used as a name not matched against the subject (`capture("name")`,
+  a warning selector's names, a parameter name) is unaffected; a key or separator that is matched (`row(m:, "msg")`,
+  `sep = ","`) follows the file's `i`.
 - `@options.strict(/no-fail/)` makes the warning named `no-fail` an error; "every warning" is the selector that
   matches every name.
 - The `@options` family's other members, capability opt-ins declared in the source, are an idea
@@ -204,8 +209,8 @@ defined: native (compile-time effects: how a file's literals are read; the compi
 - A compile-time effect: written after `@` only, as a statement (core/operators/statements).
 A library keeps its own options: WHOLE `a\nb` HOLDS, `axb` HOLDS / SEARCHED `a\nb axb` `a\nb`@0 / FIND-ALL `a\nb axb ayb` [`a\nb`@0, `axb`@4, `ayb`@8] (`/a${dot}b/`, dot := `/./` in a library file opening `@options(s)`)
 Never across an import: WHOLE `a\nb` FAILS, `axb` HOLDS / SEARCHED `a\nb axb` `axb`@4 / FIND-ALL `a\nb axb ayb` [`axb`@4, `ayb`@8] (`/a${dot}b/` in a program file opening `@options(s)`, dot := `/./` in a library file that sets nothing)
-Candidate (a) of options-reach-constants: WHOLE `ab` HOLDS, `AB` HOLDS / SEARCHED `x AB ab` `AB`@2 / FIND-ALL `ab AB` [`ab`@0, `AB`@3] (`"ab"` in a program file opening `@options(i)`)
-Candidate (b) of options-reach-constants: WHOLE `ab` HOLDS, `AB` FAILS / SEARCHED `x AB ab` `ab`@5 / FIND-ALL `ab AB` [`ab`@0] (`"ab"` in a program file opening `@options(i)`)
+A string constant: WHOLE `ab` HOLDS, `AB` HOLDS / SEARCHED `x AB ab` `AB`@2 / FIND-ALL `ab AB` [`ab`@0, `AB`@3] (`"ab"` in a program file opening `@options(i)`)
+A string from a library file: WHOLE `xab` HOLDS, `XAB` FAILS, `Xab` HOLDS / SEARCHED `xAB Xab` `Xab`@4 / FIND-ALL `xab xAB Xab` [`xab`@0, `Xab`@8] (`/x${c}/` in a program file opening `@options(i)`, c := `"ab"` in a library file that sets nothing)
 An argument literal: WHOLE `a\nb` HOLDS, `axb` HOLDS / SEARCHED `a\nb axb` `a\nb`@0 / FIND-ALL `a\nb axb` [`a\nb`@0, `axb`@4] (`atomic(/a.b/)` in a program file opening `@options(s)`, atomic(X) := `/(?>${[(=) = X]})/` in a library file)
 Mid-file: WHOLE `x\ny` FAILS, `xay` HOLDS / SEARCHED `x\ny xay` `xay`@4 / FIND-ALL `x\ny xay xby` [`xay`@4, `xby`@8] (`/x${a}y/` in a program file writing a := `/./`, then `@options(s)`, then the program)
 

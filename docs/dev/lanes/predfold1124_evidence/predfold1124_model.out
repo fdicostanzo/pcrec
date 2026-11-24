@@ -189,9 +189,23 @@ PASS EXACTCOUNT: `E(rx.digit, _)` refused True (`_` passed for `n` of E: the con
    RUN `/(?<h>\d)?x/ & some((h: capture("h")))`: refused: a capture request inside a group question: a compile error for now (open capture-in-set)
    LINE [lib/structural/capture/in-set] The plain request: WHOLE `3x` HOLDS, `5x` HOLDS, `x` FAILS / SEARCHED `5x 3x` `5x`@0 / FIND-ALL `3x 5x x` [`3x`@0, `5x`@3] (`/(?<h>\d)?x/ & (h: capture("h"))`)
 PASS CAPSET: status line `### A capture request inside a set   [lib/structural/capture/in-set]   ruled 2026-11-23`; `|` refused True (a capture request inside a set operator (`h: "3" | capture("h")`): a compile err), `&` refused True; the plain request legal True
-== OPTIONS: the manager's two closures that stand, marked readings following from ruled words; the constant half still asked
+== OPTIONS: the manager's two closures that stand, marked readings following from ruled words; the constant half ruled (R-1)
    3 rule sentences pinned for OPTIONS, 0 missing
-PASS OPTIONS: the position reading, the argument reading and the open constant half found in lib/builtin/options: True
+PASS OPTIONS: the position reading, the argument reading and the ruled constant half found in lib/builtin/options: True; an open options line left: False
+== FLAGS: R-1 options-reach-constants (ruled: yes) and R-2 option-hole-explicit (ruled: explicit), on predfix84's flag engine, and the manager's readings each names
+   5 rule sentences pinned for FLAGS, 0 missing
+   LINE [core/patterns/flags] Through an option hole: WHOLE `ab` HOLDS, `AB` HOLDS / SEARCHED `x AB ab` `AB`@2 / FIND-ALL `ab AB Ab` [`ab`@0, `AB`@3, `Ab`@6] (`/(?${o})${w}/`, o := `"i"`, w := `/ab/` in a library file that sets nothing)
+   LINE [lib/builtin/options] A string constant: WHOLE `ab` HOLDS, `AB` HOLDS / SEARCHED `x AB ab` `AB`@2 / FIND-ALL `ab AB` [`ab`@0, `AB`@3] (`"ab"` in a program file opening `@options(i)`)
+   LINE [lib/builtin/options] A string from a library file: WHOLE `xab` HOLDS, `XAB` FAILS, `Xab` HOLDS / SEARCHED `xAB Xab` `Xab`@4 / FIND-ALL `xab xAB Xab` [`xab`@0, `Xab`@8] (`/x${c}/` in a program file opening `@options(i)`, c := `"ab"` in a library file that sets nothing)
+   LINE [core/patterns/flags] Another letter through an option hole: WHOLE `a\nb` FAILS, `axb` HOLDS / SEARCHED `a\nb axb` `axb`@4 / FIND-ALL `a\nb axb` [`axb`@4] (`/(?${o})${w}/`, o := `"s"`, w := `/a.b/` in a library file that sets nothing)
+   SUPPORTED: R-2 the ruling: an `i` through an option hole passes into `w`
+   SUPPORTED: R-1 the ruling: `"ab"` under `@options(i)` matches `AB`
+   SUPPORTED: R-1 (a): the weak value on a string does not propagate across an import (a library string in a weakly insensitive program's hole: `xAB` FAILS, `Xab` HOLDS)
+   SUPPORTED: R-1 (c): a matched key the caller writes follows the caller's file's `i` (`K("msg")`, K(k) := `/${k}=1/` in a library file: `MSG=1` HOLDS)
+   SUPPORTED: R-2 (b): another letter through an option hole (`s`) is not inherited at the hole: `a\nb` FAILS
+   NOT MODELLED: R-2 (a) for a macro's parameter: the flag engine resolves an option hole's name as a binding only; the binding route is the ruled line itself (o := `"i"`)
+   UNTESTABLE: R-1 (b), a string used as a name not matched against the subject (`capture("name")`, a warning selector's names) is unaffected: the flag engine runs no capture request or selector
+PASS FLAGS: pins True; 5 runs: all as ruled and read
 == PARKED: the parked piece (his discussion on capture-in-set): a form of its own for effects, a condition operator; trigger and source
 PASS PARKED: parked/ideas/effect-form present, parked, its trigger and his words in the details: True
 == EXPAND: the expansion drill: each sugar form against its written-out form READ from the documents
@@ -232,25 +246,25 @@ PASS READINGS: 7 readings run: all SUPPORTED
    DECLARED x7: not modelled (the header's list); the printed line is RIGHT (review r8
    DECLARED x1: the lowered `(\d)x` holds an unnamed group, which the label engine doe
    DECLARED x13: value arithmetic over a pattern or several strings: not modelled
-   ADDED core.md:362 `B(A) & (A.d: <5)`
-   ADDED core.md:389 `[n = [_x = P]] & (_x.d: <5)`
-   ADDED core.md:394 `B(A) & (B.h: <5)`
-   ADDED core.md:395 `B([a = A]) & (a.h: <5)`
-   ADDED core.md:406 `[n = [m = P]] & (n.m.d: <5)`
-   ADDED core.md:410 `X & (X.n.m.h: <5)`
-   ADDED core.md:411 `X & (X.h: <5)`
-   ADDED core.md:881 `B(A) & (A.d: <5)`
-   ADDED core.md:910 `B(A) & (A.d: <5)`
-   ADDED core.md:914 `B(A) & (A.d: <5)`
-   ADDED core.md:1950 `B(A) & (A.d: <100)`
-   ADDED core.md:2263 `E(rx.digit, 0)`
-   ADDED core.md:2264 `E0(rx.digit)`
+   ADDED core.md:364 `B(A) & (A.d: <5)`
+   ADDED core.md:391 `[n = [_x = P]] & (_x.d: <5)`
+   ADDED core.md:396 `B(A) & (B.h: <5)`
+   ADDED core.md:397 `B([a = A]) & (a.h: <5)`
+   ADDED core.md:408 `[n = [m = P]] & (n.m.d: <5)`
+   ADDED core.md:412 `X & (X.n.m.h: <5)`
+   ADDED core.md:413 `X & (X.h: <5)`
+   ADDED core.md:883 `B(A) & (A.d: <5)`
+   ADDED core.md:912 `B(A) & (A.d: <5)`
+   ADDED core.md:916 `B(A) & (A.d: <5)`
+   ADDED core.md:1955 `B(A) & (A.d: <100)`
+   ADDED core.md:2268 `E(rx.digit, 0)`
+   ADDED core.md:2269 `E0(rx.digit)`
    ADDED library.md:53 `identity(A) & (A.d: <5)`
-   ADDED library.md:343 `peek(A) SEQ /\d/ & (A.d: <5)`
-   ADDED library.md:372 `W(A, (A.h: <5))`
-   ADDED library.md:411 `atomic(A) & (A.d: <5)`
-   ADDED library.md:482 `hits(A) & (A.d: <5)`
-   ADDED library.md:880 `/(?<h>\d)?x/ & (h: capture("h"))`
+   ADDED library.md:348 `peek(A) SEQ /\d/ & (A.d: <5)`
+   ADDED library.md:377 `W(A, (A.h: <5))`
+   ADDED library.md:416 `atomic(A) & (A.d: <5)`
+   ADDED library.md:487 `hits(A) & (A.d: <5)`
+   ADDED library.md:885 `/(?<h>\d)?x/ & (h: capture("h"))`
    ANSWER MOVED OR LINE GONE (declared): `/(?<h>\d)?x/ & (h: "3" | capture("h"))`: capture-in-set ruled "error": candidate (b)'s union line retired (to `rejected:`)
    ANSWER MOVED OR LINE GONE (declared): `/(?<h>\d)?x/ & (h: <5 & capture("h"))`: capture-in-set ruled "error": candidate (b)'s intersection line retired (to `rejected:`)
    ANSWER MOVED OR LINE GONE (declared): `B(A) & (A.d: <5)`: shorthand-is-callers (ruled) with reading (a): a body placing the argument alone first and labelled second reads the last mention, the labelled spot (the line "Alone first")
@@ -273,11 +287,11 @@ PASS SWEEP: 320 printed lines now (DIFF 8, REFUSED 61, same 274, unparsed 1), 30
    LEGALITY CHANGED (a line of the starting commit) library.md:478 `hits(A) & (A.d: <5)`: refused -> legal
 PASS ERRSWEEP: 52 compile-error lines now, each refused with no crash: bad 0; of the starting commit's 56, 11 changed legality under the ruled rules (listed)
 == NULLABLE: EVID-4's known limit: no program the extended engine ran has a loop whose body can match empty
-PASS NULLABLE: 715 programs run by the checks above (SWEEP's included), walked node by node: 0 with a loop whose body can match empty
+PASS NULLABLE: 720 programs run by the checks above (SWEEP's included), walked node by node: 0 with a loop whose body can match empty
 == SUCCESSOR: every earlier in-force model re-run with library.md served from its PINNED delivery commit (predfix88's runner, unchanged; nested runs routed to their own pins); each red declared by its FAIL line VERBATIM with a reason; a traceback is never declared
 PASS SUCCESSOR: 0 earlier models re-run (0 s in all), each red against its declared FAIL line verbatim (0 declared): every red declared, its text unchanged; no traceback
 == QUOTES: the owner's sentences, each PINNED to the piece (or details entry) that quotes it, and in the record at the pinned start commit; the rulings' titles cited whole
 PASS QUOTES: 18 quoted sentences, each in the record at 172930848 AND in its own piece, missing: none; 4 record titles cited whole as a `rulings:` item's record, not a title or not cited: none
 == DOC: every line this model formats occurs verbatim in the piece its tag names
-PASS DOC: 54 lines, each in its own piece; missing: 0
-predfold1124_model: 19 checks, 0 failed
+PASS DOC: 58 lines, each in its own piece; missing: 0
+predfold1124_model: 20 checks, 0 failed

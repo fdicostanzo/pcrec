@@ -244,9 +244,13 @@ by: core/principles/rx-owns-flags
 - No implicit extended mode beyond the file's program options: unless its file sets `x` (lib/builtin/options),
   `/foo bar/` keeps its space and `#` is literal text.
 - Where it is written its file's program options are the literal's defaults (`m`, `s`, `n`, `x`, the weak `i`:
-  lib/builtin/options, "program-options: yes"); a flag the literal writes for itself wins.
-- EXPLICIT is a flag written in the literal's text (`(?i)`, `(?-i)`, `(?i:..)`, `/.../i`), with PCRE's scope inside
-  it; a program option is never explicit (the manager's reading (a) of hole-flags' "yes to all").
+  lib/builtin/options, "program-options: yes"), and the weak `i` its string constants' (options-reach-constants); a
+  flag the literal writes for itself wins.
+- EXPLICIT is a flag written in the literal's text (`(?i)`, `(?-i)`, `(?i:..)`, `/.../i`), or put into it by an
+  option hole (his words "option-hole-explicit: explicit"; the line "Through an option hole"), with PCRE's scope
+  inside it; a program option is never explicit (the manager's reading (a) of hole-flags' "yes to all"). Another
+  letter an option hole carries stays not inherited at a hole (a reading; the line "Another letter through an
+  option hole").
 - Built up inside another rx, an rx inherits an explicit `i` only: for a hole, core/holes/flags.
 - An `&` written at program level has no surrounding rx: each side keeps its own flags (a reading); so does a
   sequence operand at program level (a reading).
@@ -255,12 +259,10 @@ by: core/principles/rx-owns-flags
   the statement on (lib/builtin/options); the file default.
 - `r` and the `a`-family are not inherited at a hole: only an explicit `i` or `-i` is (core/holes/flags).
 - `pattern($x)` carries the flags in force where its group is written (lib/builtin/pattern, a reading).
-- Is an `i` written by an option hole explicit (`/(?${o})${w}/`, o := `"i"`)? (open option-hole-explicit: the
-  lines "Candidate (a)", explicit, and "Candidate (b)", weak.)
 see: core/holes/flags lib/builtin/options
 WHOLE `aB` HOLDS, `AB` FAILS / SEARCHED `AB aB` `aB`@3 / FIND-ALL `ab aB Ab` [`ab`@0, `aB`@3] (`/a(?i)b/`)
-Candidate (a) of option-hole-explicit: WHOLE `ab` HOLDS, `AB` HOLDS / SEARCHED `x AB ab` `AB`@2 / FIND-ALL `ab AB Ab` [`ab`@0, `AB`@3, `Ab`@6] (`/(?${o})${w}/`, o := `"i"`, w := `/ab/` in a library file that sets nothing)
-Candidate (b) of option-hole-explicit: WHOLE `ab` HOLDS, `AB` FAILS / SEARCHED `x AB ab` `ab`@5 / FIND-ALL `ab AB Ab` [`ab`@0] (`/(?${o})${w}/`, o := `"i"`, w := `/ab/` in a library file that sets nothing)
+Through an option hole: WHOLE `ab` HOLDS, `AB` HOLDS / SEARCHED `x AB ab` `AB`@2 / FIND-ALL `ab AB Ab` [`ab`@0, `AB`@3, `Ab`@6] (`/(?${o})${w}/`, o := `"i"`, w := `/ab/` in a library file that sets nothing)
+Another letter through an option hole: WHOLE `a\nb` FAILS, `axb` HOLDS / SEARCHED `a\nb axb` `axb`@4 / FIND-ALL `a\nb axb` [`axb`@4] (`/(?${o})${w}/`, o := `"s"`, w := `/a.b/` in a library file that sets nothing)
 
 ### The sequence operator   [core/patterns/sequence]   ruled 2026-11-17
 `A SEQ B` is regex concatenation, A's text then B's, an assertion at a part's edge seeing its neighbours; it binds tighter than `&` and `|`.
@@ -1724,6 +1726,8 @@ see: core/operators/bindings/unspecified
   aT` (each accepted by libpcre2 10.46).
 - `_` passed for the value is no value and not "Nothing": the part is not written, no option group, as `""`
   (core/operators/bindings/unspecified, the line "An option").
+- An `i` or `-i` it puts into the literal is explicit, inherited at the literal's holes as a typed `(?i)` is
+  (core/patterns/flags; option-hole-explicit), however the value reaches it (the manager's reading).
 WHOLE `AB` HOLDS, `ab` HOLDS / SEARCHED `x AB` `AB`@2 / FIND-ALL `ab AB Ab` [`ab`@0, `AB`@3, `Ab`@6] (`/(?${o})ab/`, o := "i"; with o := "" WHOLE `AB` FAILS)
 
 ### Zero values in a hole   [core/holes/zero-values]   reading 2026-11-19
@@ -1793,7 +1797,8 @@ needs: core/patterns/flags core/holes/pattern
 by: core/principles/rx-owns-flags
 see: core/holes/same-name lib/builtin/options
 - What is inserted in a hole starts from its own file's defaults, the program options in force where it is
-  written (lib/builtin/options); a flag it writes for itself wins.
+  written (lib/builtin/options); a flag it writes for itself wins. An `i` or `-i` an option hole puts into a literal
+  is explicit (core/patterns/flags).
 - His words: "hole-flags: yes to all.", on three parts: a weak value does not propagate, the file's default for its
   own literals; at a hole only an explicit `i` or `-i` is inherited and replaces what was in force, down the hole,
   until a nearer explicit setting; `m` and `s` are not inherited.
