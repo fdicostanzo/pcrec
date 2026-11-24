@@ -26,3 +26,5 @@ tests/registry/limits_check.sh: six names added to the NON-LIMIT allowlist and a
 - I did not run `make test-registry` under boxlock (box held by k155fix2-sweep); the limits check itself was run directly and is clean. The full `make test` is OWED: key dptri-test, log build/dptri_test.log in the dpcompact worktree.
 - Rulings file dptri_rulings.md: empty at last read.
 - Uncommitted noise: docs/dev/artifact_size_log.tsv is a test-run byproduct, not committed.
+
+dirty-ok: docs/dev/lanes/dptri_deliver.txt
