@@ -88,4 +88,5 @@ Top suggestions, smallest first:
 
 STATE: done. Committed on lane/archrev. The rulings file `docs/dev/lanes/archrev_rulings.md` was re-read before the
 commit and before this report; it was empty both times, so no entry was applied ("last entry applied: none").
-OWED runs: none. `docs/dev/lanes/archrev_deliver.txt` is the manager's file and was left untouched.
+OWED: none
+`docs/dev/lanes/archrev_deliver.txt` is the manager's file and was left untouched.
