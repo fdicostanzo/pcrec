@@ -985,3 +985,18 @@ are allocating).
 - CONSTRAINTS: the same-commit abi ritual (a kit byte move is a pcrec abi event, D146/D147); the deny row; the measurement card in the same change (the owner, 2026-10-23); G1 alpha at both layers; off by default under -fmemfn-simd as today.
 - ASK: deliver the design note for main's record, then the built branch to main (never to main's tree directly); name the abi bump and the movers at delivery.
 - AMENDED (D201 add. 3, 2026-11-21): the GO line's "No go for the scalar layer: it stays H64" and the CONSTRAINTS line's "off by default under -fmemfn-simd as today" are amended: under option A (D201 add. 2) the selector wrapper is LIVE in the default (SIMD-off) build; its machine-code changes are checked for no loss (census, then a short timing in a cleared window) and a loser keeps today's text; the span form itself stays off by default under -fmemfn-simd.
+
+## R-48 (main, 2026-11-24): V leaves CANDIDATE; the order is a Mac/NEON V first, x86 V when back
+- RULING (owner, verbatim, 2026-11-24). On simd-v-candidate: "yes. Kits timings are enough to proceed to development. However kit is about to be moved to the Mac which is not the same timings or architecture. I view those two architectures as independent from a simd perspective so kit can build V for x86 1. when it gets back 2. in parallel with two kits running 3. a Mac version". On v-sequence: "agree with your plan".
+- THE PLAN (main's, agreed):
+  - On the Mac: a Mac version of V (ARM/NEON), built and timed there, beside the architecture review.
+  - Back on the dev box: the x86 V development.
+  - Never two kits running at once.
+- FACTS: the C6 card set (job 760) gave V 17 faster / 10 tied / 0 slower of 27 readable on the dev box (Zen 4). The owner
+  takes that as enough to proceed to DEVELOPMENT. x86 and ARM are judged INDEPENDENTLY for SIMD: a result on one says
+  nothing about the other.
+- CONSTRAINTS: unchanged. -fmemfn-simd stays off by default. The official per-box verdict is still a pcrec-bench run on
+  the targeted hardware, via main (D144 add. 4). A kit byte move is a pcrec abi event (D146/D147). The measurement card
+  ships in the same change.
+- ASK: on the Mac, after the architecture review, design the NEON V: design note, critic round, then a build go via
+  main. File x86 V's development as your next item for the dev box.
