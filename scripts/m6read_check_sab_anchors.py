@@ -500,6 +500,14 @@ class Case:
         self.sub(rel, 'if [ "${1:-}" = "--plant-check" ]; then\n',
                  'if [ "${1:-}" = "--plant-check" ]; then\n' + line + "\n")
 
+    def unexec(self, rel, tail):
+        """rel's --plant-check runs the applier WITHOUT exec, then `tail`"""
+        s = self.rd(rel)
+        i = s.index('if [ "${1:-}" = "--plant-check" ]; then\n')
+        j = s.index('    exec python3 -I "$ROOT/tests/lib/plants.py"', i)
+        k = s.index('\nfi\n', j)
+        self.wr(rel, s[:j] + '    python3' + s[j + len('    exec python3'):k] + tail + s[k:])
+
     def case_line(self, rel, line):
         """a case line added to rel's plant_spec, before its default"""
         s = self.rd(rel)
@@ -556,6 +564,11 @@ CASES = [
     ("--plant-check dies (exit 3)", lambda c: c.mode(PROOF, "    exit 3"), 1, [PROOF, "exit 3"], None, None),
     ("--plant-check exits 0 silently", lambda c: c.mode(PROOF, "    exit 0"), 1, [PROOF, "UNREADABLE"], None, None),
     ("--plant-check writes stderr", lambda c: c.mode(PROOF, "    echo oops >&2"), 1, [PROOF, "oops"], None, None),
+    ("--plant-check dump writes stderr", lambda c: c.mode(PROOF, '    [ "${2:-check}" = dump ] && echo oops >&2'), 1, [PROOF, "dump UNREADABLE: oops"], None, None),
+    ("--plant-check's answer right, its exit 3", lambda c: c.unexec(PROOF, "; exit 3"), 1, [PROOF, "exit 3, 1 summary"], None, None),
+    ("--plant-check prints its summary twice", lambda c: c.mode(PROOF, '    [ "${2:-check}" = check ] && echo "plant-check: %d plants, %d edits, 0 bad"' % (PLANT_PINS[PROOF], PLANT_PINS[PROOF])), 1, [PROOF, "2 summary line(s)"], None, None),
+    ("--plant-check's summary unparsable", lambda c: c.unexec(PROOF, " | sed 's/^plant-check: [0-9]*/plant-check: many/'; exit \"${PIPESTATUS[0]}\""), 1, [PROOF, "SUMMARY UNREADABLE"], None, None),
+    ("check and dump name different plants", lambda c: c.mode(PROOF, '    [ "${2:-check}" = dump ] && PLANTS="${PLANTS% *}"'), 1, [PROOF, "name different plants"], None, None),
     ("--plant-check dump dies", lambda c: c.mode(PROOF, '    [ "${2:-check}" = dump ] && exit 3'), 1, [PROOF, "dump UNREADABLE"], None, None),
     ("--plant-check reads only the first id", lambda c: c.sub(PROOF, "    for id in $PLANTS; do\n        if plant_edits", "    for id in ${PLANTS%% *}; do\n        if plant_edits"), 1, [PROOF, "ORPHAN"], None, None),
     ("--plant-check hangs (exec'd)", lambda c: c.mode(PROOF, "    exec sleep 300"), 1, [PROOF, "TIMED OUT"], 20, "3"),
@@ -564,6 +577,8 @@ CASES = [
     ("two runners hang: one shared deadline (PAR-2)", lambda c: (c.mode(PROOF, "    exec sleep 300"), c.mode(WIN, "    exec sleep 300")), 1, [PROOF, WIN, "TIMED OUT"], 20, "3"),
     ("twin drift: the runner's TO moved (proof S1221)", lambda c: c.sub(PROOF, "@@long d = (long)t->offset + j + (t->kind == MF_T_RUN);'", "@@long d = (long)t->offset + j + 2 * (t->kind == MF_T_RUN);'"), 1, ["S1221", "TWIN DRIFT"], None, None),
     ("twin drift: the mech row's FROM moved (S3045)", lambda c: c.wr(c.row("S3045"), c.rd(c.row("S3045")) + '\nSAB_BEFORE="${SAB_BEFORE}x"\n'), 1, ["S3045", "TWIN DRIFT"], None, None),
+    ("twin drift: the mech row's file moved (S1221)", lambda c: c.wr(c.row("S1221"), c.rd(c.row("S1221")) + '\nSAB_FILE="memfn/src/generic.c"\n'), 1, ["S1221", "TWIN DRIFT", "file"], None, None),
+    ("twin drift: the mech row grew a site 2 (S1221)", lambda c: c.wr(c.row("S1221"), c.rd(c.row("S1221")) + '\nSAB_FILE2="memfn/src/generic.c"\nSAB_BEFORE2="x"\nSAB_AFTER2="y"\n'), 1, ["S1221", "TWIN DRIFT", "its row 2 sites"], None, None),
     ("undeclared shared id (ID COLLISION)", lambda c: c.sub(PROOF, 'PLANT_TWINS="S1221 ', 'PLANT_TWINS="'), 1, ["S1221", "ID COLLISION"], None, None),
     ("the S1540 collision restored (GF-2)", lambda c: (c.sub(WIN, "    S1544) # code review r2", "    S1540) # code review r2"), c.sub(WIN, " S1544 S1541 ", " S1540 S1541 ")), 1, ["S1540", "ID COLLISION"], None, None),
     ("declared twin without a row", lambda c: c.sub(PROOF, 'PLANT_TWINS="S1221 ', 'PLANT_TWINS="S1408 S1221 '), 1, ["S1408", "TWIN WITHOUT ROW"], None, None),
