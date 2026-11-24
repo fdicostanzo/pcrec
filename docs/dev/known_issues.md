@@ -830,7 +830,7 @@ fix).
 
 ---
 
-## K71 — OPEN, diagnostic-text-only (not an answer-correctness defect) (found by lane ucpthink, `docs/dev/ucp_study.md` §G item 2, 2026-09-28) — `RX_ENGINE_WHY` names one construct's KIND at ANOTHER construct's OFFSET
+## K71 — FIXED (66f7e35ff, under K110, 2026-10-12: kind and offset now come from one record, select_engine.c why_pos; regression tests/vm/run_vm_tests.sh §3a k110a-j; stale entry found 2026-11-24 by lane bugclass, confirmed by a read-only check), diagnostic-text-only (not an answer-correctness defect) (found by lane ucpthink, `docs/dev/ucp_study.md` §G item 2, 2026-09-28) — `RX_ENGINE_WHY` names one construct's KIND at ANOTHER construct's OFFSET
 
 **Witness**: `x(?<=a)(?!b)` stamps `"(?!...) at pattern offset 1"`, but
 offset 1 is where the `(?<=` sits, not the `(?!`. The `\b` spelling shows
