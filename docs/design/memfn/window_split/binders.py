@@ -144,7 +144,7 @@ for rf, dec in (('memfn/tests/run_g2_win.sh', un_win), ('memfn/tests/run_g2_pres
     for i, l in enumerate(open(os.path.join(rroot, rf)).read().split('\n'), 1):
         m = re.match(r"\s*([A-Za-z0-9_|-]+)\)", l)
         if m: label = m.group(1)
-        m = re.search(r"echo '([A-Za-z0-9_]+\.c)@@(.*)'", l)
+        m = re.search(r"echo '([A-Za-z0-9_]+\.[ch])@@(.*)'", l)
         if not m or m.group(1) not in CHANGED: continue
         spec = m.group(2).replace("'\"'\"'", "'")
         frm, _, to = spec.partition('@@')
