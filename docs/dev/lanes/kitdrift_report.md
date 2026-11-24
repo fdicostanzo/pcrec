@@ -17,3 +17,4 @@ Proposal 3 (commit the round's anchor_map.py as a reusable tool) is the kit's to
 
 ## STATE AT HANDOFF
 Complete. Nothing owed. Rulings file kitdrift_rulings.md was empty at last read.
+OWED: none
