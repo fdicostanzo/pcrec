@@ -77,6 +77,7 @@ message when the draft is ready.
    only once `build/pcrec` exists; a critic without a binary waits for it
    (poll every 10 min, up to 4 h) rather than ending source-only. When the promise includes trace records, build BASE and SUBJECT
    `-DPCREC_KS_TRACE` binaries ONCE into the round dir as part of the round's build
+   For an ALLOCATION-INJECTOR subject (alloc_check, mg-peak, a fail-at-N harness), build BASE and SUBJECT injected libs with the SUBJECT's injector header, so both sides count the same allocation sites (r96 k155code).
    (r5 sp1g: saved three per-critic builds). When a touched trace sits behind a guard (`PCREC_KS_TRACE`, `PCREC_CAND_TRACE`, whatever the `#if` names), grep the guard and build BASE and SUBJECT trace binaries for it before briefing (r11 covs1f: a COMMON named a trace switch that never printed). For MFTRACE REACH equality, build the BASE and SUBJECT MF_TRACE pairs via
    `tests/memfn/mk_mftrace_lib.sh` + one gcc link; a BASE tree may be a `git archive` export in the
    round dir (r1 sp1b). When the subject adds or moves sabotage rows, also prebuild ONE planted compiler per moved
