@@ -181,6 +181,7 @@ command) and its class; the register rows matched (or "none", with the grep); an
 
 ## 6. Self-check before delivery (architect)
 
+- A population sentence that says 'the rest are X' re-runs with X filtered out and prints the count (r100: "the one setjmp" was five handlers; the rest were not all comments).
 - Every site-map row has a command, a class and a goal/rule; every command re-runs at `$T` and prints what the row
   says (re-run them all once, last).
 - Every vocabulary term was grepped; a term with zero hits is listed as such (it is a `NEW-SEAM` or a new shape).

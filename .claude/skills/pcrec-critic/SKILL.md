@@ -39,7 +39,7 @@ and follow them as the coordinator." plus: mode, subject, topic, the scope
 mandate (only the pcrec and pcrec-bench repos; scratch only under
 `$PCREC_TMPDIR/scratch/crit-<topic>/`; no edits to either repo except creating and
 removing the review worktree), and the denylist paths the coordinator cannot
-know (lane report names, earlier reviews of this subject). Say NOTHING about
+know (lane report names, earlier reviews of this subject). When the denylist covers a file the subject cites as a REQUIREMENT, say so and QUOTE the cited lines in the launch prompt (r100: three lenses could not verify claims cited from a denied lane report). Say NOTHING about
 known results. Then go about other work; the coordinator hands back one
 message when the draft is ready.
 
