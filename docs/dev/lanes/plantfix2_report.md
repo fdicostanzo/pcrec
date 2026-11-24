@@ -167,7 +167,9 @@ All on the Mac (gcc-16), TMPDIR=$PCREC_TMPDIR/scratch/plantfix2/tmp, under workt
 ## STATE AT HANDOFF
 
 STATE: delivered. Branch lane/plantfix2, tip in the handback. Last ruling applied: R-1 (S1544 free;
-the kit's runner-plant range S1541-S1559 named in run_g2_win.sh's id comment). OWED: none.
+the kit's runner-plant range S1541-S1559 named in run_g2_win.sh's id comment).
+
+OWED: none.
 
 Files: tests/lib/plants.py; scripts/m6read_check_sab_anchors.py; memfn/tests/run_g2_win.sh,
 run_g2_pres.sh; tests/memfn/run_proof.sh, run_wreply.sh; tests/codegen/run_codegen_tests.sh
