@@ -47,6 +47,7 @@ message when the draft is ready.
 
 1. Subject:
    - code: `git rev-parse` the branch yourself (never a hash from prose); record
+     When the subject branch carries commits beyond the lane (an earlier unit, a merge of main), BASE is the LANE'S PARENT commit, not the merge-base (r94 memfn-plantcheck).
      `SUBJECT` and `BASE=$(git merge-base main SUBJECT)`.
    - design: the document path AND the commit that holds it (`git log -1
      --format=%H -- <doc>` on its branch); critics read that version. ALSO record the commit a
