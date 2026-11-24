@@ -3763,3 +3763,17 @@ Reports: docs/dev/lanes/forms*_report.md, formsfixl_report.md, formsfixm_report.
   - **Validation:** 759 at -j16: 222/0 in 667 s, against 757's serial 5615 s, and a masked diff identical to 757 (one named urandom line). make strict ok at the merge.
   - No product code, no abi event.
   - **Filed, not built:** mutb.py (one unit per mutant) and run_g2_win.sh (split by head).
+
+- **done: R-47 (D201, the block span at the SIMD layer), all units U1-U6** (2026-11-24, kit). Branch lane/memfn-k1108 @ 5681185fd.
+  - **What this delivery adds:** the U6 timing record and the job-shape fix. Main already has U1-U6 minus timing and the parallel selftest.
+  - **Timing:** job 760-kit-u6time on the dev box (Zen 4), in Frank's cleared window ("u6-timing-window: yes"). Record: docs/dev/lanes/u6time_evidence/run760/ (README, job.log, results TSV, quiet logs).
+  - **Verdict** (c6decide, rule 9a2875a6bf089837):
+    - C6 (SIMD on, the block span vs --memfn=no-span-vector): NO LOSS. Readable 27 of 32, W/T/L 17/10/0, A/A 0 standing (rate 0.000 against VOID above 0.050).
+    - C6c, the scalar layer under two compilers: NO LOSS. off-clang 11 of 12 readable, 0/11/0; off-os 12 of 12 readable, 0/12/0.
+    - NOT-RUN 0, no TRUNCATED.
+  - **Boxes:** Zen 4 only. ubuntubudu (Zen 1) is UNAVAILABLE (Frank: an old box, not planned). There is no Mac cell (Frank, 11-23). No 2x128 AVX2 datapoint is needed to decide.
+  - **The queue outcome:** `failed rc=0 verdict=GREEN` (expect stale: the rehearsal's lines shared the log). Ruled GREEN by the kit, and the job shape is fixed (replayed: done=1, verdict=3).
+  - **PROPOSED for main to record:** by D155 item 2, with the bench box set now the dev box alone (no loss anywhere, a win somewhere: 17 standing wins), V leaves CANDIDATE.
+    - The labels "CANDIDATE until every bench box runs C6" in docs/design/memfn/block_span.md (lines ~37, ~1007, ~1479, ~1501) then read "MEASURED on Zen 4, 2026-11-24 (job 760)".
+    - The kit edits them on your word, or main does at landing.
+  - **Still open, not R-47:** [KIT-ARCH-STEP] stage 2, after Frank moves the kit to the Mac. Filed ideas: mutb.py under parpool, run_g2_win.sh split by head.
