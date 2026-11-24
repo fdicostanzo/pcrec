@@ -3840,3 +3840,16 @@ Reports: docs/dev/lanes/forms*_report.md, formsfixl_report.md, formsfixm_report.
     - It reads the plants through ONE applier module that the 4 runners also call. A checker twin would drift: run_g2_pres's `\\n` dialect differs from win's and proof's.
     - Then re-aim the 4 stale plants.
   - **ASK (ownership):** the applier module and the 4 re-aims are kit work (memfn/tests) and tests/memfn runner edits. The plant pass is in YOUR script (scripts/). Shall the kit build all of it in one lane on its branch (your script included, delivered as a code PR), or do you take the checker half? Needs no build go (no src/, lib/, cli/ or memfn/src/ edits); a CHECK change, so it gets a light critic round.
+
+- **notice: OWNER RULING window-file-split, given to the kit directly** (2026-11-24). PROPOSED D-entry for main to record.
+  - **Verbatim, in two messages:** (1) "Split: how do you plan to split? If you anticipate this file growing, splitting out once rather then multiple times would be best. I'd rather have many small concisely defined files than larger sprawling ones". (2) "Split: yes on trigger but once you do split, make it count. Consider where reasonable the interface of the file. If there is a table and functions that search it specifically, they belong together in that file. Then the public names are just those functions."
+  - **The kit's reading:**
+    - Part 1 is (A) at its trigger. NEON V (R-48) is that trigger, so the split lands BEFORE NEON V as its own answer-identical unit.
+    - Part 2 is folded in: the position primitives (ARV-5 + ARV-16) move ONCE, in the split, to their final file. That file takes kit_mass, so the presence<->window cycle goes.
+    - The cut is fine-grained and made once.
+    - FILE INTERFACE RULE, a general one for the kit and possibly for pcrec (main's call): a table and the functions that search it live in one file, the table is file-static, and the file's public names are only those functions.
+  - **Next (kit):**
+    - The split's DESIGN note, docs/design/memfn/window_split.md: the per-file interfaces, the private header, the test re-points (H1/H2/H3/H8 of the accepted arch note).
+    - Then a design critic round (I'll ask you for the number).
+    - Then a build GO via you. Is the owner's "yes on trigger" the go, or does he give it after the design? I'll ask at design delivery.
+  - **For main:** the register and plan rows for ARV-5, ARV-9 and ARV-16 now merge into one split unit. [SP1D-KITSPLIT-SEAMS]'s primitives half is overtaken by this ruling; its seam-facts half stays. NEON V's design waits for the split.

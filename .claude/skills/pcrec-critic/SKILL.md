@@ -47,6 +47,7 @@ message when the draft is ready.
 
 1. Subject:
    - code: `git rev-parse` the branch yourself (never a hash from prose); record
+     When the subject branch carries commits beyond the lane (an earlier unit, a merge of main), BASE is the LANE'S PARENT commit, not the merge-base (r94 memfn-plantcheck).
      `SUBJECT` and `BASE=$(git merge-base main SUBJECT)`.
    - design: the document path AND the commit that holds it (`git log -1
      --format=%H -- <doc>` on its branch); critics read that version. ALSO record the commit a
@@ -77,12 +78,14 @@ message when the draft is ready.
    only once `build/pcrec` exists; a critic without a binary waits for it
    (poll every 10 min, up to 4 h) rather than ending source-only. When the promise includes trace records, build BASE and SUBJECT
    `-DPCREC_KS_TRACE` binaries ONCE into the round dir as part of the round's build
+   For an ALLOCATION-INJECTOR subject (alloc_check, mg-peak, a fail-at-N harness), build BASE and SUBJECT injected libs with the SUBJECT's injector header, so both sides count the same allocation sites (r96 k155code).
    (r5 sp1g: saved three per-critic builds). When a touched trace sits behind a guard (`PCREC_KS_TRACE`, `PCREC_CAND_TRACE`, whatever the `#if` names), grep the guard and build BASE and SUBJECT trace binaries for it before briefing (r11 covs1f: a COMMON named a trace switch that never printed). For MFTRACE REACH equality, build the BASE and SUBJECT MF_TRACE pairs via
    `tests/memfn/mk_mftrace_lib.sh` + one gcc link; a BASE tree may be a `git archive` export in the
    round dir (r1 sp1b). When the subject adds or moves sabotage rows, also prebuild ONE planted compiler per moved
    row into the round dir (`plants/<ID>/`, from the row's own BEFORE/AFTER), so critics test each row's witness
    without running make (r9 covs1: 9 plants took about 10 minutes). BASE trees and per-commit trees build CLEAN (a `build/` seeded from the review tree outlives the archive's mtimes and silently builds the SUBJECT binary: r63 l3remodel); only SUBJECT-derived plant trees are seeded. Copy the SUBJECT `git archive` plus the review tree's `build/` into `plants/<ROW>/tree`: the archive's commit-time mtimes make each plant an incremental build (r32 covs2code: 17 plants + BASE + 2 trace builds in ~72 s at -j2). Apply EVERY edit the row declares (`SAB_FILE`/`SAB_BEFORE`/`SAB_AFTER` and each numbered `SAB_FILEn`/`SAB_BEFOREn`/`SAB_AFTERn`), and DELETE the copied `build/pcrec` and `build/pcrec-harness` before `make`, so a plant whose edit did not take cannot pass as the unplanted binary (2026-11-19 r55 CHECK-5: two-edit rows S3382/S1653 were built with their first edit only). On a FIX-UP round (the subject fixes a reviewed tree), also build the previously REVIEWED tree clean and give the kit's tree selector a `reviewed` value beside base/subject, so a critic can tell a fix's move from the original change's (2026-11-21 r66 l3fix: EMIT-1's reviewed-vs-subject stamps).
    Build each plant with `build/pcrec build/pcrec-harness` (a REACH-using row needs the harness; r18 covs2a: REACH-FAILED on every plant built with the compiler alone). When `src/`, `lib/` and `cli/` are byte-identical BASE vs SUBJECT (a harness-only subject), reuse the previous round's plants and make BASE a `git archive` with the build tree shared instead of rebuilding either (r74 growth2: plants reused from r73, a harness-only BASE, a ~1 minute review build).
+   COMMON tells every critic that its deliver/lanes files are INPUTS, never written (r97: a critic emptied its own deliver file).
 3. Denylist (D27 applied to review): the lane's reports
    (`docs/dev/lanes/<lane>*`), review files on this subject, `git log` bodies
    beyond the subject lines, job logs, other worktrees, the box queue, plus the
@@ -159,6 +162,7 @@ note and its requirements read-only into `R/subject/`, give the site-map critic 
 deny the architect lane's report (`docs/dev/lanes/<lane>*`). Arch mode states section 5's R/subject copy and findings-file pre-create explicitly, and builds no review worktree [pilot 2026-11-18, r49 C-7, r50 6].
 On a SECTION review (a note reviewing existing sections, not a feature), each suggestion's SIZE and GATE go to the first-unit identity lens ONLY; the other lenses do not re-derive them (r91: ARV-9's ranges were derived by 3 lenses, ARV-12's writers by 3).
 On a RE-CHECK of a section review, a NEW unit's claimed effect also goes to first-unit identity (beside its size and gate); the row-kind checks (state, trigger, register columns) go to ONE lens; every sentence of the note's owner-questions section goes to the ruling lens only [r92 memfn-archrev2: G1, G9, G12c each found twice].
+For a MOVE design (a file split, a code relocation): the run kit carries a CUT ASSEMBLER that builds each proposed file from the design's ranges, and a readiness lens `gcc -fsyntax-only`s every assembled file; the gates lens asks which gate EXECUTES each re-pointed binder (a plant no gate runs certifies nothing) and checks that every identity-gate arm REACHES the moved code [r95 memfn-winsplit: the cut did not compile, no gate ran a re-aimed G2 plant, the sweep never reached the V w32 block].
 Arch-mode tree: build the review tree as a `git archive <T>` export under the round dir with the denylisted files removed, and point EVERY lens at it, instead of having each critic `git grep <T>` the repo with its pathspec excludes (r91: 0 leaks, 5 critics in 3-10 min).
 
 Staffing: a "strong" lens gets opus; with both in scope, at least one strong

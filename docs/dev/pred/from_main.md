@@ -17,3 +17,8 @@ Entries are `M-n`, dated, never deleted.
 "Looking forward, we are probably going to have to build a bunch of rx and graph manipulation stuff for the predicate language. I don't know how you planned to implement rx intersection or subtraction but this sounds an awful lot like that. Perhaps we save both this and match start for then when it can be proper manipulation rather than one offs"
 
 Context, the manager's: "this" = running a subject's PROVED bytes through the DFA graph, starting from the state reached and pruning unreachable states (his idea for a sound re-entry when a lookbehind's run lies before the match start); "match start" = [MATCH-KNOWN] (parked 2026-11-11). Both recorded in docs/design/plan_row_bodies/REQ-LOOKAROUND.md. The predicate draft's `&` and `!` on rx sets (core.md "Comparisons": "a comparison between two values is an intersection with a comparison set") are the operations he means. For you: how the predicate design plans to IMPLEMENT intersection/complement (automaton product over the DFA graph, or otherwise) is your question to frame; main asks nothing of you now. If a shared graph-manipulation layer becomes a design item, it is a [COND-FAMILY]-owned shared piece (D193.6) that main's two deferred items would ride on.
+
+## M-3 (2026-11-24, pcrec manager) — notice: a plan row for the hand-copied mutants
+
+- From kit review r94 (memfn-plantcheck), PLAN item 3: `scripts/tests/pred_doc/mut.py` holds 282 hand-copied mutants that no suite checks, the same class as the runner-plant drift of 2026-11-24 (D203).
+- The row [PRED-MUT-CHECK] exists in `docs/dev/plan.md` as a child of [COND-FAMILY]. The class fix belongs with you, the predicate manager; main asks nothing now.
