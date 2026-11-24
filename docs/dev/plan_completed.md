@@ -6660,3 +6660,21 @@ next: the runtime-selection discussion with Frank (owner.md); bench subst mini-b
   note (2026-11-03, file1103): session 128 carry-over item "S1760/S1761" is this row; nothing new found (rows added by ic3, docs/dev/lanes/ic3_report.md).
   Test-side half of the 256-byte `pcrec_error.msg` cut. The interim fix is a short MECH_SCRATCH in the reach job (kit-owned, no code change).
   status (2026-11-23, lane pinmsg): DONE: both probes copy tests/code/frag to a short mktemp dir under $PCREC_TMPDIR and use it for every path, so the message phrase lands inside the 256-byte cut at any scratch depth; REACHED at deep and default scratch (test-side only, no src/ change)
+
+## Completed 2026-11-24 (lane planpark: owner stale-rows-park housekeeping; rows verbatim and de-indented, a `completed` line and a DONE status line added)
+
+- [UPROP-MORE] STATE:completed — \p{} covers binary and remaining properties (Emoji, Default_Ignorable, Bidi_Class, Age, Block)
+  completed: 2026-11-24 lane planpark (its only remaining step is the not-started size follow-up, which lives under [DATA-PLAN] steps A and B; row verbatim below)
+filed: 2026-10-24 manager (utfwant want 2; Frank 2026-10-24 "set these up")
+status (2026-11-11): part B landed 731228fb2; D27 corpus promoted e2ff8c6a6 (tests/uprops/d27/, 520 blocks; UCD and libpcre2 arms 0 disagreements; no pcrec bug; cli.md §1.17.1 has the 55 names)
+  status (2026-11-24, lane planpark): DONE: closed; the size follow-up is [DATA-PLAN] A/B
+next: size follow-up under [DATA-PLAN] only (not started); the row closes when that is ruled not needed or done
+refs: docs/design/uprop_more.md; docs/dev/utf_wants_2026-10-24.md; D178; [UCD-RECORD]; [DATA-PLAN]
+Mostly PCRE2 catch-up: libpcre2 10.46 accepts 53 binary properties and Bidi_Class, pcrec refused them. One mechanism: a ranged-property reader in third_party/ucd-16.0.0/generate.py; each property is an interval list like \p{Sc}.
+
+- [DOC-INDEX-T1] STATE:done — ruling and tracker files as a short index plus greppable details, one accessor (landed part of [DOC-INDEX])
+  completed: 2026-11-24 lane planpark (split from [DOC-INDEX], whose open remainder T2 and [CITE-FORMS] stays in plan.md)
+  filed: 2026-11-10 Frank (the ask in the charter); manager wrote the row (review 2026-11-10-r1-docfmt FREEZE NOTE)
+  status (2026-11-10): LANDED under the owner's charter: T1 81449f5a0 (scripts/entry, doc_profiles.py), unit 1.0 582a0b49f + cite resolver 092516b60, T1b scripts/INDEX.md 39da816d7; open: T2, CITE-FORMS
+  status (2026-11-24, lane planpark): DONE: T1 81449f5a0 (scripts/entry, doc_profiles.py), unit 1.0 582a0b49f + cite resolver 092516b60, T1b scripts/INDEX.md 39da816d7
+  refs: docs/design/doc_index_format.md (+ doc_index_format_appendix.md); decisions D192
