@@ -157,6 +157,8 @@ the design and code rounds. Usual staffing: aggregation, site-map completeness, 
 first-unit identity when the note lists remodels; 3-5 critics. The RULING lens is STANDARD staffing whenever the note cites rulings, revisions, deliveries or owner questions (the most productive lens in r49, r50 and r51); its brief adds: grep decisions.md for every D-row citing the feature [pilot 2026-11-18, r49 C-2, r50 1: D191.3 was missed by all]. In design-mode setup terms (section 5), copy the
 note and its requirements read-only into `R/subject/`, give the site-map critic the requirements first, and
 deny the architect lane's report (`docs/dev/lanes/<lane>*`). Arch mode states section 5's R/subject copy and findings-file pre-create explicitly, and builds no review worktree [pilot 2026-11-18, r49 C-7, r50 6].
+On a SECTION review (a note reviewing existing sections, not a feature), each suggestion's SIZE and GATE go to the first-unit identity lens ONLY; the other lenses do not re-derive them (r91: ARV-9's ranges were derived by 3 lenses, ARV-12's writers by 3).
+Arch-mode tree: build the review tree as a `git archive <T>` export under the round dir with the denylisted files removed, and point EVERY lens at it, instead of having each critic `git grep <T>` the repo with its pathspec excludes (r91: 0 leaks, 5 critics in 3-10 min).
 
 Staffing: a "strong" lens gets opus; with both in scope, at least one strong
 critic on behaviour (emitted code or simulation) and one on design. A subject that moves more than ~5 sabotage rows gets an opus check-adequacy critic, one row per sabotage (2026-11-11 K38-2 review: the sonnet critic was thin).

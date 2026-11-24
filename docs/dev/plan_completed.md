@@ -6678,3 +6678,10 @@ Mostly PCRE2 catch-up: libpcre2 10.46 accepts 53 binary properties and Bidi_Clas
   status (2026-11-10): LANDED under the owner's charter: T1 81449f5a0 (scripts/entry, doc_profiles.py), unit 1.0 582a0b49f + cite resolver 092516b60, T1b scripts/INDEX.md 39da816d7; open: T2, CITE-FORMS
   status (2026-11-24, lane planpark): DONE: T1 81449f5a0 (scripts/entry, doc_profiles.py), unit 1.0 582a0b49f + cite resolver 092516b60, T1b scripts/INDEX.md 39da816d7
   refs: docs/design/doc_index_format.md (+ doc_index_format_appendix.md); decisions D192
+
+- [SP1E-RENDERER-TABLE] STATE:completed — span_pick: one renderer table keyed by (frame, pick, layer), the asker fact derived from it
+  filed: 2026-11-06 land1106 (review 2026-11-05-r2, F5+F6+F9)
+  status (2026-11-06): filed; 1e declared the renderer rows (fd_renderers, 14 pairs) but the asker fact SF_ASKER_PAIR is still a separate declaration
+  trigger: span_pick unit 3.0
+  refs: docs/dev/reviews/2026-11-05-r2-memfn-sp1e.md (F5, F6, F9); docs/dev/lanes/sp1e_report.md
+  completed: 2026-11-24 lane kitdrift: the asker fact SF_ASKER_PAIR (and fd_stop.renders_pair) was deleted by b5d1f8dd4 (memfn 3.0a commit 2, plan_frame.md rev 2.2 §2.4); the composer's fd_renderers rows moved into window.c's renderer tables (ren_skel/ren_search/ren_stream/ren_check/ren_fused, read through the one accessor ren_find) and the finder asks the frame's renderable set (wf_renders). The renderers are five tables behind one accessor, not a single (frame, pick, layer) table: that spelling was not kept

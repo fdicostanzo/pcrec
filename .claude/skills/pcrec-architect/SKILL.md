@@ -187,6 +187,7 @@ command) and its class; the register rows matched (or "none", with the grep); an
 - Every `CHAIN->TABLE`/`SHARED`/`ACCESSOR`/`WIDEN` row (except "SHARED, already satisfied") appears either under "Remodels that land first" or as a register row
   (matched or proposed) with its trigger.
 - No algorithm, field layout, schedule or test design appears outside "What the design step must decide".
+- Every COUNT built from a NAME LIST (the sites you thought of) is a FLOOR: say so beside the count ("at least N"), or count by grepping for the SHAPE, as D203's sibling-count grep does (r91: four counts read as a census).
 - Plan rows cited by TAG, spec sections by `§`, never by line (`make test-plan-lint` PL14, `make test-spec-history`).
 - The note is committed on the lane branch; the lane report names `T` and the note's path.
 
