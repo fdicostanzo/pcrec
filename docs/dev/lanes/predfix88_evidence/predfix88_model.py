@@ -60,7 +60,10 @@ def _git8(rel, rev):
 
 
 # ================================================================== SUCCESSOR's runner (a mode of its own)
-if len(sys.argv) == 4 and sys.argv[1] == "--succ":
+if len(sys.argv) > 1 and sys.argv[1] == "--succ":
+    if len(sys.argv) != 4:
+        sys.exit("predfix88 --succ: malformed runner call %r (never run as the full model: a nested re-run "
+                 "would recurse)" % (sys.argv,))
     import runpy
     mpath, pin = os.path.abspath(sys.argv[2]), sys.argv[3]
     libtxt = _git8("docs/design/predicates/library.md", pin)
@@ -77,7 +80,7 @@ if len(sys.argv) == 4 and sys.argv[1] == "--succ":
 
     def _route(cmd):
         """A nested run of an earlier model is routed through this runner with ITS OWN pin."""
-        if isinstance(cmd, (list, tuple)):
+        if isinstance(cmd, (list, tuple)) and "--succ" not in [str(x) for x in cmd]:
             for i_, a_ in enumerate(cmd):
                 mm_ = re.search(r"(\w+)_model\.py$", str(a_))
                 if mm_ and mm_.group(1) in PINS8:
@@ -85,8 +88,7 @@ if len(sys.argv) == 4 and sys.argv[1] == "--succ":
                             os.path.abspath(str(a_)), PINS8[mm_.group(1)]] + list(cmd[i_ + 1:])
         return cmd
 
-    subprocess.run = lambda cmd, *a, **k: _run0(_route(cmd), *a, **k)
-
+    # subprocess.run calls Popen: routing is done in Popen ONLY (routing in both doubled the pin and recursed)
     class _P(_popen0):
         def __init__(self, cmd, *a, **k):
             super().__init__(_route(cmd), *a, **k)
@@ -115,7 +117,7 @@ PLANTS8 = [   # (plant, its target check, what it plants: each changes the ENGIN
     ("p8", "UNSPEC", "the overlay sentence in core.md made the rule (\"It is not that the rule gives none\" dropped)"),
     ("p9", "COUNT", "libpcre2 run on `a{0,}` where the record's run reads `a{,}`"),
     ("p10", "SHORTHAND", "condition 4 off: the shorthand also through a spot the body labels"),
-    ("p11", "SHORTHAND", "the shorthand label exported (A5's reading undone: `pub.A.h` legal through the sugar)"),
+    ("p11", "SHORTHAND", "condition 4 undone for the caller's own label: `B([a = A]) & (A.h: ..)` read as `a.h`"),
     ("p12", "SHORTHAND", "condition 1 off: a binding used twice in the caller's text takes the shorthand"),
     ("p13", "NOLABEL", "`_:` on a spot written out as the blank mark `[_ = v]` again (reading (a))"),
     ("p14", "NOLABEL", "label-omitted's rule sentence in core.md reversed to the blank mark"),
@@ -173,9 +175,9 @@ if "all" in SAB8:                                            # the plant runner:
         print("%s -> %s (%s): %s (%.0f s)" % (pn, target, what, "caught" if ok else "NOT CAUGHT", time.time() - t0))
         print("   last line: %s" % last)
         print("   its FAIL line: %s" % fl_[:300], flush=True)
-    print("predfix88_sabotage: %d plants, %d not caught%s" % (
-        len(rows), notc, " (each plant turned its target check FAIL, no traceback, no engine crash)" if not notc
-        else ""))
+    if not notc:
+        print("   each plant turned its target check FAIL, with no traceback and no engine crash")
+    print("predfix88_sabotage: %d plants, %d not caught" % (len(rows), notc))
     sys.exit(1 if notc else 0)
 
 
@@ -952,14 +954,16 @@ unit("TABLE", "B3: the ownership table READ from core.md (header, column sentenc
 _own = piece8(OWN_T)
 if s8("p21"):
     _own = _own.replace("| used alone | labelled |", "| labelled | used alone |", 1)
-if s8("p22"):
-    _own = _own.replace("alone `/${rx}xx/`; labelled `/${[p = rx]}xx/`", "alone `/${[p = rx]}xx/`; labelled `/${rx}xx/`", 1)
 if s8("p23"):
     _own = _own.replace("\n- A body that passes its PATTERN", "\n| a sixth writer | `h` | `h` | `h` | `h` | `h` |\n- A body "
                         "that passes its PATTERN", 1)
 if s8("p24"):
     _own = _own.replace("| `h` bare (line 1) |", "| `h` a compile error (line 1) |", 1)
 _ow = ws(_own)
+if s8("p22"):                                                # on the text as read (the sentence wraps in the file)
+    _p22 = _ow.replace("alone `/${rx}xx/`; labelled `/${[p = rx]}xx/`", "alone `/${[p = rx]}xx/`; labelled `/${rx}xx/`", 1)
+    assert _p22 != _ow, "p22 planted nothing"
+    _ow = _p22
 COLB = dict(re.findall(r"(alone|labelled|listed|closed|stacked) `(/[^`]*/)`", _ow.split("the column says:", 1)[1]
                        .split("The first row", 1)[0])) if "the column says:" in _ow else {}
 _mm = re.search(r"the three modes: (WHOLE .*?\])\.", _ow)
