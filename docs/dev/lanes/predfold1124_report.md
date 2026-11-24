@@ -5,6 +5,8 @@ lib/, memfn/, tests/ or scripts/ changed. The record (COND-FAMILY.md) was not ed
 
 ## STATE AT HANDOFF
 
+OWED: none
+
 - Last rulings-file entry applied: **R-2** (option-hole-explicit RULED explicit). R-1 is applied too. The file holds
   no other entries.
 - Lint `pred_doc_lint: checks passed 8801, failed 0`; `make -s test-plan-lint` green (2 passed, 0 failed).
