@@ -1,0 +1,22 @@
+# Items to verify (r95). Each: HOLDS / REFUTED / PARTLY / not verified (why). A REFUTED quotes the exact command run.
+Critic files (read for the full claim + repro): RD/owner.md RD/premise.md RD/slot.md RD/rdchecks.md RD/rdcode.md
+
+V1 (OWNER-4, PREMISE-2, RDCHECKS-4c, RDCODE-2c): static fn `run_member` (window.c:998) does NOT really cross a file boundary under cut.spec; census.py's only cross-file "use" is `WR_M(run_member)` (:3148), a struct-member macro argument. Check :998, :1185, :3143-3148, and the census -v use list. Also: is the §5 rename to wf_run_member then unnecessary?
+V2 (PREMISE-3, RDCODE-3): `plan_ix`'s only prototype (:1891) is in frame's range, its use :2186 precedes its definition :4085, both in efind; deleting :1891 yields an implicit-declaration error (gcc-16 -fsyntax-only probe in your scratch).
+V3 (PREMISE-17, RDCODE-4): `use_nothing` (:792, stop) is read via NU()'s sizeof in WF_CT_S (span, :1979-1988); an `extern const gate_use use_nothing[];` declaration makes sizeof fail. Probe.
+V4 (RDCODE-1, RDCODE-7): files other than frame dereference renderer rows (`->srch->`, `->fused->`, `->strm->`, `->skel->`, `->chk->`) and `struct wf_rc` fields, so window.h needs COMPLETE row types and the wf_rc body, not bare tags; also `wf_plan_frame` (:4596-4600) reads `w->skel->k.id`. Re-run the grep and bucket the lines by cut.spec.
+V5 (RDCHECKS-4, RDCODE-2): read tests/memfn/decider_census.py: (a) a LIVE-shape line inside a function that is not a census member is STRAY (red) -> A2/A3 moving decide's kit_walk lines into new functions changes MEMBER_COUNT; (b) A4 merging the four ren_fused[/ren_stream[ reads (:2968/:2973/:3248/:3253) changes HITS; (c) RUN_CALLERS keys enclosing function names (run_member). (d) wf_tie_to's row file after A1 is kit.h.
+V6 (RDCHECKS-1, RDCHECKS-2): no Makefile target, script or gate the design lists runs the G2 plant tables (`--plants`/`--plant` modes of run_g2_win.sh, run_g2_pres.sh, run_proof.sh); plants.py hard-codes window.c/presence.c and its regex cannot match `window_margin.c@@`.
+V7 (RDCHECKS-8): the V form's w32 level block (window.c:4459-4468) renders only at x86-64-v3, so emit_sweep `--extra=-fmemfn-simd=x86-64` does not reach it (emit_sweep.py ~:530, g2_vspan.py :10-11).
+V8 (RDCHECKS-3): run_purity_reach.sh inserts pur_never_* before `static const wf_arow wf_arows[] = {` only (:68-70), and C/E/ST rows that use them home in verify/frame after the cut.
+V9 (SLOT-1): plan.md at 4d26eef02, rows [KIT-WINSPLIT] and [ARV-7-TEXTBUF-LEAF]: does either require ARV-7's leaf "before or with" the split? Does the design have an ARV-7 step? Full `kitgraph.py memfn/src cut.spec` (no DROP) SCC with compose.c?
+V10 (SLOT-2): with only window.c and finder.c kept, kitgraph prints a finder<->family cycle including finder.c -> window_frame.c (wf_renders) and window_frame.c -> finder.c (fd_find at :2630); and the note's A8 assigns finder<->frame to H1/ARV-9 (RD/R/subject/arch_review_2026-11.md).
+V11 (PREMISE-7, PREMISE-15): `wstream_of` (:2872-2876) straddles the ask/frame boundary; floor's range starts at :3881 inside a block comment opened at :3880.
+V12 (PREMISE-10, RDCHECKS-5): mech S452's SAB_BEFORE is finder.c:928 `if (m == 1)`, a U2b site; S3006's SAB_BEFORE/AFTER pass `sets_at`, which U3 renames.
+V13 (OWNER-3): run census.py --calls over RD/owner/spec_o1b.spec (cwd $T): statics/types counts and FILE CYCLES as OWNER-3 states (86/38; one SCC {frame, ren} via wf_erows in wf_tables_check).
+V14 (PREMISE-1): kitgraph's T-cycle edges mismatch.c->window.c (`shape`) and ofsskip.c->window.c (`count`) come from a local/parameter (mismatch.c:135, ofsskip.c:862/913).
+V15 (PREMISE-6, SLOT-4): which of §3's PUBLIC names have no caller outside the family (wf_find_arm, wf_floor_arm, kit_tie_takes, sets_at, kit_pos_class_of, wf_support_rows); is kit_sets_at new to kit.h against §10 bullet 4?
+V16 (RDCHECKS-9): scripts/boxqueue is Linux-only; g2_vspan.py treats a SKIP as bad on a host that cannot run x86-64-v3.
+V17 CONTRADICTION (PREMISE-4 vs RDCODE PROBED-AND-HELD): the design's MF_NS member-collision counts `count` 6, `shape` 5 -- premise reproduces 5/4, rdcode reproduces 6/5. Run the design's exact command and settle which, and why they differ.
+V18 (RDCHECKS-6): in run_sabotage_matrix.sh a sabotage whose build fails is an ANOMALY (loud), not a kill.
+V19 (PREMISE-18): ents.py ignores enumerators of `typedef enum` (wf_tie_to, :81-82); TIE_EXCHANGE used in stop's range and TIE_RESEED at :865 (margin).
