@@ -1254,6 +1254,11 @@ Owner waits: a row or stage waiting on the OWNER (a charter, a build go, an answ
   Frank 2026-11-10: "Yes. Let's start or designate a master to all these. Perhaps others were missing? It should look at the machinery needed to satisfy and the common elements. Then we can plan them all together."
   UMBRELLA ROW. Members (rows stay where they are): [CONDITIONALS], [POSTFACT], [ENG-LOOK], [BRANCH-RESET], [PCRE2-GAPS-TBD] (`(*FAIL)` `(*ACCEPT)`), [CLASS-SETOPS], [VLOOKBEHIND], [LB-EXIST]; readers: [REQ-LOOKAROUND], [CTX-PREFILTER], [LOOK-LOCATE], [DESC-DEAD], [NEVER-MATCH], [BREF-SPAN], [SPAN-HELPERS]; superset machinery: [ENG-TDFA]. Common elements (survey §4): the condition node, the name table (labels vs capture numbers), ONE checker product for every DFA member (start/read rows), and the VM-drives/DFA-checks piece (A-REV and its forward twin).
   NOTE (2026-11-12): four notes (andspike oracle spike; D196 add. 2 mechanism-before-syntax; planning principles for the combined plan) in docs/design/plan_row_bodies/COND-FAMILY.md §2026-11-12
+  - [PRED-MUT-CHECK] STATE:not-started — a check for the 282 hand-copied predicate mutants in scripts/tests/pred_doc/mut.py
+    filed: 2026-11-24 kit review r94 (memfn-plantcheck), PLAN item 3; owner: the predicate manager session
+    status (2026-11-24): filed, nothing built; no suite checks the mutants, the same class as the runner-plant drift (D203); the class fix belongs with the predicate manager (notice M-3 in docs/dev/pred/from_main.md)
+    trigger: the next change to scripts/tests/pred_doc/mut.py, or the predicate manager's own pick-up of M-3
+    refs: scripts/tests/pred_doc/mut.py; D203; docs/dev/pred/from_main.md (M-3); [COND-FAMILY]
 - [COUNT-TO-OCCURS] STATE:not-started — a predicate `count()` converts to `occurs` when pcrec can show no change in semantics
   filed: 2026-11-15 Frank (to session 132), manager wrote the row (lane file1115b)
   status (2026-11-15): filed, later and unscheduled; nothing built; the predicate base has no `count()` yet
@@ -2367,6 +2372,28 @@ Owner waits: a row or stage waiting on the OWNER (a charter, a build go, an answ
   next: the cheap two-artifact twin (`-e byte` vs `-e utf8` of one literal) — may be a pick defect
   refs: docs/dev/lanes/u8pick0_report.md; src/findings/default.rxt; decisions D83 D153 D159 D160
   utf8 literal-pick cells: pcrec leads jit but trails re2/rust x1.2-x15.7 (lit-sharp-s worst), 10 utf8 cells. FIRST STEP: the cheap two-artifact twin (`-e byte` vs `-e utf8` of one literal) — may be a pick defect. ROUND 3 rank 3a-4 (D153): kept at rank 4; remodel overlap likely refactor A (landmark pick / [TIE-ALIGN]) — confirm at its twin step.
+
+- [WATCH-CANCEL-SHAPES] STATE:not-started — watchers mishandle three shapes: hand-cancelled cloud runs, and scratch-only lanes
+  filed: 2026-11-24 manager (lane rows1124), from the day's watcher misses (journal 15:06 and 15:28 entries)
+  status (2026-11-24): filed, nothing built; (a) 8 CLOUD-SHARD-RED after a hand-cancel (run 45469584369); (b) its CLOUD-DONE says RED, not CANCELLED; (c) lanewatch false QUIET (rc 10) x3 on scratch-only lanes
+  trigger: the next change to queuewatch, monread or lanewatch, or a fourth recurrence of any of the three shapes
+  refs: scripts/queuewatch; scripts/monread; scripts/lanewatch; (b) conclusion=cancelled; memory "watch the idle box" (grow the watchers from each miss shape); (c)'s fix might also read the scratch dir's mtimes
+- [G2-PLANT-WANT] STATE:not-started — kit: a plant_want table for run_g2_win.sh so each plant asserts its REASON
+  filed: 2026-11-24 kit review r94 (memfn-plantcheck), PLAN item 1; owner of the work: the kit
+  status (2026-11-24): filed, nothing built; today a plant is asserted only to fail, not to fail for the reason it was written for
+  trigger: the next change to the PLANTS list in memfn/tests/run_g2_win.sh
+  refs: docs/dev/reviews/ r94 (memfn-plantcheck); memfn/tests/run_g2_win.sh; [SAB-ID-RANGES]
+- [SAB-ID-RANGES] STATE:not-started — record every sabotage id range (main's and the kit's) where a check can see them
+  filed: 2026-11-24 kit review r94 (memfn-plantcheck), PLAN item 2; manager (lane rows1124)
+  status (2026-11-24): filed, nothing built; the ranges live only in worktrees/.mgr/sabotage_ids.txt (gitignored, main-only); instance: kit runner plant S1540 collided with mech S1540 (renumbered S1544)
+  trigger: the next sabotage id collision, or the plant-check landing
+  refs: tests/mech/sabotages (registry and the anchor check); worktrees/.mgr/sabotage_ids.txt; [G2-PLANT-WANT]; learnings.md section 3
+  Goal: a collision is caught by a check, not by chance: one committed place lists each id range with its owner (main, kit), and the registry or anchor check reads it.
+- [RUNNER-PLANTS-POOL] STATE:not-started — kit: a process pool for the runners' --plants modes
+  filed: 2026-11-24 kit review r94 (memfn-plantcheck), PLAN item 4; owner of the work: the kit
+  status (2026-11-24): filed, nothing built; the --plants modes run their plants one after another
+  trigger: the next full plant sweep owed (D77)
+  refs: docs/dev/reviews/ r94 (memfn-plantcheck); owner rule, memory pcrec-tests-parallel (2026-11-23: tests run in parallel)
 
 ## Boonies
 - [LB-NEST-CAP] STATE:not-started — cap the BACK row by the walk's own reach, so sound nested-lookbehind runs are kept
