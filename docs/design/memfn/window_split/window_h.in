@@ -1,0 +1,92 @@
+/* SPDX-License-Identifier: 0BSD
+ * Provenance: original pcrec-memory-functions text (memfn/PROVENANCE.md).
+ *
+@TYPES@
+
+/* ---- THE FAMILY's NAMES: one section per defining file, each a name another
+ * family file uses (window_split.md §4; C15: every one through MF_NS). ---- */
+
+@DECLS@
+
+/* window_floor.c, window_find.c: the two family arms (Table E's E-generic and
+ * E-find rows); no kit file outside the family names them (W13). */
+#define wf_floor_arm    MF_NS(wf_floor_arm)
+#define wf_find_arm     MF_NS(wf_find_arm)
+extern const arm wf_floor_arm;
+extern const arm wf_find_arm;
+
+#endif
+@export cands
+@export rd_core
+@export rd_set
+@export run_role
+@export pinned_yes
+@export wf_extent
+@new window_stop.c wf_a_choose = void wf_a_choose(const mf_art *art, const mf_site *s, int quiet, wf_dec *d, unsigned ai);
+@new window_stop.c wf_a_path = const char *wf_a_path(size_t arow);
+@new window_stop.c wf_a_is_model = int wf_a_is_model(size_t arow);
+@new window_margin.c wf_m_choose = void wf_m_choose(wf_dec *d, const gate_in *in, const gate_tctx *tc);
+@export c_plan
+@export in_plan
+@export member_opts
+@export sets_at
+@export decide
+@export reply_of
+@export rows_hold
+@export offer_at
+@export plan_of
+@export legacy_ok
+@export run_bytes
+@export run_rank
+@export translate
+@export wf_plan_site
+@export wf_arm_pick
+@export wf_find_decide
+@new window_ren.c wf_ren_pieces = const char *wf_ren_pieces(struct wf_plan *w, wf_frame_row f, const ren_fused_row *fu, fd_form search);
+@new window_ren.c wf_ren_check = const char *wf_ren_check(void);
+@new window_ren.c wf_legacy_stream = unsigned wf_legacy_stream(wf_frame_row f);
+@export wf_stretches
+@new window_span.c wf_span_render = int wf_span_render(wf_rc *rc, kb *t, const struct wf_stretch *st);
+@new window_span.c wf_span_define = int wf_span_define(wf_rc *rc, const struct wf_stretch *st, mf_sink *out);
+@new window_span.c wf_span_check = const char *wf_span_check(void);
+@export b_hors_prepare
+@export hors_window
+@export s_shift_prepare
+@export pieces_libc
+@export wf_find_prepare
+@export resume_next
+@export wf_at
+@export wf_bound
+@export wf_cand
+@export wf_close
+@export wf_frame
+@export wf_lower
+@export wf_member
+@export wf_member_of
+@export wf_need
+@export wf_open
+@export wf_pos_test
+@export wf_put
+@export wf_rc_init
+@export wf_span_h
+@export c_find_test
+@export c_floor_test
+@export wf_floor_ct
+@export wf_floor_expr
+@export b_fn_define
+@export b_pair_state
+@export d_hors_define
+@export d_hors_head
+@export d_hors_next
+@export find_head
+@export hors_skip
+@export stop_skip
+@export wf_b_memchr
+@export wf_b_pair
+@export wf_b_walk
+@export wf_family_applies
+@export wf_find_ct
+@export wf_find_expr
+@export wf_find_fn
+@export wf_span_v
+@export wf_span_v_define
