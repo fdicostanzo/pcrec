@@ -10330,3 +10330,26 @@ reasons someone doesn't want a stretch to exist. Although, theres probably bette
 
 Class: a PROPOSAL as a question ("how about"), a THIRD candidate: the unspecified exact count is the count 0,
 the section removed; with his own doubt ("theres probably better ways to express it"). NOT a ruling.
+
+### 2026-11-23 OWNER RULING — exact-count-unspecified: "agree error"
+tags: core/operators/bindings/unspecified core/holes/count lib/rx/repeat lib/modifiers/padded-to core/principles/conservative-first
+
+ASKED AS A RULING (slug exact-count-unspecified, restated after his proposal of the count 0: "error, or do you
+want the count 0?"; the manager's leaning error, with: the removed section is already the count `0`, ruled
+(core/holes/count: "The count value zero, `x{${n}}` with n := 0, is `x{0}`: the object is absent and the rest
+matches"); the count 0 for the mark would duplicate `0` and split the count position against his "no maximum"
+for an unspecified upper bound; and four readings of `T(rx.digit, _)`, T(x, n) := `/a(?:${x}){${n}}b/`, RUN
+(python `re`, output pasted):
+`a(?:\d){0}b` : WHOLE `ab` HOLDS, `a1b` FAILS, `a12b` FAILS / SEARCHED `a12b a1b ab` `ab`@9 / FIND-ALL `ab a1b a12b ab` [`ab`@0, `ab`@12]
+`a(?:\d)b` : WHOLE `ab` FAILS, `a1b` HOLDS, `a12b` FAILS / SEARCHED `a12b a1b ab` `a1b`@5 / FIND-ALL `ab a1b a12b ab` [`a1b`@3]
+`a(?:\d){0,}b` : WHOLE `ab` HOLDS, `a1b` HOLDS, `a12b` HOLDS / SEARCHED `a12b a1b ab` `a12b`@0 / FIND-ALL `ab a1b a12b ab` [`ab`@0, `a1b`@3, `a12b`@7, `ab`@12]
+the fourth the compile error). HIS WORDS, whole:
+
+"exact-count-unspecified: agree error"
+
+Class: a RULING: the underscore where a body writes an exact count (`{${n}}`) is a compile error. His proposal
+of the entry above (the count 0) is not taken, by his own answer; the removed section is written with the count
+`0`. For the next fold: the open line becomes ruled; the three explicit spellings are named beside it (`0`; the
+count left out of the body; `rx.repeat(x, _, _)`); `padded_to`'s refusal of `_` for its width stands on it.
+The manager's reading that follows (marked): "the quantifier not written" (the literal reading of
+unspecified-rule at this position) is not the meaning either: the position's line is the error.
