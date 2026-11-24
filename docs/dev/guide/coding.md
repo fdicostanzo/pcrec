@@ -64,6 +64,15 @@ k155fix): "every exit" is every RETURN; a refusal's longjmp is not one, and
 [ARENA-SCOPES]). A builder live across a refusal is arena-backed:
 `pcrec_sb_scratch(&cx->arena)` for a StrBuf, `pcrec_arena_own` for a heap
 result; `tests/core/scratch_builder_check.py` holds the allowlist of the rest.
+Nor is any other unowned resource live across a refusal: `ks_measures.c`
+allocates its buffer before it opens the FILE (review r96 GENFORM-2). The
+CALLER-OWNS rule (review r96 GENFORM-4): a hook compile_driver calls
+(`fd_hook`, `lc_hook` in src/dump) may grow heap builders only when they
+belong to the hook's CALLER, which frees them when compile_driver returns
+nonzero; the longjmp never leaves compile_driver, so nothing strands. A
+scratch builder in a function called in a loop over a user-controlled size
+states its call count: arena retention is the SUM over calls, not the peak
+(review r96 COST-1, a re-render per intern was quadratic).
 
 **1.7 Single-letter locals in the emitters ARE the house convention.** `c` the C
 string buffer, `d` the `Dfa`, `p` the prefix, `b` a `StrBuf`, `v` the `Vm`, `st` a
