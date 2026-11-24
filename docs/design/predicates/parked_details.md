@@ -866,6 +866,7 @@ evidence:
 history:
 - 2026-11-23 (lane predfold1123, the fold of 2026-11-22 late and 2026-11-23; record "2026-11-23 OWNER RULING — label-parameter-omitted: `_` is the unspecified label; and: no argument is omitted under the current call rules; label arguments are not special by position or requirement"): a new parked piece.
 - 2026-11-23 (lane predfold1123b, the fold of the 2026-11-23 rulings after zero-open): its trigger "the call-forms ruling" has fired: call-forms and unspecified-rule are ruled; `_` covers a part not written; the empty position itself stays parked (a bullet).
+- 2026-11-23 (lane predfix88, review r88 A15; record "2026-11-23 MANAGER — review r88 (predfold1123b): the dispositions; no owner words"): the fired trigger "or the call-forms ruling" dropped.
 
 ## parked/ideas/reference-kind — A reference kind of label parameter for users
 slugs: 
@@ -899,12 +900,13 @@ history:
 - 2026-11-23 (lane predfold1123, the fold of 2026-11-22 late and 2026-11-23; record "2026-11-23 OWNER, on optional-label-general: the `?` in conditions "is a special case"; where it sits; `?` for optional macro arguments; a value left of `:` with no label"): a new parked piece.
 - 2026-11-23 (lane predfix86, review r86 D3; record "2026-11-23 MANAGER — review r86 (predfold1123): the dispositions; three errors of the manager's own brief named; no owner words"): a note that the idea would give `?` a second meaning, against his reason for the `?:` operator (optional-place); his words kept; `see:` gains core/conditions/form/optional-general.
 - 2026-11-23 (lane predfold1123b, the fold of the 2026-11-23 rulings after zero-open): its trigger "the call-forms ruling" has fired without taking it: the play-out's note that his `max?` would be `max = _` (the manager's suggestion) added; the idea stays parked, not ruled.
+- 2026-11-23 (lane predfix88, review r88 A15; record "2026-11-23 MANAGER — review r88 (predfold1123b): the dispositions; no owner words"): a live trigger: a head parameter that must be optional with no default and no `_` meaning.
 
 ## parked/ideas/compile-time-conditional — A compile-time conditional in an expression
 slugs: repeat-head
 rulings:
 - 2026-11-23 "repeat-head: agree with your lean" (record: "2026-11-23 OWNER RULING — repeat-head: "agree with your lean" (head (i): `repeat(x, min = _, max = min)`)"); RULED head (i), `repeat(x, min = _, max = min)`: one count exact, a written 0 exactly 0; his conditional head not taken.
-- 2026-11-23 (class: SKETCH) "repeat: repeat(A, min = 0, max = ((min &  0)? _ :(min?min:)) := /${A}{${min|0},${max}}/" (record: "2026-11-23 OWNER RULING — label-hole-full: a pure label's name hole must be whole; a capture's name may be partial, "but again, the label portion is lost"; and a sketch of the repeat head with a conditional default"); the component his sketch uses.
+- 2026-11-23 (class: SKETCH) "repeat-head: repeat(A, min = 0, max = ((min &  0)? _ :(min?min:)) := /${A}{${min|0},${max}}/" (record: "2026-11-23 OWNER RULING — label-hole-full: a pure label's name hole must be whole; a capture's name may be partial, "but again, the label portion is lost"; and a sketch of the repeat head with a conditional default"); the component his sketch uses.
 - 2026-11-23 (class: REMARK) "With proper ?: spelling And different semantics for repeat holes...lol" (record: "2026-11-23 OWNER, on his own repeat sketch: "With proper ?: spelling And different semantics for repeat holes...lol""); the spelling note.
 rejected:
 readings:
@@ -912,6 +914,7 @@ readings:
 evidence:
 history:
 - 2026-11-23 (lane predfold1123b, the fold of the 2026-11-23 rulings after zero-open): a new parked piece, at repeat-head's direction: "a compile-time conditional in an expression stays an idea (to park, with the trigger \"the first default or body that cannot be written without it\"; its `?` `:` spelling meets the optional entry operator: the spellings review)".
+- 2026-11-23 (lane predfix88, review r88 A15; record "2026-11-23 MANAGER — review r88 (predfold1123b): the dispositions; no owner words"): a trigger that can fire: one name for two forms one head cannot express, or a second split like padded_to.
 
 ## parked/ideas/call-head-forms — The head as a binding list, and the call forms beside it
 slugs: call-forms
@@ -924,6 +927,7 @@ readings:
 evidence:
 history:
 - 2026-11-23 (lane predfold1123b, the fold of the 2026-11-23 rulings after zero-open): a new parked piece for the play-out's parts call-forms did NOT rule (record "2026-11-23 MANAGER — the play-out he asked for: one head per name, from components the language already has (a PROPOSAL throughout; no owner words; nothing here is ruled)"): the head as a binding list (the "one idea"), a map written in place (item 8), a tuple or map spread (8), variable arguments (7), a user macro taking a macro and its termination rule (9, 11, 12), the interleaving beyond line 2 (6). One piece for the group, as the brief allowed.
+- 2026-11-23 (lane predfix88, review r88 A15; record "2026-11-23 MANAGER — review r88 (predfold1123b): the dispositions; no owner words"): the interleaving member gains its trigger.
 
 ## parked/ideas/cartesian — An explicit product of arrays
 slugs: 
@@ -1141,6 +1145,7 @@ readings:
 evidence:
 history:
 - 2026-11-23 (lane predfix84, review r84 G4; record "2026-11-23 MANAGER — review r84 (predspot1122): the dispositions, ruled with the 2026-11-23 rulings in hand; no owner words"): a new parked piece. Its source is review r84 FIXIND-14 (4), a critic's unlock on label-names-spot generalised ("a name is visible where its spot is placed and listed"; members: argument-default, default-export, `_` closing, the label-only `hit`); the manager's disposition: PLAN, parked with the review's trigger, BOONIES weight unless the owner takes it up. No owner words; nothing for rulings:.
+- 2026-11-23 (lane predfix88, review r88 A13; record "2026-11-23 MANAGER — review r88 (predfold1123b): the dispositions; no owner words"): "padded's width form" now "padded_to".
 
 ## parked/ideas/class-base — Number operations over a base given by a class
 slugs: 
