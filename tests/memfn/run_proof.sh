@@ -32,8 +32,6 @@ export LC_ALL=C
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
 . "$ROOT/tests/lib/cc_resolve.sh"
 LIB="${LIB:-$ROOT/build/libpcrec.a}"
-WORK="$(mktemp -d "${TMPDIR:-/tmp}/proof.XXXXXX")"
-trap 'rm -rf "$WORK"' EXIT
 
 # THE PLANTS: id, then FILE@@FROM@@TO (FILE under memfn/src; FROM replaced
 # by TO, `\n` a newline, `\&` an ampersand). Each must make this run red.
@@ -64,19 +62,27 @@ plant_spec() {
     esac
 }
 PLANTS="S1221 S1224 S1225 S1419 S1408 S3242"
+# PLANT_TWINS: the PLANTS ids that are the same plant as the tests/mech/sabotages row of
+# that id; any other shared id is a collision. The plant pass holds both (review r94 GF-1).
+PLANT_TWINS="S1221 S1224 S1225 S1419"
 # plant_edits ID: EDITS=(the plant's FILE@@FROM@@TO edit, one), or 1 if no plant ID.
 # THE ONE APPLIER (tests/lib/plants.py, dialect `win`) decodes and applies it for
-# --plant/--plants, and counts it for --plant-check (lane plantfix: FUW-12's class).
+# --plant/--plants, and checks it for --plant-check (lane plantfix: FUW-12's class).
 plant_edits() { local s; s="$(plant_spec "$1")" || return 1; EDITS=("$s"); }
-# --plant-check: every plant in PLANTS counted against today's memfn/src, never
-# applied or built (scripts/m6read_check_sab_anchors.py's plant pass runs this)
+# --plant-check [check|dump]: every plant in PLANTS run through the applier's loop over an
+# in-memory copy of today's memfn/src (check), or decoded (dump), never applied or built,
+# no work directory (scripts/m6read_check_sab_anchors.py's plant pass runs both)
 if [ "${1:-}" = "--plant-check" ]; then
+    case "${2:-check}" in check|dump) ;; *) echo "--plant-check [check|dump]" >&2; exit 2 ;; esac
     args=()
     for id in $PLANTS; do
         if plant_edits "$id"; then args+=(--plant "$id" 1 "${EDITS[@]}"); else args+=(--plant "$id" 0); fi
     done
-    exec python3 -I "$ROOT/tests/lib/plants.py" check win "$ROOT/memfn/src" "$ROOT/tests/memfn/run_proof.sh" -- "${args[@]}"
+    exec python3 -I "$ROOT/tests/lib/plants.py" "${2:-check}" win "$ROOT/memfn/src" "$ROOT/tests/memfn/run_proof.sh" \
+        --labels <(declare -f plant_spec) --twins "$PLANT_TWINS" -- "${args[@]}"
 fi
+WORK="$(mktemp -d "${TMPDIR:-/tmp}/proof.XXXXXX")"
+trap 'rm -rf "$WORK"' EXIT
 # The text a plant's red must carry (empty: any FAIL line is red).
 plant_want() {
     case "$1" in

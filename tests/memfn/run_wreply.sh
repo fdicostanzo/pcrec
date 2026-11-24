@@ -93,14 +93,23 @@ plant_edits() {
     local s; s="$(plant_spec "$1")" || return 1
     if [ "$1" = S1414 ]; then EDITS=("$s"); else EDITS=("${PERTS[@]}" "$s"); fi
 }
-# --plant-check: every plant in PLANTS (with its PERTS) counted against today's tree,
-# never applied or built, no box lock (scripts/m6read_check_sab_anchors.py's plant pass)
+# tracked_files: THE COPY'S FILE SET, NUL-separated: the tree's tracked files, the set
+# build_copy copies and --plant-check admits (one function, both modes: review r94 CA-1)
+tracked_files() { (cd "$ROOT" && git ls-files -z); }
+# PLANT_TWINS: the PLANTS ids that are the same plant as a tests/mech/sabotages row of
+# that id (none here); any other shared id is a collision. The plant pass holds both.
+PLANT_TWINS=""
+# --plant-check [check|dump]: every plant in PLANTS (with its PERTS) run through the
+# applier's loop over an in-memory copy of today's tracked files (check), or decoded
+# (dump), never applied or built, no box lock (scripts/m6read_check_sab_anchors.py's pass)
 if [ "${1:-}" = "--plant-check" ]; then
+    case "${2:-check}" in check|dump) ;; *) echo "--plant-check [check|dump]" >&2; exit 2 ;; esac
     args=()
     for id in $PLANTS; do
         if plant_edits "$id"; then args+=(--plant "$id" "${#EDITS[@]}" "${EDITS[@]}"); else args+=(--plant "$id" 0); fi
     done
-    exec python3 -I "$ROOT/tests/lib/plants.py" check wreply "$ROOT" "$ROOT/tests/memfn/run_wreply.sh" -- "${args[@]}"
+    exec python3 -I "$ROOT/tests/lib/plants.py" "${2:-check}" wreply "$ROOT" "$ROOT/tests/memfn/run_wreply.sh" \
+        --labels <(declare -f plant_spec) --files base <(tracked_files) --twins "$PLANT_TWINS" -- "${args[@]}"
 fi
 # THE BOX LOCK (scripts/boxlock): ~160 compiles and a tree build per copy is
 # over the sweep cap, so the run takes the lock unless its caller holds it (taken
@@ -117,7 +126,7 @@ build_copy() {
     local name=$1; shift
     local dir="$WORK/$name"
     mkdir -p "$dir"
-    (cd "$ROOT" && git ls-files -z | tar --null --ignore-failed-read -T - -cf -) |
+    (cd "$ROOT" && tracked_files | tar --null --ignore-failed-read -T - -cf -) |
         tar -xf - -C "$dir" || return 1
     apply "$dir" "$@" || return 1
     "$TIMEOUT_BIN" 900 make -C "$dir" -j"$JOBS" build/pcrec \
