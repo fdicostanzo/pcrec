@@ -1,0 +1,5 @@
+report: docs/dev/lanes/dpfix_report.md
+sections: Summary; Fixes; Measurement; Validation; STATE AT HANDOFF
+nonempty: all
+commit: yes
+owed: dpfix-test dpfix-mech dpfix-sweep
