@@ -25,6 +25,13 @@
 #                  catch an over-read; S3242, R-45's witness row (a): R-short refuses by its
 #                  message, plant_want; the table below): the run must go red. Writes only the work
 #                  directory. --plants runs them all and reports each.
+#                  THE PASS FORM (lane s3012fix): a DETECTED plant prints `PLANT <id>
+#                  RED   (proof_check / proof_run passed failed: ...): <a FAIL line>`
+#                  (one carrying its plant_want text where it names one); the run
+#                  exits 0 only when every plant named is detected. `PLANT <id> GREEN
+#                  (NOT DETECTED; ...)` means NOT DETECTED and makes the run exit 1:
+#                  GREEN is the FAILING answer here, never a pass. A setup failure
+#                  prints `FAIL: ...` and exits 1.
 #
 # Env: CC (tests/lib/cc_resolve.sh's), LIB, TMPDIR.
 set -u

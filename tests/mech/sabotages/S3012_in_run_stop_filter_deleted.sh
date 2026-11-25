@@ -9,6 +9,8 @@
 # RE-AIMED 2026-11-14 (lane mechund): since [RUN-POS-SET] stage 3 the derived run part is a direct
 # translation of the reply (part_d.md §2.1), so g2pres no longer reaches the filter; the detector is G2's WINDOW family
 # (memfn/tests/run_g2_win.sh, arm g2win): its in-run sites' DECIDE check reds (86 fails on the plant, 2026-11-14).
+# RUNNER TWIN (lane s3012fix, 2026-11-24): run_g2_win.sh's own S3012, the same edit and detector
+# (PLANT_TWINS; its --plant asserts an in-run DECIDE FAIL). It sat in run_g2_pres.sh until then.
 # Former detector: G2's presence family (memfn/tests/run_g2_pres.sh): in the run-tie-left pass the
 # window's stop and the run decision disagree, mf_define refuses the layout ("its run part is
 # not the WINDOW its presence link verifies"), and the generator's failures red the pass.

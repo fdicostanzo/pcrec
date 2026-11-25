@@ -52,7 +52,7 @@ pcrec's checks on the search-code kit (`memfn/`, D146/D147;
 - **run_proof.sh**, **proof_check.c**, **proof_run.c**, **proof_meta.h** — R-26.1-R-26.5's checks (MF_SITE_ABI 18), part `proof` of `make test-memfn-finder` ... Guard-page layouts and plant S1408: NOTES.md. Later history of this check (D172 S2 commit 6, S3): tests/memfn/NOTES.md.
 ### D172 S2 commit 4's lever check (lane wsc4)
 - **run_wreply.sh** — the window family's REPLY check (D172 S2; wsc4-wsc6). Opt-in, no make target; ~10 s plus a tree build; takes the box lock. Full description: NOTES.md "run_wreply.sh".
-- RUNNER PLANTS (the four shell runners: run_proof.sh, run_wreply.sh, memfn/tests' run_g2_win/run_g2_pres): applied ONLY by `tests/lib/plants.py`; `--plant-check` feeds [SABANCHOR]'s plant pass. Add to `plant_spec` AND `PLANTS`, move its PLANT_PINS pin; a mech-shared id is a PLANT_TWINS twin.
+- RUNNER PLANTS (the four shell runners: run_proof.sh, run_wreply.sh, memfn/tests' run_g2_win/run_g2_pres): applied ONLY by `tests/lib/plants.py`; `--plant-check` feeds [SABANCHOR]'s plant pass. Add to `plant_spec` AND `PLANTS`, move its PLANT_PINS pin; a mech-shared id: in PLANT_TWINS's literal, its row's arm runs it.
 ### The guarded-bytes check (RQ-3, D155 add. 2)
 - **run_simd_guarded.sh**, **simd_guarded_check.py**, **simd_bounds.tsv** — `make test-memfn-guarded` (in TEST_SECTIONS; mech arm `simdguarded`).
 ### The SIMD floor rule, C9-x86 (R-13)

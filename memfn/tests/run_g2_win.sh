@@ -26,6 +26,13 @@
 #   --plant NAME   the same run over a COPY of memfn/src with one planted
 #                  defect (the table below): the run must go red. --plants
 #                  runs them all. Writes only the work directory.
+#                  THE PASS FORM (lane s3012fix): a DETECTED plant prints `PLANT <id>
+#                  RED   (driver passed failed: P F): <a FAIL line>` (its plant_expect
+#                  line where it names one); the run exits 0 only when every plant
+#                  named is detected. `PLANT <id> GREEN (NOT DETECTED; ...)` means NOT
+#                  DETECTED, as does `RED BUT NOT BY ITS DETECTOR`: either makes the
+#                  run exit 1. GREEN is the FAILING answer here, never a pass. A setup
+#                  failure prints `FAIL: ...` and exits 1.
 #
 # G2W_TRACE=1 (plan_frame.md 3.0b, run by run_g2.sh against
 # libpcrec_mftrace.a): the TRACED pass. LIB is an MF_TRACE kit, the plant
@@ -302,13 +309,31 @@ plant_spec() {
         # left at each offset, so a position a set span narrows is not R's stop (the in-run
         # sites' `meet` witnesses)
         echo 'window.c@@        const wf_pos *p0 = \&m->p[r->start - WF_LO];\n        kit_run_reply rr = KIT_RUN_NONE;@@        const wf_pos *p00 = \&m->p[r->start - WF_LO];\n        static wf_pos pl[MF_WSPAN_POS];\n        for (unsigned j = 0; j < r->len; j++) { pl[j] = p00[j]; memcpy(pl[j].set, r->set[j], 32); }\n        const wf_pos *p0 = pl;\n        kit_run_reply rr = KIT_RUN_NONE;' ;;
+    S3012) # R-38 K38-2a FAM-5 (lane k382afix; MOVED HERE from run_g2_pres.sh by lane s3012fix,
+        # 2026-11-24, triage s3012tri_report.md): a_mass_choose's in-run filter deleted, so inside
+        # a verify-YES run the stop reads T_MASS_STRETCH directly, not the run decision's. Since
+        # [RUN-POS-SET] stage 3 (kit d5f9da41b) the presence family never calls a_mass_choose; the
+        # window family's IN-RUN sites do: their DECIDE reds (plant_expect). The twin of
+        # tests/mech/sabotages/S3012 (arm g2win), the same edit and the same detector.
+        echo 'window.c@@        if (r \&\& p->stretch \&\& o >= r->start \&\& o < r->start + r->len \&\& o != rs)\n            continue;                   /* inside R: the run decision'"'"'s one */@@        (void)o; (void)rs;' ;;
     *) return 1 ;;
     esac
 }
-PLANTS="S1400 S1401 S1402 S1403 S1404 S1405 S1406 S1407 S1409 S1410 S1422 S1423 S1425 S1426 S1427 S1428 S1429 S1544 S1541 S1542 S1543 S1549 S2986 S2987 S2989 S2991 S3040 S3041 S3084 S3089 S3090 S3091 S3092 S3093 S3096 S3116 S3117 S3118"
+# plant_expect ID: the FAIL-line patterns (each grep -E, each required, `;` between them)
+# naming the check the plant is FOR; empty: any FAIL line of the run reds it. A plant red
+# only by something else is RED BUT NOT BY ITS DETECTOR, which is not a pass.
+plant_expect() {
+    case "$1" in
+    S3012) echo '^FAIL: site inrun#[0-9]+ DECIDE: ' ;;
+    *) echo '' ;;
+    esac
+}
+PLANTS="S1400 S1401 S1402 S1403 S1404 S1405 S1406 S1407 S1409 S1410 S1422 S1423 S1425 S1426 S1427 S1428 S1429 S1544 S1541 S1542 S1543 S1549 S2986 S2987 S2989 S2991 S3040 S3041 S3084 S3089 S3090 S3091 S3092 S3093 S3096 S3116 S3117 S3118 S3012"
 # PLANT_TWINS: the PLANTS ids that are the same plant as a tests/mech/sabotages row of
-# that id (none here); any other shared id is a collision. The plant pass holds both.
-PLANT_TWINS=""
+# that id; any other shared id is a collision. An EXPLICIT literal id list, never an
+# expansion: the plant pass refuses any other spelling, holds each twin's edit equal to its
+# row's, and holds this runner among the arms its row's SAB_SUITES run (lane s3012fix).
+PLANT_TWINS="S3012"
 # plant_edits ID: EDITS=(the plant's FILE@@FROM@@TO edit, one), or 1 if no plant ID.
 # THE ONE APPLIER (tests/lib/plants.py, dialect `win`) decodes and applies it for
 # --plant/--plants, and checks it for --plant-check (lane plantfix: FUW-12's class).
@@ -397,8 +422,19 @@ if [ "${1:-}" = "--plant" ] || [ "${1:-}" = "--plants" ]; then
         c="$(counts "$WORK/plant_$id.run.log" 2>/dev/null)"
         red=$(grep -h '^FAIL' "$WORK/plant_$id.gen.log" "$WORK/plant_$id.run.log" 2>/dev/null | head -1)
         [ -n "$red" ] || red="$built"
-        if [ -n "$red" ]; then
-            echo "PLANT $id RED   (driver passed failed: $c): $red"
+        # by its own detector: every plant_expect pattern among the FAIL lines
+        byown=1 shown=""
+        IFS=';' read -ra pats <<< "$(plant_expect "$id")"
+        for pat in "${pats[@]}"; do
+            [ -n "$pat" ] || continue
+            m=$(grep -h -E -m1 -- "$pat" "$WORK/plant_$id.gen.log" "$WORK/plant_$id.run.log" 2>/dev/null | head -1)
+            if [ -n "$m" ]; then shown="$m"; else byown=0; fi
+        done
+        if [ -n "$red" ] && [ "$byown" = 1 ]; then
+            echo "PLANT $id RED   (driver passed failed: $c): ${shown:-$red}"
+        elif [ -n "$red" ]; then
+            echo "PLANT $id RED BUT NOT BY ITS DETECTOR ($(plant_expect "$id"); driver passed failed: $c): $red"
+            bad=$((bad + 1))
         else
             echo "PLANT $id GREEN (NOT DETECTED; $c)"; bad=$((bad + 1))
         fi
