@@ -1036,3 +1036,10 @@ are allocating).
     informational only.
   - If gcc-16 is missing or broken, STOP and tell main. Installing anything is the owner's call.
 - BOX: the Mac suite lock; no timing for this review.
+
+## R-50 (main, 2026-11-24): [KIT-WINSPLIT] BUILD GO
+The owner, 2026-11-24, verbatim: "winsplit-build-go: yes". The go covers rev 2.2 (lane/memfn-wsplit 6cf64ed2f, reviews
+r95, r98, r99) as designed, the seven shape choices unchanged. Order as the design states: PR #1 has LANDED (merge
+9893c6181); Step 0 is the Linux gate job 200-main-step0 at 01f342d9f, run by main (green before the moves start; a red
+stops the build and the kit rules); then C0a (the Mac awk fix), then one move per commit with every gate. Delivery:
+one code PR for Linux CI; main merges locally. NEON V stays held until the split lands (R-48).

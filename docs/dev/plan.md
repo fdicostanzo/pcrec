@@ -47,11 +47,11 @@ Owner waits: a row or stage waiting on the OWNER (a charter, a build go, an answ
   status (2026-11-24): stage 1 done; stage 2 DONE (R-49: note rev 4 accepted after r91-r93; its suggestions filed below, owner ruling window-file-split = D204); stage 3 (an arch review per new kit feature, the kit manager skill's trigger row) is IN FORCE
   next: stage 3 runs per new kit feature; the children below each wait on their own trigger; [KIT-WINSPLIT] is first (NEON V's trigger)
   refs: [ARCH-STEP]; docs/design/plan_row_bodies/KIT-ARCH-STEP.md; memfn/docs/requests.md (R-49); .claude/skills/pcrec-memfn-manager; pcrec-architect; pcrec-critic (mode arch)
-  - [KIT-WINSPLIT] STATE:not-started — kit: split window.c once, one file per table and its search functions (ARV-5 + ARV-9 + ARV-16)
+  - [KIT-WINSPLIT] STATE:started — kit: split window.c once, one file per table and its search functions (ARV-5 + ARV-9 + ARV-16)
     filed: 2026-11-24 kit arch review (R-49, note rev 4 accepted; suggestions filed, not built)
     status (2026-11-24): direction ruled (D204: yes on trigger, split lands BEFORE NEON V, answer-identical); the position primitives move once, in the split, to a file taking kit_mass (the presence<->window cycle goes); design not written
-    waits: the design note, the r95 round, then owner — the build go (asked at design delivery); trigger is NEON V (R-48); NEON V's design waits for the split
-    next: the kit writes docs/design/memfn/window_split.md (per-file interfaces, private header, test re-points: H1/H2/H3/H8), then design round r95 (memfn-winsplit), then the kit asks the owner for the build go at design delivery
+    waits: Step 0 (Linux gate job 200-main-step0 at 01f342d9f, green before the moves); then C0a, then one move per commit (kit)
+    next: BUILD GO (owner 2026-11-24 "winsplit-build-go: yes"; R-50) on rev 2.2 (lane/memfn-wsplit 6cf64ed2f; r95, r98, r99); kit builds, one code PR, main merges locally
     refs: D204; memfn/docs/arch_review_2026-11.md §7 ARV-5, ARV-9, ARV-16, §8 H1/H2/H3/H8, §9; architecture.md register row 43; memfn/docs/responses.md (OWNER RULING window-file-split)
     Charter: owner 2026-11-24: "yes on trigger but once you do split, make it count. Consider where reasonable the interface of the file. If there is a table and functions that search it specifically, they belong together in that file. Then the public names are just those functions." ARV-5 (set questions join kit_pos_*), ARV-16 (primitives one home) and ARV-9 (the split) are one unit; ARV-7's text-buffer leaf goes before or with it.
   - [ARV-1-NONE-NOTED] STATE:not-started — kit: noted-deviation register rows for the 2 NONE-density readers (hors_facts, m_margin_holds)
