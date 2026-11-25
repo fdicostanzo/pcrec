@@ -200,6 +200,17 @@ def mech_pass():
 #               the dump's declared twins are exactly its ids: `"$PLANTS"` (S3012's
 #               declaration: every new plant a twin unasked) or any other spelling is
 #               TWINS NOT EXPLICIT.
+#   channels    (lane tt6fix) the --plant-check PROTOCOL is STDOUT and the exit code ONLY:
+#               the rows, the one summary line, and their consistency. A runner's STDERR is
+#               SHOWN (one deduplicated block, every line, which runs printed it) and never
+#               parsed: the helpers a runner sources print advisory notices there by design
+#               (tests/lib/timeout_bin.sh's [TT-6] where bare `timeout` is not GNU,
+#               cc_resolve.sh's [MACPORT], resolve_pcre2.sh's [ORACLE-LINK]), and a verdict
+#               that read stderr was red on every box with one (the Linux dev box, every
+#               lane, 2026-11-24). A runner that dies still goes red by its exit code or its
+#               missing/garbled protocol, its stderr's last line quoted as context. Never
+#               pre-set a notice's *_ANNOUNCED gate here to silence it (the instance fix this
+#               replaced): the next helper's notice would break the pass again.
 #
 # The runners run CONCURRENTLY, each in its own session, under ONE shared deadline
 # (r94 PAR-2/PAR-3): on the deadline the whole process group is killed and the
@@ -269,7 +280,7 @@ def run_all(cmds, budget):
     deadline, each drained by its own thread: {key: (rc, out, err) or (None, why, '')}.
     On the deadline the process GROUP is killed and the pipes read with a bound, so a
     grandchild holding them cannot hang the pass (r94 PAR-2/PAR-3)."""
-    env = dict(os.environ, CC_RESOLVE_ANNOUNCED="1")   # cc_resolve's notice; any OTHER stderr is a finding
+    env = dict(os.environ)    # no notice gate pre-set: stderr is shown, never parsed (lane tt6fix)
     deadline = time.monotonic() + budget
 
     def one(argv):
@@ -441,6 +452,7 @@ def plant_pass():
         p_unreadable.append((MATRIX, "ARM TABLE UNREADABLE: " + why))
     nplants = nedits = ntwins = 0
     counts, seen = {}, {}
+    shown = {}      # a runner's stderr line -> the runs that printed it: SHOWN, never parsed
     cmds = []
     for rel in runners:
         if '"--plant-check"' not in open(os.path.join(root, rel), errors="replace").read():
@@ -460,21 +472,26 @@ def plant_pass():
                 bad_here = True
                 break
             lines = out.split("\n")
+            errl = [l for l in err.split("\n") if l.strip()]
+            for l in errl:
+                shown.setdefault(l, []).append(rel + ("" if mode == "check" else " (dump)"))
+            ctx = ("; its stderr ends: " + errl[-1][:70]) if errl else ""
             if mode == "dump":
                 rows = [l.split("\t") for l in lines if l]
-                if err.strip() or rc != 0 or any(len(r) != 6 for r in rows):
-                    why = (err.strip().splitlines() or ["exit %d" % rc])[-1]
-                    p_unreadable.append((rel, "--plant-check dump UNREADABLE: " + why[:70]))
+                if rc != 0 or any(len(r) != 6 for r in rows):
+                    p_unreadable.append((rel, "--plant-check dump UNREADABLE: exit %d, %d malformed row(s)%s"
+                                         % (rc, sum(len(r) != 6 for r in rows), ctx)))
                     bad_here = True
                     break
                 dump = rows
                 continue
             summ = [l for l in lines if l.startswith("plant-check: ")]
             rows = [l.split("\t") for l in lines if l and not l.startswith("plant-check: ")]
-            if err.strip() or rc not in (0, 1) or len(summ) != 1 \
+            if rc not in (0, 1) or len(summ) != 1 \
                     or any(len(r) != 5 for r in rows):
-                why = (err.strip().splitlines() or ["exit %d, %d summary line(s)" % (rc, len(summ))])[-1]
-                p_unreadable.append((rel, "--plant-check UNREADABLE: " + why[:70]))
+                p_unreadable.append((rel, "--plant-check UNREADABLE: exit %d, %d summary line(s), "
+                                     "%d malformed row(s)%s"
+                                     % (rc, len(summ), sum(len(r) != 5 for r in rows), ctx)))
                 bad_here = True
                 break
             try:
@@ -519,6 +536,11 @@ def plant_pass():
           % (nplants, nedits, len(counts)) if not pins else
           "runner plants checked: %d (%d edits, %d runners)" % (nplants, nedits, len(counts)))
     print("runner plant twins checked: %d (declared twins of a tests/mech/sabotages row)" % ntwins)
+    if shown:      # advisory notices ([TT-6], [MACPORT], ...) and any other diagnostics: for the reader
+        print("runner stderr (shown, not parsed: the verdict reads stdout and the exit code): %d line(s)"
+              % len(shown))
+        for ln, who in shown.items():
+            print("  %s    <- %s" % (ln[:160], ", ".join(who)))
     if p_unreadable:
         print("UNREADABLE RUNNERS:", len(p_unreadable), "-- the plant pass is BLIND to these")
         for rel, why in p_unreadable:
@@ -560,6 +582,7 @@ NOMODE = ("#!/bin/bash\n# applies through tests/lib/plants.py\nplant_spec() {\n 
 class Case:
     def __init__(self, t):
         self.t = t
+        self.env = {}     # the case's own environment changes (None unsets), for the notice cases
 
     def rd(self, rel):
         return open(os.path.join(self.t, rel)).read()
@@ -624,6 +647,21 @@ def s3012_to_pres(c):
     c.sub(PRES, 'PLANT_TWINS="S3007 ', 'PLANT_TWINS="S3012 S3007 ')
 
 
+def notice(c, which):
+    """(lane tt6fix) force a helper's advisory stderr notice on in every runner the case runs:
+    its gate unset, its variable a value that is not the default name. The value is never run
+    by --plant-check; each case also requires the notice text in its output, so a fixture that
+    stopped reaching the notice is a red case, not a vacuous green one."""
+    if which == "tt6":      # tests/lib/timeout_bin.sh: TIMEOUT_BIN != "timeout"
+        c.env.update(TIMEOUT_BIN=shutil.which("timeout") or "/usr/bin/gnutimeout", TT6_TIMEOUT_BIN_ANNOUNCED=None)
+    else:                   # tests/lib/cc_resolve.sh: CC != "gcc"
+        c.env.update(CC=shutil.which("gcc") or "/usr/bin/gcc", CC_RESOLVE_ANNOUNCED=None)
+
+
+TT6_SHOWN, MACPORT_SHOWN = "[TT-6] TIMEOUT_BIN=", "[MACPORT] CC="
+SHOWN = "runner stderr (shown, not parsed"
+
+
 def suites(c, pid, val):
     c.wr(c.row(pid), c.rd(c.row(pid)) + '\nSAB_SUITES="%s"\n' % val)
 
@@ -665,8 +703,15 @@ CASES = [
     ("--plant-check prints a well-formed lie", lambda c: c.mode(PROOF, '    [ "${2:-check}" = check ] && printf "a\\tb\\tOK\\td\\te\\n"'), 1, [PROOF, "INCONSISTENT"], None, None),
     ("--plant-check dies (exit 3)", lambda c: c.mode(PROOF, "    exit 3"), 1, [PROOF, "exit 3"], None, None),
     ("--plant-check exits 0 silently", lambda c: c.mode(PROOF, "    exit 0"), 1, [PROOF, "UNREADABLE"], None, None),
-    ("--plant-check writes stderr", lambda c: c.mode(PROOF, '    [ "${2:-check}" = check ] && echo oops >&2'), 1, [PROOF, "--plant-check UNREADABLE: oops"], None, None),
-    ("--plant-check dump writes stderr", lambda c: c.mode(PROOF, '    [ "${2:-check}" = dump ] && echo oops >&2'), 1, [PROOF, "dump UNREADABLE: oops"], None, None),
+    # stderr is SHOWN, never parsed (lane tt6fix): a protocol that is whole on stdout is green
+    ("--plant-check writes stderr (shown, green)", lambda c: c.mode(PROOF, '    [ "${2:-check}" = check ] && echo oops >&2'), 0, ["all runner plants apply", SHOWN, "oops    <- " + PROOF + "\n"], None, None),
+    ("--plant-check dump writes stderr (shown, green)", lambda c: c.mode(PROOF, '    [ "${2:-check}" = dump ] && echo oops >&2'), 0, ["all runner plants apply", "oops    <- " + PROOF + " (dump)"], None, None),
+    ("--plant-check dies saying why on stderr (red, quoted)", lambda c: c.mode(PROOF, '    echo "fatal: no such thing" >&2; exit 3'), 1, [PROOF, "exit 3", "its stderr ends: fatal: no such thing"], None, None),
+    ("[TT-6] notice forced: green, the notice shown", lambda c: notice(c, "tt6"), 0, ["all runner plants apply", "runner plants checked: 81 ", "runner plant twins checked: 39 ", SHOWN, TT6_SHOWN, WIN, PRES, WREPLY], None, None),
+    ("[MACPORT] notice forced: green, the notice shown", lambda c: notice(c, "cc"), 0, ["all runner plants apply", "runner plants checked: 81 ", MACPORT_SHOWN, PROOF], None, None),
+    ("both notices forced, a runner dies (exit 3): red", lambda c: (notice(c, "tt6"), notice(c, "cc"), c.mode(PROOF, "    exit 3")), 1, [PROOF, "exit 3", "its stderr ends: " + MACPORT_SHOWN, TT6_SHOWN], None, None),
+    ("[TT-6] notice forced, a stale FROM (win): red", lambda c: (notice(c, "tt6"), c.sub(WIN, "echo 'ofsskip.c@@    const int m[2] = { a, b };", "echo 'ofsskip.c@@    const int m[2] = { a, bXYZZY };")), 1, ["STALE", WIN, TT6_SHOWN], None, None),
+    ("[TT-6] notice forced, the dump dies: red", lambda c: (notice(c, "tt6"), c.mode(WREPLY, '    [ "${2:-check}" = dump ] && exit 3')), 1, [WREPLY, "dump UNREADABLE: exit 3", TT6_SHOWN], None, None),
     ("--plant-check's answer right, its exit 3", lambda c: c.unexec(PROOF, "; exit 3"), 1, [PROOF, "exit 3, 1 summary"], None, None),
     ("--plant-check prints its summary twice", lambda c: c.mode(PROOF, '    [ "${2:-check}" = check ] && echo "plant-check: %d plants, %d edits, 0 bad"' % (PLANT_PINS[PROOF], PLANT_PINS[PROOF])), 1, [PROOF, "2 summary line(s)"], None, None),
     ("--plant-check's summary unparsable", lambda c: c.unexec(PROOF, " | sed 's/^plant-check: [0-9]*/plant-check: many/'; exit \"${PIPESTATUS[0]}\""), 1, [PROOF, "SUMMARY UNREADABLE"], None, None),
@@ -800,11 +845,17 @@ def selftest(serial):
                 for fn in fns:
                     os.link(os.path.join(dp, fn), os.path.join(rd, fn))
             os.makedirs(os.path.join(t, "tmp"))
+            c = Case(t)
             try:
-                fault(Case(t))
+                fault(c)
             except Exception as e:     # a fixture that no longer applies is a red case
                 return name, False, "FIXTURE: %s" % e
             env = dict(os.environ, TMPDIR=os.path.join(t, "tmp"), PLANT_ALIVE=os.path.join(t, "alive"))
+            for k, v in c.env.items():
+                if v is None:
+                    env.pop(k, None)
+                else:
+                    env[k] = v
             if tmo:
                 env["PLANT_CHECK_TIMEOUT"] = tmo
             s0 = time.monotonic()
