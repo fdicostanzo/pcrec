@@ -10594,3 +10594,25 @@ the empty text") would change meaning. (3) No operator is needed for the peek: P
 it, `/(?!${A})/`, as `peek` is `/(?=${A})/`; the `when` guard is then `/(?!${test})/` (its printed lowering
 already reads `(?!\d)`). (4) not-test then dissolves: `when(!x, z)`, x a bare pattern, is a complement in a test
 position, the existing compile error (complement-place). Put to him as a ruling, slug drop-not.
+
+### 2026-11-25 OWNER, on drop-not: "What's the full peek family then peekback, etc"
+tags: lib/control/peek core/patterns/lookaround core/filters/negation lib/control/when lib/convention/argument-labels core/model/places
+
+Asked **drop-not** (three lines: `NOT` leaves the language, negation is `!` only, on a pattern or set the
+complement, on a condition "the condition fails"; the negative peek is a provided macro over `(?!...)`, the
+`when` guard `/(?!${test})/`; not-test closes as a complement in a test position; the manager's leaning yes to
+all three). HIS WORDS, whole:
+
+"What's the full peek family then peekback, etc"
+
+Class: a QUESTION (it names `peekback`, his word, a placeholder spelling). NOT a ruling; drop-not is not answered.
+RUN before answering (python `re`, subject `1x2 x3 4x x`; output pasted):
+peek x(?=\d) | WHOLE x FAILS | SEARCHED ('x', 1) | FIND-ALL [('x', 1), ('x', 4)]
+negative ahead x(?!\d) | WHOLE x HOLDS | SEARCHED ('x', 8) | FIND-ALL [('x', 8), ('x', 10)]
+peekback (?<=\d)x | WHOLE x FAILS | SEARCHED ('x', 1) | FIND-ALL [('x', 1), ('x', 8)]
+negative behind (?<!\d)x | WHOLE x HOLDS | SEARCHED ('x', 4) | FIND-ALL [('x', 4), ('x', 10)]
+The manager's answer (told to him; the manager's reading; nothing applied): the family is PCRE's lookarounds,
+each a one-line body around a pattern hole: four (`(?=`, `(?!`, `(?<=`, `(?<!`), and PCRE2's two non-atomic
+positive forms (`(?*`, `(?<*`), which an outside condition re-enters (core/patterns/lookaround has "A condition
+outside a lookahead never re-enters it" for the atomic ones). `build/pcrec --list-syntax` lists all six as built
+(module lookaround). The positive bodies carry the list on the spot; the negative ones pass no labels.
