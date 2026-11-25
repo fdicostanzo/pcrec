@@ -56,9 +56,9 @@ untouched (not re-run). No sabotage id taken (S3598 removed; none added).
 ## STATE AT HANDOFF
 
 Rulings file: empty at every boundary, no R-n applied.
-OWED: the mech REACH run and the memgate sample below (the deliver file says `owed: none`; the box stayed held by arenabuild's suite for the whole lane, so these could not run):
+OWED: 200-arenafix-mech 200-arenafix-mg (the mech REACH run and the memgate sample below; the box stayed held by arenabuild's suite for the whole lane)
 - mech with REACH on the touched scope rows: queue job `200-arenafix-mech` (S3593-S3597, S3599-S3603; expect
   `== mech run COMPLETE: 10 rows`); read with `scripts/monread arenafix` or `scripts/verdict`.
-- memgate sample (prep + peak/rungs/instr, side vs itself, --limit 25): `$PCREC_TMPDIR/scratch/arenafix/mg.log`, last line
+- memgate sample (queue job `200-arenafix-mg`; prep + peak/rungs/instr, side vs itself, --limit 25): its job log, last line
   `== mg sample COMPLETE`; each mode line `== MODE exit 0` expected (the noise read).
 Note: the mech job archives HEAD at its start; later commits to this branch change what it tests.
