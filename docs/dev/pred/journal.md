@@ -1203,3 +1203,22 @@ wake.md says (read the draft WHOLE first; A4 is a ruled-words finding: read his 
   adequacy; denylist given; no known result told. Main told (no reply needed).
 - Read whole: core.md, library.md, parked.md; the record's eighth-session entries.
 - NEXT: re-ask not-test; on r90's hand-back: rule, one opus fix lane (files the review), merge, lints, P-30.
+
+## 2026-11-25 — drop-not in discussion; the all-DFA goal; r90 ruled; fix lane predfix90 launched
+
+- Owner (8 record entries, all classed; none a ruling): not-test re-asked -> "is not ... a logical statement?" ->
+  "Couldn't ! Handle it?" (record check: NOT on a condition was MY proposal, spelled `!` then) -> drop-not ASKED
+  (NOT leaves; `!` on a pattern, set or condition; the negative peek a body over `(?!...)`) -> the peek family ->
+  his spelling lean `peeknot` -> "a complement on a lookahead is not meaningful" (yes; run) -> his IDEA `peek(!A)`
+  (the peek detects a complement, as a hole's position decides) -> my general form: `!B` is "no path of B in the
+  place's text and mode" (place table), so `peek(!A)` is `(?!A)` by definition; the wider in-place rule would make
+  `when(!x, z)` work and reverse lone-complement-match: put to him, NOT answered.
+- GOAL he stated, amended: "goal is all dfa unless specified by user. I don't want "when" to force vm". Recorded;
+  P-30 notice to main (lookaround over a regular body in the automaton, product, complement: M-2's layer).
+- r90 hand-back (coordinator stopped): 12 A items, 9 B, 9 C, 1 rejected; no ruled answer changes. RULED (record
+  entry "review r90 (predfold1124): the dispositions"): all FIX-NOW but A12's unified statement and A11's group
+  node (PLAN) and the full mutant gate (PLAN); four owner questions queued: sent-label-wall, skip-past-wall,
+  equivalence-inside, shorthand-outside; open line alone-as-middle.
+- LAUNCHED lane predfix90 (opus; worktree `worktrees/predfix90`, cut at 33abd6926; deliver + empty rulings first;
+  lanewatch armed): applies r90, adds the path GRID against a separate rule evaluator, files the review.
+- NEXT: his answer on drop-not; at predfix90's delivery: merge, lints, P-31 `done:`, tell main.
