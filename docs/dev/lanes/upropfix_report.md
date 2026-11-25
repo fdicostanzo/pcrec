@@ -1,6 +1,17 @@
 # upropfix report: the uprops local arena (K155 class) on main 96b2587a8
 
-STATE: stopped (the brief's own stop rule: the house-form fix raises peak memory above noise; a ruling is needed)
+STATE: delivered (round 2, after main's ruling: ALLOW as an [ARENA-SCOPES] client); validation OWED (checks chain + upropfix-test, see STATE AT HANDOFF)
+
+## Round 2 (main's ruling, 2026-11-24)
+
+The ruling was: an ALLOW row as an [ARENA-SCOPES] client, the same shape as clskit's. The +29% peak is refused under R-3's peak gate. No sabotage row, because the scratch check already binds the site. The streaming decode stays an alternative for the scopes design and is not built. Applied in 536cefcb4:
+- `tests/core/scratch_builder_check.py`: a new row `("src/parse/mod_uprops.c", "uprops_produce", "arena:tmp", ...)` in the `[ARENA-SCOPES] client` block. Its reason says three things: the site is NOT safe across a refusal; it is a KNOWN STRAND on the out-of-memory/refusal path, tracked as a named [ARENA-SCOPES] client; and the class fix rides [ARENA-SCOPES]. The row is `arena:tmp`, so a second private arena in that function is still flagged.
+- `src/parse/mod_uprops.c`: the comment at the site says the same thing and names the measured refusal. Only the comment changed; no code and no emitted byte moved.
+- `docs/dev/known_issues.md` K155: one sibling line. It goes in K155, not K163, because tmp's `.cx` is the running Ctx, so this is K155's strand and not K163's wrong-recovery-point shape.
+- The scratch check on the tree: `PASS: ... 92 compile-path files, 23 scratch builders, 25 allowlisted sites, 6 Job buffers all freed by job_cleanup, 0 heap builders` (rc 0).
+- For the [ARENA-SCOPES] design: this site is a LIFO transient freed on return, a textbook scope client. Option 3 below (a streaming decode, so no transient array at all) is an alternative the design may take instead of scoping it.
+
+Round 1 follows unchanged. In it, "STOP" and "NOT RUN" describe round 1 only.
 
 ## Summary
 
@@ -53,6 +64,13 @@ Options for the ruling. My recommendation comes first.
 - NOT RUN, because no fix was committed: `make test-registry`, the parse tier, `make strict`, the anchor check, the byte-identity sweep, `make test-alloc`, and the queued `upropfix-test`. No sabotage id was taken.
 
 ## STATE AT HANDOFF
+
+- Round 2 delivered at 536cefcb4 plus this report commit. The rulings file `docs/dev/lanes/upropfix_rulings.md` is empty, so no entry was applied. Main's ruling came by message (Round 2 above).
+- OWED, checks chain: `$PCREC_TMPDIR/scratch/upropfix/checks.sh`, run detached under `scripts/boxlock run --label upropfix-checks`. The log is `/var/tmp/pcrec-pcrec/scratch/upropfix/checks.log`. Its steps are build, scratch, test-registry, test-alloc (W3 = `\p{L}`), strict, and the anchor check with TT6_TIMEOUT_BIN_ANNOUNCED=1. Each step prints `== STEP x` / `== RC n`, and the chain ends with `== CHECKS COMPLETE`. At handoff it was WAITING on the lock, which queue job 200-main-step0 held; a non-queue lock run yields to queued jobs, so it may run after upropfix-test. Read every `== RC` line, and for the make steps grep -E '\*\*\* \[(Makefile:[0-9]+: )?test-'. If test-alloc is red at W3 with a stranding under uprops_produce, that confirms the dynamic control sees this strand. The fix is then an alloc_check.c known_stranded row for mod_uprops.c `uprops_produce`, the same [ARENA-SCOPES] client form as minimize.c's. That is a follow-up item; this lane did not pre-add it.
+- OWED, queued: `200-upropfix-test`, a full make test via perfrun. Its log is `worktrees/upropfix/build/upropfix_test.log`, and the verdict comes from boxqueue/monread.
+- Scratch: `$PCREC_TMPDIR/scratch/upropfix/` holds the round-1 measurement outputs, checks.sh, checks.log and the job script.
+
+## Round 1 STATE AT HANDOFF (historical)
 
 - STOPPED for a ruling on the fix form (options 1-4 above; I recommend 1). No code change. The branch holds this report only.
 - Rulings file `docs/dev/lanes/upropfix_rulings.md`: re-read before this report. It is empty, so no ruling was applied.
