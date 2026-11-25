@@ -154,7 +154,6 @@ main's post-merge make test went red on test-startset, lane sstri).
 A change that makes a strategy fire in new places (new row, widened admission, new rung) runs `REACH_ONLY=1 bash tests/mech/run_sabotage_matrix.sh` before delivery and re-aims each moved witness in the same delivery.
 Any change under `src/`, `cli/`, `lib/` or `memfn/` runs `python3 scripts/m6read_check_sab_anchors.py` (pure grep, seconds) before delivery and re-anchors every stale row it names: a moved anchor makes its sabotage row certify nothing (2026-11-24 k155fix: S256 went stale when sb_grow's nomem route moved; caught only by the codegen job).
 Any non-.md file that names `tests/lib/plants.py` must be a plant runner or have a row in NOT_RUNNERS (`scripts/m6read_check_sab_anchors.py`), or [SABANCHOR] goes red (kit PR #1, r94 CA-3, 2026-11-24).
-TEMPORARY (kit bug, fix lane tt6fix, 2026-11-24): on the Linux dev box run that check as `TT6_TIMEOUT_BIN_ANNOUNCED=1 python3 scripts/m6read_check_sab_anchors.py`; without it a [TT-6] stderr notice reads as UNREADABLE. Remove this line when tt6fix lands.
 A lane that REUSES a worktree whose earlier lane left queued jobs: before its first edit, `scripts/boxqueue cancel KEY` for each of those jobs still pending or running (they would test a tree you are changing), and name them in your report (2026-11-24 dpfix: three dpcompact jobs ran against a moving tree).
 Never merge to main yourself.
 
