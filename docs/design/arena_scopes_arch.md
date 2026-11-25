@@ -1,5 +1,5 @@
 # Scoped arenas registered on the Ctx ([ARENA-SCOPES]): architecture note
-STATUS: DRAFT rev 2 (lane arenaarch2, 2026-11-24), answering review `docs/dev/reviews/2026-11-24-r100-arenaarch.md`
+STATUS: DRAFT rev 2 plus r101 text fixes (lane arenafix3, 2026-11-24; the manager marks it ACCEPTED). Rev 2 by lane arenaarch2, 2026-11-24, answering review `docs/dev/reviews/2026-11-24-r100-arenaarch.md`
 (r100, RULED by the manager the same day). Rev 1 (lane arenaarch, tree 15e37b005) is superseded in place; the
 "r100 disposition" table at the end maps each finding to its answer. Next: the light re-check round r100 RULED names.
 FORM: full   (trigger: at least 9 existing decision sites touched, a floor from the site map's ROW/CHAIN/SHARED/WIDEN/ACCESSOR rows: S1 `pcrec_arena_alloc`'s error channel, S3 `pcrec_arena_free`'s owned walk, S4 `job_cleanup`, S6 the five `setjmp` handlers, S8 `sb.c`'s storage-kind tests, S9 the two storage transplants, S21 the nested part compile's facts copy, S22 `job_cleanup`'s end actions, S25 the Job scratch pair; mechanisms added: one lifetime record nested in another's, and its registration)
@@ -69,7 +69,7 @@ Standing questions (docs/design/CLAUDE.md).
 - R-3 (journal 11:01): "+7-12% peak heap (59-175 KB) from 3 whole-artifact rewrites now in the arena ... Lane
   proposed Job.rwsb (job_cleanup-freed) — REFUSED R-3 as a second mechanism; those 3 sites become [ARENA-SCOPES]
   clients". CONSEQUENCE for the design (C3): it may not answer its clients by adding a member to `job_cleanup`'s
-  named list. Turning that list into registrations (P4) is the allowed direction, implement-then-replace.
+  named list. Turning that list into registrations (P4) is the allowed direction, implement-then-replace. That turns the WHOLE named list into registrations, including the `lmnfa`/`lmdfa` frees (compile.c:304-306), so it overlaps H-FLAGS / [LANDWALK] (STATE:started).
 - Plan row [ARENA-SCOPES] @T: "scoped arenas registered on the Ctx: freed LIFO on the way out, all at once on a
   longjmp". Its clients are K155's three whole-artifact rewrites, `minimize.c`'s tables, `clskit.c`'s local arena,
   and "maybe job_cleanup's free() list". Its next line is "a short design (API, LIFO discipline, what job_cleanup's
@@ -126,9 +126,9 @@ Standing questions (docs/design/CLAUDE.md).
 | S1 | `Arena` record, internal.h (`{ ABlock *head; Ctx *cx; AOwn *owned; }`); `pcrec_arena_alloc` arena.c (error channel: `a->cx` then `abort()`) | C-1, C-2 | one flat block list per arena, freed only wholesale; no parent, no nesting. THREE kinds at T: Ctx-owned (the 5 `Ctx.arena`s), Ctx-bound but unregistered (`clskit.c`'s local, S14; `DfaMemo.arena`, S7), detached (8 `{ 0 }` locals and `RxtSource.arena`, `.cx = NULL`) | WIDEN (the feature's own new shape: a nested lifetime). Generic writers: S28 | "A shape states the inputs it covers" |
 | S2 | the comment on `Arena` in internal.h: "there are none today; every Arena is a Ctx's own" | C-2 | FALSE at T, independent of the feature: 8 detached locals plus `RxtSource.arena` have no Ctx | (drift; corrected as a no-mover inside RM-1) | "No silent defaults" |
 | S3 | `Arena.owned` / `pcrec_arena_own_slot` / `pcrec_arena_own` (arena.c), one caller compound.c `walk_part` | C-3 | a list, in the arena, of heap blocks freed with it (K155) | SHARED: "what else dies with this arena" already has this one answer; a registration is the same question. The design says which survives | "One question, one primitive, from the second caller" |
-| S4 | `job_cleanup` compile.c: the named list | C-4 | 27 `free()` of Job heap arrays + 6 `pcrec_sb_free` + `free(job)` + `pcrec_arena_free(&cx->arena)`. Called on success, on every handler exit, AND mid-compile before each retry: 13 calls in `compile_driver`, 6 of them followed by `continue` (C-4b). So whatever the feature opens must be EMPTY between attempts. The arrays grow by `realloc` in place; four allowlisted sites rely on that (C-15: nfa.c `nst`; dfa.c `tab_grow`, which frees and NULLs the old table first; `intern`; dfamemo.c `pcrec_build_min_dfa`, which attaches the restored array "before any further allocation") | SHARED, CONDITIONAL (D-3): the teardown a longjmp reaches. SHARED with S3 if the named list becomes registrations. R-3 bars adding a member to it (C3). Its `lmnfa`/`lmdfa` lines are roadmap H-FLAGS's, with [LANDWALK] STATE:started (overlap) | goal 1; "Notice siblings" |
+| S4 | `job_cleanup` compile.c: the named list | C-4 | 27 `free()` calls (one of them `free(cx->job)`) + 6 `pcrec_sb_free` + `pcrec_arena_free(&cx->arena)`. Called on success, on every handler exit, AND mid-compile before each retry: 10 calls in `compile_driver`, 6 of them followed by `continue` (C-4b). So whatever the feature opens must be EMPTY between attempts. WRITERS beside `realloc`: compile.c:587-591 swaps the machine arrays between the primary and x-set Job fields by value (SUSPECTED), so a registration must key on the owner field. The arrays grow by `realloc` in place; four allowlisted sites rely on that (C-15: nfa.c `nst`; dfa.c `tab_grow`, which frees and NULLs the old table first; `intern`; dfamemo.c `pcrec_build_min_dfa`, which attaches the restored array "before any further allocation") | SHARED, CONDITIONAL (D-3): the teardown a longjmp reaches. SHARED with S3 if the named list becomes registrations. R-3 bars adding a member to it (C3). Its `lmnfa`/`lmdfa` lines are roadmap H-FLAGS's, with [LANDWALK] STATE:started (overlap) | goal 1; "Notice siblings" |
 | S5 | the five `Ctx` instances: `compile_driver` (inside the attempt loop, memset per attempt), `pcrec_count_groups` (compile.c), `built_status_probe`, `pcrec_probe_ask`, `pcrec_syntax_explain` (syntax_dump.c) | C-5 | each owns its arena and its teardown | (the population of S6) | |
-| S6 | the FIVE `setjmp` handlers, one per S5 Ctx | C-6 | three teardown spellings: `job_cleanup` (+ `pcrec_dfa_memo_free` on the driver's returning rows) in `compile_driver` and `pcrec_count_groups`; `pcrec_arena_free(&cx.arena)` alone in `built_status_probe` and `pcrec_probe_ask`; two `pcrec_sb_free` + `pcrec_arena_free` in `pcrec_syntax_explain`. The three dump-tier handlers never reach `job_cleanup`. `compile_driver`'s handler reads Ctx fields (`fit_labels(&cx)`, the `sets` carries) BEFORE `job_cleanup`. No sabotage row binds the dump-tier teardowns (C-6b) | SHARED, CONDITIONAL (D-4/D-7): release placed in `pcrec_arena_free` reaches all five; placed in `job_cleanup` it reaches 2 of 5 (then RM-2 lands first). At least 5 comments claim one setjmp TREE-WIDE (C-6c): DOC drift, the manager files it | goal 1; src/core/CLAUDE.md (stale) |
+| S6 | the FIVE `setjmp` handlers, one per S5 Ctx | C-6 | three teardown spellings: `job_cleanup` (+ `pcrec_dfa_memo_free` on the driver's returning rows) in `compile_driver` and `pcrec_count_groups`; `pcrec_arena_free(&cx.arena)` alone in `built_status_probe` and `pcrec_probe_ask`; two `pcrec_sb_free` + `pcrec_arena_free` in `pcrec_syntax_explain`. The three dump-tier handlers never reach `job_cleanup`. `compile_driver`'s handler reads Ctx fields (`fit_labels(&cx)`, the `sets` carries) BEFORE `job_cleanup`. No sabotage row binds the dump-tier teardowns (C-6b) | SHARED, CONDITIONAL (D-4/D-7): release placed in `pcrec_arena_free` reaches all five (and must also hold for memset-only test Ctxs); placed in `job_cleanup` it reaches 2 of 5 src handlers, 2 of 11 counting the test tier's 6 more Ctx + `setjmp` recovery points (definitions_check.c x3, definitions_oracle_gen.c, branch_count_check.c, cwmax_check.c), all with hand teardown that never reaches `job_cleanup` (then RM-2 lands first). At least 5 comments claim one setjmp TREE-WIDE (C-6c): DOC drift, the manager files it | goal 1; src/core/CLAUDE.md (stale) |
 | S7 | `DfaMemo.arena` (internal.h; dfamemo.c), freed by 5 hand calls in `compile_driver` | C-7 | an arena that lives ACROSS attempts (compile lifetime); `.cx` re-pointed per attempt (`m->arena.cx = cx`) | SHARED, CONDITIONAL: a compile-lifetime member of the family. It is a DECIDING site between the two candidate shapes (section "The general form"); its five hand frees are register row 20's (re-based) | "Notice siblings" |
 | S8 | StrBuf storage kinds: `sb_store`, `sb_unstore`, `sb_grow`'s arena branch, `pcrec_sb_take` (sb.c), plus the BORROWED view `part_splice` (emit_compound.c, `StrBuf t = { .p = (char *)text, ...}`, allowlisted "never grown or freed") | C-8 | THREE storage kinds: heap, "this arena" (`.ar`), borrowed (`.p` owned by someone else). `pcrec_sb_take` already decides "move if heap, copy if arena" by `.ar` | AS-IS if a scope is presented as an `Arena *` (the `.ar` branch takes it unchanged); WIDEN if the design makes a scope another type. The borrowed kind is not a scope client | "One table per slot" |
 | S9 | the two storage transplants: `target_headers_render` (memfn_stamps.c: `free(c->p); c->p = nb.p; c->len = ...; c->cap = ...`) and `render_buf` (part_layout.c: `char *old = sb->p; sb->p = o.p; ... sb->layout_bytes = 0; free(old)`) | C-9 | another unit swaps a StrBuf's storage and `free()`s; correct only while both sides are heap | ACCESSOR (primary), SHARED (secondary: with `pcrec_sb_take`'s by-`.ar` decision). RM-1 | goal 2; "A structure is read and written through its owner's accessors" |
@@ -140,17 +140,17 @@ Standing questions (docs/design/CLAUDE.md).
 | S15 | `pcrec_scanedge_dfa` (scanedge.c), 10 hand-freed temporaries | C-12 | safe at T by the allowlist's argument: their only refusals are their own allocation failures, which free first | SHARED, CONDITIONAL: a client only if the design's form takes plain heap blocks; else proposed row P3 | goal 1 |
 | S16 | the CALLER-OWNS hooks `fd_hook` (facts_dump.c), `lc_hook` (callouts_dump.c) | C-13 | heap builders freed by the hook's caller after `compile_driver` returns | AS-IS (the longjmp never leaves `compile_driver`, so nothing strands) | src/core/CLAUDE.md CALLER-OWNS |
 | S17 | the kit seam `mf_arena` (memfn/include/memfn.h) and pcrec's backing (memfn_sites.c: `pcrec_memfn_arena_alloc`, `pcrec_memfn_art` setting `ma->u = &cx->arena`) | C-14 | the art's allocations go to the ATTEMPT arena; contract: "memory lives until pcrec's arena dies and is never freed by the kit" | AS-IS on pcrec's side, with a pin the design must state (D-11): the art's `mf_arena` is the attempt's arena, never a scope; a scoped `mf_arena` would be a kit seam event | goal 3; D146 |
-| S18 | the checks' tables: scanner `ALLOW[]` (5 rows naming [ARENA-SCOPES], 4 Job heap-array rows), `alloc_check.c` `known_stranded[]` (2 rows) | C-15 | allowlisted or filed as clients waiting on this row | ROW (rows deleted as each client moves) | "A row checks its own contract" |
+| S18 | the checks' tables: scanner `ALLOW[]` (5 rows naming [ARENA-SCOPES], 4 Job heap-array rows), `alloc_check.c` `known_stranded[]` (2 rows) | C-15 | allowlisted or filed as clients waiting on this row | ROW (rows deleted as each client moves). Also checks that exist only for the rows deleted: S3584's SAB_BEFORE is the literal `nb` client line; S3572's premise is the name-narrowed `nb` row; `alloc_check.c`'s stack recording and its `fn` column serve only the `target_headers_render` row, so they become unreached mechanisms (learnings §3) | "A row checks its own contract" |
 | S19 | grow-by-copy inside an arena | C-16 | each growth takes a fresh block and copies; the old block stays until the arena dies (COST-1's mechanism). At least 18 sites: the shape grep prints 42 lines in 16 src/ files, plus `sb_grow`, `fq_push` and the kit's `kb_reserve` that it misses. `arena_regrow` (dfa.c, file-static) has 2 callers; no other site calls it | SHARED, CONDITIONAL (D-5): a member here only if the design answers COST-1 by a scope mechanism; else plan row [ARENA-REGROW] (updated, not duplicated: see "Register rows") | "Notice siblings"; COST-1 |
-| S20 | job-arena scratch dead when its function returns: the 23 scratch builders on `pcrec_sb_scratch(...)` and D105's legend arrays | C-17 | retained to the attempt's end; COST-1's census found them linear (journal 15:19) | AS-IS (not clients; R-3's cost was the WHOLE-ARTIFACT rewrites); unlock U1 | "Build under measurement" |
+| S20 | job-arena scratch dead when its function returns: the 22 scratch builders on `pcrec_sb_scratch(...)` and D105's legend arrays | C-17 | retained to the attempt's end; COST-1's census found them linear (journal 15:19) | AS-IS (not clients; R-3's cost was the WHOLE-ARTIFACT rewrites); unlock U1 | "Build under measurement" |
 | S21 | the NESTED PART COMPILE: compound.c `walk_part` sets `w->facts[i].into = &w->cx->arena` (the OUTER attempt's arena) and runs `part_compile` -> `pcrec_compile_driver`, a whole inner compile on its own `Ctx`; the inner compile copies into it (compile.c, `pf->memfn_forms = pcrec_sb_fragf(pf->into, ...)`) BEFORE its own `job_cleanup` / memo free | C-18 | an allocation under the inner Ctx through a handle whose error channel (`.cx`) is the OUTER Ctx. On OOM the longjmp lands at the OUTER `setjmp`, skipping the inner teardown: the inner Job, arena and memo strand. **K163, SUSPECTED**, not reproduced: W6's 1,008 forced failures never landed on the copy, because the outer arena's head block always had room. The lifetime order is not linear: outer attempt > inner compile > inner attempt, across two Ctxs | WIDEN, CONDITIONAL (the lifetime shape must cover a level owned by another Ctx, D-2/D-4); the bug is K163's, fixed at its class, not by this feature | D203; D32 §8; "A shape states the inputs it covers" |
 | S22 | `job_cleanup`'s END ACTIONS: `*cx->find_union |= pcrec_find_asked(cx)` and `*cx->meas_union = true`, before any free | C-4 | two non-memory, ORDER-BOUND entries (they read the Job, so they run before it is freed) | SHARED, CONDITIONAL (D-3): if the named list becomes registrations, these are its first non-memory entries | goal 1 |
 | S23 | `Arena *` captured in long-lived structs: `StrBuf.ar`, `PcrecCpSet.ar` (19 `cpset_init(` hits), `PcrecPartFacts.into`, endwin.c, clskit.c, dfa.c `LCtxTab`/`PMemo`/`ContStack`, rxt_find.c, rxt_source.c, subst_template.c | C-19 | at least 11 fields by the shape grep (r100 read 13 by hand; a floor either way). Each holds a lifetime handle past the call that gave it | WIDEN hazard (D-2: a handle naming a closed scope), D70's trigger for AST payloads | "A shape states the inputs it covers" |
-| S24 | the allocation-call population | C-20 | 461 `pcrec_arena_alloc(` call lines outside arena.c/internal.h; 340 pass a Ctx's arena through a `cx` handle (251 the literal `&cx->arena`) | AS-IS if a scope is an explicit `Arena *` handed only to client code; WIDEN if the design adds an implicit "current arena" (all 340 change meaning) (D-1) | "No silent defaults" |
+| S24 | the allocation-call population | C-20 | 462 `pcrec_arena_alloc(` call lines outside arena.c/internal.h; 340 pass a Ctx's arena through a `cx` handle (251 the literal `&cx->arena`) | AS-IS if a scope is an explicit `Arena *` handed only to client code; WIDEN if the design adds an implicit "current arena" (all 340 change meaning) (D-1) | "No silent defaults" |
 | S25 | `Job.scr_test` / `Job.scr_desc` (internal.h; set up in `compile_driver`, freed in `job_cleanup`; used in emit_vm.c) | C-21 | an existing hand-built longjmp-safe scratch (added after a LeakSanitizer find). `scr_test` is spliced into the program (follows the artifact, adopted like S10), `scr_desc` into the listing (a pure temporary) | SHARED, CONDITIONAL: family members. Clients of a scope only if D-8 takes them | goal 1; "Notice siblings" |
 | S26 | StrBuf TRUNCATIONS outside sb.c: `splice_mark` (`sb->len = at; sb->p[at] = 0`), emit_vm.c x4 (`len = 0; p[0] = 0`), vm_stmt.c (`b->len = 0; b->p[0] = 0`) | C-22 | 6 direct writes of `len`/`p[...]`; storage untouched, so correct for every storage kind | ACCESSOR, not needed by the feature: proposed row P5 | goal 2 |
 | S27 | kit siblings: window.c `wdecide_framed`, an `mf_arena` over `wd_alloc` (calloc blocks chained in `wd_blk`, freed by `wd_free` before return; reached from emit_dfa.c `mf_wdecide` on a shipped path); pcrec's own `KsAlloc` handles (measures.c `{ meas_alloc, &cx->arena }` and three detached) | C-23 | the kit's own heap arena, freed on return. SUSPECTED: kit heap live across a pcrec hook that can longjmp (between the `wd_blk` allocations and `wd_free`, `wf_plan_site` calls pcrec's `def` hooks); a population nobody counts (scanner LAYERS are src/ only). Partial evidence: in K163's repro run, `alloc_check.c` W6 failed `wd_alloc` at 896 trials, each diagnosed with no stranded heap (one witness only) | AS-IS for the feature (no scope crosses either handle); the SUSPECTED hazard is PLAN (the manager traces it, then states it to the kit as a FACT, D157) | goal 3; D157 |
-| S28 | `Arena` initialisers and `.cx` writers | C-2, C-24 | 9 hand initialisers (`Arena a = { 0 }` x8, `{ .cx = c->cx }` x1) + 3 struct fields; 7 `.cx` writes (compile.c 2, syntax_dump.c 3, dfamemo.c, rxt_source.c `= NULL`); no init accessor (`pcrec_arena_(init|open|attach)` 0 hits) | ACCESSOR, CONDITIONAL: all 16 change if a scope is an `Arena` that gains fields (RM-3); else proposed row P6 | goal 2 CHECK |
+| S28 | `Arena` initialisers and `.cx` writers | C-2, C-24 | src: 9 hand initialisers (`Arena a = { 0 }` x8, `{ .cx = c->cx }` x1) + 3 struct fields; 7 `.cx` writes (compile.c 2, syntax_dump.c 3, dfamemo.c, rxt_source.c `= NULL`). tests/ (compiled in `make test`): 17 more writers = 11 `.cx` writes + 6 `{0}` initialisers. Total 33 writers (16 src + 17 test). No init accessor (`pcrec_arena_(init|open|attach)` 0 hits) | ACCESSOR, CONDITIONAL: all 33 change if a scope is an `Arena` that gains fields (RM-3); else proposed row P6 | goal 2 CHECK |
 
 ### Commands and counts (all at T)
 
@@ -166,8 +166,8 @@ Standing questions (docs/design/CLAUDE.md).
   `walk_part` (slot, then `pcrec_arena_own` on the part text).
 - C-4 `GS src/core/compile.c | awk '/^static void job_cleanup/,/^}/' | grep -c -E '^\s*free\('`: 27; `... | grep -c
   pcrec_sb_free`: 6 (csb, hsb, vmsb, irsb, scr_test, scr_desc); the same range shows the two union folds first.
-  C-4b `GS src/core/compile.c | awk 'NR>=2043 && NR<=3870 && /job_cleanup\(|pcrec_dfa_memo_free\(/'`: 13
-  `job_cleanup` calls and 5 `pcrec_dfa_memo_free` calls inside `compile_driver`. Six `job_cleanup` calls continue
+  C-4b `GS src/core/compile.c | awk 'NR>=2043 && NR<=3870 && /job_cleanup\(|pcrec_dfa_memo_free\(/'`: 10
+  `job_cleanup` calls and 5 `pcrec_dfa_memo_free` calls inside `compile_driver` (the file holds 13 `job_cleanup(` = 1 definition + 10 + 2 in `pcrec_count_groups`). Six `job_cleanup` calls continue
   the loop (the `sets` routine's retry, the size-term ladder's three, the trial catch, the compound-off retry).
 - C-5 `GG -E '^\s*(struct )?Ctx\s+[a-z_]+\s*(=|;)' src cli lib memfn/src`: 5 (compile.c `compile_driver`,
   `pcrec_count_groups`; syntax_dump.c 3). Each function is found by the nearest preceding definition line.
@@ -214,8 +214,7 @@ Standing questions (docs/design/CLAUDE.md).
   `kb_reserve` (compose.c: "the old block stays in the arena") grow by copy and are missed by that grep, so the
   family is at least 18 sites. `GG -E 'arena_regrow' src`: the definition and 2 callers, both dfa.c. Plan row:
   `scripts/entry ARENA-REGROW -l 2`.
-- C-17 `GG 'pcrec_sb_scratch(' src`, excluding sb.c, internal.h and comment lines: 23 calls (k155fix's census
-  names 23 converted builders).
+- C-17 `GG 'pcrec_sb_scratch(' src`, excluding sb.c and internal.h: 23 lines, one of them prose (22 code calls; k155fix's census names 23 converted builders).
 - C-18 `GG -E '(->|\.)into\b' src cli lib memfn/src`: 3 lines (compound.c `w->facts[i].into = &w->cx->arena`;
   compile.c the NULL check and `pcrec_sb_fragf(pf->into, ...)`). `GS src/core/compound.c`: `walk_part`,
   `part_compile` (`pcrec_compile_driver(...)`). `GS src/core/arena.c`: on a failed block `malloc`,
@@ -223,11 +222,11 @@ Standing questions (docs/design/CLAUDE.md).
 - C-19 `GG -E 'Arena\s*\*\s*[a-z_]+\s*;' src cli lib memfn/src`, excluding assignments: 11 fields (internal.h 3:
   `StrBuf.ar`, `PcrecCpSet.ar`, `PcrecPartFacts.into`; endwin.c; clskit.c; dfa.c 3; rxt_find.c; rxt_source.c;
   subst_template.c). `GG -c 'cpset_init(' src`: 19 hits.
-- C-20 `GG -E 'pcrec_arena_alloc\(' src cli lib memfn/src`: 465 hits, 461 outside arena.c/internal.h and comments.
+- C-20 `GG -E 'pcrec_arena_alloc\(' src cli lib memfn/src`: 465 hits, 462 outside arena.c/internal.h with the stated filter (comments counted as hits).
   `git grep -h -o -E 'pcrec_arena_alloc\(\s*[^,]*' $T -- src cli lib memfn/src`, counted by first argument: 251
   `&cx->arena`, 340 naming `cx->arena` or `cx.arena` through any handle.
 - C-21 `GG -E 'scr_test|scr_desc' src`: internal.h `StrBuf scr_test, scr_desc;`; compile.c (the `.cx` attach, the
-  comment "`scr_test` follows the artifact and `scr_desc` does not", the two frees); emit_vm.c 5 uses.
+  comment "`scr_test` follows the artifact and `scr_desc` does not", the two frees); emit_vm.c 4 code lines and 3 comments.
 - C-22 `GG -E '(sb|csb|vmsb|out|o|body|b|t|d)(->|\.)p\[[^]]+\]\s*=\s*(0|.\\0.)' src`, excluding sb.c: 6 lines
   (memfn_stamps.c 1, emit_vm.c 4, vm_stmt.c 1), each beside its `len =` write.
 - C-23 `GG -E 'wd_blk|wd_alloc|wd_free|wdecide_framed' memfn/src/window.c`; `GG 'mf_wdecide(' src` (emit_dfa.c 3
@@ -272,15 +271,14 @@ Rows the note PROPOSES (register columns: remodel | shape (rule) | where | event
   next refusal added while they are live (the allowlist's safety argument then fails), or the design taking S15 |
   S, no-mover | the hand frees and its ALLOW row | open. (Rev 1's U2 is this row; it is not restated as an unlock.)
 - P4 | `job_cleanup`'s named list becomes registrations | goal 1; Notice siblings | compile.c `job_cleanup` (C-4),
-  with S22's two end actions | the next Job heap array or end action added to the list (R-3 refuses that addition,
-  so the addition is this row's trigger instead), unless D-3 takes it now | M, no-mover | the named list (27 frees, 6
+  with S22's two end actions | the next Job heap array or end action added to the list by this feature's clients (R-3 refuses that addition for them, so the addition is this row's trigger instead; R-3 is read in that scope, not over every future Job heap array, e.g. [LANDWALK]'s machine arrays use the list's own mechanism), unless D-3 takes it now | M, no-mover | the named list (27 frees, 6
   sb_frees, the 2 folds as list members) | open. Overlap: H-FLAGS / [LANDWALK] (the `lmnfa`/`lmdfa` lines).
 - P5 | StrBuf truncation through its owner (`pcrec_sb_truncate`-shaped; the name is the design's) | goal 2; "A
   structure is read and written through its owner's accessors" | memfn_stamps.c `splice_mark`; emit_vm.c x4;
   vm_stmt.c (C-22) | a StrBuf storage kind whose truncation is not "write `len`, NUL the byte" (e.g. a mark or
   layout record kept beside the bytes), or a seventh hand truncation | S, no-mover | 6 hand truncations | open.
-- P6 (only if RM-3 is not taken) | `Arena` initialised and bound to a Ctx through `arena.c` | goal 2 | the 16
-  writers (C-2, C-24) | a field added to `Arena` | S, no-mover | 16 hand initialisations | open.
+- P6 (only if RM-3 is not taken) | `Arena` initialised and bound to a Ctx through `arena.c` | goal 2 | the 33
+  writers (C-2, C-24; 16 src + 17 tests) | a field added to `Arena` | S, no-mover | 16 hand initialisations | open.
 
 Rev 1's P1 (grow-by-copy) is WITHDRAWN as a register row (r100 C10). Its event has fired: plan row [ARENA-REGROW]
 says "the allocation half ... is ready now". So it is a PLAN-ROW UPDATE for the manager: the row gains `sb_grow`,
@@ -293,7 +291,7 @@ whose private arena is a sibling (C-14) that the feature does not touch. This no
 D-row "Revisit when" triggers on mapped sites: D70's ("a future allocation-model change makes the arena pointer in
 a payload wrong") IS met by this feature wherever an AST payload holds an `Arena *` that could name a scope (S23).
 The design either keeps scopes out of payloads or carries D70's revisit. D56's trigger (a legitimate pattern
-measured needing more than the cap) is not met. D19, D105, D109, D110 and D203 carry none. Found by `grep -n -i
+measured needing more than the cap) is not met. D109's Revisit says its scope excludes four handlers because they "read no per-attempt Ctx field". If the open-scope record is a Ctx field that those handlers' teardown reads (D-7's "on the Ctx"), that premise stops holding, so the design carries D109's revisit (D-4/D-7). D19, D105, D110 and D203 carry none. D109's Revisit clause BEARS (see below). Found by `grep -n -i
 revisit docs/dev/decisions.md` within those rows.
 
 ## Remodels that land first
@@ -331,7 +329,7 @@ truth.**
 
 **RM-2 (CONDITIONAL): register row 20 re-based, one Ctx/setjmp/teardown wrapper.**
 - Lands first if the design places release anywhere but `pcrec_arena_free` (D-4/D-7). Release in `job_cleanup`
-  reaches 2 of the 5 handlers (S6), and the three dump-tier handlers free by hand.
+  reaches 2 of the 5 src handlers (2 of 11 with the test tier's 6 more recovery points, S6), and the three dump-tier handlers free by hand.
 - One wrapper over the five Ctx-owning sites must exist first. It also takes the memo's five hand frees, which
   makes it one exit for `compile_driver` (U9).
 - GATE: no-mover. SIZE: S (the row's own).
@@ -342,14 +340,14 @@ truth.**
 - If release is inside `pcrec_arena_free`, this is not a unit and row 20 keeps its re-based trigger.
 
 **RM-3 (CONDITIONAL): `Arena` initialised through `arena.c` (S28; goal 2 CHECK).**
-- Lands first if D-1 makes a scope an `Arena` with a new field (a parent link, a mark). The 16 hand writers (9
-  initialisers, 7 `.cx` writes) then go through one initialiser, so the new field has one writer.
+- Lands first if D-1 makes a scope an `Arena` with a new field (a parent link, a mark). The 33 hand writers (16 in src: 9
+  initialisers, 7 `.cx` writes; 17 in tests/: 11 `.cx` writes, 6 `{0}`) then go through one initialiser, so the new field has one writer.
 - GATE: no-mover, byte identity. SIZE: S.
 - CHECKS: S255 (`pcrec_arena_alloc`'s nomem route, arena.c); `alloc_check.c` W1-W6, which compile through
   `pcrec_compile` and so reach the Ctx-owned arenas only. The detached and dump-tier initialisers have no witness
   named here, so the unit names the check that reaches them.
 - SEPARABLE: yes.
-- DELETES: 16 hand spellings.
+- DELETES: 33 hand spellings.
 - If D-1 adds no field, proposed row P6 holds it.
 
 No other site needs a remodel first. S3/S4/S7 (SHARED) are the feature's own general form, not a reshaping the
@@ -375,12 +373,13 @@ CONFIRM that the mechanism is the design's):
   mechanisms unless (A) also takes heap entries.
 - **(B) r96 GENFORM-8's registry**: one per-Ctx list of {pointer, free fn} entries with scope marks AND a release
   operation. Heap temporaries are freed when they are today (no peak cost) and on a longjmp. Arena blocks are one
-  entry kind. S4's arrays and S22's end actions are entries, and S7 is an entry at a compile-level mark.
+  entry kind. S4's arrays and S22's end actions are entries, and S7 is an entry at a compile-level mark. Under (B) the whole named list, `lmnfa`/`lmdfa` included, becomes entries: the H-FLAGS / [LANDWALK] overlap applies.
 - (B) is the WIDER form. (A) is (B) restricted to arena entries. The DECIDING sites are S4 and S7 (and S22, S21):
   the shape that covers them deletes the most answers. GENFORM-8/9's "resource entries only at a second member
   (D77)" gates NON-MEMORY entries (a FILE*, an end action). It does not gate heap pointers, which are memory. Rev
-  1's U6 said "no non-memory member at T". That misread S22: `job_cleanup` already holds two order-bound
-  non-memory actions, so under (B) with D-3 taking the list, that gate is met.
+  1's U6 said "no non-memory member at T". Whether S22's two order-bound end actions (they free nothing) count as
+  GENFORM-9 "resource entries" ({pointer, free fn} that a longjmp frees) is an OPEN CLASSIFICATION, listed under D-3
+  for the design step; this note declares no gate met.
 
 THE FAMILY TODAY (one answer each to "what dies when", site map; at least 13 members, a floor):
 - the attempt arena S1 and its owned list S3;
@@ -408,10 +407,10 @@ UNLOCKS, each with its trigger:
   measured peak cost in the job arena (D77; COST-1's census found them linear).
 - U3: the memo's five hand frees become one compile-level registration. Trigger: RM-2, or a design taking S7.
 - U4: `job_cleanup`'s named list becomes registrations (P4). "A new allocation belongs here or it leaks on abort"
-  (its own comment) stops being a rule a writer must remember. Trigger: as P4.
+  (its own comment) stops being a rule a writer must remember. Trigger: as P4. Overlap: it rewrites the `lmnfa`/`lmdfa` lines, H-FLAGS / [LANDWALK] (STATE:started).
 - U5: the scanner's allowlist (S18) shrinks as clients move. Trigger: each client's move (same change).
 - U6: non-memory resource entries (a FILE*, r96 GENFORM-2's shape). Trigger: GENFORM-9's second NON-MEMORY member.
-  It is met at S22 if D-3 takes the list, and not met otherwise (GENFORM-2's FILE* was fixed by reordering).
+  Whether S22's end actions are a second member is open (D-3's classification); GENFORM-2's FILE* was fixed by reordering.
 - U7: grow-by-copy released early (a lifetime that frees a growing region's old blocks). Trigger: a S19 member
   measured super-linear, or a retained-garbage share of peak above noise.
 - U8: the nested part compile's teardown registered with the enclosing attempt (S21), so a longjmp to the outer
@@ -438,13 +437,14 @@ to state after the trace. No kit code shares a scope.
 
 - RM-1: the two hand transplants (S9) and their raw `free()`s; the false S2 sentence.
 - RM-2 (if taken): four hand teardown spellings and four memo frees.
-- RM-3 (if taken): 16 hand Arena initialisations.
+- RM-3 (if taken): 33 hand Arena writers (16 src, 17 tests).
 - The feature:
   - `clskit.c`'s private arena and its comment (S14);
   - `minimize.c`'s 8 hand frees and its 3 free-then-nomem exits (S13);
   - the three rewrites' heap builders and their `[ARENA-SCOPES] client` comments (S10-S12);
   - 5 scanner `ALLOW` rows and 2 `alloc_check.c` `known_stranded` rows (S18), with K155's three-rewrite remainder
     closed;
+  - the checks that exist only for those rows (S18): S3584's SAB_BEFORE (the `nb` client line), S3572's premise (the `nb` row), and `alloc_check.c`'s stack recording and `fn` column (unreached once `target_headers_render` leaves its filed row);
   - if D-3 takes it, `job_cleanup`'s named list in favour of registrations (P4), excluding the `lmnfa`/`lmdfa` lines'
     ownership (H-FLAGS);
   - if D-8 takes S25, the Job scratch pair's hand frees.
@@ -455,7 +455,7 @@ Handed on, not decided here:
 
 - D-1 THE API (S1, S3, S8, S24): how a lifetime is opened, allocated from and closed; shape (A) or (B) ("The general
   form"), judged at S4, S7, S21, S22; whether a scope IS an `Arena *` (S8's `.ar` branch takes it unchanged, RM-3
-  fires if it gains fields) or another type (S8 WIDEN). It also decides how 461 allocation calls see it: an explicit
+  fires if it gains fields) or another type (S8 WIDEN). It also decides how 462 allocation calls see it: an explicit
   handle at client sites only, or an implicit "current" lifetime that changes 340 calls' meaning.
 - D-2 THE LIFO DISCIPLINE, and how a violation is caught (S1, S13, S21, S23):
   - closing a lifetime that is not the innermost;
@@ -465,7 +465,8 @@ Handed on, not decided here:
 - D-3 WHAT `job_cleanup`'S LIST BECOMES (S4, S22, P4). It is kept, or it becomes registrations. Constraints:
   - the Job's machine arrays grow by `realloc` in place (the 4 allowlisted sites; two rely on an
     adopt-before-next-allocation order);
-  - the two end actions are order-bound before any free;
+  - the two end actions are order-bound before any free. OPEN CLASSIFICATION: whether they are GENFORM-8/9 resource entries at all (they free nothing), hence whether the D77 second-member gate is met. This note does not decide it; GENFORM-9 is a candidate the design picks;
+  - the registration must key on the owner FIELD, not the pointer value: compile.c:587-591 swaps the machine arrays between the primary and x-set Job fields by value (`revend` tagged form), a second mutation beside `realloc` (SUSPECTED, SITEMAP-5);
   - R-3 bars adding a member to the list;
   - the `lmnfa`/`lmdfa` lines overlap H-FLAGS / [LANDWALK] (STATE:started).
 - D-4 HOW A LIFETIME INTERACTS WITH THE LONGJMP (S6, S21):
@@ -474,7 +475,8 @@ Handed on, not decided here:
     `job_cleanup`);
   - every lifetime EMPTY at each of the 6 mid-compile retries (C-4b);
   - the memo (S7), whose `.cx` is the attempt but whose lifetime is longer;
-  - the nested compile, whose OOM lands at the OUTER recovery point (K163).
+  - the nested compile, whose OOM lands at the OUTER recovery point (K163);
+  - D109's Revisit: its scope excludes four handlers because they "read no per-attempt Ctx field". An open-scope record on the Ctx that those handlers' teardown reads voids that premise, so the design carries D109's revisit (D-7).
 - D-5 COST-1 (S19, S20): whether a lifetime answers grow-by-copy retention (U7), or [ARENA-REGROW] does; whether
   the kit is told the fact.
 - D-6 ADOPTION (S10, S12, RM-1): how a builder's finished bytes leave a scope to become the Job's `csb` (a copy, or
@@ -511,7 +513,7 @@ Handed on, not decided here:
   - EXAMPLE (hand-worked): under shape (A), those tables become arena blocks of a scope, and the realloc'd Job
     arrays stay in `job_cleanup`'s list (a second mechanism). Under shape (B), each table is a {pointer, free fn}
     entry under a scope mark, freed at its exit and on a longjmp, with no peak cost; the Job arrays and the memo
-    are entries too.
+    are entries too. (Taking the whole named list, `lmnfa`/`lmdfa` included, overlaps H-FLAGS / [LANDWALK], STATE:started; the design names it.)
   - QUESTION: your words ("Not proscribed: If arenas were registered such that the exit could free them") name
     arenas. Do they leave the MECHANISM to the design, so the design may build the wider registry (r96 GENFORM-8,
     which takes arenas as one entry kind) if it deletes more special cases?
@@ -561,9 +563,29 @@ Handed on, not decided here:
 | C28 | FIX-NOW | Unlocks U7, U8, U9 with triggers; U6's fire-ability restated |
 | C29 | NOTED | No change: coding.md's scratch-builder rule cites [ARENA-SCOPES] outside the register, and the register stays silent on the five allowlisted clients until they move (U5); the register is the manager's |
 
+## r101 disposition
+
+Review `docs/dev/reviews/2026-11-24-r101-arenaarch2.md`, RULED all accepted as proposed (FIX-NOW 5, DOC 5). Applied by lane arenafix3. Tree T is unchanged (no re-freeze: every item is text or a count).
+
+| item | ruled | where answered |
+|---|---|---|
+| DISPO-1 | FIX-NOW | the [LANDWALK] / H-FLAGS overlap now named at the R-3 consequence (Requirements), shape (B), U4 and the scope-reach EXAMPLE (the four missed sites); a grep for `lmnfa` and for "named list" over this note lists every site |
+| DISPO-2 | FIX-NOW | "D-row Revisit triggers": D109 now BEARS (removed from "carry none"); D-4 gains the D109-revisit bullet (carried to D-7) |
+| DISPO-3 | FIX-NOW | P4's event, scoped to this feature's clients, with R-3 not read over every future Job heap array |
+| DISPO-4 | FIX-NOW | "The general form" and U6 no longer declare the GENFORM-9 gate met; D-3 lists S22's classification as an OPEN item the design picks |
+| DISPO-5 | DOC | K163's fix option 1 (known_issues.md) is worded as a direction (a holder the outer level owns before the copy), not a recipe |
+| SITEMAP-1 | DOC | S4 and C-4b: 10 `job_cleanup` calls in `compile_driver` (13 in the file = 1 + 10 + 2); S4's `free(job)` double count removed |
+| SITEMAP-2 | FIX-NOW | S6, S28, RM-2, RM-3, "What is deleted": the test tier's 6 more recovery points (2 of 11) and 17 more Arena writers (33 total); release must also hold for memset-only test Ctxs |
+| SITEMAP-3 | DOC | S18 and "What is deleted" name S3584, S3572 and `alloc_check.c`'s stack recording and `fn` column |
+| SITEMAP-4 | DOC | C-17 (22 code calls of 23 lines), C-20 (462), C-21 (4 code lines, 3 comments); S20, S24 and D-1 follow |
+| SITEMAP-5 | DOC | S4 (writer) and D-3 (constraint: key on the owner field), SUSPECTED |
+
 ## STATE AT HANDOFF
 
 Lane arenaarch2, 2026-11-24. T = 4b8f6a719 (lane/arenaarch HEAD at start). Rulings file `arenaarch2_rulings.md`:
 empty at every re-read, so no ruling was applied. Every site-map command was re-run at T. K163 was filed in
 docs/dev/known_issues.md. Its one repro attempt (alloc_check W6, `--both --sites`, 19:12-19:17) did NOT reproduce it, and the entry gives the reason. Next: the light re-check round named in r100's RULED section.
+OWED: none
+
+Lane arenafix3 (2026-11-24): applied r101's 5 FIX-NOW and 5 DOC items (see "r101 disposition"); T unchanged; rulings file empty at every re-read.
 OWED: none
