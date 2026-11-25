@@ -286,7 +286,13 @@ static ExtResult uprops_produce(Ctx *cx, ExtWant want, bool in_class,
                       .at = at, .msg = "", .answered_at = want };
     /* The decoded interval list is TRANSIENT (the class constructor copies it
      * into its own set), so it lives in a scratch arena freed here rather than
-     * in the compile arena: a 4,000-item class keeps no 4,000 copies. */
+     * in the compile arena: a 4,000-item class keeps no 4,000 copies.
+     * NOT SAFE ACROSS A REFUSAL: an out-of-memory or a refusal inside
+     * `pcrec_ast_class_from_iv` longjmps with tmp's block live and strands
+     * it. A KNOWN strand (K155's class), an [ARENA-SCOPES] client allowed by
+     * name in tests/core/scratch_builder_check.py; the class fix is the
+     * scoped arena. Decoding into `cx->arena` instead was measured at +29%
+     * peak RSS for 4,000 `\p{L}` and refused (upropfix report). */
     Arena tmp = { .cx = cx };
     int n = 0;
     const PcrecCpRange *iv =
