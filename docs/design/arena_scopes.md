@@ -465,6 +465,9 @@ shared `scope_check(s)` (L1); `pcrec_arena_hold` instead tests L7 (`a->open` set
 a->open, gen = ++a->gen, below = a->top }` (`below` read BEFORE the push, so it is the record under the mark); (4) push
 it on `a->top`; (5) `a->open = mark`; return `{ a, mark, mark.gen }`. No step after (2) can refuse.
 
+(R-3, lane arenabuild2: records live in ONE array per Arena and handles name them by position; the record shape and
+"lives INSIDE its record" below are superseded, see "Deviations at build". The order itself holds.)
+
 THE ORDER INSIDE A REGISTERING CALL, so no refusal falls between a resource's birth and its owner (B14):
 1. take a record: `calloc(1, offsetof(LEnt, payload) + kind->size)`; a failure diagnoses through
    `pcrec_err_chan(a->cx)` with nothing yet to lose;
@@ -614,6 +617,10 @@ hold replaces `Arena.owned` itself (one record type, one walk, B7), and `walk_pa
   - FLOOR: `min_total` = half the population measured at F1 (D110).
   - BUDGET: W7 adds at most 2,000 trials and 60 s to `test-alloc` (unmeasured defaults; today about 162 malloc trials
     for W4 in about 60 s). A larger population at F1's profiling run is a STOP for F1; the fallback is a stated stride.
+    DEVIATION AT BUILD (lane arenabuild2, ruling R-1): F1 measured 2,112 trials; the stride is 4 on scope-window-only
+    points, every hand-kept-window point kept (W7/W3: 535 trials), and the DFA memo arena is excluded from the
+    hand-kept window, its premise (compile_driver frees it on every arrival) asserted by alloc_check (sabotage S3603);
+    "Deviations at build" below.
   - CONTROLS: sabotage (1) (drop the registry walk from `pcrec_arena_free`) makes W7 strand minimize's tables; C0(d)
     shows the lent window stranding the `into` copy on today's tree. After F4 the lent window's population is 0 by
     construction (C10): it stays as the pre-fix control only, and its floor is 0 for sabotage (9)'s member, so it is
@@ -740,6 +747,25 @@ Listed for the pre-go briefing; under D191 addendum 2 they need no go of their o
     reasons), S29 as unit F6, and the SEEN gate in F1 (Tests and sabotage); the build go should cite them;
   - (h) r102 B27 is filed as an unlock on [ARENA-SCOPES]'s refs (the trace build's arrival restores as GENFORM-9's
     possible second non-memory member); whether trace-only members count toward GENFORM-9 is the manager's call.
+
+## Deviations at build (F1, lane arenabuild2, the manager's rulings R-1..R-4)
+
+- R-1, W7. The DFA memo arena (S7) is not a hand-kept arena for W7: compile_driver frees it on every arrival, so it
+  cannot strand, and its window spans the whole compile (W7/W1 alone read 2,614 trials with it). BINDING: every
+  alloc_check child (malloc trials, arena trials, the profiling pass) exits 6, a FAIL naming the memo, if a memo arena
+  still holds a block when the compile returns; sabotage S3603 drops the memo free at the nomem arrival. The stride is
+  `W7_SCOPE_STRIDE` = 4 on points in the scope window only; every point in the hand-kept window is a trial.
+- R-2, memgate. Peak and the arena block columns count REQUESTED bytes (per pointer; block = `sizeof(ABlock) + cap`);
+  the `malloc_usable_size` peak is an informational column. Usable size moved with heap history, not with bytes asked.
+- R-3, the registry. Records are no longer one `calloc` each: each Arena keeps ONE heap array used as a LIFO stack
+  (`rec`, `n`, `cap`; first growth 16 records, doubling; popped on close; freed by `pcrec_arena_free`). The array moves
+  when it grows, so handles name records by POSITION and stamp: `Scope.mark` is a position (index + 1, 0 = none), and
+  a hold is an `ArenaHold { a, rec, gen }` set once through `pcrec_hold_set` (it replaces the `void **` slot; F4's
+  `PcrecPartFacts.hold` becomes an `ArenaHold`). A STRBUF or ARENA entry's storage is its own heap object the record
+  points to (one `calloc`, like the record before it), so the pointer a client holds survives growth. Peak cost: the
+  array (16 x 32 B = 512 B) is live from the first registration to the arena's teardown, not per entry.
+  RESULT: the 8 MiB rung on `depth/ncaltrep@250` STILL MOVES (STOP, to the owner): thresholds in
+  `docs/dev/lanes/arenabuild2_report.md`.
 
 ## r102 disposition
 

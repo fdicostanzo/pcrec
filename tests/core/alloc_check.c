@@ -1106,9 +1106,10 @@ static int w7_plant(pcrec_error *err)
  * nothing and they hold no hand-kept arena), so they have no row (a row of
  * population 0 is a gate that passes by emptiness, K35); W3 has two
  * windows, `uprops_produce`'s tmp arena and minimize's scope. `min_total`
- * is half the population measured at F1 (D110). */
+ * is half the population measured at R-1's stride (535, lane arenabuild2;
+ * D110). */
 #define W7_ROWS \
-    { "W7/W3 (unicode-props/utf8)", "\\p{L}", PCREC_ENC_UTF8, 1, 0, 1055, 0, 0, NULL, NULL, 0 }, \
+    { "W7/W3 (unicode-props/utf8)", "\\p{L}", PCREC_ENC_UTF8, 1, 0, 267, 0, 0, NULL, NULL, 0 }, \
 
 
 int main(int argc, char **argv)
@@ -1201,14 +1202,15 @@ int main(int argc, char **argv)
          * THE ABSORPTION PIN IS BY DESIGN, not a filed defect: a part that
          * refuses ends the compound row and the compile falls back to the
          * plain artifact (compound.c: "Nothing here refuses the compile"),
-         * so single-shot failures inside a part's compile succeed (1010 of
-         * 1045 at [ARENA-SCOPES] F1, re-pinned UP from 982 of 1008: each part
-         * compile's registry records are new heap calls, absorbed by the same
-         * fallback); under sustained failure the fallback fails too (0). The
+         * so single-shot failures inside a part's compile succeed (984 of
+         * 1011 since lane arenabuild2's R-3, re-pinned DOWN from F1's 1010 of
+         * 1045: the registry's records are one array per arena, not one
+         * calloc each, so they are no longer per-entry malloc trials; 982 of
+         * 1008 before F1); under sustained failure the fallback fails too (0). The
          * pin is exact (D110); allocation-shape churn on the compound path
          * re-pins it. `min_total` floor: 504 (half of 1008, kept). */
         { "W6 (compound split)",   "^abc|x+$",   PCREC_ENC_BYTE, 0, 0,
-          504, 1010, 0,
+          504, 984, 0,
           "the compound row's by-design fallback: a refused part compile "
           "leaves the plain artifact (compound.c)", NULL, 0 },
     };

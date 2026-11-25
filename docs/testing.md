@@ -5161,8 +5161,9 @@ both [ARENA-SCOPES] clients. Its static complement is
 census of compile-path heap builders, which sees the sites no witness
 reaches. Witness W6 (`^abc|x+$`, review r96) runs the compound walk, the one
 fixed shape (a callee's heap result handed to the arena) the scan cannot
-see: BASE strands a part's text on 10 refusals, the fix 0; its 1010
-(982 before [ARENA-SCOPES] F1's registry records) single-shot absorptions are the compound row's by-design fallback, pinned
+see: BASE strands a part's text on 10 refusals, the fix 0; its 984
+(982 before [ARENA-SCOPES] F1, 1010 at F1's per-record callocs, 984 once the
+registry became one array per arena) single-shot absorptions are the compound row's by-design fallback, pinned
 exactly with that reason (a pinned count prints a NOTE, any other count
 FAILS); sabotage S3580 drops the store into the part text's arena hold
 (`pcrec_arena_hold`, [ARENA-SCOPES] F1) and only W6 sees it. The
