@@ -1,0 +1,192 @@
+/* tests/core/memgate/mg_drv.c — memgate's per-compile driver ([ARENA-SCOPES] T1).
+ *
+ * Reads lines "RAISE\tFEATURES\tENGINE\tPATFILE" on stdin, runs one
+ * `pcrec_compile` per line, prints one result line per input line.
+ *
+ * -DMG_PEAK (linked against an alloc_inject.h build, with
+ *   -Wl,--wrap=pcrec_arena_alloc -Wl,--wrap=pcrec_arena_free):
+ *   "PEAK RC LIVE_AFTER ATT_HW OTH_HW" where PEAK is the compile's peak live
+ *   heap (malloc_usable_size of every live block the library holds), and the
+ *   arena BLOCK bytes split BY ARENA IDENTITY: ATT_HW is the high-water of
+ *   the block bytes held by attempt arenas (an Arena that is its Ctx's own
+ *   `&cx->arena`), OTH_HW the same for every other arena (the memo, clskit's,
+ *   a scope's child). A new block is seen as `a->head` moving across one
+ *   `pcrec_arena_alloc` call; an arena's bytes are dropped when it reaches
+ *   `pcrec_arena_free` through the wrap. A call made from inside arena.o is
+ *   not wrapped (GNU ld wraps undefined references only), so a child arena
+ *   released by arena.c's own registry walk stays counted in OTH: OTH is
+ *   informational, ATT is the gate (design G2a).
+ * -DMG_INSTR (linked against the plain -O2 library): "INSTR RC" where INSTR
+ *   is the user-mode instruction count (perf_event_open, exclude_kernel)
+ *   around the one `pcrec_compile` call.
+ *
+ * Deterministic by construction (no wall clock); memgate.py's noise read runs
+ * a side against itself to prove it. */
+#include <malloc.h>
+#include <stdint.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+
+#include "pcrec.h"
+
+#ifdef MG_PEAK
+#include "core/internal.h"
+
+static long long live, peak;
+
+/* Counts a block the library now holds and raises the peak. */
+static void *add(void *p)
+{
+    if (p) {
+        live += (long long)malloc_usable_size(p);
+        if (live > peak) peak = live;
+    }
+    return p;
+}
+void *pcrec_inject_malloc_at(size_t n, const char *f, int l) { (void)f; (void)l; return add(malloc(n)); }
+void *pcrec_inject_calloc_at(size_t a, size_t b, const char *f, int l) { (void)f; (void)l; return add(calloc(a, b)); }
+void *pcrec_inject_realloc_at(void *p, size_t n, const char *f, int l)
+{
+    (void)f; (void)l;
+    long long o = p ? (long long)malloc_usable_size(p) : 0;
+    void *q = realloc(p, n);
+    if (q) live -= o;
+    return add(q);
+}
+char *pcrec_inject_strdup_at(const char *s, const char *f, int l) { (void)f; (void)l; return add(strdup(s)); }
+void pcrec_inject_free_at(void *p, const char *f, int l)
+{
+    (void)f; (void)l;
+    if (p) live -= (long long)malloc_usable_size(p);
+    free(p);
+}
+
+/* The per-arena block bytes, keyed by the Arena's address (open addressing;
+ * a compile holds a handful of arenas at once). */
+#define MG_NARENA 4096
+static struct { const Arena *a; long long bytes; bool att; } tab[MG_NARENA];
+static long long att_live, att_hw, oth_live, oth_hw;
+
+/* The table slot for `a`, claimed on first sight. */
+static size_t slot(const Arena *a)
+{
+    size_t h = ((uintptr_t)a >> 4) % MG_NARENA;
+    while (tab[h].a && tab[h].a != a) h = (h + 1) % MG_NARENA;
+    tab[h].a = a;
+    return h;
+}
+
+void *__real_pcrec_arena_alloc(Arena *a, size_t sz);
+void __real_pcrec_arena_free(Arena *a);
+
+/* Allocates through the real arena and charges a newly opened block to the
+ * arena's class (attempt or other). */
+void *__wrap_pcrec_arena_alloc(Arena *a, size_t sz)
+{
+    ABlock *h0 = a->head;
+    void *p = __real_pcrec_arena_alloc(a, sz);
+    if (a->head != h0) {
+        size_t s = slot(a);
+        tab[s].att = a->cx && a == &a->cx->arena;
+        long long n = (long long)malloc_usable_size(a->head);
+        tab[s].bytes += n;
+        if (tab[s].att) { att_live += n; if (att_live > att_hw) att_hw = att_live; }
+        else { oth_live += n; if (oth_live > oth_hw) oth_hw = oth_live; }
+    }
+    return p;
+}
+
+/* Drops the arena's charged block bytes, then frees it for real. */
+void __wrap_pcrec_arena_free(Arena *a)
+{
+    size_t s = slot(a);
+    if (tab[s].att) att_live -= tab[s].bytes;
+    else oth_live -= tab[s].bytes;
+    tab[s].bytes = 0;
+    __real_pcrec_arena_free(a);
+}
+#endif
+
+#ifdef MG_INSTR
+#include <linux/perf_event.h>
+#include <sys/ioctl.h>
+#include <sys/syscall.h>
+#include <unistd.h>
+
+/* A user-mode instruction counter on this thread, disabled until armed. */
+static int instr_fd(void)
+{
+    struct perf_event_attr pe;
+    memset(&pe, 0, sizeof pe);
+    pe.type = PERF_TYPE_HARDWARE;
+    pe.size = sizeof pe;
+    pe.config = PERF_COUNT_HW_INSTRUCTIONS;
+    pe.disabled = 1;
+    pe.exclude_kernel = 1;
+    pe.exclude_hv = 1;
+    int fd = (int)syscall(SYS_perf_event_open, &pe, 0, -1, -1, 0);
+    if (fd < 0) { perror("perf_event_open"); exit(2); }
+    return fd;
+}
+#endif
+
+/* The whole file at `path`, NUL-terminated (the pattern bytes). */
+static char *slurp(const char *path)
+{
+    FILE *f = fopen(path, "rb");
+    if (!f) return NULL;
+    fseek(f, 0, SEEK_END);
+    long n = ftell(f);
+    fseek(f, 0, SEEK_SET);
+    char *s = malloc((size_t)n + 1);
+    if (!s || fread(s, 1, (size_t)n, f) != (size_t)n) { fclose(f); free(s); return NULL; }
+    s[n] = 0;
+    fclose(f);
+    return s;
+}
+
+int main(void)
+{
+    char line[8192];
+#ifdef MG_INSTR
+    int fd = instr_fd();
+#endif
+    while (fgets(line, sizeof line, stdin)) {
+        line[strcspn(line, "\n")] = 0;
+        char *raise = strtok(line, "\t"), *feat = strtok(NULL, "\t");
+        char *eng = strtok(NULL, "\t"), *pf = strtok(NULL, "\t");
+        if (!pf) { printf("BADLINE\n"); fflush(stdout); continue; }
+        char *pat = slurp(pf);
+        if (!pat) { printf("NOPAT\n"); fflush(stdout); continue; }
+        pcrec_options o;
+        pcrec_default_options(&o);
+        o.features = strcmp(feat, "-") ? feat : NULL;
+        o.engine = atoi(eng);
+        if (atoi(raise)) { o.max_emit_code_bytes = UINT64_MAX / 2; o.max_emit_bytes = UINT64_MAX / 2; }
+        pcrec_output out;
+        memset(&out, 0, sizeof out);
+        pcrec_error err;
+        memset(&err, 0, sizeof err);
+#ifdef MG_PEAK
+        live = peak = 0;
+        att_live = att_hw = oth_live = oth_hw = 0;
+        memset(tab, 0, sizeof tab);
+        int rc = pcrec_compile(pat, &o, &out, &err);
+        if (rc == 0) pcrec_output_free(&out);
+        printf("%lld %d %lld %lld %lld\n", peak, rc, live, att_hw, oth_hw);
+#else
+        ioctl(fd, PERF_EVENT_IOC_RESET, 0);
+        ioctl(fd, PERF_EVENT_IOC_ENABLE, 0);
+        int rc = pcrec_compile(pat, &o, &out, &err);
+        ioctl(fd, PERF_EVENT_IOC_DISABLE, 0);
+        long long n = 0;
+        if (read(fd, &n, sizeof n) != (ssize_t)sizeof n) n = -1;
+        if (rc == 0) pcrec_output_free(&out);
+        printf("%lld %d\n", n, rc);
+#endif
+        fflush(stdout);
+        free(pat);
+    }
+    return 0;
+}
