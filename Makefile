@@ -2265,11 +2265,14 @@ memgate:
 	bash scripts/boxlock run --label memgate -- $(MAKE) --no-print-directory memgate-locked
 
 memgate-locked:
+	python3 -I tests/core/memgate/test_verdicts.py
 	python3 -I tests/core/memgate/memgate.py prep $(MEMGATE_OUT)/base --ref $(MEMGATE_BASE) --repo $(CURDIR)
 	python3 -I tests/core/memgate/memgate.py prep $(MEMGATE_OUT)/tree --tree $(CURDIR)
-	python3 -I tests/core/memgate/memgate.py peak $(MEMGATE_OUT)/base $(MEMGATE_OUT)/tree $(MEMGATE_OUT)/peak --bound $(MEMGATE_BOUND)
-	python3 -I tests/core/memgate/memgate.py rungs $(MEMGATE_OUT)/base $(MEMGATE_OUT)/tree $(MEMGATE_OUT)/rungs
-	python3 -I tests/core/memgate/memgate.py instr $(MEMGATE_OUT)/base $(MEMGATE_OUT)/tree $(MEMGATE_OUT)/instr
+	rc=0; \
+	python3 -I tests/core/memgate/memgate.py peak $(MEMGATE_OUT)/base $(MEMGATE_OUT)/tree $(MEMGATE_OUT)/peak --bound $(MEMGATE_BOUND) || rc=1; \
+	python3 -I tests/core/memgate/memgate.py rungs $(MEMGATE_OUT)/base $(MEMGATE_OUT)/tree $(MEMGATE_OUT)/rungs || rc=1; \
+	python3 -I tests/core/memgate/memgate.py instr $(MEMGATE_OUT)/base $(MEMGATE_OUT)/tree $(MEMGATE_OUT)/instr || rc=1; \
+	exit $$rc
 
 # [CLOUD-SUITE] `test-alloc`: the allocation-failure injector as a `make test` section. It was opt-in (`make alloc`, a
 # battery stage) only because nothing ran it by default; what it checks is COMPILER-INDEPENDENT -- every forced

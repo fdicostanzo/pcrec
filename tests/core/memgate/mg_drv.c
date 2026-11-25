@@ -143,7 +143,14 @@ static long long att_live, att_hw, oth_live, oth_hw;
 static size_t slot(const Arena *a)
 {
     size_t h = ((uintptr_t)a >> 4) % MG_NARENA;
-    while (tab[h].a && tab[h].a != a) h = (h + 1) % MG_NARENA;
+    size_t probes = 0;
+    while (tab[h].a && tab[h].a != a) {
+        if (++probes >= MG_NARENA) {   /* a full table would probe forever (r104 MEMGATE-6) */
+            fprintf(stderr, "mg_drv: more than %d distinct Arena addresses in one compile; raise MG_NARENA\n", MG_NARENA);
+            abort();
+        }
+        h = (h + 1) % MG_NARENA;
+    }
     tab[h].a = a;
     return h;
 }

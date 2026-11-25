@@ -34,6 +34,9 @@ identical base runs must print identical numbers).
       per-compile user-mode instruction count around pcrec_compile, B/A ratio: p95 and max,
       every compile over --band (default 1.02) listed OVER-BAND.
 
+Exit status (r104 MEMGATE-2): after the full report, 1 on a STOP / MOVED verdict or any ERR side; 0 on WITHIN /
+IDENTICAL / LAYOUT. `python3 -I tests/core/memgate/test_verdicts.py` is the control for the verdict logic (fake sides).
+
 The population is read from side A's tree (corpus via scripts/emit_sweep.py's enumerator and
 A's CLI, cells via A's tests/growth/run_growth.py), so both sides compile the same inputs.
 Regime (docs/design/arena_scopes.md, standing question 1): REQUESTED bytes, in process, the
@@ -222,6 +225,8 @@ def mode_peak(a, items):
         for r in over:
             print("OVER-BOUND %s A %d B %d (%+d > %d)" % (r[0], r[1], r[2], r[2] - r[1], a.bound))
         print("peak: VERDICT %s (bound %d B: %d over)" % ("WITHIN" if not over and not nerr else "STOP", a.bound, len(over)))
+        return 1 if over or nerr else 0
+    return 1 if nerr else 0   # without --bound there is no verdict line, but an ERR side still fails
 
 
 def mode_instr(a, items):
@@ -245,8 +250,9 @@ def mode_instr(a, items):
     over = [r for r in rows if r[3] > a.band]
     for r in sorted(over, key=lambda r: -r[3])[:30]:
         print("OVER-BAND %s A %d B %d (x%.4f)" % r)
-    print("instr: VERDICT %s (p95 band %.3f, max band %.3f: %d over)" % (
-        "WITHIN" if pct(rat, 0.95) <= a.p95 and not over and not nerr else "STOP", a.p95, a.band, len(over)))
+    within = pct(rat, 0.95) <= a.p95 and not over and not nerr
+    print("instr: VERDICT %s (p95 band %.3f, max band %.3f: %d over)" % ("WITHIN" if within else "STOP", a.p95, a.band, len(over)))
+    return 0 if within else 1
 
 
 GRAIN = 4096   # the RLIMIT_DATA bisection grain (a page)
@@ -302,6 +308,8 @@ def rung_layout(a, item, out):
     nb = rung_need(B, item, cap, out[B] == "compiled")
     d = "requested peak A %d B %d (%+d); threshold A %s B %s; heap-extent delta %s" % (
         pa, pb, pb - pa, na, nb, "%+d" % (nb - na) if na is not None and nb is not None else "?")
+    if na is None or nb is None:   # an unfound threshold is a persistent refusal, not a layout move (r104 MEMGATE-3)
+        return False, d + " (threshold not found within 64 x the rung: MOVED)"
     return pa == pb, d
 
 
@@ -334,7 +342,10 @@ def mode_rungs(a, items):
         failed += not is_layout
         print("%s %s cap %d: %s" % ("LAYOUT" if is_layout else "MOVE-FAILS", key, cap, d), flush=True)
     print("rungs: %d compared, %d moved (%d layout, %d failing), %d with an ERR side" % (n, len(moves), layout, failed, err))
-    print("rungs: VERDICT %s" % ("IDENTICAL" if not moves else "LAYOUT" if not failed else "MOVED"))
+    # an ERR side (either or both) is a failing move (D-9): a build or driver broken on BOTH sides must not read IDENTICAL
+    v = "MOVED" if failed or err else "IDENTICAL" if not moves else "LAYOUT"
+    print("rungs: VERDICT %s" % v)
+    return 0 if v in ("IDENTICAL", "LAYOUT") else 1
 
 
 def main():
@@ -352,7 +363,7 @@ def main():
         q.add_argument("A")
         q.add_argument("B")
         q.add_argument("out")
-        q.add_argument("--jobs", type=int, default=8)
+        q.add_argument("--jobs", type=int, default=os.cpu_count() or 8)
         q.add_argument("--limit", type=int, default=0)
         q.add_argument("--shard", default="", metavar="K/N")
         if m == "peak":
@@ -367,7 +378,8 @@ def main():
     os.makedirs(os.path.join(a.out, "pat"), exist_ok=True)
     items = population(a)
     print("%s: %d compiles per side (A %s, B %s)" % (a.mode, len(items), a.A, a.B), flush=True)
-    {"peak": mode_peak, "rungs": mode_rungs, "instr": mode_instr}[a.mode](a, items)
+    # the full report prints first; a STOP / MOVED / ERR verdict then exits 1 (r104 MEMGATE-2)
+    sys.exit({"peak": mode_peak, "rungs": mode_rungs, "instr": mode_instr}[a.mode](a, items))
 
 
 if __name__ == "__main__":
