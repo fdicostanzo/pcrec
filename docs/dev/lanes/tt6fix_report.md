@@ -172,3 +172,5 @@ over 2 minutes, and before this report. No ruling was applied. No queued jobs, a
 lock `worktrees/.mac-suite.lock` was released after each run. Evidence is in
 `docs/dev/lanes/tt6fix_evidence/`: the census script and its output, the fake timeout, and the mutant
 rows.
+
+OWED: none
