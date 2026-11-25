@@ -775,6 +775,18 @@ Listed for the pre-go briefing; under D191 addendum 2 they need no go of their o
   move. Numbers: `docs/dev/lanes/arenabuild2_report.md`.
 - R-6, the rung rule (the owner, 2026-11-25, "rung-edge: agree with lean"): rungs are judged on requested bytes; D-9
   states it and memgate `rungs` applies it.
+- r104 (code review of F1, the manager's ruling 2026-11-25), REGISTRY-1: sabotage (3), dropping the handler-top
+  `pcrec_scope_unwind`, is UNREACHED. Its one reason is FIT_FORCE_NEXT, and the only scope client (minimize, a leaf)
+  is not reachable from `pcrec_facts_force_all`, so no witness exists (C0(e) answers: none) and no row is built
+  (D77). TRIGGER: the first scope client reachable from the force loop; that unit builds the resume-shaped witness
+  and the sabotage row.
+- r104, CHECKS-6: sabotage S3598 (the "-asan" copy of S3597) is DELETED: the core arm passes no sanitizer flags
+  (SAB_REQUIRE=asan only probed the box), so it ran byte-identically to S3597, whose forged-handle drill is the
+  allocator-independent witness for (4c).
+- r104, CHECKS-4: `scope_check` defines `abort`, so a refusal ends the child with a tagged exit status (77); a glibc
+  `free(): invalid pointer` abort no longer reads as a refusal.
+- r104, MEMGATE-7: `pcrec_err_chan` is the channel for arena.c and sb.c refusals only (D-7, the scanner's scope); the
+  16 `sb->cx` refusals in vm_stmt.c (11) and enc.c (5) read the Ctx directly: an F4 input.
 
 ## r102 disposition
 

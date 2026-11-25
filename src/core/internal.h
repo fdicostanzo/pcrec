@@ -557,7 +557,9 @@ bool    pcrec_arena_open_p(const Arena *a);
  * exists (the one step that can fail); refused while a scope is open (L7). */
 void  **pcrec_arena_hold(Arena *a);
 /* The one error-channel read: every refusal or nomem made through an
- * Arena's or a StrBuf's `.cx` takes its Ctx from it (D-7). */
+ * Arena's or a StrBuf's `.cx` in arena.c and sb.c takes its Ctx from it
+ * (D-7; the scanner's scope). The `sb->cx` refusals in vm_stmt.c and enc.c
+ * still read the Ctx directly (an F4 input). */
 Ctx    *pcrec_err_chan(Ctx *cx);
 
 /* The two comment CLASSES, decided at the emission site (D112 item 2).
@@ -683,8 +685,9 @@ char *pcrec_sb_take(StrBuf *sb);                /* transfer ownership, resets sb
 void  pcrec_sb_free(StrBuf *sb);
 /* [ARENA-SCOPES] R1 (D-6) Moves `src`'s text storage into `dst`, frees
  * `dst`'s old storage and leaves `src` empty: a whole-artifact rewrite built
- * in a fresh heap buffer replaces the one it rewrote with no copy. Heap to
- * heap only; a scratch (`.ar`) buffer on either side is an internal-error
+ * in a fresh heap buffer replaces the one it rewrote with no copy. `dst` and
+ * `src` must be DISTINCT buffers (adopting a buffer into itself empties it).
+ * Heap to heap only; a scratch (`.ar`) buffer on either side is an internal-error
  * refusal (an abort on a detached buffer). The other StrBuf records
  * (`layout_bytes`, the brackets) stay the caller's (RM-1). */
 void  pcrec_sb_adopt(StrBuf *dst, StrBuf *src);

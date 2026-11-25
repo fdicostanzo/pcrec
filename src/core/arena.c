@@ -56,7 +56,8 @@ static const struct LKind kind_arena  = { sizeof(Arena),   release_arena };
 static MarkPay *mark_pay(LEnt *m) { return (MarkPay *)(void *)m->payload; }
 
 /* The one error-channel read for a refusal or nomem made through an Arena's
- * or a StrBuf's `.cx` (D-7). Returns `cx`; NULL (a detached arena) is legal. */
+ * or a StrBuf's `.cx` in arena.c and sb.c (D-7; vm_stmt.c's and enc.c's `sb->cx`
+ * refusals do not use it yet: an F4 input). Returns `cx`; NULL (a detached arena) is legal. */
 Ctx *pcrec_err_chan(Ctx *cx)
 {
     return cx;
