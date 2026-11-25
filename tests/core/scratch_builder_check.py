@@ -98,6 +98,7 @@ ALLOW = [
     ("src/gen/memfn_stamps.c", "splice_mark", "strbuf:tail", "[ARENA-SCOPES] client: a whole-artifact tail rewrite"),
     ("src/gen/part_layout.c", "render_buf", "strbuf:o", "[ARENA-SCOPES] client: the whole-artifact layout-mark rewrite"),
     ("src/gen/clskit.c", "pcrec_clskit_emit_kit", "arena:a", "[ARENA-SCOPES] client: a private arena never registered on the Ctx"),
+    ("src/parse/mod_uprops.c", "uprops_produce", "arena:tmp", "[ARENA-SCOPES] client, NOT safe across a refusal: the transient \\p decode, freed on return, is a KNOWN STRAND when pcrec_ast_class_from_iv runs out of memory or refuses; the class fix rides [ARENA-SCOPES] (the compile arena instead costs +29% peak at 4,000 \\p{L}, refused, upropfix)"),
     # -- outside a compile: no Ctx, so no longjmp can strand anything ------
     ("src/core/compile.c", "pcrec_subst_compile", "arena", "the subst compile: a detached arena, freed on return, no Ctx"),
     ("src/gen/emit_subst.c", "support_unit", "strbuf", "the subst support unit: no Ctx"),
