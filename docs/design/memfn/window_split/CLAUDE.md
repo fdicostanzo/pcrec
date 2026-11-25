@@ -1,6 +1,6 @@
 # docs/design/memfn/window_split/ — the window family split's instruments
 
-Instruments of `../window_split.md` (rev 1 lane wsplitd, rev 2 lane wsplitd2, rev 2.1 lane wsplitd3,
+Instruments of `../window_split.md` (rev 1 lane wsplitd, rev 2 lane wsplitd2, rev 2.1 lane wsplitd3, rev 2.2 lane wsplitd4,
 2026-11-24).
 Read-only over a tree's `memfn/src`; python3 run with `-I`, plus `gcc-16 -fsyntax-only`; never built
 or run by `make`. Every count the note quotes names the command that produced it from these files
