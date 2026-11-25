@@ -10873,3 +10873,34 @@ note of P-30 stands.
 For the next fold (after lane predfix90 delivers; its own lane: it re-spells every printed `NOT`, the `when` body,
 core/filters/negation, core/holes/insert, core/operators/precedence, the spellings table, the error index, and
 closes lib/control/when-test/not).
+
+### 2026-11-25 OWNER, on group-truth: "Should: these operators take the array form of the label?"
+tags: core/model/table/group-truth lib/counting/some lib/counting/count lib/counting/occurs core/labels/labels-vs-captures/array-vs-passes core/conditions/form/record-in-some core/conditions/form/value-left core/conditions/form/optional-entry lib/structural/capture/add-on lib/structural/sorted core/spellings/placeholders
+
+Asked **group-truth** (under the array of settings, are `!some(c)` and `occurs.none(c)` one question and
+`occurs.none(!c)` another, so the item closes for a condition of one entry; the manager's leaning: close; RUN, a
+python model of the paths of `/(?:(?<d>\d)?,)+/`, most items first, c the condition `(d: "7")`, output pasted:
+!some((d: "7")) | WHOLE ',' HOLDS '1,' HOLDS '7,' FAILS '1,7,' FAILS '7,,' FAILS | SEARCHED 7,1, -> (',1,', 1) | FIND-ALL 1,7, , 7,7, -> [('1,', 0), (',', 3), (',', 5), (',', 8), (',', 10)]
+occurs.none((d: "7")) | WHOLE ',' HOLDS '1,' HOLDS '7,' FAILS '1,7,' FAILS '7,,' FAILS | SEARCHED 7,1, -> (',1,', 1) | FIND-ALL 1,7, , 7,7, -> [('1,', 0), (',', 3), (',', 5), (',', 8), (',', 10)]
+occurs.none(!(d: "7")) | WHOLE ',' HOLDS '1,' FAILS '7,' HOLDS '1,7,' FAILS '7,,' HOLDS | SEARCHED 7,1, -> ('7,', 0) | FIND-ALL 1,7, , 7,7, -> [(',7,', 1), (',', 5), ('7,7,', 7)]
+DFA category told: maybe, about 0.8). HIS WORDS, whole:
+
+"Should: these operators take the array form of the label?"
+
+Class: a QUESTION that is an IDEA: `some`, `count`, `occurs` taking the ARRAY form of a label (his `@x`) in place
+of a condition whose plain label name is read as the array. NOT a ruling; group-truth is NOT answered.
+CHECKED AGAINST THE RECORD: array-vs-passes (2026-11-21, ruled) settles WHAT the group questions read (the array
+of settings), not how the argument is written; the argument as a condition is from `some(c)` of 2026-11-15. His
+own example of 2026-11-22 wrote the label: "(count(chars.ch): ==5)" (the documents re-spelled it
+`count((chars.ch: anything))`). The other array readers already take the array form: `capture(@x)` (array-capture,
+ruled), `sorted` / `distinct` ("would take the ARRAY form of a read"), the index `h[k]`.
+The manager's answer (told to him; the manager's reading; nothing applied): yes, it is the better form. Today one
+text has two readings by where it stands: `(h: "7")` reads the label (the last setting) outside a group question
+and every setting inside one (the documents' printed lines "Outside the loop" and "Outside the loop, the label
+beside it": `/(?<h>\d);(?:(?<h>\d);)*/` on `7;`, `some((h: "7"))` HOLDS, `(h: "7")` FAILS). The fences that follow
+from it in the documents: a value entry, a joint entry, `?:` and a capture request are each refused inside a group
+question; a record of several entries is open (record-in-some); what `count` counts on several entries is "not
+stated"; a `$` read inside "reads the label as it stands". With the array written (`some(@d, "7")`,
+`occurs.none(@d, "7")`, `count(@d, "7")`, `count(@d)`), a condition reads the label everywhere and those fences
+have nothing to stand on; group-truth's third form is a complement on the SET (`occurs.none(@d, !"7")`), a
+setting never being absent. Put to him as a ruling, slug array-argument.
