@@ -165,10 +165,10 @@ struct CompWalk {
  * refused). Its parent options are P's own (the placeholder prefix: the text
  * is spliced unrendered, so K79 holds across the compound), and so is its
  * measurement set: this attempt's resolved one, never resolved again. Its
- * text (heap, the part compile's output) is handed to the compile's arena
- * the moment it exists ([K155], pcrec_arena_own): no refusal later in the
- * walk, the next part's compile included, can strand it, and the shell
- * reads it from there. A part has no header (`part_compile`). */
+ * text (heap, the part compile's output) is stored into an arena HOLD taken
+ * before the part compiles ([K155], pcrec_arena_hold) the moment it exists:
+ * no refusal later in the walk, the next part's compile included, can strand
+ * it, the arena frees it, and the shell reads it from there. A part has no header (`part_compile`). */
 static int walk_part(CompWalk *w, int i)
 {
     if (!w->tried[i]) {
@@ -180,7 +180,7 @@ static int walk_part(CompWalk *w, int i)
         w->tried[i] = true;
         w->rep[i].killed = -1;   /* stays -1 unless the derivation ran */
         w->facts[i].into = &w->cx->arena;
-        AOwn *own = pcrec_arena_own_slot(&w->cx->arena);
+        void **text = pcrec_arena_hold(&w->cx->arena);
         w->rc[i] = part_compile(w->cx->pat, w->cx->opt, &w->row->parts[i],
                                 &w->rep[i], &w->facts[i], true,
                                 /* [ENTRY-TABLE] E1 the shell row the part's
@@ -189,7 +189,7 @@ static int walk_part(CompWalk *w, int i)
                                                     : PCREC_ENTRY_COMP_B,
                                 &meas, &w->out[i],
                                 &w->err[i]);
-        if (w->rc[i] == 0) pcrec_arena_own(&w->cx->arena, own, w->out[i].c_src);
+        if (w->rc[i] == 0) *text = w->out[i].c_src;
     }
     return w->rc[i];
 }

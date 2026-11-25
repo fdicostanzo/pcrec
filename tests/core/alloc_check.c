@@ -1020,7 +1020,7 @@ int main(int argc, char **argv)
         /* [K155] W6 — THE COMPOUND WALK (review r96 GENFORM-1/CHECK-5): a
          * floor arm beside an end-pinned arm admits the `split` compound
          * row, so nested part compiles run and hand their heap `c_src` to
-         * the arena (`pcrec_arena_own`, compound.c). W1-W5 never run the
+         * the arena (an arena hold, `pcrec_arena_hold`, compound.c). W1-W5 never run the
          * walk. Measured 2026-11-24: BASE (before K155's fix) strands a
          * part's c_src on 10 diagnosed refusals; with the fix 0 new.
          *

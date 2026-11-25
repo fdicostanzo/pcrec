@@ -2,8 +2,9 @@
 # a compound part's heap text is never handed to the compile's arena.
 #
 # `src/core/compound.c`'s `walk_part` links each successful part compile's
-# heap `c_src` into the arena (`pcrec_arena_own`), so the arena frees it on
-# every exit, a refusal's longjmp included. The plant drops the call: the
+# heap `c_src` into an arena hold (`pcrec_arena_hold`, [ARENA-SCOPES] F1;
+# re-aimed from `pcrec_arena_own`), so the arena frees it on
+# every exit, a refusal's longjmp included. The plant drops the store: the
 # text is owned by nothing. No emitted byte or answer moves (the shell reads
 # the text before the arena dies); only the heap balance does. The net is
 # tests/core/alloc_check.c's W6 witness (the compound walk), which the
@@ -13,9 +14,9 @@
 SAB_ID="S3580-compound-part-text-not-owned"
 SAB_FILE="src/core/compound.c"
 SAB_SUITES="resource"
-SAB_DESC="walk_part never hands a part compile's heap c_src to the arena (pcrec_arena_own dropped): byte-identical output, the text owned by nothing; only alloc_check's W6 compound witness (resource arm, section 2b) sees the live heap"
+SAB_DESC="walk_part never hands a part compile's heap c_src to the arena (the store into its pcrec_arena_hold dropped): byte-identical output, the text owned by nothing; only alloc_check's W6 compound witness (resource arm, section 2b) sees the live heap"
 SAB_DOC_FIGURE="Read the current figure from a run: bash tests/mech/run_sabotage_matrix.sh S3580."
-SAB_REACH_POP="src/core/compound.c|pcrec_arena_own\\(&w->cx->arena, own, w->out\\[i\\]\\.c_src\\);|1"
+SAB_REACH_POP="src/core/compound.c|\\*text = w->out\\[i\\]\\.c_src;|1"
 SAB_COUNT=1
-SAB_BEFORE='        if (w->rc[i] == 0) pcrec_arena_own(&w->cx->arena, own, w->out[i].c_src);'
-SAB_AFTER='        (void)own;   /* SABOTAGE S3580: the part text is never owned */'
+SAB_BEFORE='        if (w->rc[i] == 0) *text = w->out[i].c_src;'
+SAB_AFTER='        (void)text;   /* SABOTAGE S3580: the part text is never owned */'
