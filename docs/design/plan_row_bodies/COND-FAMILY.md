@@ -10800,3 +10800,30 @@ evidence engine and the rules part. The manager's dispositions (ids are the draf
   it is tested, and fails inside the binding).
 - The owner's all-DFA goal and the drop-not discussion (the round's freeze drift) are NOT part of this fix.
 One opus fix lane, predfix90, applies these and files the review.
+
+### 2026-11-25 OWNER, on the DFA goal: its scope ("our peek and when forms"), a standing question ("should be asked repeatedly as we discuss features"), and three categories ("yes dfa, no not dfa under any circumstances, and maybe ... with a weight")
+tags: lib/control/peek lib/control/when lib/control/when-test core/patterns/lookaround core/conditions/form core/values/reads lib/structural/capture lib/builtin/import parked/ideas/capability-optins parked/ideas/match-is-rx-unlocks
+
+Said after the manager's summary of review r90 and of what stays open on drop-not. HIS WORDS, whole:
+
+"I'm just asking for our peek and when forms. Although, it's a question that should be asked repeatedly as we
+discuss features. Also: for some of those reads, I suspect it's possible to convert to dfa in certain
+circumstances. And we are going to try and do dfa captures. So the three categories are yes dfa, no not dfa under
+any circumstances, and maybe under certain circumstances with a weight between the two ends for the maybe."
+
+Class: (1) a CLARIFICATION of his question of the entry "Can these forms be converted into dfa?": it was asked of
+the peek and `when` forms. (2) a STANDING REQUEST for how features are discussed: the DFA question is asked of each
+feature as it is discussed. (3) an OBSERVATION ("I suspect"): some label reads convert to a DFA in certain
+circumstances. (4) a DIRECTION stated, main's side: "we are going to try and do dfa captures". (5) a CLASSING he
+gives: three categories, yes / never / maybe, the maybe carrying a weight between the two ends. None asked as a
+ruling; drop-not and not-test are NOT answered. Whether the goal sentence ("all dfa unless specified by user") is
+narrowed by (1) is not presumed: (1) says what his QUESTION was about; the goal stands as he stated it.
+The manager's answer (told to him; the manager's ESTIMATES, nothing run, no design check; the weights are the
+manager's guesses, 0 never, 1 yes): `peek(A)`, the negative peek, `peekback` and its negative, the non-atomic
+pair, each over a regular A with no label read afterwards: YES. `when` with a peek or a bare pattern as its test
+and regular branches: YES. `when` with a condition on one label against a fixed set as its test: MAYBE, about
+0.8 (the condition narrows the group; it rests on DFA captures for a label set in a loop or an optional). A label
+a peek or a `when` test sets, read afterwards against a fixed set (`peek.d`, `when.h`): MAYBE, about 0.6 (the
+first path only; the label may lie outside the match). A test comparing two labels or computing on a read:
+MAYBE, about 0.2, only where the reads are finite and small enough to enumerate; otherwise NEVER (unbounded
+reads). From now on each question put to him carries its category.
