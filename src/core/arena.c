@@ -37,10 +37,30 @@ void *pcrec_arena_alloc(Arena *a, size_t sz)
     return p;
 }
 
-/* Frees every block the arena holds and resets it to empty; the arena's one
+/* [K155] The ownership record, from the arena itself: allocated before the
+ * heap block it will hold exists (see internal.h). */
+AOwn *pcrec_arena_own_slot(Arena *a)
+{
+    return pcrec_arena_alloc(a, sizeof(AOwn));
+}
+
+/* [K155] Links `heap` (may be NULL) into `slot`: the arena frees it. No
+ * allocation, so nothing can refuse between a callee returning the block
+ * and the arena owning it. */
+void pcrec_arena_own(Arena *a, AOwn *slot, void *heap)
+{
+    slot->p = heap;
+    slot->next = a->owned;
+    a->owned = slot;
+}
+
+/* Frees every block the arena holds (its owned heap blocks first: their
+ * records live in the blocks) and resets it to empty; the arena's one
  * teardown, called on both the success path and every longjmp'd refusal. */
 void pcrec_arena_free(Arena *a)
 {
+    for (AOwn *o = a->owned; o; o = o->next) free(o->p);
+    a->owned = NULL;
     ABlock *b = a->head;
     while (b) {
         ABlock *next = b->next;

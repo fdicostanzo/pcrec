@@ -64,7 +64,7 @@ static bool co_ident_cont(char c)
  * so a refusal cannot drive the reader's terminal. */
 static const char *co_echo(Ctx *cx, const char *s, size_t n)
 {
-    StrBuf b = { .cx = cx };
+    StrBuf b = pcrec_sb_scratch(&cx->arena);
     pcrec_sb_textn(&b, s, n);
     const char *t = pcrec_sb_fragf(&cx->arena, "%s", b.p ? b.p : "");
     pcrec_sb_free(&b);

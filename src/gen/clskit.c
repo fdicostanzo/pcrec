@@ -1123,7 +1123,7 @@ static void emit_empty(StrBuf *c, const char *fn)
 void pcrec_clskit_emit_kit(StrBuf *c, const char *fn, const ClsKit *k,
                            unsigned cp_max)
 {
-    Arena a = { NULL, c->cx };
+    Arena a = { .cx = c->cx };   /* [ARENA-SCOPES] client: never registered, strands its blocks on a refusal */
     if (k->nsec <= 0) { emit_empty(c, fn); return; }
     for (int s = 0; s < k->nsec; s++)
         emit_leaf_tables(c, &a, fn, s, k->iv, &k->sec[s]);

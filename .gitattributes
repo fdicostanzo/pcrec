@@ -1,2 +1,3 @@
 # Append-only indexes: concurrent lanes each append a line; union-merge keeps both (no conflict).
 docs/dev/reviews/INDEX.md merge=union
+memfn/docs/journal.md merge=union

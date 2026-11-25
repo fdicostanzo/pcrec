@@ -164,7 +164,11 @@ struct CompWalk {
 /* Part `i` of the walk's row, compiled on its first ask: 0, or -1 (the part
  * refused). Its parent options are P's own (the placeholder prefix: the text
  * is spliced unrendered, so K79 holds across the compound), and so is its
- * measurement set: this attempt's resolved one, never resolved again. */
+ * measurement set: this attempt's resolved one, never resolved again. Its
+ * text (heap, the part compile's output) is handed to the compile's arena
+ * the moment it exists ([K155], pcrec_arena_own): no refusal later in the
+ * walk, the next part's compile included, can strand it, and the shell
+ * reads it from there. A part has no header (`part_compile`). */
 static int walk_part(CompWalk *w, int i)
 {
     if (!w->tried[i]) {
@@ -176,6 +180,7 @@ static int walk_part(CompWalk *w, int i)
         w->tried[i] = true;
         w->rep[i].killed = -1;   /* stays -1 unless the derivation ran */
         w->facts[i].into = &w->cx->arena;
+        AOwn *own = pcrec_arena_own_slot(&w->cx->arena);
         w->rc[i] = part_compile(w->cx->pat, w->cx->opt, &w->row->parts[i],
                                 &w->rep[i], &w->facts[i], true,
                                 /* [ENTRY-TABLE] E1 the shell row the part's
@@ -184,14 +189,9 @@ static int walk_part(CompWalk *w, int i)
                                                     : PCREC_ENTRY_COMP_B,
                                 &meas, &w->out[i],
                                 &w->err[i]);
+        if (w->rc[i] == 0) pcrec_arena_own(&w->cx->arena, own, w->out[i].c_src);
     }
     return w->rc[i];
-}
-
-static void walk_free(CompWalk *w)
-{
-    for (int i = 0; i < PCREC_COMP_MAXPARTS; i++)
-        if (w->tried[i] && w->rc[i] == 0) pcrec_output_free(&w->out[i]);
 }
 
 /* A1: P's plain compile runs today's attempt loop over every start -- a DFA
@@ -417,10 +417,7 @@ void pcrec_compound_walk(Ctx *cx, const Ast *root)
                               fail ? fail->id : "admit");
         if (cx->emit_in && cx->emit_in->comp_verdict)
             *cx->emit_in->comp_verdict = fail ? fail->id : "admit";
-        if (fail) {
-            walk_free(&w);
-            continue;
-        }
+        if (fail) continue;   /* the parts' texts are the arena's */
         /* THE SLOT-COVERAGE CHECK's compile half (§A.1): F is P, so its
          * slots are P's; Q's are at most P's, and the pad writes the rest. */
         const int ncaps = pcrec_dfa_ncaps(cx);
@@ -440,13 +437,8 @@ void pcrec_compound_walk(Ctx *cx, const Ast *root)
             sh->role[a] = w.row->parts[k].role;
             sh->facts[a] = w.facts[k];
             /* the derived operand that matches nothing is never called */
-            if (w.row->parts[k].derive != &pcrec_derive_none && w.rep[k].never) {
-                pcrec_output_free(&w.out[k]);
-            } else {
+            if (!(w.row->parts[k].derive != &pcrec_derive_none && w.rep[k].never))
                 sh->text[a] = w.out[k].c_src;
-                w.out[k].c_src = NULL;
-                pcrec_output_free(&w.out[k]);
-            }
             w.tried[k] = false;
         }
         cx->job->comp_shell = sh;
