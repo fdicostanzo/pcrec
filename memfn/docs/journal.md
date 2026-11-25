@@ -4958,3 +4958,4 @@ bsu3fix2 delivered (6cf672b6a on lane/bsu3fix; lanecheck DONE; TaskStop).
   - CLASS: runner plants are checked to apply, never to detect.
   - GF-1 HOLE: the check never reads SAB_SUITES, and pres's PLANT_TWINS="$PLANTS" is a blanket declaration. Siblings: 1 of 41 twins diverges from its detector.
   - RULED: the fix rides PR #1. Lane s3012fix (opus): S3012 moves to run_g2_win, the twin check reads SAB_SUITES, PLANT_TWINS becomes an explicit list, drills + mutants, the pass form documented. The scheduled Linux --plants job is PLAN, to main.
+- main confirmed on x86 (Zen 4): S3012 at the BASE b9f81ef80 is GREEN, NOT DETECTED (100 s), so the miss is pre-existing, as s3012tri found. PR #1 lands after s3012fix delivers and main runs the moved S3012 RED on x86.
