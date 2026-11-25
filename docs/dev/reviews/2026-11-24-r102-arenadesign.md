@@ -208,3 +208,17 @@ four sides.
   (close, reopen at the same depth, then close the stale handle) and a FREE-THE-MARK drill (B1).
 - COMMON template: findings go under `## Findings`, above `## PROBED-AND-HELD` (one critic appended all 12 under the held
   heading).
+
+## RULED (manager, 2026-11-24)
+
+- Every PROPOSED disposition ACCEPTED as written: FIX-NOW 21, DOC 9, PLAN 1, NOTED 1. A FRESH design lane (arenadesign2)
+  writes rev 2 on lane/arenadesign; there is no fix-in-place by the rev-1 author.
+- B9: rev 2 re-scores D-1 with the ACCEPTED note's definition of shape (A) and states the deciding reason as found. If
+  (B) wins on cost and not on count, the design says so; a mechanism choice that flips goes back to the manager
+  before the build go.
+- B27 (PLAN): the trace build's arrival restores as GENFORM-9's possible second non-memory member go into
+  [ARENA-SCOPES]'s refs as an unlock, with its trigger. They are not built in this design.
+- Next: a fix-induced plus readiness round (one or two critics, next free review number), then the owner's build go.
+- Lessons 1 and 2 ACCEPTED into the pcrec-critic lens table (premise: re-score a rival by the accepted definition;
+  simulate: stale-handle and free-the-mark drills for any registry with reused records). Lesson 3 ACCEPTED (COMMON
+  template wording).
