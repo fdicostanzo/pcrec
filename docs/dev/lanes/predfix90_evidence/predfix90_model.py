@@ -120,7 +120,7 @@ P10F = dict(prog=prog, path_rules=path_rules)
 
 
 def x10():
-    return X10[0] and not s10("q1x")
+    return X10[0] or s10("q1")
 
 
 # ================================================================== PATH10: the path rules over the label tree
@@ -360,7 +360,7 @@ def wrap10(t):
         for nm, s_, c_, e_ in sorted(_brackets(t), key=lambda b: -b[1]):
             body = t[c_:e_]
             b0 = body.strip()
-            if not b0 or (b0.startswith("(") and close_paren(b0, 0) == len(b0) - 1):
+            if nm == "_" or not b0 or (b0.startswith("(") and close_paren(b0, 0) == len(b0) - 1):
                 continue
             stk = b0.startswith("[") and _close_br(b0, 0) == len(b0) - 1
             ops = re.search(r"\bSEQ\b|[&|]", _mask_conds(b0)) is not None and not (
@@ -425,7 +425,7 @@ GRULE = {   # the deciding sentences, each READ from its piece (pinned by GRID)
     "sent": ("core/labels/rule/sent-label-wall", "a compile error by rule 2 for now"),
     "short": ("core/labels/rule", "whatever B's body does with the spot"),
 }
-START_KINDS = ("in", "in_", "bind", "use", "call", "arg", "sent", "short")
+START_KINDS = ("in", "in_", "inwx", "inwb", "bind", "use", "call", "arg", "sent", "short")
 WALLS10 = ("_x", "_")
 
 
@@ -448,8 +448,8 @@ def g_eval(kind, layers, steps):
             if ly[0] in WALLS10:
                 return "refused", ["sent" if kind == "sent" else 2] + ([5] if j else [])
         outside = j > 0 or kind in ("bind", "call", "use")
-        labelled = bool(sg) and sg[-1][0] in ("P",) + WALLS10 or (j == 0 and not sg and kind in ("in", "in_",
-                                                                                                 "sent"))
+        labelled = bool(sg) and sg[-1][0] in ("P",) + WALLS10 or (j == 0 and not sg and kind in (
+            "in", "in_", "inwx", "inwb", "sent"))
         if outside and not labelled:
             return "refused", [6] + ([5] if j else [])
         if not outside and not labelled and j + 1 < len(segs):
@@ -467,7 +467,7 @@ def g_eval(kind, layers, steps):
     if s10("q3") and skipped >= 2:
         return "refused", [4]
     return "legal", [1] + ([5] if kind in ("bind", "use", "call") or len(segs) > 1 else []) + \
-        ([3] if kind in ("in", "in_") else []) + ([4] if skipped >= 1 else []) + (["4r"] if skipped >= 2 else []) + \
+        ([3] if kind in ("in", "in_", "inwx", "inwb") else []) + ([4] if skipped >= 1 else []) + (["4r"] if skipped >= 2 else []) + \
         ([2] if kind == "in_" else [])
 
 
@@ -486,9 +486,12 @@ def g_build(kind, layers, steps):
             binds.append("%s := %s" % (ly[1], frag))
             frag = ly[1]
     path = ".".join(list(steps) + ["h"])
-    if kind in ("in", "in_"):
-        s_ = "s" if kind == "in" else "_s"
-        return '[%s = %s] SEQ "!" & (%s.%s: <5)' % (s_, frag, s_, path), [A_H] + binds, rx + "!"
+    if kind in ("in", "in_", "inwx", "inwb"):
+        s_ = "_s" if kind == "in_" else "s"
+        top = "[%s = %s]" % (s_, frag)
+        if kind in ("inwx", "inwb"):                         # a wall ABOVE the start
+            top = "[%s = %s]" % ("_x" if kind == "inwx" else "_", top)
+        return '%s SEQ "!" & (%s.%s: <5)' % (top, s_, path), [A_H] + binds, rx + "!"
     if kind == "bind":
         return "X & (X.%s: <5)" % path, [A_H] + binds + ['X := %s SEQ "!"' % frag], rx + "!"
     if kind == "use":
