@@ -287,7 +287,7 @@ static ExtResult uprops_produce(Ctx *cx, ExtWant want, bool in_class,
     /* The decoded interval list is TRANSIENT (the class constructor copies it
      * into its own set), so it lives in a scratch arena freed here rather than
      * in the compile arena: a 4,000-item class keeps no 4,000 copies. */
-    Arena tmp = { NULL, cx };
+    Arena tmp = { .cx = cx };
     int n = 0;
     const PcrecCpRange *iv =
         pcrec_ucd_find(&tmp, name, len, ns, cx->mods->caseless, &n);
