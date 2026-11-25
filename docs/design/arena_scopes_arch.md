@@ -1,5 +1,5 @@
 # Scoped arenas registered on the Ctx ([ARENA-SCOPES]): architecture note
-STATUS: ACCEPTED (manager, 2026-11-24, after reviews r100 and r101, RULED). Open owner question: scope-reach. Rev 2 by lane arenaarch2 plus r101 text fixes (lane arenafix3); rev 1 (lane arenaarch, tree 15e37b005) superseded in place. Next: the design step, which cites this note.
+STATUS: ACCEPTED (manager, 2026-11-24, after reviews r100 and r101, RULED). Owner question scope-reach ANSWERED 2026-11-24: "yes let design choose. I believe I said \"not proscribed\" so that it was a source of inspiration rather than a specific instruction". Rev 2 by lane arenaarch2 plus r101 text fixes (lane arenafix3); rev 1 (lane arenaarch, tree 15e37b005) superseded in place. Next: the design step, which cites this note.
 The "r100 disposition" and "r101 disposition" tables at the end map each finding to its answer.
 FORM: full   (trigger: at least 9 existing decision sites touched, a floor from the site map's ROW/CHAIN/SHARED/WIDEN/ACCESSOR rows: S1 `pcrec_arena_alloc`'s error channel, S3 `pcrec_arena_free`'s owned walk, S4 `job_cleanup`, S6 the five `setjmp` handlers, S8 `sb.c`'s storage-kind tests, S9 the two storage transplants, S21 the nested part compile's facts copy, S22 `job_cleanup`'s end actions, S25 the Job scratch pair; mechanisms added: one lifetime record nested in another's, and its registration)
 TREE: T = 4b8f6a7194482adc1a103a6df13e42580c462a59 (lane/arenaarch HEAD at this lane's start: rev 1 plus main merged in, 46ec58349, plus two deliver-file commits). `git diff --stat 15e37b005 $T -- src cli lib memfn/src tests docs/dev/guide` is empty, so no code cited by rev 1 or by r100 moved; every record below was nevertheless re-run at this T.
@@ -505,7 +505,7 @@ Handed on, not decided here:
 
 ## Open questions for the owner
 
-- **scope-reach** (CONFIRM, re-framed against r100 C2).
+- **scope-reach** (CONFIRM, re-framed against r100 C2). ANSWERED 2026-11-24, the owner: "yes let design choose. I believe I said \"not proscribed\" so that it was a source of inspiration rather than a specific instruction".
   - TODAY: `minimize.c`'s tables are malloc'd and hand-freed; an out-of-memory inside it strands them
     (`alloc_check.c` files it). Other "what dies when" answers in the tree (Job arrays grown by realloc, the memo's
     cross-attempt arena) are not arenas.
