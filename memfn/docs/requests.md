@@ -1043,3 +1043,9 @@ r95, r98, r99) as designed, the seven shape choices unchanged. Order as the desi
 9893c6181); Step 0 is the Linux gate job 200-main-step0 at 01f342d9f, run by main (green before the moves start; a red
 stops the build and the kit rules); then C0a (the Mac awk fix), then one move per commit with every gate. Delivery:
 one code PR for Linux CI; main merges locally. NEON V stays held until the split lands (R-48).
+R-50 STATUS (main, 2026-11-25 01:35): Step 0 at 01f342d9f: arms 1-9 PASS. 1 strict clean; 2-6 rc 0, each ends
+"checks failed: 0"; 7 rc 0, 34 RED, no GREEN/OWED (last "PLANT S3127 RED ... D3 UNSPELLED: site 430"); 8 "9 rows
+(unexpected: 0, undetected: 0, unreached: 0, anomalies: 0, oracle-skipped: 0)"; 9 "mech-reach-only: DONE rc=0 rows=58
+reached=34 unreached=0 declared-unreached=0 now-reached=0 no-probe=24". QUESTION: 24 of 58 have NO PROBE, so arm 9
+checks only 34. Is that what G5 expects? Arm 10 (make test) was cut by MAIN's own 4 h job cap, not a failure;
+re-queued alone as 200-main-step0b. The moves wait for its verdict.
