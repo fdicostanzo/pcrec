@@ -10654,3 +10654,41 @@ peek(/\d*/) whole on stretch '5': no match -> complement HOLDS
 peek(/\d*/) whole on stretch '57': no match -> complement HOLDS
 peek(/\d*/) whole on stretch 'x': no match -> complement HOLDS
 It holds on every stretch but the empty one with a nullable A: never the wanted "A cannot match from here".
+
+### 2026-11-25 OWNER, DISCUSSION on drop-not: "what about peek(!A) ? It practically reads the same. In the same vein that hole insertion depends on the location, perhaps peek() can detect complementary. Not a ruling. Discussion"
+tags: core/filters/complement core/filters/negation core/filters/kinds core/model/places core/holes/insert core/holes/pattern core/patterns/lookaround lib/control/peek lib/control/when lib/control/when-test/not core/principles/explicit-exceptions
+
+Said after the manager's answer that a complement on a lookahead is not meaningful. HIS WORDS, whole:
+
+"I see your logic. Here's my concern: we've abstracted away the regex so the logic here is based on the fact that
+we are using a special form of regex which the user cannot see directly. I'd expect as a user if I was using
+when() that I could use the "not" operator to provide not like behavior as generally it does. I could understand
+!peek() being an error because maybe you're "not peeking" but what about peek(!A) ? It practically reads the
+same. In the same vein that hole insertion depends on the location, perhaps peek() can detect complementary. Not
+a ruling. Discussion"
+
+Class: DISCUSSION (his words: "Not a ruling. Discussion"). A CONCERN (the user does not see the regex under
+`when`; he expects the not operator to give not-like behaviour there); a concession (`!peek()` an error is
+understandable); an IDEA: `peek(!A)`, the peek detecting a complement as a hole's meaning depends on its
+position. drop-not is NOT answered.
+RUN before answering (python `re`, subject `1x2 x3 4x x`, A := `\d`; output pasted):
+peek(!A) as (?!A): x(?!\d) | WHOLE x HOLDS | SEARCHED ('x', 8) | FIND-ALL [('x', 8), ('x', 10)]
+peek(anything & !A): | WHOLE x HOLDS | SEARCHED ('x', 1) | FIND-ALL [('x', 1), ('x', 4), ('x', 8), ('x', 10)]
+(?!(?=A)) against (?!A): 0 of 1456 differ
+The manager's thoughts (told to him; every line the manager's reading; nothing applied):
+- A general form of his idea exists in the documents' own terms: the place table (core/model/places) gives every
+  place its text and mode; `!B` is "no path of B matches, in the place's text and mode". In an `&` operand that
+  is the ruled sentence ("holds on a stretch where no path of B matches it whole"); in a lookahead's place ("from
+  its point, consuming nothing") it is "no path of B from this point", PCRE's `(?!B)`. So `peek(!A)` is the
+  negative peek by the complement's own definition read in the peek's place, not by a special case.
+- Where it lives: one more row of the hole positions (core/holes/insert): a hole that is the whole content of a
+  lookaround group takes a complement and flips the group (`(?=${!A})` is `(?!A)`). Today that cell is the
+  compile error (a complement in a pattern hole), so no existing answer moves.
+- With it the `when` guard is `peek(!test)` for every kind of test (a condition, a peek, a bare pattern; the third
+  line above: 0 of 1456 differ for a peek as the test), `NOT` and `peeknot` are both unneeded, `peekback(!A)` is
+  the negative behind form, and `when(!x, z)` on a bare pattern stays a compile error whose message names
+  `when(peek(!x), z)`.
+- The cost, a look-alike: `peek(!A)` and `peek(anything & !A)` part (the first two lines above): a lone
+  complement was never `anything & !A` (lone-complement-match: the lone complement stays an error), but a reader
+  may expect it.
+- `!peek(A)` stays the compile error under this form (a complement in a sequence place).
