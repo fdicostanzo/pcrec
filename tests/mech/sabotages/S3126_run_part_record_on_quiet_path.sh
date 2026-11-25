@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # S3126 -- R-38 Part D D3 (docs/design/memfn/part_d.md rev 4 section 5.1 D3, plant p15; lane partd2).
-# The same plant as memfn/tests/run_g2_pres.sh --plant S3126 (its plant_spec; one source of the text).
+# The same plant as memfn/tests/run_g2_pres.sh --plant S3126 (its plant_spec; two copies of the text, held equal by the twin check).
 SAB_ID="S3126-run-part-record-on-quiet-path"
 SAB_FILE="memfn/src/window.c"
 SAB_SUITES="g2pres"

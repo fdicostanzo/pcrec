@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # S3127 -- R-38 Part D D3 (docs/design/memfn/part_d.md rev 4 section 5.1 D3, plant p11; lane partd2).
-# The same plant as memfn/tests/run_g2_pres.sh --plant S3127 (its plant_spec; one source of the text).
+# The same plant as memfn/tests/run_g2_pres.sh --plant S3127 (its plant_spec; two copies of the text, held equal by the twin check).
 SAB_ID="S3127-census-parser-skips-set-terms"
 SAB_FILE="docs/design/memfn/span_pick/census0.py"
 SAB_SUITES="g2pres"

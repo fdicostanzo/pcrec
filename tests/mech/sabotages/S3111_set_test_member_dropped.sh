@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # S3111 -- R-38 Part D (docs/design/memfn/part_d.md rev 4 section 5.1, plant p6'; lane partd).
-# The same plant as memfn/tests/run_g2_pres.sh --plant S3111 (its plant_spec; one source of the text).
+# The same plant as memfn/tests/run_g2_pres.sh --plant S3111 (its plant_spec; two copies of the text, held equal by the twin check).
 SAB_ID="S3111-set-test-member-dropped"
 SAB_FILE="memfn/src/ofsskip.c"
 SAB_SUITES="g2pres"
