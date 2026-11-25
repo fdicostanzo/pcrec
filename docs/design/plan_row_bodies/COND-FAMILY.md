@@ -10692,3 +10692,35 @@ The manager's thoughts (told to him; every line the manager's reading; nothing a
   complement was never `anything & !A` (lone-complement-match: the lone complement stays an error), but a reader
   may expect it.
 - `!peek(A)` stays the compile error under this form (a complement in a sequence place).
+
+### 2026-11-25 OWNER, DISCUSSION on drop-not: "when(peek()) and when() are different so they can have different semantics around !"; and a QUESTION with a GOAL: "Can these forms be converted into dfa? The goal is mostly dfa unless specifically turned off."
+tags: lib/control/when lib/control/when-test/not lib/control/peek core/filters/complement core/filters/and core/patterns/lookaround core/model/places lib/builtin/import parked/ideas/capability-optins parked/ideas/string-level-rx
+
+Said on the manager's thoughts on `peek(!A)` (the complement read in the peek's place; `when(!x, z)` on a bare
+pattern left a compile error, "what is your read on that one?"). HIS WORDS, whole:
+
+"when(peek()) and when() are different so they can have different semantics around !  Can these forms be
+converted into dfa? The goal is mostly dfa unless specifically turned off."
+
+Class: (1) an OBSERVATION in the discussion (drop-not and not-test are NOT answered): the test of `when` and the
+argument of a `peek` are different places, so `!` may mean something of its own in each. (2) a QUESTION: can
+these forms (`!`, `peek(!A)`, `when`) be converted into a DFA. (3) a GOAL he STATES: "The goal is mostly dfa
+unless specifically turned off." (not asked as a ruling; it agrees with the documents' default capability level,
+lib/builtin/import: "automaton code only by default").
+The manager's answer (told to him; the manager's reading; nothing applied; NOTHING RUN for the DFA part, no
+predicate build exists):
+- On (1): two ways `when(!x, z)` could work. (i) `when` looks at the kind of its test: not writable as a body
+  today (it needs the parked compile-time conditional). (ii) the general form of the place reading: wherever a
+  match is needed in place (a sequence spot, a pattern hole, a lookaround, a test), `!B` is the zero-width test
+  "no path of B from this point"; then `when`'s ruled body gives `when(!x, z)` the negative peek's answers with
+  no change (`(?!x)z|(?!(?!x))`, the run of the entry "on not-test" above), `!peek(A)` becomes legal too, and
+  `A SEQ !B` (B cannot follow) stands beside `A & !B` (the stretch is not B). (ii) reverses
+  lone-complement-match for every in-place position: his to rule, not presumed.
+- On (2): by the textbook closure of the regular languages, `&` (a product), `!` (determinise, then flip the
+  accepting states) and a lookaround over a regular pattern, negative included, stay regular, so each has a DFA
+  in principle; the spelling chosen (`NOT peek(A)`, `peeknot(A)`, `peek(!A)`) lowers to one regex and changes
+  nothing here. What is not regular in general: a condition comparing two labels or computing on a read, a
+  value hole over an unbounded read, captures returned to the caller. pcrec today (APPROACH.md's module table,
+  `--list-syntax`): every lookaround form is VM; the plan row [REQ-LOOKAROUND] cites "lookahead removal +
+  lookahead to DFA" as a general form. The work is the rx and graph manipulation layer of his remark to main
+  (from_main M-2).
