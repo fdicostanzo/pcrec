@@ -1,6 +1,6 @@
 # The window family split: window.c and the position primitives into small files, once
 
-DESIGN rev 2.1, lane wsplitd3, 2026-11-24 (rev 2: lane wsplitd2; rev 1: lane wsplitd; same day).
+DESIGN rev 2.2, lane wsplitd4, 2026-11-24 (rev 2.1: lane wsplitd3; rev 2: lane wsplitd2; rev 1: lane wsplitd; same day).
 Not a build go.
 Architecture: `memfn/docs/arch_review_2026-11.md` (ACCEPTED rev 4): ARV-9 (the split), ARV-16 (the
 primitives' home), ARV-5 (the set family) and ARV-7's text-buffer leaf, as one unit. This note
@@ -8,7 +8,7 @@ makes the choices that review left to the design step: §8 H1 (the cut and every
 H2 (the primitives' home), H3 (the set family) and H8's placement half (where the public entries
 live).
 
-**Read §R2.1 first, then §R2.** Rev 2.1 answers review r98
+**Read §R2.2 first, then §R2.1, then §R2.** Rev 2.1 answers review r98
 (`docs/dev/reviews/2026-11-24-r98-memfn-winsplit2.md`), every FIX-NOW (R1-R13) and DOC (R14-R26)
 item, under its RULING: every gate arm's BASE run is green on the box it is listed for (§8.4 holds
 the runs), binders.py's per-commit population keeps each peel's rows with a floor (drilled, §7.8),
@@ -30,6 +30,26 @@ dir the assembler writes (`S/asm`, never `memfn/src`).
 
 **Numbers convention.** Every count names its command and says CENSUS (the whole population, exact)
 or FLOOR. The instruments are committed in `window_split/` (own CLAUDE.md).
+
+## §R2.2 — what rev 2.2 changes, by review id (r99; TEXT only)
+
+Rev 2.2 applies review r99's RULING (`docs/dev/reviews/2026-11-24-r99-memfn-winsplit3.md`) and
+changes no code, cut or spec byte except one comment line (files.spec's kit_pos.c title, which
+`assemble.py` writes into kit_pos.c's header comment; syncheck stays `82 PASS, 0 FAIL`). Its plant
+numbers assume **C0 = lane/memfn-plantcheck PR #1 landed** (branch tip `90b0acc66`, not merged
+here), which MOVES S3012 from run_g2_pres.sh to run_g2_win.sh; rev 2.1's r98-era runs (§8.4) were
+taken on C0 at `838deefe2`, before that move (S3012 still in pres).
+
+| r99 id | disposition | where |
+|---|---|---|
+| CLOSURE-1 Linux arms have no base run | FIXED: build STEP 0, one Linux dev-box queue job by main at the base, green before C0a and C0b; every Linux-listed arm, commands and pass lines given | §8.1 |
+| S3012 (CLOSURE-1's clause) | FIXED: §8 no longer relies on `run_g2_pres.sh --plants` executing S3012; takes PR #1's pins (win 39, pres 34, proof 6, wreply 2 = 81 plants; 39 twins); re-aimed counts win 34 (33 + S3012), pres 6, proof 1 | §7.3, §8.2, §8.3, §8.4 |
+| OC1 (ruled) | the macOS awk `-v` newline is a kit test-portability defect: its OWN pre-split commit C0a (not U1: the split stays a pure move), sibling grep recorded (D203); after C0a test-memfn-finder is a Mac arm too | §8.1, §8.2, §8.4 |
+| OC2, OC3 (ruled) | Linux arms, reasons recorded (stamps MOVERS_FLOOR=1 against the Mac's 0 movers; x86 text on arm64) | §8.4 |
+| CLOSURE-2 G5's mech half | DOC: REACH_ONLY mech named as its own Linux arm with its reason and its Step 0 base run | §8.2 G5, §8.3 |
+| CLOSURE-3 G3's id spelling | DOC: the re-aimed ids listed exactly, not as ranges | §8.2 G3 |
+| CLOSURE-4 kit_pos.c's title | DOC: files.spec's title names `kit_run_set` and `kit_run_at` | files.spec |
+| (COORD-2) G1.8's binders command | DOC: sets `TMPDIR` | §8.2 G1, §8.4 |
 
 ## §R2.1 — what rev 2.1 changes, by review id (r98)
 
@@ -572,6 +592,9 @@ gate runs. With it, G1 runs each runner's `--plant-check` per commit (seconds) a
 [SABANCHOR]'s plant pass (its floor 81) counts through the same applier. The executing gates are
 G3's `--plants` runs at the tip, [rev2.1] R2: on the Mac `run_g2_win.sh --plants` (33 re-aimed
 plants) and `run_proof.sh --plants` (1); on Linux only `run_g2_pres.sh --plants` (7), §8.2/§8.3.
+[rev2.2] r99: with PR #1 landed S3012 is a run_g2_win.sh plant, so the counts are win 34 re-aimed (the 33
+plus S3012), pres 6, proof 1; the Mac arm `run_g2_win.sh --plants` executes S3012 and Linux's pres arm
+does not (§8.2).
 
 Re-spelled plants (`OK*`, the FROM changes): S1402 (O3), S1405, S1428, S3106 (H3), S1410 (H3
 `full`). TO-only: S1427 ([rev2.1] R25: its TO calls `count` AND `in_set`, re-spelled
@@ -693,7 +716,48 @@ U24 2; U8 floor and U9 test move none). The lists below name the non-peel units'
 are its file's rows in that output.
 
 - **C0 (outside the unit):** lane/memfn-plantcheck lands (FUW-12: S1423, S3092, S1224, S3064
-  re-aimed; the one applier; `--plant-check`).
+  re-aimed; the one applier; `--plant-check`). [rev2.2] r99: PR #1's final state (branch tip
+  `90b0acc66`) also MOVES S3012 from run_g2_pres.sh to run_g2_win.sh; its pins are win 39, pres 34,
+  proof 6, wreply 2 = 81 plants and 39 twins (win 1, pres 34, proof 4; read with `git show
+  lane/memfn-plantcheck:scripts/m6read_check_sab_anchors.py | grep -A5 'PLANT_PINS = {'`). Every
+  plant count below assumes this state.
+- **STEP 0 (rev 2.2, r99 CLOSURE-1; before C0a, before C0b, after C0):** ONE Linux dev-box queue job,
+  run by main at the base (C0 landed, nothing of the unit applied), whose GREEN is the build's
+  precondition: no unit commit starts until it is green. It runs every Linux-listed arm as its own
+  command (no arm stops another), `TMPDIR` the temp root, from the repo root, each with its pass line:
+
+  | arm | command | passes when |
+  |---|---|---|
+  | strict | `make strict` | rc 0, no `*** [` Error line |
+  | finder (until C0a) | `make test-memfn-finder` | rc 0, `checks failed: 0` |
+  | stamps (OC2) | `make test-memfn-stamps` | rc 0, `checks failed: 0` |
+  | g2 (OC3) | `make test-memfn-g2` | rc 0, `checks failed: 0` |
+  | win plain | `bash memfn/tests/run_g2_win.sh` | rc 0, `checks failed: 0` (v_section included) |
+  | pres | `bash memfn/tests/run_g2_pres.sh` | rc 0, `checks failed: 0` |
+  | pres plants | `bash memfn/tests/run_g2_pres.sh --plants` | rc 0, 34 `PLANT <id> RED ...` lines, no `GREEN`/`OWED` line |
+  | g2v, simdfloor mech rows | `bash tests/mech/run_sabotage_matrix.sh S3525 S3526 S3515 S3530 S3532 S3533 S3534 S3535 S3536` | rc 0, `== mech run COMPLETE: 9 rows (unexpected: 0, undetected: 0, unreached: 0, anomalies: 0` |
+  | G5 mech half | `REACH_ONLY=1 bash tests/mech/run_sabotage_matrix.sh` over the re-pointed rows (`repoint.py`'s list) | rc 0, `mech-reach-only: DONE rc=0` |
+  | G5 `make test` | `make test` (a boxqueue stage) | no `\*\*\* \[(Makefile:[0-9]+: )?test-` Error line (the make verdict, never a FAIL grep) |
+
+  The pass form for `--plant`/`--plants` is: a DETECTED plant prints `PLANT <id> RED ...` and the
+  run exits 0; `PLANT <id> GREEN (NOT DETECTED; ...)` means NOT DETECTED (as do `RED BUT NOT ...`
+  and `OWED`), and any such line makes the run exit 1. `run_g2_win.sh --plants` is not in Step 0: it
+  is a Mac arm (§8.3), but main may also queue it on Linux, where it is green by the same form (39
+  RED). If any Step 0 arm is red, the build STOPS and the manager rules; an arm red at the base is not
+  listed for the box (the r98 rule, now applied to Linux too).
+- **C0a (rev 2.2, r99 OC1; its own commit, before the split and before C0b):** the macOS awk `-v`
+  newline defect, `tests/memfn/run_purity_reach.sh`'s `awk -v nv="$NEVER"` (a four-line value),
+  passes NEVER to awk through `ENVIRON` or a file. A kit test-portability defect: it is NOT fixed in U1,
+  because the split stays a pure move. Sibling sites (D203), `grep -rnE 'awk[^|]* -v '
+  memfn/tests tests/memfn tests/lib`, every site read: ONE site holds a multi-line `-v` value,
+  this one (`run_purity_reach.sh:70`, `nv`); its siblings with `-v` values are all one-line (0
+  other sites): `tests/memfn/run_finder.sh:200` (`o`, `n`: one row's line), `run_deleg_sites.sh`
+  :160/:169/:180/:205/:208, `run_arm_pins.sh`:150/:154/:320, `run_arm_reach.sh`:118/:119,
+  `run_link_checks.sh`:89/:244/:257, `run_targets.sh`:177, `memfn/tests/check_targets.sh`:426,
+  `run_g2.sh`:421/:804/:1224/:1234/:1245, `run_g2_pres.sh`:505, `tests/lib/table.sh`:182,
+  `spec_extract.sh`:27/:64, `shard_split.sh`:31, `size_count.sh`:150, `run_gen_timeout_tests.sh`
+  :438, `load_guard.sh`:91/:101. After C0a, test-memfn-finder is a Mac arm too (its base run is C0a's
+  own tree, green when `checks failed: 0` on the Mac).
 - **C0b:** [rev2.1] R9: FIRST F1 (memfn/src/CLAUDE.md, 12,277 B of its 12,288 B limit, moves
   window.c's detail to memfn/NOTES.md, so this and every later commit can add its file's line);
   then ARV-7's leaf, `kit_kb.c <- compose.c 27-115` (W4), with kit_kb.c's PROVENANCE row and
@@ -753,7 +817,9 @@ fail, so it is not listed for that box.
      target after it;
   2. on the Mac `make CC=gcc-16 test-memfn-rows test-memfn-link`; on Linux `make test-memfn-rows
      test-memfn-finder test-memfn-link`. [rev2.1] STOP RULE, measured at the base (§8.4):
-     `test-memfn-finder` is RED on the Mac at the base, so it is LINUX's (OPEN CHOICE OC1, §8.4):
+     `test-memfn-finder` is RED on the Mac at the base, so it is LINUX's until C0a (OC1, ruled by r99:
+     C0a, §8.1, fixes it in its own commit; from C0a on it is a Mac arm too, and the Mac line becomes
+     `make CC=gcc-16 test-memfn-rows test-memfn-finder test-memfn-link`):
      its purity-reach section (`tests/memfn/run_purity_reach.sh`, which run_finder.sh runs) passes
      the four NEVER lines to awk as one `-v nv=` value, and macOS's awk (20200816) refuses a
      newline in a `-v` string (`awk: newline in string`), so all 49 REACH/UNREACHED rows read
@@ -762,12 +828,12 @@ fail, so it is not listed for that box.
   3. [SABANCHOR] `python3 scripts/m6read_check_sab_anchors.py`;
   4. `python3 tests/memfn/decider_census.py --root .` (test-memfn-rows runs it too);
   5. the purity reach table: no command of its own (run_purity_reach.sh takes ROOT WORK CC FX from
-     run_finder.sh); it runs inside test-memfn-finder, so on Linux only until OC1 is ruled;
+     run_finder.sh); it runs inside test-memfn-finder, so on Linux only until C0a (OC1, ruled);
   6. each runner's `--plant-check` (C0): `memfn/tests/run_g2_win.sh`, `memfn/tests/run_g2_pres.sh`,
      `tests/memfn/run_proof.sh`, `tests/memfn/run_wreply.sh` (static: no build, any host);
   7. `python3 -I $D/unused.py memfn/src <the family files + every edited file>` (syntax-only does
      not report an unused static);
-  8. `CC=gcc-16 python3 -I $D/binders.py . . --compile` (Linux `CC=gcc`): the W26 probe, every
+  8. `TMPDIR=$PCREC_TMPDIR CC=gcc-16 python3 -I $D/binders.py . . --compile` (Linux `CC=gcc`; COORD-2: TMPDIR always set): the W26 probe, every
      population at or above its floor (§7, §7.8), seconds to minutes.
 - **G2, byte identity per commit:** `scripts/emit_sweep.py --ref <the unit's base> --tree-rev
   <commit>` (W28: `--ref` the base the unit is cut from, not T), three arms: default;
@@ -785,9 +851,12 @@ fail, so it is not listed for that box.
   Compiling or RUNNING the emitted x86-64-v3 code is G3's and is Linux's.
 - **G3, at the tip** (the gates that EXECUTE re-aimed plants, W22), [rev2.1] R2, by box:
   - the Mac: `memfn/tests/run_g2_win.sh --plants` (its plant path builds the planted kit and runs
-    `one_run` only: no target loop, no `v_section`, host-independent; EXECUTES its 33 re-aimed
-    plants S1400-S1428, S1543, S2986-S2991, S3040, S3041, S3084-S3096, S3116-S3118, read per
-    plant); `tests/memfn/run_proof.sh` and `run_proof.sh --plants` (S1419, re-keyed
+    `one_run` only: no target loop, no `v_section`, host-independent; EXECUTES its 34 re-aimed
+    plants, the ids exactly (rev 2.2, r99 CLOSURE-3, `binders.py` over the assembled tip with PR #1's
+    runners; rev 2.1's ranges over-read): S1400, S1401, S1402, S1403, S1404, S1405, S1406, S1407, S1409,
+    S1410, S1422, S1423, S1425, S1426, S1427, S1428, S1543, S2986, S2987, S2989, S2991, S3040, S3041, S3084,
+    S3089, S3090, S3091, S3092, S3093, S3096, S3116, S3117, S3118 (the 33 of r98/r99's runs) and S3012
+    (moved here by PR #1; its detector `^FAIL: site inrun#[0-9]+ DECIDE: `), read per plant); `tests/memfn/run_proof.sh` and `run_proof.sh --plants` (S1419, re-keyed
     window_check.c). [rev2.1] STOP RULE, measured at the base: `run_g2.sh --quick` is NOT a Mac
     arm. Bare, it exits 2 (`build/libpcrec_mftrace.a missing (build pcrec first)`); as `make
     CC=gcc-16 test-memfn-g2` (which builds that library) it is RED on the Mac at the base: its window
@@ -801,8 +870,8 @@ fail, so it is not listed for that box.
   - Linux only: `run_g2_win.sh` plain (it runs `v_section`, i.e. `memfn/tests/g2_vspan.py both`,
     which is red on a host that cannot run x86-64-v3 text: "a skip is not a pass"; so on the Mac
     plain `run_g2_win.sh` is red at the base and is not listed); `memfn/tests/run_g2_pres.sh` plain
-    and `--plants`, which EXECUTES its 7 re-aimed plants (S3012 stop; S3047, S3110, S3112, S3125,
-    S3126 parts; S3106 kit_pos) (on the Mac its `host_has` accepts x86-64, whose text does not
+    and `--plants`, which with PR #1 EXECUTES its 6 re-aimed plants (S3047, S3110, S3112, S3125,
+    S3126 parts; S3106 kit_pos; S3012 is no longer here, rev 2.2: it is run_g2_win.sh's), 34 plants in all (on the Mac its `host_has` accepts x86-64, whose text does not
     compile on arm64, and its x86-only plants S3099/S3101/S3102 can never read RED there, so its
     rc is red at the base: not a Mac gate); `run_g2.sh` (full); and the mech rows whose detection
     only Linux suites execute, run as mech rows (not REACH_ONLY) at the tip: S3525 (re-spelled
@@ -815,10 +884,14 @@ fail, so it is not listed for that box.
   family names and the 2 TIE predicates) and -3 (`pcrec_mf_kit_tie_takes`,
   `pcrec_mf_kit_tie_member_key`, `pcrec_mf_wf_part_site`, made static); r98 measured B 178 ->
   tip 257 over every memfn/src object; R13 moves two externals between files and changes no name.
-- **G5, at the tip, Linux:** REACH_ONLY mech over the re-pointed rows, then `make test` (a
+- **G5, at the tip, Linux:** REACH_ONLY mech over the re-pointed rows (`REACH_ONLY=1 bash
+  tests/mech/run_sabotage_matrix.sh <ids>`, pass `mech-reach-only: DONE rc=0`), then `make test` (a
   boxqueue job). [rev2.1] Stated: G5 is NOT a Mac gate in this unit: `make test` measures ~100-105
   minutes on the Mac (docs/testing.md), so its base run is not taken here, and an arm with no
-  base run on a box is not listed for it (R1's rule).
+  base run on a box is not listed for it (R1's rule). [rev2.2] r99 CLOSURE-2, the mech half is its
+  own arm: no Mac base run of it was taken (the r99 re-runs list none), so by R1's rule it is not a
+  Mac arm; its rows include the x86-64-v3 detectors (S3525/S3526 g2v; S3515, S3530, S3532-S3536
+  simdfloor), whose suites are Linux's (OC3). Both halves have a Linux base run in Step 0 (§8.1).
 - **G6:** `-fstack-usage` (run_link_checks.sh's R-28 recipe, which `make test-memfn-link` runs: no
   kit frame over its cap, population floor) at the base AND the tip: no frame over 4 KB, and every
   frame that grew past 3 KB from its base value named in the delivery. The base run is G1 arm 2's
@@ -836,18 +909,25 @@ fail, so it is not listed for that box.
 
 | gate | the Mac (aarch64, gcc-16; the Mac suite lock, not boxqueue) | Linux (x86, boxqueue) |
 |---|---|---|
-| G1 | arms 1 (syncheck.sh), 2 (`test-memfn-rows test-memfn-link`), 3, 4, 6, 7, 8, every commit; NOT `make strict`, NOT `test-memfn-finder` (with its purity reach, arm 5: OC1) | `make strict` + arms 1-8 with `test-memfn-finder`, every commit |
+| G1 | arms 1 (syncheck.sh), 2 (`test-memfn-rows test-memfn-link`), 3, 4, 6, 7, 8, every commit; NOT `make strict`; `test-memfn-finder` (with its purity reach, arm 5) from C0a on (OC1) | `make strict` + arms 1-8 with `test-memfn-finder`, every commit |
 | G2 | all three arms + w32reach.py (text only) | yes |
-| G3 | `run_g2_win.sh --plants` (33 plants), `run_proof.sh` + `--plants` (S1419); NOT `run_g2.sh`/`test-memfn-g2` (OC3) | REQUIRED: `make test-memfn-g2` (run_g2.sh --quick), plain `run_g2_win.sh` (with g2_vspan), `run_g2_pres.sh` + `--plants` (its 7 plants), `run_g2.sh`, `g2_vspan.py`, mech S3525/S3526 (g2v) and S3515/S3530/S3532-S3536 (simdfloor) executed |
+| G3 | `run_g2_win.sh --plants` (34 re-aimed plants, S3012 among them), `run_proof.sh` + `--plants` (S1419); NOT `run_g2.sh`/`test-memfn-g2` (OC3) | REQUIRED: `make test-memfn-g2` (run_g2.sh --quick), plain `run_g2_win.sh` (with g2_vspan), `run_g2_pres.sh` + `--plants` (its 6 re-aimed of 34 plants), `run_g2.sh`, `g2_vspan.py`, mech S3525/S3526 (g2v) and S3515/S3530/S3532-S3536 (simdfloor) executed |
 | G4, G6 | yes | yes |
 | G7 | the three defines (grep); NOT `make test-memfn-stamps` (OC2) | the defines + `make test-memfn-stamps` |
-| G5 | not listed (no base run: ~100 min) | REQUIRED at the tip |
+| G5 | not listed (`make test`: ~100 min, no base run; REACH_ONLY mech: no base run, x86-64-v3 rows) | REQUIRED at the tip; both halves have their Step 0 base run |
 
 `scripts/boxqueue` needs flock and /proc (Linux); on the Mac heavy stages take the Mac suite lock.
 The Linux arms are OWED by the build lane at the tip, not run by this design lane (its brief: the
-Linux arms are recorded as Linux-owed, not run).
+Linux arms are recorded as Linux-owed, not run). [rev2.2] r99 CLOSURE-1: each has its BASE run first,
+in Step 0 (§8.1), green before C0a and C0b.
 
 ### 8.4 The base runs on the Mac (r98 R1/R2's rule)
+
+[rev2.2] Branch state: these runs are r98/r99-era, on C0 at `838deefe2`, BEFORE PR #1's S3012 move
+(S3012 still in run_g2_pres.sh). With C0 = PR #1 final (`90b0acc66`) the runner counts are: `run_g2_win.sh
+--plant-check` 39 plants (this table: 38), `run_g2_pres.sh --plant-check` 34 (35), `--plants` 39 of 39 and
+34 of 34 `RED`; proof 6 and wreply 2 unchanged; the re-aimed counts win 34, pres 6, proof 1. They are not
+re-run here (text lane, no build); Step 0 and the build's first G1 re-take them on the PR #1 state.
 
 The base: a `git archive` of B' (`79388197d`) in `$S/base`, built `nice make CC=gcc-16 -j4` (rc 0),
 copied to `$S/basec0` with C0's 12 runner/script files (`git diff --name-only 79388197d 838deefe2
@@ -859,7 +939,7 @@ starts from. Every Mac arm below ran there as its own command, under the Mac sui
 |---|---|---|---|
 | G1.1 strict compile | `bash $D/syncheck.sh $S/c gcc-16` (`$S/c` = a copy of the base's `memfn/`) | 0 | `syncheck: 40 PASS, 0 FAIL (gcc-16)` |
 | G1.2 (Mac) | `make CC=gcc-16 test-memfn-rows test-memfn-link` | 0 | `checks failed: 0` (21 s) |
-| G1.2 finder | `make CC=gcc-16 test-memfn-rows test-memfn-finder test-memfn-link` | **2** | `make: *** [test-memfn-finder] Error 1` (`checks passed: 28889`, `checks failed: 49`: the 49 purity-reach rows, BSD awk; OC1) -> LINUX |
+| G1.2 finder | `make CC=gcc-16 test-memfn-rows test-memfn-finder test-memfn-link` | **2** | `make: *** [test-memfn-finder] Error 1` (`checks passed: 28889`, `checks failed: 49`: the 49 purity-reach rows, BSD awk; OC1) -> LINUX until C0a |
 | G1.3 [SABANCHOR] | `python3 scripts/m6read_check_sab_anchors.py` | 0 | `all runner plants apply` |
 | G1.4 decider census | `python3 tests/memfn/decider_census.py --root .` | 0 | `checks failed: 0` |
 | G1.6 plant-check | `bash memfn/tests/run_g2_win.sh --plant-check` | 0 | `plant-check: 38 plants, 38 edits, 0 bad` |
@@ -867,7 +947,7 @@ starts from. Every Mac arm below ran there as its own command, under the Mac sui
 | | `bash tests/memfn/run_proof.sh --plant-check` | 0 | `plant-check: 6 plants, 6 edits, 0 bad` |
 | | `bash tests/memfn/run_wreply.sh --plant-check` | 0 | `plant-check: 2 plants, 4 edits, 0 bad` |
 | G1.7 unused | `(cd memfn/src && python3 -I $D/unused.py . window.c presence.c compose.c finder.c ofsskip.c precheck.c pffind.c generic.c)` | 0 | (no UNUSED line) |
-| G1.8 binders | `CC=gcc-16 python3 -I $D/binders.py . . --compile` | 0 | `binders: rows 4 rows, 4 OK, 0 bad, floor 4` (mech 187/187, g2 75/75, purity 49/49, census 67/67, all at their floors) |
+| G1.8 binders | `TMPDIR=$S/tmp CC=gcc-16 python3 -I $D/binders.py . . --compile` | 0 | `binders: rows 4 rows, 4 OK, 0 bad, floor 4` (mech 187/187, g2 75/75, purity 49/49, census 67/67, all at their floors) |
 | G2 arm 1 | `python3 scripts/emit_sweep.py --tree . --ref-bin build/pcrec --bin $S/pcrec_side_b --out $S/es1` | 0 | `emit_sweep: DONE rc=0` (467 s; every stream `movers=0 asymmetric=0`) |
 | G2 arm 2 | same + `--extra=-fmemfn-simd=x86-64` (`--out $S/es2`) | 0 | `emit_sweep: DONE rc=0` (581 s; arm differ 62/62 c-default >= floor 22, 35/35 c-vm >= 19) |
 | G2 arm 3 | same + `--extra=-fmemfn-simd=x86-64-v3 --no-differ-floor` (`--out $S/es3`) | 0 | `emit_sweep: DONE rc=0` (578 s; differ 90/90 c-default, 35/35 c-vm; `(--no-differ-floor: an unpinned arm was WAIVED, not checked)`) |
@@ -886,23 +966,24 @@ starts from. Every Mac arm below ran there as its own command, under the Mac sui
 The arms red at the base are NOT bent: each is moved to Linux in §8.2/§8.3 with its evidence and
 an open choice for the kit manager:
 
-- **OC1 (test-memfn-finder's purity reach on the Mac).** `tests/memfn/run_purity_reach.sh` passes
+- **OC1 (test-memfn-finder's purity reach on the Mac; RULED by r99: its own pre-split commit C0a, §8.1).** `tests/memfn/run_purity_reach.sh` passes
   its four NEVER lines as one awk `-v nv="$NEVER"` value; macOS's awk refuses it (`echo x | awk -v
   nv="$(printf 'a\nb')" '{print nv}'` -> `awk: newline in string a b... at source line 1`, rc 2),
   so every row with text reads "its text does not occur exactly once in window.c" (49 FAIL lines,
   all purity reach; everything else in test-memfn-finder passed). This predates the unit, and
-  `make test` on the Mac carries the same red. Choices: (a) U1, which rewrites run_purity_reach.sh
+  `make test` on the Mac carries the same red. [rev2.2] RULED (r99): choice (a)'s fix, but as its OWN
+  commit C0a and NOT inside U1 (the split stays a pure move); sibling grep in §8.1. The choices as put: (a) U1, which rewrites run_purity_reach.sh
   anyway (§7.4), passes NEVER through `ENVIRON` or a file, a tests/ edit inside U1; then the arm's
   base run on the Mac is U1's own tree, and test-memfn-finder joins the Mac's G1 from U1 on, once
   that run is green; or (b) the arm stays Linux-only for the unit. This lane leans (a) (U1 edits
   the file in any case; the Mac then binds the 49 rows per commit), but did not edit tests/.
-- **OC3 (test-memfn-g2 / run_g2.sh --quick on the Mac).** Its window section runs plain
+- **OC3 (test-memfn-g2 / run_g2.sh --quick on the Mac; RULED by r99: Linux's, reason: x86 text on arm64).** Its window section runs plain
   run_g2_win.sh, whose `v_section` (g2_vspan.py) compiles x86-64-v3 text (`#error "this file was
   generated for another CPU family"` on arm64), its window loop-report floor reads `5 < 7` on this
   host (plain and traced), and its presence section is run_g2_pres.sh, red on arm64 by its x86-64
   pass (r98 READY-3). Host-limited, outside the unit: the arm is Linux's; the Mac keeps the three
   plant-executing runs above. Choice: none proposed beyond Linux.
-- **OC2 (test-memfn-stamps on the Mac).** run_libc_census.sh's SIMD-on population has floor 1
+- **OC2 (test-memfn-stamps on the Mac; RULED by r99: Linux's, reason: `MOVERS_FLOOR = 1` in tests/memfn/libc_census.py against 0 SIMD-on movers on an aarch64 host).** run_libc_census.sh's SIMD-on population has floor 1
   and reads 0 on an aarch64 host (no SIMD row renders under the host's family default). A
   host-limited check, outside the unit: the arm is Linux's; the Mac's G7 is the defines' grep.
   Choice: none proposed beyond Linux (a per-host floor is the check's owner's, not this unit's).

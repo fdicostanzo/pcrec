@@ -3,7 +3,7 @@
 # Table C's C-model rows (verify); every other new file is kit original.
 prov  window_stop.c    original pcrec-memory-functions text, except the A-model rows, which transcribe pcrec 7050f8652's src/opt/prefix_k.c selection (verify_cost, model_cost, the scan loop), relicensed 0BSD by its author (D145 addendum 1) (memfn/PROVENANCE.md).
 prov  window_verify.c  original pcrec-memory-functions text, except the C-model rows, which transcribe pcrec 7050f8652's src/opt/prefix_k.c selection (the greedy verify pick, its exchange sort, the materiality test), relicensed 0BSD by its author (D145 addendum 1) (memfn/PROVENANCE.md).
-title kit_pos.c        THE POSITION QUESTIONS (ARV-5, ARV-16): a 256-bit position set's membership, count, first member, shape, members and fullness, its spelling class, the mass of a position multiset (kit_mass, from presence.c) and the run member pick (kit_run_member).
+title kit_pos.c        THE POSITION QUESTIONS (ARV-5, ARV-16): a 256-bit position set's membership, count, first member, shape, members and fullness, its spelling class, the mass of a position multiset (kit_mass, from presence.c), the run member pick (kit_run_member) and the run set and its test (kit_run_set, kit_run_at).
 title kit_pick.c       THE TIE TABLE (window_site.md §2.1) and the functions that search it: the pick's one before-relation and the two TIE predicates (O3).
 title window_cands.c   THE DECISION's candidate list (span_pick.md §The shape step 2): cands, rd_set, rd_core, wf_extent, run_role, pinned_yes.
 title window_check.c   THE STATEMENT'S RULES (wf_check).

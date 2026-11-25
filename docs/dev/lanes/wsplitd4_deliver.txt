@@ -1,0 +1,5 @@
+report: docs/dev/lanes/wsplitd4_report.md
+sections: Summary; Items applied; Re-runs; STATE AT HANDOFF
+nonempty: all
+commit: yes
+owed: none
