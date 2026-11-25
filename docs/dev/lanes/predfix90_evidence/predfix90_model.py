@@ -184,7 +184,7 @@ def _directly(t, br, enc, p, e):
     if not enc:
         return False
     nm, s_, c_, e_ = enc[-1]
-    return t[c_:e_].strip() == t[p:e].strip() or t[c_:e_].strip() == "(%s)" % t[p:e].strip()
+    return t[c_:e_].strip() == t[p:e].strip()
 
 
 def _match(steps, names):
@@ -230,7 +230,7 @@ def walk10(t, lo, hi, steps, target, outside, env, bd, heads, route, depth=0, la
                 raise Und("a provided call %s holds a part" % nm)
             continue
         nm = s[3]
-        labelled = _directly(t, br, enc, p, e) or (not enc and lab_above)
+        labelled = _directly(t, br, enc, p, e) or (not enc and lab_above and raw.strip() == t[p:e].strip())
         sub = []
         if kind == "bind":
             if rest and rest[0] == nm:
@@ -320,7 +320,8 @@ def path10(t, binds):
     out, last = [], 0
     for pos, rd in reads:
         steps = rd.split(".")
-        if steps[0] in ("rx",) or steps[0] in PROV or steps[0] in MACROS:
+        if steps[0] == "rx" or (steps[0] not in bd and steps[0] not in heads and (steps[0] in PROV or
+                                                                                  steps[0] in MACROS)):
             continue
         new = rd
         bad = next((s_ for s_ in steps[1:] if s_.startswith("_")), None)
@@ -329,7 +330,8 @@ def path10(t, binds):
                                (rd, RULE2_10, bad))
         try:
             tt, lo, hi, outside, env, sk = _start10(steps[0], t, bd, heads, {})
-            res = walk10(tt, lo, hi, steps[1:-1], steps[-1], outside, env, bd, heads, [steps[0]])
+            res = walk10(tt, lo, hi, steps[1:-1], steps[-1], outside, env, bd, heads, [steps[0]],
+                         lab_above=sk in ("label", "sent"))
         except Und:
             res = None
         if res:
@@ -389,4 +391,164 @@ def prog(expr, binds=(), **opts):                            # noqa: F811
         h = head_of(b)
         n_, _, body = b.partition(" := ")
         b2.append(n_ + " := " + wrap10(body))
-    return P10F["prog"](wrap10(expr), b2, **opts)
+    e2 = wrap10(expr)
+    for mm in re.finditer(r"(?<![\w.$])(_[A-Za-z]\w*)\.", strip_lits(e2)):
+        priv = mm.group(1)
+        if re.search(r"\[%s = " % re.escape(priv), e2) and not s10("q2x"):
+            path10(e2, list(binds))                          # decided first: a wall below the start still refuses
+            e2 = re.sub(r"(?<![\w.$])%s(?![\w])" % re.escape(priv), "p" + priv + "_start", e2)
+    return P10F["prog"](e2, b2, **opts)
+
+
+# ================================================================== the GRID's evaluator: the path rules, SEPARATE
+# It reads no program text: a cell is an abstract stack of layers between the start and the target `h` (the group
+# of A := /(?<h>\d)/), and the rules are applied to that stack as the documents word them. The program text the
+# engine runs and the regex the answers are checked against are both BUILT from the stack, mechanically.
+#   layer: ("P", name) a public part label | ("_x",) a private one | ("_",) the blank label | ("E",) the part is
+#   one operand of an expression (`(.. SEQ ",")`) | ("H",) the part is in a hole of a literal (`/${..},/`) |
+#   ("Bd", name) a binding boundary (the part below is the text of a binding `name`, used here).
+GRULE = {   # the deciding sentences, each READ from its piece (pinned by GRID)
+    1: ("core/labels/rule/paths", "1. in the label DAG there is a target label and a starting label. The starting "
+                                  "label has at least one path to the target label"),
+    2: ("core/labels/rule/paths", "2. the path may not contain any underscore labels full or prefix unless the "
+                                  "underscore prefix label is the start"),
+    3: ("core/labels/rule/paths", "3. within a binding, any label on the path may be used as a start label"),
+    4: ("core/labels/rule/paths", "4. if a legal path exists a.b.c and c can be unambiguously referenced from a, then "
+                                  "b can be skipped a.c"),
+    "4r": ("core/labels/rule/paths", "rule 4 applies repeatedly"),
+    5: ("core/labels/rule/paths", "5. From outside, the start is the binding's name, a macro's name at its call, or a "
+                                  "label written on the use. The path then continues into that binding's tree by "
+                                  "rules 1, 2 and 4."),
+    6: ("core/labels/rule/paths", "6. A part used alone inside a binding is crossed from outside as an underscore "
+                                  "label is, and is a start inside its own binding."),
+    "e": ("core/labels/rule/paths", "never a licence to cross a wall below it"),
+    "sent": ("core/labels/rule/sent-label-wall", "a compile error by rule 2 for now"),
+    "short": ("core/labels/rule", "whatever B's body does with the spot"),
+}
+START_KINDS = ("in", "in_", "bind", "use", "call", "arg", "sent", "short")
+WALLS10 = ("_x", "_")
+
+
+def g_eval(kind, layers, steps):
+    """(verdict, [rule keys]) by the rules alone, on the abstract stack: "legal" | "refused"."""
+    if kind == "arg":
+        return "legal", ["e"]                                # the caller's label: a start, the body's walls above it
+    if kind == "short":
+        return "legal", ["short"]                            # shorthand-is-callers, whatever the body does
+    segs, cur, und = [], [], False
+    for ly in layers:
+        if ly[0] == "Bd":
+            segs.append(cur)
+            cur = []
+        else:
+            cur.append(ly)
+    segs.append(cur)
+    for j, sg in enumerate(segs):
+        for ly in sg:
+            if ly[0] in WALLS10:
+                return "refused", ["sent" if kind == "sent" else 2] + ([5] if j else [])
+        outside = j > 0 or kind in ("bind", "call", "use")
+        labelled = bool(sg) and sg[-1][0] in ("P",) + WALLS10 or (j == 0 and not sg and kind in ("in", "in_",
+                                                                                                 "sent"))
+        if outside and not labelled:
+            return "refused", [6] + ([5] if j else [])
+        if not outside and not labelled and j + 1 < len(segs):
+            und = True
+    pubs = [ly[1] for ly in layers if ly[0] == "P"]
+    k = 0
+    for p in pubs:
+        if k < len(steps) and steps[k] == p:
+            k += 1
+    if k < len(steps):
+        return "refused", [1]
+    if und and not s10("q16"):
+        return "undecided", ["alone-as-middle"]
+    skipped = len(pubs) - len(steps)
+    if s10("q3") and skipped >= 2:
+        return "refused", [4]
+    return "legal", [1] + ([5] if kind in ("bind", "use", "call") or len(segs) > 1 else []) + \
+        ([3] if kind in ("in", "in_") else []) + ([4] if skipped >= 1 else []) + (["4r"] if skipped >= 2 else []) + \
+        ([2] if kind == "in_" else [])
+
+
+def g_build(kind, layers, steps):
+    """(expression, bindings, the expected regex) built from the stack, mechanically."""
+    leaf = {"call": "rx", "arg": "rx", "short": "rx", "sent": "v"}.get(kind, "A")
+    frag, rx, binds = leaf, "(?P<h>[0-4])", []
+    for ly in reversed(layers):
+        if ly[0] == "P" or ly[0] in WALLS10:
+            frag = "[%s = %s]" % (ly[1] if ly[0] == "P" else ly[0], frag)
+        elif ly[0] == "E":
+            frag, rx = '(%s SEQ ",")' % frag, rx + ","
+        elif ly[0] == "H":
+            frag, rx = "/${%s},/" % frag, rx + ","
+        elif ly[0] == "Bd":
+            binds.append("%s := %s" % (ly[1], frag))
+            frag = ly[1]
+    path = ".".join(list(steps) + ["h"])
+    if kind in ("in", "in_"):
+        s_ = "s" if kind == "in" else "_s"
+        return '[%s = %s] SEQ "!" & (%s.%s: <5)' % (s_, frag, s_, path), [A_H] + binds, rx + "!"
+    if kind == "bind":
+        return "X & (X.%s: <5)" % path, [A_H] + binds + ['X := %s SEQ "!"' % frag], rx + "!"
+    if kind == "use":
+        return "[c = X] & (c.%s: <5)" % path, [A_H] + binds + ['X := %s SEQ "!"' % frag], rx + "!"
+    if kind == "sent":
+        return "R(x:, A) & (x.%s: <5)" % path, [A_H, "R(l:, v) := /${[l = %s]}xx/" % frag], rx + "xx"
+    body = "B(rx) := /${%s}xx/" % frag
+    if kind == "call":
+        return "B(A) & (B.%s: <5)" % path, [A_H, body], rx + "xx"
+    if kind == "arg":
+        return "B([a = A]) & (a.h: <5)", [A_H, body], rx + "xx"
+    return "B(A) & (A.h: <5)", [A_H, body], rx + "xx"
+
+
+def g_cells():
+    """the grid: start kind x stack (depth 0-3: labels, walls, an expression, a hole, up to two binding levels) x
+    every subsequence of the stack's public labels as the path's middle steps."""
+    import itertools
+    toks = ("P", "_x", "_", "E", "H", "Bd")
+    out = []
+    for kind in START_KINDS:
+        for n in range(0, 4):
+            for combo in itertools.product(toks, repeat=n):
+                if kind in ("call", "arg", "short", "sent") and "Bd" in combo:
+                    continue
+                if kind == "sent" and ("E" in combo or "H" in combo):
+                    continue
+                if combo.count("Bd") > 2:
+                    continue
+                layers, pn, bn = [], iter("nmk"), iter(("Y1", "Y2"))
+                for t_ in combo:
+                    layers.append(("P", next(pn)) if t_ == "P" else ("Bd", next(bn)) if t_ == "Bd" else (t_, t_))
+                pubs = [ly[1] for ly in layers if ly[0] == "P"]
+                subs = [s for r in range(len(pubs) + 1) for s in itertools.combinations(pubs, r)]
+                if kind in ("arg", "short"):
+                    subs = [()]
+                for st in subs:
+                    out.append((kind, tuple(layers), st))
+    return out
+
+
+def g_texts(rx):
+    """WHOLE / SEARCHED / FIND-ALL subjects made from the expected regex itself (its one digit 3 or 7)."""
+    lit = rx.replace("(?P<h>[0-4])", "\0")
+    hold, fail = lit.replace("\0", "3"), lit.replace("\0", "7")
+    return [hold, fail], fail + " " + hold, hold + " " + fail + " " + lit.replace("\0", "4")
+
+
+def g_run(cells):
+    """each cell: the evaluator's verdict, the engine's run, and (legal) the answers against the built regex."""
+    res = []
+    for kind, layers, steps in cells:
+        want, why = g_eval(kind, layers, steps)
+        e, b, rx = g_build(kind, layers, steps)
+        Pg, err = run(e, b)
+        got = "legal" if Pg is not None else ("CRASH" if err.startswith("CRASH") else "refused")
+        diff = None
+        if Pg is not None and want == "legal":
+            wh, sr, fa = g_texts(rx)
+            q = wh + [sr, fa]
+            diff = ndiff(answers(Pg, q), answers(Re(rx), q))
+        res.append((kind, layers, steps, want, why, e, b, rx, got, err, diff))
+    return res
