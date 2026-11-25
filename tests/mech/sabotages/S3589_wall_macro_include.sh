@@ -1,5 +1,11 @@
 # S3589 — [DATA-PLAN] A1 THE UCD WALL (r97 W-1..W-3): an include whose name is built from adjacent string literals in a macro
 #
+# The plant must COMPILE (the first version used `#include S3589_HDR`, which
+# is invalid C -- #include takes ONE string-literal token, adjacent literals
+# are not joined there -- so the row was BUILD-FAILED, never measured; dptri2).
+# The wall joins adjacent literals in the TEXT, so a macro/const holding the
+# spelled-out name is what the row must prove caught.
+#
 # Detector: tests/core/ucd_wall_check.py (via ucd_wall_check.sh, run by
 # run_core_tests.sh).  The plant holds a SHAPE the wall's needle words do not
 # contain literally, so the row proves the structural rule, not a word list.
@@ -13,4 +19,4 @@ SAB_COUNT=1
 SAB_BEFORE='#include "parse/ucd_tables.h"'
 SAB_AFTER='#include "parse/ucd_tables.h"
 #define S3589_HDR "ucd_" "tables" ".inc"   /* SABOTAGE S3589 */
-#include S3589_HDR'
+static const char s3589_name[] __attribute__((unused)) = S3589_HDR;'
