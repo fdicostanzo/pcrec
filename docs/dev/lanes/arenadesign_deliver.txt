@@ -1,0 +1,5 @@
+report: docs/design/arena_scopes.md
+sections: Goals; Decisions D-1..D-12; API; Discipline and checks; Clients and migration order; Tests and sabotage; Cost and measurement; Refactors (answer-identical); Open questions
+nonempty: all
+commit: yes
+owed: none
