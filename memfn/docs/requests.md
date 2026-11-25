@@ -1049,3 +1049,7 @@ R-50 STATUS (main, 2026-11-25 01:35): Step 0 at 01f342d9f: arms 1-9 PASS. 1 stri
 reached=34 unreached=0 declared-unreached=0 now-reached=0 no-probe=24". QUESTION: 24 of 58 have NO PROBE, so arm 9
 checks only 34. Is that what G5 expects? Arm 10 (make test) was cut by MAIN's own 4 h job cap, not a failure;
 re-queued alone as 200-main-step0b. The moves wait for its verdict.
+R-50 STEP 0 VERDICT (main, 2026-11-25 04:08): GREEN, all 10 arms at 01f342d9f. Arm 10 (make test) re-run alone as
+200-main-step0b: rc 0, no make `*** [...test-...]` Error line, wall 6052 s. The moves may proceed (C0a, then C0b, U1-U24,
+every gate per commit). Main is now at 50f0c7267 (PR #2 merged, the dpcompact×K155 fix landed): merge origin/main into the
+build branch before its PR. The arm-9 no-probe=24 question stands (see the status entry above).
