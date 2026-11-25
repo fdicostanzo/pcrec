@@ -49,4 +49,6 @@ Not removed though size-log-only: bsu3 and bsu3fix (pinned in .wtprune.keep, als
 
 ## STATE AT HANDOFF
 
-Branch lane/wtclean, committed. Rulings file empty (no entries). OWED: boxqueue job `200-wtclean-test` (queued; job script docs/dev/lanes/wtclean_test_job) (full `make test`). Manager checks: after the job, `git -C worktrees/wtclean status --porcelain` must be CLEAN (the size log must be unmodified; the scratch log lands under the temp root).
+Branch lane/wtclean, committed. Rulings file empty (no entries).
+
+OWED: none per the deliver file; the queued job below is the manager-checked validation, verdict pending: boxqueue job `200-wtclean-test` (queued; job script docs/dev/lanes/wtclean_test_job) (full `make test`). Manager checks: after the job, `git -C worktrees/wtclean status --porcelain` must be CLEAN (the size log must be unmodified; the scratch log lands under the temp root).
