@@ -24,7 +24,8 @@
 - `binders.py` on the PR #1 runner state: all five populations at their floors, 0 bad.
 
 ## STATE AT HANDOFF
-Branch lane/wsplitd4. The rulings file `wsplitd4_rulings.md` was re-read and is empty, so no later ruling was applied. Nothing is OWED.
+Branch lane/wsplitd4. The rulings file `wsplitd4_rulings.md` was re-read and is empty, so no later ruling was applied. 
+OWED: none
 Two things were not independently checked:
 - The Step 0 pass lines for `test-memfn-stamps`, `test-memfn-g2` and the plain win/pres runs (`checks failed: 0`) come from the suites' tails and the existing doc.
 - The G5 REACH_ONLY reason on the Mac is stated from r99's "no base run" fact, not measured.
