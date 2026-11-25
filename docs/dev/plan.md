@@ -1101,6 +1101,24 @@ Owner waits: a row or stage waiting on the OWNER (a charter, a build go, an answ
   TRIGGER: the growth diagnosis. Round-3 overlap: shares the view-edge site with K81 (3b-8), so file/diagnose before K81 is designed.
 
 ## Backlog
+- [W7-SITE-TALLY] STATE:not-started — W7's stride-4 scope window has no distinct-failure-site count (period-4 aliasing)
+  filed: 2026-11-25 manager (review r104 CHECKS-7, lane arenafix)
+  status (2026-11-25): filed; SUSPECTED only: stride 4 on scope-window points could alias a period-4 allocation pattern, and nothing counts the distinct failure sites the strided run reaches
+  trigger: the first scope client beyond minimize, or any W7 floor move; one unstrided-vs-strided run on the F1 population shows whether the distinct-site sets differ
+  refs: docs/dev/reviews/2026-11-25-r104-arenacore.md (CHECKS-7); tests/core/alloc_check.c (W7_SCOPE_STRIDE); docs/design/arena_scopes.md "Deviations at build" R-1
+  Fix shape: a distinct-failure-site tally (call site of the failed allocation) with a floor, compared once unstrided vs strided; if the sets match, record it and keep the stride.
+- [MEMGATE-FAILFAST] STATE:not-started — memgate runs on after a dying side: a broken side prints ~7,400 ERR lines
+  filed: 2026-11-25 manager (review r104 MEMGATE-4, lane arenafix)
+  status (2026-11-25): filed; a worker that dies is named and counted but the sweep continues, and a hung one waits 900 s per item; no deadlock, and the exit status (MEMGATE-2, fixed) carries the verdict now
+  trigger: the next memgate run that wastes a sweep on a broken side (a build or driver failure on one side)
+  refs: docs/dev/reviews/2026-11-25-r104-arenacore.md (MEMGATE-4); tests/core/memgate/memgate.py
+  Fix shape: abort the mode after K consecutive ERR items (K a named constant, labelled unmeasured), report the first ERR's argv and stderr, exit 1.
+- [MEMGATE-LAYOUT-POOL] STATE:not-started — memgate's LAYOUT re-measurement runs serially after the worker pool
+  filed: 2026-11-25 manager (review r104 MEMGATE-5, lane arenafix)
+  status (2026-11-25): filed; the default --jobs now follows os.cpu_count(); the bisection of each flipped rung (rung_layout / rung_need) still runs one at a time after the pool drains
+  trigger: a rungs run whose LAYOUT pass takes longer than the pooled sweep, or a run with more than a few dozen flips
+  refs: docs/dev/reviews/2026-11-25-r104-arenacore.md (MEMGATE-5); tests/core/memgate/memgate.py (mode_rungs)
+  Fix shape: submit each flip's rung_layout to the same executor; output order kept by item.
 - [PLANT-DETECT-JOB] STATE:not-started — plants are checked to APPLY, never DETECTED: a scheduled Linux detect job per runner
   filed: 2026-11-24 manager (kit PR #1 landing, lane pr1land)
   status (2026-11-24): filed; S3012 went undetected from d5f9da41b (11-14) until 11-24 because the plant check proves only that a plant applies; 42 of the kit's 81 runner plants have no mech twin, so a detect job is their only cover
