@@ -1,0 +1,5 @@
+memfn/tests/run_g2_pres.sh	S3012	mech=S3012_in_run_stop_filter_deleted.sh	suites=g2win	names_runner=False	reaimed_text=True
+SUMMARY memfn/tests/run_g2_pres.sh: plants=35 twins_with_mech_row=35 flagged=1 arms_in_twin_rows=g2pres,g2pres-asan,g2win
+SUMMARY memfn/tests/run_g2_win.sh: plants=38 twins_with_mech_row=0 flagged=0 arms_in_twin_rows=
+SUMMARY tests/memfn/run_proof.sh: plants=6 twins_with_mech_row=4 flagged=0 arms_in_twin_rows=memfnfinder
+SUMMARY tests/memfn/run_wreply.sh: plants=2 twins_with_mech_row=0 flagged=0 arms_in_twin_rows=

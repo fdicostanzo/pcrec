@@ -54,8 +54,8 @@ Parser structure (PARSE-1):
 - mod_classes.c — module `classes`: POSIX port, includes generated cls_bits.inc
 - cls_bits.inc — GENERATED positive byte-set tables (do not edit)
 - mod_modifiers.c — module `modifiers`: option-run grammar and semantic port (`pcrec_modport_optrun`)
-- mod_uprops.c — module `unicode-props` scanner + producer; uprops_tables.inc GENERATED from third_party/ucd-16.0.0
-- uprops_tables.inc — GENERATED property tables: categories, scripts, binary properties, Bidi_Class, Block, Age (do not edit)
+- mod_uprops.c — module `unicode-props` scanner + producer; asks the tables through `ucd_tables.h` only
+- ucd_tables.{h,c} — the Unicode tables' ONE interface (`pcrec_ucd_*`) and only reader of ucd_tables.inc (GENERATED, do not edit); format described in the .c header; guard `tests/core/ucd_wall_check.sh`
 - mod_ucp.c — module `ucp`: `(*UTF)`/`(*UCP)`, option run, UCP sets
 - mod_named_groups.c — module `named-groups` declaring port
 - mod_assertions.c — module `assertions` (`\A \Z \z \b \B \G`) and, since the [FEAT-FAMILIES] split, the producer for `\K`, which is its own module `match-start-reset`

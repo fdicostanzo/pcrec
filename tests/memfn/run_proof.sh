@@ -25,6 +25,13 @@
 #                  catch an over-read; S3242, R-45's witness row (a): R-short refuses by its
 #                  message, plant_want; the table below): the run must go red. Writes only the work
 #                  directory. --plants runs them all and reports each.
+#                  THE PASS FORM (lane s3012fix): a DETECTED plant prints `PLANT <id>
+#                  RED   (proof_check / proof_run passed failed: ...): <a FAIL line>`
+#                  (one carrying its plant_want text where it names one); the run
+#                  exits 0 only when every plant named is detected. `PLANT <id> GREEN
+#                  (NOT DETECTED; ...)` means NOT DETECTED and makes the run exit 1:
+#                  GREEN is the FAILING answer here, never a pass. A setup failure
+#                  prints `FAIL: ...` and exits 1.
 #
 # Env: CC (tests/lib/cc_resolve.sh's), LIB, TMPDIR.
 set -u
@@ -32,8 +39,6 @@ export LC_ALL=C
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
 . "$ROOT/tests/lib/cc_resolve.sh"
 LIB="${LIB:-$ROOT/build/libpcrec.a}"
-WORK="$(mktemp -d "${TMPDIR:-/tmp}/proof.XXXXXX")"
-trap 'rm -rf "$WORK"' EXIT
 
 # THE PLANTS: id, then FILE@@FROM@@TO (FILE under memfn/src; FROM replaced
 # by TO, `\n` a newline, `\&` an ampersand). Each must make this run red.
@@ -44,8 +49,10 @@ plant_spec() {
     S1224) # a proof bit set only by a SIMD layer (C-PROOF): cleared where the art's
         # stated target admits a level (unit U3: the target, not a policy bit, is the layer)
         # (MF_CLASS_V 11: the row is written through the kit's writable pointer to the
-        # caller's rows)
-        echo 'compose.c@@    if (!row || kit_class(row, s, out, stp)) { memset(out, 0, sizeof *out); return -1; }\n    if (fd_pres(@@    if (!row || kit_class(row, s, out, stp)) { memset(out, 0, sizeof *out); return -1; }\n    if (kit_target_levels(art->target) \&\& out->proof_n > 0 - MF_PROOF_LO) ((uint8_t (*)[32])out->proof)[0 - MF_PROOF_LO][0] \&= 0xFE;\n    if (fd_pres(' ;;
+        # caller's rows) (RE-AIMED 2026-11-24, lane plantfix, FUW-12: the text of its mech twin
+        # tests/mech/sabotages/S1224_proof_bit_simd_only.sh, which ad5a89b26 re-anchored onto
+        # 4d00fccfe's one-statement ask; the bit is cleared after the ask's refusal block)
+        echo 'compose.c@@    if (kit_class(row, s, out, stp) || fd_pres(art, art->nsites + 1, s, FD_PRES_QUIET, out, \&why)) {\n        memset(out, 0, sizeof *out);\n        return -1;\n    }@@    if (kit_class(row, s, out, stp) || fd_pres(art, art->nsites + 1, s, FD_PRES_QUIET, out, \&why)) {\n        memset(out, 0, sizeof *out);\n        return -1;\n    }\n    if (kit_target_levels(art->target) \&\& out->proof_n > 0 - MF_PROOF_LO) ((uint8_t (*)[32])out->proof)[0 - MF_PROOF_LO][0] \&= 0xFE;' ;;
     S1225) # an over-filter on an OPTIONAL position (an OPTIONAL SET term tests one member fewer)
         echo 'generic.c@@            if (tm->kind == MF_T_SET) {\n                if (member_test(rc, b, tm, id, bx)) {@@            if (tm->kind == MF_T_SET) {\n                mf_term nt = *tm;\n                for (int q = 0; tm->need == MF_OPTIONAL \&\& q < 256; q++)\n                    if (nt.set[q >> 3] >> (q \& 7) \& 1) { nt.set[q >> 3] \&= (uint8_t)~(1u << (q \& 7)); break; }\n                if (member_test(rc, b, \&nt, id, bx)) {' ;;
     S1419) # a window site's renderer-interface field accepted (`plan_hint` stated beside
@@ -62,6 +69,27 @@ plant_spec() {
     esac
 }
 PLANTS="S1221 S1224 S1225 S1419 S1408 S3242"
+# PLANT_TWINS: the PLANTS ids that are the same plant as the tests/mech/sabotages row of
+# that id; any other shared id is a collision. The plant pass holds both (review r94 GF-1).
+PLANT_TWINS="S1221 S1224 S1225 S1419"
+# plant_edits ID: EDITS=(the plant's FILE@@FROM@@TO edit, one), or 1 if no plant ID.
+# THE ONE APPLIER (tests/lib/plants.py, dialect `win`) decodes and applies it for
+# --plant/--plants, and checks it for --plant-check (lane plantfix: FUW-12's class).
+plant_edits() { local s; s="$(plant_spec "$1")" || return 1; EDITS=("$s"); }
+# --plant-check [check|dump]: every plant in PLANTS run through the applier's loop over an
+# in-memory copy of today's memfn/src (check), or decoded (dump), never applied or built,
+# no work directory (scripts/m6read_check_sab_anchors.py's plant pass runs both)
+if [ "${1:-}" = "--plant-check" ]; then
+    case "${2:-check}" in check|dump) ;; *) echo "--plant-check [check|dump]" >&2; exit 2 ;; esac
+    args=()
+    for id in $PLANTS; do
+        if plant_edits "$id"; then args+=(--plant "$id" 1 "${EDITS[@]}"); else args+=(--plant "$id" 0); fi
+    done
+    exec python3 -I "$ROOT/tests/lib/plants.py" "${2:-check}" win "$ROOT/memfn/src" "$ROOT/tests/memfn/run_proof.sh" \
+        --labels <(declare -f plant_spec) --twins "$PLANT_TWINS" -- "${args[@]}"
+fi
+WORK="$(mktemp -d "${TMPDIR:-/tmp}/proof.XXXXXX")"
+trap 'rm -rf "$WORK"' EXIT
 # The text a plant's red must carry (empty: any FAIL line is red).
 plant_want() {
     case "$1" in
@@ -112,18 +140,10 @@ if [ "${1:-}" = "--plant" ] || [ "${1:-}" = "--plants" ]; then
     [ -n "$ids" ] || fail_setup "--plant needs an id ($PLANTS)"
     bad=0
     for id in $ids; do
-        spec="$(plant_spec "$id")" || fail_setup "no plant $id"
-        file="${spec%%@@*}"; rest="${spec#*@@}"; from="${rest%%@@*}"; to="${rest#*@@}"
+        plant_edits "$id" || fail_setup "no plant $id"
         rm -rf "$WORK/src"; cp -r "$ROOT/memfn/src" "$WORK/src"
-        python3 -I - "$WORK/src/$file" "$from" "$to" <<'EOF' || fail_setup "$id: the plant does not apply"
-import sys
-p, a, b = sys.argv[1], sys.argv[2].replace('\\n', '\n'), sys.argv[3].replace('\\n', '\n')
-a = a.replace('\\&', '&'); b = b.replace('\\&', '&')
-s = open(p).read()
-if s.count(a) != 1:
-    sys.exit("plant text found %d times" % s.count(a))
-open(p, 'w').write(s.replace(a, b))
-EOF
+        python3 -I "$ROOT/tests/lib/plants.py" apply win "$WORK/src" -- "${EDITS[@]}" \
+            || fail_setup "$id: the plant does not apply"
         kit_objs "$WORK/src" "$WORK/pk_$id" || fail_setup "$id: the planted kit does not compile"
         one_run "plant_$id" "$WORK/pk_$id"/*.o
         c="$(counts "$WORK/plant_$id.chk.log") / $(counts "$WORK/plant_$id.run.log")"

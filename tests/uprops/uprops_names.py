@@ -3,12 +3,13 @@
 the generator, and compared against the shipped table in BOTH directions.
 
 WHAT IT IS FOR.  `run_uprops_tests.sh` §1 asserts the committed
-`src/parse/uprops_tables.inc` is exactly what `generate.py` produces *today*.
+the generated Unicode table is exactly what `generate.py` produces *today*.
 That says nothing about whether the generator produces the right NAMES: a
 generator that silently dropped half the scripts would pass §1 with a table
 nobody asks about.  So this script re-derives the name set from the VENDORED
-SOURCE — never from the generator, and never from the .inc — and requires set
-EQUALITY with the table's own rows.
+SOURCE — never from the generator, and never from the generated file — and
+requires set EQUALITY with the table's own rows, read through the module's
+interface (`ucd_dump.c`'s TSV: [DATA-PLAN] A1).
 
 WHAT IT DELIBERATELY DOES NOT CLOSE, stated because a check that hides its own
 blind spot is worse than no check: the source and the table share an origin,
@@ -22,7 +23,7 @@ THE CATEGORY HALF STAYS HAND-WRITTEN and is passed in by the caller — the
 from (three of them are PCRE2 inventions), so the promise for that half is a
 human's list, exactly as it was at [M5.0] stage 3.
 
-Usage: uprops_names.py <ucd-dir> <inc-path> <category-name> ...
+Usage: uprops_names.py <ucd-dir> <ucd_dump.tsv> <category-name> ...
 Exit 0 and print a summary, or exit 1 naming every disagreement.
 """
 import os
@@ -38,8 +39,8 @@ import sys
 # agree by construction and the check would certify nothing.
 DECLINED = {"Katakana_Or_Hiragana"}
 
-# The namespaces, from the generated table's own #defines — read rather than
-# restated, since a renumbering there must not silently pass here.
+# The namespaces, checked below against the interface's own numbers (the dump's
+# `#ns` lines) — a renumbering there must not silently pass here.
 NS_BARE, NS_SC, NS_SCX = 1, 2, 4
 NS_BC, NS_BLK, NS_AGE = 8, 16, 32   # [UPROP-MORE]
 
@@ -67,7 +68,7 @@ def normalise(name):
 
 
 def main():
-    ucd, inc = sys.argv[1], sys.argv[2]
+    ucd, dump = sys.argv[1], sys.argv[2]
     categories = sys.argv[3:]
     if not categories:
         sys.stderr.write("uprops_names: no category names given\n")
@@ -141,18 +142,25 @@ def main():
                 want.add((normalise(sp), ns))
 
     # ---- the table, as shipped -------------------------------------------
-    text = open(inc, encoding="utf-8").read()
+    text = open(dump, encoding="utf-8").read()
+    nsnum, table = {}, []
+    for line in text.splitlines():
+        f = line.split("\t")
+        if f[0] == "#ns":
+            nsnum[f[1]] = int(f[2])
+        elif not f[0].startswith("#"):
+            table.append((f[0], int(f[1]),
+                          [] if f[2] == "-" else
+                          [tuple(int(x, 16) for x in p.split("-"))
+                           for p in f[2].split(",")]))
     for label, expect in (("BARE", NS_BARE), ("SC", NS_SC), ("SCX", NS_SCX),
                           ("BC", NS_BC), ("BLK", NS_BLK), ("AGE", NS_AGE)):
-        m = re.search(r"#define PCREC_UPROP_NS_%s\s+(\d+)u" % label, text)
-        if not m or int(m.group(1)) != expect:
-            sys.stderr.write("uprops_names: PCREC_UPROP_NS_%s is not %d — this "
+        if nsnum.get(label) != expect:
+            sys.stderr.write("uprops_names: namespace %s is not %d — this "
                              "script's namespace numbering is stale\n"
                              % (label, expect))
             return 1
-    have = set()
-    for m in re.finditer(r'\{ "([^"]+)", (\d+), \d+, \d+, \d+, \d+ \},', text):
-        have.add((m.group(1), int(m.group(2))))
+    have = {(name, ns) for name, ns, _iv in table}
 
     fails = []
     for missing in sorted(want - have):
@@ -165,14 +173,11 @@ def main():
                      "between them promise" % extra)
 
     # ---- the byte-encoding population, both directions -------------------
-    ivs = [(int(a, 16), int(b, 16)) for a, b in
-           re.findall(r"\{0x([0-9A-F]+),0x([0-9A-F]+)\},", text)]
     spans = {NS_BARE: {}, NS_SC: {}}
-    for m in re.finditer(r'\{ "([^"]+)", (\d+), (\d+), (\d+), \d+, \d+ \},', text):
-        ns, off, n = int(m.group(2)), int(m.group(3)), int(m.group(4))
+    for name, ns, iv in table:
         for bit in (NS_BARE, NS_SC):
             if ns & bit:
-                spans[bit][m.group(1)] = ivs[off:off + n]
+                spans[bit][name] = iv
     low = {bit: {v for v in script_values
                  if any(lo <= 0xFF for lo, _hi in spans[bit].get(normalise(v), []))}
            for bit in (NS_BARE, NS_SC)}

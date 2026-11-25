@@ -49,6 +49,10 @@
 # children (each an independent process, sourcing this fresh) print their
 # own line — which is correct: each IS its own top-level script from the
 # Makefile's point of view.
+#
+# The notice is ADVISORY: a consumer of a script that sources this reads that
+# script's stdout and exit code as its protocol and SHOWS its stderr, never
+# scores it (lane tt6fix; docs/testing.md "The timeout binary itself").
 
 if [ -z "${TIMEOUT_BIN:-}" ]; then
     _tb_is_gnu() {

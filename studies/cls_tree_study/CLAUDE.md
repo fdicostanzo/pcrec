@@ -7,7 +7,8 @@ and the five things not to simplify away.
 
 Self-contained per `studies/CLAUDE.md`: pcrec's own `make` never enters here,
 nothing is linked into pcrec, `make test` does not run it. It READS
-`../../src/parse/uprops_tables.inc` and `../../tests/**/*.rxt` and invokes
+the Unicode property sets (as a TSV `tests/uprops/ucd_dump.c` writes through
+`src/parse/ucd_tables.h`, named by `$UCD_DUMP`) and `../../tests/**/*.rxt` and invokes
 `../../build/pcrec`; it WRITES only under this directory.
 
 **`tests/clskit/` does NOT import this directory** (reverted at [CLS-TREE]
@@ -23,8 +24,8 @@ transitive imports (`emit.py`, `loadgate.py`) instead — see
 
 ## Files
 
-- `clsets.py` — the three study POPULATIONS. `uprops()` parses the 312
-  distinct sets out of the generated `uprops_tables.inc`; `k53()` the six
+- `clsets.py` — the three study POPULATIONS. `uprops()` reads the 747
+  distinct sets from the `$UCD_DUMP` TSV (`tests/uprops/ucd_dump.c`); `k53()` the six
   sets `known_issues.md` K53 names, each with its complement;
   `byteclasses()` reads `results/byteclasses.tsv`. `--dump-iv` writes one
   interval file per set for `discover`.

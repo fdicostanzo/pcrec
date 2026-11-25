@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # S3106 -- R-38 Part D (docs/design/memfn/part_d.md rev 4 section 5.1, plant p1; lane partd).
-# The same plant as memfn/tests/run_g2_pres.sh --plant S3106 (its plant_spec; one source of the text).
+# The same plant as memfn/tests/run_g2_pres.sh --plant S3106 (its plant_spec; two copies of the text, held equal by the twin check).
 SAB_ID="S3106-findable-column-ignored"
 SAB_FILE="memfn/src/window.c"
 SAB_SUITES="g2pres"

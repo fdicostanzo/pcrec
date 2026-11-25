@@ -418,6 +418,11 @@ done <<< "$anchored"
 #     are the same kind of number as `VM_NRUNG`'s above: nothing is measured
 #     against a bit position, and the values are forced by the
 #     representation rather than chosen as a policy.
+#     PCREC_UCD_NS_BARE / _SC / _SCX / _BC / _BLK / _AGE (src/parse/ucd_tables.h,
+#     [DPCOMPACT]) are the same kind: which bit of a property row's namespace
+#     mask means which `\p` prefix. (The header is shared with the generator
+#     and ucd_tables.c asserts the numbers agree, which the SIXTH kind's
+#     file-private sets need not; nothing is measured against a bit position.)
 #     EM_ANY (src/facts/widths.c, [NULLABLE-ANCH]): the same kind, the mask
 #     set {mask 0} (`1u << EM_NONE`) that is the identity of `em_cat`'s
 #     set-of-masks product; a bit-set value forced by the representation,
@@ -626,7 +631,13 @@ PCREC_PART_ROLE_MAX
 PCREC_COMP_MAXPARTS
 COMP_LEVER_ATTEMPTS
 LMWALK_K_HIT_UNMEASURED
-KS_MEAS_MAX"
+KS_MEAS_MAX
+PCREC_UCD_NS_BARE
+PCREC_UCD_NS_SC
+PCREC_UCD_NS_SCX
+PCREC_UCD_NS_BC
+PCREC_UCD_NS_BLK
+PCREC_UCD_NS_AGE"
 
 TABLE_NAMES="$NAMES"
 SCANNED_NAMES="$(cut -f2 "$TMP3/scan.txt" | sort -u)"

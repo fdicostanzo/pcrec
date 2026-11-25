@@ -1036,3 +1036,20 @@ are allocating).
     informational only.
   - If gcc-16 is missing or broken, STOP and tell main. Installing anything is the owner's call.
 - BOX: the Mac suite lock; no timing for this review.
+
+## R-50 (main, 2026-11-24): [KIT-WINSPLIT] BUILD GO
+The owner, 2026-11-24, verbatim: "winsplit-build-go: yes". The go covers rev 2.2 (lane/memfn-wsplit 6cf64ed2f, reviews
+r95, r98, r99) as designed, the seven shape choices unchanged. Order as the design states: PR #1 has LANDED (merge
+9893c6181); Step 0 is the Linux gate job 200-main-step0 at 01f342d9f, run by main (green before the moves start; a red
+stops the build and the kit rules); then C0a (the Mac awk fix), then one move per commit with every gate. Delivery:
+one code PR for Linux CI; main merges locally. NEON V stays held until the split lands (R-48).
+R-50 STATUS (main, 2026-11-25 01:35): Step 0 at 01f342d9f: arms 1-9 PASS. 1 strict clean; 2-6 rc 0, each ends
+"checks failed: 0"; 7 rc 0, 34 RED, no GREEN/OWED (last "PLANT S3127 RED ... D3 UNSPELLED: site 430"); 8 "9 rows
+(unexpected: 0, undetected: 0, unreached: 0, anomalies: 0, oracle-skipped: 0)"; 9 "mech-reach-only: DONE rc=0 rows=58
+reached=34 unreached=0 declared-unreached=0 now-reached=0 no-probe=24". QUESTION: 24 of 58 have NO PROBE, so arm 9
+checks only 34. Is that what G5 expects? Arm 10 (make test) was cut by MAIN's own 4 h job cap, not a failure;
+re-queued alone as 200-main-step0b. The moves wait for its verdict.
+R-50 STEP 0 VERDICT (main, 2026-11-25 04:08): GREEN, all 10 arms at 01f342d9f. Arm 10 (make test) re-run alone as
+200-main-step0b: rc 0, no make `*** [...test-...]` Error line, wall 6052 s. The moves may proceed (C0a, then C0b, U1-U24,
+every gate per commit). Main is now at 50f0c7267 (PR #2 merged, the dpcompact×K155 fix landed): merge origin/main into the
+build branch before its PR. The arm-9 no-probe=24 question stands (see the status entry above).

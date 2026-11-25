@@ -17,16 +17,17 @@
 # one level deeper than studies/cls_tree_study/ (tests/clskit/ref/ vs.
 # studies/cls_tree_study/), so any HERE-relative path this file computes
 # was re-derived for its new depth — see clsets.py's own note. Nothing
-# else in this file's text was touched.
+# else in this file's text was touched except the [DATA-PLAN] A1 change
+# below, made identically in the study copy.
 """clsets.py — the STUDY POPULATIONS, read out of the tree's own generated data.
 
 Three populations, each a list of (name, intervals) where `intervals` is the
 sorted, disjoint, non-adjacent code-point interval list pcrec's own
 `src/core/cpset.c` invariant maintains:
 
-  * `uprops()`   — the 312 DISTINCT sets behind module `unicode-props`' 717
-                   name rows, parsed straight out of `src/parse/
-                   uprops_tables.inc` (the [M5.0] stage-3/5 generated table).
+  * `uprops()`   — the 747 DISTINCT sets behind module `unicode-props`' 1,384
+                   name rows, read out of the Unicode tables through
+                   `tests/uprops/ucd_dump.c` (the module's own interface).
                    Never re-derived from the UCD: the study measures the sets
                    pcrec ACTUALLY builds, the same discipline
                    `studies/form_char_twins` used when it parsed byte sets off
@@ -49,33 +50,42 @@ HERE = os.path.dirname(os.path.abspath(__file__))
 # tests/clskit/ref/ is one level deeper than studies/cls_tree_study/ was
 # (this file's header): three ".."s reach the repo root, not two.
 REPO = os.path.abspath(os.path.join(HERE, "..", "..", ".."))
-INC = os.path.join(REPO, "src", "parse", "uprops_tables.inc")
 
 MAX_CP = 0x10FFFF
 
 
 # ---------------------------------------------------------------- parsing
 
-def _parse_inc(path=INC):
+def _parse_inc(path=None):
     """Return (intervals, rows). intervals: list of (lo,hi). rows: list of
-    (name, ns, off, n, ci_off, ci_n)."""
+    (name, ns, off, n, ci_off, ci_n).
+
+    [DATA-PLAN] A1: the table's storage format belongs to ONE module
+    (behind `src/parse/ucd_tables.h`), so this no longer parses the generated file.
+    It reads the TSV `tests/uprops/ucd_dump.c` writes through the module's
+    interface: `$UCD_DUMP` names the file (required).  Each row's two sets
+    are appended to one pool, so `off`/`n` index it as before."""
+    path = path or os.environ.get("UCD_DUMP")
+    if not path:
+        raise SystemExit("clsets: set UCD_DUMP to the output of "
+                         "tests/uprops/ucd_dump.c (the clskit runner does)")
     text = open(path, encoding="utf-8").read()
-
-    m = re.search(r"pcrec_uprop_iv\[\]\s*=\s*\{(.*?)\n\};", text, re.S)
-    if not m:
-        raise SystemExit("clsets: interval array not found in %s" % path)
-    ivs = [(int(a, 16), int(b, 16))
-           for a, b in re.findall(r"\{0x([0-9A-Fa-f]+),0x([0-9A-Fa-f]+)\}",
-                                  m.group(1))]
-
-    m = re.search(r"pcrec_uprop_names\[\]\s*=\s*\{(.*?)\n\};", text, re.S)
-    if not m:
-        raise SystemExit("clsets: name array not found in %s" % path)
-    rows = []
-    for name, ns, off, n, cio, cin in re.findall(
-            r'\{\s*"([^"]+)"\s*,\s*(\d+)\s*,\s*(\d+)\s*,\s*(\d+)\s*,'
-            r'\s*(\d+)\s*,\s*(\d+)\s*\}', m.group(1)):
-        rows.append((name, int(ns), int(off), int(n), int(cio), int(cin)))
+    def parse_set(s):
+        if s == "-":
+            return []
+        return [(int(a, 16), int(b, 16))
+                for a, b in (p.split("-") for p in s.split(","))]
+    ivs, rows = [], []
+    for line in text.splitlines():
+        if not line or line.startswith("#"):
+            continue
+        name, ns, cs, ci = line.split("\t")
+        off = len(ivs)
+        ivs.extend(parse_set(cs))
+        n = len(ivs) - off
+        cio = len(ivs)
+        ivs.extend(parse_set(ci))
+        rows.append((name, int(ns), off, n, cio, len(ivs) - cio))
     return ivs, rows
 
 
@@ -129,7 +139,8 @@ def k53():
             "ZZZZ": "Unknown(Zzzz)"}
     got = {}
     for name, ns, off, n, cio, cin in rows:
-        if name in want and want[name] not in got:
+        # the BARE namespace only (bit 1): `L` is also a Bidi_Class (bc=L) row
+        if name in want and (ns & 1) and want[name] not in got:
             got[want[name]] = _slice(ivs, off, n)
     missing = [v for v in want.values() if v not in got]
     if missing:

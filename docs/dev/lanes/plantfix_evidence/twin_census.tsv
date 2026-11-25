@@ -1,0 +1,45 @@
+# memfn/tests/run_g2_win.sh: 38 plants, 38 edits
+run_g2_win.sh	S1540	DIFFERS	memfn/src/ofsskip.c,src/gen/emit_dfa.c	code differs in memfn/src/ofsskip.c,src/gen/emit_dfa.c
+# memfn/tests/run_g2_pres.sh: 35 plants, 41 edits
+run_g2_pres.sh	S3007	DIFFERS	memfn/src/runcmp.c	comments/whitespace only in memfn/src/runcmp.c
+run_g2_pres.sh	S3008	DIFFERS	memfn/src/ofsskip.c	comments/whitespace only in memfn/src/ofsskip.c
+run_g2_pres.sh	S3009	DIFFERS	memfn/src/presence.c	comments/whitespace only in memfn/src/presence.c
+run_g2_pres.sh	S3010	DIFFERS	memfn/src/ofsskip.c	comments/whitespace only in memfn/src/ofsskip.c
+run_g2_pres.sh	S3011	DIFFERS	memfn/src/runcmp.c	comments/whitespace only in memfn/src/runcmp.c
+run_g2_pres.sh	S3012	DIFFERS	memfn/src/window.c	comments/whitespace only in memfn/src/window.c
+run_g2_pres.sh	S3043	DIFFERS	memfn/src/generic.c	comments/whitespace only in memfn/src/generic.c
+run_g2_pres.sh	S3044	DIFFERS	memfn/src/finder.c	comments/whitespace only in memfn/src/finder.c
+run_g2_pres.sh	S3045	DIFFERS	memfn/src/finder.c	comments/whitespace only in memfn/src/finder.c
+run_g2_pres.sh	S3046	DIFFERS	memfn/src/compose.c	comments/whitespace only in memfn/src/compose.c
+run_g2_pres.sh	S3047	DIFFERS	memfn/src/window.c	comments/whitespace only in memfn/src/window.c
+run_g2_pres.sh	S3060	DIFFERS	memfn/src/presence.c	comments/whitespace only in memfn/src/presence.c
+run_g2_pres.sh	S3061	DIFFERS	memfn/src/presence.c	comments/whitespace only in memfn/src/presence.c
+run_g2_pres.sh	S3062	DIFFERS	memfn/src/precheck.c,memfn/src/presence.c	comments/whitespace only in memfn/src/precheck.c,memfn/src/presence.c
+run_g2_pres.sh	S3063	DIFFERS	memfn/src/presence.c	comments/whitespace only in memfn/src/presence.c
+run_g2_pres.sh	S3064	DIFFERS	memfn/src/compose.c	comments/whitespace only in memfn/src/compose.c
+run_g2_pres.sh	S3098	DIFFERS	memfn/src/vrun.c	comments/whitespace only in memfn/src/vrun.c
+run_g2_pres.sh	S3099	DIFFERS	memfn/src/vrun.c	comments/whitespace only in memfn/src/vrun.c
+run_g2_pres.sh	S3100	DIFFERS	memfn/src/vrun.c	comments/whitespace only in memfn/src/vrun.c
+run_g2_pres.sh	S3101	DIFFERS	memfn/src/vrun.c	comments/whitespace only in memfn/src/vrun.c
+run_g2_pres.sh	S3102	DIFFERS	memfn/src/vrun.c	comments/whitespace only in memfn/src/vrun.c
+run_g2_pres.sh	S3103	DIFFERS	memfn/src/levels.c,memfn/src/targets.def	comments/whitespace only in memfn/src/levels.c,memfn/src/targets.def
+run_g2_pres.sh	S3106	EQUAL	memfn/src/window.c	
+run_g2_pres.sh	S3107	EQUAL	memfn/src/finder.c	
+run_g2_pres.sh	S3108	EQUAL	memfn/src/presence.c	
+run_g2_pres.sh	S3109	EQUAL	memfn/src/compose.c	
+run_g2_pres.sh	S3110	EQUAL	memfn/src/window.c	
+run_g2_pres.sh	S3111	EQUAL	memfn/src/ofsskip.c	
+run_g2_pres.sh	S3112	EQUAL	memfn/src/window.c	
+run_g2_pres.sh	S3113	EQUAL	memfn/src/ofsskip.c	
+run_g2_pres.sh	S3114	EQUAL	memfn/src/presence.c	
+run_g2_pres.sh	S3119	EQUAL	memfn/src/presence.c	
+run_g2_pres.sh	S3125	EQUAL	memfn/src/window.c	
+run_g2_pres.sh	S3126	EQUAL	memfn/src/window.c	
+run_g2_pres.sh	S3127	EQUAL	docs/design/memfn/span_pick/census0.py	
+# tests/memfn/run_proof.sh: 6 plants, 6 edits
+run_proof.sh	S1221	EQUAL	memfn/src/compose.c	
+run_proof.sh	S1224	EQUAL	memfn/src/compose.c	
+run_proof.sh	S1225	EQUAL	memfn/src/generic.c	
+run_proof.sh	S1419	DIFFERS	memfn/src/window.c	comments/whitespace only in memfn/src/window.c
+# tests/memfn/run_wreply.sh: 2 plants, 4 edits
+# twins: 40; DIFFERS 24, EQUAL 16

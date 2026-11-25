@@ -47,11 +47,11 @@ Owner waits: a row or stage waiting on the OWNER (a charter, a build go, an answ
   status (2026-11-24): stage 1 done; stage 2 DONE (R-49: note rev 4 accepted after r91-r93; its suggestions filed below, owner ruling window-file-split = D204); stage 3 (an arch review per new kit feature, the kit manager skill's trigger row) is IN FORCE
   next: stage 3 runs per new kit feature; the children below each wait on their own trigger; [KIT-WINSPLIT] is first (NEON V's trigger)
   refs: [ARCH-STEP]; docs/design/plan_row_bodies/KIT-ARCH-STEP.md; memfn/docs/requests.md (R-49); .claude/skills/pcrec-memfn-manager; pcrec-architect; pcrec-critic (mode arch)
-  - [KIT-WINSPLIT] STATE:not-started — kit: split window.c once, one file per table and its search functions (ARV-5 + ARV-9 + ARV-16)
+  - [KIT-WINSPLIT] STATE:started — kit: split window.c once, one file per table and its search functions (ARV-5 + ARV-9 + ARV-16)
     filed: 2026-11-24 kit arch review (R-49, note rev 4 accepted; suggestions filed, not built)
     status (2026-11-24): direction ruled (D204: yes on trigger, split lands BEFORE NEON V, answer-identical); the position primitives move once, in the split, to a file taking kit_mass (the presence<->window cycle goes); design not written
-    waits: the design note, the r95 round, then owner — the build go (asked at design delivery); trigger is NEON V (R-48); NEON V's design waits for the split
-    next: the kit writes docs/design/memfn/window_split.md (per-file interfaces, private header, test re-points: H1/H2/H3/H8), then design round r95 (memfn-winsplit), then the kit asks the owner for the build go at design delivery
+    waits: Step 0 (Linux gate job 200-main-step0 at 01f342d9f, green before the moves); then C0a, then one move per commit (kit)
+    next: BUILD GO (owner 2026-11-24 "winsplit-build-go: yes"; R-50) on rev 2.2 (lane/memfn-wsplit 6cf64ed2f; r95, r98, r99); kit builds, one code PR, main merges locally
     refs: D204; memfn/docs/arch_review_2026-11.md §7 ARV-5, ARV-9, ARV-16, §8 H1/H2/H3/H8, §9; architecture.md register row 43; memfn/docs/responses.md (OWNER RULING window-file-split)
     Charter: owner 2026-11-24: "yes on trigger but once you do split, make it count. Consider where reasonable the interface of the file. If there is a table and functions that search it specifically, they belong together in that file. Then the public names are just those functions." ARV-5 (set questions join kit_pos_*), ARV-16 (primitives one home) and ARV-9 (the split) are one unit; ARV-7's text-buffer leaf goes before or with it.
   - [ARV-1-NONE-NOTED] STATE:not-started — kit: noted-deviation register rows for the 2 NONE-density readers (hors_facts, m_margin_holds)
@@ -203,8 +203,8 @@ Owner waits: a row or stage waiting on the OWNER (a charter, a build go, an answ
   RULING (2026-11-16, the manager's, not the owner's): the 2026-11-15 re-scope proposal from lane s1tail is ACCEPTED. (i) [DD-11.5] keeps ONLY part (a); part 1 is closed as overtaken by [COVER-CAP] stage 1 (the NFA span slice it built on was deleted, abi 108, merge fff636eda); the timing look and B1 as written are moot. (ii) part (b), the D168 context facts at negative offsets / past the end, is filed as its own row [CTX-FACTS-NEG] (not-started). STATE stays started: this Active row has an open part (a) and the format has no state for a review row that has not begun.
 - [DATA-PLAN] STATE:started — LARGE DATA IS PAID ONLY WHERE USED AND SHARED WHERE REPEATED (Unicode tables first)
   filed: 2026-10-24 Frank ("we need a way to only load when needed. A general data plan for extra stuff")
-  status (2026-11-24): unblocked: [UPROP-MORE] closed 2026-11-24 and its size follow-up lives here as A and B; A1 GO 2026-11-24 (owner: "data-plan-compact: yes. Have it be modular so the format is only understood to the module which provides an interface"), lane dpcompact
-  next: A: compact compiler tables lane (its UPROP-MORE predecessor closed 2026-11-24); B: measure the small class form's speed on the utf8 bench, then route it under the size setting
+  status (2026-11-24): unit A LANDED (Unicode tables compacted behind src/parse/ucd_tables; merge 6c9342003, seam fix c68185294): data 254,012 -> 95,286 B, build/pcrec about -168 KB; review r97 ruled; [CASE-TABLES-WALL] filed. A1 GO 2026-11-24 (owner), lane dpcompact
+  next: B: measure the small class form's speed on the utf8 bench, then route it under the size setting
   refs: D178; docs/design/uprop_more.md; [CLS-TREE]; [UCD-RECORD]; subst support unit (--emit-support, content id)
   Two places data lands: the compiler binary (tables for every property) and each generated matcher (only what its pattern uses, but copied into every matcher that uses it). Questions: share one copy across matchers in a program, a compact form for large classes, what the compiler must embed vs read at compile time. Also EMIT-4 (review 2026-10-24-r1-subst-code): subst's support unit links 23 KB of case tables into programs with no case template; D179 format, and do not link them when unused.
 - [INLINE-C] STATE:ready — USER C INSIDE PATTERNS (`(?C{...})`) AND TEMPLATES (`${{...}}`, `${(...)}`): requirements first
@@ -1101,6 +1101,18 @@ Owner waits: a row or stage waiting on the OWNER (a charter, a build go, an answ
   TRIGGER: the growth diagnosis. Round-3 overlap: shares the view-edge site with K81 (3b-8), so file/diagnose before K81 is designed.
 
 ## Backlog
+- [PLANT-DETECT-JOB] STATE:not-started — plants are checked to APPLY, never DETECTED: a scheduled Linux detect job per runner
+  filed: 2026-11-24 manager (kit PR #1 landing, lane pr1land)
+  status (2026-11-24): filed; S3012 went undetected from d5f9da41b (11-14) until 11-24 because the plant check proves only that a plant applies; 42 of the kit's 81 runner plants have no mech twin, so a detect job is their only cover
+  trigger: next
+  refs: kit review r94; lanes s3012tri, s3012fix (docs/dev/lanes/s3012tri_report.md, s3012fix_report.md); tests/lib/plants.py; scripts/m6read_check_sab_anchors.py
+  Fix shape: a scheduled Linux `--plants` detect job per runner, red on anything but a "PLANT <id> RED" line. Members: memfn/tests/run_g2_pres.sh (34 plants, ~51 min measured), memfn/tests/run_g2_win.sh (39, ~30 min est.), tests/memfn/run_proof.sh (6, ~5 min est.), tests/memfn/run_wreply.sh (2, ~10 min est.), plus main's own plant-bearing runners (users of tests/lib/plants.py; the four above are all that name it today).
+- [CASE-TABLES-WALL] STATE:not-started — one module plus one interface for every generated table, a wall per product
+  filed: 2026-11-24 manager (review r97 W-4, MOD-9, MOD-4)
+  status (2026-11-24): `src/core/case_tables.inc` has two readers (emit_subst.c includes it, tests/oracle/case_map_check.py regex-parses it): the shape D204's file-interface rule retired for the Unicode tables; the UCD wall covers one product only
+  trigger: the next change to ANY generated .inc (case_tables, fold_tables, utf8_fold_pairs, cls_bits): give it its module + interface header, add its wall row, and survey every generated .inc for readers outside its module
+  refs: docs/dev/reviews/2026-11-24-r97-dpcompact.md; D204; tests/core/ucd_wall_check.py; third_party/ucd-16.0.0/generate.py --list-products
+  The owner's rule (2026-11-24, "the format is only understood to the module which provides an interface") is per product. General form: one declared row table, product | owning module | interface header, products from `generate.py --list-products`, needles derived per product, one floor and one planted-include control per row; a product with no row is red. Also renames the sibling `pcrec_ucd_fold_links` prefix clash with `pcrec_ucd_*` (MOD-4).
 - [STACKDRIVER-ENC] STATE:not-started — test-stackdepth cannot measure `-e utf8` (no encoding argument in its driver)
   filed: 2026-11-21 manager (review r67 k152 F9)
   status (2026-11-21): tests/thread/compile_stack_driver.c sets features and engine only, so no DEPTH_FAMILIES row reaches island or wide-class builds; the utf8 class nest `([e-u]bc|[e-u]bd(...abe)*)*d` was 440,560 B at BASE and is 64 B over the stated 319,504 B worst

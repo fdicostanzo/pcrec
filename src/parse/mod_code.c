@@ -36,6 +36,7 @@
 
 #include "core/internal.h"
 #include "enc/enc.h"   /* pcrec_utf8_decode: the segment is UTF-8 to gcc */
+#include "parse/ucd_tables.h"
 
 /* THE LANGUAGE ROWS, projected from src/parse/codelang.def in its order. */
 static const PcrecCodeLang code_langs[] = {
@@ -123,7 +124,7 @@ const PcrecCodeLang *pcrec_code_lang_by_feature(unsigned feature)
  * 2026-10-27-r1-ic2 F1/F2/F35): every character that makes the code a
  * reviewer reads differ from the code gcc compiles, ONE first-match table.
  * A row is a UCD property (the vendored data's own set, through the table
- * `make gen-tables` generates, src/parse/uprops_tables.inc) or a code-point
+ * `make gen-tables` generates, `ucd_tables.h`) or a code-point
  * range, with what the diagnostic calls it. The segment is C source, which
  * gcc reads as UTF-8 whatever the pattern's encoding, so the scan decodes
  * UTF-8; a byte that starts no well-formed character is not a character to
@@ -146,19 +147,6 @@ static const struct { PcrecSetTerm t; const char *what; } code_refused[] = {
 #undef PROP
 #undef RANGE
 
-/* Is `cp` in the sorted interval list iv[0..n)? */
-static bool code_span_has(const PcrecCpRange *iv, int n, unsigned cp)
-{
-    int lo = 0, hi = n;
-    while (lo < hi) {
-        const int mid = lo + (hi - lo) / 2;
-        if (cp < iv[mid].lo) hi = mid;
-        else if (cp > iv[mid].hi) lo = mid + 1;
-        else return true;
-    }
-    return false;
-}
-
 /* What the table calls `cp`, or NULL when a segment may carry it. */
 static const char *code_refused_what(Ctx *cx, size_t at, unsigned cp)
 {
@@ -168,13 +156,12 @@ static const char *code_refused_what(Ctx *cx, size_t at, unsigned cp)
             if (cp >= t->lo && cp <= t->hi) return code_refused[k].what;
             continue;
         }
-        int n = 0;
-        const PcrecCpRange *iv = pcrec_uprops_span(t->prop, &n);
-        if (!iv)
+        const int in = pcrec_ucd_contains(t->prop, cp);
+        if (in < 0)
             pcrec_ctx_fail(cx, at, "internal error: the code refusal table "
                            "names property '%s', which unicode-props does "
                            "not ship", t->prop);
-        if (code_span_has(iv, n, cp)) return code_refused[k].what;
+        if (in) return code_refused[k].what;
     }
     return NULL;
 }

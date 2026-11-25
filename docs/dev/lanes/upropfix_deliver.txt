@@ -1,0 +1,5 @@
+report: docs/dev/lanes/upropfix_report.md
+sections: Summary; Class; Fix; Checks; STATE AT HANDOFF
+nonempty: all
+commit: yes
+owed: upropfix-test

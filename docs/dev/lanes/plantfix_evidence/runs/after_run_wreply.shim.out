@@ -1,0 +1,3 @@
+PLANT S1413: RED (FAIL: plant_S1413 P-b: 'xy.*xy(?i:z)' [-fno-run-prefilter] was not refused for RE-SEED (rc 0, stamp 'memchr'))
+PLANT S1414: RED (FAIL: plant_S1414: 'in|instanceof' [] refused: pcrec: internal error: offset row `run-pinned` reached with no reply it can read (path reseed; src/gen/emit_dfa.c, ofs_test_of) (pattern offset 0))
+plants: 2 of        2 red
