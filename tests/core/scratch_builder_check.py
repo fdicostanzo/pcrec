@@ -356,12 +356,23 @@ def job_fields(root):
     freed = set(re.findall(r"pcrec_sb_free\s*\(\s*&cx->job->(\w+)\s*\)", j.group(1)))
     return fields, freed
 
+# [ARENA-SCOPES] scope rules (L4, L2-static, D-7, readers). A LINE scanner over strip_noise'd text, so it does NOT see
+# (r104 CHECKS-1/CHECKS-2; deliberate regex limits, listed so nobody assumes more):
+#   - a scope result stored THROUGH A LOCAL (`char **pp = &x->t; *pp = pcrec_scope_malloc(..)`) or returned out;
+#   - a call or name written in parentheses (`(pcrec_scope_malloc)(..)`), or hidden in a macro body;
+#   - code in a `.h` (inline functions) or at file scope (initialisers): only .c function bodies are scanned;
+#   - a Scope handle copied out by any form but a plain `field = name;` (a memcpy, a struct literal);
+#   - a CHAN_CALL whose channel argument starts on the line after the one after the call's `(`.
+# What it does see: a store `x->f = [cast] pcrec_scope_*(` and a handle copy `x->f = NAME;` for a `Scope NAME` of the file.
 # [ARENA-SCOPES] L4: the src/parse functions allowed to use a scope
 # (file, function, reason); unit F6 adds `uprops_produce`'s row
 SCOPE_PARSE_ALLOW = []
 SCOPE_CALL = re.compile(r"\bpcrec_scope_\w+\s*\(")
-SCOPE_STORE = re.compile(r"(->|\.)\s*\w+(\s*\[[^]]*\])?\s*=\s*pcrec_scope_\w+\s*\(")
-CHAN_CALL = re.compile(r"\bpcrec_ctx_(nomem|fail)\s*\(\s*(?!pcrec_err_chan\s*\()")
+SCOPE_STORE = re.compile(r"(->|\.)\s*\w+(\s*\[[^]]*\])?\s*=\s*(\(\s*[\w\s*]+\)\s*)?pcrec_scope_\w+\s*\(")
+SCOPE_DECL = re.compile(r"\bScope\s+(\w+)\s*[=;,]")
+# `(?!\s|...)` after `\s*`: backtracking `\s*` shorter must not read the whitespace as "some other argument"
+CHAN_CALL = re.compile(r"\bpcrec_ctx_(nomem|fail)\s*\(\s*(?!\s|pcrec_err_chan\s*\()")
+CHAN_OPEN_EOL = re.compile(r"\bpcrec_ctx_(nomem|fail)\s*\(\s*$")
 ARENA_ALLOC_CALL = re.compile(r"\bpcrec_arena_alloc\s*\(")
 OPEN_P_CALL = re.compile(r"\bpcrec_arena_open_p\s*\(")
 
@@ -369,6 +380,8 @@ def scope_rule_findings(rel, clean, fnames):
     """-> (line, rule, message) for one file's scope-rule violations."""
     out = []
     opens, closes = {}, set()
+    scopes = {m.group(1) for l in clean for m in SCOPE_DECL.finditer(l)}
+    handle_store = re.compile(r"(->|\.)\s*\w+(\s*\[[^]]*\])?\s*=\s*&?\s*(%s)\s*;" % "|".join(sorted(scopes))) if scopes else None
     for i, l in enumerate(clean):
         fn = fnames[i]
         if fn and re.search(r"\bpcrec_scope_open\s*\(", l):   # a call, not a definition line
@@ -377,10 +390,13 @@ def scope_rule_findings(rel, clean, fnames):
             closes.add(fn)
         if SCOPE_STORE.search(l):
             out.append((i + 1, "L4", "a pcrec_scope_ result stored into a struct field (a scope object never escapes its scope)"))
+        if handle_store and handle_store.search(l):
+            out.append((i + 1, "L4", "a Scope handle copied into a struct field (a scope object never escapes its scope)"))
         if rel.startswith("src/parse/") and SCOPE_CALL.search(l) and \
                 not any(a[0] == rel and a[1] == fn for a in SCOPE_PARSE_ALLOW):
             out.append((i + 1, "L4", "a pcrec_scope_ call under src/parse/ outside SCOPE_PARSE_ALLOW"))
-        if rel in ("src/core/arena.c", "src/core/sb.c") and CHAN_CALL.search(l):
+        chan = l + " " + clean[i + 1].strip() if CHAN_OPEN_EOL.search(l) and i + 1 < len(clean) else l
+        if rel in ("src/core/arena.c", "src/core/sb.c") and CHAN_CALL.search(chan):
             out.append((i + 1, "D-7", "a refusal through a .cx channel that does not read pcrec_err_chan("))
         if rel == "src/core/arena.c" and ARENA_ALLOC_CALL.search(l) and fn and fn != "pcrec_arena_alloc":
             out.append((i + 1, "D-7", "an arena.c function calls pcrec_arena_alloc (it would bypass the test link's wrap)"))
@@ -396,12 +412,17 @@ SCOPE_MUST_FAIL = [
     ("src/opt/x.c", "void f(Ctx *cx)\n{\n    Scope s = pcrec_scope_open(&cx->arena);\n}\n", "L2-static"),
     ("src/opt/x.c", "void f(Ctx *cx)\n{\n    Scope s = pcrec_scope_open(&cx->arena);\n    cx->job->t = pcrec_scope_malloc(&s, 8);\n    pcrec_scope_close(&s);\n}\n", "L4"),
     ("src/opt/x.c", "void f(Ctx *cx, Job *j)\n{\n    Scope s = pcrec_scope_open(&cx->arena);\n    j->sb[2] = pcrec_scope_sb(&s);\n    pcrec_scope_close(&s);\n}\n", "L4"),
+    ("src/opt/x.c", "void f(Ctx *cx)\n{\n    Scope s = pcrec_scope_open(&cx->arena);\n    cx->job->t = (char *)pcrec_scope_malloc(&s, 8);\n    pcrec_scope_close(&s);\n}\n", "L4"),
+    ("src/opt/x.c", "void f(Ctx *cx, Job *j)\n{\n    Scope s = pcrec_scope_open(&cx->arena);\n    j->keep = s;\n    pcrec_scope_close(&s);\n}\n", "L4"),
+    ("src/core/sb.c", "void h(StrBuf *sb)\n{\n    if (sb->cx) pcrec_ctx_nomem(\n        sb->cx);\n}\n", "D-7"),
     ("src/parse/x.c", "void g(Ctx *cx)\n{\n    Scope s = pcrec_scope_open(&cx->arena);\n    pcrec_scope_close(&s);\n}\n", "L4"),
     ("src/core/sb.c", "void h(StrBuf *sb)\n{\n    if (sb->cx) pcrec_ctx_nomem(sb->cx);\n}\n", "D-7"),
     ("src/core/arena.c", "void k(Arena *a)\n{\n    (void)pcrec_arena_alloc(a, 8);\n}\n", "D-7"),
     ("src/gen/x.c", "void m(Arena *a)\n{\n    if (pcrec_arena_open_p(a)) return;\n}\n", "readers"),
 ]
 SCOPE_MUST_PASS = [
+    ("src/core/sb.c", "void h(StrBuf *sb)\n{\n    if (sb->cx) pcrec_ctx_nomem( pcrec_err_chan(sb->cx));\n}\n"),
+    ("src/core/sb.c", "void h(StrBuf *sb)\n{\n    if (sb->cx) pcrec_ctx_fail(\n        pcrec_err_chan(sb->cx), 0, \"x\");\n}\n"),
     ("src/opt/x.c", "void f(Ctx *cx)\n{\n    Scope s = pcrec_scope_open(&cx->arena);\n    int *t = pcrec_scope_malloc(&s, 8);\n    pcrec_scope_free(&s, t);\n    pcrec_scope_close(&s);\n}\n"),
     ("src/core/sb.c", "void h(StrBuf *sb)\n{\n    if (sb->cx) pcrec_ctx_nomem(pcrec_err_chan(sb->cx));\n}\n"),
 ]

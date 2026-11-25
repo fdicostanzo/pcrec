@@ -3,7 +3,7 @@
  * "THE DRILLS"; Discipline rows L1, L5, L6, L7).
  *
  * A refusal on a detached arena ABORTS, so every refusing step runs in its OWN
- * forked child, which must die by SIGABRT; the parent keeps the state from
+ * forked child, which must end through the code's own abort() (tagged, see REFUSED_RC); the parent keeps the state from
  * before the step (fork copies it), so the drill continues past refusing steps
  * exactly as the design's tables read. A step that must NOT refuse runs in the
  * parent and its registry is checked through the handles and `a.top`/`a.open`.
@@ -29,15 +29,25 @@ static void ok(const char *what) { printf("PASS: %s\n", what); pass_n++; }
 static void bad(const char *what) { fprintf(stderr, "FAIL: %s\n", what); fail_n++; }
 static void expect(int cond, const char *what) { if (cond) ok(what); else bad(what); }
 
-/* Runs `step` in a forked child: true iff the child died by SIGABRT (the
- * detached arena's refusal). */
+/* The refusal's TAG (r104 CHECKS-4). A detached refusal reaches `abort()` in src/core, and a bare "died by
+ * SIGABRT" also reads true when glibc aborts for a bogus `free` (a plant that drops a refusal and frees an arena
+ * pointer passed the D-6 check that way). This binary defines `abort`, so every call the code under test makes
+ * (arena.c, sb.c: static-linked into this exe) lands here and ends the child with REFUSED_RC; glibc's own internal
+ * abort never does, so it cannot read as a refusal. */
+#define REFUSED_RC 77
+void abort(void)
+{
+    _exit(REFUSED_RC);
+}
+
+/* Runs `step` in a forked child: true iff the child ended through the code under test's own abort(). */
 #define REFUSES(what, step) do {                                              \
         fflush(stdout); fflush(stderr);                                       \
         pid_t pid_ = fork();                                                  \
         if (pid_ == 0) { step; _exit(0); }                                    \
         int st_ = 0;                                                          \
         waitpid(pid_, &st_, 0);                                               \
-        expect(WIFSIGNALED(st_) && WTERMSIG(st_) == SIGABRT, what);          \
+        expect(WIFEXITED(st_) && WEXITSTATUS(st_) == REFUSED_RC, what);       \
     } while (0)
 
 static void stale_handle_drill(void)

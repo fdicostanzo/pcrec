@@ -88,7 +88,7 @@ fi
 # [ARENA-SCOPES] F1 — the arena registry's LIFO rules on a detached arena:
 # the stale-handle and free-the-mark drills (docs/design/arena_scopes.md D-2),
 # L5, L7, the unwind and the teardown. Each refusing step runs in its own
-# forked child that must die by SIGABRT. See the check's own header.
+# forked child that must end in the code's own abort() (tagged). See the check's own header.
 # ---------------------------------------------------------------------------
 BINS="$WORKDIR/scope_check"
 if ! unit_build "$BINS" "$SCRIPT_DIR/scope_check.c"; then
