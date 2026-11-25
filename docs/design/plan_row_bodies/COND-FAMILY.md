@@ -10827,3 +10827,49 @@ a peek or a `when` test sets, read afterwards against a fixed set (`peek.d`, `wh
 first path only; the label may lie outside the match). A test comparing two labels or computing on a read:
 MAYBE, about 0.2, only where the reads are finite and small enough to enumerate; otherwise NEVER (unbounded
 reads). From now on each question put to him carries its category.
+
+### 2026-11-25 OWNER RULING — drop-not: "I agree with our conclusions: peek(!A)"
+tags: core/filters/negation core/filters/complement core/filters/kinds core/conditions/two-valued core/holes/insert core/holes/pattern core/patterns/lookaround core/model/places core/operators/precedence core/operators/bindings core/spellings/placeholders core/diagnostics/errors lib/control/peek lib/control/when lib/control/when-test lib/control/when-test/not core/filters/negation/effects
+
+ASKED AS A RULING (slug drop-not, 2026-11-25, the statement put to him: "1. `NOT` leaves the language. `!` is the
+only negation: the complement on a pattern or a set, "the condition fails" on a condition. 2. The negative peek is
+the provided macro `peeknot(A)`, the body `/(?!${A})/`. The `when` guard uses that form, and its answers do not
+change. 3. not-test closes with no new rule: `when(!x, z)` with x a bare pattern is a complement where a test is
+needed, the existing compile error. Else-only is `when(!(h: <5), z)` or `when(peeknot(x), z)`."; then, in the
+discussion entries above, his idea `peek(!A)` in place of line 2's macro, the manager's place reading of it, and
+the manager's leaning as last told to him: "`peek(!A)` alone, with the general rule as its own question",
+`when(!x, z)` on a bare pattern "left an error for now", `!peek(A)` an error). HIS WORDS, whole:
+
+"Drop not: I agree with our conclusions: peek(!A)"
+
+Class: a RULING (it answers drop-not by its slug). THE READING TAKEN of "our conclusions: peek(!A)" (the
+manager's, told to him the same turn so he can object):
+1. `NOT` leaves the language; `!` is the only negation: on a pattern or a set the complement (as ruled,
+   not-is-complement); on a condition "the condition fails", an absent label included (condition-not,
+   absent-under-not: the meaning is unchanged, the spelling is the record's own of 2026-11-16).
+2. The negative peek is `peek(!A)`, his form: a complement as the argument of a peek reads "A cannot match from
+   here", PCRE's `(?!A)`. No `peeknot`: his spelling lean of the entry above is moot. The `when` guard is
+   `peek(!test)`; no answer of `when` changes.
+3. `!peek(A)` stays a compile error (his "I could understand !peek() being an error"). `when(!x, z)`, x a bare
+   pattern, stays a compile error, its message naming `when(peek(!x), z)`: not-test is CLOSED by it (candidate
+   (a)). Else-only is written `when(!(h: <5), z)` or `when(peek(!x), z)`.
+4. NOT taken: the general rule that a complement written anywhere a match is needed in place means "cannot match
+   here" (it would reverse lone-complement-match); "its own question", not asked.
+It REVERSES nothing he ruled: "Use NOT to get else behavior" (2026-11-18) keeps its meaning under the spelling `!`.
+It RETIRES: the manager's reading "`NOT T`, T a zero-width pattern" (core/filters/negation); the exception of
+`NOT` to "a word is always a NAME".
+The manager's readings (marked; for the fold to test): (a) the ground is the place table: `!B` is "no path of B
+matches, in the place's text and mode"; in a lookaround's place that is the negative lookaround; (b) it lives as
+one row of core/holes/insert: a hole that is the WHOLE content of a lookaround group takes a complement and flips
+the group (`(?=${!A})` is `(?!A)`; `(?!${!A})` is `(?=A)`), in a user's body as in `peek`'s; anywhere else in a
+pattern position a complement stays the compile error; (c) nested: `peek(!peek(A))` is `(?!(?=A))`, the answers of
+`(?!A)` (RUN in the discussion entry: 0 of 1456 differ); (d) a complement's labels are never visible, so
+`peek(!A)` passes none on and the list on the spot takes nothing; (e) a behind peek, if provided, takes `!` the
+same way; which peek forms are provided is NOT ruled (his question "What's the full peek family" stands
+answered, not decided); (f) an effect under `!` stays capture-negated's compile error, `peek(!A)` with a request
+in A included; (g) `peek(!A)` is not `peek(anything & !A)` (RUN in the discussion entry): a user-doc trap.
+DFA category (his standing question): YES: every spelling lowers to the regex `NOT peek(A)` lowered to; the build
+note of P-30 stands.
+For the next fold (after lane predfix90 delivers; its own lane: it re-spells every printed `NOT`, the `when` body,
+core/filters/negation, core/holes/insert, core/operators/precedence, the spellings table, the error index, and
+closes lib/control/when-test/not).
