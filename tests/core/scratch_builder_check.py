@@ -57,6 +57,24 @@ Each of those three rules has its own plant, run first (self_test_controls:
 a sentinel row that must come back stale, an empty population that must
 trip every floor, a listing with a new and a missing layer).
 
+THE SCOPE RULES ([ARENA-SCOPES], docs/design/arena_scopes.md "Discipline and
+checks"), on the same noise-stripped text, each with fixtures that must FAIL:
+  L2-static  every `pcrec_scope_open` has a `pcrec_scope_close` in its
+             function (a longjmp is not a return: the teardown releases);
+  L4         a `pcrec_scope_*` result is stored only in a plain local (never
+             through `->` or `.` into a longer-lived struct), and no
+             `pcrec_scope_` call sits under src/parse/ outside SCOPE_PARSE_ALLOW
+             (empty until unit F6's `uprops_produce` row);
+  D-7        in src/core/arena.c and sb.c every `pcrec_ctx_nomem(`/
+             `pcrec_ctx_fail(` takes `pcrec_err_chan(` as its Ctx, and no
+             arena.c function calls `pcrec_arena_alloc` (the test link wraps
+             it; a call from inside arena.c would bypass the wrap);
+  readers    `pcrec_arena_open_p` (W7's read-only accessor) is called by no
+             file under src/, cli/ or lib/ (its reader is tests/core/alloc_check.c).
+What they do NOT see: a scope handle passed to a callee that stores it; an
+open and close paired in one function but on different paths (the runtime's
+`pcrec_scope_check_closed` and the L1 stamp check are that control).
+
 Usage: scratch_builder_check.py ROOT   (exit 0 clean, 1 findings, 2 setup error)
 """
 import os
@@ -83,6 +101,8 @@ ALLOW = [
     ("src/core/sb.c", "sb_grow", "heap", "a heap StrBuf's realloc into a temporary (K7)"),
     ("src/core/sb.c", "pcrec_sb_take", "heap", "take hands the caller a heap string by contract"),
     ("src/core/arena.c", "pcrec_arena_alloc", "heap", "the arena's own blocks"),
+    ("src/core/arena.c", "rec_take", "heap", "[ARENA-SCOPES] the registry's entry record: linked at once, released by its scope's close or the arena's teardown"),
+    ("src/core/arena.c", "pcrec_scope_malloc", "heap", "[ARENA-SCOPES] a HEAP entry's block, stored into a record already linked (holding NULL until then)"),
     ("src/core/compile.c", "compile_driver", "heap", "the Job itself, freed by job_cleanup"),
     # -- heap arrays the Job owns from birth (job_cleanup frees them) ----
     ("src/ir/nfa.c", "nst", "heap", "the Job's NFA state array, realloc'd in place"),
@@ -91,7 +111,6 @@ ALLOW = [
     ("src/opt/dfamemo.c", "pcrec_build_min_dfa", "heap", "the restored machine's state array, attached to the Job's Dfa before any further allocation (dfa_copy)"),
     # -- hand-freed temporaries never live across a refusal --------------
     ("src/opt/scanedge.c", "pcrec_scanedge_dfa", "heap", "ten temporaries freed on every exit; the only refusals while live are their own allocation failures, which free them first (coding.md 1.6)"),
-    ("src/opt/minimize.c", "pcrec_minimize_dfa", "heap", "[ARENA-SCOPES] client (minimize.c tables): live across arena allocations, stranded on an OOM; alloc_check.c's known_stranded row"),
     # -- [ARENA-SCOPES] clients: LIVE across a refusal today, stranded on it (K155
     #    stays open until that row registers scoped arenas on the Ctx) --------
     ("src/gen/memfn_stamps.c", "target_headers_render", "strbuf:nb", "[ARENA-SCOPES] client: K155's own site, the whole-artifact rewrite of csb"),
@@ -337,6 +356,91 @@ def job_fields(root):
     freed = set(re.findall(r"pcrec_sb_free\s*\(\s*&cx->job->(\w+)\s*\)", j.group(1)))
     return fields, freed
 
+# [ARENA-SCOPES] L4: the src/parse functions allowed to use a scope
+# (file, function, reason); unit F6 adds `uprops_produce`'s row
+SCOPE_PARSE_ALLOW = []
+SCOPE_CALL = re.compile(r"\bpcrec_scope_\w+\s*\(")
+SCOPE_STORE = re.compile(r"(->|\.)\s*\w+(\s*\[[^]]*\])?\s*=\s*pcrec_scope_\w+\s*\(")
+CHAN_CALL = re.compile(r"\bpcrec_ctx_(nomem|fail)\s*\(\s*(?!pcrec_err_chan\s*\()")
+ARENA_ALLOC_CALL = re.compile(r"\bpcrec_arena_alloc\s*\(")
+OPEN_P_CALL = re.compile(r"\bpcrec_arena_open_p\s*\(")
+
+def scope_rule_findings(rel, clean, fnames):
+    """-> (line, rule, message) for one file's scope-rule violations."""
+    out = []
+    opens, closes = {}, set()
+    for i, l in enumerate(clean):
+        fn = fnames[i]
+        if fn and re.search(r"\bpcrec_scope_open\s*\(", l):   # a call, not a definition line
+            opens.setdefault(fn, i + 1)
+        if fn and re.search(r"\bpcrec_scope_close\s*\(", l):
+            closes.add(fn)
+        if SCOPE_STORE.search(l):
+            out.append((i + 1, "L4", "a pcrec_scope_ result stored into a struct field (a scope object never escapes its scope)"))
+        if rel.startswith("src/parse/") and SCOPE_CALL.search(l) and \
+                not any(a[0] == rel and a[1] == fn for a in SCOPE_PARSE_ALLOW):
+            out.append((i + 1, "L4", "a pcrec_scope_ call under src/parse/ outside SCOPE_PARSE_ALLOW"))
+        if rel in ("src/core/arena.c", "src/core/sb.c") and CHAN_CALL.search(l):
+            out.append((i + 1, "D-7", "a refusal through a .cx channel that does not read pcrec_err_chan("))
+        if rel == "src/core/arena.c" and ARENA_ALLOC_CALL.search(l) and fn and fn != "pcrec_arena_alloc":
+            out.append((i + 1, "D-7", "an arena.c function calls pcrec_arena_alloc (it would bypass the test link's wrap)"))
+        if OPEN_P_CALL.search(l) and fn and fn != "pcrec_arena_open_p":
+            out.append((i + 1, "readers", "pcrec_arena_open_p is W7's read-only accessor: no caller under src/, cli/ or lib/"))
+    for fn, ln in opens.items():
+        if fn not in closes:
+            out.append((ln, "L2-static", f"pcrec_scope_open in {fn or '<file scope>'} with no pcrec_scope_close in the same function"))
+    return out
+
+# fixtures: (rel, text) that MUST produce the named rule, and one that must not
+SCOPE_MUST_FAIL = [
+    ("src/opt/x.c", "void f(Ctx *cx)\n{\n    Scope s = pcrec_scope_open(&cx->arena);\n}\n", "L2-static"),
+    ("src/opt/x.c", "void f(Ctx *cx)\n{\n    Scope s = pcrec_scope_open(&cx->arena);\n    cx->job->t = pcrec_scope_malloc(&s, 8);\n    pcrec_scope_close(&s);\n}\n", "L4"),
+    ("src/opt/x.c", "void f(Ctx *cx, Job *j)\n{\n    Scope s = pcrec_scope_open(&cx->arena);\n    j->sb[2] = pcrec_scope_sb(&s);\n    pcrec_scope_close(&s);\n}\n", "L4"),
+    ("src/parse/x.c", "void g(Ctx *cx)\n{\n    Scope s = pcrec_scope_open(&cx->arena);\n    pcrec_scope_close(&s);\n}\n", "L4"),
+    ("src/core/sb.c", "void h(StrBuf *sb)\n{\n    if (sb->cx) pcrec_ctx_nomem(sb->cx);\n}\n", "D-7"),
+    ("src/core/arena.c", "void k(Arena *a)\n{\n    (void)pcrec_arena_alloc(a, 8);\n}\n", "D-7"),
+    ("src/gen/x.c", "void m(Arena *a)\n{\n    if (pcrec_arena_open_p(a)) return;\n}\n", "readers"),
+]
+SCOPE_MUST_PASS = [
+    ("src/opt/x.c", "void f(Ctx *cx)\n{\n    Scope s = pcrec_scope_open(&cx->arena);\n    int *t = pcrec_scope_malloc(&s, 8);\n    pcrec_scope_free(&s, t);\n    pcrec_scope_close(&s);\n}\n"),
+    ("src/core/sb.c", "void h(StrBuf *sb)\n{\n    if (sb->cx) pcrec_ctx_nomem(pcrec_err_chan(sb->cx));\n}\n"),
+]
+
+def scope_self_test():
+    """-> a message per scope-rule fixture the rules got wrong."""
+    out = []
+    for rel, text, rule in SCOPE_MUST_FAIL:
+        clean = strip_noise(text).split("\n")
+        if not any(r == rule for _, r, _ in scope_rule_findings(rel, clean, functions(clean))):
+            out.append(f"the {rule} rule missed its fixture in {rel}")
+    for rel, text in SCOPE_MUST_PASS:
+        clean = strip_noise(text).split("\n")
+        got = scope_rule_findings(rel, clean, functions(clean))
+        if got:
+            out.append(f"a clean fixture in {rel} was flagged: {got[0][2]}")
+    return out
+
+def scope_scan(root):
+    """-> (findings, files scanned, pcrec_scope_open sites) over src/ cli/ lib/ .c files."""
+    findings, nfiles, nopen = [], 0, 0
+    for top in ("src", "cli", "lib"):
+        for dp, dn, fn in os.walk(os.path.join(root, top)):
+            for f in sorted(fn):
+                if not f.endswith(".c"):
+                    continue
+                path = os.path.join(dp, f)
+                rel = os.path.relpath(path, root)
+                clean = strip_noise(open(path, encoding="utf-8", errors="replace").read()).split("\n")
+                nfiles += 1
+                fns = functions(clean)
+                nopen += sum(len(re.findall(r"\bpcrec_scope_open\s*\(", l)) for k, l in enumerate(clean)
+                             if fns[k] and rel != "src/core/arena.c")
+                for ln, rule, msg in scope_rule_findings(rel, clean, functions(clean)):
+                    findings.append((rel, ln, rule, msg))
+    return findings, nfiles, nopen
+
+MIN_SCOPE_OPENS = 1   # half the scope-opening sites at F1 (minimize.c: 1; arena.c's unwind builds no open), D110
+
 def main():
     root = sys.argv[1] if len(sys.argv) > 1 else "."
     for l, want in MUST_FLAG:
@@ -368,6 +472,16 @@ def main():
         a = ALLOW[k]
         print(f"FAIL: stale allowlist row (nothing matches it any more): {a[0]} {a[1]} {a[2]} -- remove it")
         rc = 1
+    for m in scope_self_test():
+        print(f"FAIL: self-test: {m}")
+        return 2
+    sfind, _, nopen = scope_scan(root)
+    for rel, ln, rule, msg in sfind:
+        print(f"FAIL: scope rule {rule}: {rel}:{ln}: {msg}")
+        rc = 1
+    if nopen < MIN_SCOPE_OPENS:
+        print(f"FAIL: saw only {nopen} pcrec_scope_open sites (floor {MIN_SCOPE_OPENS}): the scope scan is not reaching the tree")
+        return 2
     fields, freed = job_fields(root)
     if fields is None or freed is None:
         print("FAIL: could not find struct Job in src/core/internal.h or job_cleanup in src/core/compile.c")
@@ -382,7 +496,8 @@ def main():
         return 2
     if rc == 0:
         print(f"PASS: scratch_builder_check: {nfiles} compile-path files, {nscratch} scratch builders, "
-              f"{len(reached)} allowlisted sites, {len(fields)} Job buffers all freed by job_cleanup, 0 heap builders")
+              f"{len(reached)} allowlisted sites, {len(fields)} Job buffers all freed by job_cleanup, 0 heap builders, "
+              f"{nopen} scope sites under the scope rules")
     return rc
 
 sys.exit(main())

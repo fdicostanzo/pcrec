@@ -1368,7 +1368,10 @@ else
     ALLOCBIN="$WORKDIR/f6b_alloc_check"
     LIBPCREC="$ALLOC_SCRATCH/libpcrec.a"
     . "$ROOT_DIR/tests/lib/unit_cc.sh"   # sets unit_build; LIBPCREC above must be set first (unit_cc.sh's own default only fires when unset)
-    if ! unit_build "$ALLOCBIN" "$ROOT_DIR/tests/core/alloc_check.c" 2>"$WORKDIR/f6b.build.log"; then
+    # [ARENA-SCOPES] W7: the arena-window hook lives in the test link alone
+    # (alloc_check.c defines the __wrap_ pair; tests/core/run_alloc_tests.sh links the same way)
+    if ! unit_build "$ALLOCBIN" "$ROOT_DIR/tests/core/alloc_check.c" \
+            -Wl,--wrap=pcrec_arena_alloc -Wl,--wrap=pcrec_arena_free 2>"$WORKDIR/f6b.build.log"; then
         bad "[F6(b)] FAILED TO BUILD tests/core/alloc_check.c against the injected scratch library: see $WORKDIR/f6b.build.log"
     else
         ALLOCOUT="$WORKDIR/f6b_alloc_check.out"
