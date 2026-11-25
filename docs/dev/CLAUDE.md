@@ -15,7 +15,7 @@ Documents that track execution against the design, not the product. Memos live h
 - `learnings.md`: read this, not the journal; update only at session close for a NEW lesson class.
 - `guide/`: the living coding/architecture/style guide; read `guide/README.md` before your first code edit (`coding_guide.md` is a stub).
 - `wake.md` and `owner.md` are UNTRACKED; committed docs win on disagreement.
-- `artifact_size_log.tsv`: written ONLY by `tests/size/run_size_log.sh` after a FULL-CORPUS `test-corpus` run; not under
+- `artifact_size_log.tsv`: written ONLY by `tests/size/run_size_log.sh` after a FULL-CORPUS `test-corpus` run AND only when `ARTSIZE_COMMIT=1` (an ordinary run writes `$PCREC_TMPDIR/scratch/size/<tree>/`); not under
   `docs/measurements/`; read with `scripts/size_diff OLD NEW`.
 - `history/` files are records, never normative; `lanes/` files are historical after merge.
 - Measurement memos (`chain_profile.md`, `tt*`): re-read before citing numbers; they keep their own text as evidence.

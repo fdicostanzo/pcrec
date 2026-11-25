@@ -4369,16 +4369,26 @@ reads, never a gate). This section is the implementation record: the
 recording mechanism, its measured overhead, the log format, the tripwire,
 and the sabotage validation.
 
-### Why the log stays tracked, and is dirty after every run (admin88, 2026-09-30)
+### Why the log stays tracked, and is NOT written by an ordinary run (admin88 2026-09-30; wtclean 2026-11-25)
 
-`docs/dev/artifact_size_log.tsv` shows modified in `git status` after every
-full `test-corpus` run, because the wrapper rewrites it. It stays tracked on
-purpose: `tests/size/check_size_tripwire.sh` (`make test-size`) reads it and
-fails if it is missing, and the committed history (44 commits, re-archived
-at gates) is the ratchet's deliverable — per-pattern movement is a `git diff`
-or `scripts/size_diff`, per Frank's ruling above. Leave an ordinary run's
-rewrite out of commits (`git restore` it); re-archive it only deliberately
-from a clean full default-axes run. The rule and evidence are in
+`docs/dev/artifact_size_log.tsv` stays tracked on purpose:
+`tests/size/check_size_tripwire.sh` (`make test-size`) reads it as the
+baseline on a fresh tree and fails if it is missing, and the committed
+history (53 commits, re-archived at gates) is the ratchet's deliverable —
+per-pattern movement is a `git diff` or `scripts/size_diff`, per Frank's
+ruling above.
+
+Until 2026-11-25 every full `test-corpus` run REWROTE it, so every tree that
+ran the suite read dirty to `scripts/wtprune` (about 50 of 286 kept
+worktrees on that day) and lanes sometimes committed the rewrite inside
+unrelated work. Now `tests/size/log_path.sh` (sourced by both scripts) picks
+the file: `ARTSIZE_LOG=<file>` if set; else the committed file only when
+`ARTSIZE_COMMIT=1`; else a per-tree scratch file,
+`$PCREC_TMPDIR/scratch/size/<tree-name>/artifact_size_log.tsv`. The writer
+never falls back; the tripwire reads the scratch file if it exists, else the
+committed baseline. A deliberate re-archive is a clean, full, default-axes
+run as `ARTSIZE_COMMIT=1 make test` (or `ARTSIZE_COMMIT=1 bash
+tests/size/run_size_log.sh`), then commit the file. Rule and evidence:
 `tests/size/CLAUDE.md`.
 
 ### Where it rides

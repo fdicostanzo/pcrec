@@ -7,7 +7,9 @@
 # FULL-CORPUS invocation (no file/dir arguments, matching run.sh's own
 # "no args = every *.rxt under tests/" rule) — assembles the raw rows into
 # the stable, diffable log at docs/dev/artifact_size_log.tsv (D35's shape:
-# stable filename, so a re-run is a `git diff`; NOT under docs/measurements/
+# stable filename, so a re-run is a `git diff` — when ARTSIZE_COMMIT=1;
+# by default the log lands in the temp root (tests/size/log_path.sh) so a
+# plain `make test` leaves the tree clean; NOT under docs/measurements/
 # itself, because that directory's own CLAUDE.md rule is "no check may read
 # these files" and tests/size/check_size_tripwire.sh does read this one —
 # see this file's own header note below and docs/testing.md "The
@@ -34,7 +36,8 @@ ROOT_DIR="$(cd "$SCRIPT_DIR/../.." && pwd)"
 LC_ALL=C
 export LC_ALL
 
-STABLE_LOG="${ARTSIZE_LOG:-$ROOT_DIR/docs/dev/artifact_size_log.tsv}"
+. "$SCRIPT_DIR/log_path.sh"   # which log: scratch by default, committed only on ARTSIZE_COMMIT=1
+STABLE_LOG="$(size_log_write_path)"
 
 full_corpus=0
 [ "$#" -eq 0 ] && full_corpus=1
