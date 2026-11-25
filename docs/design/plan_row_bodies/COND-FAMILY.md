@@ -10562,3 +10562,35 @@ the match to its next path. On a BARE pattern it would be one: the operand consu
 pattern as a proposition ("x matches here") before negating it, and nothing else in the language reads a pattern
 that way (`&` is a filter on a stretch, `|` an alternation, `!` a set complement). That is a ground for the
 compile error, beside the ones put to him.
+
+### 2026-11-25 OWNER, on not-test: "What I'm wondering is if we need it. I never specifically asked for it. It emerged from discussions on when. Couldn't ! Handle it?"
+tags: core/filters/negation core/conditions/two-valued core/filters/complement lib/control/when lib/control/when-test/not lib/control/peek core/operators/bindings
+
+Said on the manager's answer of the entry above (in the clear forms `NOT` is a negative lookahead on a
+zero-width test; on a bare pattern it would be the one logical statement). HIS WORDS, whole:
+
+"What I'm wondering is if we need it. I never specifically asked for it. It emerged from discussions on when.
+Couldn't ! Handle it?"
+
+Class: a QUESTION ("if we need it"; "Couldn't ! Handle it?") with a RECOLLECTION ("I never specifically asked for
+it. It emerged from discussions on when."). NOT a ruling.
+CHECKED AGAINST THE RECORD: the recollection holds in substance. NOT on a condition was the MANAGER's position
+("2026-11-16 ... THE MANAGER'S POSITION given to him ... NOT on a condition should be ALLOWED"), ruled by his
+"condition-not : yes allow not", and that entry spelled it `!`: "`!` on a condition is LEGAL". Before it,
+"not-is-complement: yes agree" had `!` on a pattern or a set only. The capital `NOT` is in his words once, on
+`when`: "When: start with required then. Use NOT to get else behavior" (2026-11-18). `NOT` on a zero-width
+pattern (`NOT peek(A)`, the `when` body's guard) is the manager's reading (core_details, core/filters/negation:
+"the reading the ruled `when` body needs").
+RUN before answering (python `re`; `/\d+/ & !/7/` modelled as the first greedy path of `\d+` whose stretch `7`
+does not match whole; output pasted):
+complement  /\d+/ & !/7/ : WHOLE 77 HOLDS, 7 FAILS, 37 HOLDS, 73 HOLDS / SEARCHED `7 73` ('73', 2) / FIND-ALL `7 73 37 77` [('73', 2), ('37', 5), ('77', 8)]
+negative peek  (?!7)\d+ : WHOLE 77 FAILS, 7 FAILS, 37 HOLDS, 73 FAILS / SEARCHED `7 73` ('3', 3) / FIND-ALL `7 73 37 77` [('3', 3), ('37', 5)]
+The manager's answer (told to him; every line the manager's reading; nothing applied): (1) on a CONDITION `!`
+handles it, and was the record's own spelling; `A & !B` is already `A & !(0: B)` (hand-derived from the ruled
+"`A & B` holds exactly when `A & (0: B)` holds"), so the condition is the general case. (2) On a PEEK today's
+`!` does not: a complement judges a whole stretch, a negative peek a point (the run above parts them). Making
+`!` mean "fails here" on a zero-width operand needs a rule for what counts as zero-width, and `!//` (today "not
+the empty text") would change meaning. (3) No operator is needed for the peek: PCRE's `(?!...)` in a body does
+it, `/(?!${A})/`, as `peek` is `/(?=${A})/`; the `when` guard is then `/(?!${test})/` (its printed lowering
+already reads `(?!\d)`). (4) not-test then dissolves: `when(!x, z)`, x a bare pattern, is a complement in a test
+position, the existing compile error (complement-place). Put to him as a ruling, slug drop-not.
