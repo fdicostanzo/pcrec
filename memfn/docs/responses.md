@@ -3763,3 +3763,93 @@ Reports: docs/dev/lanes/forms*_report.md, formsfixl_report.md, formsfixm_report.
   - **Validation:** 759 at -j16: 222/0 in 667 s, against 757's serial 5615 s, and a masked diff identical to 757 (one named urandom line). make strict ok at the merge.
   - No product code, no abi event.
   - **Filed, not built:** mutb.py (one unit per mutant) and run_g2_win.sh (split by head).
+
+- **done: R-47 (D201, the block span at the SIMD layer), all units U1-U6** (2026-11-24, kit). Branch lane/memfn-k1108 @ 5681185fd.
+  - **What this delivery adds:** the U6 timing record and the job-shape fix. Main already has U1-U6 minus timing and the parallel selftest.
+  - **Timing:** job 760-kit-u6time on the dev box (Zen 4), in Frank's cleared window ("u6-timing-window: yes"). Record: docs/dev/lanes/u6time_evidence/run760/ (README, job.log, results TSV, quiet logs).
+  - **Verdict** (c6decide, rule 9a2875a6bf089837):
+    - C6 (SIMD on, the block span vs --memfn=no-span-vector): NO LOSS. Readable 27 of 32, W/T/L 17/10/0, A/A 0 standing (rate 0.000 against VOID above 0.050).
+    - C6c, the scalar layer under two compilers: NO LOSS. off-clang 11 of 12 readable, 0/11/0; off-os 12 of 12 readable, 0/12/0.
+    - NOT-RUN 0, no TRUNCATED.
+  - **Boxes:** Zen 4 only. ubuntubudu (Zen 1) is UNAVAILABLE (Frank: an old box, not planned). There is no Mac cell (Frank, 11-23). No 2x128 AVX2 datapoint is needed to decide.
+  - **The queue outcome:** `failed rc=0 verdict=GREEN` (expect stale: the rehearsal's lines shared the log). Ruled GREEN by the kit, and the job shape is fixed (replayed: done=1, verdict=3).
+  - **PROPOSED for main to record:** by D155 item 2, with the bench box set now the dev box alone (no loss anywhere, a win somewhere: 17 standing wins), V leaves CANDIDATE.
+    - The labels "CANDIDATE until every bench box runs C6" in docs/design/memfn/block_span.md (lines ~37, ~1007, ~1479, ~1501) then read "MEASURED on Zen 4, 2026-11-24 (job 760)".
+    - The kit edits them on your word, or main does at landing.
+  - **Still open, not R-47:** [KIT-ARCH-STEP] stage 2, after Frank moves the kit to the Mac. Filed ideas: mutb.py under parpool, run_g2_win.sh split by head.
+
+- **ack: R-48 (NEON V on the Mac first, x86 V on return)** (2026-11-24, kit, now on the Mac: Apple M1 Max, arm64, 10 cores; `gcc` here is Apple clang 21; there is no GNU gcc).
+  - **Order:** first [KIT-ARCH-STEP] stage 2, the overall architecture review of the kit's sections (owner 11-22). It needs main's charter: the plan row is not-started and the row body has no scope beyond the ruling. Then the NEON V design (design note, critic round, then a build go via main).
+  - **x86 V** is filed as the kit's next dev-box item, for when the kit session moves back. Nothing for it gets built on the Mac.
+  - **Branch:** lane/memfn-arch, cut from main e11c5f4ef (worktrees/memfn on the Mac).
+  - **A fact for the NEON design, raised now:** the Mac has no GNU gcc, and pcrec's target compiler is gcc (D2; generated code uses GNU C extensions). Timing NEON V here means timing clang-compiled matchers unless a GNU gcc is installed, and installing one touches files outside the mandate, so it is the owner's call. QUESTION for main/Frank: is clang-on-Mac the NEON V timing compiler, or does the Mac get a GNU gcc?
+  - **CORRECTION (same day):** the Mac DOES have a GNU gcc: Homebrew gcc-16 (16.2.0, /opt/homebrew/bin/gcc-16, resolved by tests/lib/cc_resolve.sh). I checked only `which gcc`, which finds Apple clang. Main answered that NEON V is timed under gcc-16, with a clang column optional. The question is withdrawn.
+
+- **notice: R-49 progress, review r91 memfn-archrev RULED** (2026-11-24, kit). Branch lane/memfn-arch @ 5af5d02d6; review docs/dev/reviews/2026-11-24-r91-memfn-archrev.md (+ dir).
+  - **Verdict:** no answer- or speed-level findings. The backbone holds (44/44 cites). But ARV-9 (the window.c split) is mis-sized: about 1,240 lines are unplaced, it needs a private header, and about 47 sabotage rows re-point. ARV-10/11/12 are mis-scoped, and the owner question window-file-split was posed inverted. All of F1-F20 are FIX-NOW: a fresh architect lane, archrev2, is running. A light re-check follows. **Please assign a review number for it.**
+  - **For main (not the kit's to edit):**
+    - F21: the [KIT-ARCH-STEP] row says "three stages" but lists two.
+    - Drift found by archrev (ARV-4): register rows 7b, 10 and roadmap A-KIND. r91 found that 7b is NOT drift and A-KIND holds; row 10 still needs your check. Plan rows: [SP1E-RENDERER-TABLE] looks done; [KN-CARRIERLESS] is half done.
+    - memfn/src/CLAUDE.md's "11 rows" (there are 12) is the kit's own fix and rides the revision.
+  - **QUESTION (RUL-13, PLAN):** is D147 Q36's "extraction" still the trigger for moving formhash.c/k1_ref.c out of the product library, or did the 11-04 manifesto supersede it? ARV-14 will read "Q36 extraction, or its successor as ruled".
+  - **Process proposals from r91 (shared skills, yours to accept):**
+    - (1) pcrec-critic §4, arch mode: on a SECTION review, give each suggestion's size/gate to first-unit identity ONLY.
+    - (2) §5, arch mode: build R/tree as a `git archive <T>` export with the denylisted files removed; 0 leaks this round.
+    - (3) Commit the round's anchor_map.py (sabotage anchor -> enclosing function; now in the review dir) as a reusable tool under scripts/ or tools/review/.
+    - (4) pcrec-architect self-check: a count built from a NAME LIST is a floor; say so, or grep by shape.
+  - **Mac portability finding (main's scripts):** scripts/gestalt uses GNU-only `xargs -d` and prints a false "GONE: kit" on the Mac; scripts/monread assumes monitor.log exists.
+
+- **done: R-49 ([KIT-ARCH-STEP] stage 2, the kit's overall architecture review)** (2026-11-24, kit). Branch lane/memfn-arch @ 51f177e6d. Note memfn/docs/arch_review_2026-11.md, ACCEPTED rev 4.
+  - **Reviews:** r91 memfn-archrev (5 critics, 21 findings), r92 memfn-archrev2 (4 critics, 14), r93 memfn-archrev3 (1 critic, 9). Each was ruled, and each fix pass was a FRESH architect lane (archrev2, 3, 4). Records: docs/dev/reviews/2026-11-24-r9{1,2,3}-*.md. The manager checked r93's fixes at acceptance and read §9 in full.
+  - **Validation:** docs only. No code moved (C-56: an empty diff from T a0f13ad83 over the code paths). Every lane's lanecheck printed DONE rc=0.
+  - **The suggestions** (18, FILED, not built; smaller first):
+    - S doc/bookkeeping: ARV-1, 18, 3, 4, 2.
+    - S no-movers: ARV-6, 7, 5, 16.
+    - M: ARV-8, 11, 10.
+    - L: ARV-9, 12.
+    - Leave-its: ARV-13, 14, 15, 17.
+    Each carries its size, gate and trigger, and §8 H1-H11 holds what the design step decides. Register rows are PROPOSED in §6 (main's to file). ARV-10 and ARV-8 also need amendments: Q-M1b-1 and plan_frame R5 (the kit's), and registry.md §6¶7 for an options row (main's).
+  - **OWNER QUESTION, §9 window-file-split (for main to put to Frank), in two parts:**
+    - (1) When a feature next adds a planner or renderer table to window.c: (A) split window.c first, as its own answer-identical unit (ARV-9, L); or (B) keep one file until the kit split. Leaning (A), at the trigger only.
+    - (2) ARV-16 (move the position primitives out of window.c): (C) go ahead on its own trigger; or (D) wait, as [SP1D-KITSPLIT-SEAMS] does, for the kit split. No leaning.
+  - **Charter vs committed:**
+    - SCOPE (planner, emitter + form tables + per-CPU dispatch, cards, seam): note §2-§5.
+    - METHOD (goals, judgement, register, the kit memories): §2-§6, §10. The memories were unreadable on the Mac, so the note relies on R-49's wording (a FREEZE NOTE in r91).
+    - Suggestions ranked smaller-first and FILED: §7.
+    - Critic round r91 in arch mode: done, plus r92 and r93.
+    - Owner summary: the question above, plus the list.
+  - **OWED:**
+    - The register rows and plan rows for the ARVs main accepts (main's).
+    - The kit triage lane for runner PLANTS (FUW-12 class; after R-49, accepted by main).
+    - The process proposal from r93 (for main): an architect self-check that re-runs every record a review finding cites before writing it in.
+  - **Next for the kit:** R-48's NEON V design (design note, critic round, then a build go via main), after Frank's pick.
+
+- **notice: FUW-12 class triage (the runner PLANTS), D203 fields** (2026-11-24, kit). Lane plantri, merged into lane/memfn-arch. Report: docs/dev/lanes/plantri_report.md (evidence in plantri_evidence/). NO FIX MADE.
+  - **Population:** 4 runners carry a PLANTS list, not 6.
+    - run_g2_win: 38 plants, 36 OK, 2 STALE (S1423, S3092).
+    - run_g2_pres: 35 plants, 34 OK, 1 STALE (S3064 edit 1).
+    - run_proof: 6 plants, 5 OK, 1 STALE (S1224).
+    - run_wreply: 2 plants, both OK.
+    - Total 81: 77 OK, 4 STALE, 0 ambiguous, 0 missing.
+    - Out of scope: run_finder's 2 awk line plants, purity_rows.tsv and decider_census are OK or report themselves; run_d3floor's plants have no FROM text; the g2 mfind/any/simd .py plants edit rendered text at run time (UNDECODED).
+    - Positive control: the decoder reads the same 4 as OK at 4d00fccfe^.
+  - **Class:** anchor drift in a hand-copied test-side literal, outside the mech tripwire's population. Nothing runs --plants automatically. 40 of the 81 share an id with a mech row: S1224 and S3064 were re-anchored there (ad5a89b26) but not in their runners. The moves were d4b25d950 (S1423) and 4d00fccfe (the other three).
+  - **Rule it breaks:** the [SABANCHOR] tripwire's intent (every plant resolves) covers only tests/mech/sabotages.
+  - **Class-level fix shape (the lane's):**
+    - A plant pass in scripts/m6read_check_sab_anchors.py, which already runs as [SABANCHOR] in test-codegen, with a population floor.
+    - It reads the plants through ONE applier module that the 4 runners also call. A checker twin would drift: run_g2_pres's `\\n` dialect differs from win's and proof's.
+    - Then re-aim the 4 stale plants.
+  - **ASK (ownership):** the applier module and the 4 re-aims are kit work (memfn/tests) and tests/memfn runner edits. The plant pass is in YOUR script (scripts/). Shall the kit build all of it in one lane on its branch (your script included, delivered as a code PR), or do you take the checker half? Needs no build go (no src/, lib/, cli/ or memfn/src/ edits); a CHECK change, so it gets a light critic round.
+
+- **notice: OWNER RULING window-file-split, given to the kit directly** (2026-11-24). PROPOSED D-entry for main to record.
+  - **Verbatim, in two messages:** (1) "Split: how do you plan to split? If you anticipate this file growing, splitting out once rather then multiple times would be best. I'd rather have many small concisely defined files than larger sprawling ones". (2) "Split: yes on trigger but once you do split, make it count. Consider where reasonable the interface of the file. If there is a table and functions that search it specifically, they belong together in that file. Then the public names are just those functions."
+  - **The kit's reading:**
+    - Part 1 is (A) at its trigger. NEON V (R-48) is that trigger, so the split lands BEFORE NEON V as its own answer-identical unit.
+    - Part 2 is folded in: the position primitives (ARV-5 + ARV-16) move ONCE, in the split, to their final file. That file takes kit_mass, so the presence<->window cycle goes.
+    - The cut is fine-grained and made once.
+    - FILE INTERFACE RULE, a general one for the kit and possibly for pcrec (main's call): a table and the functions that search it live in one file, the table is file-static, and the file's public names are only those functions.
+  - **Next (kit):**
+    - The split's DESIGN note, docs/design/memfn/window_split.md: the per-file interfaces, the private header, the test re-points (H1/H2/H3/H8 of the accepted arch note).
+    - Then a design critic round (I'll ask you for the number).
+    - Then a build GO via you. Is the owner's "yes on trigger" the go, or does he give it after the design? I'll ask at design delivery.
+  - **For main:** the register and plan rows for ARV-5, ARV-9 and ARV-16 now merge into one split unit. [SP1D-KITSPLIT-SEAMS]'s primitives half is overtaken by this ruling; its seam-facts half stays. NEON V's design waits for the split.

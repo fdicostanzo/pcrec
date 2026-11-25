@@ -544,7 +544,7 @@ static PcrecAttr layout_attr(int layout)
 static const char *stamp_value(Ctx *cx)
 {
     const PcrecPartLayout *pl = &cx->job->pl;
-    StrBuf v = { .cx = cx };
+    StrBuf v = pcrec_sb_scratch(&cx->arena);
     const char *sep = "";
     if (pl->residual) {
         pcrec_sb_printf(&v, "%sresidual=%s", sep, value_tok[pl->residual]);
@@ -597,7 +597,7 @@ static void render_buf(Ctx *cx, StrBuf *sb, unsigned char seen[PCREC_ENTRY_N + 1
 {
     if (!sb->p || !memchr(sb->p, PCREC_PREFIX_LEAD, sb->len)) return;
     const PcrecPartLayout *pl = &cx->job->pl;
-    StrBuf o = { .cx = cx };
+    StrBuf o = { .cx = cx };   /* [ARENA-SCOPES] client (K155) */
     size_t i = 0;
     while (i < sb->len) {
         const char *q = memchr(sb->p + i, PCREC_PREFIX_LEAD, sb->len - i);
@@ -676,7 +676,7 @@ void pcrec_part_layout_facts(Ctx *cx, StrBuf *ctl, StrBuf *parts, const char *en
 {
     const PcrecPartLayout *pl = &cx->job->pl;
     if (!pl->resolved) return;
-    StrBuf rows = { .cx = cx };
+    StrBuf rows = pcrec_sb_scratch(&cx->arena);
     for (int i = 0; i < pl->narow; i++)
         pcrec_sb_printf(&rows, "%s%s", i ? "," : "", art_rows[pl->arow[i]].id);
     const char *cells[9];

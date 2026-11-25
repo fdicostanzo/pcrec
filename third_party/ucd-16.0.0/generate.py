@@ -17,8 +17,9 @@ WHAT IT READS   `UnicodeData.txt`, `CaseFolding.txt`, `Scripts.txt`,
 WHAT IT WRITES  four GENERATED files, never hand-edited
                 (`src/parse/cls_bits.inc`'s precedent):
 
-  `src/parse/uprops_tables.inc`      the general-category interval tables
-                                     module `unicode-props` consults.
+  `src/parse/ucd_tables.inc`         the Unicode property tables (interval
+                                     sets and their names), read only through
+                                     `src/parse/ucd_tables.h`.
   `src/core/fold_tables.inc`         [M5.0 stage 4] the simple case-fold
                                      ORBIT relation `src/core/fold.c` walks
                                      to close a caseless class.
@@ -158,7 +159,7 @@ BIDICLASS_SOURCE = os.path.join(HERE, "DerivedBidiClass.txt")
 PROPALIAS_SOURCE = os.path.join(HERE, "PropertyAliases.txt")
 BLOCKS_SOURCE = os.path.join(HERE, "Blocks.txt")
 AGE_SOURCE = os.path.join(HERE, "DerivedAge.txt")
-OUT = os.path.join(REPO, "src", "parse", "uprops_tables.inc")
+OUT = os.path.join(REPO, "src", "parse", "ucd_tables.inc")
 FOLD_OUT = os.path.join(REPO, "src", "core", "fold_tables.inc")
 FOLD_TEXT_OUT = os.path.join(REPO, "src", "enc", "utf8_fold_pairs.inc")
 CASE_OUT = os.path.join(REPO, "src", "core", "case_tables.inc")
@@ -304,8 +305,8 @@ def check_invariant(name, ivs):
 # in a SET of namespaces, and the two script rows for one value differ in both
 # their namespace mask and their span.
 #
-# The masks are duplicated in `src/parse/mod_uprops.c` only as the #defines
-# this file emits — the C reads them, never restates them.
+# The masks are the interface's (`src/parse/ucd_tables.h` PCREC_UCD_NS_*); this
+# file emits them as UCD_GEN_NS_* and the C `_Static_assert`s they agree.
 NS_BARE = 1
 NS_SC = 2
 NS_SCX = 4
@@ -906,7 +907,9 @@ def normalise(name):
 # ---------------------------------------------------------------------------
 
 BANNER = """\
-/* uprops_tables.inc — GENERATED, DO NOT EDIT.
+/* ucd_tables.inc — GENERATED, DO NOT EDIT.  Included by `ucd_tables.c` ONLY;
+ * the layout below this comment is that module's private format, documented
+ * in its header comment and nowhere else.
  *
  * Written by `third_party/ucd-16.0.0/generate.py` from that directory's
  * vendored `UnicodeData.txt`, `Scripts.txt`, `ScriptExtensions.txt`,
@@ -940,13 +943,13 @@ BANNER = """\
  * error 147 on every libpcre2 this project can reach, which is why there is
  * no `gc` namespace here.
  *
- * EACH ROW CARRIES ITS SET TWICE — `off`/`n` and `ci_off`/`ci_n`, the second
- * being the set to use under `-i`.  MEASURED (see the generator's CASELESS_AS
- * for the two sweeps): under `PCRE2_CASELESS`, `Lu`, `Ll` and `Lt` are exactly
- * `L&` and EVERY other property is caseless-invariant, so on all but three
- * rows the two spans are the same numbers.  Carrying it as a resolved SPAN
- * rather than as a name to look up again is what keeps the caseless path from
- * being a second lookup that could miss.
+ * EACH ROW CARRIES ITS SET TWICE — the set to use, and the set to use under
+ * `-i`.  MEASURED (see the generator's CASELESS_AS for the two sweeps): under
+ * `PCRE2_CASELESS`, `Lu`, `Ll` and `Lt` are exactly `L&` and EVERY other
+ * property is caseless-invariant, so on all but three rows the two are the
+ * same set.  Carrying it as a resolved SET rather than as a name to look up
+ * again is what keeps the caseless path from being a second lookup that could
+ * miss.
  *
  * A PROPERTY SET IS NEVER PUT THROUGH `cls_casefold`.  That helper (D23)
  * widens by ASCII partners, which on `\\p{{Lu}}` would give `A-Z` plus `a-z`
@@ -971,58 +974,145 @@ BANNER = """\
 """
 
 
+def varint(v):
+    """LEB128: seven bits per byte, low group first, high bit = more follows."""
+    out = bytearray()
+    while v >= 0x80:
+        out.append((v & 0x7F) | 0x80)
+        v >>= 7
+    out.append(v)
+    return out
+
+
+CK_STRIDE = 32   # a SEARCH checkpoint every this many intervals (see encode_set)
+
+
+def encode_set(ivs):
+    """One interval list as delta varints: for each interval, `lo - previous
+    hi` (previous hi is 0 before the first) then `hi - lo`.  The count is NOT
+    in the stream — the set table carries it.  Returns (bytes, checkpoints):
+    one checkpoint (lo, byte offset within the set, previous hi) for every
+    interval whose index is a multiple of CK_STRIDE other than 0, so a reader
+    can binary-search a long set without decoding it.  THE FORMAT IS DOCUMENTED
+    IN `src/parse/ucd_tables.c`'s header comment and nowhere else; this is its
+    writer."""
+    out = bytearray()
+    cks = []
+    prev = 0
+    for i, (lo, hi) in enumerate(ivs):
+        if i and i % CK_STRIDE == 0:
+            cks.append((lo, len(out), prev))
+        out += varint(lo - prev)
+        out += varint(hi - lo)
+        prev = hi
+    return out, cks
+
+
+def c_list(vals, per_line=16):
+    lines = []
+    for i in range(0, len(vals), per_line):
+        lines.append("    " + ",".join("%d" % v for v in vals[i:i + per_line]) + ",\n")
+    return "".join(lines)
+
+
 def emit(built):
     rows, sets = built
     # INTERNED BY CONTENT, not by key: `\p{Ahom}` (bare) and `\p{sc=Ahom}` are
     # the same interval list — a script with no Script_Extensions entries —
     # and 128 of the 171 values are in that position, so interning is most of
     # this family's table weight rather than a tidy-up.
-    pool, span, by_content = [], {}, {}
+    blob = bytearray()
+    set_off, set_n = [], []          # one entry per DISTINCT set
+    set_ck = []                      # first checkpoint index of each set
+    ck_lo, ck_off, ck_prev = [], [], []
+    sid, by_content = {}, {}
     for key in sorted(sets):
         content = tuple(sets[key])
-        if content in by_content:
-            span[key] = by_content[content]
-            continue
-        span[key] = (len(pool), len(sets[key]))
-        by_content[content] = span[key]
-        pool.extend(sets[key])
-    if len(pool) > 0xFFFF or max((n for _o, n in span.values()), default=0) > 0xFFFF:
-        raise SystemExit("the interval pool no longer fits `unsigned short` "
-                         "offsets — widen the emitted struct")
+        if content not in by_content:
+            by_content[content] = len(set_off)
+            set_off.append(len(blob))
+            set_n.append(len(content))
+            enc, cks = encode_set(content)
+            set_ck.append(len(ck_lo))
+            for lo, off, prv in cks:
+                ck_lo.append(lo)
+                ck_off.append(len(blob) + off)
+                ck_prev.append(prv)
+            blob += enc
+        sid[key] = by_content[content]
+    if max(set_n, default=0) > 0xFFFF or len(set_off) > 0xFFFF \
+            or len(ck_lo) > 0xFFFF:
+        raise SystemExit("the set table no longer fits `unsigned short` — "
+                         "widen the emitted arrays")
+
+    # THE INVARIANT `pcrec_ucd_find` relies on: at most one row per (name,
+    # namespace bit).  Row order is then unobservable through the interface.
+    seen = set()
+    for name, ns, _k, _c in rows:
+        for bit in (NS_BARE, NS_SC, NS_SCX, NS_BC, NS_BLK, NS_AGE):
+            if ns & bit:
+                if (name, bit) in seen:
+                    raise SystemExit("two rows named %r answer namespace "
+                                     "bit %d" % (name, bit))
+                seen.add((name, bit))
+
+    # NAME BLOB: each distinct name once, NUL-terminated; rows point at it.
+    names, name_off = bytearray(), {}
+    row_name, row_ns, row_set, row_ci = [], [], [], []
+    for name, ns, key, ci_key in rows:
+        if name not in name_off:
+            name_off[name] = len(names)
+            names += name.encode("ascii") + b"\0"
+        row_name.append(name_off[name])
+        row_ns.append(ns)
+        row_set.append(sid[key])
+        row_ci.append(sid[ci_key])
+    if len(names) > 0xFFFF:
+        raise SystemExit("the name blob no longer fits `unsigned short` offsets")
 
     nsub = sum(1 for _n, _ns, k, ck in rows if k != ck)
-    nbytes = len(pool) * 8 + len(rows) * 24
+    nivs = sum(set_n)
+    nbytes = (len(blob) + len(names) + 4 * len(set_off) + 2 * len(set_n)
+              + 2 * len(set_ck) + 12 * len(ck_lo) + 7 * len(rows))
     out = [BANNER.format(version=UNICODE_VERSION, nprops=len(rows),
-                         nsets=len(by_content), nivs=len(pool),
+                         nsets=len(set_off), nivs=nivs,
                          nbytes=nbytes, nsub=nsub)]
-    out.append("\n#define PCREC_UPROPS_UNICODE_VERSION \"%s\"\n" % UNICODE_VERSION)
-    out.append("\n/* The NAMESPACE a body selects: no prefix, `sc=`/`Script=`, or\n"
-               " * `scx=`/`Script_Extensions=` (either separator, `=` or `:`).\n"
-               " * `src/parse/mod_uprops.c` reads these; it never restates them. */\n")
-    out.append("#define PCREC_UPROP_NS_BARE %du\n" % NS_BARE)
-    out.append("#define PCREC_UPROP_NS_SC   %du\n" % NS_SC)
-    out.append("#define PCREC_UPROP_NS_SCX  %du\n" % NS_SCX)
-    out.append("#define PCREC_UPROP_NS_BC   %du  /* Bidi_Class, short names */\n" % NS_BC)
-    out.append("#define PCREC_UPROP_NS_BLK  %du  /* pcrec extension: Block */\n" % NS_BLK)
-    out.append("#define PCREC_UPROP_NS_AGE  %du  /* pcrec extension: Age */\n" % NS_AGE)
-    out.append("\nstatic const PcrecCpRange pcrec_uprop_iv[] = {\n")
-    for i in range(0, len(pool), 4):
-        chunk = pool[i:i + 4]
-        out.append("    " + " ".join("{0x%X,0x%X}," % (lo, hi) for lo, hi in chunk) + "\n")
-    out.append("};\n")
-    out.append("\nstatic const struct { const char *name;\n"
-               "                     unsigned char ns;             /* which namespaces */\n"
-               "                     unsigned short off, n;        /* the set */\n"
-               "                     unsigned short ci_off, ci_n;  /* under -i */ }\n"
-               "pcrec_uprop_names[] = {\n")
-    for name, ns, key, ci_key in rows:
-        off, n = span[key]
-        ci_off, ci_n = span[ci_key]
-        out.append('    { "%s", %d, %d, %d, %d, %d },\n'
-                   % (name.replace("\\", "\\\\"), ns, off, n, ci_off, ci_n))
-    out.append("};\n")
-    out.append("\nstatic const size_t pcrec_uprop_names_n =\n"
-               "    sizeof pcrec_uprop_names / sizeof pcrec_uprop_names[0];\n")
+    out.append("\n#define UCD_GEN_VERSION \"%s\"\n" % UNICODE_VERSION)
+    out.append("\n/* the namespace numbering this writer used; ucd_tables.c\n"
+               " * `_Static_assert`s each against its header's PCREC_UCD_NS_*. */\n")
+    for label, val in (("BARE", NS_BARE), ("SC", NS_SC), ("SCX", NS_SCX),
+                       ("BC", NS_BC), ("BLK", NS_BLK), ("AGE", NS_AGE)):
+        out.append("#define UCD_GEN_NS_%s %du\n" % (label, val))
+    out.append("\n#define UCD_GEN_NROWS %du\n" % len(rows))
+    out.append("#define UCD_GEN_CK_STRIDE %du\n" % CK_STRIDE)
+    out.append("\nstatic const unsigned char ucd_iv_blob[%d] = {\n%s};\n"
+               % (len(blob), c_list(list(blob), 24)))
+    out.append("\nstatic const unsigned ucd_set_off[%d] = {\n%s};\n"
+               % (len(set_off), c_list(set_off)))
+    out.append("\nstatic const unsigned short ucd_set_n[%d] = {\n%s};\n"
+               % (len(set_n), c_list(set_n)))
+    out.append("\nstatic const unsigned short ucd_set_ck[%d] = {\n%s};\n"
+               % (len(set_ck), c_list(set_ck)))
+    out.append("\nstatic const unsigned ucd_ck_lo[%d] = {\n%s};\n"
+               % (len(ck_lo), c_list(ck_lo)))
+    out.append("\nstatic const unsigned ucd_ck_off[%d] = {\n%s};\n"
+               % (len(ck_off), c_list(ck_off)))
+    out.append("\nstatic const unsigned ucd_ck_prev[%d] = {\n%s};\n"
+               % (len(ck_prev), c_list(ck_prev)))
+    # adjacent string literals, `\000` in its 3-digit form so a name that
+    # BEGINS with a digit cannot extend the escape
+    out.append("\nstatic const char ucd_name_blob[] =\n")
+    for nm in sorted(name_off, key=name_off.get):
+        out.append('    "%s\\000"\n' % nm.replace("\\", "\\\\"))
+    out.append(";\n")
+    out.append("\nstatic const unsigned short ucd_row_name[%d] = {\n%s};\n"
+               % (len(rows), c_list(row_name)))
+    out.append("\nstatic const unsigned char ucd_row_ns[%d] = {\n%s};\n"
+               % (len(rows), c_list(row_ns, 24)))
+    out.append("\nstatic const unsigned short ucd_row_set[%d] = {\n%s};\n"
+               % (len(rows), c_list(row_set)))
+    out.append("\nstatic const unsigned short ucd_row_ci_set[%d] = {\n%s};\n"
+               % (len(rows), c_list(row_ci)))
     return "".join(out)
 
 
@@ -1277,6 +1367,12 @@ def emit_case_tables(upper, lower):
 
 def main():
     check = "--check" in sys.argv[1:]
+    if "--list-products" in sys.argv[1:]:
+        # the repo-relative paths this script writes, one per line, so a
+        # test that copies the products need not repeat their names
+        for path in (OUT, FOLD_OUT, FOLD_TEXT_OUT, CASE_OUT):
+            print(os.path.relpath(path, REPO))
+        return 0
     cats = read_unicodedata(SOURCE)
     fold = read_casefolding(FOLD_SOURCE)
     orbits = fold_orbits(fold)

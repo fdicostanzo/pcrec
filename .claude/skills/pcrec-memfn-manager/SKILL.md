@@ -60,7 +60,16 @@ Always on:
   `worktrees/memfn` on branch `lane/memfn-<topic>` (one branch per
   delivered unit), cut from a main that CONTAINS the request you serve.
   FIRST command there: `git rev-parse --show-toplevel`. You NEVER merge
-  to main and never push; main reviews and merges. Never `cd` into the
+  to main and never push main; main reviews and merges. PUSH (Frank
+  2026-11-24, kit-push, for a kit on another machine): you MAY push your
+  own `lane/memfn-*` branches to origin. Never main, never a branch you do
+  not own, and never a force-push over a commit main has fetched. A
+  delivery that changes CODE also opens ONE pull request into main
+  (`gh pr create`): the delivered unit, its review, the tip sha. It gets
+  CI on Linux; it is for review and CI only. Main merges LOCALLY, never
+  with GitHub's merge button, and the PR closes when main contains the
+  commits. A docs-only delivery is pushed and announced by message. Tell
+  main the branch and sha at every push. Never `cd` into the
   main tree or another worktree (a `cd` moves in-process lanes' cwd too)
   — use `git -C` and absolute paths.
 - **What you own:** everything under `memfn/` (code, `src/options.def`,

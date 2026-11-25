@@ -69,10 +69,16 @@ void *pcrec_inject_malloc_at(size_t sz, const char *file, int line);
 void *pcrec_inject_calloc_at(size_t n, size_t sz, const char *file, int line);
 void *pcrec_inject_realloc_at(void *p, size_t sz, const char *file, int line);
 char *pcrec_inject_strdup_at(const char *s, const char *file, int line);
+/* [K155] `free` is redirected too, so the driver keeps the LIVE byte count
+ * of the injected tree's own heap and can tell a refused compile that
+ * stranded a block (a heap builder live across the refusal's longjmp)
+ * from one that gave everything back. */
+void  pcrec_inject_free_at(void *p, const char *file, int line);
 
 #define malloc(sz)      pcrec_inject_malloc_at((sz), __FILE__, __LINE__)
 #define calloc(n, sz)   pcrec_inject_calloc_at((n), (sz), __FILE__, __LINE__)
 #define realloc(p, sz)  pcrec_inject_realloc_at((p), (sz), __FILE__, __LINE__)
 #define strdup(s)       pcrec_inject_strdup_at((s), __FILE__, __LINE__)
+#define free(p)         pcrec_inject_free_at((p), __FILE__, __LINE__)
 
 #endif /* PCREC_ALLOC_INJECT_H */

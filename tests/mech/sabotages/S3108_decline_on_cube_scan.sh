@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # S3108 -- R-38 Part D (docs/design/memfn/part_d.md rev 4 section 5.1, plant p3; lane partd).
-# The same plant as memfn/tests/run_g2_pres.sh --plant S3108 (its plant_spec; one source of the text).
+# The same plant as memfn/tests/run_g2_pres.sh --plant S3108 (its plant_spec; two copies of the text, held equal by the twin check).
 SAB_ID="S3108-decline-on-cube-scan"
 SAB_FILE="memfn/src/presence.c"
 SAB_SUITES="g2pres"

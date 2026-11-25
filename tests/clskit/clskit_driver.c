@@ -166,7 +166,7 @@ static Item *add_item(int pos, const char *fn, const char *var)
  * decides which compile unit each item lands in. */
 static void emit_group(int ch)
 {
-    Arena a = { NULL, NULL };
+    Arena a = { 0 };
 
     for (int q = 0; q < ncomp; q++)
         if (sets[comps[q].c].chunk == ch) {
@@ -361,7 +361,7 @@ static void dump(void)
                rows[r].sites, rows[r].pred_desc);
     for (int i = 0; i < nset; i++) {
         Set *s = &sets[i];
-        Arena a = { NULL, NULL };
+        Arena a = { 0 };
         for (size_t l = 0; l < sizeof LAMS / sizeof LAMS[0]; l++) {
             ClsKit k;
             pcrec_clskit_partition(&a, s->iv, s->n, LAMS[l], 0, &k);
@@ -393,7 +393,7 @@ static void dump(void)
 
 int main(int argc, char **argv)
 {
-    Arena a = { NULL, NULL };
+    Arena a = { 0 };
     if (argc < 3) { fprintf(stderr, "usage: clskit_driver emit|dump POPFILE [OUTDIR]\n"); return 2; }
     load(argv[2]);
     build_atoms(&a);

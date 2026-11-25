@@ -42,38 +42,74 @@ Owner waits: a row or stage waiting on the OWNER (a charter, a build go, an answ
   filed: 2026-11-17 Frank ("we discover over time that the feature is aggregated onto existing code and then have to go through a lengthy refactor ... requirements -> architecture-> design -> build Each with its own review and goals"; "I'd like to set up a plan with this"); manager wrote the row
   status (2026-11-18): A1-A5 DONE; A6 pilot ran (r49/r50, design r51), write-up in the body file, skill edits applied; owner KEPT the step and the size trigger (D200); A6 retro test owed
   next: the A6 blinded retro test; open with the owner: speed-gate, new-rules; units: docs/design/plan_row_bodies/ARCH-STEP.md
-- [XARCH-DEV] STATE:started — test cross-arch development: build, test and measure pcrec + the kit on a non-x86 box
-  filed: 2026-11-06 Frank ("add an item to test cross arch dev"; to the kit, relayed); manager wrote the row
-  status (2026-11-10): BUILD GO 2026-11-07; kit K0 d9df92c0d, pcrec P1 bfecd6143, U2+U3 (joint per-CPU SIMD) cf578177e landed 2026-11-09 (abi 98, MF_SITE_ABI 26); order: target_seam_units.md
-  next: Mac make/test/mech green; aarch64 kit levels and a measurement set under D188; the ruled per-target VARIANTS end state; children below are review follow-ups
-  refs: decisions D188 D144 D147; [XARCH] (deferred, rates); memory pcrec-cross-platform-verification
-  Scope (manager's draft, to settle with Frank): make / make test / mech green on the Mac; the kit's levels on aarch64; a measurement set produced there under D188; how a multi-target artifact carries every level's text but one set's prices.
-  REQUIREMENT (Frank, 2026-11-06): "We need the user to be able to support multiple arch simultaneously. Whether that is a single artifact or multiple is the design question." Manager's leaning, NOT ruled: targets are a compile input; per site the kit picks per target; agreeing sites are emitted once and disagreeing sites get compiler-macro #if arms with the neutral pick as #else; one target = today's bytes, so N artifacts is the special case. First measurement: price the corpus with zen4 and an M1-made set and count disagreeing sites (size and test cost scale with it). Every arm is tested on its own arch.
-  RULED (Frank, 2026-11-06, "I agree with your points"; details when the item starts): END STATE = per-target VARIANTS, no #if arms. A variant is a complete matcher planned and priced for one target. Build time: pcrec emits the build target's variant. Run time: one artifact holds 2-3 variants (generic + 1-2 SIMD) as target-attributed functions, a once-per-process CPU dispatch entry, and each variant's own entry. The artifact's target set is an explicit LIST (a,b,c) the caller gives, never assumed; with no list, a declared, stamped default list. D188 amended.
-  - [XARCH-FIXEDTEXT] STATE:not-started — emit_sweep: refuse a -fmemfn-simd= arm whose measured target text is empty
-    filed: 2026-11-08 manager (review 2026-11-08-r5-xarch checks-4, PLAN)
-    status (2026-11-08): filed; SUSPECTED, not confirmed
-    next: confirm (make the control compile fail, or an arm insert nothing, and see the arm still read ok); then FAIL such an arm and add an upper pin beside the DIFFER_PINS floors
-    refs: scripts/emit_sweep.py target_fixed_text; docs/dev/reviews/2026-11-08-r5-xarch.md
-    scripts/emit_sweep.py's target_fixed_text returns [] when its control compile fails or the arm inserts nothing; every pattern then counts as a mover and the floors (differ >= floor) still pass.
-  - [XARCH-PLACECOV] STATE:not-started — placement checks for every listed target, not one: the 32-byte region, a guard-only target
-    filed: 2026-11-08 manager (review 2026-11-08-r5-xarch checks-6, PLAN part)
-    status (2026-11-08): filed; the FIX-NOW part (xt_place's rx_info -1 guard, its no-include-in-region test, stale comments) landed with lane u3crit
-    next: run tests/cli's xt_place over one artifact per listed target with a family (a guard-only target: guard once, no region); pick the two-target family by listing order, not awk hash order
-    refs: tests/cli/run_cli_tests.sh xt_place; docs/spec/match_api.md §6.3.10¶15
-    Today the cli placement case covers one target (the baseline amd64 one); the larger region and the arm64 guard-only artifact are placed by no check.
-  - [XARCH-TOKERR] STATE:not-started — an unknown CPU token's refusal is cut at 256 bytes mid-text
-    filed: 2026-11-08 manager (review 2026-11-08-r5-xarch CONTRACT-4, PLAN)
-    status (2026-11-08): filed
-    next: size the joined refusal (or show the kit's target and family refusals separately) so cli.md §1.24¶2's "the kit's text unchanged" holds for any token length
-    refs: src/gen/memfn_targets.c add_list; docs/spec/cli.md §1.24
-    A 120-byte unknown token prints 263 bytes ending mid-token, without the "(known: ...)" lists; each target or family the kit adds lengthens those lists, so the cut moves toward ordinary tokens.
-  - [XARCH-K2PULL] STATE:not-started — weigh pulling the kit's K2 target_dependent fact forward (guard and region only where needed)
-    filed: 2026-11-08 manager (review 2026-11-08-r5-xarch SEAM-4(ii), NOTED + weigh)
-    status (2026-11-08): filed; the ruled interim stands (every -fmemfn-simd artifact carries guard and region)
-    trigger: the first caller complaint that a -fmemfn-simd artifact with no SIMD form is family-locked or AVX-only, or K2's own go, whichever first
-    refs: docs/design/memfn/target_seam_units.md (K2); docs/spec/match_api.md §6.3.10¶4
-    Most patterns reach no SIMD row, yet their -fmemfn-simd artifacts are locked to the target's family and features; with a per-art target_dependent fact pcrec could place guard and region only where the kit rendered target text.
+- [KIT-ARCH-STEP] STATE:started — the memfn kit adopts the architecture step, in stages (stage 2 DONE; stage 3 in force)
+  filed: 2026-11-22 owner (ruling kit-arch-step)
+  status (2026-11-24): stage 1 done; stage 2 DONE (R-49: note rev 4 accepted after r91-r93; its suggestions filed below, owner ruling window-file-split = D204); stage 3 (an arch review per new kit feature, the kit manager skill's trigger row) is IN FORCE
+  next: stage 3 runs per new kit feature; the children below each wait on their own trigger; [KIT-WINSPLIT] is first (NEON V's trigger)
+  refs: [ARCH-STEP]; docs/design/plan_row_bodies/KIT-ARCH-STEP.md; memfn/docs/requests.md (R-49); .claude/skills/pcrec-memfn-manager; pcrec-architect; pcrec-critic (mode arch)
+  - [KIT-WINSPLIT] STATE:started — kit: split window.c once, one file per table and its search functions (ARV-5 + ARV-9 + ARV-16)
+    filed: 2026-11-24 kit arch review (R-49, note rev 4 accepted; suggestions filed, not built)
+    status (2026-11-24): direction ruled (D204: yes on trigger, split lands BEFORE NEON V, answer-identical); the position primitives move once, in the split, to a file taking kit_mass (the presence<->window cycle goes); design not written
+    waits: Step 0 (Linux gate job 200-main-step0 at 01f342d9f, green before the moves); then C0a, then one move per commit (kit)
+    next: BUILD GO (owner 2026-11-24 "winsplit-build-go: yes"; R-50) on rev 2.2 (lane/memfn-wsplit 6cf64ed2f; r95, r98, r99); kit builds, one code PR, main merges locally
+    refs: D204; memfn/docs/arch_review_2026-11.md §7 ARV-5, ARV-9, ARV-16, §8 H1/H2/H3/H8, §9; architecture.md register row 43; memfn/docs/responses.md (OWNER RULING window-file-split)
+    Charter: owner 2026-11-24: "yes on trigger but once you do split, make it count. Consider where reasonable the interface of the file. If there is a table and functions that search it specifically, they belong together in that file. Then the public names are just those functions." ARV-5 (set questions join kit_pos_*), ARV-16 (primitives one home) and ARV-9 (the split) are one unit; ARV-7's text-buffer leaf goes before or with it.
+  - [ARV-1-NONE-NOTED] STATE:not-started — kit: noted-deviation register rows for the 2 NONE-density readers (hors_facts, m_margin_holds)
+    filed: 2026-11-24 kit arch review (R-49, note rev 4 accepted; suggestions filed, not built)
+    status (2026-11-24): the two register rows are written (architecture.md part 3) by lane arvfile; each retires at its own census trigger; no check is edited
+    next: main reviews the landed rows, then deletes this row (the work is the rows)
+    refs: memfn/docs/arch_review_2026-11.md §7 ARV-1, §6
+  - [ARV-2-KIT-HISTORY] STATE:not-started — kit: move memfn.h's changelog and include/CLAUDE.md's history to memfn/include/NOTES.md
+    filed: 2026-11-24 kit arch review (R-49, note rev 4 accepted; suggestions filed, not built)
+    status (2026-11-24): filed; the house rule says history goes to NOTES.md; 75 `memfn.h:N` cites must stay true (re-cite by symbol, or ARV-4 re-pins after)
+    trigger: the next MF_SITE_ABI bump, or now (doc only); when both ARV-2 and ARV-4 are taken, ARV-4's line re-pins land after ARV-2
+    refs: memfn/docs/arch_review_2026-11.md §7 ARV-2, H11
+  - [ARV-3-CALLER-CLASS] STATE:not-started — kit: state each public entry's caller class in memfn.h (3 classes)
+    filed: 2026-11-24 kit arch review (R-49, note rev 4 accepted; suggestions filed, not built)
+    status (2026-11-24): filed; doc only
+    trigger: the next entry added to memfn.h, or with ARV-2
+    refs: memfn/docs/arch_review_2026-11.md §7 ARV-3, D-s2
+  - [ARV-4-DRIFT] STATE:not-started — kit: bookkeeping drift (row 10 and A-KIND WHEREs, two half-done rows, 11 vs 12 fd_rows)
+    filed: 2026-11-24 kit arch review (R-49, note rev 4 accepted; suggestions filed, not built)
+    status (2026-11-24): filed; main's: row 10's WHERE (MF_MAX_BACK at memfn.h:308), A-KIND's (MF_SK_* at :513-514), [SP1E-RENDERER-TABLE] and [KN-CARRIERLESS] are HALF done, memfn/src/CLAUDE.md says 11 fd_rows, there are 12
+    next: main fixes the WHEREs and the CLAUDE.md count; if ARV-2 is also taken, these line re-pins land after ARV-2
+    refs: memfn/docs/arch_review_2026-11.md §7 ARV-4, §6 plan-row drift
+  - [ARV-6-SELECTOR-WRITER] STATE:not-started — kit: one selector writer (vany_selector through kit_selector), with ARV-11
+    filed: 2026-11-24 kit arch review (R-49, note rev 4 accepted; suggestions filed, not built)
+    status (2026-11-24): filed; no-mover; S2996 re-aims; targets_check.c becomes a reader
+    trigger: with ARV-11 (one event): R-48's architecture note, or the next change to a spelling table
+    refs: memfn/docs/arch_review_2026-11.md §7 ARV-6, B-s2
+  - [ARV-7-TEXTBUF-LEAF] STATE:not-started — kit: the text buffer gets its own leaf file; the layer order filed as a row
+    filed: 2026-11-24 kit arch review (R-49, note rev 4 accepted; suggestions filed, not built)
+    status (2026-11-24): filed; a pure move of compose.c :29-108 plus a declared layer order for memfn/src with its known violations
+    trigger: ARV-9 ([KIT-WINSPLIT]; ARV-7 before or with it), or the next structural compose.c change
+    refs: memfn/docs/arch_review_2026-11.md §7 ARV-7, B-s3
+  - [ARV-8-REACH-TABLES] STATE:not-started — kit: REACH from the declared tables, not a hand list; delete the 4 enumerators
+    filed: 2026-11-24 kit arch review (R-49, note rev 4 accepted; suggestions filed, not built)
+    status (2026-11-24): filed; M, harness; registration choice (H7) decides which readers go red; amends plan_frame.md R5 / r13 V-3's recorded scope (the kit manager's amendment)
+    trigger: the next new declared table (= ride-along register row 19's event)
+    refs: memfn/docs/arch_review_2026-11.md §7 ARV-8, B-s4
+  - [ARV-10-ONE-DENY] STATE:not-started — kit: one deny mechanism at the seam (the bit's 3 readers plus the reversed reader)
+    filed: 2026-11-24 kit arch review (R-49, note rev 4 accepted; suggestions filed, not built)
+    status (2026-11-24): filed; M, kit (MF_SITE_ABI) + pcrec edit in the same commit + G2 re-cut; serialises with [FLAG-DEMOTE]; needs the kit manager's amendment of Q-M1b-1
+    waits: [FLAG-DEMOTE]; main's amendment of docs/spec/registry.md §6 para 7 if an options row is taken
+    trigger: [FLAG-DEMOTE]'s opening, the next MF_SITE_ABI layout event, or a second MF_D_* bit. docs/spec/registry.md §6 para 7 is NOT amended here: MAIN amends it only if ARV-10 is taken with an options row (note §9)
+    refs: memfn/docs/arch_review_2026-11.md §7 ARV-10, D-s3, §9
+  - [ARV-11-SPELLING-HALF] STATE:not-started — kit: the level C-spelling half (D146 add. 1) for the 4 spelling tables, facts to the facts half
+    filed: 2026-11-24 kit arch review (R-49, note rev 4 accepted; suggestions filed, not built)
+    status (2026-11-24): filed; M, no-mover at x86; bounded at spelling (no level-admission fact, level choice or include report)
+    trigger: R-48's architecture note, or the next spelling-table change; one event with ARV-6
+    refs: memfn/docs/arch_review_2026-11.md §7 ARV-11, B-s2
+  - [ARV-12-RENDERER-IFACE] STATE:not-started — kit: the renderer interface leaves the public structs (rides the filed R1 item)
+    filed: 2026-11-24 kit arch review (R-49, note rev 4 accepted; suggestions filed, not built)
+    status (2026-11-24): filed; L, kit (MF_SITE_ABI) + harness; 5 mf_pred fields leave, 2 window-site value reservations move, end_back per H6; G2 route re-cut
+    trigger: the R1 filing's triggers ("a renderer change" may have fired) or Table E legacy rows retiring; D162 add. 3 for the ranking
+    refs: memfn/docs/arch_review_2026-11.md §7 ARV-12, D-s4, D-s5
+  - [ARV-18-SECOND-MECHS] STATE:not-started — kit: implement-then-replace register rows for the 10 second mechanisms the tables second-guess
+    filed: 2026-11-24 kit arch review (R-49, note rev 4 accepted; suggestions filed, not built)
+    status (2026-11-24): the ten register rows are written (architecture.md part 3) by lane arvfile; P2's dominance compare still needs its own census row, and `ren_fused`'s carrying event is proposed in A-s4
+    next: the kit adds P2's census row (a check change, doc + one census row); each remodel is M-L at its own census trigger
+    refs: memfn/docs/arch_review_2026-11.md §7 ARV-18, A-s4, §6
 - [OPTLOOP] STATE:ongoing — THE OPTIMIZATION LOOP
   filed: 2026-09-21 Frank
   status (2026-10-12): ROUND 1 CLOSED 2026-10-05 (batch gate complete, docs/dev/lanes/r1gclose_report.md); rounds 2 and 3 share one batch gate (D144 addendum 3); ROUND 3 SELECTED 2026-10-06 (docs/dev/optloop/round3_selection.md…
@@ -155,15 +191,6 @@ Owner waits: a row or stage waiting on the OWNER (a charter, a build go, an answ
   review: at each SIMD verdict, a planned bench run on the targeted hardware
   refs: docs/design/plan_row_bodies/OPT-SIMD.md; docs/dev/lanes/r13_report.md; studies/simd1; docs/design/memfn/integration.md; decisions D119 D147 D157
   (Frank 2026-08-31: x86-64 AND aarch64/NEON are supported targets, neither primary; D147 addendum 8). The pre-kit text in the full row (studies/simd1, opt3_dfa_scan_measurement.md s.3-4, x86-only measurements) is input to the kit's design, not a plan. Design: docs/design/memfn/integration.md (§R4.9) and memfn/. FULL TEXT (long-form charter and history, moved 2026-10-12): docs/design/plan_row_bodies/OPT-SIMD.md.
-- [MEASURE-SET] STATE:started — DECISION MEASUREMENTS AS VERSIONED SETS, loadable at compile time
-  filed: 2026-10-13 Frank
-  status (2026-11-10): span_pick stages 1-2 landed: zen4-grid3@1 set 692ec83b7 (2026-11-07, DEFAULTS idk -> zen4-grid3@1, 0 movers); M0 on main (measures row, measure_store/, --measures, stamp, --list-measurements)
-  next: M1; M2 generic envelope default; M3 library of sets and install-time tool (formal library, Frank 2026-10-23 Q3)
-  refs: docs/design/regime_tables.md; decisions D149 D161 D162 D166; [LIST-TABLES]; [ART-MGR]
-  RULED M2 order (manager, 2026-11-03, span_pick rev 3.1; answer-free): M2 is NOT ordered against span_pick's row 1. At M2 the idk default becomes an ISA envelope with no per-byte cost rows, so priced rows go DARK on bare compiles (picks fall back to the rules; stamps move). INTENDED ("an unknown target prices nothing"); M2's own census owns those stamp moves; named-set compiles keep their priced picks.
-  A measurement set is the machine-side twin of the analysis object: one box/run/method version, values relative to the scalar walk's per-byte cost plus derived crossovers, provenance per row (method id+version, box, compiler, commit, tier scratch/official). Deliverables: the set format and committed store (gen-tables shape), `--measures=FILE|NAME` + config line, the per-artifact set stamp (abi event), `--list-measurements` (rows, provenance, reader rows), the derived generic envelope set, an install-time measurement tool (crossovers only, noise-gated). Open: the relative unit, analysis-format vs sibling, the tool's home. Answers never depend on the set.
-  RULED Q1 (Frank 2026-10-23, kit responses.md): the kit's stop choice is ONE priced choice (position x find method); its costs are visible in the measurement set via --list-measurements (no --list-costs), relative to the walk with raw readings as provenance, stamped per artifact; plan_cost.def rows migrate into the sets; an option changes a cost only through a visible key or another row.
-  FORMAL LIBRARY (Frank 2026-10-23, Q3: "make it a formal thing and build it as a library of values ... pcrec will run on different machines and need timings for each"): (a) a canned, self-contained pcrec script (part of pcrec, not bench) that measures any machine into a set, the install-time tool above; (b) closest-match selection over the library as DECLARED FALLBACK ROWS (microarch -> ISA level -> arch family -> generic), visible in --list-measurements and stamped; (c) targeting another machine (built: --measures / config line); (d) the generic envelope default (M2). Only this box is measured now; the rest stays in this item, unscheduled.
 - [DD-11.5] STATE:started — span context producer (D168) + A_BOL/A_EOL into A_CTX? (text route retired)
   filed: 2026-09-28 lane admin88
   status (2026-11-16): part 1 CLOSED (overtaken by [COVER-CAP] stage 1, abi 108, merge fff636eda; its NFA span slice was deleted); part (b) re-filed as [CTX-FACTS-NEG]; only part (a), the A_BOL/A_EOL into A_CTX review, remains open
@@ -174,25 +201,10 @@ Owner waits: a row or stage waiting on the OWNER (a charter, a build go, an answ
   NOTE (2026-11-15): [COVER-CAP] design rev 4.1 (docs/design/cover_cap.md) DELETES the NFA span slice that part 1 built on; when COVER-CAP stage 1 gets its build go, this row must be re-scoped before its next step. STATE unchanged.
   NOTE (2026-11-15, after [COVER-CAP] stage 1, abi 108, merge fff636eda): stage 1 DELETED the NFA span slice named in the CHARTER, the status line and Z2's "span_facts slice" (`pcrec_span_walk`, the `span_facts` fact and its accessor, `MkLang`, `pcrec_known_derive`, the 48-deep horizon, the 24-deep exact loop, `KN_CAP`, the limit `PCREC_SPAN_WALK_SUBSETS`, sabotage S1149; docs/dev/lanes/covs1_report.md DELETED). Those mentions are history; part 1's producer is no longer in the tree. STATE unchanged.
   RULING (2026-11-16, the manager's, not the owner's): the 2026-11-15 re-scope proposal from lane s1tail is ACCEPTED. (i) [DD-11.5] keeps ONLY part (a); part 1 is closed as overtaken by [COVER-CAP] stage 1 (the NFA span slice it built on was deleted, abi 108, merge fff636eda); the timing look and B1 as written are moot. (ii) part (b), the D168 context facts at negative offsets / past the end, is filed as its own row [CTX-FACTS-NEG] (not-started). STATE stays started: this Active row has an open part (a) and the format has no state for a review row that has not begun.
-- [FINDALL-NEXT] STATE:started — find-all iterator over a caller-filled struct (generic callers loop over info->next / next_n)
-  filed: 2026-10-09 Frank
-  status (2026-10-23): I0+I1+I4 LANDED on main (merge b8c66a739, abi 84, one event; RX_FOREACH dropped D175; r2 critic fixes, review 2026-10-23-r2-iter-code.md); remaining: I2 the kit's `st`, I3 `pair-hits`; follow-ups [ITER-RETRY-ELIDE], [ITER-REVIEW-PLAN]
-  next: I2 (the kit's `st`, arrives with the kit's kit-find row, findall_iter.md IC2) then I3 `pair-hits`; follow-ups [ITER-RETRY-ELIDE], [ITER-REVIEW-PLAN]; none started
-  refs: docs/spec/match_api.md; tests/assertions/gstart_findall.c; tests/encseam/findall_driver.c; tests/codegen/entry_shape_driver.c; docs/dev/lanes/f3search_driver.c; decisions D38 D76 D80 D83 D94 D132 D158; known_issues K75 K105
-  wrap the find-all advance (match_api.md §3.1 "Finding every match": `p = non-empty ? <prefix>_next_pos(s,n,end-1) : <prefix>_next_pos(s,n,start)`, the [K75]/D132 aligned rule) in an emitted macro or `static inline` per-artifact helper (e.g. `<prefix>_next_start(s, n, caps)`), so callers stop hand-copying it and the looping rule can change later without touching callers. TODAY: the spec carries the loop as prose a caller copies; three in-tree drivers copy it by hand (tests/assertions/gstart_findall.c:64, tests/encseam/findall_driver.c:45, tests/codegen/entry_shape_driver.c:75; plus docs/dev/lanes/f3search_driver.c).
-  EVAL QUESTIONS: (1) macro vs `static inline` in the artifact's .h vs an exported function (header-inline keeps it free and type-checked; an exported symbol is an rx_info/[V-E] entry-pointer candidate); (2) helper for the ADVANCE only, or a whole step `<prefix>_search_next(s,n,&p,caps)` returning the next match — the latter is where future flexibility pays: replace_design.md §3.8 notes the §3.1 loop cannot express PCRE2's NOTEMPTY_ATSTART retry for empty-preferring patterns, and [OPT-HYB-RESEED-XCALL]/xcall.md §5 held a caller-owned cross-call state (`_search_ex` + `pcrec_search_state`) that would ride the same entry; (3) relation to [V-E]'s entry-pointer struct; (4) it is emitted scaffolding: an abi event + spec hunk (D76/D94/D80), and the drivers migrate to it in the same change. Cost S.
-  LEADING SHAPE (Frank 2026-10-09: "could it return a boolean such that one could write while (wrapper(..)) ..."; manager): a whole-step boolean iterator — `rx_iter it = RX_ITER_INIT; while (<prefix>_next(&it, s, n, caps)) report(caps); if (it.rc < 0) /* gave up */` — `_next` = (p > n → 0) + `_search` + the [K75] aligned advance; the done-vs-gave-up distinction (§4's negative codes) rides in `it.rc`, never dropped; the iterator struct is where the NOTEMPTY_ATSTART retry bit and the xcall.md §5 cross-call hint would live later, with no caller change; `rx_iter` a fixed unprefixed ABI type (rx_ctx's family), `_next` a `static inline` in the artifact header.
-- [UPROP-MORE] STATE:started — \p{} covers binary and remaining properties (Emoji, Default_Ignorable, Bidi_Class, Age, Block)
-  filed: 2026-10-24 manager (utfwant want 2; Frank 2026-10-24 "set these up")
-  status (2026-11-11): part B landed 731228fb2; D27 corpus promoted e2ff8c6a6 (tests/uprops/d27/, 520 blocks; UCD and libpcre2 arms 0 disagreements; no pcrec bug; cli.md §1.17.1 has the 55 names)
-  next: size follow-up under [DATA-PLAN] only (not started); the row closes when that is ruled not needed or done
-  refs: docs/design/uprop_more.md; docs/dev/utf_wants_2026-10-24.md; D178; [UCD-RECORD]; [DATA-PLAN]
-  Mostly PCRE2 catch-up: libpcre2 10.46 accepts 53 binary properties and Bidi_Class, pcrec refused them. One mechanism: a ranged-property reader in third_party/ucd-16.0.0/generate.py; each property is an interval list like \p{Sc}.
-- [DATA-PLAN] STATE:blocked — LARGE DATA IS PAID ONLY WHERE USED AND SHARED WHERE REPEATED (Unicode tables first)
+- [DATA-PLAN] STATE:started — LARGE DATA IS PAID ONLY WHERE USED AND SHARED WHERE REPEATED (Unicode tables first)
   filed: 2026-10-24 Frank ("we need a way to only load when needed. A general data plan for extra stuff")
-  status (2026-11-11): PARKED, blocked on [UPROP-MORE] (its D27 test author and review); design docs/design/data_plan.md delivered; D179 rulings (fair effort, simple formats read in place, small form on request, sharing when needed)
-  waits: [UPROP-MORE] (its D27 test author and review) before A; B follows A
-  next: A: compact compiler tables lane after [UPROP-MORE] lands; B: measure the small class form's speed on the utf8 bench, then route it under the size setting
+  status (2026-11-24): unit A LANDED (Unicode tables compacted behind src/parse/ucd_tables; merge 6c9342003, seam fix c68185294): data 254,012 -> 95,286 B, build/pcrec about -168 KB; review r97 ruled; [CASE-TABLES-WALL] filed. A1 GO 2026-11-24 (owner), lane dpcompact
+  next: B: measure the small class form's speed on the utf8 bench, then route it under the size setting
   refs: D178; docs/design/uprop_more.md; [CLS-TREE]; [UCD-RECORD]; subst support unit (--emit-support, content id)
   Two places data lands: the compiler binary (tables for every property) and each generated matcher (only what its pattern uses, but copied into every matcher that uses it). Questions: share one copy across matchers in a program, a compact form for large classes, what the compiler must embed vs read at compile time. Also EMIT-4 (review 2026-10-24-r1-subst-code): subst's support unit links 23 KB of case tables into programs with no case template; D179 format, and do not link them when unused.
 - [INLINE-C] STATE:ready — USER C INSIDE PATTERNS (`(?C{...})`) AND TEMPLATES (`${{...}}`, `${(...)}`): requirements first
@@ -203,12 +215,6 @@ Owner waits: a row or stage waiting on the OWNER (a charter, a build go, an answ
   refs: [M4-CALLOUTS]; [M4-SUBST]; D36 D38 D163; docs/design/design_callout_abi.md; notes and rulings: docs/design/plan_row_bodies/INLINE-C.md
   A new capability: its gate is Frank's word, not a measured need (no existing pattern can carry the feature). Pattern side rides PCRE2's legal brace callout string and forces the VM unless a post-match mode applies; the template side runs after the match and needs no VM.
 
-- [VMREC] STATE:started — VM emitter record-first: typed records are the only writers of the VM body
-  filed: 2026-10-29 vmcons3 (manager)
-  status (2026-10-31): step (a) DONE, merged 3bc599c92 (byte-identical, no abi bump, D182); steps (b) and (c) not started
-  next: (b) the analysis-free R stage on the records; (c) the analysis build, stage 2a first (lexer, helper registry, FL, CEN), after a soundness round on its lexer section and a D27 spec-first author
-  refs: D182; docs/dev/lanes/vmcons3_report.md; docs/dev/reviews/2026-10-29-r9-vmcons3.md; docs/dev/lanes/vmrec_report.md vmrecm_report.md vmrecf_report.md vmrecg_report.md; docs/design/plan_row_bodies/VMREC.md (members added after (a))
-  (c) rulings (r9, 2026-10-29): kit windows are opaque with DECLARED EFFECTS (kit facts per window: reads, writes, can transfer control; undeclared = may-write-everything barrier, no denylist lexing); post-render rewrites become record transforms or run before the record is frozen; every analysed operand is printed by its renderer or carried as a record field.
 
 - [IR-FORM] STATE:ongoing — MASTER TRACKER: every pcrec and kit emitter plans into a record form, then renders C
   filed: 2026-11-07 Frank ("create a master tracking item for all pcrec/kit planning to intermediary and add dfa to that"); manager wrote the row
@@ -264,7 +270,7 @@ Owner waits: a row or stage waiting on the OWNER (a charter, a build go, an answ
   note (2026-11-09, lane sar1mt, ruled by main): R1's rate tie picks a run per ENCODING (byte and utf8 rate tables differ), so `\Gcat\Kdog` stamps RX_REQ_RUN dog (byte) vs cat (utf8): ACCEPTED as one more row of K50's EXACT `#UNDECLARED` list (tests/codegen/manifests/k50_gate_refinement.txt; answers equal, data not an encoding branch). If rate-tie rows grow past a handful, K50 should admit a run difference the artifact's own why stamp declares (the manifest's own 'a stamp, not a wider rule' doctrine), not grow the list.
 - [DOC-INDEX] STATE:started — ruling and tracker files as a short index plus greppable details, one accessor
   filed: 2026-11-10 Frank (the ask in the charter); manager wrote the row (review 2026-11-10-r1-docfmt FREEZE NOTE)
-  status (2026-11-10): LANDED under the owner's charter: T1 81449f5a0 (scripts/entry, doc_profiles.py), unit 1.0 582a0b49f + cite resolver 092516b60, T1b scripts/INDEX.md 39da816d7; open: T2, CITE-FORMS
+  status (2026-11-24): T1, unit 1.0, cite resolver and T1b LANDED (archived as [DOC-INDEX-T1] in plan_completed.md); open: T2 (plan_lint folds into doc_lint), CITE-FORMS
   next: T2 (plan_lint folds into doc_lint), then the CITE-FORMS child; later units per the design's §10 readiness tables
   refs: docs/design/doc_index_format.md (+ doc_index_format_appendix.md); docs/dev/reviews/2026-11-10-r1-docfmt.md; docs/dev/reviews/2026-11-10-r2-docfmt2.md; decisions D192 D77 D153
   Charter (Frank, 2026-11-10): decisions and plan should each be a short "simple statement" file that covers most cases and is easy to recall, plus a details file from which one entry is easy to grep out by its slug; formalize the shared format and say which other files fit. Known issues third (D192).
@@ -580,19 +586,34 @@ Owner waits: a row or stage waiting on the OWNER (a charter, a build go, an answ
   RULING growth-memcap (Frank 2026-11-20, his words): "yes. The point is to induce instability and make sure the exit is graceful." The runner also runs every cell under a LADDER of low memory caps (several caps, since the failing point moves with build and allocator); PASS = any clean refusal (the named limit or out-of-memory); FAIL = crash, abort, hang or timeout. The named-limit rule above still binds the uncapped column.
   RULING growth-stackcap (Frank 2026-11-20): "no but note as future direction". FUTURE DIRECTION: a ladder of threads smaller than the stack budget; today limits.md §3.10¶4 promises an overflow, not a refusal, below the budget, so every such cell fails by design until that promise changes.
   DIRECTION library-vs-process (Frank 2026-11-20, his words): "Also, library vs process. I want to see if a series of tests run in a single process using the library crashes. That will test if it cleans up". The runner gains a LIBRARY mode: one process calls pcrec_compile on the whole cell series (refusals and memory-cap failures included) and must not crash, must leave no leak (LeakSanitizer) and must still compile a control pattern correctly at the end; the CLI-per-cell mode stays.
+- [ARENA-SCOPES] STATE:started — scoped arenas registered on the Ctx: freed LIFO on the way out, all at once on a longjmp
+  filed: 2026-11-24 manager, from the owner's direction during K155 (D203)
+  status (2026-11-25): BUILD GO (owner "arena-build-go: go") on design rev 2.1 (docs/design/arena_scopes.md; r100-r103). Units C0, R1, T1, F1, F2+F6, F3, F4 (F5 OUT: P3 not fired)
+  next: lane arenabuild (opus): C0 census, R1, T1, F1 (the core); then the client units; code critic round before landing
+  refs: owner 2026-11-24 "the arena memory system is in my mind a stack memory extension system"; src/core/arena.c; src/core/compile.c job_cleanup; known_issues K155; D203; review r96 GENFORM-5/8/9, COST-2; growth run 45492837175 (13 leaks = grow9fix set, site attribution needs a fast_unwind_on_malloc=0 repro); design docs/design/arena_scopes.md (rev 2, review r102); UNLOCK (r102 B27, not built here): the trace build's arrival restores (`pcrec_cand_eval_reset` at compile_driver's handler top, where the design adds the scope unwind, and the 6 `pcrec_cand_trace_quiet` brackets a longjmp skips) are GENFORM-9's possible second non-memory member, a restore entry kind under U6; trigger: a manager ruling that trace-only members count toward GENFORM-9, or a longjmp-skipped bracket that the trace floor catches in a shipped trace run
 
 
 ## Candidates ([OPTLOOP])
-- [KIT-ARCH-STEP] STATE:not-started — the memfn kit adopts the architecture step, in three stages
-  filed: 2026-11-22 owner (ruling kit-arch-step)
-  status (2026-11-22): ruled, nothing started. Stages: (1) after the in-flight effort, ONE arch review of the kit's sections with suggestions + possible refactors, smaller items favored; (2) then the arch step for every new kit feature
-  trigger: the kit's in-flight effort completes (R-47 block span, U5 and after)
-  refs: [ARCH-STEP]; docs/design/plan_row_bodies/KIT-ARCH-STEP.md; .claude/skills/pcrec-memfn-manager; pcrec-architect; pcrec-critic (mode arch)
 - [FH-INTRIN] STATE:not-started — mf_form_hash alpha-renames _mm* intrinsics, so a SIMD form change can leave its hash unchanged
   filed: 2026-11-22 main (kit review r79 F15; block_span.md §8 "[U5, r79 F15] PLAN, not built")
   status (2026-11-22): filed; nothing built. cmpeq->cmpgt or loadu->load hashes the same. Fix: keep intrinsic families in kept[]; cost: every stored hash goes stale (a re-measure event)
   trigger: the next formhash shape touch, or any card verdict that rests on a SIMD-form hash
   refs: docs/design/memfn/block_span.md §8; kit review r79 (F15); [BSPAN-CLANG-DIFF]
+- [B152-REGR] STATE:not-started — three bench-measured slowdowns since 11-02, each tied to one landed change (bench b152, O-122)
+  filed: 2026-11-24 manager, from lane b152attr (objdump attribution over cb32eda28..d6c5e71a5)
+  status (2026-11-24): grp-cap/grp-named/grp-named-quote/qnt-poss-plus/rec-fwd +13-17% (null +4-7%): only 51481d1b3 (S1 min-width guard + attempt bound). cls-range +18.6%, slack-webhook +15.3%: 9cecc3caa (rx_reqrun prefilter). dig-exact-8: no code change (bench/box)
+  next: ONE bounded pass per change (memory one-pass-loss-chasing): a decline-predicate survey for the S1 guard and the reqrun prefilter on these shapes, then accept or file the predicate; dig-exact-8 goes back to the bench as a non-program mover
+  refs: docs/dev/lanes/b152attr_report.md "Regression attribution"; pcrec-bench O-122; [RUN-POS-SET]; [B152-REGR-DIG] (none: bench side)
+- [LANDWALK-SHARE] STATE:not-started — the walk's verify machine reuses the anchored machine's tables instead of a second copy
+  filed: 2026-11-24 lane b152attr2
+  status (2026-11-24): b152 username-password-pair nocaps: walk +44,304 B, of which 36,281 B (82%) are lmverify tables byte-identical to rx_anchored's; 4,767 B reverse tables; 3,256 B code
+  trigger: a measured size or compile-cost mover; size-cap refusals of landmark-walk artifacts in [LANDWALK-CENSUS]
+  refs: docs/dev/lanes/b152attr_report.md "Landmark walk size"; docs/spec/tuning.md §2.54¶1/¶5; docs/spec/limits.md §8.4; [LANDWALK-CENSUS]; abi event + identity re-pin when built (D76/D94)
+- [LOCATE-CHARSTEP-ROW] STATE:not-started — `char-step` is a locate choice the axes listing never shows (cand_rows[] entry lacks .list/.desc)
+  filed: 2026-11-24 manager, from lane b152attr (bench prep question, O-122)
+  status (2026-11-24): omission confirmed (lane b152attr); no test covers RX_DFA_SCAN values; draft row in the report; not built
+  next: a small lane lists char-step on the locate axis (order 1, the others 2..5), re-pins registry expectations and registry.md §6 by grep, and adds a check that every RX_DFA_SCAN value is a row or a named non-choice (empty, attempt)
+  refs: docs/dev/lanes/b152attr_report.md "char-step locate row"; src/gen/emit_dfa.c cand_rows[]; src/dump/axes_dump.c; tests/registry/axes_registry_check.sh; docs/spec/registry.md §6
 - [WIDTH-PATH-BOUND] STATE:not-started — the width walk is still quadratic on acyclic and late-cycle patterns (path form is O(n+edges))
   filed: 2026-11-22 lane k159r81, from review r81 COMPLEXITY-1 (docs/dev/reviews/2026-11-22-r81-k159fix.md)
   status (2026-11-22): filed; nothing built. `q(?:a|bc){N}` walk 0.089/0.333/1.338 s at N=2000/4000/8000 (x4 per doubling), same on BASE. The path form is TIGHTER where a live cycle cannot reach accept: an ANSWER CHANGE for the width fact
@@ -1080,6 +1101,18 @@ Owner waits: a row or stage waiting on the OWNER (a charter, a build go, an answ
   TRIGGER: the growth diagnosis. Round-3 overlap: shares the view-edge site with K81 (3b-8), so file/diagnose before K81 is designed.
 
 ## Backlog
+- [PLANT-DETECT-JOB] STATE:not-started — plants are checked to APPLY, never DETECTED: a scheduled Linux detect job per runner
+  filed: 2026-11-24 manager (kit PR #1 landing, lane pr1land)
+  status (2026-11-24): filed; S3012 went undetected from d5f9da41b (11-14) until 11-24 because the plant check proves only that a plant applies; 42 of the kit's 81 runner plants have no mech twin, so a detect job is their only cover
+  trigger: next
+  refs: kit review r94; lanes s3012tri, s3012fix (docs/dev/lanes/s3012tri_report.md, s3012fix_report.md); tests/lib/plants.py; scripts/m6read_check_sab_anchors.py
+  Fix shape: a scheduled Linux `--plants` detect job per runner, red on anything but a "PLANT <id> RED" line. Members: memfn/tests/run_g2_pres.sh (34 plants, ~51 min measured), memfn/tests/run_g2_win.sh (39, ~30 min est.), tests/memfn/run_proof.sh (6, ~5 min est.), tests/memfn/run_wreply.sh (2, ~10 min est.), plus main's own plant-bearing runners (users of tests/lib/plants.py; the four above are all that name it today).
+- [CASE-TABLES-WALL] STATE:not-started — one module plus one interface for every generated table, a wall per product
+  filed: 2026-11-24 manager (review r97 W-4, MOD-9, MOD-4)
+  status (2026-11-24): `src/core/case_tables.inc` has two readers (emit_subst.c includes it, tests/oracle/case_map_check.py regex-parses it): the shape D204's file-interface rule retired for the Unicode tables; the UCD wall covers one product only
+  trigger: the next change to ANY generated .inc (case_tables, fold_tables, utf8_fold_pairs, cls_bits): give it its module + interface header, add its wall row, and survey every generated .inc for readers outside its module
+  refs: docs/dev/reviews/2026-11-24-r97-dpcompact.md; D204; tests/core/ucd_wall_check.py; third_party/ucd-16.0.0/generate.py --list-products
+  The owner's rule (2026-11-24, "the format is only understood to the module which provides an interface") is per product. General form: one declared row table, product | owning module | interface header, products from `generate.py --list-products`, needles derived per product, one floor and one planted-include control per row; a product with no row is red. Also renames the sibling `pcrec_ucd_fold_links` prefix clash with `pcrec_ucd_*` (MOD-4).
 - [STACKDRIVER-ENC] STATE:not-started — test-stackdepth cannot measure `-e utf8` (no encoding argument in its driver)
   filed: 2026-11-21 manager (review r67 k152 F9)
   status (2026-11-21): tests/thread/compile_stack_driver.c sets features and engine only, so no DEPTH_FAMILIES row reaches island or wide-class builds; the utf8 class nest `([e-u]bc|[e-u]bd(...abe)*)*d` was 440,560 B at BASE and is 64 B over the stated 319,504 B worst
@@ -1233,6 +1266,11 @@ Owner waits: a row or stage waiting on the OWNER (a charter, a build go, an answ
   Frank 2026-11-10: "Yes. Let's start or designate a master to all these. Perhaps others were missing? It should look at the machinery needed to satisfy and the common elements. Then we can plan them all together."
   UMBRELLA ROW. Members (rows stay where they are): [CONDITIONALS], [POSTFACT], [ENG-LOOK], [BRANCH-RESET], [PCRE2-GAPS-TBD] (`(*FAIL)` `(*ACCEPT)`), [CLASS-SETOPS], [VLOOKBEHIND], [LB-EXIST]; readers: [REQ-LOOKAROUND], [CTX-PREFILTER], [LOOK-LOCATE], [DESC-DEAD], [NEVER-MATCH], [BREF-SPAN], [SPAN-HELPERS]; superset machinery: [ENG-TDFA]. Common elements (survey §4): the condition node, the name table (labels vs capture numbers), ONE checker product for every DFA member (start/read rows), and the VM-drives/DFA-checks piece (A-REV and its forward twin).
   NOTE (2026-11-12): four notes (andspike oracle spike; D196 add. 2 mechanism-before-syntax; planning principles for the combined plan) in docs/design/plan_row_bodies/COND-FAMILY.md §2026-11-12
+  - [PRED-MUT-CHECK] STATE:not-started — a check for the 282 hand-copied predicate mutants in scripts/tests/pred_doc/mut.py
+    filed: 2026-11-24 kit review r94 (memfn-plantcheck), PLAN item 3; owner: the predicate manager session
+    status (2026-11-24): filed, nothing built; no suite checks the mutants, the same class as the runner-plant drift (D203); the class fix belongs with the predicate manager (notice M-3 in docs/dev/pred/from_main.md)
+    trigger: the next change to scripts/tests/pred_doc/mut.py, or the predicate manager's own pick-up of M-3
+    refs: scripts/tests/pred_doc/mut.py; D203; docs/dev/pred/from_main.md (M-3); [COND-FAMILY]
 - [COUNT-TO-OCCURS] STATE:not-started — a predicate `count()` converts to `occurs` when pcrec can show no change in semantics
   filed: 2026-11-15 Frank (to session 132), manager wrote the row (lane file1115b)
   status (2026-11-15): filed, later and unscheduled; nothing built; the predicate base has no `count()` yet
@@ -1295,12 +1333,11 @@ Owner waits: a row or stage waiting on the OWNER (a charter, a build go, an answ
   refs: docs/design/memfn/span_pick.md rev 5 (With data, conditions (i)-(iv); §Cost cards); docs/dev/reviews/2026-11-02-r1-memfn-spanpick/MEAS.md (MEAS-5); [BENCH-WITHDATA]; [MEASURE-SET]
   Rev 5: the with-data guarantee (a with-data compile matches or beats the blind compile beyond noise) holds when (i) the cards' regime is the cell's, long subjects; per-call cells need this row's term. Cards are per-byte streaming while the bench's losses and the bar are per-call (review r1, MEAS-5).
 
-- [KN-CARRIERLESS] STATE:not-started — kit finder: KN_A/I/M/N bits and needs_names "PEAIMN" have no carrier
+- [KN-CARRIERLESS] STATE:not-started — kit finder: KN_A/I/M/N bits and needs_names letters A,I,M,N have no carrier
   filed: 2026-11-03 file1103 (review 2026-11-03-r4 CONTRACT-2, PLAN part)
-  status (2026-11-03): filed; nothing built. The comment part of CONTRACT-2 was FIX-NOW on lane/memfn-sp1f; the bits themselves were ruled PLAN.
-  next: drop the bits and the needs_names letters with no carrier (1a precedent: KN_H dropped "since no row carried them"), riding unit 1e's merged walk if 1e still runs; otherwise a small kit lane
-  refs: docs/dev/reviews/2026-11-03-r4-memfn-sp1f.md (CONTRACT-2); memfn/src/finder.c:60-61, :827; memfn/docs/responses.md
-  After 1f removed the last consumers, KN_A/KN_I/KN_M/KN_N and the needs_names string "PEAIMN" describe nothing any row carries. 1a already dropped KN_H on exactly that ground. Unscheduled; ride 1e.
+  status (2026-11-24): HALF true: KN_P and KN_E are carried (the fd_rows needs fields) and stay; KN_A/KN_I/KN_M/KN_N (memfn/src/finder.c enum) and the letters A, I, M, N in needs_names ("PEAIMN") are carried by no row and nothing is built
+  next: drop KN_A/KN_I/KN_M/KN_N and the letters A, I, M, N from needs_names, leaving "PE" (1a precedent: KN_H dropped "since no row carried them"); a small kit lane, or riding unit 1e's merged walk
+  refs: docs/dev/reviews/2026-11-03-r4-memfn-sp1f.md (CONTRACT-2); memfn/src/finder.c (the KN_ enum, needs_names); memfn/docs/responses.md
 - [FINDER-UNPAID] STATE:not-started — kit finder check: the `unpaid` form column and the stale LATER_FORMS schedule
   filed: 2026-11-03 file1103 (review 2026-11-03-r4 CHECK-6)
   status (2026-11-03): filed; nothing built. `fd_form unpaid` (finder.c:141) is FF_UNSTATED on every row and finder_check A:208 asserts "-"; nothing can set it.
@@ -1347,22 +1384,17 @@ Owner waits: a row or stage waiting on the OWNER (a charter, a build go, an answ
   trigger: an optimization or fix that opens the DFA top level, start table or forward match (the ride-along rule), or Frank's go; A-REV S1 lands first and its record is the vocabulary this extends
   refs: [IR-FORM]; [VMREC]; docs/design/stream/roadmap.md areas A-REC, A-DFATOP, A-SEAM; docs/design/stream/arev.md
   Shape: byte-identical first step (records become the only writers, as [VMREC] (a)); one record vocabulary with the VM's where the kinds agree (A-REC); stamps derived from the records, not the engine verdict (A-DFATOP).
-- [SP1D-KITSPLIT-SEAMS] STATE:not-started — kit split: position primitives' home and the seam facts (rates snapshot, rules digest, alt=)
+- [SP1D-KITSPLIT-SEAMS] STATE:not-started — kit split: the seam facts (rates snapshot, rules digest, alt=)
   filed: 2026-11-05 land1105 (review 2026-11-05-r1, F10 + r2 F13, F12)
-  status (2026-11-05): filed; noted at 1d. Primitives (kit_pick_takes, kit_tie_*) sit in window.c while kit_mass and kit_run_set sit in presence.c; the rates are host-mutable and the trace names no rules version
-  trigger: the kit split (a planner file is the natural home)
-  refs: docs/dev/reviews/2026-11-05-r1-memfn-sp1d.md (F10, F12); docs/dev/reviews/2026-11-03-r2-memfn-spanpick5.md
-  Scope: move the position primitives to one home; snapshot the rates by (tag, version) at mf_art_begin; a rules digest in the trace; `alt=` on the per-alternative SEL/ROW/END lines.
+  status (2026-11-24): seam facts only: the rates are host-mutable and the trace names no rules version. The position-primitives half is OVERTAKEN by [KIT-WINSPLIT] (D204: they move once, in the window.c split)
+  trigger: the kit split (manifesto 2026-11-04: planning face to the planner, emitting face to the back end)
+  refs: D204; [KIT-WINSPLIT]; docs/dev/reviews/2026-11-05-r1-memfn-sp1d.md (F12); docs/dev/reviews/2026-11-03-r2-memfn-spanpick5.md
+  Scope: snapshot the rates by (tag, version) at mf_art_begin; a rules digest in the trace; `alt=` on the per-alternative SEL/ROW/END lines.
 - [SP1D-AMODEL-CANDS] STATE:not-started — span_pick: A-model reads the merged candidates, not the walked spans' own sets
   filed: 2026-11-05 land1105 (sp1d_report "Design deviation 1"; review 2026-11-05-r1)
   status (2026-11-05): filed; 1d left A-model reading each walked span's own set, because reading the merged candidates moves G2-visible decisions
   trigger: a ruled change (it moves picks, so it needs its census)
   refs: docs/dev/lanes/sp1d_report.md (Design deviation 1); docs/dev/reviews/2026-11-05-r1-memfn-sp1d.md
-- [SP1E-RENDERER-TABLE] STATE:not-started — span_pick: one renderer table keyed by (frame, pick, layer), the asker fact derived from it
-  filed: 2026-11-06 land1106 (review 2026-11-05-r2, F5+F6+F9)
-  status (2026-11-06): filed; 1e declared the renderer rows (fd_renderers, 14 pairs) but the asker fact SF_ASKER_PAIR is still a separate declaration
-  trigger: span_pick unit 3.0
-  refs: docs/dev/reviews/2026-11-05-r2-memfn-sp1e.md (F5, F6, F9); docs/dev/lanes/sp1e_report.md
 - [SP1E-HORS-FLOOR] STATE:not-started — span_pick: measure the D-hors floor
   filed: 2026-11-06 land1106 (review 2026-11-05-r2, F10)
   status (2026-11-06): filed; D-hors is the first FIND row and its floor is unmeasured
@@ -2353,6 +2385,28 @@ Owner waits: a row or stage waiting on the OWNER (a charter, a build go, an answ
   refs: docs/dev/lanes/u8pick0_report.md; src/findings/default.rxt; decisions D83 D153 D159 D160
   utf8 literal-pick cells: pcrec leads jit but trails re2/rust x1.2-x15.7 (lit-sharp-s worst), 10 utf8 cells. FIRST STEP: the cheap two-artifact twin (`-e byte` vs `-e utf8` of one literal) — may be a pick defect. ROUND 3 rank 3a-4 (D153): kept at rank 4; remodel overlap likely refactor A (landmark pick / [TIE-ALIGN]) — confirm at its twin step.
 
+- [WATCH-CANCEL-SHAPES] STATE:not-started — watchers mishandle three shapes: hand-cancelled cloud runs, and scratch-only lanes
+  filed: 2026-11-24 manager (lane rows1124), from the day's watcher misses (journal 15:06 and 15:28 entries)
+  status (2026-11-24): filed, nothing built; (a) 8 CLOUD-SHARD-RED after a hand-cancel (run 45469584369); (b) its CLOUD-DONE says RED, not CANCELLED; (c) lanewatch false QUIET (rc 10) x3 on scratch-only lanes
+  trigger: the next change to queuewatch, monread or lanewatch, or a fourth recurrence of any of the three shapes
+  refs: scripts/queuewatch; scripts/monread; scripts/lanewatch; (b) conclusion=cancelled; memory "watch the idle box" (grow the watchers from each miss shape); (c)'s fix might also read the scratch dir's mtimes
+- [G2-PLANT-WANT] STATE:not-started — kit: a plant_want table for run_g2_win.sh so each plant asserts its REASON
+  filed: 2026-11-24 kit review r94 (memfn-plantcheck), PLAN item 1; owner of the work: the kit
+  status (2026-11-24): filed, nothing built; today a plant is asserted only to fail, not to fail for the reason it was written for
+  trigger: the next change to the PLANTS list in memfn/tests/run_g2_win.sh
+  refs: docs/dev/reviews/ r94 (memfn-plantcheck); memfn/tests/run_g2_win.sh; [SAB-ID-RANGES]
+- [SAB-ID-RANGES] STATE:not-started — record every sabotage id range (main's and the kit's) where a check can see them
+  filed: 2026-11-24 kit review r94 (memfn-plantcheck), PLAN item 2; manager (lane rows1124)
+  status (2026-11-24): filed, nothing built; the ranges live only in worktrees/.mgr/sabotage_ids.txt (gitignored, main-only); instance: kit runner plant S1540 collided with mech S1540 (renumbered S1544)
+  trigger: the next sabotage id collision, or the plant-check landing
+  refs: tests/mech/sabotages (registry and the anchor check); worktrees/.mgr/sabotage_ids.txt; [G2-PLANT-WANT]; learnings.md section 3
+  Goal: a collision is caught by a check, not by chance: one committed place lists each id range with its owner (main, kit), and the registry or anchor check reads it.
+- [RUNNER-PLANTS-POOL] STATE:not-started — kit: a process pool for the runners' --plants modes
+  filed: 2026-11-24 kit review r94 (memfn-plantcheck), PLAN item 4; owner of the work: the kit
+  status (2026-11-24): filed, nothing built; the --plants modes run their plants one after another
+  trigger: the next full plant sweep owed (D77)
+  refs: docs/dev/reviews/ r94 (memfn-plantcheck); owner rule, memory pcrec-tests-parallel (2026-11-23: tests run in parallel)
+
 ## Boonies
 - [LB-NEST-CAP] STATE:not-started — cap the BACK row by the walk's own reach, so sound nested-lookbehind runs are kept
   filed: 2026-11-20 manager (review 2026-11-20-r65-l3feat I speed half, WALK-1; lane l3r65 wrote the row)
@@ -2407,9 +2461,9 @@ Owner waits: a row or stage waiting on the OWNER (a charter, a build go, an answ
   refs: known_issues K157; docs/dev/lanes/grow6_report.md; tests/growth/run_growth.py (K157_CELLS); docs/spec/limits.md §8a, match_api.md §4¶3
 - [K155-STAMPS-LEAK] STATE:not-started — target_headers_render leaks its 32 KB pass-2 buffer on an out-of-memory refusal (K155)
   filed: 2026-11-21 lane grow2, from grow1's library stage (NEW-2)
-  status (2026-11-21): filed; nothing built. LeakSanitizer in the growth sweep's ASan library stage names src/gen/memfn_stamps.c target_headers_render
-  next: trigger the next crash-family lane; free or arena-back the StrBuf on every exit of target_headers_render; the library stage of make test-growth goes green on it
-  refs: known_issues K155; docs/dev/lanes/grow2_report.md; src/gen/memfn_stamps.c
+  status (2026-11-24): lane k155fix: census + general rule enforced (23 small builders on pcrec_sb_scratch, compound texts arena-owned, scratch_builder_check.py in make test, alloc_check stranded-heap property); THIS site and the other two whole-artifact rewrites stay heap by ruling R-3, waiting on [ARENA-SCOPES]
+  next: [ARENA-SCOPES] lands, then move nb/render_buf/splice tail onto a scoped arena; the library stage of make test-growth goes green on it; drop their guard allowlist rows and alloc_check's filed stranding
+  refs: known_issues K155; docs/dev/lanes/grow2_report.md; docs/dev/lanes/k155fix_report.md; src/gen/memfn_stamps.c
 - [K150-LMCAT-QUADRATIC] STATE:not-started — the landmark walk's lm_cat rebuilds a CAT spine per candidate: quadratic compile memory (K150)
   filed: 2026-11-20 lane growfile, from growsurv KR-D
   status (2026-11-20): filed; nothing built. `(?:a|b)` x 5,000 spends 3.46 GB with no refusal; the size cap fires only past about 8,000
@@ -2673,6 +2727,26 @@ Owner waits: a row or stage waiting on the OWNER (a charter, a build go, an answ
   BOONIES. The fold stays the default (D138 addendum 2026-09-30); its one real penalty is waf744 (+1.2% throughput, +28% match on a 21-byte subject), a forced-VM-only shape with a default-route population of 0. Research why.
 
 ## Deferred
+- [ARV-13-CARDS-PY] STATE:deferred — kit: LEAVE cards.py whole; split by card when the next card lands
+  filed: 2026-11-24 kit arch review (R-49, note rev 4 accepted; suggestions filed, not built)
+  status (2026-11-24): leave it; the layout pools go to [LAYOUT-DRAW]
+  trigger: the next card written into cards.py (then M, harness: split by card)
+  refs: memfn/docs/arch_review_2026-11.md §7 ARV-13, C-s1
+- [ARV-14-NOTED-LIBPCREC] STATE:deferred — kit: LEAVE formhash.c, k1_ref.c and vany.c in libpcrec, each with its reason
+  filed: 2026-11-24 kit arch review (R-49, note rev 4 accepted; suggestions filed, not built)
+  status (2026-11-24): leave it; the three noted-deviation rows are written (architecture.md part 3) by lane arvfile
+  trigger: its OWN trigger per member (not Q36): formhash.c a measured library-size or link cost (main's R-1); k1_ref.c the next change to G2's oracle or its linking; vany.c its routing
+  refs: memfn/docs/arch_review_2026-11.md §7 ARV-14, C-s2
+- [ARV-15-SETKEY-LEAVE] STATE:deferred — kit: LEAVE the set-key comparator and art->consulted; span_pick stage 3 row 1 uses or deletes them
+  filed: 2026-11-24 kit arch review (R-49, note rev 4 accepted; suggestions filed, not built)
+  status (2026-11-24): leave it
+  trigger: span_pick stage 3 row 1 ([PICK-IDIOM])
+  refs: memfn/docs/arch_review_2026-11.md §7 ARV-15, A-s3
+- [ARV-17-G2-POOLS] STATE:deferred — kit: LEAVE the 4 G2 runners' own pools; they join the filed mutb.py-under-parpool item
+  filed: 2026-11-24 kit arch review (R-49, note rev 4 accepted; suggestions filed, not built)
+  status (2026-11-24): leave it
+  trigger: the next change to one of those runners' pool
+  refs: memfn/docs/arch_review_2026-11.md §7 ARV-17, C-s3
 - [ROWCON-TABLE-ENGINE] STATE:deferred — the kit hosts the general first-match table engine (MF_NS utility) that pcrec tables may adopt
   filed: 2026-11-10 closea (HELD (a) of the closed [MEMFN-ROWCON]; Frank 2026-10-07 Q-ROW-4 AGREE)
   status (2026-11-10): ruled but not built; the cand_rows[] mapping stays as design evidence only
@@ -2756,3 +2830,58 @@ Owner waits: a row or stage waiting on the OWNER (a charter, a build go, an answ
   refs: docs/design/plan_row_bodies/ENG-TACTICS.md; docs/design/where_to_start.md; docs/dev/lanes/rlhtwin_report.md; decisions D77 D151 D153 D161
   no general planner — a small fixed set of tactic ROWS (reverse-inner among them), each with a precondition computed from [PATFACTS] facts and a one-time soundness argument, first-match, the plain VM as the always-sound last row. FIRST STEP when opened: a TACTIC CENSUS over the VM-only-at-auto population (backref/linked-call) + `--engine=vm`, reporting which tactics' preconditions hold per pattern (D77: build only what measurably pays). TRIGGER (re-worded 2026-10-11 after rlhtwin): see the full text. Evidence: docs/design/where_to_start.md and where_to_start/, docs/dev/lanes/rlhtwin_report.md, rincensus_report.md, rinmodel_report.md, et1twin_report.md. FULL TEXT (long-form charter and history, moved 2026-10-12): docs/design/plan_row_bodies/ENG-TACTICS.md.
   2026-10-27 lane subtri (bench O-109 case 5b mask-email, x3.16 behind rust): rev-inner's trigger fires (an unbounded leading class before a rare `@`; the easy form, the class excludes `@`). The forward DFA steps 93% of 362 MB and restarts 53.6M times; an @-driven hand twin cuts instructions x75 (cycles x45). Evidence docs/dev/lanes/subtri_report.md.
+- [XARCH-DEV] STATE:deferred — test cross-arch development: build, test and measure pcrec + the kit on a non-x86 box
+  filed: 2026-11-06 Frank ("add an item to test cross arch dev"; to the kit, relayed); manager wrote the row
+  status (2026-11-24): parked 2026-11-24 (owner, stale-rows-park): no activity since 2026-11-10; done: build go 11-07, kit K0, pcrec P1, U2+U3 per-CPU SIMD (abi 98, MF_SITE_ABI 26); Mac green, aarch64 levels, per-target variants not started
+  trigger: the next session on a non-x86 box (Mac or aarch64), or the kit's move to the Mac, whichever first; then: Mac make/test/mech green; aarch64 kit levels and a measurement set under D188; the ruled per-target VARIANTS end state; children below are review follow-ups
+  refs: decisions D188 D144 D147; [XARCH] (deferred, rates); memory pcrec-cross-platform-verification
+  Scope (manager's draft, to settle with Frank): make / make test / mech green on the Mac; the kit's levels on aarch64; a measurement set produced there under D188; how a multi-target artifact carries every level's text but one set's prices.
+  REQUIREMENT (Frank, 2026-11-06): "We need the user to be able to support multiple arch simultaneously. Whether that is a single artifact or multiple is the design question." Manager's leaning, NOT ruled: targets are a compile input; per site the kit picks per target; agreeing sites are emitted once and disagreeing sites get compiler-macro #if arms with the neutral pick as #else; one target = today's bytes, so N artifacts is the special case. First measurement: price the corpus with zen4 and an M1-made set and count disagreeing sites (size and test cost scale with it). Every arm is tested on its own arch.
+  RULED (Frank, 2026-11-06, "I agree with your points"; details when the item starts): END STATE = per-target VARIANTS, no #if arms. A variant is a complete matcher planned and priced for one target. Build time: pcrec emits the build target's variant. Run time: one artifact holds 2-3 variants (generic + 1-2 SIMD) as target-attributed functions, a once-per-process CPU dispatch entry, and each variant's own entry. The artifact's target set is an explicit LIST (a,b,c) the caller gives, never assumed; with no list, a declared, stamped default list. D188 amended.
+  - [XARCH-FIXEDTEXT] STATE:not-started — emit_sweep: refuse a -fmemfn-simd= arm whose measured target text is empty
+    filed: 2026-11-08 manager (review 2026-11-08-r5-xarch checks-4, PLAN)
+    status (2026-11-08): filed; SUSPECTED, not confirmed
+    next: confirm (make the control compile fail, or an arm insert nothing, and see the arm still read ok); then FAIL such an arm and add an upper pin beside the DIFFER_PINS floors
+    refs: scripts/emit_sweep.py target_fixed_text; docs/dev/reviews/2026-11-08-r5-xarch.md
+    scripts/emit_sweep.py's target_fixed_text returns [] when its control compile fails or the arm inserts nothing; every pattern then counts as a mover and the floors (differ >= floor) still pass.
+  - [XARCH-PLACECOV] STATE:not-started — placement checks for every listed target, not one: the 32-byte region, a guard-only target
+    filed: 2026-11-08 manager (review 2026-11-08-r5-xarch checks-6, PLAN part)
+    status (2026-11-08): filed; the FIX-NOW part (xt_place's rx_info -1 guard, its no-include-in-region test, stale comments) landed with lane u3crit
+    next: run tests/cli's xt_place over one artifact per listed target with a family (a guard-only target: guard once, no region); pick the two-target family by listing order, not awk hash order
+    refs: tests/cli/run_cli_tests.sh xt_place; docs/spec/match_api.md §6.3.10¶15
+    Today the cli placement case covers one target (the baseline amd64 one); the larger region and the arm64 guard-only artifact are placed by no check.
+  - [XARCH-TOKERR] STATE:not-started — an unknown CPU token's refusal is cut at 256 bytes mid-text
+    filed: 2026-11-08 manager (review 2026-11-08-r5-xarch CONTRACT-4, PLAN)
+    status (2026-11-08): filed
+    next: size the joined refusal (or show the kit's target and family refusals separately) so cli.md §1.24¶2's "the kit's text unchanged" holds for any token length
+    refs: src/gen/memfn_targets.c add_list; docs/spec/cli.md §1.24
+    A 120-byte unknown token prints 263 bytes ending mid-token, without the "(known: ...)" lists; each target or family the kit adds lengthens those lists, so the cut moves toward ordinary tokens.
+  - [XARCH-K2PULL] STATE:not-started — weigh pulling the kit's K2 target_dependent fact forward (guard and region only where needed)
+    filed: 2026-11-08 manager (review 2026-11-08-r5-xarch SEAM-4(ii), NOTED + weigh)
+    status (2026-11-08): filed; the ruled interim stands (every -fmemfn-simd artifact carries guard and region)
+    trigger: the first caller complaint that a -fmemfn-simd artifact with no SIMD form is family-locked or AVX-only, or K2's own go, whichever first
+    refs: docs/design/memfn/target_seam_units.md (K2); docs/spec/match_api.md §6.3.10¶4
+    Most patterns reach no SIMD row, yet their -fmemfn-simd artifacts are locked to the target's family and features; with a per-art target_dependent fact pcrec could place guard and region only where the kit rendered target text.
+- [MEASURE-SET] STATE:deferred — DECISION MEASUREMENTS AS VERSIONED SETS, loadable at compile time
+  filed: 2026-10-13 Frank
+  status (2026-11-24): parked 2026-11-24 (owner, stale-rows-park): no activity since 2026-11-10; done: span_pick stages 1-2 (zen4-grid3@1, 692ec83b7) and M0 on main; M1, M2 generic envelope, M3 library not started
+  trigger: a measured machine other than this one (or the install-time tool's go), or the kit's next priced choice that needs its own set, whichever first; then: M1; M2 generic envelope default; M3 library of sets and install-time tool (formal library, Frank 2026-10-23 Q3)
+  refs: docs/design/regime_tables.md; decisions D149 D161 D162 D166; [LIST-TABLES]; [ART-MGR]
+  RULED M2 order (manager, 2026-11-03, span_pick rev 3.1; answer-free): M2 is NOT ordered against span_pick's row 1. At M2 the idk default becomes an ISA envelope with no per-byte cost rows, so priced rows go DARK on bare compiles (picks fall back to the rules; stamps move). INTENDED ("an unknown target prices nothing"); M2's own census owns those stamp moves; named-set compiles keep their priced picks.
+  A measurement set is the machine-side twin of the analysis object: one box/run/method version, values relative to the scalar walk's per-byte cost plus derived crossovers, provenance per row (method id+version, box, compiler, commit, tier scratch/official). Deliverables: the set format and committed store (gen-tables shape), `--measures=FILE|NAME` + config line, the per-artifact set stamp (abi event), `--list-measurements` (rows, provenance, reader rows), the derived generic envelope set, an install-time measurement tool (crossovers only, noise-gated). Open: the relative unit, analysis-format vs sibling, the tool's home. Answers never depend on the set.
+  RULED Q1 (Frank 2026-10-23, kit responses.md): the kit's stop choice is ONE priced choice (position x find method); its costs are visible in the measurement set via --list-measurements (no --list-costs), relative to the walk with raw readings as provenance, stamped per artifact; plan_cost.def rows migrate into the sets; an option changes a cost only through a visible key or another row.
+  FORMAL LIBRARY (Frank 2026-10-23, Q3: "make it a formal thing and build it as a library of values ... pcrec will run on different machines and need timings for each"): (a) a canned, self-contained pcrec script (part of pcrec, not bench) that measures any machine into a set, the install-time tool above; (b) closest-match selection over the library as DECLARED FALLBACK ROWS (microarch -> ISA level -> arch family -> generic), visible in --list-measurements and stamped; (c) targeting another machine (built: --measures / config line); (d) the generic envelope default (M2). Only this box is measured now; the rest stays in this item, unscheduled.
+- [VMREC] STATE:deferred — VM emitter record-first: typed records are the only writers of the VM body
+  filed: 2026-10-29 vmcons3 (manager)
+  status (2026-11-24): parked 2026-11-24 (owner, stale-rows-park): no activity since 2026-10-31; done: step (a) merged 3bc599c92 (byte-identical, D182); steps (b) and (c) not started
+  trigger: a VM emitter change that needs the records first, or the stream roadmap reaching the VM area (A-REC), whichever first; then: (b) analysis-free R stage; (c) analysis build, stage 2a first (lexer, registry, FL, CEN), after a soundness round and a D27 author
+  refs: D182; docs/dev/lanes/vmcons3_report.md; docs/dev/reviews/2026-10-29-r9-vmcons3.md; docs/dev/lanes/vmrec_report.md vmrecm_report.md vmrecf_report.md vmrecg_report.md; docs/design/plan_row_bodies/VMREC.md (members added after (a))
+  (c) rulings (r9, 2026-10-29): kit windows are opaque with DECLARED EFFECTS (kit facts per window: reads, writes, can transfer control; undeclared = may-write-everything barrier, no denylist lexing); post-render rewrites become record transforms or run before the record is frozen; every analysed operand is printed by its renderer or carried as a record field.
+- [FINDALL-NEXT] STATE:deferred — find-all iterator over a caller-filled struct (generic callers loop over info->next / next_n)
+  filed: 2026-10-09 Frank
+  status (2026-11-24): parked 2026-11-24 (owner, stale-rows-park): no activity since 2026-10-23; done: I0+I1+I4 on main (b8c66a739, abi 84); I2 the kit's `st` and I3 `pair-hits` not started
+  trigger: the kit's `st` delivery (findall_iter.md IC2, with the kit-find row); then: I2 (the kit's `st`, arrives with the kit's kit-find row, findall_iter.md IC2) then I3 `pair-hits`; follow-ups [ITER-RETRY-ELIDE], [ITER-REVIEW-PLAN]; none started
+  refs: docs/spec/match_api.md; tests/assertions/gstart_findall.c; tests/encseam/findall_driver.c; tests/codegen/entry_shape_driver.c; docs/dev/lanes/f3search_driver.c; decisions D38 D76 D80 D83 D94 D132 D158; known_issues K75 K105
+  wrap the find-all advance (match_api.md §3.1 "Finding every match": `p = non-empty ? <prefix>_next_pos(s,n,end-1) : <prefix>_next_pos(s,n,start)`, the [K75]/D132 aligned rule) in an emitted macro or `static inline` per-artifact helper (e.g. `<prefix>_next_start(s, n, caps)`), so callers stop hand-copying it and the looping rule can change later without touching callers. TODAY: the spec carries the loop as prose a caller copies; three in-tree drivers copy it by hand (tests/assertions/gstart_findall.c:64, tests/encseam/findall_driver.c:45, tests/codegen/entry_shape_driver.c:75; plus docs/dev/lanes/f3search_driver.c).
+  EVAL QUESTIONS: (1) macro vs `static inline` in the artifact's .h vs an exported function (header-inline keeps it free and type-checked; an exported symbol is an rx_info/[V-E] entry-pointer candidate); (2) helper for the ADVANCE only, or a whole step `<prefix>_search_next(s,n,&p,caps)` returning the next match — the latter is where future flexibility pays: replace_design.md §3.8 notes the §3.1 loop cannot express PCRE2's NOTEMPTY_ATSTART retry for empty-preferring patterns, and [OPT-HYB-RESEED-XCALL]/xcall.md §5 held a caller-owned cross-call state (`_search_ex` + `pcrec_search_state`) that would ride the same entry; (3) relation to [V-E]'s entry-pointer struct; (4) it is emitted scaffolding: an abi event + spec hunk (D76/D94/D80), and the drivers migrate to it in the same change. Cost S.
+  LEADING SHAPE (Frank 2026-10-09: "could it return a boolean such that one could write while (wrapper(..)) ..."; manager): a whole-step boolean iterator — `rx_iter it = RX_ITER_INIT; while (<prefix>_next(&it, s, n, caps)) report(caps); if (it.rc < 0) /* gave up */` — `_next` = (p > n → 0) + `_search` + the [K75] aligned advance; the done-vs-gave-up distinction (§4's negative codes) rides in `it.rc`, never dropped; the iterator struct is where the NOTEMPTY_ATSTART retry bit and the xcall.md §5 cross-call hint would live later, with no caller change; `rx_iter` a fixed unprefixed ABI type (rx_ctx's family), `_next` a `static inline` in the artifact header.

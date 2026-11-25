@@ -3533,6 +3533,15 @@ is printed once per top-level script to stderr, only when it differs from
 plain `timeout`, so a log names which binary ran without spamming a log
 sourced by every one of a suite's per-case subshells.
 
+**A consumer reads a sourcing script's STDOUT, never its stderr, as the
+protocol** (lane tt6fix, 2026-11-24). This notice, `cc_resolve.sh`'s
+`[MACPORT]` and `resolve_pcre2.sh`'s `[ORACLE-LINK]` are advisory stderr
+lines that appear on some boxes and not others; a checker that scored any
+stderr as a fault (`scripts/m6read_check_sab_anchors.py`'s plant pass) was
+red on every box whose bare `timeout` is not GNU. Show stderr to the reader;
+decide on stdout and the exit code; do not pre-set an `*_ANNOUNCED` gate to
+silence one notice (the next helper's notice breaks it again).
+
 `tests/lib/gen_timeout.sh` sources it (its `gen_cc` wall wrapper was the
 single highest-traffic call site) and every other file in the tree that
 invoked a bare `timeout` was swapped to `"$TIMEOUT_BIN"`: `tests/harness/
@@ -4360,16 +4369,26 @@ reads, never a gate). This section is the implementation record: the
 recording mechanism, its measured overhead, the log format, the tripwire,
 and the sabotage validation.
 
-### Why the log stays tracked, and is dirty after every run (admin88, 2026-09-30)
+### Why the log stays tracked, and is NOT written by an ordinary run (admin88 2026-09-30; wtclean 2026-11-25)
 
-`docs/dev/artifact_size_log.tsv` shows modified in `git status` after every
-full `test-corpus` run, because the wrapper rewrites it. It stays tracked on
-purpose: `tests/size/check_size_tripwire.sh` (`make test-size`) reads it and
-fails if it is missing, and the committed history (44 commits, re-archived
-at gates) is the ratchet's deliverable — per-pattern movement is a `git diff`
-or `scripts/size_diff`, per Frank's ruling above. Leave an ordinary run's
-rewrite out of commits (`git restore` it); re-archive it only deliberately
-from a clean full default-axes run. The rule and evidence are in
+`docs/dev/artifact_size_log.tsv` stays tracked on purpose:
+`tests/size/check_size_tripwire.sh` (`make test-size`) reads it as the
+baseline on a fresh tree and fails if it is missing, and the committed
+history (53 commits, re-archived at gates) is the ratchet's deliverable —
+per-pattern movement is a `git diff` or `scripts/size_diff`, per Frank's
+ruling above.
+
+Until 2026-11-25 every full `test-corpus` run REWROTE it, so every tree that
+ran the suite read dirty to `scripts/wtprune` (about 50 of 286 kept
+worktrees on that day) and lanes sometimes committed the rewrite inside
+unrelated work. Now `tests/size/log_path.sh` (sourced by both scripts) picks
+the file: `ARTSIZE_LOG=<file>` if set; else the committed file only when
+`ARTSIZE_COMMIT=1`; else a per-tree scratch file,
+`$PCREC_TMPDIR/scratch/size/<tree-name>/artifact_size_log.tsv`. The writer
+never falls back; the tripwire reads the scratch file if it exists, else the
+committed baseline. A deliberate re-archive is a clean, full, default-axes
+run as `ARTSIZE_COMMIT=1 make test` (or `ARTSIZE_COMMIT=1 bash
+tests/size/run_size_log.sh`), then commit the file. Rule and evidence:
 `tests/size/CLAUDE.md`.
 
 ### Where it rides
@@ -5135,6 +5154,28 @@ the size-term ladder's documented "any reason, this K is out" catch-all
 both silently absorb a genuine allocation failure into a successful
 compile from a later internal attempt, which no answer-level check or
 `ulimit -v` approach can see.
+
+**The stranded-heap property ([K155], lane k155fix, 2026-11-24).** A
+DIAGNOSED refusal is no longer enough: the injector also frees-tracks
+(`free` is redirected too) and keeps the injected tree's live heap, and a
+trial whose refusal leaves any block live after `pcrec_compile` returns
+FAILS ("diagnosed but STRANDED HEAP"; `--sites` names each block's
+allocating `file:line`). The exceptions are the `known_stranded` table,
+filed defects each tied to a plan row and each required to be REACHED
+(stale = FAIL); a row may narrow itself to blocks allocated UNDER one
+function (the allocation stack, symbolized with `addr2line -i` only for
+stranded blocks), because every StrBuf's storage comes from `sb.c`. Today:
+`minimize.c`'s tables and K155's `target_headers_render` rewrite buffer,
+both [ARENA-SCOPES] clients. Its static complement is
+`tests/core/scratch_builder_check.py` (in `make test` via test-core): the
+census of compile-path heap builders, which sees the sites no witness
+reaches. Witness W6 (`^abc|x+$`, review r96) runs the compound walk, the one
+fixed shape (a callee's heap result handed to the arena) the scan cannot
+see: BASE strands a part's text on 10 refusals, the fix 0; its 982
+single-shot absorptions are the compound row's by-design fallback, pinned
+exactly with that reason (a pinned count prints a NOTE, any other count
+FAILS); sabotage S3580 drops `pcrec_arena_own` and only W6 sees it. The
+injected `free` lowers the balance only for a block it counted (CHECK-6).
 
 ## The long-prefix sweep and the irsb byte-neutrality arm ([REVW.1] wave 1 stage 0, 2026-09-18)
 

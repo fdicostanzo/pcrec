@@ -1023,8 +1023,7 @@ mf_site *pcrec_memfn_span_site(Ctx *cx, const PcrecEncSite *es, mf_hooks *h)
     s->pred.term[0].ppm_hi = MF_PPM_FULL;
     const char *fold = NULL;
     if (es->fold) {                     /* its `$` is the artifact's prefix */
-        StrBuf fb = { 0 };
-        fb.cx = cx;
+        StrBuf fb = pcrec_sb_scratch(&cx->arena);
         pcrec_enc_emit_site_text(&fb, es->fold, cx->opt->prefix);
         char *t = pcrec_arena_alloc(&cx->arena, fb.len + 1);
         memcpy(t, fb.p, fb.len);

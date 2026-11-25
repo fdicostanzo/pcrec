@@ -75,6 +75,7 @@
 #include "core/internal.h"
 #include "enc/enc.h"
 #include "parse/parse_mods.h"
+#include "parse/ucd_tables.h"
 
 /* An arena-owned, NUL-terminated copy of pat[start, start+len) — the one
  * place this module needs a string outliving the pattern buffer's own
@@ -88,24 +89,6 @@ static const char *ng_arena_strndup(Ctx *cx, const char *s, size_t len)
     return p;
 }
 
-/* Is `cp` in the bare-namespace Unicode property `prop` (normalised name)?
- * A binary search of the same generated interval table `\p{..}` reads; -1
- * when unicode-props does not ship the table. */
-static int ng_in_prop(const char *prop, unsigned cp)
-{
-    int n = 0;
-    const PcrecCpRange *iv = pcrec_uprops_span(prop, &n);
-    if (!iv) return -1;
-    int lo = 0, hi = n - 1;
-    while (lo <= hi) {
-        int mid = lo + (hi - lo) / 2;
-        if (cp < iv[mid].lo) hi = mid - 1;
-        else if (cp > iv[mid].hi) lo = mid + 1;
-        else return 1;
-    }
-    return 0;
-}
-
 /* THE GROUP-NAME CHARACTER, ONE RULE for the pattern side and the subst
  * template (subst_template.c): an ASCII letter or `_` first, then letters,
  * digits or `_`; above ASCII (an encoding wider than a byte, the caller's
@@ -117,8 +100,8 @@ int pcrec_group_name_cp(unsigned cp, bool first)
     if (cp < 0x80)
         return ((cp | 0x20) >= 'a' && (cp | 0x20) <= 'z') || cp == '_'
                || (!first && cp >= '0' && cp <= '9');
-    int r = ng_in_prop("L", cp);
-    return r != 0 || first ? r : ng_in_prop("ND", cp);
+    int r = pcrec_ucd_contains("L", cp);
+    return r != 0 || first ? r : pcrec_ucd_contains("ND", cp);
 }
 
 /* The byte length of the name character at p[i] (`first`: in the leading

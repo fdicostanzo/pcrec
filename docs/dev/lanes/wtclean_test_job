@@ -1,0 +1,19 @@
+#!/usr/bin/env bash
+# wtclean: owed validation of lane/wtclean (size log goes to the temp root unless ARTSIZE_COMMIT=1): build, then the full make test.
+# After the run the tree must read git-status clean (the manager checks).
+set -u
+TREE=/home/pcrec/projects/pcrec/worktrees/wtclean
+case "${1:-}" in
+    --ready) exit 0 ;;
+    --dry-run)
+        [ -d "$TREE" ] && [ -x "$TREE/scripts/perfrun" ] || { echo "no tree or perfrun in $TREE" >&2; exit 1; }
+        n=$(make -C "$TREE" -s -p -n nothing 2>/dev/null | sed -n 's/^TEST_SECTIONS := //p' | head -1 | wc -w)
+        [ "$n" -gt 0 ] || { echo "cannot count TEST_SECTIONS" >&2; exit 1; }
+        echo "would run in $TREE: make -j16; scripts/perfrun --label wtclean -- \$BQ_LOG.make"
+        echo "boxqueue: cap 9000"; echo "boxqueue: patience 54000"
+        echo "boxqueue: expect sections=$n log=job.log.make last=^sections ran:"
+        echo "boxqueue: witness sections=sections ran: $n/$n"
+        exit 0 ;;
+esac
+make -C "$TREE" -j16 >/dev/null || exit 1
+(cd "$TREE" && scripts/perfrun --label wtclean -- "$BQ_LOG.make")

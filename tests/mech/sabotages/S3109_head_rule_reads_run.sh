@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # S3109 -- R-38 Part D (docs/design/memfn/part_d.md rev 4 section 5.1, plant p4; lane partd).
-# The same plant as memfn/tests/run_g2_pres.sh --plant S3109 (its plant_spec; one source of the text).
+# The same plant as memfn/tests/run_g2_pres.sh --plant S3109 (its plant_spec; two copies of the text, held equal by the twin check).
 SAB_ID="S3109-head-rule-reads-run"
 SAB_FILE="memfn/src/compose.c"
 SAB_SUITES="g2pres"

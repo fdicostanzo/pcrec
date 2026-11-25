@@ -63,6 +63,8 @@ Always on, whatever the situation:
   "settled" the caller's read-out (undefined); three of 24 marked readings failed their runs): a factual sentence
   about what a pattern matches is run before it is said or is marked hand-worked, and every "MANAGER'S READING" in
   the record is listed for the next revision lane to test and report as supported or not.
+- **A fix shape recommended to the owner is checked against the mechanism it relies on and stated at the CLASS level** (D203, 2026-11-24:
+  K155's "free it on the error path" had no error path, errors longjmp to one setjmp, and the arena-backed-builder rule had ~29 siblings); bugs are not plan items, so the close-out, 90% and one-pass doctrines do not apply to them.
 - **A lane's "cloud runs dispatched" is a claim** (2026-11-16, covs2g named four runs, one existed): at acceptance
   run `git ls-remote origin 'refs/heads/cloud/main/*/NAME*'`; briefs demand that line as proof.
 - **A status claim about a set or a row is READ from the journal and `git log`, never from a plan status line**

@@ -737,11 +737,10 @@ void pcrec_facts_force_failed(Ctx *cx)
  * is kept only so a cube run's text does not move). */
 static const char *pf_hex(Ctx *cx, const unsigned char *const *pos, int n, int idx)
 {
-    StrBuf sb = { 0 };
+    StrBuf sb = pcrec_sb_scratch(&cx->arena);
     const char *t;
     bool masked = false, cubes = true;
     int tk[PCREC_MAX_REQ_RUN_SCAN][2];
-    sb.cx = cx;
     for (int k = 0; k < n; k++) {
         if (!pcrec_req_cube(pos[k], &tk[k][0], &tk[k][1])) cubes = false;
         if (tk[k][1] != 0xFF) masked = true;
@@ -789,9 +788,8 @@ const char *pcrec_fact_render(Ctx *cx, PfFactId f)
     const PatFacts *pf = &cx->job->pf;
     switch (f) {
     case PF_KINDS: {
-        StrBuf sb = { 0 };
+        StrBuf sb = pcrec_sb_scratch(&cx->arena);
         const char *t;
-        sb.cx = cx;
         for (unsigned b = 0; b < sizeof pf_kind_name / sizeof pf_kind_name[0]; b++)
             if (pf->kinds & (1u << b))
                 pcrec_sb_printf(&sb, "%s%s", sb.len ? "," : "", pf_kind_name[b]);
@@ -811,11 +809,10 @@ const char *pcrec_fact_render(Ctx *cx, PfFactId f)
         /* `nullable` where the erased language can match empty (no byte is
          * necessary); otherwise the member count, `:`, and the 32 bytes in
          * lowercase hex, byte 0 first, bit `b & 7` of byte `b >> 3`. */
-        StrBuf sb = { 0 };
+        StrBuf sb = pcrec_sb_scratch(&cx->arena);
         const char *t;
         int n = 0;
         if (pf->start_set.nullable) return "nullable";
-        sb.cx = cx;
         for (int b = 0; b < 256; b++) n += (pf->start_set.bits[b >> 3] >> (b & 7)) & 1;
         pcrec_sb_printf(&sb, "%d:", n);
         for (int i = 0; i < 32; i++) pcrec_sb_printf(&sb, "%02x", pf->start_set.bits[i]);
@@ -846,10 +843,9 @@ const char *pcrec_fact_render(Ctx *cx, PfFactId f)
         return t;
     }
     case PF_REQ_SET: {
-        StrBuf sb = { 0 };
+        StrBuf sb = pcrec_sb_scratch(&cx->arena);
         const char *t;
         int n = 0;
-        sb.cx = cx;
         for (int b = 0; b < 256; b++)
             if ((pf->req_set.bits[b >> 3] >> (b & 7)) & 1)
                 pcrec_sb_printf(&sb, "%s%d", n++ ? "," : "", b);
@@ -860,10 +856,9 @@ const char *pcrec_fact_render(Ctx *cx, PfFactId f)
     case PF_REQ_SET_MAXOFF: {
         /* [REQ-HANDOFF-L1] `byte:K` per member, byte order, as `req_set`
          * lists them; `byte:unbounded` where no static bound exists. */
-        StrBuf sb = { 0 };
+        StrBuf sb = pcrec_sb_scratch(&cx->arena);
         const char *t;
         int n = 0;
-        sb.cx = cx;
         for (int b = 0; b < 256; b++) {
             if (!((pf->req_set.bits[b >> 3] >> (b & 7)) & 1)) continue;
             if (pf->req_set.maxoff[b] >= PCREC_W_UNBOUNDED)
@@ -884,8 +879,7 @@ const char *pcrec_fact_render(Ctx *cx, PfFactId f)
          * where only the last positions are stored (the first at offset o). */
         const PdDesc *d = &pf->req_pieces;
         if (d->ng < 2) return "none";
-        StrBuf sb = { 0 };
-        sb.cx = cx;
+        StrBuf sb = pcrec_sb_scratch(&cx->arena);
         for (int i = 0; i < d->ng; i++) {
             const PdGroup *g = &d->g[i];
             pcrec_sb_printf(&sb, "%s%lld", i ? "|" : "", g->w);
@@ -915,9 +909,8 @@ const char *pcrec_fact_render(Ctx *cx, PfFactId f)
     case PF_KSET_WALK: {
         /* One item per offset, offset order: a singleton as its byte in
          * decimal, a wider set as `[N]`, its member count. */
-        StrBuf sb = { 0 };
+        StrBuf sb = pcrec_sb_scratch(&cx->arena);
         const char *t;
-        sb.cx = cx;
         for (int j = 0; j < pf->kset_walk.nwalk; j++) {
             const PrefixK *k = &pf->kset_walk.k[j];
             if (k->count == 1) pcrec_sb_printf(&sb, "%s%d", j ? "," : "", k->byte);

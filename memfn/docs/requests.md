@@ -985,3 +985,71 @@ are allocating).
 - CONSTRAINTS: the same-commit abi ritual (a kit byte move is a pcrec abi event, D146/D147); the deny row; the measurement card in the same change (the owner, 2026-10-23); G1 alpha at both layers; off by default under -fmemfn-simd as today.
 - ASK: deliver the design note for main's record, then the built branch to main (never to main's tree directly); name the abi bump and the movers at delivery.
 - AMENDED (D201 add. 3, 2026-11-21): the GO line's "No go for the scalar layer: it stays H64" and the CONSTRAINTS line's "off by default under -fmemfn-simd as today" are amended: under option A (D201 add. 2) the selector wrapper is LIVE in the default (SIMD-off) build; its machine-code changes are checked for no loss (census, then a short timing in a cleared window) and a loser keeps today's text; the span form itself stays off by default under -fmemfn-simd.
+
+## R-48 (main, 2026-11-24): V leaves CANDIDATE; the order is a Mac/NEON V first, x86 V when back
+- RULING (owner, verbatim, 2026-11-24). On simd-v-candidate: "yes. Kits timings are enough to proceed to development. However kit is about to be moved to the Mac which is not the same timings or architecture. I view those two architectures as independent from a simd perspective so kit can build V for x86 1. when it gets back 2. in parallel with two kits running 3. a Mac version". On v-sequence: "agree with your plan".
+- THE PLAN (main's, agreed):
+  - On the Mac: a Mac version of V (ARM/NEON), built and timed there, beside the architecture review.
+  - Back on the dev box: the x86 V development.
+  - Never two kits running at once.
+- FACTS: the C6 card set (job 760) gave V 17 faster / 10 tied / 0 slower of 27 readable on the dev box (Zen 4). The owner
+  takes that as enough to proceed to DEVELOPMENT. x86 and ARM are judged INDEPENDENTLY for SIMD: a result on one says
+  nothing about the other.
+- CONSTRAINTS: unchanged. -fmemfn-simd stays off by default. The official per-box verdict is still a pcrec-bench run on
+  the targeted hardware, via main (D144 add. 4). A kit byte move is a pcrec abi event (D146/D147). The measurement card
+  ships in the same change.
+- ASK: on the Mac, after the architecture review, design the NEON V: design note, critic round, then a build go via
+  main. File x86 V's development as your next item for the dev box.
+
+## R-49 (main, 2026-11-24): charter for [KIT-ARCH-STEP] stage 2, the kit's overall architecture review
+- RULING it serves (owner, 2026-11-22, verbatim): "kit-arch-step: yes but after existing effort completed. Then overall
+  arch review of kit sections with suggestions. Possible refactors, favoring smaller items. Then arch reviews going
+  forwards" (docs/design/plan_row_bodies/KIT-ARCH-STEP.md).
+- SCOPE, included: every section of memfn/ as it stands at your branch point (e11c5f4ef):
+  - the planner and its scenario/basic-unit layer;
+  - the emitter and the form tables (scalar and SIMD rows, the per-CPU dispatch);
+  - the measurement cards and their scripts;
+  - the request/response seam with pcrec: the site description pcrec sends, the C text and stamps you return, and the
+    abi coupling (D146/D147/D157).
+  Also the pcrec-side CALLERS of the seam, read-only, to judge the seam, never to propose pcrec-internal changes.
+- SCOPE, excluded:
+  - pcrec internals beyond the seam;
+  - NEON V, which is the next item, not this review;
+  - the in-flight design of anything not yet landed;
+  - performance re-measurement (this is a structure review: no timing runs).
+- METHOD: one note, at memfn/docs/arch_review_2026-11.md. Review it against docs/dev/guide/architecture.md: the four
+  goals, the judgement section, and part 3 (the ride-along register: which rows touch kit sites, plus any shape a rule
+  would flag with no row). It also holds the owner's standing kit memories: facts not methods (D157), basic units
+  (one shared span choice set), plan as text seam (planner vs emitter split), and decisions as first-match tables.
+  For each section give:
+  - what it is;
+  - where it serves or strains each goal (file:line evidence);
+  - SUGGESTIONS, ranked smaller-first as the owner asked. Each suggestion is a candidate refactor (answer-identical
+    or not), a register row, or "leave it", with its size and its trigger.
+  Suggestions are FILED (kit plan rows, register rows proposed to main), never built without a go.
+- REVIEW: one pcrec-critic round on the note, in mode `arch`. Review number r91, topic `memfn-archrev`. Then main rules
+  the dispositions, and the owner gets a short summary of the suggestions for his pick.
+- COMPILER on the Mac (your ask 2): no question for the owner. A GNU gcc is already there: Homebrew `gcc-16`
+  (16.2.0), installed by the owner on 2026-09-04 ([MACPORT]; docs/testing.md "The Mac dev box"; tests/lib/cc_resolve.sh
+  resolves it; bare `gcc` is Apple clang). Run `gcc-16 --version` to confirm.
+  - Time NEON V under gcc-16, since gcc is pcrec's target compiler (D2). An Apple-clang column is optional and
+    informational only.
+  - If gcc-16 is missing or broken, STOP and tell main. Installing anything is the owner's call.
+- BOX: the Mac suite lock; no timing for this review.
+
+## R-50 (main, 2026-11-24): [KIT-WINSPLIT] BUILD GO
+The owner, 2026-11-24, verbatim: "winsplit-build-go: yes". The go covers rev 2.2 (lane/memfn-wsplit 6cf64ed2f, reviews
+r95, r98, r99) as designed, the seven shape choices unchanged. Order as the design states: PR #1 has LANDED (merge
+9893c6181); Step 0 is the Linux gate job 200-main-step0 at 01f342d9f, run by main (green before the moves start; a red
+stops the build and the kit rules); then C0a (the Mac awk fix), then one move per commit with every gate. Delivery:
+one code PR for Linux CI; main merges locally. NEON V stays held until the split lands (R-48).
+R-50 STATUS (main, 2026-11-25 01:35): Step 0 at 01f342d9f: arms 1-9 PASS. 1 strict clean; 2-6 rc 0, each ends
+"checks failed: 0"; 7 rc 0, 34 RED, no GREEN/OWED (last "PLANT S3127 RED ... D3 UNSPELLED: site 430"); 8 "9 rows
+(unexpected: 0, undetected: 0, unreached: 0, anomalies: 0, oracle-skipped: 0)"; 9 "mech-reach-only: DONE rc=0 rows=58
+reached=34 unreached=0 declared-unreached=0 now-reached=0 no-probe=24". QUESTION: 24 of 58 have NO PROBE, so arm 9
+checks only 34. Is that what G5 expects? Arm 10 (make test) was cut by MAIN's own 4 h job cap, not a failure;
+re-queued alone as 200-main-step0b. The moves wait for its verdict.
+R-50 STEP 0 VERDICT (main, 2026-11-25 04:08): GREEN, all 10 arms at 01f342d9f. Arm 10 (make test) re-run alone as
+200-main-step0b: rc 0, no make `*** [...test-...]` Error line, wall 6052 s. The moves may proceed (C0a, then C0b, U1-U24,
+every gate per commit). Main is now at 50f0c7267 (PR #2 merged, the dpcompact×K155 fix landed): merge origin/main into the
+build branch before its PR. The arm-9 no-probe=24 question stands (see the status entry above).

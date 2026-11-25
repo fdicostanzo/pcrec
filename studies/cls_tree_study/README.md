@@ -5,8 +5,9 @@ is the reproduction recipe and the things a future reader needs in order not
 to re-learn them.
 
 Nothing here is built by pcrec's `make`, linked into pcrec, or run by
-`make test`. It reads two things out of the tree — `src/parse/uprops_tables.inc`
-(the generated property sets) and `tests/**/*.rxt` (corpus patterns, compiled
+`make test`. It reads two things out of the tree — the property sets (the TSV
+`tests/uprops/ucd_dump.c` writes through `src/parse/ucd_tables.h`, named by
+`$UCD_DUMP`) and `tests/**/*.rxt` (corpus patterns, compiled
 by `build/pcrec`) — and writes only under this directory.
 
 ## Reproduce
@@ -64,7 +65,7 @@ not reproducible, however green it looks.
 re-derived from the UCD.** `studies/form_char_twins` set this rule for a
 reason: a set re-derived from source data can disagree with the set the
 compiler actually builds, and then the study is measuring its own parser
-instead of pcrec. `clsets.uprops()` parses `src/parse/uprops_tables.inc`;
+instead of pcrec. `clsets.uprops()` reads the `$UCD_DUMP` TSV (`tests/uprops/ucd_dump.c`);
 `extract_byteclasses.py` parses emitted artifacts.
 
 **2. `baseline.py` must pass `-e utf8`.** Under `byte` every property set is

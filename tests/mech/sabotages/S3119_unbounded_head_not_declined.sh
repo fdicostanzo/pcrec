@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # S3119 -- R-38 Part D (docs/design/memfn/part_d.md rev 4 section 5.1 and requests.md R-41, plant R-41; lane partd).
-# The same plant as memfn/tests/run_g2_pres.sh --plant S3119 (its plant_spec; one source of the text).
+# The same plant as memfn/tests/run_g2_pres.sh --plant S3119 (its plant_spec; two copies of the text, held equal by the twin check).
 SAB_ID="S3119-unbounded-head-not-declined"
 SAB_FILE="memfn/src/presence.c"
 SAB_SUITES="g2pres"

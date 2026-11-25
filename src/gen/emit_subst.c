@@ -1207,7 +1207,7 @@ static void emit_subst_info(StrBuf *c, const char *tmpl, size_t len, const char 
 void pcrec_emit_subst(const char *tmpl, size_t len, const SubstTmpl *t,
                       const PcrecSubstOptions *o, pcrec_output *out)
 {
-    Arena a = { NULL, NULL };
+    Arena a = { 0 };
     StrBuf c = { 0 }, h = { 0 };
     const char *p = o->prefix;
     const char *up = pcrec_sb_upper(&a, p);

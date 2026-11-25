@@ -98,7 +98,7 @@ changes). **S** = stated in `docs/spec/`. **—** = compile-time only, not in th
 
 | # | path | what | made how | consumers | E/S |
 |---|---|---|---|---|---|
-| B1 | `src/parse/uprops_tables.inc` | `\p` property interval lists (gc + 171 scripts × namespaces) | GENERATED ← `third_party/ucd-16.0.0/` (`generate.py:146`) | `mod_uprops.c`, `mod_ucp.c` | E (via lowered automata of `\p` patterns) |
+| B1 | `src/parse/ucd_tables.inc` (read ONLY by `ucd_tables.c`; interface `ucd_tables.h`) | `\p` property interval lists (gc + 171 scripts × namespaces) | GENERATED ← `third_party/ucd-16.0.0/` (`generate.py:146`) | `mod_uprops.c`, `mod_ucp.c`, `mod_named_groups.c`, `mod_code.c` (through `ucd_tables.h`) | E (via lowered automata of `\p` patterns) |
 | B2 | `src/core/fold_tables.inc` `pcrec_ucd_fold_links` | simple case-fold as cyclic next-member links (1,454 classes) | GENERATED ← `CaseFolding.txt` (`generate.py:147`) | `core/fold.c:93`: `pcrec_fold_ucd_simple`, `pcrec_fold_latin1`, `pcrec_fold_latin1_rep` | E (folded classes; A6) |
 | B3 | `src/core/fold.c:68` `pcrec_ascii_fold[256]` | the 52-letter ASCII partner map (C-locale fold) | hand, deliberately ("a table someone can READ") | `pcrec_fold_ascii`; the `ascii-named` fold row at EVERY encoding (`parse.c:650`); byte's residual compare is tied to it by `tests/backrefs/fold_agreement_check.c` | E |
 | B4 | `src/core/fold.c:185-187` `pcrec_fold_{ascii,ucd_simple,latin1}` | the three fold RELATIONS as objects | hand over B2/B3 | `PcrecEnc.fold`, `parse.c` `fold_rows[]` `:646-653` | E |
@@ -443,7 +443,7 @@ should state what the authored block is (Q4).
 
 ### 3.6 Repertoire data keeps its homes, with one rename
 
-`uprops_tables.inc`, `fold_tables.inc`, `pcrec_ascii_fold`, `cls_bits.inc` and the
+`ucd_tables.inc` (was `uprops_tables.inc`), `fold_tables.inc`, `pcrec_ascii_fold`, `cls_bits.inc` and the
 `pcrec_fold_*` relations do not move. `utf8_fold_pairs.inc` becomes
 `ucd_fold_pairs.inc` (§4 E5). Unifying the two match-time fold tables (§2.4) is
 discussed in Q3. It is an abi event and is not part of the no-mover migration.

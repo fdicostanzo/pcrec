@@ -95,6 +95,7 @@ Search, start, scan and engine optimization notes
 - `emit_backends_notes.md` — FORWARD NOTES only (Frank 2026-10-30, nothing scheduled): record-level cleanups, other code targets, a bytecode VM, a matcher IR with backend libraries, memfn on the backend side.
 - `cls_tree_design.md` — [CLS-TREE]; `poss_arms.md` — [ART-POSS-ARMS] (+ `poss_arms_measurements/`); `altcls_pinned_impl/` — [OPT-ALTCLS] pinned instrument.
 - `dense_hit_arch.md` — [REQ-PAST-LAST] dense-hit remedy: architecture note.
+- `arena_scopes_arch.md` — [ARENA-SCOPES] scoped arenas: architecture note; `arena_scopes.md` — its design (a LIFO registry per arena, scopes as marks).
 - `c3_three_way.md` — C3 tier narrowing (built); `tt4m_harness_batching.md` — [TT-4M] step 2b.
 
 Engines, bounded repeat, budgets

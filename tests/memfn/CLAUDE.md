@@ -42,7 +42,7 @@ pcrec's checks on the search-code kit (`memfn/`, D146/D147;
 - `occurrence_oracle.py` (+ `_selftest.py`) — K38-2a occurrence oracle (D27-blind, sheet §3.3; k382o_report.md).
 - `arm_fixtures.c --only FIXTURE` (N4) renders one fixture alone, so a traced run's rows are that fixture's.
 - `arm_fixtures.c --site-text ID [CLS]` / `--site-parts ID [CLS]` / `--hash-text FILE|-` / `--facts ID [CLS]` / `--frame` (+`--target-facts`) (S2c, kit.h): an instance's text (whole or FILE/BODY), any text's hash, the slot's facts; `--hash`: `FORMCLS` lines, per-instance R-MS3 fixtures (r9).
-- `arm_fixtures.c --purity` / `--purity-control` (span_pick 1d): THE PURITY HARNESS (11 sites; NONE and framed replies, fresh art vs interleaved defines, whole-reply memcmp; the sticky-err fence; 3.0b's fixtures: NOTES.md "Purity harness"). run_finder.sh floors it EXACTLY, runs it plain and on the MF_TRACE driver `fxt` (E-func/E-generic define counts EXACT), plants `nsites`-keyed A-mass and M-parked rows (RED, control moved), and runs **run_purity_reach.sh** over **purity_rows.tsv**: each window.c table row dropped must move a reply or be declared unreached.
+- `arm_fixtures.c --purity` / `--purity-control` (span_pick 1d): THE PURITY HARNESS, floored and planted by run_finder.sh, with **run_purity_reach.sh** over **purity_rows.tsv**. Full entry: NOTES.md "Purity harness index entry".
 - **run_n2_sample.sh**, **n2_sample_patterns.txt** — [MEMFN-ROWCON] N2's zero rules on a SAMPLE (lane m7fix, 2026-10-08; opt-in, no make target; mech arm `n2sample`).
 ### The finder table's B1 checks (lane fdb1, [MEMFN] R17-b′ B1)
 - **run_finder.sh**, **finder_check.py** — `make test-memfn-finder` (in TEST_SECTIONS, CI shard 3; mech arm `memfnfinder`; seconds). Check C reads every `memfn/data/cards/*.tsv` by listing (floor 3), holds each card row's shape and the `kit:form.`-dep guard (named deps resolve; count EXACT 17); check B: an id's hash = its instances' fold (S2933).
@@ -52,6 +52,7 @@ pcrec's checks on the search-code kit (`memfn/`, D146/D147;
 - **run_proof.sh**, **proof_check.c**, **proof_run.c**, **proof_meta.h** — R-26.1-R-26.5's checks (MF_SITE_ABI 18), part `proof` of `make test-memfn-finder` ... Guard-page layouts and plant S1408: NOTES.md. Later history of this check (D172 S2 commit 6, S3): tests/memfn/NOTES.md.
 ### D172 S2 commit 4's lever check (lane wsc4)
 - **run_wreply.sh** — the window family's REPLY check (D172 S2; wsc4-wsc6). Opt-in, no make target; ~10 s plus a tree build; takes the box lock. Full description: NOTES.md "run_wreply.sh".
+- RUNNER PLANTS (the four shell runners: run_proof.sh, run_wreply.sh, memfn/tests' run_g2_win/run_g2_pres): applied ONLY by `tests/lib/plants.py`; `--plant-check` feeds [SABANCHOR]'s plant pass. Add to `plant_spec` AND `PLANTS`, move its PLANT_PINS pin; a mech-shared id: in PLANT_TWINS's literal, its row's arm runs it.
 ### The guarded-bytes check (RQ-3, D155 add. 2)
 - **run_simd_guarded.sh**, **simd_guarded_check.py**, **simd_bounds.tsv** — `make test-memfn-guarded` (in TEST_SECTIONS; mech arm `simdguarded`).
 ### The SIMD floor rule, C9-x86 (R-13)

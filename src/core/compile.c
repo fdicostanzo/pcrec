@@ -249,7 +249,7 @@ bool pcrec_prefix_acceptable(const char *p, char *why, size_t whysz)
 int pcrec_subst_compile(const char *tmpl, size_t len, const PcrecSubstOptions *o,
                         pcrec_output *out, pcrec_error *err)
 {
-    Arena a = { NULL, NULL };
+    Arena a = { 0 };
     SubstTmpl t;
     out->c_src = out->h_src = NULL;
     if (!pcrec_prefix_acceptable(o->prefix, err->msg, sizeof err->msg)) {
@@ -321,11 +321,8 @@ static void job_cleanup(Ctx *cx)
         free(cx->job->out_c);
         free(cx->job->out_h);
         free(cx->job->out_ir);
-        /* [COMPOUND] the shell's part texts (heap, the parts' own outputs);
-         * the shell itself is arena, freed below. */
-        if (cx->job->comp_shell)
-            for (int i = 0; i < PCREC_COMP_MAXPARTS; i++)
-                free(cx->job->comp_shell->text[i]);
+        /* [COMPOUND] the shell and its part texts are the arena's (the
+         * texts handed to it by pcrec_arena_own, [K155]), freed below. */
         free(cx->job);
         cx->job = NULL;
     }

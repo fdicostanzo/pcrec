@@ -82,6 +82,11 @@ report: `docs/dev/lanes/revtools_report.md`.
   with the matrix's own `replace.py`, no make, the tree untouched; for a critic
   re-deriving a row's plant against what it claims to break. OUTDIR under the
   temp root; `build/obj` must be built from REV. Header has the contract.
+- `anchor_map.py TREE [PREFIX]` (adopted from kit review
+  `2026-11-24-r91-memfn-archrev`) -- every mech sabotage row whose SAB_FILE[n]
+  starts with PREFIX (default `memfn/`, `''` = all), each SAB_BEFORE hit with
+  its enclosing C function; STALE / MISSING FILE rows are findings. For the
+  critic first-unit lens: run over every function a subject moves or splits.
 - `out/` -- the evidence TSVs (regenerated 2026-09-19 by lane `w4` after
   [REVW.3] wave 3's file moves; row counts live in each header).
 

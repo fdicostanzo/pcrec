@@ -176,7 +176,9 @@ run_battery() {
         else
         case "$stage" in
             test)
-                make -k -j"$TEST_MAKE_J" PROCS="$TEST_PROCS" test > "$slog" 2>&1
+                # ARTSIZE_COMMIT=1: the full battery is main's deliberate run, the one that updates the committed
+                # docs/dev/artifact_size_log.tsv (lane wtclean, 2026-11-25; ordinary runs write the temp root).
+                ARTSIZE_COMMIT=1 make -k -j"$TEST_MAKE_J" PROCS="$TEST_PROCS" test > "$slog" 2>&1
                 ;;
             strict)
                 make strict > "$slog" 2>&1

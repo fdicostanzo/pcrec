@@ -341,12 +341,25 @@ typedef struct ABlock {
     char mem[];
 } ABlock;
 
+/* [K155] A heap block the arena OWNS: freed with it (pcrec_arena_free). */
+typedef struct AOwn { struct AOwn *next; void *p; } AOwn;
+
 /* `cx` is the owning compile, or NULL for an arena with no error channel to
- * report through (there are none today; every Arena is a Ctx's own). */
-typedef struct { ABlock *head; Ctx *cx; } Arena;
+ * report through (there are none today; every Arena is a Ctx's own).
+ * `owned` lists the heap blocks handed to it (pcrec_arena_own). */
+typedef struct { ABlock *head; Ctx *cx; AOwn *owned; } Arena;
 
 void *pcrec_arena_alloc(Arena *a, size_t sz);   /* zeroed, 16-aligned */
 void  pcrec_arena_free(Arena *a);
+/* [K155] HANDING A HEAP RESULT TO THE ARENA, in two steps so nothing can
+ * strand it: `pcrec_arena_own_slot` takes the record from the arena BEFORE
+ * the heap block exists (the one step that can fail, while there is nothing
+ * to lose), and `pcrec_arena_own` links the block into it and allocates
+ * nothing, so no refusal can fall between the block's birth and its owner.
+ * For a result a callee returns on the heap (a part compile's text) that
+ * must live, and die, with the compile's arena. */
+AOwn *pcrec_arena_own_slot(Arena *a);
+void  pcrec_arena_own(Arena *a, AOwn *slot, void *heap);
 
 /* ---- the C-stack rule for a recursive walk ([DD-10]) ----
  *
@@ -420,8 +433,19 @@ void  pcrec_arena_free(Arena *a);
  * `pcrec_sb_size_decide`. */
 typedef struct { size_t total, prose, tables; } PcrecEmitSize;
 
+/* [K155] `ar`: where the bytes live. NULL is the heap (realloc'd, freed by
+ * pcrec_sb_free or taken): the Job's own buffers, which job_cleanup frees on
+ * every exit, and the buffers outside a compile. Non-NULL is a SCRATCH
+ * builder (`pcrec_sb_scratch`): every growth is a fresh arena block, the old
+ * one is left for the arena, and pcrec_sb_free only forgets the pointer. A
+ * builder live across anything that can reach `pcrec_ctx_fail` or
+ * `pcrec_ctx_nomem` is a scratch one (src/core/CLAUDE.md), so a refused
+ * compile's longjmp strands nothing: the arena it lives in is freed by
+ * job_cleanup. `tests/core/scratch_builder_check.py` holds the line; its
+ * allowlist names the heap builders still waiting on [ARENA-SCOPES]. */
 typedef struct {
     char *p; size_t len, cap; Ctx *cx; size_t abort_over;
+    Arena *ar;
     bool     cmt_drop;
     unsigned cmt_depth;
     unsigned cmt_mute_depth;   /* 0 = not muted; else the muting region's depth */
@@ -481,6 +505,16 @@ typedef struct {
     size_t        scaf_guarded;
     PcrecEmitSize scaf_size;
 } StrBuf;
+
+/* [K155] A SCRATCH builder over arena `a` (see StrBuf.ar): the one
+ * constructor for a StrBuf that is not the Job's and lives inside a compile.
+ * Its text (`p`) is arena-owned and stays valid until the arena is freed, so
+ * a finished scratch text needs no copy to outlive the function that built
+ * it. Diagnoses through `a->cx` as the heap form does through `.cx`. */
+static inline StrBuf pcrec_sb_scratch(Arena *a)
+{
+    return (StrBuf){ .cx = a->cx, .ar = a };
+}
 
 /* The two comment CLASSES, decided at the emission site (D112 item 2).
  * ESSENTIAL is provenance and the embedder's contract — what the file IS and
@@ -4405,8 +4439,15 @@ struct Ctx {
      * spelled identically share a slot, which is why the key is the render
      * rather than the node.
      *
-     * NULL/0 for every pattern with no variable. */
+     * NULL/0 for every pattern with no variable.
+     *
+     * `var_exp_keys[i]` is `var_exps[i]`'s canonical rendering, rendered
+     * ONCE when the expansion is interned and read by every later lookup:
+     * re-rendering each earlier expansion per new one retained E(E+1)/2
+     * scratch renders in the arena (review r96 COST-1). Same length and
+     * growth as `var_exps`. */
     const VarExp       **var_exps;
+    const char         **var_exp_keys;
     unsigned             n_var_exps;
     /* [K60] docs/dev/known_issues.md, disposition (2) — set by `pcrec_ctx_nomem`
      * ONLY, before its `longjmp`, so `compile_driver`'s recovery point can
@@ -6495,21 +6536,9 @@ bool pcrec_registry_uprops_recognise(const char *at, size_t avail,
 ExtResult pcrec_modport_uprops(Ctx *cx, const RegRow *rw, ExtWant want,
                                bool in_class, size_t at, size_t from);
 
-/* THE PROPERTY TABLE, READ-ONLY, FOR ONE CHECK ([M5.0] stage 5).
- * `tests/registry/pcre2_check.c` sweeps every name pcrec ships and asks the
- * LIVE libpcre2 whether it is real — the one arbiter that did not produce the
- * table.  `ns` is the row's namespace mask (`PCREC_UPROP_NS_*`, defined by
- * the generated `uprops_tables.inc`): a general-category row answers in the
- * bare namespace only, a script row also in `sc=`/`scx=`.  Row ORDER is the
- * generator's and is not a contract; nothing on the compile path calls
- * these.  `pcrec_uprops_unicode_version` is the PIN, to be compared against
- * `pcre2_abi_unicode_version`'s report of the oracle's. */
-/* [UCP] a bare-namespace property's case-sensitive interval span by its
- * normalised name, NULL if absent (mod_ucp.c's set recipes read it). */
-const PcrecCpRange *pcrec_uprops_span(const char *normname, int *n);
-size_t pcrec_uprops_row_count(void);
-const char *pcrec_uprops_row_name(size_t i, unsigned *ns);
-const char *pcrec_uprops_unicode_version(void);
+/* THE UNICODE PROPERTY TABLES are `src/parse/ucd_tables.h`'s interface
+ * (`pcrec_ucd_find`, `_contains`, `_row_*`, `_unicode_version`); that module
+ * alone knows how they are stored. */
 
 /* ---- doorway 3's NAME tables (Q1) --------------------------------------
  *
@@ -9085,8 +9114,9 @@ void pcrec_compound_walk(Ctx *cx, const struct Ast *root);
  * (compound.md §A.5, §B.2). The emitter writes P's own prologue, stamps,
  * residuals, `rx_info` and `main` -- the compound's ONE artifact -- and in
  * place of P's engine and entries the parts' texts and the controller
- * (src/gen/emit_compound.c). Owned by `Job.comp_shell`; the texts are heap
- * (`pcrec_output.c_src`) and `job_cleanup` frees them. */
+ * (src/gen/emit_compound.c). Owned by `Job.comp_shell`; the shell is
+ * arena, and so are the texts: each part's heap output is handed to the
+ * arena as its compile returns (`pcrec_arena_own`, [K155]). */
 #define PCREC_COMP_MAXPARTS 2
 typedef struct PcrecCompShell {
     const char *row;                          /* the admitted row's name */

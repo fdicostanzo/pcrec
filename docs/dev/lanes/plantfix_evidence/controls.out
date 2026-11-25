@@ -1,0 +1,27 @@
+CONTROL C0-positive: rc=0
+    runner plants checked: 81 (89 edits, 4 runners), floor 81
+    all runner plants apply
+CONTROL C1-stale-FROM: rc=1
+    runner plants checked: 81 (89 edits, 4 runners), floor 81
+    BAD RUNNER PLANTS: 1
+      memfn/tests/run_g2_win.sh      S1401  edit 1/1  STALE         count 0  memfn/src/window.c
+CONTROL C2-runner-out-of-discovery: rc=1
+    runner plants checked: 79 (85 edits, 3 runners), floor 81
+    RUNNER PLANT POPULATION 79 IS BELOW ITS FLOOR 81 -- a runner left discovery or lost its list; the plants were not all read
+CONTROL C3-runner-deleted: rc=1
+    runner plants checked: 75 (83 edits, 3 runners), floor 81
+    RUNNER PLANT POPULATION 75 IS BELOW ITS FLOOR 81 -- a runner left discovery or lost its list; the plants were not all read
+CONTROL C4-no-check-mode: rc=1
+    runner plants checked: 81 (89 edits, 5 runners), floor 81
+    UNREADABLE RUNNERS: 1 -- the plant pass is BLIND to these
+      tests/memfn/run_nomode.sh                  DEFINES plant_spec BUT HAS NO --plant-check MODE
+    C4: the runner was not run
+CONTROL C5-orphan-case: rc=1
+    runner plants checked: 81 (89 edits, 4 runners), floor 81
+    BAD RUNNER PLANTS: 1
+      tests/memfn/run_proof.sh       S9999  edit -    ORPHAN        count 0  tests/memfn/run_proof.sh
+CONTROL C6-ambiguous-FROM: rc=1
+    runner plants checked: 81 (89 edits, 4 runners), floor 81
+    BAD RUNNER PLANTS: 1
+      memfn/tests/run_g2_win.sh      S1423  edit 1/1  AMBIGUOUS     count 2  memfn/src/window.c
+CONTROL M-mech-identity: SAME (sabotages checked: 1404 (1463 anchor sites))

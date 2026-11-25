@@ -1,0 +1,6 @@
+sabotages checked: 1404 (1463 anchor sites)
+all anchors resolve
+runner plants checked: 81 (89 edits, 4 runners, each at its pin)
+runner plant twins checked: 39 (declared twins of a tests/mech/sabotages row)
+all runner plants apply, every shared id is an equal declared twin of a row whose suites run its runner
+rc=0

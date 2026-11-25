@@ -91,4 +91,8 @@ A field with nothing to say is written "none", never dropped.
     (and any the lane asks back) wants a reply EITHER WAY; never phrase a
     request as "reply only if ..." (Frank 2026-11-07).
 
+TRIAGE LANE (a red, a bug; still NO FIX) additionally reports (D203, 2026-11-24): the defect CLASS; the house rule or
+mechanism it breaks (the owning dir's CLAUDE.md) or "none"; a sibling-site COUNT with the grep used; a CLASS-LEVEL fix shape,
+checked against the mechanism it relies on (K155: "free it on the error path" had no error path, errors longjmp).
+
 Two more traps (2026-11-15): never run a fix lane in a worktree that queued box jobs build in (cut a new branch/worktree); and a prepare command chained with `&&` after a commit loses the deliver/rulings files when a hook rejects the commit (write them in their own command).

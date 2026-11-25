@@ -1,0 +1,5 @@
+report: docs/dev/lanes/plantfix_report.md
+sections: Summary; Mechanism; Re-aims; Controls; Validation; STATE AT HANDOFF
+nonempty: all
+commit: yes
+owed: none

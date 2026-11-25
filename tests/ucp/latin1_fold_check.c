@@ -42,7 +42,7 @@ int main(int argc, char **argv)
     fclose(f);
     if (nrows == 0) { printf("FAIL: latin1 fold: oracle file has no rows\n"); return 1; }
 
-    Arena ar = { NULL, NULL };
+    Arena ar = { 0 };
     int bad = 0, pairs = 0;
     for (unsigned x = 0; x < 256; x++) {
         PcrecCpSet in, out;
