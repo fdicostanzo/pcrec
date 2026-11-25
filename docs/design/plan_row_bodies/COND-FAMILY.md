@@ -10616,3 +10616,17 @@ each a one-line body around a pattern hole: four (`(?=`, `(?!`, `(?<=`, `(?<!`),
 positive forms (`(?*`, `(?<*`), which an outside condition re-enters (core/patterns/lookaround has "A condition
 outside a lookahead never re-enters it" for the atomic ones). `build/pcrec --list-syntax` lists all six as built
 (module lookaround). The positive bodies carry the list on the spot; the negative ones pass no labels.
+
+### 2026-11-25 OWNER, on the negative peek's name: "nopeek sounds like it's "not peeking". peeknot sounds awkward but does read well: peeknot(digit)"
+tags: lib/control/peek core/spellings/placeholders core/filters/negation lib/control/when
+
+Said on the manager's table of the peek family (`peek`, `nopeek`, `peekback`, `nopeekback`, the manager's
+placeholders but `peekback`, and PCRE2's two non-atomic forms). HIS WORDS, whole:
+
+"nopeek sounds like it's "not peeking". peeknot sounds awkward but does read well: peeknot(digit)"
+
+Class: a LEAN on a SPELLING: the negative peek's name reads `peeknot` (`peeknot(digit)`), against the manager's
+`nopeek`. A placeholder for the spellings review (D193 addendum 4), taken as the working name. NOT a ruling;
+drop-not is not answered by these words (they presume a named negative peek, which is its line 2: noted, not
+taken as the answer). The manager's reading (marked): by the same pattern the behind forms would read `peekback`
+and `peekbacknot`; not asked.
