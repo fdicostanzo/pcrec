@@ -1107,6 +1107,12 @@ Owner waits: a row or stage waiting on the OWNER (a charter, a build go, an answ
   trigger: next
   refs: kit review r94; lanes s3012tri, s3012fix (docs/dev/lanes/s3012tri_report.md, s3012fix_report.md); tests/lib/plants.py; scripts/m6read_check_sab_anchors.py
   Fix shape: a scheduled Linux `--plants` detect job per runner, red on anything but a "PLANT <id> RED" line. Members: memfn/tests/run_g2_pres.sh (34 plants, ~51 min measured), memfn/tests/run_g2_win.sh (39, ~30 min est.), tests/memfn/run_proof.sh (6, ~5 min est.), tests/memfn/run_wreply.sh (2, ~10 min est.), plus main's own plant-bearing runners (users of tests/lib/plants.py; the four above are all that name it today).
+- [CASE-TABLES-WALL] STATE:not-started — one module plus one interface for every generated table, a wall per product
+  filed: 2026-11-24 manager (review r97 W-4, MOD-9, MOD-4)
+  status (2026-11-24): `src/core/case_tables.inc` has two readers (emit_subst.c includes it, tests/oracle/case_map_check.py regex-parses it): the shape D204's file-interface rule retired for the Unicode tables; the UCD wall covers one product only
+  trigger: the next change to ANY generated .inc (case_tables, fold_tables, utf8_fold_pairs, cls_bits): give it its module + interface header, add its wall row, and survey every generated .inc for readers outside its module
+  refs: docs/dev/reviews/2026-11-24-r97-dpcompact.md; D204; tests/core/ucd_wall_check.py; third_party/ucd-16.0.0/generate.py --list-products
+  The owner's rule (2026-11-24, "the format is only understood to the module which provides an interface") is per product. General form: one declared row table, product | owning module | interface header, products from `generate.py --list-products`, needles derived per product, one floor and one planted-include control per row; a product with no row is red. Also renames the sibling `pcrec_ucd_fold_links` prefix clash with `pcrec_ucd_*` (MOD-4).
 - [STACKDRIVER-ENC] STATE:not-started — test-stackdepth cannot measure `-e utf8` (no encoding argument in its driver)
   filed: 2026-11-21 manager (review r67 k152 F9)
   status (2026-11-21): tests/thread/compile_stack_driver.c sets features and engine only, so no DEPTH_FAMILIES row reaches island or wide-class builds; the utf8 class nest `([e-u]bc|[e-u]bd(...abe)*)*d` was 440,560 B at BASE and is 64 B over the stated 319,504 B worst

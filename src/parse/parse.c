@@ -924,7 +924,7 @@ Ast *pcrec_ast_class_from_bits(Ctx *cx, const unsigned char bits[32],
  * non-ASCII uppercase letters, which is neither `Lu` nor `L&` and is wrong
  * on every non-ASCII cased letter. So the CALLER owns caselessness — module
  * `unicode-props` picks the right span before it gets here (mod_uprops.c's
- * `uprops_lookup`) — and this function must not fold on top of a set that
+ * call to `pcrec_ucd_find`) — and this function must not fold on top of a set that
  * already answered the question.
  *
  * The input list is required to be SORTED (the generator emits it canonical

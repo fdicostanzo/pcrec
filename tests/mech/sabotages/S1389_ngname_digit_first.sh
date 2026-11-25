@@ -10,7 +10,7 @@ SAB_DOC_FIGURE="PREDICTED: 1 harness case of tests/named_groups/utf8_names.rxt (
 SAB_COUNT=1
 # Re-anchored by lane substr1fix (HOUSE-1): the rule is pcrec_group_name_cp,
 # shared with the subst template; S1583 is the same plant read by the subst arm.
-SAB_BEFORE='    return r != 0 || first ? r : ng_in_prop("ND", cp);'
+SAB_BEFORE='    return r != 0 || first ? r : pcrec_ucd_contains("ND", cp);'
 
-SAB_AFTER='    return r != 0 ? r : ng_in_prop("ND", cp);'
+SAB_AFTER='    return r != 0 ? r : pcrec_ucd_contains("ND", cp);'
 

@@ -33,7 +33,7 @@ the row.
   `DerivedCoreProperties.txt`, `emoji-data.txt`, `DerivedBidiClass.txt`,
   `PropertyAliases.txt`, `Blocks.txt`, `DerivedAge.txt`); six since [M5.0] stage 5 added `Scripts.txt`,
   `ScriptExtensions.txt` and `PropertyValueAliases.txt`. Derives
-  `src/parse/uprops_tables.inc`, `src/core/fold_tables.inc`,
+  `src/parse/ucd_tables.inc`, `src/core/fold_tables.inc`,
   `src/enc/utf8_fold_pairs.inc` and `src/core/case_tables.inc` ([SUBST-CASE]).
 
   **A SOURCE FILE CAN ARRIVE FOR A REASON THE DESIGN DID NOT NAME**, and stage
