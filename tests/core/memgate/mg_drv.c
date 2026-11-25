@@ -5,9 +5,13 @@
  *
  * -DMG_PEAK (linked against an alloc_inject.h build, with
  *   -Wl,--wrap=pcrec_arena_alloc -Wl,--wrap=pcrec_arena_free):
- *   "PEAK RC LIVE_AFTER ATT_HW OTH_HW" where PEAK is the compile's peak live
- *   heap (malloc_usable_size of every live block the library holds), and the
- *   arena BLOCK bytes split BY ARENA IDENTITY: ATT_HW is the high-water of
+ *   "PEAK RC LIVE_AFTER ATT_HW OTH_HW UPEAK" where PEAK is the compile's peak
+ *   live heap in REQUESTED bytes (the size each live block the library holds
+ *   was asked for, kept per pointer), UPEAK the same peak read by
+ *   malloc_usable_size (INFORMATIONAL: it moves with the allocator's rounding
+ *   and mmap/brk choice under a different heap history, lane arenabuild2's
+ *   ruling R-2), and the arena BLOCK bytes, in REQUESTED block size, split BY
+ *   ARENA IDENTITY: ATT_HW is the high-water of
  *   the block bytes held by attempt arenas (an Arena that is its Ctx's own
  *   `&cx->arena`), OTH_HW the same for every other arena (the memo, clskit's,
  *   a scope's child). A new block is seen as `a->head` moving across one
@@ -33,32 +37,99 @@
 #ifdef MG_PEAK
 #include "core/internal.h"
 
-static long long live, peak;
+static long long live, peak, ulive, upeak;
 
-/* Counts a block the library now holds and raises the peak. */
-static void *add(void *p)
+/* The requested size of every live library block, keyed by its address
+ * (open addressing, linear probing, backward-shift deletion; this file is
+ * not injected, so its own malloc is the real one). */
+static struct { void *p; size_t n; } *sz_tab;
+static size_t sz_cap, sz_used;
+
+static size_t sz_home(const void *p) { return ((uintptr_t)p >> 4) * 0x9E3779B97F4A7C15ull & (sz_cap - 1); }
+
+static void sz_put(void *p, size_t n);
+static void sz_grow(void)
+{
+    size_t oc = sz_cap;
+    __typeof__(sz_tab) ot = sz_tab;
+    sz_cap = oc ? oc * 2 : 1 << 16;
+    sz_tab = calloc(sz_cap, sizeof *sz_tab);
+    if (!sz_tab) { perror("memgate"); exit(2); }
+    sz_used = 0;
+    for (size_t i = 0; i < oc; i++)
+        if (ot[i].p) sz_put(ot[i].p, ot[i].n);
+    free(ot);
+}
+static void sz_put(void *p, size_t n)
+{
+    if ((sz_used + 1) * 2 > sz_cap) sz_grow();
+    size_t h = sz_home(p);
+    while (sz_tab[h].p && sz_tab[h].p != p) h = (h + 1) & (sz_cap - 1);
+    if (!sz_tab[h].p) sz_used++;
+    sz_tab[h].p = p;
+    sz_tab[h].n = n;
+}
+/* Removes `p`, returning its requested size (0 if unknown). */
+static size_t sz_take(void *p)
+{
+    if (!sz_cap) return 0;
+    size_t h = sz_home(p);
+    while (sz_tab[h].p && sz_tab[h].p != p) h = (h + 1) & (sz_cap - 1);
+    if (!sz_tab[h].p) return 0;
+    size_t n = sz_tab[h].n;
+    sz_used--;
+    for (size_t i = h, j = h;;) {   /* backward-shift deletion */
+        sz_tab[i].p = NULL;
+        for (;;) {
+            j = (j + 1) & (sz_cap - 1);
+            if (!sz_tab[j].p) return n;
+            size_t k = sz_home(sz_tab[j].p);
+            if (i <= j ? (i < k && k <= j) : (i < k || k <= j)) continue;
+            break;
+        }
+        sz_tab[i] = sz_tab[j];
+        i = j;
+    }
+}
+
+/* Counts a block of `n` requested bytes the library now holds and raises
+ * both peaks. */
+static void *add(void *p, size_t n)
 {
     if (p) {
-        live += (long long)malloc_usable_size(p);
+        sz_put(p, n);
+        live += (long long)n;
         if (live > peak) peak = live;
+        ulive += (long long)malloc_usable_size(p);
+        if (ulive > upeak) upeak = ulive;
     }
     return p;
 }
-void *pcrec_inject_malloc_at(size_t n, const char *f, int l) { (void)f; (void)l; return add(malloc(n)); }
-void *pcrec_inject_calloc_at(size_t a, size_t b, const char *f, int l) { (void)f; (void)l; return add(calloc(a, b)); }
+/* Uncounts a block the library is giving back. */
+static void drop(void *p)
+{
+    if (!p) return;
+    live -= (long long)sz_take(p);
+    ulive -= (long long)malloc_usable_size(p);
+}
+void *pcrec_inject_malloc_at(size_t n, const char *f, int l) { (void)f; (void)l; return add(malloc(n), n); }
+void *pcrec_inject_calloc_at(size_t a, size_t b, const char *f, int l) { (void)f; (void)l; return add(calloc(a, b), a * b); }
 void *pcrec_inject_realloc_at(void *p, size_t n, const char *f, int l)
 {
     (void)f; (void)l;
     long long o = p ? (long long)malloc_usable_size(p) : 0;
     void *q = realloc(p, n);
-    if (q) live -= o;
-    return add(q);
+    if (q) {
+        if (p) { live -= (long long)sz_take(p); ulive -= o; }
+        add(q, n);
+    }
+    return q;
 }
-char *pcrec_inject_strdup_at(const char *s, const char *f, int l) { (void)f; (void)l; return add(strdup(s)); }
+char *pcrec_inject_strdup_at(const char *s, const char *f, int l) { (void)f; (void)l; return add(strdup(s), strlen(s) + 1); }
 void pcrec_inject_free_at(void *p, const char *f, int l)
 {
     (void)f; (void)l;
-    if (p) live -= (long long)malloc_usable_size(p);
+    drop(p);
     free(p);
 }
 
@@ -89,7 +160,7 @@ void *__wrap_pcrec_arena_alloc(Arena *a, size_t sz)
     if (a->head != h0) {
         size_t s = slot(a);
         tab[s].att = a->cx && a == &a->cx->arena;
-        long long n = (long long)malloc_usable_size(a->head);
+        long long n = (long long)(sizeof(ABlock) + a->head->cap);   /* the block the arena requested (R-2) */
         tab[s].bytes += n;
         if (tab[s].att) { att_live += n; if (att_live > att_hw) att_hw = att_live; }
         else { oth_live += n; if (oth_live > oth_hw) oth_hw = oth_live; }
@@ -169,12 +240,14 @@ int main(void)
         pcrec_error err;
         memset(&err, 0, sizeof err);
 #ifdef MG_PEAK
-        live = peak = 0;
+        live = peak = ulive = upeak = 0;
+        if (sz_cap) memset(sz_tab, 0, sz_cap * sizeof *sz_tab);
+        sz_used = 0;
         att_live = att_hw = oth_live = oth_hw = 0;
         memset(tab, 0, sizeof tab);
         int rc = pcrec_compile(pat, &o, &out, &err);
         if (rc == 0) pcrec_output_free(&out);
-        printf("%lld %d %lld %lld %lld\n", peak, rc, live, att_hw, oth_hw);
+        printf("%lld %d %lld %lld %lld %lld\n", peak, rc, live, att_hw, oth_hw, upeak);
 #else
         ioctl(fd, PERF_EVENT_IOC_RESET, 0);
         ioctl(fd, PERF_EVENT_IOC_ENABLE, 0);

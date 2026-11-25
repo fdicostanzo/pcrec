@@ -9,51 +9,65 @@
 
 /* ---- the registry ([ARENA-SCOPES], docs/design/arena_scopes.md) ----
  *
- * One LIFO list per Arena (`top`, newest first) of ENTRY records, each a
- * resource of one KIND from the table below, released by that kind's
- * function. A SCOPE is a MARK record in the list; closing it releases every
- * entry above it, newest first. Entries pushed while no scope is open are
- * the HOLDS (`pcrec_arena_hold`), the list's bottom. `pcrec_arena_free`
- * releases the whole list before the blocks, so every teardown releases
- * whatever a longjmp left open. Records are heap (one `calloc` each, sized by
- * kind, freed at release): never from the arena's own blocks, and no
- * function in this file calls `pcrec_arena_alloc` (the test link wraps it,
- * and a call from inside this file would bypass the wrap). */
+ * One LIFO STACK per Arena of ENTRY records, each a resource of one KIND from
+ * the table below, released by that kind's function. The stack is ONE heap
+ * array (`rec`, `n` used of `cap`, oldest first), grown by doubling, popped
+ * on close and freed by `pcrec_arena_free`: no per-record allocation (ruling
+ * R-3 of lane arenabuild2, a design deviation: per-record calloc/free moved
+ * the 8 MiB growth rung). A SCOPE is a MARK record in the stack; closing it
+ * pops and releases every entry above it, newest first. Entries pushed while
+ * no scope is open are the HOLDS (`pcrec_arena_hold`), the stack's bottom.
+ * `pcrec_arena_free` releases the whole stack before the blocks, so every
+ * teardown releases whatever a longjmp left open.
+ *
+ * The array moves when it grows, so nothing outside this file holds a record
+ * address: a handle (a Scope, an ArenaHold) names its record by POSITION
+ * (index + 1; 0 is "none") and generation stamp, and an entry's storage (a
+ * heap block, a StrBuf, a child Arena) is a heap object of its own that the
+ * record points to, so a pointer the client holds survives every growth.
+ * No function in this file calls `pcrec_arena_alloc` (the test link wraps
+ * it, and a call from inside this file would bypass the wrap). */
 
-/* An entry's kind: its payload size and its release, which never allocates
- * and never refuses (it runs inside a teardown). A new row is a design
- * change, reviewed, never a local addition. */
+/* An entry's kind: the size of the heap object its storage is (0: the
+ * storage is the client's own block, or none), and its release, which never
+ * allocates and never refuses (it runs inside a teardown) and takes NULL (a
+ * record pushed before its object exists). A new row is a design change,
+ * reviewed, never a local addition. */
 struct LKind {
     size_t size;
     void (*release)(void *storage);
 };
 
+/* A record: its kind, its storage, and for a MARK or a hold its stamp; a
+ * MARK also keeps the mark it hides (`prev_open`, a position, 0 = none). */
 struct LEnt {
-    LEnt *next;
     const struct LKind *kind;
-    _Alignas(max_align_t) unsigned char payload[];
+    void    *p;
+    uint64_t gen;
+    size_t   prev_open;
 };
 
-/* A MARK's payload: the mark it hides (`prev_open`), its stamp, and the
- * record under it when it was pushed (the close's stop and post-condition). */
-typedef struct {
-    LEnt    *prev_open;
-    uint64_t gen;
-    LEnt    *below;
-} MarkPay;
-
 static void release_none(void *storage) { (void)storage; }
-static void release_heap(void *storage) { free(*(void **)storage); }
-static void release_strbuf(void *storage) { pcrec_sb_free(storage); }
-static void release_arena(void *storage) { pcrec_arena_free(storage); }
+static void release_heap(void *storage) { free(storage); }
+static void release_strbuf(void *storage)
+{
+    if (storage) pcrec_sb_free(storage);
+    free(storage);
+}
+static void release_arena(void *storage)
+{
+    if (storage) pcrec_arena_free(storage);
+    free(storage);
+}
 
 /* THE KIND TABLE (design "API", the kind table) */
-static const struct LKind kind_mark   = { sizeof(MarkPay), release_none };
-static const struct LKind kind_heap   = { sizeof(void *),  release_heap };
-static const struct LKind kind_strbuf = { sizeof(StrBuf),  release_strbuf };
-static const struct LKind kind_arena  = { sizeof(Arena),   release_arena };
+static const struct LKind kind_mark   = { 0,              release_none };
+static const struct LKind kind_heap   = { 0,              release_heap };
+static const struct LKind kind_strbuf = { sizeof(StrBuf), release_strbuf };
+static const struct LKind kind_arena  = { sizeof(Arena),  release_arena };
 
-static MarkPay *mark_pay(LEnt *m) { return (MarkPay *)(void *)m->payload; }
+/* The record at position `h` (index + 1). Valid until the next push. */
+static LEnt *rec_at(const Arena *a, size_t h) { return &a->rec[h - 1]; }
 
 /* The one error-channel read for a refusal or nomem made through an Arena's
  * or a StrBuf's `.cx` (D-7). Returns `cx`; NULL (a detached arena) is legal. */
@@ -71,95 +85,93 @@ __attribute__((noreturn)) static void reg_fail(const Arena *a, const char *why)
     abort();
 }
 
-/* A fresh zeroed record of `kind`, not yet linked: the one step of a
- * registration that can fail, taken while there is nothing yet to lose. */
-static LEnt *rec_take(Arena *a, const struct LKind *kind)
+/* A nomem from the registry: through the arena's compile, else an abort. */
+__attribute__((noreturn)) static void reg_nomem(const Arena *a)
 {
-    LEnt *e = calloc(1, offsetof(LEnt, payload) + kind->size);
-    if (!e) {
-        if (a->cx) pcrec_ctx_nomem(pcrec_err_chan(a->cx));
-        abort();
+    if (a->cx) pcrec_ctx_nomem(pcrec_err_chan(a->cx));
+    abort();
+}
+
+/* Pushes a zeroed record of `kind` (storage NULL) and returns its position:
+ * the one step of a registration that can fail (the array's growth), taken
+ * while there is nothing yet to lose. The first growth takes 16 records:
+ * minimize, the one client at F1, peaks at 9 (its mark and 8 tables), so one
+ * allocation serves an attempt (derived from that count, not measured). */
+static size_t rec_take(Arena *a, const struct LKind *kind)
+{
+    if (a->n == a->cap) {
+        size_t cap = a->cap ? a->cap * 2 : 16;
+        LEnt *r = cap > SIZE_MAX / sizeof *r ? NULL : realloc(a->rec, cap * sizeof *r);
+        if (!r) reg_nomem(a);
+        a->rec = r;
+        a->cap = cap;
     }
-    e->kind = kind;
-    return e;
+    a->rec[a->n] = (LEnt){ .kind = kind };
+    return ++a->n;
 }
 
-/* Links `e` on top of the registry. */
-static void rec_push(Arena *a, LEnt *e)
+/* Gives the record at `h` its kind's heap object (zeroed): the record is
+ * already pushed holding NULL, so a failure here strands nothing. */
+static void *rec_obj(Arena *a, size_t h)
 {
-    e->next = a->top;
-    a->top = e;
+    void *o = calloc(1, rec_at(a, h)->kind->size);
+    if (!o) reg_nomem(a);
+    rec_at(a, h)->p = o;
+    return o;
 }
 
-/* Releases one unlinked record: its kind's resource, then the record. */
-static void rec_release(LEnt *e)
+/* Pops and releases records, newest first, until `n` remain. */
+static void release_above(Arena *a, size_t n)
 {
-    e->kind->release(e->payload);
-    free(e);
+    while (a->n > n) {
+        LEnt *e = &a->rec[--a->n];
+        e->kind->release(e->p);
+    }
 }
 
 /* L1: `s` names the innermost open scope of its arena, with that scope's
- * stamp. `a->open` is tested first, and only the LIVE mark is read: a
- * closed handle's `mark` may be freed memory. */
+ * stamp. `a->open` is tested first, and only the LIVE mark is read. */
 static void scope_check(const Scope *s)
 {
     Arena *a = s->a;
     if (!a) abort();
-    if (!(a->open && a->open == s->mark && mark_pay(a->open)->gen == s->gen))
+    if (!(a->open && a->open == s->mark && rec_at(a, a->open)->gen == s->gen))
         reg_fail(a, "a scope handle that is not the innermost open scope");
 }
 
 Scope pcrec_scope_open(Arena *a)
 {
     if (a->child) reg_fail(a, "a scope opened on a scope's child arena");
-    LEnt *m = rec_take(a, &kind_mark);
-    MarkPay *mp = mark_pay(m);
-    mp->prev_open = a->open;
-    mp->gen = ++a->gen;
-    mp->below = a->top;
-    rec_push(a, m);
+    size_t m = rec_take(a, &kind_mark);
+    LEnt *e = rec_at(a, m);
+    e->prev_open = a->open;
+    e->gen = ++a->gen;
     a->open = m;
-    return (Scope){ a, m, mp->gen };
-}
-
-/* Releases records from the top down to and including `mark`. */
-static void release_to_mark(Arena *a, LEnt *mark)
-{
-    for (;;) {
-        LEnt *e = a->top;
-        bool last = e == mark;
-        a->top = e->next;
-        rec_release(e);
-        if (last) break;
-    }
+    return (Scope){ a, m, e->gen };
 }
 
 void pcrec_scope_close(Scope *s)
 {
     scope_check(s);
     Arena *a = s->a;
-    LEnt *below = mark_pay(s->mark)->below, *prev = mark_pay(s->mark)->prev_open;
-    release_to_mark(a, s->mark);
+    size_t prev = rec_at(a, s->mark)->prev_open;
+    release_above(a, s->mark - 1);
     a->open = prev;
-    if (a->top != below)
+    if (a->n != s->mark - 1)
         reg_fail(a, "a scope's close did not release down to its mark");
 }
 
 /* Pushes a HEAP entry for scope `s` and gives it `n` bytes (never fewer than
- * one): the record is linked holding NULL before the block exists, so a
+ * one): the record is pushed holding NULL before the block exists, so a
  * failure of the block strands nothing. */
 void *pcrec_scope_malloc(Scope *s, size_t n)
 {
     scope_check(s);
     Arena *a = s->a;
-    LEnt *e = rec_take(a, &kind_heap);
-    rec_push(a, e);
+    size_t h = rec_take(a, &kind_heap);
     void *p = malloc(n ? n : 1);
-    if (!p) {
-        if (a->cx) pcrec_ctx_nomem(pcrec_err_chan(a->cx));
-        abort();
-    }
-    *(void **)(void *)e->payload = p;
+    if (!p) reg_nomem(a);
+    rec_at(a, h)->p = p;
     return p;
 }
 
@@ -167,24 +179,27 @@ void *pcrec_scope_calloc(Scope *s, size_t n, size_t sz)
 {
     if (sz && n > SIZE_MAX / sz) {
         scope_check(s);
-        if (s->a->cx) pcrec_ctx_nomem(pcrec_err_chan(s->a->cx));
-        abort();
+        reg_nomem(s->a);
     }
     void *p = pcrec_scope_malloc(s, n * sz);
     memset(p, 0, n * sz);
     return p;
 }
 
+/* L6: only the innermost scope's own HEAP entries are candidates (the
+ * search stops at its mark, and above the innermost mark there is no
+ * other mark); the entries above the one released close up over it. */
 void pcrec_scope_free(Scope *s, void *p)
 {
     scope_check(s);
     Arena *a = s->a;
-    LEnt *prev = NULL;
-    for (LEnt *e = a->top; e != s->mark; prev = e, e = e->next) {
-        if (e->kind != &kind_heap || *(void **)(void *)e->payload != p) continue;
-        if (prev) prev->next = e->next;
-        else a->top = e->next;
-        rec_release(e);
+    for (size_t h = a->n; h > s->mark; h--) {
+        LEnt *e = rec_at(a, h);
+        if (e->kind != &kind_heap || e->p != p) continue;
+        LEnt dead = *e;
+        memmove(e, e + 1, (a->n - h) * sizeof *e);
+        a->n--;
+        dead.kind->release(dead.p);
         return;
     }
     reg_fail(a, "pcrec_scope_free of a block the innermost scope does not own");
@@ -194,9 +209,7 @@ StrBuf *pcrec_scope_sb(Scope *s)
 {
     scope_check(s);
     Arena *a = s->a;
-    LEnt *e = rec_take(a, &kind_strbuf);
-    rec_push(a, e);
-    StrBuf *sb = (StrBuf *)(void *)e->payload;
+    StrBuf *sb = rec_obj(a, rec_take(a, &kind_strbuf));
     sb->cx = a->cx;
     return sb;
 }
@@ -205,9 +218,7 @@ Arena *pcrec_scope_arena(Scope *s)
 {
     scope_check(s);
     Arena *a = s->a;
-    LEnt *e = rec_take(a, &kind_arena);
-    rec_push(a, e);
-    Arena *c = (Arena *)(void *)e->payload;
+    Arena *c = rec_obj(a, rec_take(a, &kind_arena));
     c->cx = a->cx;
     c->child = true;
     return c;
@@ -216,7 +227,7 @@ Arena *pcrec_scope_arena(Scope *s)
 void pcrec_scope_unwind(Arena *a)
 {
     while (a->open) {
-        Scope s = { a, a->open, mark_pay(a->open)->gen };
+        Scope s = { a, a->open, rec_at(a, a->open)->gen };
         pcrec_scope_close(&s);
     }
 }
@@ -228,15 +239,26 @@ void pcrec_scope_check_closed(Arena *a)
 
 bool pcrec_arena_open_p(const Arena *a)
 {
-    return a->open != NULL;
+    return a->open != 0;
 }
 
-void **pcrec_arena_hold(Arena *a)
+ArenaHold pcrec_arena_hold(Arena *a)
 {
     if (a->open) reg_fail(a, "pcrec_arena_hold while a scope is open");
-    LEnt *e = rec_take(a, &kind_heap);
-    rec_push(a, e);
-    return (void **)(void *)e->payload;
+    size_t h = rec_take(a, &kind_heap);
+    LEnt *e = rec_at(a, h);
+    e->gen = ++a->gen;
+    return (ArenaHold){ a, h, e->gen };
+}
+
+void pcrec_hold_set(ArenaHold *h, void *p)
+{
+    Arena *a = h->a;
+    if (!a) abort();
+    if (!(h->rec && h->rec <= a->n && rec_at(a, h->rec)->kind == &kind_heap &&
+          rec_at(a, h->rec)->gen == h->gen && !rec_at(a, h->rec)->p))
+        reg_fail(a, "a hold handle that names no empty hold of its arena");
+    rec_at(a, h->rec)->p = p;
 }
 
 /* Allocates `sz` bytes (rounded up to 16) from the arena's current block,
@@ -272,17 +294,16 @@ void *pcrec_arena_alloc(Arena *a, size_t sz)
 }
 
 /* Releases the arena's whole registry (open scopes, their entries and the
- * holds, newest first), then frees every block, and resets it to empty but
- * for `cx` and `child`; the arena's one teardown, called on both the success
- * path and every longjmp'd refusal. */
+ * holds, newest first) and frees its array, then frees every block, and
+ * resets it to empty but for `cx` and `child`; the arena's one teardown,
+ * called on both the success path and every longjmp'd refusal. */
 void pcrec_arena_free(Arena *a)
 {
-    while (a->top) {
-        LEnt *e = a->top;
-        a->top = e->next;
-        rec_release(e);
-    }
-    a->open = NULL;
+    release_above(a, 0);
+    free(a->rec);
+    a->rec = NULL;
+    a->n = a->cap = 0;
+    a->open = 0;
     a->gen = 0;
     ABlock *b = a->head;
     while (b) {

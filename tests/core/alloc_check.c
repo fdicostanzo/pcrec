@@ -70,6 +70,17 @@
  *       docs/design/arena_scopes.md "Tests and sabotage") is the planted
  *       witness `W7 control`, a hand-kept arena stranded on purpose, which
  *       every trial must read as STRANDED.
+ *       THE STRIDE (lane arenabuild2, ruling R-1): every point in the
+ *       hand-kept window is a trial; a point in the scope window ONLY is a
+ *       trial every W7_SCOPE_STRIDE-th (4) of them, the first included.
+ *       Measured at R-1: W7/W3 runs 535 trials (9 hand-kept + 526 of 2,102
+ *       scope-window points), against 2,111 unstrided at F1.
+ *       THE MEMO EXCLUSION (a recorded design deviation, ruling R-1): the
+ *       DFA memo arena is not hand-kept. Its premise, that compile_driver
+ *       frees it on EVERY arrival, refusals included, is BOUND here: every
+ *       child of every witness (malloc and arena trials, the profiling pass)
+ *       exits 6, a FAIL, if a memo arena still holds a block when the
+ *       compile returns (sabotage S3603 drops one of those frees).
  *
  * [K60FIX] (2026-09-18, lane k60fix, docs/dev/decisions.md D109): W4's own
  * mechanism (the [ART-SIZE] ladder catch absorbing a genuine pcrec_ctx_nomem) is
@@ -313,11 +324,30 @@ static int arena_mode = 0;            /* this sweep's trial points are W7's */
 #define HK_CAP 64
 static const Arena *hk[HK_CAP];
 static int hk_n = 0;
+/* R-1: a point in the scope window only is a trial every W7_SCOPE_STRIDE-th
+ * time (the first included). Why 4: F1's unstrided W7 ran 2,112 trials in
+ * 58 s against the design's budget of 2,000; the scope window's points all
+ * fail inside the same few minimize tables, so every 4th still reaches each
+ * table, and the hand-kept window (the strands W7 exists to find) is kept
+ * whole. */
+#define W7_SCOPE_STRIDE 4
+static long long scope_pt_n = 0;
+/* R-1: the live DFA memo arenas (a block taken, not yet freed). */
+static const Arena *mm[HK_CAP];
+static int mm_n = 0;
 
 static void hk_forget(const Arena *a)
 {
     for (int i = 0; i < hk_n; i++)
-        if (hk[i] == a) { hk[i] = hk[--hk_n]; return; }
+        if (hk[i] == a) { hk[i] = hk[--hk_n]; break; }
+    for (int i = 0; i < mm_n; i++)
+        if (mm[i] == a) { mm[i] = mm[--mm_n]; break; }
+}
+
+/* The Ctx's DFA memo arena (`cx->dfa_memo`, S7). */
+static int is_memo(const Arena *a)
+{
+    return a->cx && a->cx->dfa_memo && a == &a->cx->dfa_memo->arena;
 }
 
 /* A HAND-KEPT arena: Ctx-bound, not its Ctx's own `&cx->arena`, not a
@@ -327,8 +357,7 @@ static void hk_forget(const Arena *a)
  * compile and multiply W7's population for trials that cannot fail). */
 static int hand_kept(const Arena *a)
 {
-    return a->cx && a != &a->cx->arena && !a->child &&
-           !(a->cx->dfa_memo && a == &a->cx->dfa_memo->arena);
+    return a->cx && a != &a->cx->arena && !a->child && !is_memo(a);
 }
 
 void *__real_pcrec_arena_alloc(Arena *a, size_t sz);
@@ -340,7 +369,7 @@ void __real_pcrec_arena_free(Arena *a);
  * opens the hand-kept window. */
 void *__wrap_pcrec_arena_alloc(Arena *a, size_t sz)
 {
-    if (pcrec_arena_open_p(a) || hk_n > 0) {
+    if (hk_n > 0 || (pcrec_arena_open_p(a) && scope_pt_n++ % W7_SCOPE_STRIDE == 0)) {
         arena_n++;
         if (arena_fail_at && arena_n == arena_fail_at) {
             if (!fail_site[0])
@@ -353,10 +382,12 @@ void *__wrap_pcrec_arena_alloc(Arena *a, size_t sz)
     void *p = __real_pcrec_arena_alloc(a, sz);
     if (!h0 && a->head && hand_kept(a) && hk_n < HK_CAP)
         hk[hk_n++] = a;
+    if (!h0 && a->head && is_memo(a) && mm_n < HK_CAP)
+        mm[mm_n++] = a;
     return p;
 }
 
-/* A hand-kept arena's release closes its window. */
+/* A hand-kept arena's release closes its window; a memo's leaves the list. */
 void __wrap_pcrec_arena_free(Arena *a)
 {
     hk_forget(a);
@@ -485,6 +516,8 @@ static void child_attempt(const Witness *w, long long n, int sust, int fd)
     arena_fail_at = arena_mode ? n : 0;
     arena_n = 0;
     hk_n = 0;
+    scope_pt_n = 0;
+    mm_n = 0;
     sustained = sust;
     call_n = 0;
     live_bytes = 0;
@@ -537,9 +570,11 @@ static void child_attempt(const Witness *w, long long n, int sust, int fd)
     fflush(stdout);
     if (n == 0) {
         /* profiling pass: the total is the report; the compile must succeed
-         * and give back every block */
-        _exit(rc == 0 && live_bytes == 0 ? 0 : 1);
+         * and give back every block, the memo's included */
+        _exit(rc == 0 && live_bytes == 0 && !mm_n ? 0 : 1);
     }
+    /* R-1: the memo exclusion's premise, on every arrival */
+    if (mm_n) _exit(6);
 
     if (rc == 0)
         _exit(2);   /* forced failure at N was not on the path taken -- success is fine, but flag it for the caller to note */
@@ -618,6 +653,7 @@ static int trial(const Witness *w, long long n, int sust,
  * than merely printed one after the other. */
 typedef struct {
     long long total, n_succeeded, n_silent, n_signalled, n_anomaly;
+    long long n_memo, first_memo_n;   /* R-1: a DFA memo arena live at return */
     long long first_succeeded_n, first_silent_n, first_signal_n, first_signal_code;
     /* [K155] diagnosed refusals that stranded heap: how many, the first N,
      * its byte balance and the forced allocation's site */
@@ -672,6 +708,7 @@ static int sweep_mode(const Witness *w, int sust, Tally *t)
         }
         if (code == 2) { t->n_succeeded++; if (t->first_succeeded_n < 0) t->first_succeeded_n = n; }
         else if (code == 3) { t->n_silent++; if (t->first_silent_n < 0) t->first_silent_n = n; }
+        else if (code == 6) { t->n_memo++; if (!t->first_memo_n) t->first_memo_n = n; }
         else if (code >= 100) { t->n_signalled++; if (t->first_signal_n < 0) { t->first_signal_n = n; t->first_signal_code = code - 100; } }
         else t->n_anomaly++;
     }
@@ -692,7 +729,7 @@ static void report(const Witness *w, const Tally *t, int sust)
      * (above the pin: a new absorption; below: the stale-pin line). */
     int pinned = want > 0 && w->absorbed_why && t->n_succeeded == want;
     long long bad_n = (pinned ? 0 : t->n_succeeded) + t->n_silent + t->n_signalled
-                    + t->n_anomaly + t->n_leaked;
+                    + t->n_anomaly + t->n_leaked + t->n_memo;
     /* [ARENA-SCOPES] the W7 control: a planted strand every trial must SEE */
     if (w->expect_all_stranded) {
         if (t->total >= w->min_total && t->n_leaked == t->total && !t->n_known_stranded)
@@ -756,6 +793,10 @@ static void report(const Witness *w, const Tally *t, int sust)
         bad("%s%s: %lld of %lld forced allocations were diagnosed with an EMPTY message -- first at N=%lld (rc == -1, err.msg[0] == 0)",
             w->name, tag, t->n_silent, t->total, t->first_silent_n);
     }
+    if (t->n_memo)
+        bad("%s%s: %lld of %lld forced allocations returned with a DFA memo arena still holding a block (first N=%lld): "
+            "compile_driver did not free cx->dfa_memo on that arrival, the premise of W7's memo exclusion (R-1)",
+            w->name, tag, t->n_memo, t->total, t->first_memo_n);
     if (t->n_anomaly) {
         bad("%s%s: %lld of %lld forced allocations produced a wait() anomaly", w->name, tag, t->n_anomaly, t->total);
     }

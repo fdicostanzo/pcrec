@@ -10,8 +10,9 @@ scratch tool.
 - `memgate.py` — `prep SIDE (--ref REF | --tree TREE)` builds a side outside any tree (`git archive` for a ref); `peak
   A B OUT [--bound N]`, `rungs A B OUT`, `instr A B OUT [--band --p95]` compare. A side against itself is the noise
   read. Its docstring is the usage.
-- `mg_drv.c` — the per-compile driver: `-DMG_PEAK` (alloc_inject.h library; peak live heap by `malloc_usable_size`,
-  arena BLOCK bytes split by ARENA IDENTITY through `--wrap=pcrec_arena_alloc`/`pcrec_arena_free`: attempt arena =
+- `mg_drv.c` — the per-compile driver: `-DMG_PEAK` (alloc_inject.h library; peak live heap in REQUESTED bytes, kept
+  per pointer, with the `malloc_usable_size` peak as an informational column (lane arenabuild2, R-2); arena BLOCK
+  bytes (requested block size) split by ARENA IDENTITY through `--wrap=pcrec_arena_alloc`/`pcrec_arena_free`: attempt arena =
   `&cx->arena`), `-DMG_INSTR` (plain library; user-mode instructions by `perf_event_open`).
 
 ## Rules

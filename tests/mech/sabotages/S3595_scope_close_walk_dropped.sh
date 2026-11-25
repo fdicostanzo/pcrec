@@ -5,6 +5,7 @@
 # gone it refuses with an internal error, so every compile that runs a scope
 # (minimize.c's tables: every DFA compile) refuses and the corpus goes red.
 # scope_check's drills also fail (core).
+# Re-anchored by lane arenabuild2 (ruling R-3: the registry is one LIFO array).
 SAB_ID="S3595-scope-close-walk-dropped"
 SAB_FILE="src/core/arena.c"
 SAB_SUITES="harness core"
@@ -12,6 +13,6 @@ SAB_DESC="pcrec_scope_close skips release_to_mark: the close's post-condition re
 SAB_DOC_FIGURE="Read the current figure from a run: bash tests/mech/run_sabotage_matrix.sh S3595."
 SAB_REACH_POP="src/opt/minimize.c|pcrec_scope_open\\(|1"
 SAB_COUNT=1
-SAB_BEFORE='    release_to_mark(a, s->mark);
+SAB_BEFORE='    release_above(a, s->mark - 1);
     a->open = prev;'
 SAB_AFTER='    a->open = prev;   /* SABOTAGE S3595: nothing above the mark is released */'

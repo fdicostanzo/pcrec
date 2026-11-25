@@ -13,7 +13,8 @@ identical base runs must print identical numbers).
       SIDE_DIR/mg_peak, SIDE_DIR/mg_instr (mg_drv.c, this directory) and SIDE_DIR/gdrv
       (the side's own tests/growth/growth_driver.c).
   memgate.py peak  A B OUT [--bound BYTES] [--jobs J] [--limit N] [--shard K/N]
-      per-compile PEAK LIVE HEAP (and attempt-arena BLOCK high-water) of side A vs side B
+      per-compile PEAK LIVE HEAP in REQUESTED bytes (and attempt-arena BLOCK high-water, in
+      requested block size; the malloc_usable_size peak is an informational column, R-2) of side A vs side B
       over the population: every distinct corpus argv pattern (--features all) and every
       non-red growth cell uncapped (its own raise/features/engine). --bound names the unit's
       predicted per-compile delta; every compile above it is listed OVER-BOUND (a STOP).
@@ -26,8 +27,10 @@ identical base runs must print identical numbers).
 
 The population is read from side A's tree (corpus via scripts/emit_sweep.py's enumerator and
 A's CLI, cells via A's tests/growth/run_growth.py), so both sides compile the same inputs.
-Regime (docs/design/arena_scopes.md, standing question 1): glibc malloc_usable_size, in
-process, the dev box; deterministic, so 0 B is the expected noise.
+Regime (docs/design/arena_scopes.md, standing question 1): REQUESTED bytes, in process, the
+dev box (lane arenabuild2's ruling R-2: malloc_usable_size moved by heap history, not by bytes
+asked for, read +4,048 B on one cell whose arena call sequence was identical); deterministic,
+so 0 B is the expected noise.
 """
 import argparse, concurrent.futures as cf, os, re, resource, shutil, subprocess, sys
 
@@ -187,15 +190,18 @@ def mode_peak(a, items):
                 print("LIVE-AFTER %s %d bytes (rc %d)" % (key, y[2], y[1]), flush=True)
             if x[1] != y[1]:
                 print("RC-MOVED %s A %d B %d" % (key, x[1], y[1]), flush=True)
-            rows.append((key, x[0], y[0], x[1], y[1], x[3], y[3], x[4], y[4]))
+            rows.append((key, x[0], y[0], x[1], y[1], x[3], y[3], x[4], y[4], x[5], y[5]))
     with open(os.path.join(a.out, "peak%s.tsv" % a.shard.replace("/", "of")), "w") as fo:
-        fo.write("key\tpeakA\tpeakB\trcA\trcB\tattA\tattB\tothA\tothB\n")
+        fo.write("key\tpeakA\tpeakB\trcA\trcB\tattA\tattB\tothA\tothB\tupeakA\tupeakB\n")
         for r in rows:
-            fo.write("%s\t%d\t%d\t%d\t%d\t%d\t%d\t%d\t%d\n" % r)
+            fo.write("%s\t%d\t%d\t%d\t%d\t%d\t%d\t%d\t%d\t%d\t%d\n" % r)
     d = [r[2] - r[1] for r in rows]
     print("peak: %d compared, %d errors; delta (B-A) min %d median %d max %d; B>A %d, equal %d, B<A %d"
           % (len(rows), nerr, min(d or [0]), pct(d, 0.5), max(d or [0]),
              sum(x > 0 for x in d), sum(x == 0 for x in d), sum(x < 0 for x in d)))
+    ud = [r[10] - r[9] for r in rows]
+    print("peak: usable-size peak (INFORMATIONAL, R-2) delta min %d median %d max %d; B>A %d, B<A %d"
+          % (min(ud or [0]), pct(ud, 0.5), max(ud or [0]), sum(x > 0 for x in ud), sum(x < 0 for x in ud)))
     att = [r for r in rows if r[6] > r[5]]
     print("peak: attempt-arena block high-water raised on %d, lowered on %d" % (len(att), sum(r[6] < r[5] for r in rows)))
     for r in att[:20]:
