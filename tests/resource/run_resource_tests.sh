@@ -163,9 +163,13 @@ src/dump/callouts_dump.c
 src/ir/dfa.c
 src/ir/nfa.c
 src/opt/dfamemo.c
-src/opt/minimize.c
 src/opt/scanedge.c
 src/parse/rxt_source.c'
+    # [ARENA-SCOPES] (lane arenatri, 2026-11-25) src/opt/minimize.c LEFT: its
+    # local tables moved to pcrec_scope_malloc (scope-owned, freed on the one
+    # return and by the arena's teardown on a refusal), so it holds no raw
+    # malloc/calloc/realloc/strdup call any more; the discipline covers it
+    # through the arena, not through a raw-site pin.
     # [INLINE-C] stage 3 (lane ic3tri, 2026-10-29) src/dump/callouts_dump.c
     # joined: its one malloc(1) is the empty-result string of
     # pcrec_list_callouts, which the CALLER free()s like every other dump
