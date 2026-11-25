@@ -337,7 +337,7 @@ def path10(t, binds):
         if res:
             oks = sorted(set(tuple(x[1]) for x in res if x[0] == "ok"))
             walls = [x for x in res if x[0] == "wall"]
-            if not oks and walls:
+            if not oks and walls and not (sk == "sent" and s10("q5")):
                 w = walls[0]
                 if w[1] == "rule 2":
                     raise CompileError("`%s`: the path %s `%s`, not the start (a compile error, path-rules rule 2%s)"
@@ -353,8 +353,24 @@ def path10(t, binds):
     return "".join(out)
 
 
+def _toplevel10(t):
+    """t's text outside every (), [], {}, literal and string: the operators that join t's top-level parts."""
+    m = _mask_conds(t)
+    out, d = [], 0
+    for c in m:
+        if c in "([{":
+            d += 1
+        elif c in ")]}":
+            d -= 1
+        elif d == 0:
+            out.append(c)
+    return "".join(out)
+
+
 def wrap10(t):
-    """every part label whose content is a stack or an expression, handed over parenthesised (the nested form)."""
+    """every part label (the blank's excepted) whose content is a stack or an expression joined by `SEQ` or `&` (a
+    top-level `|` or `,` makes entries of the label set: "Inside `[ ]` the label set binds looser than `&`, tighter
+    than `|`"), handed over parenthesised."""
     for _ in range(20):
         changed = False
         for nm, s_, c_, e_ in sorted(_brackets(t), key=lambda b: -b[1]):
@@ -362,9 +378,9 @@ def wrap10(t):
             b0 = body.strip()
             if nm == "_" or not b0 or (b0.startswith("(") and close_paren(b0, 0) == len(b0) - 1):
                 continue
-            stk = b0.startswith("[") and _close_br(b0, 0) == len(b0) - 1
-            ops = re.search(r"\bSEQ\b|[&|]", _mask_conds(b0)) is not None and not (
-                re.fullmatch(r"[\w.]+\(.*\)", b0, re.S) and close_paren(b0, b0.index("(")) == len(b0) - 1)
+            stk = re.match(r"\[(?:\w+|\([^()]*\)) = ", b0) is not None and _close_br(b0, 0) == len(b0) - 1
+            top = _toplevel10(b0)
+            ops = bool(re.search(r"\bSEQ\b|&", top)) and not re.search(r"[|,]", top)
             if stk or ops:
                 t = t[:c_] + body.replace(b0, "(" + b0 + ")", 1) + t[e_:]
                 changed = True
@@ -555,3 +571,677 @@ def g_run(cells):
             diff = ndiff(answers(Pg, q), answers(Re(rx), q))
         res.append((kind, layers, steps, want, why, e, b, rx, got, err, diff))
     return res
+
+
+# ================================================================== the checks10
+def unit10(name, what, secs=UNIT_TIMEOUT10):
+    unit(name, what, secs)
+
+
+SC10_T = "core/labels/rule/stacked-chain"
+EXP_T = "core/labels/export"
+LP_T = "core/labels/paths"
+SLW_T = "core/labels/rule/sent-label-wall"
+SPW_T = "core/labels/rule/skip-past-wall"
+EQI_T = "core/labels/rule/equivalence-inside"
+AAM_T = "core/labels/rule/alone-as-middle"
+GRN_T = "core/labels/rule/group-node"
+SHO_T = "core/labels/paths/shorthand-outside"
+P1_ = "P := /(?<d>\\d)/"
+Q1_ = "Q := /,(?<d>\\d)/"
+QE_ = "Q := /,(?<e>\\d)/"
+P2_ = "P := /(?<d>\\d)\\d/"
+Q2_ = "Q := /\\d(?<d>\\d)/"
+Q2E = "Q := /\\d(?<e>\\d)/"
+Q3_ = "Q := /a(?<d>\\d)/"
+Q3E = "Q := /a(?<e>\\d)/"
+XW_ = 'X := [_x = [n = A]] SEQ "!"'
+YW_ = 'Y := [c = X] SEQ ";"'
+Y2_ = 'Y := [c = B(A)] SEQ "!"'
+X2L = 'X := [y = Y] SEQ ";"'
+RSB = "R(l:, v) := /${[l = [_ = v]]}xx/"
+RSA = "R(l:, v) := /${[_ = [l = v]]}xx/"
+QS10 = (["3,7", "7,3"], "7,3 3,7", "3,7 7,3 4,1")
+QA10 = (["7,3", "3,7"], "3,7 7,3", "7,3 3,7 4,1")
+Q2D = (["37", "73"], "73 37", "37 73 14")
+QOR = (["3", "a3", "a7"], "a7 a3", "3 a7 a4")
+Q2L = (["3xx!;", "7xx!;"], "7xx!; 3xx!;", "3xx!; 7xx!; 4xx!;")
+QX1 = (["37!", "73!"], "73! 37!", "37! 73! 14!")
+QM10 = (["3,7!", "7,3!"], "7,3! 3,7!", "3,7! 7,3! 4,1!")
+D10 = dict(NOWS)                                             # the documents as READ by the checks (plants alter it)
+if s10("q6"):
+    D10["core.md"] = D10["core.md"].replace("rule 4 applies repeatedly", "rule 4 applies once", 1)
+if s10("q8"):
+    D10["core.md"] = D10["core.md"].replace("none: `B.h` a compile error (rule 2)", "none: `B.h` a compile error (rule 6)", 1)
+if s10("q9"):
+    D10["core.md"] = D10["core.md"].replace("`m.d` starts at `m` (rule 3)", "`m.d` is a compile error", 1)
+if s10("q14"):
+    D10["core.md"] = D10["core.md"].replace("4. if a legal path exists a.b.c and c can be unambiguously referenced from a, "
+                                            "then b can be skipped a.c", "4. a middle label may be skipped", 1)
+if s10("q17"):
+    D10["core.md"] = D10["core.md"].replace("the same-label-twice rules", "the rules", 1)
+D8.clear()
+D8.update(D10)
+
+
+def flat_call(body, param, arg, target, wrong=False):
+    """CONTROL's direct regex of `B(A)` read through A's `target`, BUILT from the texts: the body's literal with
+    every hole's labels dropped and the parameter replaced by the argument's literal, A's group the restricted
+    digit, the body's own groups unnamed."""
+    a = arg.strip()[1:-1]
+    a = re.sub(r"\(\?<%s>\\d\)" % re.escape(target), "([5-9])" if wrong else "([0-4])", a)
+    a = re.sub(r"\(\?<\w+>", "(?:", a)
+    b = re.sub(r"\(\?<\w+>", "(?:", body.strip()[1:-1])
+
+    def hole(mm):
+        x = mm.group(1).strip()
+        while True:
+            m2 = re.fullmatch(r"\[(?:\w+|\([^()]*\)) = (.*)\]", x, re.S)
+            if not m2:
+                break
+            x = m2.group(1).strip()
+        assert x == param, (x, param)
+        return a
+    return re.sub(r"\$\{([^{}]*)\}", hole, b)
+
+
+CTL10 = []
+for e_, b_ in (("identity(A) & (A.d: <5)", [A_D, IDN]), ("B(A) & (A.d: <5)", [A_D, B_CL]),
+               ("B(A) & (A.d: <5)", [A_D, B_LS]), ("B(A) & (A.d: <5)", [A_D, B_CP]),
+               ("B(A) & (A.d: <5)", [A_D, B_P]), ("B([A = A]) & (A.d: <5)", [A_D, B_ST])):
+    h_ = head_of(b_[1])
+    CTL10.append((e_, b_, flat_call(h_[2], h_[1][0][0], b_[0].split(" := ", 1)[1], "d",
+                                    wrong=s10("q7") and e_.startswith("identity"))))
+
+# ---- predfold1124's checks CONTROL .. READINGS, run again from its own text with the DECLARED PATCHES of r90
+PATCH10 = [   # (why, its text in predfold1124, the patched text): each must apply exactly once
+    ("C4: CONTROL runs the provided bodies against regexes built from their texts",
+     '("B(A) & (A.d: <5)", [A_D, B_AF], r"\\d-[0-4]")):',
+     '("B(A) & (A.d: <5)", [A_D, B_AF], r"\\d-[0-4]")) + tuple(CTL10):'),
+    ("C4: CONTROL's FAIL line names the differing rows only",
+     '"over %d texts: %s" % (len(QC9), ctl9))',
+     '"over %d texts: %s" % (len(QC9), [x_ for x_ in ctl9 if x_[1] != (0, 0, 0)] or "none"))'),
+    ("A8: \"From outside\" re-witnessed on a labelling body",
+     'ok_s11, r_s11 = rl("From outside", \'[pub = B(A)] & (pub.A.h: <5)\', [A_H, B_XX], "not visible",\n'
+     '                   "the shorthand label is protected: it adds no export (the manager\'s reading (b))", AD_T)',
+     'ok_s11, r_s11 = rl("From outside", \'[pub = B(A)] & (pub.A.h: <5)\', [A_H, B_PH], "not visible",\n'
+     '                   "the shorthand label is protected: it adds no export (the manager\'s reading (b); open "\n'
+     '                   "shorthand-outside)", AD_T)'),
+    ("the line \"A blank label in the stack\" printed once, in core/labels/ownership",
+     'ok_p4, r_p4 = rl("A blank label in the stack", "[l = [_ = P]] & (l.d: <5)", [P_], RULE2_9,\n'
+     '                 "the path crosses the blank label (rule 2); no label reads `d` there", PATHS_T)',
+     'ok_p4, r_p4 = refused("[l = [_ = P]] & (l.d: <5)", [P_], RULE2_9), ""'),
+    ("the line \"Through a call, a private label in the body\" moved to core/labels/ownership",
+     '"the path crosses the body\'s `_x` (rules 5 and 2); `B(A) & (B.h: <5)` alike", PATHS_T)',
+     '"the path crosses the body\'s `_x` (rules 5 and 2); `B(A) & (B.h: <5)` alike", OWN_T)'),
+    ("A5: reading (e) restricted: the line's label",
+     'pl("The caller\'s label, a start whatever the body stacks",',
+     'pl("The caller\'s label, a start under the body\'s wall",'),
+    ("C7: READINGS (b) by a refusal with its key, never a crash",
+     '("shorthand-is-callers (b): the shorthand label protected (no export through the caller\'s label)", P_rb is None),',
+     '("shorthand-is-callers (b): the shorthand label protected (no export through the caller\'s label)",\n'
+     '     refused("[pub = B(A)] & (pub.A.d: <5)", [A_D, B_XX], "not visible")),'),
+    ("C7: READINGS (d) by a refusal with its key, never a crash",
+     '"only", P_rd is None),',
+     '"only", refused("[a = A] SEQ \\"!\\" & (A.h: <5)", [A_H], "neither written")),'),
+    ("A5: reading (e) restricted: the arm's name",
+     '("path-rules (e): a caller\'s label is a start whatever the body stacks", P_re is not None),',
+     '("path-rules (e): a caller\'s label is a start, the body\'s wall above it", P_re is not None),'),
+    ("A7: (g) is tested (READINGS10), no longer printed UNTESTABLE",
+     'print("   UNTESTABLE: path-rules (g), the equivalence is a picture, not a spelling: nothing runs `t` as a label")',
+     'print("   (g) of path-rules: run by READINGS10 (inside and outside)")'),
+    ("C6: NAMEGRID's deciding sentence the ruled clause, not a rule number (n.m.d)",
+     '("n.m.d", "inside, two public", "plain", "[n = [m = P]] & (n.m.d: <5)", [P_XX], "legal", SC_T, "rule 1"),',
+     '("n.m.d", "inside, two public", "plain", "[n = [m = P]] & (n.m.d: <5)", [P_XX], "legal", SC_T,\n'
+     '     "rule 1 makes `n.m.d` a path"),'),
+    ("C6: NAMEGRID (B.n.m.h)",
+     '("B.n.m.h", "two public stacked", "plain", "B(A) & (B.n.m.h: <5)", [A_H, B_MN], "legal", SC_T, "rule 1"),',
+     '("B.n.m.h", "two public stacked", "plain", "B(A) & (B.n.m.h: <5)", [A_H, B_MN], "legal", SC_T,\n'
+     '     "From outside (rule 5) the binding\'s name starts the same tree"),'),
+    ("C6: NAMEGRID (B.m.h)",
+     '("B.m.h", "two public stacked", "plain", "B(A) & (B.m.h: <5)", [A_H, B_MN], "legal", SC_T, "rule 1"),',
+     '("B.m.h", "two public stacked", "plain", "B(A) & (B.m.h: <5)", [A_H, B_MN], "legal", SC_T,\n'
+     '     "rule 3 lets `m` start one"),'),
+    ("C6: NAMEGRID (X.n.m.h)",
+     '[A_H, X_MN], "legal", SC_T, "rule 5"),',
+     '[A_H, X_MN], "legal", SC_T,\n     "From outside (rule 5) the binding\'s name starts the same tree"),'),
+    ("C6: NAMEGRID (X.h)",
+     '("X.h", "from outside", "plain", "X & (X.h: <5)", [A_H, X_MN], "legal", SC_T, "rule 4"),',
+     '("X.h", "from outside", "plain", "X & (X.h: <5)", [A_H, X_MN], "legal", SC_T,\n'
+     '     "and `X.h` (rule 4) read A\'s `h`"),'),
+    ("A5: NAMEGRID's sentence for the caller's label under a stack",
+     '"legal", PATHS_T, "whatever the body stacks around them"),',
+     '"legal", PATHS_T, "never a licence to cross a wall below it"),'),
+    ("the cell B.n.h's sentence moved with its line to core/labels/ownership",
+     '("B.n.h", "stacked", "plain", "B(A) & (B.n.h: <5)", [A_H, B_ST], "refused", PATHS_T,',
+     '("B.n.h", "stacked", "plain", "B(A) & (B.n.h: <5)", [A_H, B_ST], "refused", OWN_T,'),
+    ("B9: FLAGS pins the narrowed options sentence (the weak `i`, the asked letter)",
+     '(OP_T, "Program options reach a string constant written after the statement in that file")',
+     '(OP_T, "A file\'s weak `i` reaches a string constant written after the statement in that file")'),
+    ("B9: FLAGS pins the narrowed explicit sentence (an `i` put in by an option hole)",
+     '(FL_T, "or put into it by an option hole")', '(FL_T, "or an `i` put into it by an option hole")'),
+    ("B9: \"Inside a union\" names no intersection as its alike (the line \"Inside an intersection\" is its own)",
+     '"his ruling; `(h: <5 & capture(\\"h\\"))` alike", CS_T)', '"his ruling", CS_T)'),
+    ("C9: NAMEGRID's FAIL line says which arm a cell fails",
+     'g9_bad.append((sp_, occ_, kind_, want, got, has, (err or "")[:100]))',
+     'g9_bad.append((sp_, occ_, kind_, want, got, "sentence found" if has else "sentence missing", (err or "")[:100]))'),
+]
+_a10 = _src9.index('unit9("CONTROL", ')
+_chk9 = _src9[_a10:_src9.index('unit9("SWEEP", ')]
+_bad10 = []
+for why_, old_, new_ in PATCH10:
+    if _chk9.count(old_) != 1:
+        _bad10.append((why_, _chk9.count(old_)))
+    _chk9 = _chk9.replace(old_, new_, 1)
+if _bad10:
+    print("PATCH DRIFT (predfold1124's text moved): %s" % _bad10)
+    print("predfix90_model: 0 checks, 1 failed (PATCHES)")
+    sys.exit(1)
+print("== %d declared patches applied to predfold1124's checks CONTROL .. READINGS:" % len(PATCH10))
+for why_, _, _ in PATCH10:
+    print("   PATCH: %s" % why_)
+if s10("q10"):
+    _run10 = run
+
+    def run(expr, binds=()):                                 # noqa: F811  (q10: the engine crashes on one program)
+        if expr == "[pub = B(A)] & (pub.A.d: <5)":
+            return None, "CRASH ValueError: planted"
+        return _run10(expr, binds)
+exec(compile(_chk9, P1124, "exec"), globals())               # noqa: S102
+
+
+# ---- this lane's checks
+unit10("CANARY", "the control is predfold1124's engine: each canary program's legality flips with PATH10 off")
+CAN10 = [("Y & (Y.c.h: <5)", [A_H, XW_, YW_]), ('[n = [m = A] SEQ "!"] & (n.h: <5)', [A_H]),
+         ("X & (X.ab.l: <5)", ["B := /(?<l>\\d)/", "A := /a(?<l>\\d)/", 'X := [ab = (B | A)] SEQ "!"']),
+         ("[n = [m = [k = P]]] & (n.k.d: <5)", [P_XX])]
+can_rows = []
+for e_, b_ in CAN10:
+    X10[0] = False
+    off_ = run(e_, b_)[0] is not None
+    X10[0] = True
+    on_ = run(e_, b_)[0] is not None
+    can_rows.append((e_, "legal" if off_ else "refused", "legal" if on_ else "refused"))
+    print("   CANARY `%s`: PATH10 off %s, on %s" % can_rows[-1])
+can_ok = all(r_[1] != r_[2] for r_ in can_rows)
+check("CANARY", can_ok, "%d canaries; the control is %s" % (len(can_rows), "predfold1124's engine: each flips" if can_ok
+                                                           else "not predfold1124's engine: %s" % can_rows))
+
+unit10("PATHS10", "review r90's cells A1-A8, A10, A11 as printed lines, each run; the readings and clauses pinned")
+pa10_pins = [(PATHS_T, "rule 4 applies repeatedly"), (PATHS_T, "never a licence to cross a wall below it"),
+             (PATHS_T, "count only the targets a legal path reaches"), (PATHS_T, "an implicit label is never a middle"),
+             (PATHS_T, "Rule 5's start by a binding's or macro's name is line 3's shorthand"),
+             (PATHS_T, "It holds from outside"), (EXP_T, "A label under an underscore label is not exported"),
+             (AD_T, "for the read through `A.d`"), (SLW_T, "a compile error by rule 2 for now"),
+             (SPW_T, "count only the targets a legal path reaches"), (AAM_T, "an implicit label is a start, never a middle"),
+             (EQI_T, "[_t = A ] is equivalent to [_ = [t = A ]]"), (SHO_T, "the shorthand label is protected"),
+             (GRN_T, "no sentence decides it")]
+pa10_miss = [(t_, s_) for t_, s_ in pa10_pins if ws(s_) not in ws(piece8(t_))]
+P_a1 = pl("A public label between", '[n = [m = P] SEQ "!"] & (n.d: <5)', [P2_], *QX1, tag=PATHS_T,
+          tail=": rules 1 and 4")
+P_a1b = run('[n = [m = P] SEQ "!"] & (n.m.d: <5)', [P2_])[0]
+P_a2 = pl("Three stacked, both middles skipped", "[n = [m = [k = P]]] & (n.d: <5)", [P_XX], *Q3, tag=SC10_T,
+          tail=": rule 4 applied repeatedly (a reading)")
+P_a2b = run("[n = [m = [k = P]]] & (n.m.k.d: <5)", [P_XX])[0]
+P_a2c = pl("Two binding levels, the middles skipped", "X & (X.c.h: <5)", [A_H, B_PH, Y2_, X2L], *Q2L, tag=SC10_T,
+           tail=": rules 5 and 4, applied repeatedly (a reading)")
+P_a2d = run("X & (X.y.c.p.h: <5)", [A_H, B_PH, Y2_, X2L])[0]
+ok_a3, r_a3 = rl("A wall one binding level up", "Y & (Y.c.h: <5)", [A_H, XW_, YW_], RULE2_10,
+                 "the path Y, c, then X's `_x`, crosses `_x` (rules 5 and 2); `Y.h` and `Y.c.n.h` alike", OWN_T)
+ok_a3b = refused("Y & (Y.h: <5)", [A_H, XW_, YW_], RULE2_10) and refused("Y & (Y.c.n.h: <5)", [A_H, XW_, YW_], RULE2_10)
+ok_a3c = refused("X & (X.n.h: <5)", [A_H, XW_], RULE2_10)
+ok_a4, r_a4 = rl("From outside, alone in an expression", "X & (X.ab.l: <5)",
+                 ["B := /(?<l>\\d)/", "A := /a(?<l>\\d)/", 'X := [ab = (B | A)] SEQ "!"'], RULE6_10,
+                 "B and A are used alone in it (core/labels/rule/paths rule 6); through a hole, X := "
+                 "`[n = /${Q},/] SEQ \"!\"`, alike", LP_T)
+ok_a4b = refused("X & (X.n.d: <5)", [Q1_, 'X := [n = /${Q},/] SEQ "!"'], RULE6_10)
+P_a4 = pl("From outside, a public part beside a part used alone", "X & (X.n.d: <5)",
+          [P1_, Q1_, 'X := [n = ([m = P] SEQ Q)] SEQ "!"'], *QM10, tag=LP_T,
+          tail=": m's `d` (rule 6: Q, used alone, is crossed as a wall)")
+ok_a5, r_a5 = rl("Through the call, the caller's label under the body's wall", "B([a = A]) & (B.a.d: <5)", [A_D, B_ST],
+                 RULE2_10, "the path crosses the body's `_x` (rules 5 and 2); `a.d` is the read", OWN_T)
+P_a8w = pl("From outside, written out", "[pub = B([A = A])] & (pub.A.h: <5)", [A_H, B_PH], *Q3, tag=AD_T)
+rl("From outside", "[pub = B(A)] & (pub.A.h: <5)", [A_H, B_PH], "not visible",
+   "the shorthand label is protected: it adds no export (the manager's reading (b); open shorthand-outside)", SHO_T)
+pl("From outside, written out", "[pub = B([A = A])] & (pub.A.h: <5)", [A_H, B_PH], *Q3, tag=SHO_T)
+P_a10 = pl("Both bounds unspecified, the one hole twice", "EB(rx.digit, _)", ["EB(x, n) := /(?:${x}){${n},${n}}/"], QR,
+           "x1234567", "1234567 12", UN_T, tail=": `{0,}` (count-unspecified)")
+# the open pieces' runs
+ok_o1, r_o1 = rl("The sent label above the body's blank", "R(x:, A) & (x.h: <5)", [A_H, RSB], SENT10,
+                 "the path x, `_`, h crosses the blank (rule 2, the manager's reading)", SLW_T)
+P_o1b = pl("Candidate (b)'s answers: the wall written above the sent label", "R(x:, A) & (x.h: <5)", [A_H, RSA], *Q3,
+           tag=SLW_T)
+P_o2s = pl("In a sequence, the private part last", "[n = ([m = P] SEQ [_x = Q])] & (n.d: <5)", [P1_, Q1_], *QS10,
+           tag=SPW_T, tail=": m's `d`")
+P_o2a = pl("Across `&`", "[n = ([m = P] & [_x = Q])] & (n.d: <5)", [P2_, Q2_], *Q2D, tag=SPW_T, tail=": m's `d`")
+P_o2o = pl("Across `|`", "[n = ([m = P] | [_x = Q])] & (n.d: <5)", [P1_, Q3_], *QOR, tag=SPW_T,
+           tail=": m's `d`, unset where the private branch is taken")
+P_o2sb = pl("Candidate (b) in a sequence, the last mention read", "[n = ([m = P] SEQ [k = Q])] & (n.d: <5)",
+            [P1_, Q1_], *QS10, tag=SPW_T, tail=": Q's `d`")
+ok_o2ab, r_o2ab = rl("Candidate (b) across `&`", "[n = ([m = P] & [k = Q])] & (n.d: <5)", [P2_, Q2_], "ambiguous",
+                     "both sides set `d`, the ambiguous reference", SPW_T)
+P_o2ob = pl("Candidate (b) across `|`, the branch taken", "[n = ([m = P] | [k = Q])] & (n.d: <5)", [P1_, Q3_], *QOR,
+            tag=SPW_T)
+P_o2se = run("[n = ([m = P] SEQ [_x = Q])] & (n.d: <5)", [P1_, QE_])[0]      # the competitor renamed: the control
+P_o2ae = run("[n = ([m = P] & [_x = Q])] & (n.d: <5)", [P2_, Q2E])[0]
+P_o2oe = run("[n = ([m = P] | [_x = Q])] & (n.d: <5)", [P1_, Q3E])[0]
+P_o3 = pl("Inside, the blank above `t`", '[_ = [t = A]] SEQ "!" & (t.h: <5)', [A_H], *Q3B, tag=EQI_T, tail=": rule 3")
+ok_o3, r_o3 = rl("Inside, his `[_t = A]`", '[_t = A] SEQ "!" & (t.h: <5)', [A_H], "neither written",
+                 "no label `t` is made (the manager's reading (g)); `_t.h` is the read", EQI_T)
+ok_o3b, r_o3b = rl("From outside, both", "X & (X.t.h: <5)", [A_H, 'X := [_ = [t = A]] SEQ "!"'], RULE2_10,
+                   "the path crosses the blank (rule 2); X := `[_t = A] SEQ \"!\"` with `X.h` alike, crossing `_t`",
+                   EQI_T)
+ok_o3c = refused("X & (X.h: <5)", [A_H, 'X := [_t = A] SEQ "!"'], RULE2_10) and \
+    refused("X & (X.h: <5)", [A_H, 'X := [_ = [t = A]] SEQ "!"'], RULE2_10)
+ok_o4, r_o4 = rl("A part used alone as a middle, inside", "[n = (P SEQ Q)] & (n.Q.d: <5)", [P1_, Q1_], "not visible",
+                 "the read is `Q.d`; an implicit label is a start, never a middle (the manager's reading)", AAM_T)
+P_o4 = pl("Through the part used alone, skipped", "[n = (P SEQ Q)] & (n.d: <5)", [P1_, Q1_], *QA10, tag=AAM_T,
+          tail=": Q's `d`, the last mention")
+P_o4b = pl("Candidate (b)'s answers: the read as `Q.d`", "[n = (P SEQ Q)] & (Q.d: <5)", [P1_, Q1_], *QA10, tag=AAM_T)
+ok_o5, r_o5 = rl("A group inside a group", "/(?<g>(?<d>\\d))x/ & (g.d: <5)", [], "not visible",
+                 "the evidence engine reads no group as a middle; no sentence decides it", GRN_T)
+P_o5b = pl("Candidate (b)'s answers: the outer group written as a part label", "[g = /(?<d>\\d)/] SEQ /x/ & (g.d: <5)",
+           [], ["3x", "7x"], "7x 3x", "3x 7x 4x", GRN_T)
+QK10 = pop("37,a!x;", 3)
+pa10_arms = {
+    "pins": not pa10_miss,
+    "A1 a public label between: `n.d` = `n.m.d`": P_a1 is not None and P_a1b is not None and
+    answers(P_a1, QK10) == answers(P_a1b, QK10) and wh_(P_a1, QX1[0]) == [True, False],
+    "A2 depth 3: `n.d` = `n.m.k.d`": P_a2 is not None and P_a2b is not None and answers(P_a2, QK10) == answers(P_a2b, QK10),
+    "A2 two binding levels: `X.c.h` = `X.y.c.p.h`": P_a2c is not None and P_a2d is not None and
+    answers(P_a2c, pop("37x!;", 5)[:400]) == answers(P_a2d, pop("37x!;", 5)[:400]),
+    "A3 the two-level wall": ok_a3 and ok_a3b and ok_a3c,
+    "A4 rule 6 below a label over an expression and a hole": ok_a4 and ok_a4b and wh_(P_a4, QM10[0]) == [True, False],
+    "A5 (ii) through the call, the body's wall": ok_a5,
+    "A8 from outside: the written-out half legal": wh_(P_a8w, Q3[0]) == [True, False],
+    "A10 the EB line: `{0,}`": wh_(P_a10, QR) == [True] * 4,
+    "sent-label-wall: (a) refused, (b) legal": ok_o1 and wh_(P_o1b, Q3[0]) == [True, False],
+    "skip-past-wall: each operator = its renamed control": all(
+        p_ is not None and q_ is not None and answers(p_, QK10) == answers(q_, QK10)
+        for p_, q_ in ((P_o2s, P_o2se), (P_o2a, P_o2ae), (P_o2o, P_o2oe))),
+    "skip-past-wall candidate (b) runs": wh_(P_o2sb, QS10[0]) == [False, True] and ok_o2ab and P_o2ob is not None,
+    "equivalence-inside: legal / refused inside, both refused outside": wh_(P_o3, Q3B[0]) == [True, False] and ok_o3
+    and ok_o3b and ok_o3c,
+    "alone-as-middle: `n.Q.d` refused, `n.d` and `Q.d` alike": ok_o4 and P_o4 is not None and P_o4b is not None and
+    answers(P_o4, QK10) == answers(P_o4b, QK10),
+    "group-as-node: refused now, (b) legal": ok_o5 and wh_(P_o5b, ["3x", "7x"]) == [True, False],
+}
+check("PATHS10", all(pa10_arms.values()), "arms failing: %s; pins MISSING: %s" % (
+    [k for k, v in pa10_arms.items() if not v] or "none", pa10_miss or "none"))
+
+unit10("GRID", "start kind x stack (labels, walls, an expression, a hole, up to two binding levels; depth 0-3) x every "
+       "skip: the SEPARATE evaluator's verdict from the rule text against the engine; each legal answer against the "
+       "regex built from the stack, in all three modes; every cell printed")
+g_pins = [(k, t_, s_) for k, (t_, s_) in GRULE.items()]
+g_miss = [(k, t_) for k, t_, s_ in g_pins if ws(s_) not in ws(piece8(t_))]
+for k, t_, s_ in g_pins:
+    print("   SENTENCE %s [%s] \"%s\" %s" % (k, t_, s_, "(found)" if (k, t_) not in g_miss else "(MISSING)"))
+cells10 = g_cells()
+gres = g_run(cells10)
+g_bad, g_und, g_cnt = [], [], {}
+for kind, layers, steps, want, why, e, b, rx, got, err, diff in gres:
+    stk = "/".join(l_[1] if l_[0] in ("P", "Bd") else l_[0] for l_ in layers) or "-"
+    tag_ = "UNDECIDED" if want == "undecided" else "DECIDED"
+    ok_ = want == "undecided" or (want == got and (diff in (None, (0, 0, 0))))
+    g_cnt[(want, got)] = g_cnt.get((want, got), 0) + 1
+    print("   %s %s | %s | path %s | rules %s: %s | engine %s%s%s" % (
+        tag_, kind, stk, ".".join(steps) or "-", ",".join(map(str, why)), want, got,
+        (" modes-diff %s" % (diff,)) if diff not in (None, (0, 0, 0)) else "", "" if ok_ else "   <-- DISAGREES"))
+    if want == "undecided":
+        g_und.append((kind, stk, steps))
+    elif not ok_:
+        g_bad.append((kind, stk, ".".join(steps), want, got, diff, (err or "")[:80]))
+G_UND10 = 16                                                 # declared: the alone-as-middle cells (inside, through a
+#                                                              binding used alone below a label over an expression)
+check("GRID", not g_bad and not g_miss and len(g_und) == G_UND10,
+      "%d cells (%s); disagreeing: %s; undecided %d (declared %d); sentences missing: %s" % (
+          len(gres), ", ".join("%s->%s %d" % (a_, b_, n_) for (a_, b_), n_ in sorted(g_cnt.items())),
+          g_bad[:6] or "none", len(g_und), G_UND10, g_miss or "none"))
+
+unit10("READINGS10", "the manager's readings of review r90's dispositions, each run: SUPPORTED / NOT SUPPORTED")
+r4r = [r_ for r_ in gres if "4r" in r_[4]]
+RD10 = [
+    ("(1) rule 4 applies repeatedly (A2): every GRID cell skipping two or more labels legal, its answers the built "
+     "regex's (%d cells)" % len(r4r), bool(r4r) and all(r_[8] == "legal" and r_[10] == (0, 0, 0) for r_ in r4r)),
+    ("(2) a label under an underscore label is not exported (A3): `X.n.h` and, a level up, `Y.c.h` refused",
+     ok_a3c and ok_a3),
+    ("(3) `n.Q.d` inside a compile error: an implicit label is a start, never a middle (A4)", ok_o4),
+    ("(4) reading (e) restricted (A5): the caller's label a start under the body's wall (`a.h` legal), never a "
+     "licence below it (`B([a = [_x = A]]) & (a.h: <5)` refused)",
+     run("B([a = A]) & (a.h: <5)", [A_H, B_ST])[0] is not None and
+     refused("B([a = [_x = A]]) & (a.h: <5)", [A_H, B_XX], RULE2_10)),
+    ("(5) sent-label-wall: the sent label above the body's blank a compile error by rule 2 (A5 i)", ok_o1),
+    ("(6) rule 4's candidates count only the targets a legal path reaches (A6), per operator `SEQ`, `&`, `|`: each "
+     "answer that of the program with the private competitor renamed", pa10_arms[
+         "skip-past-wall: each operator = its renamed control"]),
+    ("(7) his equivalence holds from outside and fails inside under reading (g) (A7)",
+     pa10_arms["equivalence-inside: legal / refused inside, both refused outside"]),
+]
+P_8in = [(run("B(A) & (A.h: <5)", [A_H, bb])[0], run("B([A = A]) & (A.h: <5)", [A_H, bb])[0]) for bb in (B_PH, B_LS)]
+P_8out = [(refused("[pub = B(A)] & (pub.A.h: <5)", [A_H, bb], "not visible"),
+           run("[pub = B([A = A])] & (pub.A.h: <5)", [A_H, bb])[0]) for bb in (B_PH, B_LS)]
+RD10.append(("(8) the shorthand's expansion: the same READ inside the binding, parting from outside, for a labelling "
+             "and a listing body (A8; the inside half compares the shorthand with the text SHORT9 rewrites it to, "
+             "checks C4 names)", all(a_ is not None and b_ is not None and answers(a_, pop("37x", 3)) ==
+                                     answers(b_, pop("37x", 3)) for a_, b_ in P_8in) and
+             all(a_ and b_ is not None for a_, b_ in P_8out)))
+for a_, v_ in RD10:
+    print("   %s: %s" % ("SUPPORTED" if v_ else "NOT SUPPORTED", a_))
+check("READINGS10", all(v_ for _, v_ in RD10), "%d readings run: %s" % (
+    len(RD10), [a_[:60] for a_, v_ in RD10 if not v_] or "all SUPPORTED"))
+
+unit10("TABLE10", "C5: every ownership-table cell's GROUNDS (line n, rule n, condition n, a piece, \"a reading\") "
+       "against the declared list; a cell resting on a reading carries its mark")
+GTOK10 = re.compile(r"\blines? \d+(?:, \d+)*|\brules? \d+(?: and \d+)?|\bcondition \d+|\ba reading\b|"
+                    r"core/[\w/-]+|transform-export|another door")
+
+
+def cell_grounds(cell):
+    return sorted(set(GTOK10.findall(cell)))
+
+
+_trows = [l_ for l_ in piece8(OWN_T).split("\n") if l_.startswith("|")][2:]
+GOT10 = {}
+for i_, l_ in enumerate(_trows):
+    cs = [c.strip() for c in l_.strip("|").split("|")]
+    for j_, c_ in enumerate(cs):
+        GOT10[(i_, j_)] = cell_grounds(c_)
+GROUNDS10 = {(0, 0): [], (0, 1): ['line 1'], (0, 2): ['lines 1, 2'], (0, 3): ['line 1'], (0, 4): ['a reading', 'line 4'], (0, 5): ['line 1', 'rule 2', 'rule 3'], (1, 0): [], (1, 1): ['core/labels/paths/argument-default', 'line 3'], (1, 2): ['rule 5'], (1, 3): ['transform-export'], (1, 4): ['line 3', 'rule 2'], (1, 5): ['rule 2'], (2, 0): [], (2, 1): ['core/labels/paths/call-prefix'], (2, 2): ['a reading', 'rule 4', 'rule 5'], (2, 3): ['transform-export'], (2, 4): ['rule 2'], (2, 5): ['rule 2'], (3, 0): ['condition 4'], (3, 1): ['core/labels/export/arguments'], (3, 2): [], (3, 3): [], (3, 4): ['another door', 'core/labels/paths/closed-argument', 'line 4'], (3, 5): ['a reading', 'rule 3'], (4, 0): ['core/operators/bindings/label-forward'], (4, 1): ['core/operators/bindings/label-in-argument'], (4, 2): [], (4, 3): [], (4, 4): ['another door', 'line 4'], (4, 5): ['line 1']}                                               # DECLARED: each cell's grounds, the table as fixed
+tb10_bad = [(k_, GROUNDS10.get(k_), v_) for k_, v_ in sorted(GOT10.items()) if GROUNDS10.get(k_) != v_]
+if not GROUNDS10:
+    print("   GROUNDS10 (to declare): %r" % GOT10)
+check("TABLE10", GROUNDS10 and not tb10_bad and len(GOT10) == len(GROUNDS10),
+      "%d cells read, each cell's ground set against the declared one; changed ground: %s" % (
+          len(GOT10), tb10_bad[:4] or "none"))
+
+unit10("STACKCHAIN10", "C6: stacked-chain's ruled lede and bullet clauses pinned (the piece can no longer be reversed "
+       "with every check green)")
+sc10_pins = [(SC10_T, "`n.m.d` is the full path, `n.d` skips `m` (rule 4), `m.d` starts at `m` (rule 3)"),
+             (SC10_T, "rule 1 makes `n.m.d` a path, rule 3 lets `m` start one, rule 4 lets `n.d` skip `m`"),
+             (SC10_T, "The nested form `[n = ([m = P])]`, two spots, reads the same"),
+             (SC10_T, "From outside (rule 5) the binding's name starts the same tree")]
+sc10_miss = [(t_, s_) for t_, s_ in sc10_pins if ws(s_) not in ws(piece8(t_))]
+check("STACKCHAIN10", not sc10_miss and " ruled " in piece8(SC10_T).split("\n")[0],
+      "%d sentences pinned; MISSING: %s" % (len(sc10_pins), sc10_miss or "none"))
+
+unit10("SWEEP", "C8: every printed three-mode line (`rejected:` and history skipped): predfold1124's engine (PATH10 off) "
+       "over the starting commit's documents against this one over these, keyed by the FULL sweep key (program, "
+       "bindings, the three texts); every non-same status and every moved or gone answer DECLARED", 900)
+OLD10 = {f_: _git8("docs/design/predicates/" + f_, START10) for f_ in DOCF}
+MOVED10 = {}                                                 # DECLARED: repr(full key) -> why (filled from the run)
+X10[0] = False
+OLD_T10 = sw_table84(OLD10)
+X10[0] = True
+NEW_T10 = sw_table84(NOWS)
+if s10("q11"):                                               # an answer moved in the run AND the document alike
+    _k = next(k_ for k_, vs in sorted(NEW_T10.items(), key=lambda kv: repr(kv[0])) if vs[0][2] == "same" and
+              repr(k_) not in MOVED10 and k_ in OLD_T10)
+    NEW_T10[_k] = [(a_, b_, c_, d_ + " (planted)") for a_, b_, c_, d_ in NEW_T10[_k]]
+inh10 = {}                                                   # the control's own non-same rows: inherited, full key
+for k_, vs in OLD_T10.items():
+    for f_, ln_, st_, got_ in vs:
+        if st_ != "same":
+            inh10[(k_, f_, st_)] = True
+sw_bad, sw_moved, sw_new, sw_gone, used10, cnt10 = [], [], [], [], set(), {}
+for k_, vs in NEW_T10.items():
+    ov = OLD_T10.get(k_, [])
+    for i_, (f_, ln_, st_, got_) in enumerate(vs):
+        cnt10[st_] = cnt10.get(st_, 0) + 1
+        if st_ != "same" and (k_, f_, st_) not in inh10 and repr(k_) not in MOVED10:
+            sw_bad.append(("UNDECLARED", f_, ln_, st_, k_[0], got_[:160]))
+        o_ = ov[i_] if i_ < len(ov) else None
+        if o_ and (o_[3] != got_ or o_[2] != st_):
+            if repr(k_) in MOVED10:
+                used10.add(repr(k_))
+            else:
+                sw_moved.append((f_, ln_, k_, o_[2], st_, o_[3][:160], got_[:160]))
+        elif repr(k_) in MOVED10 and not ov:
+            used10.add(repr(k_))
+    if not ov:
+        sw_new.append((vs[0][0], vs[0][1], k_[0]))
+for k_, vs in OLD_T10.items():
+    if k_ not in NEW_T10:
+        if repr(k_) in MOVED10:
+            used10.add(repr(k_))
+        else:
+            sw_gone.append((vs[0][0], vs[0][1], k_, vs[0][2]))
+stale10 = sorted(k_ for k_ in MOVED10 if k_ not in used10)
+for x_ in sw_gone:
+    print("   GONE %s:%d %r (was %s)" % x_)
+for x_ in sw_new:
+    print("   ADDED %s:%d `%s`" % x_)
+for x_ in sw_moved:
+    print("   MOVED %s:%d %r (old %s, now %s)\n      old: %s\n      now: %s" % x_)
+for x_ in sw_bad:
+    print("   BAD %s" % (x_,))
+for x_ in stale10:
+    print("   STALE DECLARATION %s" % x_)
+for k_, why_ in sorted(MOVED10.items()):
+    print("   DECLARED MOVE OR GONE %s: %s" % (k_[:160], why_))
+check("SWEEP", OLD_T10 and not sw_bad and not sw_moved and not sw_gone and not stale10,
+      "%d printed lines now (%s), %d at the starting commit under predfold1124's engine; undeclared %d; moved or gone "
+      "and not declared %d; declared %d; added %d; stale declarations %d" % (
+          len(NEW_T10), ", ".join("%s %d" % kv for kv in sorted(cnt10.items())), len(OLD_T10), len(sw_bad),
+          len(sw_moved) + len(sw_gone), len(MOVED10), len(sw_new), len(stale10)))
+
+unit10("ERRSWEEP", "C9: every printed compile-error line of the base files refused, no crash; a line the parser cannot "
+       "read is COUNTED (declared or a failure); each legality change of the starting commit's lines DECLARED")
+exec(compile(_src9[_src9.index("def err_lines(docs"):_src9.index("es_now = err_lines(D8)")], P1124, "exec"),
+     globals())                                              # noqa: S102  predfold1124's reader, verbatim
+if s10("q12"):
+    D8["core.md"] = D8["core.md"].replace("A wall one binding level up: modes: a compile error (`",
+                                          "A wall one binding level up: modes: a compile error ( `", 1)
+FN10 = ("worded \"a compile error for now (\" or \"at `lim`\", which predfold1124's reader does not parse; no path "
+        "cell (r90 moves none)")
+SKIP10 = {("core.md", "A joint left part"): FN10, ("core.md", "A value left part"): FN10,   # DECLARED: why unread
+          ("core.md", "Inside a group question"): FN10, ("core.md", "A set that reads a label, bound alone"): FN10}
+ES_CHG10 = {}                                                # DECLARED: (file, program, bindings) -> why
+es_now = err_lines(D8)
+es_seen = set((f_, ln_) for f_, ln_, _, _ in es_now)
+es_skip = []
+for f_ in DOCF:
+    if f_.endswith("_details.md"):
+        continue
+    for ln_, L_ in enumerate(D8[f_].split("\n"), 1):
+        if re.search(r"modes: a compile error", L_) and (f_, ln_) not in es_seen:
+            lab_ = L_.split(": modes:", 1)[0].strip()[:80]
+            es_skip.append((f_, lab_))
+es_und_skip = [x_ for x_ in es_skip if x_ not in SKIP10]
+es_bad, es_chg = [], []
+for f_, ln_, e_, b_ in es_now:
+    Pg, err = run(e_, b_)
+    if Pg is not None or err.startswith("CRASH"):
+        es_bad.append((f_, ln_, e_, "legal" if Pg is not None else err[:100]))
+for f_, ln_, e_, b_ in err_lines(OLD10):
+    X10[0] = False
+    Po = run(e_, b_)[0]
+    X10[0] = True
+    Pn = run(e_, b_)[0]
+    if (Po is None) != (Pn is None):
+        es_chg.append((f_, e_, tuple(b_), "refused" if Po is None else "legal", "refused" if Pn is None else "legal"))
+for f_, e_, b_ in [x_[:3] for x_ in es_chg]:
+    pass
+ES_DECL10 = dict(ES_CHG10)
+if s10("q18") and ES_DECL10:
+    ES_DECL10.pop(sorted(ES_DECL10)[0])
+es_und_chg = [x_ for x_ in es_chg if x_[:3] not in ES_DECL10]
+es_stale = [k_ for k_ in ES_DECL10 if k_ not in set(x_[:3] for x_ in es_chg)]
+for x_ in es_chg:
+    print("   LEGALITY CHANGED (a line of the starting commit) %s `%s` %s: %s -> %s; %s" % (
+        x_[0], x_[1], list(x_[2]), x_[3], x_[4], ES_DECL10.get(x_[:3], "UNDECLARED")))
+for x_ in es_skip:
+    print("   SKIPPED (the parser cannot read it) %s `%s`: %s" % (x_[0], x_[1], SKIP10.get(x_, "UNDECLARED")))
+for x_ in es_bad:
+    print("   BAD (printed a compile error, runs legal or crashes) %s" % (x_,))
+check("ERRSWEEP", es_now and not es_bad and not es_und_skip and not es_und_chg and not es_stale,
+      "%d compile-error lines read, each refused with no crash: bad %d; skipped %d (undeclared skipped %d); of the "
+      "starting commit's lines %d changed legality (undeclared change %d, stale %d)" % (
+          len(es_now), len(es_bad), len(es_skip), len(es_und_skip), len(es_chg), len(es_und_chg), len(es_stale)))
+D8.clear()
+D8.update(D10)
+
+exec(compile(_src9[_src9.index('unit9("NULLABLE", '):_src9.index('unit9("SUCCESSOR", ')], P1124, "exec"),
+     globals())                                              # noqa: S102  predfold1124's NULLABLE, verbatim
+
+unit10("SUCCESSOR10", "every earlier in-force model re-run (predfold1124 itself, then predfix88 and the fourteen it "
+       "re-ran, library.md served from their PINNED commits by predfix88's runner); each red declared by a key with "
+       "no document line numbers (C1): DOC/MARKS reds by their MISSING-line set (C2), a red whose check printed an "
+       "engine CRASH row by its crash rows, class CRASH, never \"documents moved\" (C3); a raw traceback never", 3600)
+PINS10 = dict(PINS8)
+PINS10["predfix88"] = "50a39f8e4"
+ORDER10 = ["predfold1124", "predfix88"] + list(PINS8)
+DECLF10 = os.path.join(HERE10, "predfix90_succ_decl.tsv")
+SDECL10 = {}
+if os.path.exists(DECLF10):
+    for l_ in builtins.open(DECLF10, encoding="utf-8").read().split("\n"):
+        if l_ and not l_.startswith("#"):
+            m_, r_, cls_, why_, key_ = l_.split("\t", 4)
+            SDECL10.setdefault(m_, {})[r_] = (cls_, key_, why_)
+CRASH10 = re.compile(r"\bCRASH [A-Z]\w*(Error|Exception)\b|'CRASH', ")
+
+
+def norm10(t):
+    """C1: a key with no document line numbers."""
+    t = re.sub(r"\('(\w+\.md)', \d+", r"('\1', N", t)
+    t = re.sub(r"(\w+\.md):\d+", r"\1:N", t)
+    return t
+
+
+def red_key10(name, out_lines, fline):
+    """(class, key) of one red: its section is the lines between its `== NAME:` header and its verdict."""
+    sec, on = [], False
+    for x_ in out_lines:
+        if x_.startswith("== %s:" % name) or re.match(r"== %s\b" % re.escape(name), x_):
+            on, sec = True, []
+            continue
+        if on and (x_.startswith("FAIL %s:" % name) or x_.startswith("PASS %s:" % name)):
+            break
+        if on:
+            sec.append(x_)
+    crash = sorted(set(norm10(x_.strip()) for x_ in sec if CRASH10.search(x_)))
+    if crash:
+        return "CRASH", " || ".join(crash)
+    miss = sorted(set(norm10(x_.strip()) for x_ in sec if x_.strip().startswith("MISSING")))
+    if miss:
+        return "MISSING", " || ".join(miss)
+    return "LINE", norm10(fline)
+
+
+succ_bad, succ_n, succ_t, succ_seen = [], 0, {}, []
+if s10("q13") and SDECL10:
+    _m = next(m_ for m_ in sorted(SDECL10) if any(v_[0] == "MISSING" for v_ in SDECL10[m_].values()))
+    _r = next(r_ for r_ in sorted(SDECL10[_m]) if SDECL10[_m][r_][0] == "MISSING")
+    SDECL10[_m][_r] = (SDECL10[_m][_r][0], SDECL10[_m][_r][1] + " || MISSING [x] planted", SDECL10[_m][_r][2])
+if not LIGHT10:
+    for mname in ORDER10:
+        env = {k: v for k, v in os.environ.items() if not k.endswith(("_SABOTAGE", "_ENGINE", "_PROBE", "_LIGHT",
+                                                                       "_DUMPSUCC"))}
+        for v_ in list(LIGHTENV8.values()) + ["PREDFIX88_LIGHT", "PREDFOLD1124_LIGHT"]:
+            env[v_] = "1"                                    # their own SUCCESSOR re-runs the same list: run once, here
+        t0 = time.time()
+        cmd = [sys.executable, "-I", "-B", P1124] if mname == "predfold1124" else \
+            [sys.executable, "-I", "-B", P88, "--succ", os.path.join(LANES10, mname + "_evidence", mname + "_model.py"),
+             PINS10[mname]]
+        try:
+            out = subprocess.run(cmd, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True, env=env,
+                                 timeout=900).stdout
+        except subprocess.TimeoutExpired:
+            out = "TIMEOUT: model %s did not finish in 900 s" % mname
+        succ_t[mname] = time.time() - t0
+        if os.environ.get("PREDFIX90_DUMPSUCC"):
+            builtins.open(os.path.join(os.environ["PREDFIX90_DUMPSUCC"], mname + ".out"), "w").write(out)
+        succ_n += 1
+        lines_ = out.rstrip("\n").split("\n")
+        last = lines_[-1]
+        mm = re.match(r"%s_model: (\d+) checks, (\d+) failed(?: \(([^)]*)\))?$" % mname, last)
+        reds = {}
+        if mm and not any(x_.startswith("Traceback") for x_ in lines_):
+            for r in [x_.strip() for x_ in (mm.group(3) or "").split(",") if x_.strip()]:
+                fl_ = next((l_ for l_ in lines_ if l_.startswith("FAIL %s:" % r) or
+                            re.match(r"%s\s+FAIL\b" % re.escape(r), l_)), "")
+                reds[r] = red_key10(r, lines_, fl_)
+        else:
+            reds["TRACEBACK"] = ("TRACEBACK", last)
+        decl = SDECL10.get(mname, {})
+        print("   %-13s (%s, %.1f s) last line: %s" % (mname, "its own documents" if mname == "predfold1124" else
+                                                       "library at " + PINS10[mname], succ_t[mname], last[:150]))
+        for r, (cls_, key_) in sorted(reds.items()):
+            succ_seen.append((mname, r, cls_, key_))
+            d = decl.get(r)
+            if r == "TRACEBACK":
+                succ_bad.append((mname, "TRACEBACK"))
+                print("      TRACEBACK (never declarable): %s" % key_[:300])
+            elif d is None:
+                succ_bad.append((mname, r, "UNDECLARED"))
+                print("      %s UNDECLARED (%s): %s" % (r, cls_, key_[:600]))
+            elif d[0] != cls_ or d[1] != key_:
+                succ_bad.append((mname, r, "MISSING SET CHANGED" if cls_ == "MISSING" else "KEY CHANGED"))
+                print("      %s %s:\n         declared (%s): %s\n         now (%s):      %s" % (
+                    r, "MISSING SET CHANGED" if cls_ == "MISSING" else "KEY CHANGED", d[0], d[1][:600], cls_,
+                    key_[:600]))
+            else:
+                print("      %s declared (%s): %s\n         its key: %s" % (r, cls_, d[2], key_[:300]))
+        gone = sorted(set(decl) - set(reds))
+        if gone:
+            succ_bad.append((mname, "GREEN NOW", gone))
+            print("      declared but green now: %s" % gone)
+    if os.environ.get("PREDFIX90_WRITEDECL"):                # the declarations' source run (the lane's scratch)
+        with builtins.open(os.environ["PREDFIX90_WRITEDECL"], "w", encoding="utf-8") as fh:
+            for m_, r_, c_, k_ in succ_seen:
+                fh.write("%s\t%s\t%s\t%s\t%s\n" % (m_, r_, c_, SDECL10.get(m_, {}).get(r_, ("", "", "?"))[2], k_))
+check("SUCCESSOR10", LIGHT10 or (succ_n == len(ORDER10) == 16 and not succ_bad),
+      "%d earlier models re-run (%.0f s in all), each red against its declared key (%d declared): %s"
+      % (succ_n, sum(succ_t.values()), sum(len(v) for v in SDECL10.values()), succ_bad or "every red declared, its "
+         "key unchanged; no traceback"))
+
+unit10("QUOTES", "the owner's sentences the fixed pieces quote, each PINNED to its piece and to the record at the "
+       "pinned start commit; the rulings' titles cited whole")
+REC10 = _git8("docs/design/plan_row_bodies/COND-FAMILY.md", START10)
+RW10 = ws(REC10)
+QQ10 = [
+    ("path-rules: yes", PATHS_T),
+    ("1. in the label DAG there is a target label and a starting label. The starting label has at least one path to "
+     "the target label", PATHS_T),
+    ("2. the path may not contain any underscore labels full or prefix unless the underscore prefix label is the "
+     "start", PATHS_T),
+    ("3. within a binding, any label on the path may be used as a start label", PATHS_T),
+    ("4. if a legal path exists a.b.c and c can be unambiguously referenced from a, then b can be skipped a.c", PATHS_T),
+    ("[_t = A ] is equivalent to [_ = [t = A ]]", PATHS_T),
+    ("[_t = A ] is equivalent to [_ = [t = A ]]", EQI_T),
+    ("Setting a label closes a path (through the shorthand in that binding) but doesn't block out the target.", RULE_T),
+    ("Setting a label closes a path (through the shorthand in that binding) but doesn't block out the target.", CA_T),
+    ("shorthand-is-callers: yes thats it exactly", AD_T),
+    ("exact-count-unspecified: agree error", UN_T),
+    ("capture-in-set: error.", "lib/structural/capture/in-set"),
+    ("options-reach-constants: yes", "lib/builtin/options"),
+    ("option-hole-explicit: explicit", "core/patterns/flags"),
+    ("you can't go through A to get inside", EXP_T),
+]
+q10_miss = [(q_[:60], w_, ws(q_) in RW10) for q_, w_ in QQ10 if ws(q_) not in RW10 or ws(q_) not in ws(piece8(w_))]
+TT10 = ["2026-11-23 OWNER RULING — path-rules: yes (his four rules for paths within a binding, the manager's two "
+        "readings of them, and rules 5 and 6 across bindings)",
+        '2026-11-23 OWNER RULING — shorthand-is-callers: "yes thats it exactly. Setting a label closes a path (through '
+        'the shorthand in that binding) but doesn\'t block out the target."',
+        "2026-11-23 OWNER RULING — options-reach-constants: yes (a file's weak `i` reaches a string constant)",
+        "2026-11-25 MANAGER — review r90 (predfold1124): the dispositions; no owner words"]
+DET10 = D8["core_details.md"] + D8["library_details.md"] + D8["parked_details.md"]
+t10_miss = [t_[:60] for t_ in TT10 if ws(t_) not in heads8(REC10) or ws(t_) not in ws(DET10)]
+check("QUOTES", not q10_miss and not t10_miss,
+      "%d quoted sentences, each in the record at %s AND in its own piece, missing: %s; %d record titles cited, not a "
+      "title or not cited: %s" % (len(QQ10), START10, q10_miss or "none", len(TT10), t10_miss or "none"))
+
+unit10("DOC", "every line this model formats occurs verbatim in the piece its tag names")
+DLN10 = list(LINES)
+if s10("q15") and DLN10:
+    DLN10[0] = (DLN10[0][0], DLN10[0][1].replace("WHOLE `", "WHOLE `x", 1))
+D8.clear()
+D8.update(NOWS)
+d10_miss = [(t_, L_) for t_, L_ in DLN10 if ws(L_) not in ws(piece8(t_))]
+for t_, L_ in d10_miss:
+    print("   MISSING [%s] %s" % (t_, L_))
+check("DOC", DLN10 and not d10_miss, "%d lines, each in its own piece; missing: %d" % (len(DLN10), len(d10_miss)))
+
+failed10 = [n_ for n_, ok_ in RESULTS if not ok_]
+print("predfix90_model: %d checks, %d failed%s" % (len(RESULTS), len(failed10),
+                                                  (" (%s)" % ", ".join(failed10)) if failed10 else ""))
+sys.exit(1 if failed10 else 0)

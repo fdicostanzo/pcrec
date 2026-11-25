@@ -196,12 +196,12 @@ defined: native (compile-time effects: how a file's literals are read; the compi
 - A literal the caller writes as an argument takes the caller's file's options: it is written in the program file
   (a reading following the same ruled sentence and core/holes/flags, told to him, not his words; the line "An
   argument literal").
-- Program options reach a string constant written after the statement in that file, as they reach its rx
+- A file's weak `i` reaches a string constant written after the statement in that file, as it reaches its rx
   literals: his words "options-reach-constants: yes"; `x` never applies to a string (the line "A string constant").
-  Readings (the manager's): the weak value on a string does not propagate through a hole or across an import (the
-  line "A string from a library file"); a string used as a name not matched against the subject (`capture("name")`,
-  a warning selector's names, a parameter name) is unaffected; a key or separator that is matched (`row(m:, "msg")`,
-  `sep = ","`) follows the file's `i`.
+  Readings (the manager's): `m`, `s`, `n` have nothing to act on in a string; the weak value on a string does not
+  propagate through a hole or across an import (the line "A string from a library file"); a string used as a name
+  not matched against the subject (`capture("name")`, a warning selector's names, a parameter name) is unaffected;
+  a key or separator that is matched (`row(m:, "msg")`, `sep = ","`) follows the file's `i`.
 - `@options.strict(/no-fail/)` makes the warning named `no-fail` an error; "every warning" is the selector that
   matches every name.
 - The `@options` family's other members, capability opt-ins declared in the source, are an idea
@@ -858,8 +858,9 @@ defined: ?
   core/filters/negation/effects.
 - A one-literal program (a program that is exactly one literal) returns PCRE's own captures; any request makes the
   requested name follow the label rules, so a request after a loop gives the label (a reading; the line "After a loop").
-- Inside a set operator, with a value left of `:` or inside a group question: a compile error for now (the
-  conservative reading; open, lib/structural/capture/in-set).
+- Inside a set built with `|` or `&` (right of `:`): a compile error (his ruling, capture-in-set); with a value
+  left of `:` or inside a group question: a compile error for now (the manager's conservative readings);
+  lib/structural/capture/in-set.
 Requires the label: WHOLE `x` FAILS, `3x` HOLDS (h = `3`) / SEARCHED `x 3x` `3x`@2 / FIND-ALL `x 3x x` [`3x`@2] (`/(?<h>\d)?x/ & (h: capture("h"))`)
 If present: WHOLE `x` HOLDS (h unset), `3x` HOLDS (h = `3`) / SEARCHED `x 3x` `x`@0 / FIND-ALL `x 3x x` [`x`@0, `3x`@2, `x`@5] (`/(?<h>\d)?x/ & (h ?: capture("h"))`)
 The stretch: WHOLE `12` HOLDS, `x` FAILS / SEARCHED `x12` `12`@1 / FIND-ALL `1 22` [`1`@0, `22`@2] (`/\d+/ & capture("n")`)
@@ -880,7 +881,7 @@ defined: ?
   conservative readings; core/principles/conservative-first).
 - His discussion on the same answer (the conditions' shared operators, an effect written as a set) is a parked
   idea: parked/ideas/effect-form.
-Inside a union: modes: a compile error (`/(?<h>\d)?x/ & (h: "3" | capture("h"))`: his ruling; `(h: <5 & capture("h"))` alike).
+Inside a union: modes: a compile error (`/(?<h>\d)?x/ & (h: "3" | capture("h"))`: his ruling).
 Inside an intersection: modes: a compile error (`/(?<h>\d)?x/ & (h: <5 & capture("h"))`: his ruling).
 The plain request: WHOLE `3x` HOLDS, `5x` HOLDS, `x` FAILS / SEARCHED `5x 3x` `5x`@0 / FIND-ALL `3x 5x x` [`3x`@0, `5x`@3] (`/(?<h>\d)?x/ & (h: capture("h"))`)
 
