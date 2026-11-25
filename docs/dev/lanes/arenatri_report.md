@@ -13,4 +13,4 @@ A stale pin, not a regression: the branch moved minimize.c's local tables to `pc
 Removed src/opt/minimize.c from the pinned manifest with a dated reason comment (commit "arenatri: re-pin resource census manifest"). No check loosened; no allowlist row added (git log --since=14.days on that file: minw and pffix2 re-pins, different causes). Class sweep: other readers of the minimize.c raw-site claim are only the script's header prose (historical).
 
 ## STATE AT HANDOFF
-Rulings file empty, no entries applied. test-resource re-run alone under boxlock (label arenatri): see handback message. OWED: queue key `arenatri-test` (full make test).
+Rulings file empty, no entries applied. test-resource re-run alone under boxlock (label arenatri): see handback message. OWED: queue key `200-arenatri-test` (full make test via perfrun, log worktrees/arenatri/build/arenatri_test.log). The solo `make test-resource` re-run was waiting on the box lock (yielding to queue) and was NOT completed; the full run covers it.
