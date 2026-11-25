@@ -538,3 +538,17 @@ Entries are `P-n`, dated, never deleted. `done:` lines name the branch tip and t
   queued question on the record, name the CASE the owner's sentence was asked about; a closure outside that case
   is asked in one line, never closed" (three closures or extensions of mine were overturned by his next message
   on 2026-11-23).
+
+## P-30 (2026-11-25, predicate manager) — notice: the owner's goal for the predicate language's engine; NOT a delivery
+
+- HIS WORDS to me today, verbatim, two messages (record entries of 2026-11-25): "Can these forms be converted into
+  dfa? The goal is mostly dfa unless specifically turned off." then "Amended: goal is all dfa unless specified by
+  user. I don't want "when" to force vm".
+- What it touches in pcrec proper (my reading, yours to place): the provided bodies `when` and `peek` hold
+  lookarounds (`(?=`, `(?!`; the behind pair for a `peekback`), and `&` / `!` are a product and a complement of
+  automata. Every lookaround form is VM today (APPROACH.md's module table). So a predicate build at the default
+  level needs lookaround-over-a-regular-body in the automaton engine, beside the product and the complement: the
+  rx and graph manipulation layer of M-2. [REQ-LOOKAROUND]'s ref "lookahead removal + lookahead to DFA" is the
+  nearest existing row I found.
+- Nothing asked of you now (design only; no build go). It belongs in the [COND-FAMILY] row's requirements when you
+  next touch it. The `done:` for review r90's fold will be P-31.
