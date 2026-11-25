@@ -1,0 +1,96 @@
+sourcers (direct+transitive): 192
+capture sites of a sourcer's stderr: 94
+docs/design/findall_iter/twin/parity_job.sh:28 -> docs/design/findall_iter/twin/parity.sh | out=$(PARITY_CPU=$CPU bash "$TW/parity.sh" smoke "$d" 2>&1); rc=$?
+docs/design/memfn/probes/lxrun/memfn_r4c.sh:121 -> tests/mech/run_sabotage_matrix.sh | $T 1800 bash tests/mech/run_sabotage_matrix.sh "$id" > "$L/mech_$id.log" 2>&1; r=$?
+docs/design/memfn/probes/lxrun/memfn_r4c.sh:129 -> tests/axes/run_axes.sh | AXES="-fno-memfn-simd -fmemfn-simd" $T 3600 bash tests/axes/run_axes.sh > "$L/axes.log" 2>&1; a=$?
+docs/design/memfn/probes/r16/slot23_run.sh:33 -> tests/mech/run_sabotage_matrix.sh | PROCS=4 gnutimeout 7200 bash tests/mech/run_sabotage_matrix.sh $(cat $S/mech_rows.txt) > $S/mech.log 2>&1; mrc=$?; grep -q "== mech run COMPLETE" $S/m
+docs/design/memfn/r17b_prime/b3a/sabotage/run_skb3a.sh:24 -> tests/codegen/run_cand_oracle.sh | candoracle)  (cd "$2" && TMPDIR="$OUT/tmp" gnutimeout 1800 bash tests/codegen/run_cand_oracle.sh "$2") > "$3" 2>&1 ;;
+docs/design/memfn/r17b_prime/b3a/sabotage/run_skb3a.sh:25 -> tests/memfn/run_finder.sh | memfnfinder) (cd "$2" && TMPDIR="$OUT/tmp" gnutimeout 1800 bash tests/memfn/run_finder.sh) > "$3" 2>&1 ;;
+docs/design/memfn/r17b_prime/b3a/sabotage/run_skb3a.sh:26 -> tests/memfn/run_deleg_sites.sh | memfndeleg)  (cd "$2" && TMPDIR="$OUT/tmp" gnutimeout 1800 bash tests/memfn/run_deleg_sites.sh) > "$3" 2>&1 ;;
+docs/design/poss_arms_measurements/built/run_composition_build.sh:46 -> tests/harness/run.sh | bash "$ROOT/tests/harness/run.sh" "${FILES[@]}" > "$OUT/$1.out" 2> "$OUT/$1.err"
+docs/design/poss_arms_measurements/rev21/run_composition.sh:44 -> tests/harness/run.sh | bash "$ROOT/tests/harness/run.sh" "${FILES[@]}" > "$OUT/$1.out" 2> "$OUT/$1.err"
+docs/dev/lanes/admitimpl_chain.sh:22 -> tests/mech/run_sabotage_matrix.sh | timeout 21600 bash tests/mech/run_sabotage_matrix.sh S269 > build/S269.log 2>&1
+docs/dev/lanes/admitimpl_chain.sh:26 -> tests/mech/run_sabotage_matrix.sh | timeout 21600 bash tests/mech/run_sabotage_matrix.sh S270 > build/S270.log 2>&1
+docs/dev/lanes/b3b/chain.sh:65 -> tests/mech/run_sabotage_matrix.sh | gnutimeout 7200 bash tests/mech/run_sabotage_matrix.sh $id > $lg 2>&1; rc=$?
+docs/dev/lanes/b3b/chain.sh:99 -> tests/axes/run_axes.sh | MEMFN_REACH_ONLY=1 AXES=--memfn gnutimeout 9000 bash tests/axes/run_axes.sh > $L/axes_reach.log 2>&1; rc=$?
+docs/dev/lanes/b3b/chain.sh:102 -> tests/axes/run_axes.sh | AXES="--memfn=no-fd-pres-pick --memfn=no-fd-pres-g1 --memfn=no-pres-set-lead" gnutimeout 9000 bash tests/axes/run_axes.sh > $L/axes_pres.log 2>&1; rc=
+docs/dev/lanes/b3b/chain.sh:106 -> tests/codegen/run_form_census.sh | PROCS=$(bash tests/lib/procs_default.sh) gnutimeout 9000 bash tests/codegen/run_form_census.sh > $L/form_census.log 2>&1; rc=$?
+docs/dev/lanes/b3b/reach_chain.sh:56 -> tests/axes/run_axes.sh | ( cd $W && AXES="--memfn=no-fd-pres-pick --memfn=no-fd-pres-g1 --memfn=no-pres-set-lead" gnutimeout $(budget 4500) bash tests/axes/run_axes.sh ) > $L/
+docs/dev/lanes/grid2/plants.sh:39 -> tests/utfcheck/run_utfcheck.sh | bash "$HERE/check.sh" > "$OUT/plants2.base.out" 2>&1 || { say "plants: the unplanted check is not green; run check.sh first"; exit 2; }
+docs/dev/lanes/grid2/plants.sh:60 -> tests/utfcheck/run_utfcheck.sh | bash "$HERE/check.sh" > "$OUT/plants2.$name.out" 2>&1; rc=$?
+docs/dev/lanes/grid2/plants.sh:92 -> tests/utfcheck/run_utfcheck.sh | env "$@" bash "$HERE/check.sh" > "$OUT/plants2.$name.out" 2>&1; rc=$?
+docs/dev/lanes/grid2/plants.sh:114 -> tests/utfcheck/run_utfcheck.sh | bash "$HERE/check.sh" > "$OUT/plants2.restore.out" 2>&1 && say "restore: check.sh green again" || { say "restore: check.sh NOT green after the plants"
+docs/dev/lanes/grid2/slot.sh:98 -> tests/utfcheck/run_utfcheck.sh | bash "$HERE/check.sh" > "$OUT/check.out" 2>&1; rc=$?
+docs/dev/lanes/mechpar_chain/chain.sh:18 -> tests/mech/run_sabotage_matrix.sh | bash tests/mech/run_sabotage_matrix.sh $ROWS > "$L/out_p$P.txt" 2>&1
+docs/dev/lanes/plantfix_evidence/run_wreply_side.sh:3 -> tests/memfn/run_wreply.sh | s0=$(date +%s); timeout 3600 bash $T/tests/memfn/run_wreply.sh --plants > $S/out_$TAG/run_wreply.shim.out 2> $S/out_$TAG/run_wreply.shim.err; echo "rc
+docs/dev/lanes/r30b2_jobs/01-build.sh:25 -> tests/mech/run_sabotage_matrix.sh | out=$(VALIDATE_ONLY=1 bash tests/mech/run_sabotage_matrix.sh $IDS_A $IDS_B 2>&1) || { printf '%s\n' "$out" | tail -3; return 1; }
+docs/dev/lanes/r32_jobs/mech-s526.sh:8 -> tests/mech/run_sabotage_matrix.sh | out=$(cd "$TREE" && VALIDATE_ONLY=1 bash tests/mech/run_sabotage_matrix.sh $IDS 2>&1) ||
+docs/dev/lanes/r32_jobs/mech-s526.sh:33 -> tests/mech/run_sabotage_matrix.sh | bash tests/mech/run_sabotage_matrix.sh $IDS > "$log" 2>&1; rc=$?
+docs/dev/lanes/trailgc3/plant.sh:13 -> tests/vm/run_trail_compact.sh | (cd $d && TMPDIR=/var/tmp/pcrec-pcrec TRAIL_CORPUS=${TRAIL_CORPUS:-0} gnutimeout 900 bash tests/vm/run_trail_compact.sh > $d/tc.log 2>&1)
+memfn/tests/run_g2.sh:1048 -> memfn/tests/run_g2_win.sh | if TMPDIR="$work" LIB="$plainlib" "$TO" 3000 bash "$here/run_g2_win.sh" > "$work/win.log" 2>&1; then
+memfn/tests/run_g2.sh:1086 -> memfn/tests/run_g2_pres.sh | if TMPDIR="$work" LIB="$plainlib" "$TO" 1800 bash "$here/run_g2_pres.sh" > "$work/pres.log" 2>&1; then
+scripts/monitor_preflight:44 -> scripts/boxqueue | chk runner-state 'out=$(bash "$R/scripts/boxqueue" status 2>&1) || { echo "boxqueue status failed: ${out%%$'"'"'\n'"'"'*}"; exit 1; }; printf "%s\n" "
+scripts/monitor_preflight:60 -> scripts/queuewatch | out=$(bash "$R/scripts/queuewatch" --queue "$S/q" --state "$S/state" --every 1 --max-sec 1 --disk-pct 101 --no-ci 2>&1); rc=$?
+scripts/monitor_rehearsal:79 -> scripts/boxqueue | bash "$here/boxqueue" add --name \$n "$D/job_\$n" >> "$D/feeder.log" 2>&1 || echo "ADD FAILED \$n" >> "$D/feeder.log"
+scripts/monitor_rehearsal:108 -> scripts/boxqueue | PCREC_BOXQUEUE_DIR=$D/q PCREC_BOXLOCK_FILE=$D/box bash "$here/boxqueue" status 2>&1 | head -20
+scripts/queuewatch:408 -> scripts/cloudrun | bash "$here/cloudrun" --rerun-infra "$rid" 9>&- >/dev/null 2>&1
+scripts/test_queuemon.sh:135 -> scripts/boxqueue | PCREC_BOXQUEUE_DIR=$T/bqq QUEUEMON_DIR=$T/inert bash "$here/boxqueue" start >/dev/null 2>&1
+scripts/tests/cloudrun.test:108 -> scripts/queuewatch | qw() { timeout 60 bash "$here/queuewatch" --queue "$Q" --state "$T/qstate" --every 1 --max-sec 1 --disk-pct 101 --ci-every 0 2>&1; }
+scripts/tests/queuewatch.test:53 -> scripts/boxqueue | bash "$here/boxqueue" add --name "100-test-sim$tag" "$w" > "$T/add.$tag" 2>&1 || { echo "ADD FAILED" > "$T/ev.$tag"; return 1; }
+scripts/tests/queuewatch.test:99 -> scripts/boxqueue | bash "$here/boxqueue" add --no-start --name 100-test-simdead "$w" > "$T/add.dead" 2>&1
+scripts/tests/queuewatch.test:109 -> scripts/boxqueue | bash "$here/boxqueue" cancel simdead > /dev/null 2>&1
+scripts/tests/queuewatch.test:157 -> scripts/boxqueue | bash "$here/boxqueue" add --name "100-test-sim$tag" "$w" > "$T/add.$tag" 2>&1 || { echo "ADD FAILED"; return 1; }
+scripts/tests/queuewatch_cloud.test:40 -> scripts/queuewatch | watch() { PATH="$T/bin:$PATH" "$TO" 60 bash "$here/queuewatch" --queue "$T/q" --state "$T/state" --every 1 --max-sec 1 --disk-pct 101 --ci-every 0 2>&
+scripts/tests/queuewatch_cloud.test:54 -> scripts/cloudrun | st=$(PATH="$T/bin:$PATH" bash "$here/cloudrun" --status 2>&1)
+scripts/tests/queuewatch_infra.test:35 -> scripts/queuewatch | watch() { PATH="$T/bin:$PATH" "$TO" 60 bash "$here/queuewatch" --queue "$T/q" --state "$T/state" --every 1 --max-sec 1 --disk-pct 101 --ci-every 0 2>&
+scripts/tests/watchrun.test:34 -> scripts/chainrun | "$TO" 30 bash "$here/chainrun" --tree "$D" --logdir "$LD" "$D/stages" > "$D/arm.out" 2>&1 || bad "arm failed: $(cat "$D/arm.out")"
+tests/axes/run_axes.sh:1393 -> tests/harness/run.sh | bash "$ROOT_DIR/tests/harness/run.sh" "$@" > "$WORKDIR/base.out" 2>"$WORKDIR/base.err"
+tests/axes/run_axes.sh:1470 -> tests/harness/run.sh | bash "$ROOT_DIR/tests/harness/run.sh" "$@" > "$outlog" 2>"$errlog"
+tests/axes/run_axes.sh:2389 -> tests/harness/run.sh | bash "$ROOT_DIR/tests/harness/run.sh" "$@" > "$WORKDIR/axis_utfcheck.out" 2>"$WORKDIR/axis_utfcheck.err"
+tests/axes/run_ksweep.sh:95 -> tests/harness/run.sh | bash "$ROOT_DIR/tests/harness/run.sh" "$@" > "$WORKDIR/base.out" 2>"$WORKDIR/base.err"
+tests/axes/run_ksweep.sh:109 -> tests/harness/run.sh | bash "$ROOT_DIR/tests/harness/run.sh" "$@" > "$WORKDIR/k.out" 2>"$WORKDIR/k.err"
+tests/bench/compare/gate.sh:122 -> tests/bench/compare/compare.sh | bash "$SCRIPT_DIR/compare.sh" >"$WORK/out.txt" 2>"$WORK/err.txt" || {
+tests/bench/compare/rebaseline.sh:70 -> tests/bench/compare/compare.sh | out="$(CASES="$CASE" REPORT_FORCE=0 bash "$SCRIPT_DIR/compare.sh" 2>&1)"
+tests/callouts/run_callouts_tests.sh:341 -> tests/harness/run.sh | out="$(PCREC="$PCREC" "$TIMEOUT_BIN" 300 bash "$ROOT_DIR/tests/harness/run.sh" "$WORK/mf/" 2>&1)"
+tests/ci/cloud_mech_shard.sh:51 -> tests/mech/run_sabotage_matrix.sh | bash "$root/tests/mech/run_sabotage_matrix.sh" $ids 2>&1 | tee "$log"
+tests/code/run_code_tests.sh:157 -> tests/harness/run.sh | if PCREC="$PCREC" bash "$ROOT_DIR/tests/harness/run.sh" "$M2/" > "$WORK/m2.log" 2>&1; then
+tests/code/run_code_tests.sh:992 -> tests/code/d27/run.sh | bash "$SCRIPT_DIR/d27/run.sh" >"$2" 2>&1
+tests/codegen/run_cand_oracle.sh:281 -> tests/memfn/run_pres_picks.sh | PRES_PICKS_BIN="$BIN" bash "$TREE/tests/memfn/run_pres_picks.sh" "$TREE" > "$WORK/picks.log" 2>&1
+tests/doc_lint/run_doc_lint.sh:70 -> scripts/tests/pred_doc_lint.py.test | out="$(bash "$ROOT_DIR/scripts/tests/pred_doc_lint.py.test" 2>&1)"; rc=$?
+tests/findings/run_findings_tests.sh:481 -> tests/axes/run_axes.sh | bash tests/axes/run_axes.sh "${SLICE[@]}" ) > "$WORKDIR/slice.log" 2>&1
+tests/knowledge/run_knowledge_tests.sh:237 -> tests/knowledge/run_measures_tests.sh | PCREC="$PCREC" bash "$SCRIPT_DIR/run_measures_tests.sh" > "$mlog" 2>&1
+tests/known_fail/run_known_fail.sh:53 -> tests/harness/run.sh | if bash "$ROOT_DIR/tests/harness/run.sh" "$f" >/dev/null 2>&1; then
+tests/mech/nocompile_selftest.sh:44 -> tests/mech/run_sabotage_matrix.sh | MECH_ANOMALY_CEILING=0 MECH_SAB_DIR="$T/defs" bash "$HERE/run_sabotage_matrix.sh" Sy1 Sy2 Sy3 > "$T/out" 2>"$T/err"
+tests/mech/nocompile_selftest.sh:52 -> tests/mech/run_sabotage_matrix.sh | MECH_ANOMALY_CEILING=0 MECH_SAB_DIR="$T/defs" bash "$HERE/run_sabotage_matrix.sh" Sy4 > "$T/out4" 2>"$T/err4"
+tests/mech/nocompile_selftest.sh:55 -> tests/mech/run_sabotage_matrix.sh | MECH_SAB_DIR="$T/defs5" bash "$HERE/run_sabotage_matrix.sh" Sy5 > "$T/out5" 2>"$T/err5"
+tests/mech/reach_only_selftest.sh:33 -> tests/mech/run_sabotage_matrix.sh | run() { MECH_SAB_DIR="$T/defs" REACH_ONLY=1 bash "$HERE/run_sabotage_matrix.sh" "$@" > "$T/out" 2>"$T/err"; echo $?; }
+tests/mech/run_sabotage_matrix.sh:2056 -> tests/codegen/run_landmark_walk.sh | bash "$tree/tests/codegen/run_landmark_walk.sh" > "$work/landwalk.log" 2>&1
+tests/mech/run_sabotage_matrix.sh:2713 -> tests/vm/run_vm_tests.sh | bash "$tree/tests/vm/run_vm_tests.sh" > "$work/vm.log" 2>&1
+tests/mech/run_sabotage_matrix.sh:3091 -> tests/compound/run_compound_unit.sh | bash "$tree/tests/compound/run_compound_unit.sh" > "$work/compound.log" 2>&1
+tests/mech/run_sabotage_matrix.sh:3109 -> tests/kitproof/run_cover.sh | bash "$tree/tests/kitproof/run_cover.sh" "$tree" > "$work/kitproof.log" 2>&1
+tests/mech/run_sabotage_matrix.sh:3399 -> tests/codegen/run_dfa_stamps.sh | bash "$tree/tests/codegen/run_dfa_stamps.sh" > "$work/dfastamps.log" 2>&1
+tests/mech/run_sabotage_matrix.sh:3408 -> tests/codegen/run_rev_end.sh | bash "$tree/tests/codegen/run_rev_end.sh" > "$work/revend.log" 2>&1
+tests/mech/run_sabotage_matrix.sh:3417 -> tests/endmark/run_b3_checks.sh | bash "$tree/tests/endmark/run_b3_checks.sh" > "$work/endmark.log" 2>&1
+tests/mech/run_sabotage_matrix.sh:3426 -> tests/revend/run_window_twin.sh | bash "$tree/tests/revend/run_window_twin.sh" > "$work/revtwin.log" 2>&1
+tests/mech/run_sabotage_matrix.sh:3441 -> tests/codegen/run_case_spelling_identity.sh | bash "$tree/tests/codegen/run_case_spelling_identity.sh" > "$work/casespell.log" 2>&1
+tests/mech/run_sabotage_matrix.sh:3450 -> tests/codegen/run_start_landing.sh | bash "$tree/tests/codegen/run_start_landing.sh" > "$work/startlanding.log" 2>&1
+tests/mech/run_sabotage_matrix.sh:3472 -> tests/subst/run_subst_tests.sh | bash "$tree/tests/subst/run_subst_tests.sh" > "$work/subst.log" 2>&1
+tests/mech/run_sabotage_matrix.sh:3481 -> tests/codegen/run_residual_twins.sh | bash "$tree/tests/codegen/run_residual_twins.sh" > "$work/twins.log" 2>&1
+tests/mech/run_sabotage_matrix.sh:3533 -> memfn/tests/run_g2_pres.sh | bash "$tree/memfn/tests/run_g2_pres.sh" > "$work/g2pres.log" 2>&1
+tests/mech/run_sabotage_matrix.sh:3542 -> memfn/tests/run_g2_win.sh | bash "$tree/memfn/tests/run_g2_win.sh" > "$work/g2win.log" 2>&1
+tests/mech/run_sabotage_matrix.sh:3552 -> memfn/tests/run_g2_pres.sh | bash "$tree/memfn/tests/run_g2_pres.sh" > "$work/g2presasan.log" 2>&1
+tests/mech/run_sabotage_matrix.sh:3562 -> memfn/tests/run_g2_win.sh | bash "$tree/memfn/tests/run_g2_win.sh" --v > "$work/g2v.log" 2>&1
+tests/mech/run_sabotage_matrix.sh:3785 -> tests/vm/run_trail_compact.sh | bash "$tree/tests/vm/run_trail_compact.sh" > "$work/trailcompact.log" 2>&1
+tests/mech/run_sabotage_matrix.sh:3792 -> tests/codegen/run_skip_pins.sh | PCREC="$pcrec" bash "$tree/tests/codegen/run_skip_pins.sh" > "$work/skippins.log" 2>&1
+tests/memfn/run_finder.sh:236 -> tests/memfn/run_arm_reach.sh | TMPDIR="$WORK" bash "$ROOT/tests/memfn/run_arm_reach.sh" > "$WORK/reach.log" 2>&1
+tests/memfn/run_finder.sh:242 -> tests/memfn/run_pr11.sh | TMPDIR="$WORK" bash "$ROOT/tests/memfn/run_pr11.sh" "$ROOT" > "$WORK/pr11.log" 2>&1
+tests/memfn/run_finder.sh:257 -> tests/memfn/run_proof.sh | LIB="$LIB" TMPDIR="$WORK" bash "$ROOT/tests/memfn/run_proof.sh" > "$WORK/proof.log" 2>&1
+tests/registry/run_registry_tests.sh:416 -> tests/registry/run_pc4.sh | bash "$SCRIPT_DIR/run_pc4.sh" 2>&1 | tee "$PC4OUT"
+tests/registry/run_registry_tests.sh:434 -> tests/registry/axes_registry_check.sh | PCREC="$PCREC" bash "$SCRIPT_DIR/axes_registry_check.sh" 2>&1 | tee "$AXESOUT"
+tests/registry/run_registry_tests.sh:773 -> tests/registry/limits_check.sh | PCREC="$PCREC" bash "$SCRIPT_DIR/limits_check.sh" 2>&1 | tee "$LIMITSOUT"
+tests/registry/run_registry_tests.sh:875 -> tests/registry/run_definitions_tests.sh | bash "$SCRIPT_DIR/run_definitions_tests.sh" 2>&1 | tee "$DEFOUT"
+tests/registry/run_registry_tests.sh:887 -> tests/registry/run_definitions_oracle.sh | bash "$SCRIPT_DIR/run_definitions_oracle.sh" 2>&1 | tee "$ORACLEOUT"
+tests/size/run_size_log.sh:57 -> tests/harness/run.sh | bash "$ROOT_DIR/tests/harness/run.sh" "$@" 2>&1 | tee "$OUT"
+tests/startset/run_dfahat_checks.sh:50 -> tests/harness/run.sh | RXTFLAGS="$fl" bash "$ROOT_DIR/tests/harness/run.sh" $FIX > "$W/$tag.log" 2>&1
+tests/startset/run_vmhat_checks.sh:30 -> tests/harness/run.sh | bash "$ROOT_DIR/tests/harness/run.sh" "$SCRIPT_DIR/vmhat.rxt" "$SCRIPT_DIR/giveup.rxt" "$SCRIPT_DIR/vmhat_walk.rxt" > "$W/fix.log" 2>&1
+tests/ucp/run_charstep_tests.sh:39 -> tests/harness/run.sh | PCREC="$PCREC" bash "$ROOT_DIR/tests/harness/run.sh" "${ISL[@]}" > "$WORKDIR/harness.log" 2>&1

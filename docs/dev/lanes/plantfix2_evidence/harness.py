@@ -54,9 +54,9 @@ MUTANTS = {
     "P1d": (S, "        if rel not in PLANT_PINS:\n            pins.append", "        if False:\n            pins.append", "an unpinned runner not red"),
     "P2": (S, "        if f.endswith(\".md\") or f in (me, APPLIER):", "        if f.endswith(\".md\") or f in (me, APPLIER) or f.startswith(\"memfn/\"):", "discovery drops memfn/"),
     "P3": (S, "            p_unreadable.append((rel, \"DEFINES plant_spec BUT HAS NO --plant-check MODE\"))\n", "", "a no-mode runner skipped silently"),
-    "P4": (S, "            if err.strip() or rc not in (0, 1) or len(summ) != 1", "            if rc not in (0, 1) or len(summ) != 1", "check's stderr ignored"),
-    "P4b": (S, "                if err.strip() or rc != 0 or any(len(r) != 6 for r in rows):", "                if rc != 0 or any(len(r) != 6 for r in rows):", "dump's stderr ignored"),
-    "P5": (S, "            if err.strip() or rc not in (0, 1) or len(summ) != 1", "            if err.strip() or len(summ) != 1", "check's returncode ignored"),
+    # P4/P4b ("check's/dump's stderr ignored") RETIRED by lane tt6fix: ignoring stderr in the
+    # verdict is now the code's rule (stdout is the protocol, stderr is shown); E1-E9 below.
+    "P5": (S, "            if rc not in (0, 1) or len(summ) != 1", "            if len(summ) != 1", "check's returncode ignored"),
     "P6": (S, " or len(summ) != 1 \\\n", " or not summ \\\n", "summary-count rule dropped"),
     "P7": (S, "                    or any(len(r) != 5 for r in rows):", "                    or False:", "row-width rule dropped"),
     "P8": (S, "            if len(ids) != P or len(bad) != Bn or (rc == 0) != (Bn == 0):", "            if False:", "the INCONSISTENT rule dropped"),
@@ -108,6 +108,16 @@ MUTANTS = {
     "T12": (S, "    if n != 1 or len(lit) != 1:", "    if n != 1:", "the LITERAL rule dropped (PLANT_TWINS=\"$PLANTS\" accepted)"),
     "T13": (S, "    if declared != set(ids):", "    if False:", "the dump's twins not held to the literal (the mode passes $PLANTS)"),
     "T14": (S, "        explicit_twins(rel, dump, p_bad)\n", "", "the explicit-declaration check never called"),
+    # --- clauses lane tt6fix added (stdout is the protocol; stderr SHOWN, never parsed) ---
+    "E1": (S, "                shown.setdefault(l, []).append(rel + (\"\" if mode == \"check\" else \" (dump)\"))\n", "                pass\n", "stderr never recorded (not shown)"),
+    "E2": (S, "            if rc not in (0, 1) or len(summ) != 1 \\\n", "            if errl or rc not in (0, 1) or len(summ) != 1 \\\n", "check's stderr parsed again (the TT-6 bug)"),
+    "E3": (S, "                if rc != 0 or any(len(r) != 6 for r in rows):", "                if errl or rc != 0 or any(len(r) != 6 for r in rows):", "dump's stderr parsed again (the TT-6 bug)"),
+    "E4": (S, "            if rc not in (0, 1) or len(summ) != 1 \\\n", "            if any(not l.startswith(\"[\") for l in errl) or rc not in (0, 1) or len(summ) != 1 \\\n", "a notice-grammar allowlist: any other stderr red (the rejected design)"),
+    "E5": (S, "    env = dict(os.environ)    #", "    env = dict(os.environ, CC_RESOLVE_ANNOUNCED=\"1\", TT6_TIMEOUT_BIN_ANNOUNCED=\"1\")    #", "the gates pre-set again: notices silenced (the instance fix)"),
+    "E6": (S, "            ctx = (\"; its stderr ends: \" + errl[-1][:70]) if errl else \"\"", "            ctx = \"\"", "a red runner's stderr not quoted"),
+    "E7": (S, "    if shown:      #", "    if False:      #", "the shown block never printed"),
+    "E8": (S, "                shown.setdefault(l, []).append(rel + (\"\" if mode == \"check\" else \" (dump)\"))\n", "                shown.setdefault(l, []).append(rel)\n", "shown lines not attributed to their mode"),
+    "E9": (S, "            for k, v in c.env.items():", "            for k, v in []:", "SELFTEST: the notice cases' environment never applied (forced cases vacuous)"),
     "T15": (S, "    for m in ARM_BLOCK.finditer(", "    for m in list(ARM_BLOCK.finditer(", "HARNESS SELF-CHECK: a syntax error (must be killed)"),
 }
 

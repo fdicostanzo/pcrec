@@ -1,0 +1,15 @@
+CONTROL  GREEN     44 s   
+P5       KILLED    67 s   selftest rc 1, 1 failed: case --plant-check's answer right, its exit 3  [check's returncode ignored]
+P6       KILLED    67 s   selftest rc 1, 2 failed: case --plant-check prints its summary twice; case a grandchild escapes the group, holding the p  [summary-count rule dropped]
+P7       KILLED    67 s   selftest rc 1, 1 failed: case --plant-check prints garbage  [row-width rule dropped]
+E1       KILLED    67 s   selftest rc 1, 6 failed: case --plant-check writes stderr (shown, green); case --plant-check dump writes stderr (shown, gree; case [TT-6] notice forced: green, the notice shown  [stderr never recorded (not shown)]
+E2       KILLED    56 s   live rc 1: all anchors resolve | runner plants checked: 2 (4 edits, 1 runners) | runner plant twins checked: 0 (declared twins of a tests/mech/sabotages row) | r || selftest rc 1, 48 failed: case clean copy; case stale FROM (win, its plant_spec); case stale FROM (pres edit 2 of 2, the source move  [check's stderr parsed again (the TT-6 bug)]
+E3       KILLED    56 s   live rc 1: all anchors resolve | runner plants checked: 2 (4 edits, 1 runners) | runner plant twins checked: 0 (declared twins of a tests/mech/sabotages row) | r || selftest rc 1, 43 failed: case clean copy; case stale FROM (win, its plant_spec); case stale FROM (pres edit 2 of 2, the source move  [dump's stderr parsed again (the TT-6 bug)]
+E4       KILLED    68 s   selftest rc 1, 1 failed: case --plant-check writes stderr (shown, green)  [a notice-grammar allowlist: any other stderr red (the rejected design)]
+E5       KILLED    68 s   selftest rc 1, 5 failed: case [TT-6] notice forced: green, the notice shown; case [MACPORT] notice forced: green, the notice sh; case both notices forced, a runner dies (exit 3):   [the gates pre-set again: notices silenced (the instance fix)]
+E6       KILLED    65 s   selftest rc 1, 2 failed: case --plant-check dies saying why on stderr (red,; case both notices forced, a runner dies (exit 3):   [a red runner's stderr not quoted]
+E7       KILLED    67 s   selftest rc 1, 7 failed: case --plant-check writes stderr (shown, green); case --plant-check dump writes stderr (shown, gree; case [TT-6] notice forced: green, the notice shown  [the shown block never printed]
+E8       KILLED    63 s   selftest rc 1, 1 failed: case --plant-check dump writes stderr (shown, gree  [shown lines not attributed to their mode]
+E9       KILLED    66 s   selftest rc 1, 4 failed: case [TT-6] notice forced: green, the notice shown; case both notices forced, a runner dies (exit 3): ; case [TT-6] notice forced, a stale FROM (win): red  [SELFTEST: the notice cases' environment never applied (forced cases vacuous)]
+mutants: 12, killed 12, survived 0 [], harness errors 0 []
+mut: DONE rc=0

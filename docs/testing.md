@@ -3533,6 +3533,15 @@ is printed once per top-level script to stderr, only when it differs from
 plain `timeout`, so a log names which binary ran without spamming a log
 sourced by every one of a suite's per-case subshells.
 
+**A consumer reads a sourcing script's STDOUT, never its stderr, as the
+protocol** (lane tt6fix, 2026-11-24). This notice, `cc_resolve.sh`'s
+`[MACPORT]` and `resolve_pcre2.sh`'s `[ORACLE-LINK]` are advisory stderr
+lines that appear on some boxes and not others; a checker that scored any
+stderr as a fault (`scripts/m6read_check_sab_anchors.py`'s plant pass) was
+red on every box whose bare `timeout` is not GNU. Show stderr to the reader;
+decide on stdout and the exit code; do not pre-set an `*_ANNOUNCED` gate to
+silence one notice (the next helper's notice breaks it again).
+
 `tests/lib/gen_timeout.sh` sources it (its `gen_cc` wall wrapper was the
 single highest-traffic call site) and every other file in the tree that
 invoked a bare `timeout` was swapped to `"$TIMEOUT_BIN"`: `tests/harness/
