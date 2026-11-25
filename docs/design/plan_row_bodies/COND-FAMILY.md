@@ -10904,3 +10904,30 @@ stated"; a `$` read inside "reads the label as it stands". With the array writte
 `occurs.none(@d, "7")`, `count(@d, "7")`, `count(@d)`), a condition reads the label everywhere and those fences
 have nothing to stand on; group-truth's third form is a complement on the SET (`occurs.none(@d, !"7")`), a
 setting never being absent. Put to him as a ruling, slug array-argument.
+
+### 2026-11-25 OWNER, on array-argument: "Let's discuss the against argument about conditions"
+tags: lib/counting/some lib/counting/count lib/counting/occurs core/conditions/form core/operators/bindings/label-kinds core/labels/labels-vs-captures/array-vs-passes core/conditions/form/record-in-some
+
+Asked **array-argument** (four lines: the group questions take the array form and a set; a condition reads the
+label everywhere; one array per call; group-truth closes inside it, the negation on the set; the "against" told
+to him: every printed group question is respelled, and a condition can no longer be handed to a group question
+as a ready-made argument). HIS WORDS, whole:
+
+"Let's discuss the against argument about conditions"
+
+Class: DISCUSSION (a request to discuss one force). NOT a ruling; array-argument is NOT answered.
+COUNTED before answering (`grep -o -E '(some|count|occurs\.[a-z_]+)\([^`]{0,60}'` over core.md and library.md,
+strings normalised): every group question a printed program RUNS is one entry written in place (`(d: "7")`,
+`(h.hit: >= 5)`, `(chars.ch: /(?s:.)/)`, `(ok: anything)`, `(h: $m)`), one of them negated (`some(NOT (d: "7"))`);
+the two-entry record is the open record-in-some; the joint, the value entry, `?:` and the capture request inside
+are each printed as compile errors; `some(c)` with a NAME for the condition appears only as notation in rule
+sentences, never in a program. No printed program hands a condition through a parameter to a group question.
+The manager's thoughts (told to him; the manager's reading; nothing applied): (1) what a condition offers as an
+argument beyond one entry is exactly the list the documents fence off inside a group question; (2) the finished
+question (`some(@d, "7")`) is itself a test and stays passable where a condition is; (3) the real loss: a USER
+macro that receives a condition and decides how to quantify it; with the array form it would need the label, and
+label-kinds (ruled 2026-11-23) keeps a label read but not placed "off limits for users" ("the reference kind can
+be used by natives"): `some`, `count`, `occurs` are natives, so they may take `@d`; a user's wrapper takes the
+set, or the finished question; (4) a middle form, the condition's shape with the array marked in it
+(`some((@d: "7"))`), keeps a condition as the argument and ends the two readings, at the price of rules for
+`(@d: S)` standing alone, for mixed entries, and of record-in-some staying open.
