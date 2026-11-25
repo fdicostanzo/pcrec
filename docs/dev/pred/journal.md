@@ -1190,3 +1190,16 @@ wake.md says (read the draft WHOLE first; A4 is a ruled-words finding: read his 
   re-run, 50 reds declared verbatim; full run 66 s. Lane stopped.
 - NOT a delivery: the fold is unreviewed. r90 (reserved by main) is the FIRST act of the next session.
 - wake.md REWRITTEN from scratch; owner.md current; P-29 (pausing) posted; main told. Nothing in flight; no cron.
+
+## 2026-11-25 — ninth session: wake; r90 launched
+
+- Registered (session_role pred). Main merged into `lane/pred-rev28` (clean; tip 07a46f018); lint 8,811 / 0;
+  plan-lint green. M-3 read ([PRED-MUT-CHECK]: the 282 hand-copied mutants of scripts/tests/pred_doc/mut.py; the
+  class fix is mine, nothing asked now).
+- LAUNCHED coordinator `crit-predfold1124` (opus, background): review r90, design mode, subject the branch frozen at
+  its tip, scope `git diff 0dda97065..tip -- docs/design/predicates/`, record range from after "review r88
+  (predfold1123b): the dispositions" to the end; lenses asked: ruling (which case each sentence was asked on),
+  examples / mode closure + expansion drill, fix-induced + general form, name grid over the path rules, check
+  adequacy; denylist given; no known result told. Main told (no reply needed).
+- Read whole: core.md, library.md, parked.md; the record's eighth-session entries.
+- NEXT: re-ask not-test; on r90's hand-back: rule, one opus fix lane (files the review), merge, lints, P-30.

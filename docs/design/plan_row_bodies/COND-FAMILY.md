@@ -10538,3 +10538,27 @@ of that literal as a typed `(?i)` is. The manager's readings (marked; for the fo
 every way the value reaches the option hole (a constant, a binding, a macro's parameter): what counts is that
 the literal's text has the option group; (b) the other letters an option hole may carry stay not inherited at a
 hole (hole-flags: only `i` and `-i`).
+
+### 2026-11-25 OWNER, on not-test: "is not in these examples a logical statement? Because I believe it would be the only logical statement"
+tags: lib/control/when-test/not core/filters/negation core/conditions/two-valued lib/control/when lib/control/peek core/principles/matching-language
+
+Re-asked **not-test** (`when(NOT x, z)`, x a bare pattern: the negative peek, the answers of
+`when(NOT peek(/\d/), /\w/)`, RUN (python `re`): WHOLE `x` HOLDS, `1` FAILS / SEARCHED `1x` ``@0 / FIND-ALL
+`x1 y 12` [`x`@0, ``@1, `y`@3, ``@5, ``@6]; or a compile error naming `NOT peek(x)`, the manager's leaning; the
+forces: a second negation of a pattern beside `!P`; the consuming-test warning; an error relaxes later without
+changing an answer). HIS WORDS, whole (his "Note test" read as the slug not-test, "not" as `NOT`: phone
+autocorrect):
+
+"Note test: is not in these examples a logical statement? Because I believe it would be the only logical
+statement"
+
+Class: a QUESTION with an OBSERVATION ("I believe it would be the only logical statement"). NOT a ruling;
+not-test is not answered by these words.
+The manager's answer (told to him; marked the manager's reading; nothing applied): in the two clear forms `NOT`
+is not a logical statement by the documents' own definition: its operand is already a zero-width test (a
+condition, a `peek`), and core/filters/negation has "`NOT c` on a condition holds exactly when c fails, a
+negative lookahead at its point" and "`NOT peek(A)` is `(?!A)`": a piece of the pattern that rejects and sends
+the match to its next path. On a BARE pattern it would be one: the operand consumes, so `NOT x` has to read the
+pattern as a proposition ("x matches here") before negating it, and nothing else in the language reads a pattern
+that way (`&` is a filter on a stretch, `|` an alternation, `!` a set complement). That is a ground for the
+compile error, beside the ones put to him.
