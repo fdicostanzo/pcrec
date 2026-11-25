@@ -4953,3 +4953,9 @@ bsu3fix2 delivered (6cf672b6a on lane/bsu3fix; lanecheck DONE; TaskStop).
   - binders drill: a re-keyed broken AFTER goes red, and a row leaving the selection goes red.
   - OC1-OC3: three arms are red on the Mac at the base and move to Linux: test-memfn-finder (BSD awk -v newline), test-memfn-stamps (0 SIMD-on movers), test-memfn-g2 (x86 text).
   - r99 memfn-winsplit3 launched: one sonnet critic + a verifier, §8 only.
+- r99 memfn-winsplit3 RULED (ed9d7efc3): READY after text fixes. The 25 Mac arms were re-run green at the base, and the separate verifier holds all 4 findings it checked.
+  - CLOSURE-1: the Linux arms base run becomes the build lane's step 0 (a main queue job).
+  - S3012: §8 takes PR #1's final populations.
+  - OC1: the BSD-awk fix becomes its own pre-split commit C0a, not part of U1.
+  - OC2/OC3: Linux arms.
+  - NEXT: rev 2.2 (a sonnet text lane) once s3012fix delivers, then the go summary for Frank via main.
