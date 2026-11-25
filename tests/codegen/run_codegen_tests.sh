@@ -3684,17 +3684,44 @@ fi
 # anchors resolve"). Never run against the real tests/mech/sabotages/ --
 # corrupting a live row to prove a check is exactly the failure mode this
 # suite's own convention (docs/dev/learnings.md §3) warns against.
+#
+# TWO HALVES since lane plantfix (2026-11-24), one rc: the mech rows' anchors
+# above, and the RUNNER PLANT pass (the four shell runners' own plants, read
+# through the one applier in tests/lib; the script's own comment). Each half has its own
+# population line, each parsed and floored here (review r94 CA-8), and the
+# verdict texts name the half that failed. The plant pass's STANDING CONTROL is
+# the script's `--selftest` (r94 CA-5): planted faults in copies of the tracked
+# tree, each red with its own status word, the clean copy green, plus the
+# applier's decoder rows; it runs CONCURRENTLY with the live run (~15 s of
+# mostly-parallel work, the live run's mech half ~14 s).
+sab_st_log="$WORKDIR/sabanchor_selftest.log"
+python3 -I "$ROOT_DIR/scripts/m6read_check_sab_anchors.py" --selftest >"$sab_st_log" 2>&1 &
+sab_st_pid=$!
 sab_anchor_out="$(python3 "$ROOT_DIR/scripts/m6read_check_sab_anchors.py" 2>&1)"
 sab_anchor_rc=$?
+wait "$sab_st_pid"
+sab_st_rc=$?
 sab_anchor_pop="$(printf '%s\n' "$sab_anchor_out" | sed -n 's/^sabotages checked: \([0-9]*\).*/\1/p')"
+sab_plant_pop="$(printf '%s\n' "$sab_anchor_out" | sed -n 's/^runner plants checked: \([0-9]*\).*/\1/p')"
+sab_mech_red="$(printf '%s\n' "$sab_anchor_out" | grep -cE '^(UNREADABLE ROWS|STALE ANCHORS):')"
+sab_plant_red="$(printf '%s\n' "$sab_anchor_out" | grep -cE '^(UNREADABLE RUNNERS|RUNNER PLANT PINS|BAD RUNNER PLANTS):')"
 if [ -z "$sab_anchor_pop" ] || [ "$sab_anchor_pop" -lt 150 ]; then
     bad "[SABANCHOR] scripts/m6read_check_sab_anchors.py's own row count parsed as '${sab_anchor_pop:-<none>}', below its floor of 150 (measured 2026-08-26: 180) -- a population that collapses means the SWEEP broke, not that the tree lost its sabotage rows:
 $sab_anchor_out"
-elif [ "$sab_anchor_rc" -ne 0 ]; then
-    bad "[SABANCHOR] scripts/m6read_check_sab_anchors.py reports a stale or unreadable anchor among its $sab_anchor_pop sabotage row(s) -- re-derive the anchor from the live source per tests/mech/sabotages/CLAUDE.md's Conventions (never from \`git show HEAD:<path>\` alone once the working tree has moved past HEAD), and never weaken the SAB_COUNT check:
+elif [ -z "$sab_plant_pop" ] || [ "$sab_plant_pop" -lt 1 ]; then
+    bad "[SABANCHOR] scripts/m6read_check_sab_anchors.py's RUNNER PLANT pass printed no population ('runner plants checked: ${sab_plant_pop:-<none>}') -- the plant half did not run, so nothing about the runners' plants was read (its per-runner pins are the script's PLANT_PINS):
 $sab_anchor_out"
+elif [ "$sab_anchor_rc" -ne 0 ] && [ "$sab_mech_red" -gt 0 ]; then
+    bad "[SABANCHOR] scripts/m6read_check_sab_anchors.py's MECH half reports a stale or unreadable anchor among its $sab_anchor_pop sabotage row(s) -- re-derive the anchor from the live source per tests/mech/sabotages/CLAUDE.md's Conventions (never from \`git show HEAD:<path>\` alone once the working tree has moved past HEAD), and never weaken the SAB_COUNT check$([ "$sab_plant_red" -gt 0 ] && echo "; its RUNNER PLANT half is red too (below)"):
+$sab_anchor_out"
+elif [ "$sab_anchor_rc" -ne 0 ]; then
+    bad "[SABANCHOR] scripts/m6read_check_sab_anchors.py's RUNNER PLANT half is red among its $sab_plant_pop runner plant(s) (the mech half's $sab_anchor_pop rows resolve) -- re-aim the runner's plant_spec text (the runner is named below; the applier's docstring, tests/lib, has the dialects), move a runner's PLANT_PINS entry only in the change that moves its plants, and keep a mech twin equal to its row:
+$sab_anchor_out"
+elif [ "$sab_st_rc" -ne 0 ]; then
+    bad "[SABANCHOR] scripts/m6read_check_sab_anchors.py --selftest is red: the plant pass's standing control no longer turns a planted fault red for its own reason (or the clean copy is not green), so the live run's green above certifies less than it says:
+$(cat "$sab_st_log")"
 else
-    ok "[SABANCHOR] scripts/m6read_check_sab_anchors.py: all $sab_anchor_pop sabotage rows' anchors resolve -- a stale anchor (S67/S179/S183's own [DD-13c]/[OPT-1] drift) now fails make test-codegen instead of waiting for a full make mech sweep or a battery author's memory"
+    ok "[SABANCHOR] scripts/m6read_check_sab_anchors.py: all $sab_anchor_pop sabotage rows' anchors resolve and all $sab_plant_pop runner plants apply at their pins, every shared id an equal declared twin; its --selftest is green ($(sed -n 's/^plant pass selftest: //p' "$sab_st_log")) -- a stale anchor (S67/S179/S183's own [DD-13c]/[OPT-1] drift) or a stale runner plant (FUW-12) now fails make test-codegen instead of waiting for a full make mech sweep, a --plants run or a battery author's memory"
 fi
 
 # ---- [OPT-LITSCAN] F5 -- the lit-run floor is THREE bytes, not two --------

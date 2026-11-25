@@ -112,3 +112,6 @@ Since D172 S2 commit 1 (lane wsc1) proof_run repeats every call with the subject
 
 ## span_pins.py (R-47 U4, lane bsu4p)
 The T-table pin cells and SPAN-SEED's V-site census, called from C18's main (one counter, one `checks passed` line, so the `simdfloor` mech arm scores it). `run_simd_floor.sh` builds `build/libpcrec_mftrace.a` and links a traced CLI (the finder row of §10.1's k source); the harness binary gives the head-0 loop text. Both are required arguments of simd_floor_check.py.
+
+## Purity harness index entry (moved verbatim from CLAUDE.md, lane plantfix, 2026-11-24, for the 12 KB limit)
+- `arm_fixtures.c --purity` / `--purity-control` (span_pick 1d): THE PURITY HARNESS (11 sites; NONE and framed replies, fresh art vs interleaved defines, whole-reply memcmp; the sticky-err fence; 3.0b's fixtures: NOTES.md "Purity harness"). run_finder.sh floors it EXACTLY, runs it plain and on the MF_TRACE driver `fxt` (E-func/E-generic define counts EXACT), plants `nsites`-keyed A-mass and M-parked rows (RED, control moved), and runs **run_purity_reach.sh** over **purity_rows.tsv**: each window.c table row dropped must move a reply or be declared unreached.

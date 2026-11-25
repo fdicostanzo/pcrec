@@ -24,6 +24,11 @@
 #             the clean tree compiling it.
 #   --plant ID / --plants: the same run with one more planted defect in the
 #   copy (the table below); the run must go red. Writes only its work dir.
+#   THE PASS FORM (lane s3012fix; this runner spells it with a colon): a DETECTED
+#   plant prints `PLANT <id>: RED (<its first FAIL line>)`, then `plants: R of N red`;
+#   the run exits 0 only when R = N. `PLANT <id>: GREEN (not caught)` means NOT
+#   DETECTED and makes the run exit 1: GREEN is the FAILING answer here, never a
+#   pass. A setup failure prints `FAIL: ...` and exits 2.
 #
 # Takes the box lock (scripts/boxlock) unless its caller holds it.
 # Env: TMPDIR (the work dir's parent), JOBS (the copy's make -j, default 16).
@@ -33,13 +38,6 @@ ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
 . "$ROOT/tests/lib/timeout_bin.sh"
 P="$ROOT/build/pcrec"
 JOBS="${JOBS:-16}"
-# THE BOX LOCK (scripts/boxlock): ~160 compiles and a tree build per copy is
-# over the sweep cap, so the run takes the lock unless its caller holds it
-if ! bash "$ROOT/scripts/boxlock" held; then
-    exec bash "$ROOT/scripts/boxlock" run --label wreply -- bash "${BASH_SOURCE[0]}" "$@"
-fi
-WORK="$(mktemp -d "${TMPDIR:-/tmp}/wreply.XXXXXX")"
-trap 'rm -rf "$WORK"' EXIT
 pass=0 fail=0
 ok()  { pass=$((pass + 1)); }
 bad() { echo "FAIL: $*"; fail=$((fail + 1)); }
@@ -88,24 +86,44 @@ plant_spec() {
 }
 PLANTS="S1413 S1414"
 
-# Applies FILE@@FROM@@TO specs ("\n" a newline) to tree copy $1.
+# Applies FILE@@FROM@@TO specs ("\n" a newline) to tree copy $1, in order, through
+# THE ONE APPLIER (tests/lib/plants.py, dialect `wreply`; lane plantfix: FUW-12's class).
 apply() {
     local dir=$1; shift
-    local spec
-    for spec in "$@"; do
-        python3 -I - "$dir" "$spec" <<'EOF' || return 1
-import sys
-d, spec = sys.argv[1], sys.argv[2]
-f, a, b = spec.split("@@")
-a, b = a.replace("\\n", "\n"), b.replace("\\n", "\n")
-p = d + "/" + f
-s = open(p).read()
-if s.count(a) != 1:
-    sys.exit("%s: the text is found %d times" % (f, s.count(a)))
-open(p, "w").write(s.replace(a, b))
-EOF
-    done
+    python3 -I "$ROOT/tests/lib/plants.py" apply wreply "$dir" -- "$@"
 }
+# plant_edits ID: EDITS=(the edits plant ID's copy takes, in order: S1414 alone, every
+# other plant after both PERTS), or 1 if no plant ID. --plants builds exactly this list.
+plant_edits() {
+    local s; s="$(plant_spec "$1")" || return 1
+    if [ "$1" = S1414 ]; then EDITS=("$s"); else EDITS=("${PERTS[@]}" "$s"); fi
+}
+# tracked_files: THE COPY'S FILE SET, NUL-separated: the tree's tracked files, the set
+# build_copy copies and --plant-check admits (one function, both modes: review r94 CA-1)
+tracked_files() { (cd "$ROOT" && git ls-files -z); }
+# PLANT_TWINS: the PLANTS ids that are the same plant as a tests/mech/sabotages row of
+# that id (none here); any other shared id is a collision. The plant pass holds both.
+PLANT_TWINS=""
+# --plant-check [check|dump]: every plant in PLANTS (with its PERTS) run through the
+# applier's loop over an in-memory copy of today's tracked files (check), or decoded
+# (dump), never applied or built, no box lock (scripts/m6read_check_sab_anchors.py's pass)
+if [ "${1:-}" = "--plant-check" ]; then
+    case "${2:-check}" in check|dump) ;; *) echo "--plant-check [check|dump]" >&2; exit 2 ;; esac
+    args=()
+    for id in $PLANTS; do
+        if plant_edits "$id"; then args+=(--plant "$id" "${#EDITS[@]}" "${EDITS[@]}"); else args+=(--plant "$id" 0); fi
+    done
+    exec python3 -I "$ROOT/tests/lib/plants.py" "${2:-check}" wreply "$ROOT" "$ROOT/tests/memfn/run_wreply.sh" \
+        --labels <(declare -f plant_spec) --files base <(tracked_files) --twins "$PLANT_TWINS" -- "${args[@]}"
+fi
+# THE BOX LOCK (scripts/boxlock): ~160 compiles and a tree build per copy is
+# over the sweep cap, so the run takes the lock unless its caller holds it (taken
+# here, below the definitions, so --plant-check above takes none)
+if ! bash "$ROOT/scripts/boxlock" held; then
+    exec bash "$ROOT/scripts/boxlock" run --label wreply -- bash "${BASH_SOURCE[0]}" "$@"
+fi
+WORK="$(mktemp -d "${TMPDIR:-/tmp}/wreply.XXXXXX")"
+trap 'rm -rf "$WORK"' EXIT
 
 # A copy of the tree's tracked files as they stand, with specs applied, built:
 # $1 the copy's name, the rest its specs. Echoes the copy's build dir.
@@ -113,7 +131,7 @@ build_copy() {
     local name=$1; shift
     local dir="$WORK/$name"
     mkdir -p "$dir"
-    (cd "$ROOT" && git ls-files -z | tar --null --ignore-failed-read -T - -cf -) |
+    (cd "$ROOT" && tracked_files | tar --null --ignore-failed-read -T - -cf -) |
         tar -xf - -C "$dir" || return 1
     apply "$dir" "$@" || return 1
     "$TIMEOUT_BIN" 900 make -C "$dir" -j"$JOBS" build/pcrec \
@@ -187,13 +205,13 @@ if [ "${1:-}" = "--plant" ] || [ "${1:-}" = "--plants" ]; then
     [ -n "$ids" ] || { echo "FAIL: --plant needs an id ($PLANTS)"; exit 2; }
     red=0
     for id in $ids; do
-        spec="$(plant_spec "$id")" || { echo "FAIL: no plant $id"; exit 2; }
+        plant_edits "$id" || { echo "FAIL: no plant $id"; exit 2; }
         before=$fail
         if [ "$id" = S1414 ]; then      # caught by the witnesses' stamps alone
-            bd="$(build_copy "plant_$id" "$spec")" || { echo "FAIL: $id: the planted copy does not build"; exit 2; }
+            bd="$(build_copy "plant_$id" "${EDITS[@]}")" || { echo "FAIL: $id: the planted copy does not build"; exit 2; }
             stamps "$bd/pcrec" "plant_$id" >"$WORK/plant_$id.log" 2>&1
         else
-            bd="$(build_copy "plant_$id" "${PERTS[@]}" "$spec")" || { echo "FAIL: $id: the planted copy does not build"; exit 2; }
+            bd="$(build_copy "plant_$id" "${EDITS[@]}")" || { echo "FAIL: $id: the planted copy does not build"; exit 2; }
             reach "$bd" "plant_$id" >"$WORK/plant_$id.log" 2>&1
         fi
         first="$(grep -m1 '^FAIL' "$WORK/plant_$id.log")"

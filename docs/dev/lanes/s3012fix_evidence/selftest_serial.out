@@ -1,0 +1,81 @@
+selftest case clean copy                                                 ok
+selftest case stale FROM (win, its plant_spec)                           ok
+selftest case stale FROM (pres edit 2 of 2, the source moved)            ok
+selftest case stale @c0/ FROM (census0.py moved)                         ok
+selftest case stale wreply PERT                                          ok
+selftest case ambiguous FROM (wreply S1414's text twice)                 ok
+selftest case missing file (proof S1221)                                 ok
+selftest case @c0/ file outside the copy's set (CA-1)                    ok
+selftest case one file by two spellings (CA-1 alias)                     ok
+selftest case an undecodable edit (wreply, a fourth @@ field)            ok
+selftest case PLANTS id with no case (NO SPEC)                           ok
+selftest case ORPHAN, plain label                                        ok
+selftest case ORPHAN, alternation S1|S2)                                 ok
+selftest case ORPHAN, a listed label widened                             ok
+selftest case ORPHAN, label `S9994 )`                                    ok
+selftest case ORPHAN, quoted label                                       ok
+selftest case BAD LABEL (a glob)                                         ok
+selftest case runner deleted                                             ok
+selftest case runner renamed .bash                                       ok
+selftest case runner moved to scripts/                                   ok
+selftest case plant_spec respelled `plant_spec () {` (still read)        ok
+selftest case PLANTS emptied                                             ok
+selftest case pin up: a plant added (proof)                              ok
+selftest case pin down: a plant removed (proof)                          ok
+selftest case fifth runner, no --plant-check mode                        ok
+selftest case fifth runner `function plant_spec {`, no mode              ok
+selftest case fifth runner under scripts/                                ok
+selftest case fifth runner under examples/                               ok
+selftest case defines plant_spec, never names the applier                ok
+selftest case names the applier, defines no plant_spec                   ok
+selftest case a NOT_RUNNERS entry gone vacuous                           ok
+selftest case --plant-check prints garbage                               ok
+selftest case --plant-check prints a well-formed lie                     ok
+selftest case --plant-check dies (exit 3)                                ok
+selftest case --plant-check exits 0 silently                             ok
+selftest case --plant-check writes stderr                                ok
+selftest case --plant-check dump writes stderr                           ok
+selftest case --plant-check's answer right, its exit 3                   ok
+selftest case --plant-check prints its summary twice                     ok
+selftest case --plant-check's summary unparsable                         ok
+selftest case check and dump name different plants                       ok
+selftest case --plant-check dump dies                                    ok
+selftest case --plant-check reads only the first id                      ok
+selftest case --plant-check hangs (exec'd)                               ok
+selftest case --plant-check's grandchild hangs holding the pipes (PAR-3) ok
+selftest case a grandchild escapes the group, holding the pipes          ok
+selftest case two runners hang: one shared deadline (PAR-2)              ok
+selftest case twin drift: the runner's TO moved (proof S1221)            ok
+selftest case twin drift: the mech row's FROM moved (S3045)              ok
+selftest case twin drift: the mech row's file moved (S1221)              ok
+selftest case twin drift: the mech row grew a site 2 (S1221)             ok
+selftest case undeclared shared id (ID COLLISION)                        ok
+selftest case the S1540 collision restored (GF-2)                        ok
+selftest case declared twin without a row                                ok
+selftest case declared twin not in PLANTS                                ok
+selftest case S3012 restored to pres (its row's arm is g2win)            ok
+selftest case S3044's row re-aimed to g2win, the runner not              ok
+selftest case S3044's row to g2pres-asan (the same runner: green)        ok
+selftest case S3012's row to g2v (a MODE of its runner, not it)          ok
+selftest case S1221's row with no SAB_SUITES                             ok
+selftest case run_finder.sh runs run_proof.sh in a mode (the closure)    ok
+selftest case a non-arm block (scores no arm) running the runner         ok
+selftest case the arm table gone                                         ok
+selftest case the arm table yields no arm                                ok
+selftest case blanket PLANT_TWINS="$PLANTS" (pres)                       ok
+selftest case a second, blanket PLANT_TWINS after the literal (pres)     ok
+selftest case the mode passes $PLANTS, not the literal (win)             ok
+selftest case one id in two runners                                      ok
+selftest unit wreply: a fourth @@ field refuses, the file untouched      ok
+selftest unit win: a later @@ stays in TO                                ok
+selftest unit pres: \\\\n stays the C escape, \\n a newline, \\& an ampersand ok
+selftest unit win: \\n a newline, \\& an ampersand                       ok
+selftest unit apply: cumulative (edit 2 sees edit 1) and written         ok
+selftest unit apply: an ambiguous FROM refuses, the file untouched       ok
+selftest unit apply: a stale edit 2 refuses at that edit                 ok
+selftest unit wreply: its own refusal text                               ok
+selftest unit apply: a missing file refuses                              ok
+selftest unit check: the same loop, cumulative, in memory only           ok
+selftest unit dump: decoded FILE/FROM/TO, the twin field                 ok
+plant pass selftest: 68 cases, 11 unit rows, 0 failed
+rc=0
