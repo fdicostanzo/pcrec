@@ -8,14 +8,14 @@ population that is the whole tree's rather than one of their own, discovered by
 ## Files
 
 - **run_size_log.sh** — drop-in replacement for `test-corpus`'s own `bash tests/harness/run.sh` recipe line (see the Makefile's `test-corpus:` target): threads `SIZELOG` ...
+- **log_path.sh** — sourced by both: which log is written/read (scratch by default; `ARTSIZE_COMMIT=1` = the tracked file).
 - **check_size_tripwire.sh** — THE ONE RED THIS ROW PRODUCES: the corpus-level max size and max gcc-CPU time seen in `docs/dev/artifact_size_log.tsv` (or `$ARTSIZE_LOG`), ...
 - `docs/dev/artifact_size_log.tsv` — section "Format of `docs/dev/artifact_size_log.tsv`" (history file)
 
 ## Why `docs/dev/artifact_size_log.tsv` stays TRACKED (admin88, 2026-09-30)
 
-The log shows dirty in `git status` after every full `test-corpus` run
-because `run_size_log.sh` rewrites it (new commit/date/load1 header, fresh
-timings). That is by design, not a leak, and the verdict is KEEP IT TRACKED
+Before 2026-11-25 the log showed dirty after every full `test-corpus` run
+(`run_size_log.sh` rewrote it); the verdict then and now is KEEP IT TRACKED
 (untracking it was considered and rejected). Evidence:
 
 - **A check reads the committed copy.** `check_size_tripwire.sh` (and so
@@ -24,17 +24,20 @@ timings). That is by design, not a leak, and the verdict is KEEP IT TRACKED
   is what `make test-size` has before any corpus run, and it is the
   baseline `scripts/size_diff OLD NEW` and `docs/dev/optdial_size_sweep.md`-
   style comparisons diff against. (Inside one `make test` the corpus
-  rewrites it first, so the tripwire reads the fresh copy there.)
+  writes the scratch log first, so the tripwire reads the fresh copy there.)
 - **The log IS the deliverable** (Frank's [ART-SIZE.1b] ruling: per-pattern
   movement is "a `git diff` a reviewer reads"). `git log` holds 44 commits
   on it, committed deliberately at gates ("size log re-archived at the
   <gate> (0 movers)"), which is the ratchet's whole history.
 
-Working rule: a dirty copy after an ordinary run is noise — leave it out of
-your commit (`git restore docs/dev/artifact_size_log.tsv`). Commit it only
-as a deliberate gate re-archive from a CLEAN, FULL, DEFAULT-axes run (never a
-`HARNESS_BATCH` run: batch-mode SIZELOG CPU/wall are compile-only,
-`docs/dev/tt4m_time.md`), after reading `scripts/size_diff` for movers.
+Working rule (wtclean, 2026-11-25): an ordinary run no longer touches the
+tracked copy. `log_path.sh` sends the log to
+`$PCREC_TMPDIR/scratch/size/<tree>/artifact_size_log.tsv`; only
+`ARTSIZE_COMMIT=1` (or `ARTSIZE_LOG=<file>`) writes elsewhere. Re-archive
+the tracked file only as a deliberate gate step from a CLEAN, FULL,
+DEFAULT-axes run (never a `HARNESS_BATCH` run: batch-mode SIZELOG CPU/wall
+are compile-only, `docs/dev/tt4m_time.md`), after reading `scripts/size_diff`
+for movers.
 
 ## Conventions
 

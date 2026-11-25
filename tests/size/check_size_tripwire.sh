@@ -71,7 +71,8 @@ if [ "$#" -gt 0 ]; then
     echo "FAIL: check_size_tripwire.sh: takes no positional arguments (got: $*); set ARTSIZE_LOG=<file> to check another log" >&2
     exit 2
 fi
-LOG="${ARTSIZE_LOG:-$ROOT_DIR/docs/dev/artifact_size_log.tsv}"
+. "$SCRIPT_DIR/log_path.sh"
+LOG="$(size_log_read_path)"
 
 # THE PINS. Revisit-when (D45's own convention, restated here): raise a pin
 # only with a fresh measurement recorded in docs/testing.md, never silently.
