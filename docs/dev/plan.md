@@ -602,7 +602,7 @@ Owner waits: a row or stage waiting on the OWNER (a charter, a build go, an answ
 - [ARENA-SCOPES] STATE:not-started — scoped arenas registered on the Ctx: freed LIFO on the way out, all at once on a longjmp
   filed: 2026-11-24 manager, from the owner's direction during K155 (D203)
   status (2026-11-24): GO, nothing built. Clients: K155's 3 whole-artifact rewrites (nb, render_buf, splice tail; +7-12% peak in the job arena, k155fix R-3), minimize.c tables, clskit.c:1126 local arena; maybe job_cleanup's free() list
-  next: GO (owner 2026-11-24 "arena-scopes-go: yes"): after k155fix lands: a short design (API, LIFO discipline, what job_cleanup's list becomes) + critic round, then an opus build lane
+  next: GO (owner 2026-11-24 "arena-scopes-go: yes"). Architecture note ACCEPTED (docs/design/arena_scopes_arch.md, r100+r101); owner CONFIRM scope-reach pending; then the design (D-1..D-12) + critic round, then an opus build lane
   refs: owner 2026-11-24 "the arena memory system is in my mind a stack memory extension system"; src/core/arena.c; src/core/compile.c job_cleanup; known_issues K155; D203; review r96 GENFORM-5/8/9, COST-2; growth run 45492837175 (13 leaks = grow9fix set, site attribution needs a fast_unwind_on_malloc=0 repro)
 - [LANDWALK-SHARE] STATE:not-started — the walk's verify machine reuses the anchored machine's tables instead of a second copy
   filed: 2026-11-24 lane b152attr2
