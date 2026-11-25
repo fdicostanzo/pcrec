@@ -20,7 +20,16 @@ identical base runs must print identical numbers).
       predicted per-compile delta; every compile above it is listed OVER-BOUND (a STOP).
   memgate.py rungs A B OUT [--jobs J] [--limit N] [--shard K/N]
       every non-red growth cell at every LADDER rung (RLIMIT_DATA), side A vs side B: the
-      outcome (compiled / refused + message) must be IDENTICAL (R-1).
+      outcome (compiled / refused + message) must be IDENTICAL (R-1), judged on REQUESTED bytes
+      (THE RUNG RULE, the owner's "rung-edge: agree with lean", 2026-11-25): a rung where one
+      side compiles and the other refuses is a LAYOUT move when the cell's requested-byte peak
+      (the `peak` mode's measure, uncapped) is the same on both sides. A layout move is
+      reported, not failed: the cell, both sides' thresholds (the smallest RLIMIT_DATA that
+      compiles, bisected at 4 KiB grain) and their difference, the heap-extent delta (RLIMIT_DATA
+      bounds the heap's and private mappings' address-space extent, so the threshold IS the
+      extent the compile needs). Any other move (a requested-byte change, a refusal message
+      change, an ERR side) is MOVED, a failure. VERDICT IDENTICAL | LAYOUT (moves, all layout)
+      | MOVED.
   memgate.py instr A B OUT [--jobs J] [--limit N] [--shard K/N]
       per-compile user-mode instruction count around pcrec_compile, B/A ratio: p95 and max,
       every compile over --band (default 1.02) listed OVER-BAND.
@@ -240,21 +249,92 @@ def mode_instr(a, items):
         "WITHIN" if pct(rat, 0.95) <= a.p95 and not over and not nerr else "STOP", a.p95, a.band, len(over)))
 
 
+GRAIN = 4096   # the RLIMIT_DATA bisection grain (a page)
+
+
+def rung_need(side, item, cap, compiled):
+    """The smallest RLIMIT_DATA (GRAIN multiple) at which the cell compiles on SIDE, bisected
+    from the rung CAP whose outcome (COMPILED or not) is known; None if no cap up to 64 x CAP
+    compiles (outcome assumed monotone in the cap, as the ladder itself assumes)."""
+    key, _, raise_, feat, eng, pf, stack = item
+
+    def ok(c):
+        rc, so = run([os.path.join(side, "gdrv"), "one", str(c), str(stack), str(raise_), feat or "-", str(eng), pf])
+        m = re.search(r"^rc=(-?\d+)", so or "", re.M)
+        return rc == 0 and bool(m) and m.group(1) == "0"
+    lo, hi = (None, cap) if compiled else (cap, None)
+    while lo is None:   # walk down to a failing cap
+        c = hi // 2 // GRAIN * GRAIN
+        if c < GRAIN:
+            lo = 0
+        elif ok(c):
+            hi = c
+        else:
+            lo = c
+    while hi is None:   # walk up to a compiling cap
+        c = lo * 2
+        if c > 64 * cap:
+            return None
+        if ok(c):
+            hi = c
+        else:
+            lo = c
+    while hi - lo > GRAIN:
+        mid = (lo + hi) // 2 // GRAIN * GRAIN
+        if mid in (lo, hi):
+            break
+        if ok(mid):
+            hi = mid
+        else:
+            lo = mid
+    return hi
+
+
+def rung_layout(a, item, out):
+    """THE RUNG RULE (R-6): (layout?, detail) for one compile/refuse move."""
+    A, B = a.A, a.B
+    key, cap, raise_, feat, eng, pf, stack = item
+    pk = drv_one("mg_peak", (A, B))((key, raise_, feat, eng, pf))[1]
+    if pk[A][0] == "ERR" or pk[B][0] == "ERR":
+        return False, "peak ERR %s" % (pk,)
+    pa, pb = pk[A][0], pk[B][0]
+    na = rung_need(A, item, cap, out[A] == "compiled")
+    nb = rung_need(B, item, cap, out[B] == "compiled")
+    d = "requested peak A %d B %d (%+d); threshold A %s B %s; heap-extent delta %s" % (
+        pa, pb, pb - pa, na, nb, "%+d" % (nb - na) if na is not None and nb is not None else "?")
+    return pa == pb, d
+
+
 def mode_rungs(a, items):
     A, B = a.A, a.B
-    n = moved = err = 0
+    n = err = 0
+    moves = []
     with open(os.path.join(a.out, "rungs%s.tsv" % a.shard.replace("/", "of")), "w") as fo:
         with cf.ThreadPoolExecutor(a.jobs) as ex:
-            for key, cap, out in ex.map(rung_one((A, B)), items):
+            for item, (key, cap, out) in zip(items, ex.map(rung_one((A, B)), items)):
                 n += 1
                 fo.write("%s\t%d\t%s\t%s\n" % (key, cap, out[A], out[B]))
                 if out[A].startswith("ERR") or out[B].startswith("ERR"):
                     err += 1
                 if out[A] != out[B]:
-                    moved += 1
+                    moves.append((item, out))
                     print("MOVED %s cap%dM A=%s B=%s" % (key, cap >> 20, out[A][:100], out[B][:100]), flush=True)
-    print("rungs: %d compared, %d moved, %d with an ERR side" % (n, moved, err))
-    print("rungs: VERDICT %s" % ("IDENTICAL" if moved == 0 else "MOVED"))
+    # THE RUNG RULE (the owner, 2026-11-25): a compile/refuse move with an unchanged
+    # requested-byte peak is a LAYOUT move; everything else stays a failure.
+    layout = failed = 0
+    for item, out in moves:
+        key, cap = item[0], item[1]
+        flip = sorted((out[A] == "compiled", out[B] == "compiled")) == [False, True] and \
+            not out[A].startswith("ERR") and not out[B].startswith("ERR")
+        if flip:
+            is_layout, d = rung_layout(a, item, out)
+        else:
+            is_layout, d = False, "not a compile/refuse flip (message or ERR change)"
+        layout += is_layout
+        failed += not is_layout
+        print("%s %s cap %d: %s" % ("LAYOUT" if is_layout else "MOVE-FAILS", key, cap, d), flush=True)
+    print("rungs: %d compared, %d moved (%d layout, %d failing), %d with an ERR side" % (n, len(moves), layout, failed, err))
+    print("rungs: VERDICT %s" % ("IDENTICAL" if not moves else "LAYOUT" if not failed else "MOVED"))
 
 
 def main():

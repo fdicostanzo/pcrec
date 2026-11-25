@@ -349,19 +349,15 @@ typedef struct LEnt LEnt;
  * per attempt, freed by `compile_driver`'s hand calls; and two LOCALS:
  * clskit's and `uprops_produce`'s `tmp`). Detached (`cx` NULL, freed by its
  * owner; a failure aborts).
- * `rec`/`n`/`cap`/`open`/`gen` are the registry (`pcrec_scope_open`), written
- * and read by arena.c only; `child` is set only by `pcrec_scope_arena`. Every
- * field's zero is valid, so a zeroed or `{ .cx = cx }` Arena is an empty one. */
+ * `top`/`open`/`gen` are the registry (`pcrec_scope_open`), written and read
+ * by arena.c only; `child` is set only by `pcrec_scope_arena`. Every field's
+ * zero is valid, so a zeroed or `{ .cx = cx }` Arena is an empty one. */
 typedef struct {
     ABlock  *head; Ctx *cx;
-    LEnt    *rec;     /* the registry: ONE heap array used as a LIFO stack, oldest
-                       * first, the holds at the bottom; it moves when it grows,
-                       * so records are named by position (index + 1), never by
-                       * address */
-    size_t   n, cap;  /* records in use, records allocated */
-    size_t   open;    /* the innermost open scope's MARK, by position; 0 when none */
-    uint64_t gen;     /* the last stamp issued on this arena (L1; holds too) */
-    bool     child;   /* a scope's child arena: no scope opens on it (L5) */
+    LEnt    *top;   /* the registry, newest first; the holds at the bottom */
+    LEnt    *open;  /* the innermost open scope's MARK; NULL when none is open */
+    uint64_t gen;   /* the last scope stamp issued on this arena (L1) */
+    bool     child; /* a scope's child arena: no scope opens on it (L5) */
 } Arena;
 
 void *pcrec_arena_alloc(Arena *a, size_t sz);   /* zeroed, 16-aligned */
@@ -537,7 +533,7 @@ static inline StrBuf pcrec_sb_scratch(Arena *a)
  * into an outer level, the attempt arena's blocks included, is legal (L3);
  * no scope opens on a child arena (L5). A violation is an internal-error
  * refusal (an abort on a detached arena). */
-typedef struct { Arena *a; size_t mark; uint64_t gen; } Scope;   /* mark: a position */
+typedef struct { Arena *a; LEnt *mark; uint64_t gen; } Scope;
 Scope   pcrec_scope_open(Arena *a);
 void    pcrec_scope_close(Scope *s);
 void   *pcrec_scope_malloc(Scope *s, size_t n);          /* a HEAP entry */
@@ -555,16 +551,11 @@ void    pcrec_scope_unwind(Arena *a);
 void    pcrec_scope_check_closed(Arena *a);
 /* READ-ONLY, for tests/core/alloc_check.c's W7 only: is a scope open on `a`. */
 bool    pcrec_arena_open_p(const Arena *a);
-/* A HOLD: a HEAP entry (holding NULL) that lives, and is freed, with the
- * arena: a heap result a callee returns is stored into it
- * (`pcrec_hold_set`) the moment it exists, so no refusal can fall between
- * its birth and its owner. Taken before the result exists (the one step that
- * can fail); refused while a scope is open (L7). The handle names the record
- * by position and stamp, as a Scope does; `pcrec_hold_set` refuses a handle
- * that names no empty hold of its arena. */
-typedef struct { Arena *a; size_t rec; uint64_t gen; } ArenaHold;
-ArenaHold pcrec_arena_hold(Arena *a);
-void      pcrec_hold_set(ArenaHold *h, void *p);
+/* A HEAP slot (holding NULL) that lives, and is freed, with the arena: a
+ * heap result a callee returns is stored into it the moment it exists, so no
+ * refusal can fall between its birth and its owner. Taken before the result
+ * exists (the one step that can fail); refused while a scope is open (L7). */
+void  **pcrec_arena_hold(Arena *a);
 /* The one error-channel read: every refusal or nomem made through an
  * Arena's or a StrBuf's `.cx` takes its Ctx from it (D-7). */
 Ctx    *pcrec_err_chan(Ctx *cx);

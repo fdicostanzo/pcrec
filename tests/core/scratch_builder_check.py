@@ -101,8 +101,7 @@ ALLOW = [
     ("src/core/sb.c", "sb_grow", "heap", "a heap StrBuf's realloc into a temporary (K7)"),
     ("src/core/sb.c", "pcrec_sb_take", "heap", "take hands the caller a heap string by contract"),
     ("src/core/arena.c", "pcrec_arena_alloc", "heap", "the arena's own blocks"),
-    ("src/core/arena.c", "rec_take", "heap", "[ARENA-SCOPES] the registry's array (one per Arena, a LIFO stack since lane arenabuild2's R-3): grown in place, freed by the arena's teardown"),
-    ("src/core/arena.c", "rec_obj", "heap", "[ARENA-SCOPES] a STRBUF or ARENA entry's object, stored into a record already pushed (holding NULL until then)"),
+    ("src/core/arena.c", "rec_take", "heap", "[ARENA-SCOPES] the registry's entry record: linked at once, released by its scope's close or the arena's teardown"),
     ("src/core/arena.c", "pcrec_scope_malloc", "heap", "[ARENA-SCOPES] a HEAP entry's block, stored into a record already linked (holding NULL until then)"),
     ("src/core/compile.c", "compile_driver", "heap", "the Job itself, freed by job_cleanup"),
     # -- heap arrays the Job owns from birth (job_cleanup frees them) ----

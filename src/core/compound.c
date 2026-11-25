@@ -180,7 +180,7 @@ static int walk_part(CompWalk *w, int i)
         w->tried[i] = true;
         w->rep[i].killed = -1;   /* stays -1 unless the derivation ran */
         w->facts[i].into = &w->cx->arena;
-        ArenaHold text = pcrec_arena_hold(&w->cx->arena);
+        void **text = pcrec_arena_hold(&w->cx->arena);
         w->rc[i] = part_compile(w->cx->pat, w->cx->opt, &w->row->parts[i],
                                 &w->rep[i], &w->facts[i], true,
                                 /* [ENTRY-TABLE] E1 the shell row the part's
@@ -189,7 +189,7 @@ static int walk_part(CompWalk *w, int i)
                                                     : PCREC_ENTRY_COMP_B,
                                 &meas, &w->out[i],
                                 &w->err[i]);
-        if (w->rc[i] == 0) pcrec_hold_set(&text, w->out[i].c_src);
+        if (w->rc[i] == 0) *text = w->out[i].c_src;
     }
     return w->rc[i];
 }

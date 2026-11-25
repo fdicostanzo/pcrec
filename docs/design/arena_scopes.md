@@ -43,7 +43,9 @@ Ranked; a higher goal wins a conflict. Each has who benefits and a checkable for
      and a lowered peak is KEPT and reported (F4 is a D203 bug fix: refusing a favourable move would refuse the fix);
    - (b) per-compile peak live heap (memgate `peak`, below): every compile's delta is within its unit's predicted
      bound; any compile above the bound is a STOP for that unit, named by compile;
-   - (c) refusals at the growth memory-cap rungs (memgate `rungs`): `VERDICT IDENTICAL` (R-1).
+   - (c) refusals at the growth memory-cap rungs (memgate `rungs`): `VERDICT IDENTICAL` (R-1), judged on REQUESTED
+     bytes (the owner, 2026-11-25, "rung-edge: agree with lean"): `VERDICT LAYOUT`, every move a layout move, also
+     passes (D-9).
 3. **G3 Nothing strands on a refusal for the client set** (library callers; K155, K163, D203). Checks:
    `tests/core/alloc_check.c`'s property (every failed trial diagnosed, nothing stranded) over every trial, with the
    filed `known_stranded` rows deleted (2 to 0; plus the one row F1 files for the `uprops_produce` strand, deleted at
@@ -383,7 +385,14 @@ deleted at the LATER of F2 and F3 (an unreached mechanism, learnings §3).
 
 In "Tests and sabotage". R-1's open wording (a favourable refusal move) is answered by G2: a lowered peak is kept and
 reported (F4 can lower the arena high-water); refusals at the memory-cap rungs must read IDENTICAL, and a moved rung is
-a STOP, reported to the manager with the move. LEAK-ATTRIBUTION (REQ-OPEN) is the census's first item.
+a STOP, reported to the manager with the move. THE RUNG RULE (the owner, 2026-11-25, "rung-edge: agree with lean"): a
+rung is judged on the bytes the compiler REQUESTS, not on the heap's address-space extent. A rung where one side
+compiles and the other refuses, on a cell whose requested-byte peak (memgate `peak`'s measure, uncapped) is UNCHANGED,
+is a LAYOUT move: recorded as information (the cell, both sides' thresholds, the heap-extent delta), not a STOP. A move
+with a requested-byte change, or any other move (a message, an ERR side), still STOPs. memgate `rungs` applies the rule
+itself (`LAYOUT` / `MOVE-FAILS` lines; `VERDICT IDENTICAL | LAYOUT | MOVED`), so it is the check's rule, not a note. The
+first layout move: `depth/ncaltrep@250` at the 8 MiB rung, F1 (requested peak 7,710,800 on both sides; threshold base
+8,380,416, F1 8,392,704; extent delta +12,288). LEAK-ATTRIBUTION (REQ-OPEN) is the census's first item.
 
 ### D-10 The Arena comment (S2; r102 B23)
 
@@ -464,9 +473,6 @@ shared `scope_check(s)` (L1); `pcrec_arena_hold` instead tests L7 (`a->open` set
 (a failure diagnoses through `pcrec_err_chan(a->cx)` with nothing yet to lose); (3) fill the payload `{ prev_open =
 a->open, gen = ++a->gen, below = a->top }` (`below` read BEFORE the push, so it is the record under the mark); (4) push
 it on `a->top`; (5) `a->open = mark`; return `{ a, mark, mark.gen }`. No step after (2) can refuse.
-
-(R-3, lane arenabuild2: records live in ONE array per Arena and handles name them by position; the record shape and
-"lives INSIDE its record" below are superseded, see "Deviations at build". The order itself holds.)
 
 THE ORDER INSIDE A REGISTERING CALL, so no refusal falls between a resource's birth and its owner (B14):
 1. take a record: `calloc(1, offsetof(LEnt, payload) + kind->size)`; a failure diagnoses through
@@ -639,7 +645,7 @@ hold replaces `Arena.owned` itself (one record type, one walk, B7), and `walk_pa
     unreached row fails, learnings §3); (iii) sabotage (10) drops the `__wrap_pcrec_arena_free` bookkeeping and W3's
     row reads UNREACHED (red). No unit deletes a `known_stranded` row or writes "strand closed" before (i)-(iii) read
     green; F6 deletes the row only after F6's own scope makes W3 green.
-- Growth sweep, library stage under LSan: the 13 shards green (F3); memgate `rungs`: IDENTICAL at every unit (R-1).
+- Growth sweep, library stage under LSan: the 13 shards green (F3); memgate `rungs`: IDENTICAL or LAYOUT at every unit (R-1, the rung rule in D-9).
 - Scanner: the 6 [ARENA-SCOPES] `ALLOW` rows (at d4a6c0b74) deleted as their clients move (U5), 2 registry rows added
   and 1 L4 row for `uprops_produce` (D-8); new rules L2-static, L4, D-7 channel (including "no arena.c function calls
   `pcrec_arena_alloc`"), D-11 binder, each with a self-test fixture so it can FAIL.
@@ -731,7 +737,7 @@ Listed for the pre-go briefing; under D191 addendum 2 they need no go of their o
 
 - For the owner: none. The mechanism was his to delegate and is chosen in D-1 on FORM (one list for every memory kind,
   no second mechanism), with R-3's peak cost kept as context; the count tie is stated, not hidden. R-1's favourable-move wording is answered in D-9 (a lowered peak is kept; refusal
-  moves stay a STOP).
+  moves stay a STOP, judged on requested bytes since the owner's rung rule, 2026-11-25: a layout move is recorded).
 - For the manager (its files, not this lane's):
   - (a) a one-line D109 addendum (D-4: the registry and the lent pair are read through `pcrec_arena_free` and arena.c,
     which the four handlers already reach);
@@ -748,7 +754,7 @@ Listed for the pre-go briefing; under D191 addendum 2 they need no go of their o
   - (h) r102 B27 is filed as an unlock on [ARENA-SCOPES]'s refs (the trace build's arrival restores as GENFORM-9's
     possible second non-memory member); whether trace-only members count toward GENFORM-9 is the manager's call.
 
-## Deviations at build (F1, lane arenabuild2, the manager's rulings R-1..R-4)
+## Deviations at build (F1, lanes arenabuild2 and arenabuild3, the manager's rulings R-1..R-6)
 
 - R-1, W7. The DFA memo arena (S7) is not a hand-kept arena for W7: compile_driver frees it on every arrival, so it
   cannot strand, and its window spans the whole compile (W7/W1 alone read 2,614 trials with it). BINDING: every
@@ -757,15 +763,18 @@ Listed for the pre-go briefing; under D191 addendum 2 they need no go of their o
   `W7_SCOPE_STRIDE` = 4 on points in the scope window only; every point in the hand-kept window is a trial.
 - R-2, memgate. Peak and the arena block columns count REQUESTED bytes (per pointer; block = `sizeof(ABlock) + cap`);
   the `malloc_usable_size` peak is an informational column. Usable size moved with heap history, not with bytes asked.
-- R-3, the registry. Records are no longer one `calloc` each: each Arena keeps ONE heap array used as a LIFO stack
-  (`rec`, `n`, `cap`; first growth 16 records, doubling; popped on close; freed by `pcrec_arena_free`). The array moves
-  when it grows, so handles name records by POSITION and stamp: `Scope.mark` is a position (index + 1, 0 = none), and
-  a hold is an `ArenaHold { a, rec, gen }` set once through `pcrec_hold_set` (it replaces the `void **` slot; F4's
-  `PcrecPartFacts.hold` becomes an `ArenaHold`). A STRBUF or ARENA entry's storage is its own heap object the record
-  points to (one `calloc`, like the record before it), so the pointer a client holds survives growth. Peak cost: the
-  array (16 x 32 B = 512 B) is live from the first registration to the arena's teardown, not per entry.
-  RESULT: the 8 MiB rung on `depth/ncaltrep@250` STILL MOVES (STOP, to the owner): thresholds in
-  `docs/dev/lanes/arenabuild2_report.md`.
+- R-3, the registry: a MEASURED, REVERTED TRY (lane arenabuild2 built it, lane arenabuild3 reverted it under ruling
+  R-5; F1's per-record form above stands). The try: each Arena kept ONE heap array used as a LIFO stack (first growth
+  16 records, doubling; popped on close; freed by `pcrec_arena_free`), handles named records by position and stamp,
+  and a hold became an `ArenaHold` set through `pcrec_hold_set`. Its aim was the 8 MiB rung on `depth/ncaltrep@250`.
+  Measured: it did not move the rung (the smallest RLIMIT_DATA that compiles, 4 KiB grain: base 8,380,416, F1
+  8,392,704, R-3 8,392,704); the glibc thread-arena `mprotect` high-water (strace) read base 7,757,824 and both F1 forms
+  7,770,112 (+12,288); an oldest-first release (scratch, uncommitted) needed the same 8,392,704; and the array cost
+  +512 B of requested peak on 4,464 of 7,402 compiles (66 at +1,024), over F1's bound of 232, where the per-record form
+  is within it (max +184). The rung move is heap layout, not requested bytes: under the rung rule (D-9) it is a LAYOUT
+  move. Numbers: `docs/dev/lanes/arenabuild2_report.md`.
+- R-6, the rung rule (the owner, 2026-11-25, "rung-edge: agree with lean"): rungs are judged on requested bytes; D-9
+  states it and memgate `rungs` applies it.
 
 ## r102 disposition
 

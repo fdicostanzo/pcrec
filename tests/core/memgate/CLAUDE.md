@@ -17,6 +17,9 @@ scratch tool.
 
 ## Rules
 
+- THE RUNG RULE (the owner, 2026-11-25, "rung-edge: agree with lean"; design D-9): `rungs` judges a rung on REQUESTED
+  bytes. A compile/refuse move on a cell whose uncapped requested peak is unchanged prints `LAYOUT` (both thresholds,
+  the heap-extent delta) and passes as `VERDICT LAYOUT`; any other move prints `MOVE-FAILS` and reads `VERDICT MOVED`.
 - Deterministic by construction: no wall clock is read. Nonzero noise (a side against itself) is a STOP for the gate
   that relies on it (design T1).
 - The arena split sees only calls that cross an object boundary (GNU ld wraps undefined references): a child arena

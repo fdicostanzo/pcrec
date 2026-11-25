@@ -11,13 +11,12 @@
 # resource arm runs (tests/resource/run_resource_tests.sh section 2b): its
 # profiling pass leaves heap live after pcrec_output_free, so W6 cannot be
 # swept and FAILs. Before W6 no check reached the compound walk.
-# Re-anchored by lane arenabuild2 (ruling R-3: the registry is one LIFO array).
 SAB_ID="S3580-compound-part-text-not-owned"
 SAB_FILE="src/core/compound.c"
 SAB_SUITES="resource"
 SAB_DESC="walk_part never hands a part compile's heap c_src to the arena (the store into its pcrec_arena_hold dropped): byte-identical output, the text owned by nothing; only alloc_check's W6 compound witness (resource arm, section 2b) sees the live heap"
 SAB_DOC_FIGURE="Read the current figure from a run: bash tests/mech/run_sabotage_matrix.sh S3580."
-SAB_REACH_POP="src/core/compound.c|pcrec_hold_set\\(&text, w->out\\[i\\]\\.c_src\\);|1"
+SAB_REACH_POP="src/core/compound.c|\\*text = w->out\\[i\\]\\.c_src;|1"
 SAB_COUNT=1
-SAB_BEFORE='        if (w->rc[i] == 0) pcrec_hold_set(&text, w->out[i].c_src);'
+SAB_BEFORE='        if (w->rc[i] == 0) *text = w->out[i].c_src;'
 SAB_AFTER='        (void)text;   /* SABOTAGE S3580: the part text is never owned */'
