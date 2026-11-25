@@ -485,6 +485,24 @@ void pcrec_sb_free(StrBuf *sb)
     sb->len = sb->cap = 0;
 }
 
+/* Moves heap text storage from `src` into `dst` (see internal.h): the one
+ * guard refuses arena storage on either side before anything moves, so a
+ * refusal leaves both buffers as they were for the error path. */
+void pcrec_sb_adopt(StrBuf *dst, StrBuf *src)
+{
+    if (dst->ar || src->ar) {
+        Ctx *cx = dst->cx ? dst->cx : src->cx;
+        if (cx) pcrec_ctx_fail(cx, 0, "internal error: pcrec_sb_adopt: arena storage");
+        abort();
+    }
+    free(dst->p);
+    dst->p = src->p;
+    dst->len = src->len;
+    dst->cap = src->cap;
+    src->p = NULL;
+    src->len = src->cap = 0;
+}
+
 /* ---- THE TEXT LAYER ([REVW.1] wave 1) -----------------------------------
  *
  * The contract, the two vocabularies and why they must not be swapped are

@@ -344,8 +344,11 @@ typedef struct ABlock {
 /* [K155] A heap block the arena OWNS: freed with it (pcrec_arena_free). */
 typedef struct AOwn { struct AOwn *next; void *p; } AOwn;
 
-/* `cx` is the owning compile, or NULL for an arena with no error channel to
- * report through (there are none today; every Arena is a Ctx's own).
+/* Three kinds ([ARENA-SCOPES] D-10). A Ctx's own (`cx` set, freed by its
+ * teardown). Ctx-bound and freed by hand (`DfaMemo.arena`: `.cx` re-pointed
+ * per attempt, freed by `compile_driver`'s hand calls; and two LOCALS:
+ * clskit's and `uprops_produce`'s `tmp`). Detached (`cx` NULL, freed by its
+ * owner; a failure aborts).
  * `owned` lists the heap blocks handed to it (pcrec_arena_own). */
 typedef struct { ABlock *head; Ctx *cx; AOwn *owned; } Arena;
 
@@ -637,6 +640,13 @@ void  pcrec_sb_vprintf(StrBuf *sb, const char *fmt, va_list ap)
       __attribute__((format(printf, 2, 0)));
 char *pcrec_sb_take(StrBuf *sb);                /* transfer ownership, resets sb */
 void  pcrec_sb_free(StrBuf *sb);
+/* [ARENA-SCOPES] R1 (D-6) Moves `src`'s text storage into `dst`, frees
+ * `dst`'s old storage and leaves `src` empty: a whole-artifact rewrite built
+ * in a fresh heap buffer replaces the one it rewrote with no copy. Heap to
+ * heap only; a scratch (`.ar`) buffer on either side is an internal-error
+ * refusal (an abort on a detached buffer). The other StrBuf records
+ * (`layout_bytes`, the brackets) stay the caller's (RM-1). */
+void  pcrec_sb_adopt(StrBuf *dst, StrBuf *src);
 
 /* ---- THE TEXT LAYER ([REVW.1] wave 1; D108) -----------------------------
  *

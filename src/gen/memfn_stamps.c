@@ -367,10 +367,7 @@ static void target_headers_render(Ctx *cx)
         rest = strchr(h + strlen(held), '\n') + 1;
     }
     pcrec_sb_puts(&nb, rest);
-    free(c->p);
-    c->p = nb.p;
-    c->len = nb.len;
-    c->cap = nb.cap;
+    pcrec_sb_adopt(c, &nb);
     c->simd_guarded += strlen(text) - strlen(PCREC_TARGET_HEADERS_MARK)
                      - nheld * strlen(held);
     c->simd_size.total += now.total - was.total - nheld * hm.total;

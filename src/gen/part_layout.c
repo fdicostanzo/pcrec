@@ -640,12 +640,8 @@ static void render_buf(Ctx *cx, StrBuf *sb, unsigned char seen[PCREC_ENTRY_N + 1
         }
         i = at + 4;
     }
-    char *old = sb->p;
-    sb->p = o.p;
-    sb->len = o.len;
-    sb->cap = o.cap;
+    pcrec_sb_adopt(sb, &o);
     sb->layout_bytes = 0;
-    free(old);
 }
 
 void pcrec_part_layout_render(Ctx *cx)
