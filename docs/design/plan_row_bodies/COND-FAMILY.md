@@ -10724,3 +10724,31 @@ predicate build exists):
   `--list-syntax`): every lookaround form is VM; the plan row [REQ-LOOKAROUND] cites "lookahead removal +
   lookahead to DFA" as a general form. The work is the rx and graph manipulation layer of his remark to main
   (from_main M-2).
+
+### 2026-11-25 OWNER, a GOAL amended: "goal is all dfa unless specified by user. I don't want "when" to force vm"
+tags: lib/control/when lib/control/peek core/patterns/lookaround lib/builtin/import parked/ideas/capability-optins core/filters/and core/filters/complement
+
+Said on the manager's answer that each form has a DFA in principle and that pcrec runs every lookaround on the
+VM today. HIS WORDS, whole:
+
+"Amended: goal is all dfa unless specified by user. I don't want "when" to force vm"
+
+Class: a GOAL he STATES, amending his sentence of the entry above ("mostly dfa unless specifically turned off"
+becomes "all dfa unless specified by user"), with one named case: `when` must not force the VM. Not asked as a
+ruling; recorded as his stated goal (a candidate principle for core/principles at the next fold, his words
+quoted). drop-not and not-test are NOT answered by it.
+The manager's reading of what follows (marked; nothing applied; nothing run):
+- The documents already carry the mechanism: lib/builtin/import has "A library element that needs more than the
+  level the user asked for (the capability the compiled program may use: automaton code only by default ...) is
+  a compile error naming the element, never a silent lift." Under it, with pcrec as it is today (every lookaround
+  on the VM), `when` and `peek` would be refused at the default level: `when`'s ruled body holds a lookahead
+  (`NOT peek(test)`, `(?!test)`). So the goal is a requirement on the BUILD: the lookaround forms the provided
+  bodies use (`(?=`, `(?!`, and the behind pair) over regular patterns compile into the automaton. For main.
+- Nothing in `when`'s definition is irregular in itself: with a regular test, then and else its body is a
+  regular pattern. What the user "specifies" is the rest: a condition comparing two labels, arithmetic on a
+  read, a value hole over an unbounded read, captures returned.
+- Not checked, to be checked by a design lane before it is promised: a label the test of a `when` sets, read by
+  a later condition against a fixed set (the lookahead's first path only, core/patterns/lookaround), as an
+  automaton.
+- The choice in discussion (`peek(!A)` alone, or the general in-place reading of `!`) is neutral to it: each
+  spelling lowers to the same regex.
