@@ -10752,3 +10752,51 @@ The manager's reading of what follows (marked; nothing applied; nothing run):
   automaton.
 - The choice in discussion (`peek(!A)` alone, or the general in-place reading of `!`) is neutral to it: each
   spelling lowers to the same regex.
+
+### 2026-11-25 MANAGER — review r90 (predfold1124): the dispositions; no owner words
+tags: core/labels/rule core/labels/rule/paths core/labels/rule/stacked-chain core/labels/ownership core/labels/export core/labels/paths core/labels/paths/argument-default core/labels/paths/closed-argument core/holes/labels core/diagnostics/errors core/operators/bindings/unspecified core/holes/insert core/patterns/flags lib/builtin/options lib/structural/capture lib/structural/capture/in-set parked/ideas/effect-form
+
+Review r90 (coordinator crit-predfold1124; five opus critics RULING, MODES, FIXIND, NAMEGRID, CHECKS and an opus
+verifier; frozen at 07a46f018; draft `$PCREC_TMPDIR/scratch/crit-predfold1124/review.md`). No finding changes an
+answer the owner RULED; A1 to A5 are cells of the path rules that no printed line reaches, where the fold's
+evidence engine and the rules part. The manager's dispositions (ids are the draft's):
+- A1 FIX-NOW as proposed (a public label over a sequence is legal by rules 1, 3, 4; the engine's chain
+  normalisation; one printed public line beside "Something between").
+- A2 FIX-NOW: "rule 4 applies repeatedly" as a clause MARKED a reading, its ground the asked statement's own
+  examples (`X.h`, `X.m.h` "all legal" for `[n = [m = A]]`); printed lines at depth 3 and at two binding levels.
+- A3 FIX-NOW: export statement 3 names rule 2 (a label under an underscore label is not exported: no path from
+  the binding's name reaches it), marked a reading; the engine carries rule 2 through a part label over a used
+  binding; one two-level printed line.
+- A4 FIX-NOW for the engine (rule 6 below a label over an expression or a hole) and a printed line for the mixed
+  case. `n.Q.d` INSIDE the binding (through a label, then a part used alone): an OPEN line, the manager's reading
+  for now a compile error (the read is `Q.d`; an implicit label is a start, never a middle), slug alone-as-middle.
+- A5 (ii) FIX-NOW (the engine; `B.a.d` through the body's `_x` is refused by rules 5 and 2); reading (e)
+  RESTRICTED: the caller's label is a start, never a licence to cross a wall below it. A5 (i) an OWNER QUESTION,
+  slug sent-label-wall; until asked, the reading is rule 2's compile error, marked, with an OPEN line.
+- A6 FIX-NOW as text: rule 4's candidates count only the targets a LEGAL path reaches (the inside twin of
+  flat-read-outside's "a source it keeps protected does not exist for that read"), MARKED a reading, an OPEN line
+  (slug skip-past-wall, an owner question), one printed line per operator.
+- A7 FIX-NOW: his equivalence is stated as the outside view; both inside lines printed; "UNTESTABLE" dropped;
+  the inside half an OWNER QUESTION, slug equivalence-inside.
+- A8 FIX-NOW: "for every body" narrowed to the read through `A.d` (his ruled sentence); the c.A ground restated
+  on reading (b), marked; "From outside" re-witnessed on a labelling body with its written-out half RUN; the
+  hand-worked claim corrected. Whether the expansion covers reads from outside: an OWNER QUESTION, slug
+  shorthand-outside.
+- A9, A10 FIX-NOW as proposed.
+- A11 FIX-NOW for the text items (a terms block in core/labels/rule/paths; the summary's "crosses" becomes his
+  "contain"; the nested-macro case pointed at a piece); the group-of-rx-text-as-a-node cell: an OPEN line, PLAN.
+- A12 FIX-NOW for the one cross-reference clause (rule 5's name start is line 3's shorthand under its
+  conditions). The unified reachability statement (one label tree, four node kinds): PLAN, NOT this fix lane;
+  its trigger: the four owner questions above answered, or the next export/path disagreement, whichever first.
+- B1 to B9 FIX-NOW as proposed.
+- C1 to C8 FIX-NOW as proposed. C9 FIX-NOW for the canary, the count of skipped error lines with a declared
+  change list, and a per-plant expected arm; the mutation harness is the acceptance gate for the arms this fix
+  lane adds or changes, not for all 103 surviving deletion mutants (the rest: PLAN, with main's [PRED-MUT-CHECK]).
+- FIXIND-9 REJECTED (the verifier refuted it).
+- Lesson 1 taken into the fix: the model gains a GRID over start kind x crossing x skip x level (depth 3, two
+  binding levels, a wall below every start kind) run against the rules written as a SEPARATE small evaluator.
+- The readings of the manager's the round refuted or narrowed are WITHDRAWN or restricted as above: reading (e)
+  of path-rules (restricted); "written out ... for every body" (narrowed); reading (g)'s "UNTESTABLE" (withdrawn:
+  it is tested, and fails inside the binding).
+- The owner's all-DFA goal and the drop-not discussion (the round's freeze drift) are NOT part of this fix.
+One opus fix lane, predfix90, applies these and files the review.
