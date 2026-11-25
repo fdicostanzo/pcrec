@@ -1,0 +1,5 @@
+report: docs/design/arena_scopes_arch.md
+sections: Goals served; Requirements read; Site map; Register rows looked up; Remodels that land first; The general form and its siblings; Seams; What is deleted; What the design step must decide; Open questions for the owner
+nonempty: all
+commit: yes
+owed: none
