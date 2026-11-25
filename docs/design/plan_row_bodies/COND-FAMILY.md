@@ -10630,3 +10630,27 @@ Class: a LEAN on a SPELLING: the negative peek's name reads `peeknot` (`peeknot(
 drop-not is not answered by these words (they presume a named negative peek, which is its line 2: noted, not
 taken as the answer). The manager's reading (marked): by the same pattern the behind forms would read `peekback`
 and `peekbacknot`; not asked.
+
+### 2026-11-25 OWNER, on drop-not: "So the issue with !peek() is that a complement on a lookahead is not meaningful"
+tags: core/filters/complement core/filters/kinds core/filters/operand-context lib/control/peek core/filters/negation core/model/places
+
+Said after the manager re-put drop-not with `peeknot(A)`. HIS WORDS, whole:
+
+"So the issue with !peek() is that a complement on a lookahead is not meaningful"
+
+Class: an OBSERVATION put as a check of his understanding. NOT a ruling; drop-not is not answered.
+The manager's answer (told to him; the manager's reading): yes. By the ruled pieces `!B` "holds on a stretch
+where no path of B matches it whole" (core/filters/complement) and is filter-only (core/filters/kinds); a
+lookahead is zero width and looks past its point. So (1) where the guard stands, in a sequence, a complement is
+the compile error (it cannot match by itself); (2) as an `&` operand the lookahead reaches outside the stretch,
+core/filters/operand-context's compile error; (3) were it judged anyway, the stretch its whole world, it says
+nothing about what follows: RUN (python `re`, `(?=A)` matched whole against the stretch alone; output pasted):
+peek(/\d/) whole on stretch '': no match -> complement HOLDS
+peek(/\d/) whole on stretch '5': no match -> complement HOLDS
+peek(/\d/) whole on stretch '57': no match -> complement HOLDS
+peek(/\d/) whole on stretch 'x': no match -> complement HOLDS
+peek(/\d*/) whole on stretch '': matches -> complement FAILS
+peek(/\d*/) whole on stretch '5': no match -> complement HOLDS
+peek(/\d*/) whole on stretch '57': no match -> complement HOLDS
+peek(/\d*/) whole on stretch 'x': no match -> complement HOLDS
+It holds on every stretch but the empty one with a nullable A: never the wanted "A cannot match from here".
