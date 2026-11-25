@@ -19,5 +19,6 @@ code, no new measurement. Counts re-run at main d4a6c0b74.
 - "r103 disposition" table added at the end.
 
 ## STATE AT HANDOFF
-Committed on lane/arenadesign. Rulings file empty at every re-read. OWED: none. Not applied: none. Validation:
+Committed on lane/arenadesign. Rulings file empty at every re-read. Not applied: none.
+OWED: none Validation:
 `make -s test-plan-lint` (result in the handback).
