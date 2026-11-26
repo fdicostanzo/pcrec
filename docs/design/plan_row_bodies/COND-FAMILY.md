@@ -11137,3 +11137,32 @@ key's order. Edges named to him: a key no element has (a compile error when know
 match time; a key that is an infinite set (a selector, as `@warn.off` takes). Put to him as a ruling, slug
 map-creator. DFA category: creation YES (an alternation); a key known at compile time YES; a key read at match
 time MAYBE, about 0.6 (a choice among finitely many alternatives by a read).
+
+### 2026-11-25 OWNER, on map-creator: "I'm leaning yes but I'd love you have a lane consider how the accessor would be used"; and to the manager: "would there be value in an alternative use of maps like a sequence map"
+tags: core/modules/map core/arrays/lift core/values/metadata core/labels/numbers core/operators/precedence lib/builtin/import lib/strings/join lib/records/any-order lib/records/list-of parked/ideas/call-head-forms
+
+Asked **map-creator** (five lines: a map is an array every element of which is labelled, its literal making a
+missing label a syntax error; as a pattern the alternation of its elements; elements reached `m.a` and by the
+postfix `m[key]`; in `m[key]` a numeral is a position, any other string a name, a key of several strings the
+selected elements in the key's order; a key no element has a compile error when known at compile time; three
+edges left unruled: a key read at match time, a key that is an infinite set, a name on an unlabelled array; the
+manager's leaning yes). HIS WORDS, whole:
+
+"I'm leaning yes but I'd love you have a lane consider how the accessor would be used. Consider clash issues.
+consider we can't use numbers to refer to group numbers. What about selecting label names via pattern? Combining
+names and numbers? Tables of patterns? Overlap with library namespaces?
+Consider yourself: would there be value in an alternative use of maps like a sequence map."
+
+Class: a LEAN (yes) on map-creator, NOT a ruling; a REQUEST for a lane on how the accessor would be used, with
+his list (clashes; numbers and group numbers; selecting label names by a pattern; names and numbers combined;
+tables of patterns; the overlap with library namespaces); and a QUESTION to the manager itself (an alternative use
+of maps, "like a sequence map"). His request for a lane is taken as his go for ONE lane in the slow-burn week.
+Lane predmap (sonnet, a study: a report and runs, no edit of the predicate documents) launched on it.
+The manager's own thought on the sequence map (told to him; the manager's reading; nothing applied): yes, there
+is value, and it needs no second kind of map: the map is the labelled parts, and what joins them is chosen by the
+name applied to it: bare, the alternation (the array view); `join(m, sep = ..)`, the parts in sequence (the
+documents' isodate, written today as labelled parts with the sequence operator); `any_order(m, ..)`, the fixed
+set in any order (under construction); `list_of`, repeated. lib/strings/join already has "Ordered, fixed: `join`;
+ordered, repeated: `list_of`" and a stale line on the joined parts' labels: what a join over a map does with the
+labels is the point to state. DFA category: YES (a sequence, an alternation); any order: YES in principle, the
+states growing with the number of parts.
