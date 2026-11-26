@@ -11062,3 +11062,39 @@ binding, an array making copies as the count hole rules), with no `${}`. Costs: 
 for good at the expression level (a map written in place, still queued, could not use a postfix brace); `x{}`
 and `x{,}` need a line (a compile error; `x*` is the spelling). DFA category: YES for constant counts, the states
 growing with the count. Put to him as a ruling, slug brace-counts.
+
+### 2026-11-25 OWNER RULING — brace-counts: "I rule we should do this"; an OBSERVATION on its origin (maps, "this is pcre so I should try to stay familiar"); next topics: maps, then strings
+tags: core/patterns/quantifiers lib/rx/repeat core/holes/count core/operators/precedence core/conditions/quantified core/spellings/placeholders core/principles/regex-default core/modules/map
+
+ASKED AS A RULING (slug brace-counts, 2026-11-25, the statement put to him: "1. A count in braces is a postfix
+operator on a pattern, beside the nine: `x{a}`, `x{a,b}`, `x{a,}`, `x{,b}`, each the repeat head's call of the same
+shape. `x{a}` is exact, 0 included. 2. `?` or `+` after the braces is regex's lazy or possessive form. 3. A count
+inside the braces is a value of the expression level; an array makes copies as the count hole rules. 4. `x{}` and
+`x{,}` are compile errors. On a condition the braces are the same compile error as any quantifier. 5. `rx.repeat`
+stays as the named form of the same construct."; the manager's leaning yes to all five; the brace forms RUN as
+regex in the entry above). HIS WORDS, whole:
+
+"My leaning is also yes and I like your lazy, etc idea. I actually started this as a proposal to use it for maps
+with a{} an accessor for maps but as I looked at it I reminded myself that this is pcre so I should try to stay
+familiar.
+I rule we should do this.
+I want to discuss maps after this.
+After that, strings."
+
+Class: a RULING ("I rule we should do this"), on the five lines as put, the lazy and possessive forms named by
+him ("I like your lazy, etc idea"). It REVERSES his "the brace counts are repeat" (2026-11-17) for the spelling:
+braces are now an operator; `repeat` stays, the named form of the same construct (line 5).
+An OBSERVATION on its origin: he first thought of `a{}` as an ACCESSOR for maps and dropped that for regex
+familiarity: "this is pcre so I should try to stay familiar" (a use of core/principles/regex-default, his words;
+recorded for that principle's details).
+A DIRECTION for the discussion: maps next, then strings.
+The manager's readings (marked; for the fold to test): (a) the braces bind as the nine postfix operators do
+(level 2 of core/operators/precedence, on the single operand before them), and a postfix `{` is told from any
+other use by standing directly after an operand; (b) `x{a,b}?` and `x{a,b}+` are one token each with the braces,
+read longest first, as `+?` and `++` are; `rx.repeat` gains no lazy parameter by this ruling; (c) an unspecified
+bound is written by leaving it out (`x{a,}`, `x{,b}`); the underscore inside the braces is not needed and is a
+compile error for now; (d) the count values follow core/holes/count (a member that is not a count is a compile
+error; several values make copies; an illegal copy removed); a count read at match time (`x{$n}`) is under
+construction, as in a count hole; (e) white space inside the braces is layout.
+DFA category (his standing question): YES for constant counts (the states grow with the count).
+For the next fold, with drop-not and array-argument.
