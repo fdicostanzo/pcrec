@@ -11376,3 +11376,31 @@ indentation; the file's own line ends, which would otherwise leak into what the 
 so the manager's leaning is to park it with a trigger (the first program that needs a block of literal text),
 with a minimal definition ready if he wants it now: the text exactly as written, the first newline dropped, every
 line end read as `\n`, no indentation removed. DFA category: YES.
+
+### 2026-11-25 OWNER RULING — string-literals: "Yes all five"
+tags: core/values/one-type core/patterns/literals core/patterns/flags core/patterns/sequence core/holes/insert lib/builtin/options lib/strings/join core/diagnostics/errors core/spellings/placeholders
+
+ASKED AS A RULING (slug string-literals, 2026-11-25, the statement as last put to him: "1. A string has no
+pattern operators and no holes; every character is a literal. 2. Either `"` or `'` delimits; the other quote is a
+plain character inside. 3. The escapes are the backslash, the two quotes, `\n`, `\r`, `\t` and `\x{..}`. Any other
+backslash sequence is a compile error. 4. Adjacent strings do not join. Joining is the sequence operator or
+`join`. 5. A string ends on the line it starts on. The triple quote is reserved for a multi-line form, not
+defined yet."; the manager's leaning yes; "Do you want the triple quote parked as in line 5, or defined now with
+the minimal form?"; DFA category told: yes; the runs in the two entries above). HIS WORDS, whole:
+
+"Yes all five. Then let's close the session"
+
+Class: a RULING on the five lines as put; by line 5 the triple quote is RESERVED and parked, not defined (his yes
+to line 5 as written is taken as the answer to the closing question: told to him). Lines 1 and 2 are his own
+statements of the entry "on strings". And a request to close the session.
+The manager's readings (marked; for the fold to test): (a) a string `"s"` is the rx text `\Qs\E` after its
+escapes; `${` in it is plain characters; (b) a raw line end inside a one-quote string is a compile error (line
+5), the newline written `\n`; (c) `\x{..}` is the only code form (`\x41` is a compile error by line 3); whether
+the code is a character or a byte follows the encoding question, not settled; (d) `""` is the empty text; (e)
+the ruled options stand: the weak `i` reaches a string, `x` never does; (f) a string used as a name (a capture's
+name, a map key, a parameter value) has the same syntax; (g) `"ab" SEQ "cd"` is the one string `abcd`, a constant
+where a constant is needed; (h) a parked piece is owed for the triple-quote form, its trigger the first program
+that needs a block of literal text, with the minimal definition told to him (the text as written, the first
+newline dropped, every line end read as `\n`, no indentation removed).
+DFA category (his standing question): YES (literal text).
+For the next fold, with drop-not, array-argument, brace-counts and map-creator.
