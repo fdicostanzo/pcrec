@@ -10949,3 +10949,39 @@ At the merged tip: lint `checks passed 9106, failed 0`; the model re-run by the 
   successor declaration (keyed by its crash rows, its reason naming the crash, never "documents moved"; a new or
   changed crash row fails). Four historical models carry one; their files are not edited.
 - A12's unified reachability statement: not done, PLAN, its trigger as ruled.
+
+### 2026-11-25 OWNER, on arrays: "Would it now be valuable to bring back every()"; and an IDEA: one group under several labels, conditions on different sets of groups, "you might be using a library and want to adapt it from the user perspective"
+tags: lib/counting/every-pass lib/counting/some lib/counting/occurs core/labels/labels-vs-captures/array-vs-passes core/labels/rule/stacked-chain core/labels/export/export-list core/labels/one-rule lib/structural/each parked/ideas/user-doc-traps
+
+Said in the array-argument discussion (after the manager's thoughts on the cost of losing a condition as a
+ready-made argument). HIS WORDS, whole:
+
+"Arrays: Would it now be valuable to bring back every(). Before it wasn't but if it's on an array, it can
+expressively put conditions on labels defined in different locations.
+2. An interesting thought occurred to me. Let's say I had 3 groups. I label the first two x then the last
+two,which includes the middle again, y. Then I can put conditions on different sets of groups. Or if I selected
+even numbered groups and said they had to be even and odd groups odd. I guess there's easier ways to do it if
+you control the whole process. The advantage of this kind of thinking is that you might be using a library and
+want to adapt it from the user perspective"
+
+Class: (1) a QUESTION that is a PROPOSAL: a named "every" over an array. (2) an IDEA ("An interesting thought"):
+one group carrying several labels, so that conditions fall on different SETS of groups; selecting groups by
+position (even, odd); its stated value: adapting a LIBRARY's pattern from the user's side, where the user does
+not control the pattern. Neither a ruling; array-argument is NOT answered (his (1) presumes the array form).
+CHECKED AGAINST THE RECORD: `all` was retired by "all-question: retire" (2026-11-16), asked on the list example
+`/(?:(?<h>\d);)*/` with `all` read as "every PASS passes, none needed", to keep one kind of absence (a loop that
+never ran, a pass that set nothing). The open piece lib/counting/every-pass (every-pass-spelling) holds the
+named form as candidate (b). Over an array a setting is never absent, so that ground does not reach it.
+RUN before answering (python models of the paths, most items first; output pasted):
+every(@d, <5) | WHOLE 1-2 HOLDS 1-2,3 HOLDS 1-7,3 FAILS 1-2,3,9 FAILS | SEARCHED 7-1 1-2,3,9 -> ('1-2,3', 4) | FIND-ALL 1-2,3 5-1 3-4,9,1 -> [('1-2,3', 0), ('3-4', 10)]
+(the pattern `/(?<d>\d)-(?<d>\d)(?:,(?<d>\d))*/`: `d` set in three places)
+x,y overlap | WHOLE 1-3-9 HOLDS 1-2-9 FAILS 7-3-3 FAILS | SEARCHED [('1-3-9', 0)] | FIND-ALL [('1-3-9', 0), ('4-4-4', 12)]
+(the pattern `\d-\d-\d`, x on groups 1 and 2, y on groups 2 and 3, "every x under 5 and every y at least 3")
+The manager's answer (told to him; the manager's reading; nothing applied): (1) yes: `every(@d, S)` is
+`occurs.none(@d, !S)` by meaning, true on an empty array; its value is exactly his: the item form needs the
+condition written at each place the label is set, which a library's user cannot do. (2) the overlap is writable
+under the rules in force where the user writes the groups (a spot may carry stacked labels; several groups of one
+name give one array); from the USER's side of a library two things are not stated: whether an export list may
+give two of a part's labels one name (`[(x = a, x = b) = lib]`), and any selection of an array's settings by
+position. DFA category: `every` maybe about 0.8, as the other group questions; a selection by position adds a
+small counter, maybe about 0.7.
