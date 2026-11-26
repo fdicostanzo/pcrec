@@ -10,6 +10,8 @@ Branch `lane/predfix90`, cut from `lane/pred-rev28` at 33abd6926. Record of the 
 - The model's last line: `predfix90_model: 26 checks, 0 failed`. Sabotage: `predfix90_sabotage: 18 plants, 0 not caught`. Mutation gate: `predfix90_mutation: 46 arms inverted, 14 plant arms deleted; failing: none`.
 - Nothing stopped. One reading of mine is flagged for the manager: C3, below.
 
+OWED: none
+
 ## DISPOSITIONS APPLIED
 
 Each item's RULED text and its DONE line (commit, piece) are in the filed review, docs/dev/reviews/2026-11-25-r90-predfold1124.md. The documents' edits are in commit 5658509b4 (A1-A12, B1-B9; the B items' first pass by a helper subagent, checked here against each item's text and by the model's pins), with lint and the model run after. The evidence items C1-C9 are in predfix90_model.py at the tip.
