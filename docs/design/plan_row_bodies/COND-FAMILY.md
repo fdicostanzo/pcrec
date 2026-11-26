@@ -11352,3 +11352,27 @@ a character by its code in PCRE's own spelling (`\x{..}`); every OTHER backslash
 concatenation: the manager's leaning no: it would be the one juxtaposition in a language he ruled has none, a
 missing comma in an array would join two entries silently, and `"ab" SEQ "cd"` already is the one string.
 DFA category: YES (literal text).
+
+### 2026-11-25 OWNER, on string-literals: "Value to """ delimiter for multi line strings? Thereby "..." strings are a single line?"
+tags: core/values/one-type core/patterns/literals core/operators/statements core/spellings/placeholders core/principles/conservative-first
+
+Asked **string-literals** (four lines: no pattern operators and no holes; either quote delimits; the escapes are
+the backslash, the two quotes, `\n`, `\r`, `\t`, `\x{..}`, any other backslash sequence a compile error; adjacent
+strings do not join; the manager's leaning yes; "Is there an escape you want that I left out?"). HIS WORDS, whole:
+
+"Value to """ delimiter for multi line strings? Thereby "..." strings are a single line?"
+
+Class: two QUESTIONS that carry an IDEA: a triple-quote delimiter for strings of several lines, the one-quote
+string then ending on its own line. NOT a ruling; string-literals is NOT answered.
+RUN before answering (python `re`; a two-line block as literal text, written in a file with LF line ends and in
+one with CRLF line ends taken raw; subject `x BEGIN\nEND y BEGIN\r\nEND`; output pasted):
+block written in a file with LF line ends | WHOLE 'BEGIN\nEND' HOLDS 'BEGIN\r\nEND' FAILS | SEARCHED ('BEGIN\nEND', 2) | FIND-ALL [('BEGIN\nEND', 2)]
+the same block written in a file with CRLF line ends, taken raw | WHOLE 'BEGIN\nEND' FAILS 'BEGIN\r\nEND' HOLDS | SEARCHED ('BEGIN\r\nEND', 14) | FIND-ALL [('BEGIN\r\nEND', 14)]
+The manager's answer (told to him; the manager's reading; nothing applied): the one-line rule has value by itself
+(a missing closing quote is caught at the end of its line; a newline in a string is written `\n`): proposed as a
+fifth line. The triple quote: reserved, and it is free to reserve because line 4 refuses adjacent strings (`""`
+then `"` is no legal program). Defining it needs three small rules (the newline after the opening mark; the
+indentation; the file's own line ends, which would otherwise leak into what the string matches: the run above),
+so the manager's leaning is to park it with a trigger (the first program that needs a block of literal text),
+with a minimal definition ready if he wants it now: the text exactly as written, the first newline dropped, every
+line end read as `\n`, no indentation removed. DFA category: YES.
