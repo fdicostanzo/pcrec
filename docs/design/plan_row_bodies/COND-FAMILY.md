@@ -11166,3 +11166,32 @@ set in any order (under construction); `list_of`, repeated. lib/strings/join alr
 ordered, repeated: `list_of`" and a stale line on the joined parts' labels: what a join over a map does with the
 labels is the point to state. DFA category: YES (a sequence, an alternation); any order: YES in principle, the
 states growing with the number of parts.
+
+### 2026-11-25 MANAGER — after lane predmap (the study he asked for): its findings, and one answer of the manager's WITHDRAWN (the key's order); no owner words
+tags: core/modules/map core/arrays/lift core/values/metadata core/labels/numbers core/labels/labels-vs-captures/array-vs-passes core/operators/precedence core/principles/meaning-not-spelling lib/strings/join lib/builtin/warn
+
+Lane predmap (sonnet; delivered, lanecheck DONE; merged into `lane/pred-rev28`; report
+docs/dev/lanes/predmap_report.md, evidence docs/dev/lanes/predmap_evidence/, `predmap_runs: 54 cases, 0 failed`).
+A study: it rules nothing. Its findings the manager takes to him:
+- Three number spaces share a numeral and are told apart by the SLOT: a group number (left of `:`, after `$`;
+  refused on anything but one written literal), a position in an array (`m[1]`), the k-th setting of a label
+  (`h[k]`, ruled). A map element's position is not its group number (position 2 was group 4 in the lowering). On
+  a part label over an array, `w[1]` as a setting and as a member PART (its run N3b).
+- The clash grid: 49 cells; 1 ruled (`h[k]`), 4 resting on the manager's statement, 44 undecided.
+- A key's order is the alternation's priority (`m["b"|1]` finds `a`@0 where the map finds `ab`@0); a pattern key
+  parts the same way (map order `x`@0, the key's enumeration `xyz`@0); enumerating an infinite key is refused,
+  filtering the map's own names is always finite.
+- One element list feeds the bare alternation, `join`, `any_order` and `list_of`: a sequence map is a function
+  over the one map.
+- Not in his list: `m.a` on a created map can be the element (a pattern) or the label (its text); the documents'
+  "A map interface is not a created value" stands against the proposal as worded.
+WITHDRAWN, the manager's answer to his `m["a"|1]` ("the selected elements as an array ... in the key's order", by
+the lift): it breaks core/principles/meaning-not-spelling. `"a"|"b"` and `/a|b/` are one set in two spellings; a
+finite key would order by its own enumeration and an infinite key could only filter in the map's order, so two
+spellings of one set would give two patterns. The manager's reading now (marked; put to him): the key is a SET
+taken whole, as a selector is (lib/builtin/warn: "a set of names written as an rx, matched whole"), not an operand
+the lift walks (core/arrays/lift lifts "a parameter that needs its operand SINGLE, not one that takes a FINITE or
+ANY operand whole"); the selection keeps the elements whose name or position is in the set, in the MAP's order,
+each once. A reorder is written as a new array. Further readings (marked): the KIND of name left of the bracket
+decides between members and settings (a binding: members; a label: settings, `h[k]`); a bare name inside the
+brackets is a binding's value, as on any value side; a numeral is no label name.
