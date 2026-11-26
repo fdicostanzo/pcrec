@@ -61,7 +61,9 @@ ok()  { echo "PASS: $1"; pass=$((pass + 1)); }
 bad() { echo "FAIL: $1" >&2; fail=$((fail + 1)); }
 
 BIN="$WORKDIR/alloc_check"
-if ! unit_build "$BIN" "$SCRIPT_DIR/alloc_check.c"; then
+# [ARENA-SCOPES] W7: the arena-window hook is this link's alone (alloc_check.c
+# defines __wrap_pcrec_arena_alloc/_free; the resource arm links the same way)
+if ! unit_build "$BIN" "$SCRIPT_DIR/alloc_check.c" -Wl,--wrap=pcrec_arena_alloc -Wl,--wrap=pcrec_arena_free; then
     echo "alloc: FAILED TO BUILD alloc_check.c" >&2
     exit 1
 fi

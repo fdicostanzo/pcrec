@@ -7587,6 +7587,8 @@ return and read no per-attempt `Ctx` field, so this decision does not
 touch them) — check whether it needs the same `failed_nomem` test, by
 the same reasoning as here rather than by copying the code.
 
+**Addendum ([ARENA-SCOPES] F1, 2026-11-25, owner's build go; design D-4):** the premise still holds: the arena registry lives inside `cx.arena`, which those four handlers already read through `pcrec_arena_free`, and the lent pair (F4) is read by arena.c only, so no handler reads a new per-attempt Ctx field.
+
 ## D110 — `tests/core/alloc_check.c`'s population expectations become FLOORS, not equality pins; the resource-arm's own verdict is asserted in `make test`; `make alloc` gains a battery stage (Frank, 2026-09-18, lane allocpins)
 
 `docs/dev/lanes/d105_report.md` §2 measured the hazard a per-witness

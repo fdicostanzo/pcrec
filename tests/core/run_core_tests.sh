@@ -85,6 +85,26 @@ else
 fi
 
 # ---------------------------------------------------------------------------
+# [ARENA-SCOPES] F1 — the arena registry's LIFO rules on a detached arena:
+# the stale-handle and free-the-mark drills (docs/design/arena_scopes.md D-2),
+# L5, L7, the unwind and the teardown. Each refusing step runs in its own
+# forked child that must end in the code's own abort() (tagged). See the check's own header.
+# ---------------------------------------------------------------------------
+BINS="$WORKDIR/scope_check"
+if ! unit_build "$BINS" "$SCRIPT_DIR/scope_check.c"; then
+    echo "core: FAILED TO BUILD scope_check.c" >&2
+    exit 1
+fi
+OUTS="$WORKDIR/scope_check.out"
+"$BINS" 2>&1 | tee "$OUTS"
+bins_rc="${PIPESTATUS[0]}"
+if [ "$bins_rc" -eq 0 ] && [ "$(grep -c '^PASS' "$OUTS")" -ge 16 ]; then
+    ok "scope_check: $(grep -c '^PASS' "$OUTS") sub-checks green"
+else
+    bad "scope_check: rc $bins_rc, $(grep -c '^PASS' "$OUTS") passed (floor 16, half of 32 at F1 (D110)), $(grep -c '^FAIL' "$OUTS") failed — see above"
+fi
+
+# ---------------------------------------------------------------------------
 # [REVW.2] wave 2, EP2 step 10 / lens 1 X8 — `pcrec_sb_stampf`/`pcrec_sb_stampwf`/
 # `pcrec_sb_stamp_str`, the artifact-stamp primitives. UNLIKE `pcrec_sb_fragf` above,
 # every byte these write lands in the emitted `.c`, so the four byte-identity

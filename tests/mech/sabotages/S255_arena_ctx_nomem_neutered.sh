@@ -5,7 +5,8 @@
 # F6: "there are zero sabotage rows on the error-path discipline ... none
 # plants in arena.c, sb.c ... or compile.c's attachment block").
 #
-# `if (a->cx) pcrec_ctx_nomem(a->cx);` becomes `if (0) pcrec_ctx_nomem(a->cx);` — the
+# `if (a->cx) pcrec_ctx_nomem(pcrec_err_chan(a->cx));` (the channel read through
+# `pcrec_err_chan` since [ARENA-SCOPES] F1) becomes `if (0) ...` — the
 # arena's error channel is never consulted, so EVERY arena allocation
 # failure falls straight to the unconditional `abort()` below it, on EVERY
 # compile, not only the two Job buffers F1 missed. This is the sabotage
@@ -18,10 +19,10 @@ SAB_DESC="pcrec_arena_alloc's pcrec_ctx_nomem route is neutered (if (0) instead 
 SAB_DOC_FIGURE="tests/resource/run_resource_tests.sh Section 2 (ulimit -v, Linux) and Section 2b ([REVW.U L8-F6(b)] the allocation-failure injector, darwin-viable) are the two detectors; Section 2b's own W1/W2/W3 witnesses all route through pcrec_arena_alloc, so this plant is reachable from either. Exact re-run command: bash tests/mech/run_sabotage_matrix.sh S255."
 SAB_COUNT=1
 SAB_BEFORE='        if (!b) {
-            if (a->cx) pcrec_ctx_nomem(a->cx);
+            if (a->cx) pcrec_ctx_nomem(pcrec_err_chan(a->cx));
             abort();
         }'
 SAB_AFTER='        if (!b) {
-            if (0) pcrec_ctx_nomem(a->cx);   /* SABOTAGE S255: the error channel is never consulted */
+            if (0) pcrec_ctx_nomem(pcrec_err_chan(a->cx));   /* SABOTAGE S255: the error channel is never consulted */
             abort();
         }'

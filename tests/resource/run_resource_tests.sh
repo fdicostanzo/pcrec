@@ -163,9 +163,13 @@ src/dump/callouts_dump.c
 src/ir/dfa.c
 src/ir/nfa.c
 src/opt/dfamemo.c
-src/opt/minimize.c
 src/opt/scanedge.c
 src/parse/rxt_source.c'
+    # [ARENA-SCOPES] (lane arenatri, 2026-11-25) src/opt/minimize.c LEFT: its
+    # local tables moved to pcrec_scope_malloc (scope-owned, freed on the one
+    # return and by the arena's teardown on a refusal), so it holds no raw
+    # malloc/calloc/realloc/strdup call any more; the discipline covers it
+    # through the arena, not through a raw-site pin.
     # [INLINE-C] stage 3 (lane ic3tri, 2026-10-29) src/dump/callouts_dump.c
     # joined: its one malloc(1) is the empty-result string of
     # pcrec_list_callouts, which the CALLER free()s like every other dump
@@ -1368,7 +1372,10 @@ else
     ALLOCBIN="$WORKDIR/f6b_alloc_check"
     LIBPCREC="$ALLOC_SCRATCH/libpcrec.a"
     . "$ROOT_DIR/tests/lib/unit_cc.sh"   # sets unit_build; LIBPCREC above must be set first (unit_cc.sh's own default only fires when unset)
-    if ! unit_build "$ALLOCBIN" "$ROOT_DIR/tests/core/alloc_check.c" 2>"$WORKDIR/f6b.build.log"; then
+    # [ARENA-SCOPES] W7: the arena-window hook lives in the test link alone
+    # (alloc_check.c defines the __wrap_ pair; tests/core/run_alloc_tests.sh links the same way)
+    if ! unit_build "$ALLOCBIN" "$ROOT_DIR/tests/core/alloc_check.c" \
+            -Wl,--wrap=pcrec_arena_alloc -Wl,--wrap=pcrec_arena_free 2>"$WORKDIR/f6b.build.log"; then
         bad "[F6(b)] FAILED TO BUILD tests/core/alloc_check.c against the injected scratch library: see $WORKDIR/f6b.build.log"
     else
         ALLOCOUT="$WORKDIR/f6b_alloc_check.out"
