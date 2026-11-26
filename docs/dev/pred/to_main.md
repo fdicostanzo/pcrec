@@ -552,3 +552,36 @@ Entries are `P-n`, dated, never deleted. `done:` lines name the branch tip and t
   nearest existing row I found.
 - Nothing asked of you now (design only; no build go). It belongs in the [COND-FAMILY] row's requirements when you
   next touch it. The `done:` for review r90's fold will be P-31.
+
+## P-31 (2026-11-25, predicate manager) — done: review r90 (predfold1124) ruled, applied, filed; the fold is deliverable
+
+- done: branch `lane/pred-rev28`, tip = the commit carrying this entry. It carries lane predfold1124's fold (the
+  six rulings of 2026-11-23 late: shorthand-is-callers, path-rules, capture-in-set, exact-count-unspecified,
+  options-reach-constants, option-hole-explicit), review r90 on it, and lane predfix90's fixes. Reports:
+  docs/dev/lanes/predfold1124_report.md, docs/dev/lanes/predfix90_report.md. Review:
+  docs/dev/reviews/2026-11-25-r90-predfold1124.md (+ its directory; INDEX line added).
+- Checks at the tip: `python3 -I scripts/pred_doc_lint.py` 9,106 / 0; `make -s test-plan-lint` green;
+  `predfix90_model: 26 checks, 0 failed` (re-run by me after the merge).
+- Also on the branch, RECORD ONLY (not in the documents yet): the owner's ruling drop-not (`NOT` leaves the
+  language; the negative peek is `peek(!A)`; not-test closed), his all-DFA goal (P-30), and the discussion of
+  array-argument (asked, not answered). Their fold is a later unit.
+- [COND-FAMILY] status line: "2026-11-25: r90 filed; the documents carry every ruling through
+  option-hole-explicit (2026-11-23); ruled since and not folded: drop-not (`NOT` leaves, `peek(!A)`); the owner's
+  stated goal: all DFA unless specified by the user, `when` must not force the VM; asked: array-argument; five
+  owner questions queued from r90 (sent-label-wall, skip-past-wall, equivalence-inside, shorthand-outside,
+  alone-as-middle)".
+- Worktrees free to prune after your merge: predfold1124, predfix90 (both merged into my branch). worktrees/predref
+  is not mine to judge: I did not create it this session.
+- r90's lessons for the critic guide (yours to place; docs/dev/reviews/2026-11-25-r90-predfold1124/process.md):
+  (1) a path-rule fold needs a GRID GENERATOR run against the rules written as a separate small evaluator (every
+  answer-level finding was a cell no printed line reached; the name-grid lens gets a one-program probe and is told
+  to cover depth 3, two binding levels and a wall below every start kind); (2) a declaration keyed on a verbatim
+  FAIL line that carries document LINE NUMBERS goes red on any later one-line edit: normalise them out, and the
+  committed .out is the delivered tip's run; (3) a reading phrased "whatever X does" is drilled on the inverse
+  position too.
+- PROPOSED SKILL EDITS, pcrec-predicate-manager: section 2: "each question put to the owner carries its DFA
+  category: yes / never / maybe with a weight, and what the maybe depends on" (his words 2026-11-25, record);
+  section 1: "read the memory index's TAIL too: a note cut off from the loaded index (the slow-burn week) was
+  missed and a full-size critic round was launched"; section 4: "after merging a lane, the manager re-runs its
+  model at the MERGED tip before the done: line (record entries land while a lane runs)".
+- REPLY: one line, either way (merged, or what blocks).
