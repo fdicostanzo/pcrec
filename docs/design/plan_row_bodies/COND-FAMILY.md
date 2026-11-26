@@ -11323,3 +11323,32 @@ same result twice in an alternation matches as once (the first occurrence wins),
 DFA category (his standing question): YES for all seven lines (settled at compile time; the matched member of
 line 7 is "which alternative was taken", maybe about 0.8 where alternatives overlap).
 For the next fold, with drop-not, array-argument and brace-counts.
+
+### 2026-11-25 OWNER, on strings: "a string has no pattern operators. Everything is a character literal"; "either " or ' delimits"; QUESTIONS: "allowed escapes? Auto Literal concatenation ?"
+tags: core/values/one-type core/patterns/literals core/patterns/flags core/patterns/sequence core/holes/insert lib/builtin/options lib/strings/join core/spellings/placeholders
+
+Said on the manager's summary of where strings stand ("What do you have in mind for strings?"). HIS WORDS, whole:
+
+"1. a string has no pattern operators. Everything is a character literal. Obvious but should be said
+2. either " or ' delimits
+3. allowed escapes? Auto Literal concatenation ?"
+
+Class: (1) a STATEMENT he wants written ("Obvious but should be said"): a string holds no pattern operators,
+every character is a literal. (2) a STATEMENT on syntax: either quote delimits. (3) two QUESTIONS: which escapes;
+whether adjacent literals concatenate. None asked as a ruling.
+CHECKED AGAINST THE DOCUMENTS: no piece states a string constant's syntax. core/values/one-type has "A constant
+(`5`, `"a"`) is a one-string rx known at compile time"; lib/builtin/options (ruled) has the weak `i` reaching a
+string constant and "`x` never applies to a string"; core/patterns/sequence (ruled 2026-11-17) has "There is one
+sequence operator ...; juxtaposition is not used", his words then: "A B isn't legal so its the addition form";
+core/values/arithmetic has "`+` never joins strings or patterns".
+RUN before answering (python `re`, subject `a.b axb a.b+`; output pasted):
+the string "a.b+" as character literals | regex a\.b\+ | WHOLE a.b+ HOLDS axb FAILS axbbb FAILS | SEARCHED ('a.b+', 8) | FIND-ALL [('a.b+', 8)]
+the literal /a.b+/ | regex a.b+ | WHOLE a.b+ FAILS axb HOLDS axbbb HOLDS | SEARCHED ('a.b', 0) | FIND-ALL [('a.b', 0), ('axb', 4), ('a.b', 8)]
+The manager's answer (told to him; the manager's reading; nothing applied): (1) and (2) agreed; the consequence
+to state with (1): `${` in a string is three plain characters, no hole (a hole is rx text's mark); a string `"s"`
+is the rx text `\Qs\E`. Escapes: the manager's proposal: the backslash itself, either quote, `\n`, `\r`, `\t`, and
+a character by its code in PCRE's own spelling (`\x{..}`); every OTHER backslash sequence a compile error, so
+`"\d"` is refused with a message pointing at `/\d/` rather than read as a class or as the letter d. Automatic
+concatenation: the manager's leaning no: it would be the one juxtaposition in a language he ruled has none, a
+missing comma in an array would join two entries silently, and `"ab" SEQ "cd"` already is the one string.
+DFA category: YES (literal text).
