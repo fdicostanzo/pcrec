@@ -11195,3 +11195,45 @@ ANY operand whole"); the selection keeps the elements whose name or position is 
 each once. A reorder is written as a new array. Further readings (marked): the KIND of name left of the bracket
 decides between members and settings (a binding: members; a label: settings, `h[k]`); a bare name inside the
 brackets is a binding's value, as on any value side; a numeral is no label name.
+
+### 2026-11-25 OWNER, on map-creator: "m["a"|1]: I would not deduplicate. This is two results ... it's a search which might be empty"; and a QUESTION with an example: "how do I get an index from a label in a map? .index? And is that the index of the alternation?"
+tags: core/modules/map core/values/metadata core/arrays/lift core/operators/precedence core/patterns/alternation lib/modifiers/month-numbered core/labels/paths
+
+Asked **map-creator**, restated (six lines; line 4: "`m[S]` is a selection by a set of keys: a numeral is a
+position, any other string a name. The result is the selected elements in the map's order, each once, labels
+kept."; line 5: "A listed key that no element has is a compile error. A pattern key that selects nothing gives the
+empty array with a warning"; the manager's leaning yes to all six). HIS WORDS, whole:
+
+"1. m["a"|1]: I would not deduplicate. This is two results, if they both exist. The key is that it's a search
+which might be empty
+2. how do I get an index from a label in a map? .index? And is that the index of the alternation?
+F :=[a=99]seq [b=76]|[c=87]
+F["a"].index is F.a.index
+F.a.index is 1
+F.b.index is 1
+F.c.index is 2"
+
+Class: (1) a POSITION on line 4 ("I would not deduplicate"): `m["a"|1]` is two results where both exist; the
+accessor is "a search which might be empty". It is against line 4's "each once" and, as the manager reads it,
+against line 5's compile error for a key that finds nothing. map-creator is NOT ruled by these words. (2) a
+QUESTION with his own EXAMPLE and four statements of what he expects: `.index` read through a label of F, the
+bracket and the dot agreeing (`F["a"].index is F.a.index`), the values 1, 1, 2. Spellings are his placeholders
+(`seq`). His F is not written with a map literal: it is an ordinary pattern with labels.
+CHECKED AGAINST THE DOCUMENTS: his F parses as `([a = 99] SEQ [b = 76]) | [c = 87]` (core/operators/precedence:
+the sequence operator binds tighter than `|`): two alternatives, a and b in the first, c in the second; his three
+values are the position of the alternative each label is written in. core/values/metadata (a READING, not ruled)
+has `.index` on "A part label over an array": "the 1-based position in the array of the member that matched",
+read at match time (`w.index` is 2 on `Tue`); a label INSIDE one alternative has no `.index` there.
+RUN before answering (python `re`, F lowered mechanically with a group around each alternative; output pasted):
+F | WHOLE 9976 HOLDS 87 HOLDS 99 FAILS | SEARCHED 9976@0 alternative 1, set: a,b | FIND-ALL ['9976@0 alternative 1, set: a,b', '87@5 alternative 2, set: c', '87@11 alternative 2, set: c']
+The manager's answer (told to him; the manager's reading; nothing applied): (1) taken: the accessor is a search;
+its results are kept as found, no deduplication, and finding nothing is a result (the empty array), not an error.
+What is left to ask is the ORDER of the results: the manager's candidate, the map's order, an element appearing
+once for each key string that finds it (by its name, by its position), which gives `m["a"|1]` its two results and
+keeps two spellings of one key set alike. (2) one sentence fits his example and the documents' reading: `X.a.index`
+is the position, among X's alternatives, of the alternative `a` was set in; for a label written inside one
+alternative that is a constant (his 1, 1, 2); for a label over the whole array it is the member that matched
+(`w.index`, the month number). Edges named to him: a label whose alternative was not taken (unset, or the
+constant); which alternation counts when alternations nest (the source named in the path). His
+`F["a"].index is F.a.index` says a single-name bracket and the dot reach the same thing, the index staying F's:
+a result of the search is still F's element, not a renumbered copy.
