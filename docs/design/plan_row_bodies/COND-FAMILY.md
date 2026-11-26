@@ -11029,3 +11029,36 @@ DFA category (his standing question): maybe, about 0.8, for each group question,
 test against a fixed set and a capped counter; it rests on DFA captures for a looped label); the ruling changes
 no category.
 For the next fold, with drop-not (one lane: both re-spell the same printed lines).
+
+### 2026-11-25 OWNER PROPOSAL — braces as counting syntax: "{} as counting syntax like we use +. Thoughts?"
+tags: core/patterns/quantifiers lib/rx/repeat core/holes/count core/operators/precedence core/operators/bindings/unspecified core/spellings/placeholders
+
+HIS WORDS, whole:
+
+"Proposal: {} as counting syntax like we use +. Thoughts?"
+
+Class: a PROPOSAL (his word), with a request for thoughts: counts in braces as a postfix operator of the
+expression level, beside the nine postfix quantifiers. NOT a ruling.
+CHECKED AGAINST THE RECORD: it would reverse his own ruling of 2026-11-17 ("2026-11-17 OWNER RULING — quantifier
+operators", the addendum): "lets include the possessive forms but the brace counts are repeat." Said when
+`repeat` "took a single decimal" (his words elsewhere, the conservative route); since then the repeat head is
+ruled (repeat-head, 2026-11-23: `repeat(x, min = _, max = min)`; one count exact, 0 included; `_` leaves a bound
+out). The documents today: core/patterns/quantifiers "counts in braces are `repeat`"; lib/rx/repeat "A count in
+braces is not an operator of the language; inside a regex literal it is regex's own."
+RUN before answering (python `re`, subject `1 12345678 123`; each line the regex the brace form would be; output
+pasted):
+rx.digit{2,4}  = \d{2,4} | WHOLE '1' FAILS '12' HOLDS '1234' HOLDS '12345' FAILS | SEARCHED ('1234', 2) | FIND-ALL [('1234', 2), ('5678', 6), ('123', 11)]
+rx.digit{2,4}? = \d{2,4}? | WHOLE '1' FAILS '12' HOLDS '1234' HOLDS '12345' FAILS | SEARCHED ('12', 2) | FIND-ALL [('12', 2), ('34', 4), ('56', 6), ('78', 8), ('12', 11)]
+rx.digit{3}    = \d{3} | WHOLE '1' FAILS '12' FAILS '1234' FAILS '12345' FAILS | SEARCHED ('123', 2) | FIND-ALL [('123', 2), ('456', 5), ('123', 11)]
+rx.digit{3,}   = \d{3,} | WHOLE '1' FAILS '12' FAILS '1234' HOLDS '12345' HOLDS | SEARCHED ('12345678', 2) | FIND-ALL [('12345678', 2), ('123', 11)]
+rx.digit{,2}   = \d{0,2} | WHOLE '1' HOLDS '12' HOLDS '1234' FAILS '12345' FAILS | SEARCHED ('1', 0) | FIND-ALL [('1', 0), ('', 1), ('12', 2), ('34', 4), ('56', 6), ('78', 8), ('', 10), ('12', 11), ('3', 13), ('', 14)]
+The manager's thoughts (told to him; the manager's reading; nothing applied): in favour. (1) it is regex's own
+spelling, beside nine operators that already are; (2) it needs no new meaning: `x{a}`, `x{a,b}`, `x{a,}`, `x{,b}`
+are the ruled repeat head's four calls (`repeat(x, a)`, `(x, a, b)`, `(x, a, _)`, `(x, _, b)`), so the operator
+and the name are one construct; (3) it brings the lazy and possessive counted forms (`x{2,4}?`, `x{2,4}+`), which
+`rx.repeat` cannot write today; (4) inside the braces a count is a VALUE of the expression level (a constant, a
+binding, an array making copies as the count hole rules), with no `${}`. Costs: a reader's trap between
+`d{n}` (the binding n) and `/\d{n}/` (in rx text, the four characters, as PCRE); `{` after an operand is taken
+for good at the expression level (a map written in place, still queued, could not use a postfix brace); `x{}`
+and `x{,}` need a line (a compile error; `x*` is the spelling). DFA category: YES for constant counts, the states
+growing with the count. Put to him as a ruling, slug brace-counts.
