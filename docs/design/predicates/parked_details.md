@@ -1147,6 +1147,18 @@ history:
 - 2026-11-23 (lane predfix84, review r84 G4; record "2026-11-23 MANAGER — review r84 (predspot1122): the dispositions, ruled with the 2026-11-23 rulings in hand; no owner words"): a new parked piece. Its source is review r84 FIXIND-14 (4), a critic's unlock on label-names-spot generalised ("a name is visible where its spot is placed and listed"; members: argument-default, default-export, `_` closing, the label-only `hit`); the manager's disposition: PLAN, parked with the review's trigger, BOONIES weight unless the owner takes it up. No owner words; nothing for rulings:.
 - 2026-11-23 (lane predfix88, review r88 A13; record "2026-11-23 MANAGER — review r88 (predfold1123b): the dispositions; no owner words"): "padded's width form" now "padded_to".
 
+## parked/ideas/effect-form — A form of its own for effects, and a condition operator
+slugs:
+rulings:
+- 2026-11-23 (class: DISCUSSION) "Discussion: we use "A & cond" or "A seq cond" because they work and mean that we don't have to come up with another op code. But really they are not the same thing as A & B, etc. we could for total logical consistency create a new operator for conditions to reflect its different relationship with patterns. My point is, are already pushing it by using the operators that we are. Then, we add capture() to the mix in the same-but-more manner to stretch the idea further because it's convenient and ultimately it's a tool not a logical proofs language. I feel like we should be grateful for what we have gotten away with and hope nothing cracks" (record: "2026-11-23 OWNER RULING — capture-in-set: error; and a DISCUSSION: "we are already pushing it by using the operators that we are ... it's a tool not a logical proofs language""); his discussion with the capture-in-set ruling; nothing ruled, no request.
+rejected:
+readings:
+- (the manager's, told to him) the condition joined by `&` is the general form (core/filters/and), the capture request the real stretch, measured by its fences; a watch, not a build — applied (nothing to run).
+evidence:
+history:
+- 2026-11-23 (lane predfold1124, the fold of the 2026-11-23 rulings after review r88; record "2026-11-23 OWNER RULING — capture-in-set: error; and a DISCUSSION: "we are already pushing it by using the operators that we are ... it's a tool not a logical proofs language""): a new parked piece, at the record's note "A watch, not a build: a parked piece \"a form of its own for effects (and a condition operator)\", trigger: a second kind of effect arrives (the array request being built), or the capture request needs one more fence."
+- 2026-11-25 (lane predfix90, review r90 B7; record "2026-11-25 MANAGER — review r90 (predfold1124): the dispositions; no owner words"): the trigger marked the manager's; the general-form bullet marked the manager's reading; the text until then, verbatim: "Trigger: a second kind of effect is built (the array request), or the capture request needs one more fence. / - A condition joined by `&` is already the general form: `A & B` holds exactly when `A & (0: B)` holds (core/filters/and), so the pattern filter is the special case; the effect is the stretch.".
+
 ## parked/ideas/class-base — Number operations over a base given by a class
 slugs: 
 rulings:

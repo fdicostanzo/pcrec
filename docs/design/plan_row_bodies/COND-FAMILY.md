@@ -10403,3 +10403,549 @@ inside view and takes those two readings back for the outside view. It also meet
 lets an exported label be read from outside BY NAME (`pair.x`): "I must go through the tree" read literally
 would reverse it; not presumed, asked.
 Put to him as a ruling, slug label-tree.
+
+### 2026-11-23 OWNER, on label-tree: four rules covering paths within a single binding (a target and a start; no underscore label on the path unless it is the start; any label on the path may start; a middle label may be skipped where the target is unambiguous)
+tags: core/labels/rule core/labels/ownership core/labels/export core/labels/export/flat-read-outside core/labels/paths core/labels/paths/binding-prefix core/labels/paths/label-reference core/labels/export/arguments
+
+Asked **label-tree** (three lines: read directly inside the binding; the tree's paths from outside, every step
+open; `[_t = A]` is `[_ = [t = A]]`; the edge: the by-name read from outside). HIS WORDS, whole:
+
+"I can read your underscores in code blocks but I can't read mine curiously
+Label tree:
+"Inside X, both n.h and m.h read the digit." I thought about this and let me refine it.
+Rules covering paths within a single binding:
+1. in the label DAG there is a target label and a starting label. The starting label has at least one path to
+the target label
+2. the path may not contain any underscore labels full or prefix unless the underscore prefix label is the start
+3. within a binding, any label on the path may be used as a start label
+4. if a legal path exists a.b.c and c can be unambiguously referenced from a, then b can be skipped a.c
+Which we should extend for accessing across bindings.
+So your rule above works for reason 4. If there was an underscore label or underscore prefix in the path, that
+section could not be crossed. (Due to the local label equivalence)"
+
+Class: a PROPOSAL that REFINES label-tree ("let me refine it"): four rules, HIS, for paths within one binding,
+with a DIRECTION ("Which we should extend for accessing across bindings"). label-tree as the manager put it is
+NOT answered yes; it is replaced by these rules. NOT yet a ruling: the rules are put back to him with what they
+change and with the extension across bindings (slug path-rules). "the local label equivalence" is his
+`[_t = A]` equivalent to `[_ = [t = A]]` of the entry before.
+TESTED AGAINST THE PRINTED EXAMPLES before telling him (hand-applied to each line of core/labels/rule,
+core/labels/ownership and the pieces they cite; the answers quoted are the documents' printed runs):
+- `[n = [m = A]]`: `n.m.h` (the full path), `n.h` (rule 4), `m.h` (rule 3): all legal. The manager's closure
+  "never `n.m.h`" (withdrawn above) and the open piece stacked-chain's reading (a) are AGAINST rule 1; candidate
+  (b) of that piece is his.
+- "Outer the caller's, inner private", `[n = [_x = P]] & (n.d: <5)`: the path n, `_x`, d holds an underscore
+  label that is not the start: a COMPILE ERROR by rule 2 (printed legal today: the manager's reading (b) of
+  label-doors); the read is `_x.d`, `_x` the start.
+- "Outer private, inner the caller's", `[_x = [n = P]] & (n.d: <5)`: n is a start (rule 3), no underscore after
+  it: legal, as printed.
+- "A blank label in the stack", `[l = [_ = P]] & (l.d: <5)`: the path crosses the blank label: a COMPILE ERROR by
+  rule 2 (printed legal today: the manager's reading (c) of label-doors); nothing reads `d` there, which is
+  export statement 7's "not accessible locally to the binding".
+- his body `A(l:, P) := [l = [_x = P]] & (_x: 5)`: `_x` is the start: legal, as printed.
+- shorthand-is-callers' closing body, `B(A) & (A.d: <5)`, B(rx) := `/${[_ = rx]}xx/`: the caller's shorthand
+  label A is the start in the caller's binding and no underscore follows it: legal, as ruled; through the call
+  the path would cross the blank label: a compile error, as ruled.
+- the by-name read from outside (`pair.x`, `pub.h`; flat-read-outside, ruled 2026-11-22) is rule 4 with the
+  binding's name as the start: it STAYS. The manager's label-tree line "`X.m.h` from outside is a compile error"
+  is against rule 4 (skip `n`): withdrawn.
+The manager's readings (marked; put to him): (a) "any label on the path may be used as a start" means a label
+the binding's own text writes (label-reference, ruled: a label not written here is read with its source); (b)
+"unambiguously" is the existing rule (across `&` a name both sides surface is ambiguous; in a sequence the last
+mention; across `|` the branch taken); (c) the extension across bindings: the start is the binding's name, a
+macro's name at its call, or a label written on the use, then rules 1, 2 and 4 into its tree; a part USED ALONE
+inside that binding is crossed from outside as an underscore label is (default-export, ruled: protected), and is
+a start inside its own binding (the shorthand).
+
+### 2026-11-23 OWNER RULING — path-rules: yes (his four rules for paths within a binding, the manager's two readings of them, and rules 5 and 6 across bindings)
+tags: core/labels/rule core/labels/ownership core/labels/export core/labels/export/flat-read-outside core/labels/paths core/labels/paths/binding-prefix core/labels/paths/label-reference core/labels/export/arguments core/labels/paths/closed-argument
+
+ASKED AS A RULING (slug path-rules, the statement put to him: his four rules "as you wrote them" (the entry
+above: "1. in the label DAG there is a target label and a starting label. The starting label has at least one
+path to the target label 2. the path may not contain any underscore labels full or prefix unless the underscore
+prefix label is the start 3. within a binding, any label on the path may be used as a start label 4. if a legal
+path exists a.b.c and c can be unambiguously referenced from a, then b can be skipped a.c"); two readings of the
+manager's inside them: "'Any label on the path may be used as a start' means a label the binding's own text
+writes. A label held by a used binding is still read with its source, as you ruled under label-reference." and
+"'Unambiguously' is the existing rule: across `&` a name both sides set is ambiguous; in a sequence the last
+mention wins; across `|` the branch taken."; and the extension: "5. From outside, the start is the binding's
+name, a macro's name at its call, or a label written on the use. The path then continues into that binding's
+tree by rules 1, 2 and 4. 6. A part used alone inside a binding is crossed from outside as an underscore label
+is, and is a start inside its own binding."; with the four statements of the manager's the rules overturn, told
+to him: "stacked labels never chain" (`n.m.h`, `n.h`, `m.h` all legal for `[n = [m = A]]`); "`X.m.h` from
+outside is a compile error" (legal by rule 4); `[n = [_x = P]] & (n.d: <5)` (printed legal: a compile error by
+rule 2; `_x.d` legal); `[l = [_ = P]] & (l.d: <5)` (printed legal: a compile error by rule 2); the examples:
+X := `[n = [m = A]] SEQ "!"`, A := `/(?<h>\d)/`: from outside `X.n.m.h`, `X.n.h`, `X.m.h`, `X.h` all legal, RUN
+for `X & (X.n.m.h: <5)` (python `re`, part labels modelled as named groups, output pasted): WHOLE `3!` HOLDS,
+`7!` FAILS / SEARCHED `7! 3!` `3!`@3 / FIND-ALL `3! 7! 4!` [`3!`@0, `4!`@6]; X2 := `A SEQ "!"`: from outside
+`X2.h` and `X2.A.h` compile errors, inside X2 `A.h` legal; the manager's leaning yes to all six). HIS WORDS,
+whole:
+
+"path-rules: yes"
+
+Class: a RULING: rules 1 to 4 (his words), the two readings as put, rules 5 and 6 as put. It REPLACES label-tree
+(never answered) and label-doors line 5's reach: "their order does not matter" stands for which labels may START
+a path inside the binding that writes them (rule 3); a path that CROSSES an underscore label, full or prefix, is
+refused inside and outside alike (rule 2). The manager's readings (b) and (c) of label-doors (a path passes a
+private label stacked on the spot; `[l = [_ = P]]` opens P's labels through `l`) are WITHDRAWN; reading (a)
+(stacked is nested directly) loses its use: nesting is a path either way. stacked-chain is ANSWERED (the chain
+is legal). The by-name read from outside (flat-read-outside) is rule 4.
+The manager's readings (marked; for the fold to test): (d) the blank label is never a start (it has no name);
+(e) a label a caller writes in an argument, a sent label and the caller's shorthand label are labels of the
+CALLER's binding: starts there (rule 3), whatever the body stacks around them (shorthand-is-callers,
+closing-own-label, the backdoor); (f) from outside, through a call, the body's labels are the tree: `B.p.d`,
+and `B.d` by rule 4 where unambiguous; (g) his equivalence, `[_t = A]` is `[_ = [t = A]]`, is the picture of
+rule 2 (a wall with a start inside), not a second spelling: no label `t` is made.
+
+### 2026-11-23 OWNER RULING — options-reach-constants: yes (a file's weak `i` reaches a string constant)
+tags: lib/builtin/options core/patterns/flags core/holes/flags core/values/one-type
+
+ASKED AS A RULING (slug options-reach-constants, the constant half: "Does a file's weak `i` reach a string
+constant?", `"ab"` in a program file opening `@options(i)`; "Yes": WHOLE `ab` HOLDS, `AB` HOLDS / SEARCHED
+`x AB ab` `AB`@2 / FIND-ALL `ab AB` [`ab`@0, `AB`@3]; "No": WHOLE `ab` HOLDS, `AB` FAILS / SEARCHED `x AB ab`
+`ab`@5 / FIND-ALL `ab AB` [`ab`@0] (the printed candidate lines of lib/builtin/options); the forces: for yes,
+`"ab"` and `/ab/` one pattern in two spellings, `(h: "ab")` rejecting `AB` in a case-insensitive file a
+surprise; for no, strings are also keys and separators, `row(m:, "msg")` in such a file would match a `"MSG"`
+key; "The `x` option never applies to a string under either answer"; earlier in the same question: `m`, `s`,
+`n` have nothing to act on in a string, and names not matched against the subject (a capture's name, a
+warning's name) are unaffected; the manager's leaning yes). HIS WORDS, whole:
+
+"options-reach-constants: yes"
+
+Class: a RULING: a file's weak `i` is the default of the string constants written after the statement in that
+file, as of its rx literals; `x` never applies to a string. With it the ARGUMENT half stands as the manager
+closed it (a literal the caller writes as an argument takes the caller's file's options), told to him twice
+with "say if either needs asking properly"; he did not object: a closure, not his words.
+The manager's readings (marked; for the fold to test): (a) a string constant is weakly insensitive exactly as
+the literal of its text would be: the weak value does not propagate through a hole or across an import
+(hole-flags); (b) a string used as a name that is not matched against the subject (`capture("name")`, a warning
+selector's names, a parameter name) is unaffected; (c) a key or separator that IS matched (`row(m:, "msg")`,
+`sep = ","`) follows the file's `i`, the cost named to him.
+
+### 2026-11-23 OWNER RULING — option-hole-explicit: explicit (an `i` given through an option hole is explicit)
+tags: core/patterns/flags core/holes/option core/holes/flags lib/modifiers/any-case
+
+ASKED AS A RULING (slug option-hole-explicit: `/(?${o})${w}/`, o := `"i"`, w := `/ab/` in a library file that
+sets nothing: "Is that `i` explicit, so that it passes down into `w`?"; "Explicit": WHOLE `ab` HOLDS, `AB` HOLDS /
+SEARCHED `x AB ab` `AB`@2 / FIND-ALL `ab AB Ab` [`ab`@0, `AB`@3, `Ab`@6]; "Weak": WHOLE `ab` HOLDS, `AB` FAILS /
+SEARCHED `x AB ab` `ab`@5 / FIND-ALL `ab AB Ab` [`ab`@0], "The flag would cover the literal's own text and stop
+at the hole" (the printed candidate lines of core/patterns/flags); the manager's leaning explicit). HIS WORDS,
+whole:
+
+"option-hole-explicit: explicit"
+
+Class: a RULING: an `i` (or `-i`) that an option hole puts into a literal is EXPLICIT: it is inherited at a hole
+of that literal as a typed `(?i)` is. The manager's readings (marked; for the fold to test): (a) the same for
+every way the value reaches the option hole (a constant, a binding, a macro's parameter): what counts is that
+the literal's text has the option group; (b) the other letters an option hole may carry stay not inherited at a
+hole (hole-flags: only `i` and `-i`).
+
+### 2026-11-25 OWNER, on not-test: "is not in these examples a logical statement? Because I believe it would be the only logical statement"
+tags: lib/control/when-test/not core/filters/negation core/conditions/two-valued lib/control/when lib/control/peek core/principles/matching-language
+
+Re-asked **not-test** (`when(NOT x, z)`, x a bare pattern: the negative peek, the answers of
+`when(NOT peek(/\d/), /\w/)`, RUN (python `re`): WHOLE `x` HOLDS, `1` FAILS / SEARCHED `1x` ``@0 / FIND-ALL
+`x1 y 12` [`x`@0, ``@1, `y`@3, ``@5, ``@6]; or a compile error naming `NOT peek(x)`, the manager's leaning; the
+forces: a second negation of a pattern beside `!P`; the consuming-test warning; an error relaxes later without
+changing an answer). HIS WORDS, whole (his "Note test" read as the slug not-test, "not" as `NOT`: phone
+autocorrect):
+
+"Note test: is not in these examples a logical statement? Because I believe it would be the only logical
+statement"
+
+Class: a QUESTION with an OBSERVATION ("I believe it would be the only logical statement"). NOT a ruling;
+not-test is not answered by these words.
+The manager's answer (told to him; marked the manager's reading; nothing applied): in the two clear forms `NOT`
+is not a logical statement by the documents' own definition: its operand is already a zero-width test (a
+condition, a `peek`), and core/filters/negation has "`NOT c` on a condition holds exactly when c fails, a
+negative lookahead at its point" and "`NOT peek(A)` is `(?!A)`": a piece of the pattern that rejects and sends
+the match to its next path. On a BARE pattern it would be one: the operand consumes, so `NOT x` has to read the
+pattern as a proposition ("x matches here") before negating it, and nothing else in the language reads a pattern
+that way (`&` is a filter on a stretch, `|` an alternation, `!` a set complement). That is a ground for the
+compile error, beside the ones put to him.
+
+### 2026-11-25 OWNER, on not-test: "What I'm wondering is if we need it. I never specifically asked for it. It emerged from discussions on when. Couldn't ! Handle it?"
+tags: core/filters/negation core/conditions/two-valued core/filters/complement lib/control/when lib/control/when-test/not lib/control/peek core/operators/bindings
+
+Said on the manager's answer of the entry above (in the clear forms `NOT` is a negative lookahead on a
+zero-width test; on a bare pattern it would be the one logical statement). HIS WORDS, whole:
+
+"What I'm wondering is if we need it. I never specifically asked for it. It emerged from discussions on when.
+Couldn't ! Handle it?"
+
+Class: a QUESTION ("if we need it"; "Couldn't ! Handle it?") with a RECOLLECTION ("I never specifically asked for
+it. It emerged from discussions on when."). NOT a ruling.
+CHECKED AGAINST THE RECORD: the recollection holds in substance. NOT on a condition was the MANAGER's position
+("2026-11-16 ... THE MANAGER'S POSITION given to him ... NOT on a condition should be ALLOWED"), ruled by his
+"condition-not : yes allow not", and that entry spelled it `!`: "`!` on a condition is LEGAL". Before it,
+"not-is-complement: yes agree" had `!` on a pattern or a set only. The capital `NOT` is in his words once, on
+`when`: "When: start with required then. Use NOT to get else behavior" (2026-11-18). `NOT` on a zero-width
+pattern (`NOT peek(A)`, the `when` body's guard) is the manager's reading (core_details, core/filters/negation:
+"the reading the ruled `when` body needs").
+RUN before answering (python `re`; `/\d+/ & !/7/` modelled as the first greedy path of `\d+` whose stretch `7`
+does not match whole; output pasted):
+complement  /\d+/ & !/7/ : WHOLE 77 HOLDS, 7 FAILS, 37 HOLDS, 73 HOLDS / SEARCHED `7 73` ('73', 2) / FIND-ALL `7 73 37 77` [('73', 2), ('37', 5), ('77', 8)]
+negative peek  (?!7)\d+ : WHOLE 77 FAILS, 7 FAILS, 37 HOLDS, 73 FAILS / SEARCHED `7 73` ('3', 3) / FIND-ALL `7 73 37 77` [('3', 3), ('37', 5)]
+The manager's answer (told to him; every line the manager's reading; nothing applied): (1) on a CONDITION `!`
+handles it, and was the record's own spelling; `A & !B` is already `A & !(0: B)` (hand-derived from the ruled
+"`A & B` holds exactly when `A & (0: B)` holds"), so the condition is the general case. (2) On a PEEK today's
+`!` does not: a complement judges a whole stretch, a negative peek a point (the run above parts them). Making
+`!` mean "fails here" on a zero-width operand needs a rule for what counts as zero-width, and `!//` (today "not
+the empty text") would change meaning. (3) No operator is needed for the peek: PCRE's `(?!...)` in a body does
+it, `/(?!${A})/`, as `peek` is `/(?=${A})/`; the `when` guard is then `/(?!${test})/` (its printed lowering
+already reads `(?!\d)`). (4) not-test then dissolves: `when(!x, z)`, x a bare pattern, is a complement in a test
+position, the existing compile error (complement-place). Put to him as a ruling, slug drop-not.
+
+### 2026-11-25 OWNER, on drop-not: "What's the full peek family then peekback, etc"
+tags: lib/control/peek core/patterns/lookaround core/filters/negation lib/control/when lib/convention/argument-labels core/model/places
+
+Asked **drop-not** (three lines: `NOT` leaves the language, negation is `!` only, on a pattern or set the
+complement, on a condition "the condition fails"; the negative peek is a provided macro over `(?!...)`, the
+`when` guard `/(?!${test})/`; not-test closes as a complement in a test position; the manager's leaning yes to
+all three). HIS WORDS, whole:
+
+"What's the full peek family then peekback, etc"
+
+Class: a QUESTION (it names `peekback`, his word, a placeholder spelling). NOT a ruling; drop-not is not answered.
+RUN before answering (python `re`, subject `1x2 x3 4x x`; output pasted):
+peek x(?=\d) | WHOLE x FAILS | SEARCHED ('x', 1) | FIND-ALL [('x', 1), ('x', 4)]
+negative ahead x(?!\d) | WHOLE x HOLDS | SEARCHED ('x', 8) | FIND-ALL [('x', 8), ('x', 10)]
+peekback (?<=\d)x | WHOLE x FAILS | SEARCHED ('x', 1) | FIND-ALL [('x', 1), ('x', 8)]
+negative behind (?<!\d)x | WHOLE x HOLDS | SEARCHED ('x', 4) | FIND-ALL [('x', 4), ('x', 10)]
+The manager's answer (told to him; the manager's reading; nothing applied): the family is PCRE's lookarounds,
+each a one-line body around a pattern hole: four (`(?=`, `(?!`, `(?<=`, `(?<!`), and PCRE2's two non-atomic
+positive forms (`(?*`, `(?<*`), which an outside condition re-enters (core/patterns/lookaround has "A condition
+outside a lookahead never re-enters it" for the atomic ones). `build/pcrec --list-syntax` lists all six as built
+(module lookaround). The positive bodies carry the list on the spot; the negative ones pass no labels.
+
+### 2026-11-25 OWNER, on the negative peek's name: "nopeek sounds like it's "not peeking". peeknot sounds awkward but does read well: peeknot(digit)"
+tags: lib/control/peek core/spellings/placeholders core/filters/negation lib/control/when
+
+Said on the manager's table of the peek family (`peek`, `nopeek`, `peekback`, `nopeekback`, the manager's
+placeholders but `peekback`, and PCRE2's two non-atomic forms). HIS WORDS, whole:
+
+"nopeek sounds like it's "not peeking". peeknot sounds awkward but does read well: peeknot(digit)"
+
+Class: a LEAN on a SPELLING: the negative peek's name reads `peeknot` (`peeknot(digit)`), against the manager's
+`nopeek`. A placeholder for the spellings review (D193 addendum 4), taken as the working name. NOT a ruling;
+drop-not is not answered by these words (they presume a named negative peek, which is its line 2: noted, not
+taken as the answer). The manager's reading (marked): by the same pattern the behind forms would read `peekback`
+and `peekbacknot`; not asked.
+
+### 2026-11-25 OWNER, on drop-not: "So the issue with !peek() is that a complement on a lookahead is not meaningful"
+tags: core/filters/complement core/filters/kinds core/filters/operand-context lib/control/peek core/filters/negation core/model/places
+
+Said after the manager re-put drop-not with `peeknot(A)`. HIS WORDS, whole:
+
+"So the issue with !peek() is that a complement on a lookahead is not meaningful"
+
+Class: an OBSERVATION put as a check of his understanding. NOT a ruling; drop-not is not answered.
+The manager's answer (told to him; the manager's reading): yes. By the ruled pieces `!B` "holds on a stretch
+where no path of B matches it whole" (core/filters/complement) and is filter-only (core/filters/kinds); a
+lookahead is zero width and looks past its point. So (1) where the guard stands, in a sequence, a complement is
+the compile error (it cannot match by itself); (2) as an `&` operand the lookahead reaches outside the stretch,
+core/filters/operand-context's compile error; (3) were it judged anyway, the stretch its whole world, it says
+nothing about what follows: RUN (python `re`, `(?=A)` matched whole against the stretch alone; output pasted):
+peek(/\d/) whole on stretch '': no match -> complement HOLDS
+peek(/\d/) whole on stretch '5': no match -> complement HOLDS
+peek(/\d/) whole on stretch '57': no match -> complement HOLDS
+peek(/\d/) whole on stretch 'x': no match -> complement HOLDS
+peek(/\d*/) whole on stretch '': matches -> complement FAILS
+peek(/\d*/) whole on stretch '5': no match -> complement HOLDS
+peek(/\d*/) whole on stretch '57': no match -> complement HOLDS
+peek(/\d*/) whole on stretch 'x': no match -> complement HOLDS
+It holds on every stretch but the empty one with a nullable A: never the wanted "A cannot match from here".
+
+### 2026-11-25 OWNER, DISCUSSION on drop-not: "what about peek(!A) ? It practically reads the same. In the same vein that hole insertion depends on the location, perhaps peek() can detect complementary. Not a ruling. Discussion"
+tags: core/filters/complement core/filters/negation core/filters/kinds core/model/places core/holes/insert core/holes/pattern core/patterns/lookaround lib/control/peek lib/control/when lib/control/when-test/not core/principles/explicit-exceptions
+
+Said after the manager's answer that a complement on a lookahead is not meaningful. HIS WORDS, whole:
+
+"I see your logic. Here's my concern: we've abstracted away the regex so the logic here is based on the fact that
+we are using a special form of regex which the user cannot see directly. I'd expect as a user if I was using
+when() that I could use the "not" operator to provide not like behavior as generally it does. I could understand
+!peek() being an error because maybe you're "not peeking" but what about peek(!A) ? It practically reads the
+same. In the same vein that hole insertion depends on the location, perhaps peek() can detect complementary. Not
+a ruling. Discussion"
+
+Class: DISCUSSION (his words: "Not a ruling. Discussion"). A CONCERN (the user does not see the regex under
+`when`; he expects the not operator to give not-like behaviour there); a concession (`!peek()` an error is
+understandable); an IDEA: `peek(!A)`, the peek detecting a complement as a hole's meaning depends on its
+position. drop-not is NOT answered.
+RUN before answering (python `re`, subject `1x2 x3 4x x`, A := `\d`; output pasted):
+peek(!A) as (?!A): x(?!\d) | WHOLE x HOLDS | SEARCHED ('x', 8) | FIND-ALL [('x', 8), ('x', 10)]
+peek(anything & !A): | WHOLE x HOLDS | SEARCHED ('x', 1) | FIND-ALL [('x', 1), ('x', 4), ('x', 8), ('x', 10)]
+(?!(?=A)) against (?!A): 0 of 1456 differ
+The manager's thoughts (told to him; every line the manager's reading; nothing applied):
+- A general form of his idea exists in the documents' own terms: the place table (core/model/places) gives every
+  place its text and mode; `!B` is "no path of B matches, in the place's text and mode". In an `&` operand that
+  is the ruled sentence ("holds on a stretch where no path of B matches it whole"); in a lookahead's place ("from
+  its point, consuming nothing") it is "no path of B from this point", PCRE's `(?!B)`. So `peek(!A)` is the
+  negative peek by the complement's own definition read in the peek's place, not by a special case.
+- Where it lives: one more row of the hole positions (core/holes/insert): a hole that is the whole content of a
+  lookaround group takes a complement and flips the group (`(?=${!A})` is `(?!A)`). Today that cell is the
+  compile error (a complement in a pattern hole), so no existing answer moves.
+- With it the `when` guard is `peek(!test)` for every kind of test (a condition, a peek, a bare pattern; the third
+  line above: 0 of 1456 differ for a peek as the test), `NOT` and `peeknot` are both unneeded, `peekback(!A)` is
+  the negative behind form, and `when(!x, z)` on a bare pattern stays a compile error whose message names
+  `when(peek(!x), z)`.
+- The cost, a look-alike: `peek(!A)` and `peek(anything & !A)` part (the first two lines above): a lone
+  complement was never `anything & !A` (lone-complement-match: the lone complement stays an error), but a reader
+  may expect it.
+- `!peek(A)` stays the compile error under this form (a complement in a sequence place).
+
+### 2026-11-25 OWNER, DISCUSSION on drop-not: "when(peek()) and when() are different so they can have different semantics around !"; and a QUESTION with a GOAL: "Can these forms be converted into dfa? The goal is mostly dfa unless specifically turned off."
+tags: lib/control/when lib/control/when-test/not lib/control/peek core/filters/complement core/filters/and core/patterns/lookaround core/model/places lib/builtin/import parked/ideas/capability-optins parked/ideas/string-level-rx
+
+Said on the manager's thoughts on `peek(!A)` (the complement read in the peek's place; `when(!x, z)` on a bare
+pattern left a compile error, "what is your read on that one?"). HIS WORDS, whole:
+
+"when(peek()) and when() are different so they can have different semantics around !  Can these forms be
+converted into dfa? The goal is mostly dfa unless specifically turned off."
+
+Class: (1) an OBSERVATION in the discussion (drop-not and not-test are NOT answered): the test of `when` and the
+argument of a `peek` are different places, so `!` may mean something of its own in each. (2) a QUESTION: can
+these forms (`!`, `peek(!A)`, `when`) be converted into a DFA. (3) a GOAL he STATES: "The goal is mostly dfa
+unless specifically turned off." (not asked as a ruling; it agrees with the documents' default capability level,
+lib/builtin/import: "automaton code only by default").
+The manager's answer (told to him; the manager's reading; nothing applied; NOTHING RUN for the DFA part, no
+predicate build exists):
+- On (1): two ways `when(!x, z)` could work. (i) `when` looks at the kind of its test: not writable as a body
+  today (it needs the parked compile-time conditional). (ii) the general form of the place reading: wherever a
+  match is needed in place (a sequence spot, a pattern hole, a lookaround, a test), `!B` is the zero-width test
+  "no path of B from this point"; then `when`'s ruled body gives `when(!x, z)` the negative peek's answers with
+  no change (`(?!x)z|(?!(?!x))`, the run of the entry "on not-test" above), `!peek(A)` becomes legal too, and
+  `A SEQ !B` (B cannot follow) stands beside `A & !B` (the stretch is not B). (ii) reverses
+  lone-complement-match for every in-place position: his to rule, not presumed.
+- On (2): by the textbook closure of the regular languages, `&` (a product), `!` (determinise, then flip the
+  accepting states) and a lookaround over a regular pattern, negative included, stay regular, so each has a DFA
+  in principle; the spelling chosen (`NOT peek(A)`, `peeknot(A)`, `peek(!A)`) lowers to one regex and changes
+  nothing here. What is not regular in general: a condition comparing two labels or computing on a read, a
+  value hole over an unbounded read, captures returned to the caller. pcrec today (APPROACH.md's module table,
+  `--list-syntax`): every lookaround form is VM; the plan row [REQ-LOOKAROUND] cites "lookahead removal +
+  lookahead to DFA" as a general form. The work is the rx and graph manipulation layer of his remark to main
+  (from_main M-2).
+
+### 2026-11-25 OWNER, a GOAL amended: "goal is all dfa unless specified by user. I don't want "when" to force vm"
+tags: lib/control/when lib/control/peek core/patterns/lookaround lib/builtin/import parked/ideas/capability-optins core/filters/and core/filters/complement
+
+Said on the manager's answer that each form has a DFA in principle and that pcrec runs every lookaround on the
+VM today. HIS WORDS, whole:
+
+"Amended: goal is all dfa unless specified by user. I don't want "when" to force vm"
+
+Class: a GOAL he STATES, amending his sentence of the entry above ("mostly dfa unless specifically turned off"
+becomes "all dfa unless specified by user"), with one named case: `when` must not force the VM. Not asked as a
+ruling; recorded as his stated goal (a candidate principle for core/principles at the next fold, his words
+quoted). drop-not and not-test are NOT answered by it.
+The manager's reading of what follows (marked; nothing applied; nothing run):
+- The documents already carry the mechanism: lib/builtin/import has "A library element that needs more than the
+  level the user asked for (the capability the compiled program may use: automaton code only by default ...) is
+  a compile error naming the element, never a silent lift." Under it, with pcrec as it is today (every lookaround
+  on the VM), `when` and `peek` would be refused at the default level: `when`'s ruled body holds a lookahead
+  (`NOT peek(test)`, `(?!test)`). So the goal is a requirement on the BUILD: the lookaround forms the provided
+  bodies use (`(?=`, `(?!`, and the behind pair) over regular patterns compile into the automaton. For main.
+- Nothing in `when`'s definition is irregular in itself: with a regular test, then and else its body is a
+  regular pattern. What the user "specifies" is the rest: a condition comparing two labels, arithmetic on a
+  read, a value hole over an unbounded read, captures returned.
+- Not checked, to be checked by a design lane before it is promised: a label the test of a `when` sets, read by
+  a later condition against a fixed set (the lookahead's first path only, core/patterns/lookaround), as an
+  automaton.
+- The choice in discussion (`peek(!A)` alone, or the general in-place reading of `!`) is neutral to it: each
+  spelling lowers to the same regex.
+
+### 2026-11-25 MANAGER — review r90 (predfold1124): the dispositions; no owner words
+tags: core/labels/rule core/labels/rule/paths core/labels/rule/stacked-chain core/labels/ownership core/labels/export core/labels/paths core/labels/paths/argument-default core/labels/paths/closed-argument core/holes/labels core/diagnostics/errors core/operators/bindings/unspecified core/holes/insert core/patterns/flags lib/builtin/options lib/structural/capture lib/structural/capture/in-set parked/ideas/effect-form
+
+Review r90 (coordinator crit-predfold1124; five opus critics RULING, MODES, FIXIND, NAMEGRID, CHECKS and an opus
+verifier; frozen at 07a46f018; draft `$PCREC_TMPDIR/scratch/crit-predfold1124/review.md`). No finding changes an
+answer the owner RULED; A1 to A5 are cells of the path rules that no printed line reaches, where the fold's
+evidence engine and the rules part. The manager's dispositions (ids are the draft's):
+- A1 FIX-NOW as proposed (a public label over a sequence is legal by rules 1, 3, 4; the engine's chain
+  normalisation; one printed public line beside "Something between").
+- A2 FIX-NOW: "rule 4 applies repeatedly" as a clause MARKED a reading, its ground the asked statement's own
+  examples (`X.h`, `X.m.h` "all legal" for `[n = [m = A]]`); printed lines at depth 3 and at two binding levels.
+- A3 FIX-NOW: export statement 3 names rule 2 (a label under an underscore label is not exported: no path from
+  the binding's name reaches it), marked a reading; the engine carries rule 2 through a part label over a used
+  binding; one two-level printed line.
+- A4 FIX-NOW for the engine (rule 6 below a label over an expression or a hole) and a printed line for the mixed
+  case. `n.Q.d` INSIDE the binding (through a label, then a part used alone): an OPEN line, the manager's reading
+  for now a compile error (the read is `Q.d`; an implicit label is a start, never a middle), slug alone-as-middle.
+- A5 (ii) FIX-NOW (the engine; `B.a.d` through the body's `_x` is refused by rules 5 and 2); reading (e)
+  RESTRICTED: the caller's label is a start, never a licence to cross a wall below it. A5 (i) an OWNER QUESTION,
+  slug sent-label-wall; until asked, the reading is rule 2's compile error, marked, with an OPEN line.
+- A6 FIX-NOW as text: rule 4's candidates count only the targets a LEGAL path reaches (the inside twin of
+  flat-read-outside's "a source it keeps protected does not exist for that read"), MARKED a reading, an OPEN line
+  (slug skip-past-wall, an owner question), one printed line per operator.
+- A7 FIX-NOW: his equivalence is stated as the outside view; both inside lines printed; "UNTESTABLE" dropped;
+  the inside half an OWNER QUESTION, slug equivalence-inside.
+- A8 FIX-NOW: "for every body" narrowed to the read through `A.d` (his ruled sentence); the c.A ground restated
+  on reading (b), marked; "From outside" re-witnessed on a labelling body with its written-out half RUN; the
+  hand-worked claim corrected. Whether the expansion covers reads from outside: an OWNER QUESTION, slug
+  shorthand-outside.
+- A9, A10 FIX-NOW as proposed.
+- A11 FIX-NOW for the text items (a terms block in core/labels/rule/paths; the summary's "crosses" becomes his
+  "contain"; the nested-macro case pointed at a piece); the group-of-rx-text-as-a-node cell: an OPEN line, PLAN.
+- A12 FIX-NOW for the one cross-reference clause (rule 5's name start is line 3's shorthand under its
+  conditions). The unified reachability statement (one label tree, four node kinds): PLAN, NOT this fix lane;
+  its trigger: the four owner questions above answered, or the next export/path disagreement, whichever first.
+- B1 to B9 FIX-NOW as proposed.
+- C1 to C8 FIX-NOW as proposed. C9 FIX-NOW for the canary, the count of skipped error lines with a declared
+  change list, and a per-plant expected arm; the mutation harness is the acceptance gate for the arms this fix
+  lane adds or changes, not for all 103 surviving deletion mutants (the rest: PLAN, with main's [PRED-MUT-CHECK]).
+- FIXIND-9 REJECTED (the verifier refuted it).
+- Lesson 1 taken into the fix: the model gains a GRID over start kind x crossing x skip x level (depth 3, two
+  binding levels, a wall below every start kind) run against the rules written as a SEPARATE small evaluator.
+- The readings of the manager's the round refuted or narrowed are WITHDRAWN or restricted as above: reading (e)
+  of path-rules (restricted); "written out ... for every body" (narrowed); reading (g)'s "UNTESTABLE" (withdrawn:
+  it is tested, and fails inside the binding).
+- The owner's all-DFA goal and the drop-not discussion (the round's freeze drift) are NOT part of this fix.
+One opus fix lane, predfix90, applies these and files the review.
+
+### 2026-11-25 OWNER, on the DFA goal: its scope ("our peek and when forms"), a standing question ("should be asked repeatedly as we discuss features"), and three categories ("yes dfa, no not dfa under any circumstances, and maybe ... with a weight")
+tags: lib/control/peek lib/control/when lib/control/when-test core/patterns/lookaround core/conditions/form core/values/reads lib/structural/capture lib/builtin/import parked/ideas/capability-optins parked/ideas/match-is-rx-unlocks
+
+Said after the manager's summary of review r90 and of what stays open on drop-not. HIS WORDS, whole:
+
+"I'm just asking for our peek and when forms. Although, it's a question that should be asked repeatedly as we
+discuss features. Also: for some of those reads, I suspect it's possible to convert to dfa in certain
+circumstances. And we are going to try and do dfa captures. So the three categories are yes dfa, no not dfa under
+any circumstances, and maybe under certain circumstances with a weight between the two ends for the maybe."
+
+Class: (1) a CLARIFICATION of his question of the entry "Can these forms be converted into dfa?": it was asked of
+the peek and `when` forms. (2) a STANDING REQUEST for how features are discussed: the DFA question is asked of each
+feature as it is discussed. (3) an OBSERVATION ("I suspect"): some label reads convert to a DFA in certain
+circumstances. (4) a DIRECTION stated, main's side: "we are going to try and do dfa captures". (5) a CLASSING he
+gives: three categories, yes / never / maybe, the maybe carrying a weight between the two ends. None asked as a
+ruling; drop-not and not-test are NOT answered. Whether the goal sentence ("all dfa unless specified by user") is
+narrowed by (1) is not presumed: (1) says what his QUESTION was about; the goal stands as he stated it.
+The manager's answer (told to him; the manager's ESTIMATES, nothing run, no design check; the weights are the
+manager's guesses, 0 never, 1 yes): `peek(A)`, the negative peek, `peekback` and its negative, the non-atomic
+pair, each over a regular A with no label read afterwards: YES. `when` with a peek or a bare pattern as its test
+and regular branches: YES. `when` with a condition on one label against a fixed set as its test: MAYBE, about
+0.8 (the condition narrows the group; it rests on DFA captures for a label set in a loop or an optional). A label
+a peek or a `when` test sets, read afterwards against a fixed set (`peek.d`, `when.h`): MAYBE, about 0.6 (the
+first path only; the label may lie outside the match). A test comparing two labels or computing on a read:
+MAYBE, about 0.2, only where the reads are finite and small enough to enumerate; otherwise NEVER (unbounded
+reads). From now on each question put to him carries its category.
+
+### 2026-11-25 OWNER RULING — drop-not: "I agree with our conclusions: peek(!A)"
+tags: core/filters/negation core/filters/complement core/filters/kinds core/conditions/two-valued core/holes/insert core/holes/pattern core/patterns/lookaround core/model/places core/operators/precedence core/operators/bindings core/spellings/placeholders core/diagnostics/errors lib/control/peek lib/control/when lib/control/when-test lib/control/when-test/not core/filters/negation/effects
+
+ASKED AS A RULING (slug drop-not, 2026-11-25, the statement put to him: "1. `NOT` leaves the language. `!` is the
+only negation: the complement on a pattern or a set, "the condition fails" on a condition. 2. The negative peek is
+the provided macro `peeknot(A)`, the body `/(?!${A})/`. The `when` guard uses that form, and its answers do not
+change. 3. not-test closes with no new rule: `when(!x, z)` with x a bare pattern is a complement where a test is
+needed, the existing compile error. Else-only is `when(!(h: <5), z)` or `when(peeknot(x), z)`."; then, in the
+discussion entries above, his idea `peek(!A)` in place of line 2's macro, the manager's place reading of it, and
+the manager's leaning as last told to him: "`peek(!A)` alone, with the general rule as its own question",
+`when(!x, z)` on a bare pattern "left an error for now", `!peek(A)` an error). HIS WORDS, whole:
+
+"Drop not: I agree with our conclusions: peek(!A)"
+
+Class: a RULING (it answers drop-not by its slug). THE READING TAKEN of "our conclusions: peek(!A)" (the
+manager's, told to him the same turn so he can object):
+1. `NOT` leaves the language; `!` is the only negation: on a pattern or a set the complement (as ruled,
+   not-is-complement); on a condition "the condition fails", an absent label included (condition-not,
+   absent-under-not: the meaning is unchanged, the spelling is the record's own of 2026-11-16).
+2. The negative peek is `peek(!A)`, his form: a complement as the argument of a peek reads "A cannot match from
+   here", PCRE's `(?!A)`. No `peeknot`: his spelling lean of the entry above is moot. The `when` guard is
+   `peek(!test)`; no answer of `when` changes.
+3. `!peek(A)` stays a compile error (his "I could understand !peek() being an error"). `when(!x, z)`, x a bare
+   pattern, stays a compile error, its message naming `when(peek(!x), z)`: not-test is CLOSED by it (candidate
+   (a)). Else-only is written `when(!(h: <5), z)` or `when(peek(!x), z)`.
+4. NOT taken: the general rule that a complement written anywhere a match is needed in place means "cannot match
+   here" (it would reverse lone-complement-match); "its own question", not asked.
+It REVERSES nothing he ruled: "Use NOT to get else behavior" (2026-11-18) keeps its meaning under the spelling `!`.
+It RETIRES: the manager's reading "`NOT T`, T a zero-width pattern" (core/filters/negation); the exception of
+`NOT` to "a word is always a NAME".
+The manager's readings (marked; for the fold to test): (a) the ground is the place table: `!B` is "no path of B
+matches, in the place's text and mode"; in a lookaround's place that is the negative lookaround; (b) it lives as
+one row of core/holes/insert: a hole that is the WHOLE content of a lookaround group takes a complement and flips
+the group (`(?=${!A})` is `(?!A)`; `(?!${!A})` is `(?=A)`), in a user's body as in `peek`'s; anywhere else in a
+pattern position a complement stays the compile error; (c) nested: `peek(!peek(A))` is `(?!(?=A))`, the answers of
+`(?!A)` (RUN in the discussion entry: 0 of 1456 differ); (d) a complement's labels are never visible, so
+`peek(!A)` passes none on and the list on the spot takes nothing; (e) a behind peek, if provided, takes `!` the
+same way; which peek forms are provided is NOT ruled (his question "What's the full peek family" stands
+answered, not decided); (f) an effect under `!` stays capture-negated's compile error, `peek(!A)` with a request
+in A included; (g) `peek(!A)` is not `peek(anything & !A)` (RUN in the discussion entry): a user-doc trap.
+DFA category (his standing question): YES: every spelling lowers to the regex `NOT peek(A)` lowered to; the build
+note of P-30 stands.
+For the next fold (after lane predfix90 delivers; its own lane: it re-spells every printed `NOT`, the `when` body,
+core/filters/negation, core/holes/insert, core/operators/precedence, the spellings table, the error index, and
+closes lib/control/when-test/not).
+
+### 2026-11-25 OWNER, on group-truth: "Should: these operators take the array form of the label?"
+tags: core/model/table/group-truth lib/counting/some lib/counting/count lib/counting/occurs core/labels/labels-vs-captures/array-vs-passes core/conditions/form/record-in-some core/conditions/form/value-left core/conditions/form/optional-entry lib/structural/capture/add-on lib/structural/sorted core/spellings/placeholders
+
+Asked **group-truth** (under the array of settings, are `!some(c)` and `occurs.none(c)` one question and
+`occurs.none(!c)` another, so the item closes for a condition of one entry; the manager's leaning: close; RUN, a
+python model of the paths of `/(?:(?<d>\d)?,)+/`, most items first, c the condition `(d: "7")`, output pasted:
+!some((d: "7")) | WHOLE ',' HOLDS '1,' HOLDS '7,' FAILS '1,7,' FAILS '7,,' FAILS | SEARCHED 7,1, -> (',1,', 1) | FIND-ALL 1,7, , 7,7, -> [('1,', 0), (',', 3), (',', 5), (',', 8), (',', 10)]
+occurs.none((d: "7")) | WHOLE ',' HOLDS '1,' HOLDS '7,' FAILS '1,7,' FAILS '7,,' FAILS | SEARCHED 7,1, -> (',1,', 1) | FIND-ALL 1,7, , 7,7, -> [('1,', 0), (',', 3), (',', 5), (',', 8), (',', 10)]
+occurs.none(!(d: "7")) | WHOLE ',' HOLDS '1,' FAILS '7,' HOLDS '1,7,' FAILS '7,,' HOLDS | SEARCHED 7,1, -> ('7,', 0) | FIND-ALL 1,7, , 7,7, -> [(',7,', 1), (',', 5), ('7,7,', 7)]
+DFA category told: maybe, about 0.8). HIS WORDS, whole:
+
+"Should: these operators take the array form of the label?"
+
+Class: a QUESTION that is an IDEA: `some`, `count`, `occurs` taking the ARRAY form of a label (his `@x`) in place
+of a condition whose plain label name is read as the array. NOT a ruling; group-truth is NOT answered.
+CHECKED AGAINST THE RECORD: array-vs-passes (2026-11-21, ruled) settles WHAT the group questions read (the array
+of settings), not how the argument is written; the argument as a condition is from `some(c)` of 2026-11-15. His
+own example of 2026-11-22 wrote the label: "(count(chars.ch): ==5)" (the documents re-spelled it
+`count((chars.ch: anything))`). The other array readers already take the array form: `capture(@x)` (array-capture,
+ruled), `sorted` / `distinct` ("would take the ARRAY form of a read"), the index `h[k]`.
+The manager's answer (told to him; the manager's reading; nothing applied): yes, it is the better form. Today one
+text has two readings by where it stands: `(h: "7")` reads the label (the last setting) outside a group question
+and every setting inside one (the documents' printed lines "Outside the loop" and "Outside the loop, the label
+beside it": `/(?<h>\d);(?:(?<h>\d);)*/` on `7;`, `some((h: "7"))` HOLDS, `(h: "7")` FAILS). The fences that follow
+from it in the documents: a value entry, a joint entry, `?:` and a capture request are each refused inside a group
+question; a record of several entries is open (record-in-some); what `count` counts on several entries is "not
+stated"; a `$` read inside "reads the label as it stands". With the array written (`some(@d, "7")`,
+`occurs.none(@d, "7")`, `count(@d, "7")`, `count(@d)`), a condition reads the label everywhere and those fences
+have nothing to stand on; group-truth's third form is a complement on the SET (`occurs.none(@d, !"7")`), a
+setting never being absent. Put to him as a ruling, slug array-argument.
+
+### 2026-11-25 OWNER, on array-argument: "Let's discuss the against argument about conditions"
+tags: lib/counting/some lib/counting/count lib/counting/occurs core/conditions/form core/operators/bindings/label-kinds core/labels/labels-vs-captures/array-vs-passes core/conditions/form/record-in-some
+
+Asked **array-argument** (four lines: the group questions take the array form and a set; a condition reads the
+label everywhere; one array per call; group-truth closes inside it, the negation on the set; the "against" told
+to him: every printed group question is respelled, and a condition can no longer be handed to a group question
+as a ready-made argument). HIS WORDS, whole:
+
+"Let's discuss the against argument about conditions"
+
+Class: DISCUSSION (a request to discuss one force). NOT a ruling; array-argument is NOT answered.
+COUNTED before answering (`grep -o -E '(some|count|occurs\.[a-z_]+)\([^`]{0,60}'` over core.md and library.md,
+strings normalised): every group question a printed program RUNS is one entry written in place (`(d: "7")`,
+`(h.hit: >= 5)`, `(chars.ch: /(?s:.)/)`, `(ok: anything)`, `(h: $m)`), one of them negated (`some(NOT (d: "7"))`);
+the two-entry record is the open record-in-some; the joint, the value entry, `?:` and the capture request inside
+are each printed as compile errors; `some(c)` with a NAME for the condition appears only as notation in rule
+sentences, never in a program. No printed program hands a condition through a parameter to a group question.
+The manager's thoughts (told to him; the manager's reading; nothing applied): (1) what a condition offers as an
+argument beyond one entry is exactly the list the documents fence off inside a group question; (2) the finished
+question (`some(@d, "7")`) is itself a test and stays passable where a condition is; (3) the real loss: a USER
+macro that receives a condition and decides how to quantify it; with the array form it would need the label, and
+label-kinds (ruled 2026-11-23) keeps a label read but not placed "off limits for users" ("the reference kind can
+be used by natives"): `some`, `count`, `occurs` are natives, so they may take `@d`; a user's wrapper takes the
+set, or the finished question; (4) a middle form, the condition's shape with the array marked in it
+(`some((@d: "7"))`), keeps a condition as the argument and ends the two readings, at the price of rules for
+`(@d: S)` standing alone, for mixed entries, and of record-in-some staying open.
+
+### 2026-11-25 MANAGER — after lane predfix90: review r90 applied and filed; readings tested (no owner words)
+tags: core/labels/rule core/labels/rule/paths core/labels/ownership core/labels/export core/labels/paths core/labels/paths/argument-default core/labels/paths/closed-argument
+
+Lane predfix90 (delivered, lanecheck DONE; merged into `lane/pred-rev28`) applied the dispositions of the entry
+"review r90 (predfold1124): the dispositions" and filed the review (docs/dev/reviews/2026-11-25-r90-predfold1124.md).
+At the merged tip: lint `checks passed 9106, failed 0`; the model re-run by the manager, last line
+`predfix90_model: 26 checks, 0 failed` (its output differs from the committed one in run times only).
+- No printed answer of the fold moved (the lane's SWEEP and ERRSWEEP: 0). The evidence engine now answers the
+  cells of A1 to A5 as the path rules say; those cells are printed lines.
+- The manager's eight readings listed in the brief: each SUPPORTED by a run (the lane's READINGS10); they stay
+  READINGS, marked, until the owner rules the questions they rest on.
+- OPEN pieces added, each with both candidates run: core/labels/rule/sent-label-wall, skip-past-wall,
+  equivalence-inside, alone-as-middle, group-node (PLAN, the manager's to frame); core/labels/paths/shorthand-outside.
+- C3, ruled by the manager on the lane's flag: a predecessor model's engine CRASH is a class of its own in the
+  successor declaration (keyed by its crash rows, its reason naming the crash, never "documents moved"; a new or
+  changed crash row fails). Four historical models carry one; their files are not edited.
+- A12's unified reachability statement: not done, PLAN, its trigger as ruled.

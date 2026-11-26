@@ -519,3 +519,69 @@ Entries are `P-n`, dated, never deleted. `done:` lines name the branch tip and t
   to its own DELIVERY commit" (my brief said start commit; the lane corrected it); section 2: "the underscore
   vanishes inside inline code too: fenced blocks only" (he could not see `[_t = A]`).
 - Worktrees free to prune after your merge: predfold1123b, predfix88 (both merged into my branch).
+
+## P-29 (2026-11-23, predicate manager) — pausing (/close); NOT a delivery
+
+- Branch `lane/pred-rev28`, tip = the commit carrying this entry. It now ALSO carries lane predfold1124's fold
+  (shorthand-is-callers, path-rules, capture-in-set: error, exact-count-unspecified: error,
+  options-reach-constants: yes, option-hole-explicit: explicit): MERGED into my branch, lint 8,811 / 0, plan-lint
+  green, NOT REVIEWED. 0dda97065 (P-28, on main) stays the last reviewed tip: please do not merge this tip.
+- Next predicate session, first act: critic round r90 (your number) on that fold; then its fix lane and the real
+  `done:` (P-30).
+- [COND-FAMILY] status line: "2026-11-23 late: ruled and folded on the predicate branch, awaiting review r90: the
+  shorthand label is the caller's own; six path rules (no path crosses an underscore label unless it starts
+  there; stacked labels chain); capture-in-set and exact-count-unspecified are errors; a file's weak `i` reaches
+  string constants; an `i` through an option hole is explicit; asked: not-test".
+- Nothing of mine in flight, in the box queue or on a cron. Worktrees free to prune now: predfold1123b, predfix88
+  (both on main via P-28). Leave predfold1124 until P-30.
+- One more PROPOSED SKILL EDIT (pcrec-predicate-manager, section 2), beside P-28's three: "Before closing a
+  queued question on the record, name the CASE the owner's sentence was asked about; a closure outside that case
+  is asked in one line, never closed" (three closures or extensions of mine were overturned by his next message
+  on 2026-11-23).
+
+## P-30 (2026-11-25, predicate manager) — notice: the owner's goal for the predicate language's engine; NOT a delivery
+
+- HIS WORDS to me today, verbatim, two messages (record entries of 2026-11-25): "Can these forms be converted into
+  dfa? The goal is mostly dfa unless specifically turned off." then "Amended: goal is all dfa unless specified by
+  user. I don't want "when" to force vm".
+- What it touches in pcrec proper (my reading, yours to place): the provided bodies `when` and `peek` hold
+  lookarounds (`(?=`, `(?!`; the behind pair for a `peekback`), and `&` / `!` are a product and a complement of
+  automata. Every lookaround form is VM today (APPROACH.md's module table). So a predicate build at the default
+  level needs lookaround-over-a-regular-body in the automaton engine, beside the product and the complement: the
+  rx and graph manipulation layer of M-2. [REQ-LOOKAROUND]'s ref "lookahead removal + lookahead to DFA" is the
+  nearest existing row I found.
+- Nothing asked of you now (design only; no build go). It belongs in the [COND-FAMILY] row's requirements when you
+  next touch it. The `done:` for review r90's fold will be P-31.
+
+## P-31 (2026-11-25, predicate manager) — done: review r90 (predfold1124) ruled, applied, filed; the fold is deliverable
+
+- done: branch `lane/pred-rev28`, tip = the commit carrying this entry. It carries lane predfold1124's fold (the
+  six rulings of 2026-11-23 late: shorthand-is-callers, path-rules, capture-in-set, exact-count-unspecified,
+  options-reach-constants, option-hole-explicit), review r90 on it, and lane predfix90's fixes. Reports:
+  docs/dev/lanes/predfold1124_report.md, docs/dev/lanes/predfix90_report.md. Review:
+  docs/dev/reviews/2026-11-25-r90-predfold1124.md (+ its directory; INDEX line added).
+- Checks at the tip: `python3 -I scripts/pred_doc_lint.py` 9,106 / 0; `make -s test-plan-lint` green;
+  `predfix90_model: 26 checks, 0 failed` (re-run by me after the merge).
+- Also on the branch, RECORD ONLY (not in the documents yet): the owner's ruling drop-not (`NOT` leaves the
+  language; the negative peek is `peek(!A)`; not-test closed), his all-DFA goal (P-30), and the discussion of
+  array-argument (asked, not answered). Their fold is a later unit.
+- [COND-FAMILY] status line: "2026-11-25: r90 filed; the documents carry every ruling through
+  option-hole-explicit (2026-11-23); ruled since and not folded: drop-not (`NOT` leaves, `peek(!A)`); the owner's
+  stated goal: all DFA unless specified by the user, `when` must not force the VM; asked: array-argument; five
+  owner questions queued from r90 (sent-label-wall, skip-past-wall, equivalence-inside, shorthand-outside,
+  alone-as-middle)".
+- Worktrees free to prune after your merge: predfold1124, predfix90 (both merged into my branch). worktrees/predref
+  is not mine to judge: I did not create it this session.
+- r90's lessons for the critic guide (yours to place; docs/dev/reviews/2026-11-25-r90-predfold1124/process.md):
+  (1) a path-rule fold needs a GRID GENERATOR run against the rules written as a separate small evaluator (every
+  answer-level finding was a cell no printed line reached; the name-grid lens gets a one-program probe and is told
+  to cover depth 3, two binding levels and a wall below every start kind); (2) a declaration keyed on a verbatim
+  FAIL line that carries document LINE NUMBERS goes red on any later one-line edit: normalise them out, and the
+  committed .out is the delivered tip's run; (3) a reading phrased "whatever X does" is drilled on the inverse
+  position too.
+- PROPOSED SKILL EDITS, pcrec-predicate-manager: section 2: "each question put to the owner carries its DFA
+  category: yes / never / maybe with a weight, and what the maybe depends on" (his words 2026-11-25, record);
+  section 1: "read the memory index's TAIL too: a note cut off from the loaded index (the slow-burn week) was
+  missed and a full-size critic round was launched"; section 4: "after merging a lane, the manager re-runs its
+  model at the MERGED tip before the done: line (record entries land while a lane runs)".
+- REPLY: one line, either way (merged, or what blocks).

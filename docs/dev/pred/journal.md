@@ -1157,3 +1157,85 @@ wake.md says (read the draft WHOLE first; A4 is a ruled-words finding: read his 
 - NEXT: fold lane predfold1124 once label-tree is answered (scope: shorthand-is-callers, capture-in-set,
   exact-count-unspecified, label-tree, the three closures that stand (options-position's position half, the
   argument half of options-reach-constants), the parked effects piece).
+
+## 2026-11-23 — main merged P-28; r90 reserved
+
+- Main: P-28 (0dda97065) merged on main (push follows CI). Review number r90 is reserved for predfold1124's round.
+- Last REVIEWED tip is now 0dda97065. Waiting on the owner: label-tree, then options-reach-constants.
+
+## 2026-11-23 — path-rules RULED; fold lane predfold1124 launched (review r90 to follow)
+
+- His four path rules (a start and a target in the label DAG; no underscore label on the path unless it is the
+  start; any label of the binding may start; a middle label may be skipped where unambiguous) + my two readings +
+  rules 5 and 6 across bindings: RULED ("path-rules: yes"). It replaces label-tree and my readings (b), (c) of
+  label-doors; stacked-chain answered (the chain is legal); two printed lines become compile errors.
+- LAUNCHED lane predfold1124 (opus; worktree `worktrees/predfold1124`, cut at 172930848; deliver + empty rulings
+  first; lanewatch armed). Scope: shorthand-is-callers, capture-in-set, exact-count-unspecified, path-rules, two
+  standing closures (options mid-file; an argument literal takes the caller's file's options), the parked
+  effects piece. Not ruled, kept open: the constant half of options-reach-constants (ASKED).
+- NEXT: at its delivery: merge, lints, coordinator `crit-predfold1124` for r90 (design; ruling lens on the ASKED
+  statements, examples + expansion drill, fix-induced + general form, names grid over the path rules, check
+  adequacy incl. the header-mutation drill), rule, fix lane, P-29.
+- LESSON (third time this session a closure or extension of mine was overturned by his next message: by anyone
+  the body included; never chain; X.m.h an error): when I "apply his sentence literally" I keep extending it
+  past the case it was asked on. Before closing a queued question on the record, check WHICH CASE his sentence
+  was asked about and say so; a closure outside that case is asked, in one line, not closed.
+
+## 2026-11-23 — close (/close): predfold1124 delivered and merged; r90 NOT launched
+
+- RULED by the owner before the close: options-reach-constants: yes; option-hole-explicit: explicit (both sent to
+  the running lane as R-1, R-2 and folded). ASKED, not answered: not-test.
+- Lane predfold1124 delivered (lanecheck DONE; R-2 the last ruling applied): MERGED; lint 8,811 / 0 after I added
+  the two `rulings:` items it could not cite; plan-lint green; model 20 / 0, 20 plants caught, 15 predecessors
+  re-run, 50 reds declared verbatim; full run 66 s. Lane stopped.
+- NOT a delivery: the fold is unreviewed. r90 (reserved by main) is the FIRST act of the next session.
+- wake.md REWRITTEN from scratch; owner.md current; P-29 (pausing) posted; main told. Nothing in flight; no cron.
+
+## 2026-11-25 — ninth session: wake; r90 launched
+
+- Registered (session_role pred). Main merged into `lane/pred-rev28` (clean; tip 07a46f018); lint 8,811 / 0;
+  plan-lint green. M-3 read ([PRED-MUT-CHECK]: the 282 hand-copied mutants of scripts/tests/pred_doc/mut.py; the
+  class fix is mine, nothing asked now).
+- LAUNCHED coordinator `crit-predfold1124` (opus, background): review r90, design mode, subject the branch frozen at
+  its tip, scope `git diff 0dda97065..tip -- docs/design/predicates/`, record range from after "review r88
+  (predfold1123b): the dispositions" to the end; lenses asked: ruling (which case each sentence was asked on),
+  examples / mode closure + expansion drill, fix-induced + general form, name grid over the path rules, check
+  adequacy; denylist given; no known result told. Main told (no reply needed).
+- Read whole: core.md, library.md, parked.md; the record's eighth-session entries.
+- NEXT: re-ask not-test; on r90's hand-back: rule, one opus fix lane (files the review), merge, lints, P-30.
+
+## 2026-11-25 — drop-not in discussion; the all-DFA goal; r90 ruled; fix lane predfix90 launched
+
+- Owner (8 record entries, all classed; none a ruling): not-test re-asked -> "is not ... a logical statement?" ->
+  "Couldn't ! Handle it?" (record check: NOT on a condition was MY proposal, spelled `!` then) -> drop-not ASKED
+  (NOT leaves; `!` on a pattern, set or condition; the negative peek a body over `(?!...)`) -> the peek family ->
+  his spelling lean `peeknot` -> "a complement on a lookahead is not meaningful" (yes; run) -> his IDEA `peek(!A)`
+  (the peek detects a complement, as a hole's position decides) -> my general form: `!B` is "no path of B in the
+  place's text and mode" (place table), so `peek(!A)` is `(?!A)` by definition; the wider in-place rule would make
+  `when(!x, z)` work and reverse lone-complement-match: put to him, NOT answered.
+- GOAL he stated, amended: "goal is all dfa unless specified by user. I don't want "when" to force vm". Recorded;
+  P-30 notice to main (lookaround over a regular body in the automaton, product, complement: M-2's layer).
+- r90 hand-back (coordinator stopped): 12 A items, 9 B, 9 C, 1 rejected; no ruled answer changes. RULED (record
+  entry "review r90 (predfold1124): the dispositions"): all FIX-NOW but A12's unified statement and A11's group
+  node (PLAN) and the full mutant gate (PLAN); four owner questions queued: sent-label-wall, skip-past-wall,
+  equivalence-inside, shorthand-outside; open line alone-as-middle.
+- LAUNCHED lane predfix90 (opus; worktree `worktrees/predfix90`, cut at 33abd6926; deliver + empty rulings first;
+  lanewatch armed): applies r90, adds the path GRID against a separate rule evaluator, files the review.
+- NEXT: his answer on drop-not; at predfix90's delivery: merge, lints, P-31 `done:`, tell main.
+
+## 2026-11-25 — drop-not RULED; array-argument asked; predfix90 merged; P-31 done:
+
+- RULED by the owner: drop-not ("I agree with our conclusions: peek(!A)"): `NOT` leaves; `!` on a pattern, set or
+  condition; the negative peek is `peek(!A)`; `!peek(A)` and the bare `when(!x, z)` stay errors; not-test closed.
+  NOT folded (its own lane, after the budget question).
+- His standing request: each feature discussed carries its DFA category (yes / never / maybe + weight); memory
+  `pcrec-pred-dfa-category`; the peek and `when` forms classed for him.
+- /q: group-truth asked -> his idea: the group questions take the ARRAY form (`@d`) -> array-argument ASKED (four
+  lines; group-truth closes inside it) -> he asked to discuss the "against" (a condition as a ready-made argument):
+  census of printed calls told (every running call is one entry in place). NOT answered.
+- Lane predfix90 DELIVERED (lanecheck DONE), MERGED; lint 9,106 / 0; plan-lint green; the model re-run at the merged
+  tip 26 / 0. C3 ruled on the lane's flag (a crash is its own declared class). Lane and coordinator stopped.
+- P-31 `done:` posted; main told. SLOW-BURN WEEK (memory, seen late): no other lane or round this week unless the
+  owner says so; the drop-not (+ array-argument, if ruled) fold waits.
+- NEXT: his answer on array-argument; then the r90 questions one at a time (sent-label-wall, skip-past-wall,
+  equivalence-inside, shorthand-outside, alone-as-middle); the fold lane when he says go or the week resets.

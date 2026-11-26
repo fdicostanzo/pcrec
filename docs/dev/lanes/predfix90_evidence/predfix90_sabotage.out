@@ -1,0 +1,56 @@
+q1 -> CANARY (the PATH10 switch made a no-op (X10 forced on for the control)): caught (5 s)
+   last line: predfix90_model: 26 checks, 1 failed (CANARY)
+   its FAIL line (must name `the control is not`): FAIL CANARY: 4 canaries; the control is not predfold1124's engine: [('Y & (Y.c.h: <5)', 'refused', 'refused'), ('[n = [m = A] SEQ "!"] & (n.h: <5)', 'legal', 'legal'), ('X & (X.ab.l: <5)', 'refused', 'refused'), ('[n = [m = [k = P]]] & (n.k.d: <5)', 'legal', 'legal')]
+q2 -> PATHS10 (rule 2 off below a used binding (the two-level wall lost again)): caught (5 s)
+   last line: predfix90_model: 26 checks, 5 failed (CANARY, PATHS10, GRID, READINGS10, ERRSWEEP)
+   its FAIL line (must name `two-level wall`): FAIL PATHS10: arms failing: ['A3 the two-level wall']; pins MISSING: none
+q3 -> GRID (the evaluator's rule 4 limited to ONE skipped label): caught (5 s)
+   last line: predfix90_model: 26 checks, 2 failed (GRID, READINGS10)
+   its FAIL line (must name `disagreeing`): FAIL GRID: 3050 cells (legal->legal 771, refused->legal 86, refused->refused 2177, undecided->refused 16); disagreeing: [('in', 'n/m', '', 'refused', 'legal', None, ''), ('in', 'n/m/k', '', 'refused', 'legal', None, ''), ('in', 'n/m/k', 'n', 'refused', 'legal', None, ''), ('in', 'n/m/k', 'm', 'refused', 'legal', None, ''), ('in', 'n/m/k', 'k', 'refused', 'legal', None, ''), ('in', 'n/m/E', '', 're
+q4 -> GRID (the engine's rule 6 off below a label over an expression): caught (5 s)
+   last line: predfix90_model: 26 checks, 6 failed (CANARY, PATHS10, GRID, SWEEP, ERRSWEEP, DOC)
+   its FAIL line (must name `disagreeing`): FAIL GRID: 3050 cells (legal->legal 857, refused->legal 100, refused->refused 2077, undecided->refused 16); disagreeing: [('in', 'Y1/n/E', '', 'refused', 'legal', None, ''), ('in', 'Y1/n/E', 'n', 'refused', 'legal', None, ''), ('in', 'Y1/n/H', '', 'refused', 'legal', None, ''), ('in', 'Y1/n/H', 'n', 'refused', 'legal', None, ''), ('in_', 'Y1/n/E', '', 'refused', 'legal', None, ''), ('in_', 'Y1/n/E
+q5 -> READINGS10 (the sent label crosses the body's blank below it (reading A5 (i) reversed)): caught (5 s)
+   last line: predfix90_model: 26 checks, 4 failed (PATHS10, GRID, READINGS10, ERRSWEEP)
+   its FAIL line (must name `sent-label-wall`): FAIL READINGS10: 8 readings run: ["(5) sent-label-wall: the sent label above the body's blank a"]
+q6 -> PATHS10 (the reading clause "rule 4 applies repeatedly" dropped from core.md as read): caught (5 s)
+   last line: predfix90_model: 26 checks, 2 failed (PATHS10, GRID)
+   its FAIL line (must name `MISSING`): FAIL PATHS10: arms failing: ['pins']; pins MISSING: [('core/labels/rule/paths', 'rule 4 applies repeatedly')]
+q7 -> CONTROL (a provided body's direct regex written for the wrong digit): caught (5 s)
+   last line: predfix90_model: 26 checks, 1 failed (CONTROL)
+   its FAIL line (must name `differing`): FAIL CONTROL: differing (WHOLE, SEARCHED, FIND-ALL) against python `re` over 341 texts: [('identity(A) & (A.d: <5)', (2, 310, 310))]
+q8 -> TABLE10 (a table cell's ground changed (rule 2 -> rule 6) in core.md as read): caught (5 s)
+   last line: predfix90_model: 26 checks, 2 failed (NAMEGRID, TABLE10)
+   its FAIL line (must name `ground`): FAIL TABLE10: 30 cells read, each cell's ground set against the declared one; changed ground: [((2, 4), ['rule 2'], ['rule 6'])]
+q9 -> STACKCHAIN10 (the stacked-chain lede's `m.d` sentence reversed in core.md as read): caught (5 s)
+   last line: predfix90_model: 26 checks, 1 failed (STACKCHAIN10)
+   its FAIL line (must name `MISSING`): FAIL STACKCHAIN10: 4 sentences pinned; MISSING: [('core/labels/rule/stacked-chain', '`n.m.d` is the full path, `n.d` skips `m` (rule 4), `m.d` starts at `m` (rule 3)')]
+q10 -> READINGS (the engine crashes on a reading's program (a CRASH is no support)): caught (5 s)
+   last line: predfix90_model: 26 checks, 1 failed (READINGS)
+   its FAIL line (must name `shorthand-is-callers (b)`): FAIL READINGS: 7 readings run: ["shorthand-is-callers (b): the shorthand label protected (no export through the caller's label)"]
+q11 -> SWEEP (one printed answer moved in BOTH the engine's run and the document (status stays same)): caught (5 s)
+   last line: predfix90_model: 26 checks, 1 failed (SWEEP)
+   its FAIL line (must name `moved or gone and not declared 1`): FAIL SWEEP: 336 printed lines now (DIFF 8, REFUSED 61, same 291, unparsed 1), 320 at the starting commit under predfold1124's engine; undeclared 0; moved or gone and not declared 1; declared 0; added 16; stale declarations 0
+q12 -> ERRSWEEP (one printed compile-error line respelled so the parser skips it): caught (5 s)
+   last line: predfix90_model: 26 checks, 1 failed (ERRSWEEP)
+   its FAIL line (must name `skipped 1`): FAIL ERRSWEEP: 60 compile-error lines read, each refused with no crash: bad 0; skipped 5 (undeclared skipped 1); of the starting commit's lines 0 changed legality (undeclared change 0, stale 0)
+q13 -> SUCCESSOR10 (a declared red's missing-line set altered): caught (70 s)
+   last line: predfix90_model: 26 checks, 1 failed (SUCCESSOR10)
+   its FAIL line (must name `MISSING SET CHANGED`): FAIL SUCCESSOR10: 16 earlier models re-run (66 s in all), each red against its declared key (55 declared): [('predfix83', 'DOC', 'MISSING SET CHANGED')]
+q14 -> QUOTES (path rule 4 altered in the base piece only): caught (5 s)
+   last line: predfix90_model: 26 checks, 3 failed (PATHS, GRID, QUOTES)
+   its FAIL line (must name `missing: [(`): FAIL QUOTES: 15 quoted sentences, each in the record at 33abd6926 AND in its own piece, missing: [('4. if a legal path exists a.b.c and c can be unambiguously r', 'core/labels/rule/paths', True)]; 4 record titles cited, not a title or not cited: none
+q15 -> DOC (a formatted line altered): caught (5 s)
+   last line: predfix90_model: 26 checks, 1 failed (DOC)
+   its FAIL line (must name `missing: 1`): FAIL DOC: 84 lines, each in its own piece; missing: 1
+q16 -> GRID (a cell the rules decide left undecided by the evaluator (a rule dropped silently)): caught (5 s)
+   last line: predfix90_model: 26 checks, 1 failed (GRID)
+   its FAIL line (must name `undecided 17 (declared 16)`): FAIL GRID: 3050 cells (legal->legal 856, refused->refused 2177, undecided->legal 1, undecided->refused 16); disagreeing: none; undecided 17 (declared 16); sentences missing: none
+q17 -> NAMEGRID (a cell's deciding sentence dropped from its piece as read): caught (5 s)
+   last line: predfix90_model: 26 checks, 1 failed (NAMEGRID)
+   its FAIL line (must name `sentence missing`): FAIL NAMEGRID: 39 cells: decided 38, not modelled 1 ([('A.h', 'never placed', 'core/labels/paths/argument-default')]); disagreeing: [('A.h', 'twice, alone', 'plain', 'legal', 'legal', 'sentence missing', ''), ('A.h', 'twice, alone', 'group', 'legal', 'legal', 'sentence missing', ''), ('A.h', 'labelled, then alone', 'plain', 'legal', 'legal', 'sentence missing', ''), ('A.h', 'alone, then labelled',
+q18 -> ERRSWEEP (a starting-commit compile-error line made legal in the engine run, no declaration): caught (5 s)
+   last line: predfix90_model: 26 checks, 1 failed (ERRSWEEP)
+   its FAIL line (must name `undeclared change 1`): FAIL ERRSWEEP: 61 compile-error lines read, each refused with no crash: bad 0; skipped 4 (undeclared skipped 0); of the starting commit's lines 1 changed legality (undeclared change 1, stale 0)
+   each plant turned its target check FAIL, its FAIL line naming the planted fact, with no traceback
+predfix90_sabotage: 18 plants, 0 not caught

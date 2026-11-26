@@ -33,9 +33,9 @@ module: ?
   none today) or under a complement (a complement's labels are never visible), the set arguments (`between`, the S
   of `length` and `month_numbered`), the natives with no body.
 - Every covered body makes a label on its spot (the list, or `hit`), so a binding passed whole is read through the
-  call (`identity.d`, `hits.hit.d`), never by its own name: `A.d` is a compile error there (binding-as-label
-  condition 4; the manager's reading (b) for a list; core/labels/ownership). A body using its argument alone
-  (`hide`) passes nothing through the call, and there `A.d` is the shorthand (core/labels/paths/argument-default).
+  call (`identity.d`, `hits.hit.d`), and by its own name too: `A.d` is the caller's shorthand label, whatever the
+  body does with the spot (core/labels/paths/argument-default; core/labels/ownership). A body using its argument
+  alone (`hide`) passes nothing through the call, and there `A.d` is the only read.
 - A spot the body labels exports through that label instead (the manager's reading (d)): `hits` and `occurrences` keep
   the label-only `hit` around their argument and do not also write `(=)`; the caller reads `hits.hit.g`.
 - Two spots of one argument (list_of, padded_to): the same names, read by the label rules (the last mention,
@@ -50,7 +50,7 @@ hide: modes: a compile error (`hide(A) & (hide.d: <5)`, hide(x) := `/${x}/`: hid
 The same match, either body: WHOLE `3` HOLDS, `7` HOLDS / SEARCHED `7 3` `7`@0 / FIND-ALL `3 7 4` [`3`@0, `7`@2, `4`@4] (`hide(A)`, A := `/(?<d>\d)/`, hide(x) := `/${x}/`; `identity(A)` alike)
 Two arguments: WHOLE `7;3` HOLDS, `3;7` FAILS / SEARCHED `x3;7 7;3` `7;3`@5 / FIND-ALL `7;3 3;7 1;3` [`7;3`@0, `1;3`@8] (`W(/(?<h>\d)/, /;(?<h>\d)/) & (W.h: "3")`, W(a, b) := `[(=) = a] SEQ [(=) = b]`, the shape of when's then branch)
 A binding used alone in a call, through its name: WHOLE `3` HOLDS, `7` FAILS / SEARCHED `7 3` `3`@2 / FIND-ALL `3 7 4` [`3`@0, `4`@4] (`identity(A) & (identity.d: <5)`, A := `/(?<d>\d)/`, identity(x) := `/${[(=) = x]}/`)
-The same read through the argument's name: modes: a compile error (`identity(A) & (A.d: <5)`, A := `/(?<d>\d)/`, identity(x) := `/${[(=) = x]}/`: the list on the spot is a label made (binding-as-label, the manager's reading (b))).
+The same read through the argument's name: WHOLE `3` HOLDS, `7` FAILS / SEARCHED `7 3` `3`@2 / FIND-ALL `3 7 4` [`3`@0, `4`@4] (`identity(A) & (A.d: <5)`, A := `/(?<d>\d)/`, identity(x) := `/${[(=) = x]}/`)
 An expression exports what its text writes: WHOLE `25` FAILS, `13` HOLDS / SEARCHED `25` FAILS / FIND-ALL `25 13` [`13`@3] (`atomic(/(?<l>\d\d)/ | /(?<l>\d)\d/) & (atomic.l: <20)`); `atomic(B | A) & (atomic.l: <20)`, B and A bindings used alone in it, is a compile error
 
 ## Built-in names   [lib/builtin]
@@ -190,10 +190,18 @@ defined: native (compile-time effects: how a file's literals are read; the compi
 - His `n`: "Using predicate language it's going to be more likely to use () in a literal to mean no capturing
   group." Under `n` a plain `( )` is no capture and no numbered label (core/labels/numbers).
 - Not ruled: the spelling; options beyond the four (`xx`, `J`, `U`, the `&`-in-rx switch: the idea's list).
-- May `@options(..)` stand below a binding of its file, appear more than once, or turn a flag off (`@options(-s)`)?
-  (open options-position: "Candidate (a)", from the statement on, and "Candidate (b)", only at the top of a file.)
-- Do program options reach a string constant (`"ab"`) and an argument literal a library body places? (open
-  options-reach-constants: "Candidate (a)", they do, and "Candidate (b)", they do not, a line each.)
+- `@options(..)` may stand mid-file and applies from the statement on (a reading following the ruled "applies to
+  the literals written after it in the same file"; the line "Mid-file"); a later statement applies from its own
+  place on, and turning a flag off is written as PCRE writes it, `@options(-s)` (the manager's reading).
+- A literal the caller writes as an argument takes the caller's file's options: it is written in the program file
+  (a reading following the same ruled sentence and core/holes/flags, told to him, not his words; the line "An
+  argument literal").
+- A file's weak `i` reaches a string constant written after the statement in that file, as it reaches its rx
+  literals: his words "options-reach-constants: yes"; `x` never applies to a string (the line "A string constant").
+  Readings (the manager's): `m`, `s`, `n` have nothing to act on in a string; the weak value on a string does not
+  propagate through a hole or across an import (the line "A string from a library file"); a string used as a name
+  not matched against the subject (`capture("name")`, a warning selector's names, a parameter name) is unaffected;
+  a key or separator that is matched (`row(m:, "msg")`, `sep = ","`) follows the file's `i`.
 - `@options.strict(/no-fail/)` makes the warning named `no-fail` an error; "every warning" is the selector that
   matches every name.
 - The `@options` family's other members, capability opt-ins declared in the source, are an idea
@@ -201,12 +209,10 @@ defined: native (compile-time effects: how a file's literals are read; the compi
 - A compile-time effect: written after `@` only, as a statement (core/operators/statements).
 A library keeps its own options: WHOLE `a\nb` HOLDS, `axb` HOLDS / SEARCHED `a\nb axb` `a\nb`@0 / FIND-ALL `a\nb axb ayb` [`a\nb`@0, `axb`@4, `ayb`@8] (`/a${dot}b/`, dot := `/./` in a library file opening `@options(s)`)
 Never across an import: WHOLE `a\nb` FAILS, `axb` HOLDS / SEARCHED `a\nb axb` `axb`@4 / FIND-ALL `a\nb axb ayb` [`axb`@4, `ayb`@8] (`/a${dot}b/` in a program file opening `@options(s)`, dot := `/./` in a library file that sets nothing)
-Candidate (a) of options-reach-constants: WHOLE `ab` HOLDS, `AB` HOLDS / SEARCHED `x AB ab` `AB`@2 / FIND-ALL `ab AB` [`ab`@0, `AB`@3] (`"ab"` in a program file opening `@options(i)`)
-Candidate (b) of options-reach-constants: WHOLE `ab` HOLDS, `AB` FAILS / SEARCHED `x AB ab` `ab`@5 / FIND-ALL `ab AB` [`ab`@0] (`"ab"` in a program file opening `@options(i)`)
-Candidate (a) of options-reach-constants: WHOLE `a\nb` HOLDS, `axb` HOLDS / SEARCHED `a\nb axb` `a\nb`@0 / FIND-ALL `a\nb axb` [`a\nb`@0, `axb`@4] (`atomic(/a.b/)` in a program file opening `@options(s)`, atomic(X) := `/(?>${[(=) = X]})/` in a library file)
-Candidate (b) of options-reach-constants: WHOLE `a\nb` FAILS, `axb` HOLDS / SEARCHED `a\nb axb` `axb`@4 / FIND-ALL `a\nb axb` [`axb`@4] (`atomic(/a.b/)` in a program file opening `@options(s)`, atomic(X) := `/(?>${[(=) = X]})/` in a library file)
-Candidate (a) of options-position: WHOLE `x\ny` FAILS, `xay` HOLDS / SEARCHED `x\ny xay` `xay`@4 / FIND-ALL `x\ny xay xby` [`xay`@4, `xby`@8] (`/x${a}y/` in a program file writing a := `/./`, then `@options(s)`, then the program)
-Candidate (b) of options-position: modes: a compile error (`/x${a}y/` in a program file writing a := `/./`, then `@options(s)`, then the program: `@options` below a binding)
+A string constant: WHOLE `ab` HOLDS, `AB` HOLDS / SEARCHED `x AB ab` `AB`@2 / FIND-ALL `ab AB` [`ab`@0, `AB`@3] (`"ab"` in a program file opening `@options(i)`)
+A string from a library file: WHOLE `xab` HOLDS, `XAB` FAILS, `Xab` HOLDS / SEARCHED `xAB Xab` `Xab`@4 / FIND-ALL `xab xAB Xab` [`xab`@0, `Xab`@8] (`/x${c}/` in a program file opening `@options(i)`, c := `"ab"` in a library file that sets nothing)
+An argument literal: WHOLE `a\nb` HOLDS, `axb` HOLDS / SEARCHED `a\nb axb` `a\nb`@0 / FIND-ALL `a\nb axb` [`a\nb`@0, `axb`@4] (`atomic(/a.b/)` in a program file opening `@options(s)`, atomic(X) := `/(?>${[(=) = X]})/` in a library file)
+Mid-file: WHOLE `x\ny` FAILS, `xay` HOLDS / SEARCHED `x\ny xay` `xay`@4 / FIND-ALL `x\ny xay xby` [`xay`@4, `xby`@8] (`/x${a}y/` in a program file writing a := `/./`, then `@options(s)`, then the program)
 
 ## Modifiers   [lib/modifiers]
 
@@ -237,8 +243,11 @@ defined: language
 - n reaches the counts through count holes (a bare `n` inside the literal would be the text `n`); the any-length
   branch first. Each spot carries the list; the two spots give the same names, read in the branch taken.
 - The width is a MINIMUM: zeros reach out to n characters; a value already n or longer stands unpadded.
+- The width `_` is a compile error: the body writes it as an exact count (`{${n}}`; exact-count-unspecified,
+  core/operators/bindings/unspecified; the line "The width unspecified").
 - Its order is the body's: on a lazy or shortest-first argument it prefers the longer unpadded string: the body's
   stated behaviour, not an error. An alternation of filtered copies imposes its own order (a reading).
+The width unspecified: modes: a compile error (`padded_to(rx.digit, _)`: the body writes the width as an exact count (exact-count-unspecified)).
 WHOLE `0129` HOLDS / SEARCHED `x0129` `0129`@1 / FIND-ALL `0129 0000 12` [`0129`@0, `0000`@5] (`/${padded_to(/(?:\d\d)+?/, 3)}/`)
 Two digits at least: WHOLE `5` FAILS, `05` HOLDS, `005` FAILS, `55` FAILS / SEARCHED `x5 07` `07`@3 / FIND-ALL `5 07 123` [`07`@2] (`padded_to(rx.digit, 2)`)
 Three digits at least, two zeros: WHOLE `005` HOLDS, `05` FAILS, `0005` FAILS / SEARCHED `x005` `005`@1 / FIND-ALL `5 005 0005` [`005`@2, `000`@6] (`padded_to(rx.digit, 3)`)
@@ -330,13 +339,13 @@ defined: language
 - Labels A sets are readable after it, as after any lookahead, through the call: `peek.d` (wrapper-export, "agree
   (a)"; lib/convention/argument-labels); a group written in A in place is the caller's own, read bare too
   (core/labels/export/arguments).
-- A binding passed whole is read through the call, `peek.d`, not by its own name: the list is a label made on the
-  spot (core/labels/ownership; the line "Through the argument's name").
+- A binding passed whole is read through the call, `peek.d`, or by its own name, the caller's shorthand label
+  (core/labels/paths/argument-default; the line "Through the argument's name").
 - `NOT peek(A)` is the negative peek, `(?!A)`: "A cannot match here" (core/filters/negation).
 - A condition given as A is zero width already: `peek(c)` tests c where it stands, as c does (a reading).
 - `default: yes`: in the default-imported set, so written bare, not `module.peek` (the owner's lean).
 WHOLE `37` HOLDS (peek.d = `3`), `3` FAILS / SEARCHED `x37` `37`@1 / FIND-ALL `37 4 56` [`37`@0, `56`@5] (`peek(/(?<d>\d)/) SEQ /\d\d/` is `(?=(?:(?<d>\d)))\d\d`)
-Through the argument's name: modes: a compile error (`peek(A) SEQ /\d/ & (A.d: <5)`, A := `/(?<d>\d)/`: the body lists the spot, a label made (binding-as-label); the read is `peek.d`).
+Through the argument's name: WHOLE `3` HOLDS, `7` FAILS / SEARCHED `7 3` `3`@2 / FIND-ALL `3 7 4` [`3`@0, `4`@4] (`peek(A) SEQ /\d/ & (A.d: <5)`, A := `/(?<d>\d)/`)
 Read through the call: WHOLE `37` HOLDS, `73` FAILS / SEARCHED `x73 37` `37`@4 / FIND-ALL `37 73 56` [`37`@0] (`peek(/(?<d>\d)/) SEQ /\d\d/ & (peek.d: <5)`)
 
 ### when   [lib/control/when]   ruled 2026-11-22
@@ -357,15 +366,15 @@ defined: language
   else branch, a failed test setting nothing (a reading); each spot carries the list (lib/convention/argument-labels),
   the guard's `NOT peek(test)` none (a negation's labels are never visible). A read written in then of a label the
   caller writes in the test is legal: the label is the caller's own (core/labels/export/arguments; the line "A read
-  in then", on a user macro of the same shape). `when(A, (A.h: ..))` is a compile error: the test's spot carries
-  the list, a label made there (binding-as-label condition 4, the manager's reading (b);
-  core/labels/paths/closed-argument); the caller labels the test, `when([a = A], (a.h: ..))`, or reads `when.h`.
+  in then", on a user macro of the same shape). `when(A, (A.h: ..))` reads A's `h` by the caller's shorthand label,
+  whatever the body does with the spot (core/labels/paths/argument-default; the line "Through the argument's
+  name"); `when([a = A], (a.h: ..))` and `when.h` read it too.
   A name test and then both hold is one label, the last mention (the manager's answer on wrapper-export; run on a user macro of
   the same shape: lib/convention/argument-labels' line "Two arguments").
 - `//` stands for the owner's `null`, "nothing required"; `when`, `then`, `else` are placeholder spellings.
 WHOLE `12` HOLDS, `1` FAILS / SEARCHED `x123` `x`@0 / FIND-ALL `12 x 123 1x 7` [`12`@0, `x`@3, `12`@5, `x`@10] (`when(peek(/\d/), /\d\d/, else = /\w/)` is `(?=\d)\d\d|(?!\d)\w`)
 A read in then: WHOLE `3` HOLDS, `7` FAILS / SEARCHED `7 3` `3`@2 / FIND-ALL `3 7 4` [`3`@0, `4`@4] (`W(/(?<h>\d)/, (h: <5))`, W(a, b) := `[(=) = a] SEQ [(=) = b]`)
-Through the argument's name: modes: a compile error (`W(A, (A.h: <5))`, W(a, b) := `[(=) = a] SEQ [(=) = b]`, A := `/(?<h>\d)/`: the spot is listed, a label made (binding-as-label, the manager's reading (b)); `W([a = A], (a.h: <5))` reads it).
+Through the argument's name: WHOLE `3` HOLDS, `7` FAILS / SEARCHED `7 3` `3`@2 / FIND-ALL `3 7 4` [`3`@0, `4`@4] (`W(A, (A.h: <5))`, W(a, b) := `[(=) = a] SEQ [(=) = b]`, A := `/(?<h>\d)/`)
 The caller's own label: WHOLE `3` HOLDS, `7` FAILS / SEARCHED `7 3` `3`@2 / FIND-ALL `3 7 4` [`3`@0, `4`@4] (`W([a = A], (a.h: <5))`, W(a, b) := `[(=) = a] SEQ [(=) = b]`, A := `/(?<h>\d)/`)
 
 ### The test of `when`   [lib/control/when-test]   ruled 2026-11-18
@@ -401,10 +410,10 @@ defined: language
 - The rule an atomic part follows (a condition inside it is tried before it commits; one outside never re-enters
   it) is the core's (core/patterns/atomic); this piece is only the name.
 - The export list on its spot is wrapper-export's (ruled, lib/convention/argument-labels): `atomic.l` reads X's `l`;
-  a binding passed whole is not read by its own name there (core/labels/ownership; the line below).
+  a binding passed whole is read by its own name there too, the caller's shorthand label (core/labels/ownership; the line below).
 - The name and its spelling are placeholders.
 WHOLE `ac` HOLDS, `abc` FAILS / SEARCHED `xabc ac` `ac`@5 / FIND-ALL `ac abc ac` [`ac`@0, `ac`@7] (`atomic(/a|ab/) SEQ "c"` is `(?>(?:a|ab))c`)
-Through the argument's name: modes: a compile error (`atomic(A) & (A.d: <5)`, A := `/(?<d>\d)/`: the body lists the spot; the read is `atomic.d`).
+Through the argument's name: WHOLE `3` HOLDS, `7` FAILS / SEARCHED `7 3` `3`@2 / FIND-ALL `3 7 4` [`3`@0, `4`@4] (`atomic(A) & (A.d: <5)`, A := `/(?<d>\d)/`)
 
 ## Search   [lib/search]
 
@@ -434,7 +443,7 @@ defined: language
   is the label-only group (core/labels/label-only-group): no caller capture. A group written in the ARGUMENT is the
   caller's own text (`occurrences(/(?<n>\d+)/)`: n): read through the spot the body labels, `occurrences.hit.n`
   (the manager's reading (d): `hit` is a spot, so the body writes no `(=)`), or bare, the caller's own
-  (core/labels/export/arguments); a binding passed whole is read through `hit` only (core/labels/ownership); a
+  (core/labels/export/arguments); a binding passed whole through `hit` or its name (core/labels/ownership); a
   caller capture only where the program asks for one (capture-export); its declaring: lib/structural/capture/add-on.
 - A call may name its hit label (his spelling `occurrences(x, label = "foo")`, a placeholder: `label` is reserved
   metadata). Called twice in one definition, a plain read through the macro's name is binding-prefix's compile
@@ -466,7 +475,7 @@ defined: language
   the spot the body labels, so the argument's labels pass on through it (`hits.hit.g`) and the body writes no `(=)`
   (the manager's reading (d); lib/convention/argument-labels). A group written in the argument in place is the
   caller's own, read bare too (`g`, the last hit's; core/labels/export/arguments). A binding passed whole is read
-  through `hit`, not by its own name (core/labels/ownership; the line "Through the argument's name").
+  through `hit`, or by its own name, the caller's shorthand label (core/labels/ownership; the line "Through the argument's name").
   Reading the hits out as values is the captures level (the opt-in that reads captured text out; lib/builtin/import
   names the levels). The spelling is a placeholder (his: `all_matches`).
 - One call may be read by the macro's name: `hits(/\d+/) & (hits.hit: <5)` gives the answers of the line
@@ -475,7 +484,7 @@ defined: language
   is 3 and some hit is 4"): a test inside the argument chooses the hits; a test after the atomic `hits` judges
   them (a reading, run: `4 9 3` and `43` HOLD with the test inside, FAIL with every number tested after).
 WHOLE `aax` HOLDS (hits [`a`, `ax`]), `axa` FAILS (hits [`ax`, `a`]: the last hit's g unset) / SEARCHED `axa` FAILS / FIND-ALL `aax axa` [] (`hits(/a(?<g>x)?/) & (hits.hit.g: "x")`: the hit list is the whole subject's)
-Through the argument's name: modes: a compile error (`hits(A) & (A.d: <5)`, A := `/(?<d>\d)/`: the body labels the spot `hit`; the read is `hits.hit.d`).
+Through the argument's name: WHOLE `a1b3` HOLDS, `a3b9` FAILS, `ab` FAILS / SEARCHED `x9 3` `x9 3`@0 / FIND-ALL `a9b3 c7` [] (`hits(A) & (A.d: <5)`, A := `/(?<d>\d)/`)
 Bare, the caller's own: WHOLE `ax` HOLDS, `a` FAILS, `axa` FAILS / SEARCHED `a ax` `a ax`@0 / FIND-ALL `a ax ax` [`a ax ax`@0] (`hits(/a(?<g>x)?/) & (g: "x")`)
 Plain read, the last hit: WHOLE `a1b3` HOLDS (hits [`1`, `3`]), `a9b3` HOLDS (hits [`9`, `3`]), `a3b9` FAILS (hits [`3`, `9`]), `a1b22` FAILS (hits [`1`, `22`]), `ab` FAILS (hits []) / SEARCHED `x9 3` `x9 3`@0 / FIND-ALL `a9b3 c7` [] (`[h = hits(/\d+/)] & (h.hit: <5)`)
 Every hit, a group question: WHOLE `a1b3` HOLDS (hits [`1`, `3`]), `a9b3` FAILS (hits [`9`, `3`]), `a3b9` FAILS (hits [`3`, `9`]), `a1b22` FAILS (hits [`1`, `22`]), `ab` HOLDS (hits []) / SEARCHED `x9 3` FAILS / FIND-ALL `a9b3 c7` [] (`[h = hits(/\d+/)] & occurs.none((h.hit: >= 5))`)
@@ -849,8 +858,9 @@ defined: ?
   core/filters/negation/effects.
 - A one-literal program (a program that is exactly one literal) returns PCRE's own captures; any request makes the
   requested name follow the label rules, so a request after a loop gives the label (a reading; the line "After a loop").
-- Inside a set operator, with a value left of `:` or inside a group question: a compile error for now (the
-  conservative reading; open, lib/structural/capture/in-set).
+- Inside a set built with `|` or `&` (right of `:`): a compile error (his ruling, capture-in-set); with a value
+  left of `:` or inside a group question: a compile error for now (the manager's conservative readings);
+  lib/structural/capture/in-set.
 Requires the label: WHOLE `x` FAILS, `3x` HOLDS (h = `3`) / SEARCHED `x 3x` `3x`@2 / FIND-ALL `x 3x x` [`3x`@2] (`/(?<h>\d)?x/ & (h: capture("h"))`)
 If present: WHOLE `x` HOLDS (h unset), `3x` HOLDS (h = `3`) / SEARCHED `x 3x` `x`@0 / FIND-ALL `x 3x x` [`x`@0, `3x`@2, `x`@5] (`/(?<h>\d)?x/ & (h ?: capture("h"))`)
 The stretch: WHOLE `12` HOLDS, `x` FAILS / SEARCHED `x12` `12`@1 / FIND-ALL `1 22` [`1`@0, `22`@2] (`/\d+/ & capture("n")`)
@@ -860,20 +870,20 @@ A request on an open `0`: modes: a compile error (`/\d${(0: capture("n"))}x/`: p
 A request on `0` written last: WHOLE `12` HOLDS, `x` FAILS / SEARCHED `a12` `12`@1 / FIND-ALL `1 22` [`1`@0, `22`@2] (`/\d+${(0: capture("n"))}/`)
 After a loop: WHOLE `3;;` HOLDS (h unset), `3;` HOLDS (h = `3`), `3;4;` HOLDS (h = `4`) / SEARCHED `3;; 3;` `3;;`@0 / FIND-ALL `3; ;` [`3;`@0, `;`@3] (`/(?:(?<h>\d)?;)+/ & (h ?: capture("h"))`)
 
-### A capture request inside a set   [lib/structural/capture/in-set]   open capture-in-set 2026-11-23
-Is a capture request legal inside a set operator (`|`, `&` right of `:`), with a value left of `:`, or inside a group question? For now a compile error.
+### A capture request inside a set   [lib/structural/capture/in-set]   ruled 2026-11-23
+A capture request inside a set built with `|` or `&` (right of `:`) is a compile error; with a value left of `:` and inside a group question it is a compile error too, for now.
 needs: lib/structural/capture
-see: core/filters/negation/effects core/conditions/form/optional-edges
+see: core/filters/negation/effects core/conditions/form/optional-edges parked/ideas/effect-form
 module: ?
 defined: ?
-- The definition today (the conservative reading, marked): a compile error for now; no rule says which path of a
-  set union makes the request.
-- Candidate (a): keep the compile error.
-- Candidate (b): the request is made where the entry holds on the accepting path; as a set it is `anything`, so a
-  union with it accepts every value (the lines below; what the caller receives is not modelled).
-Inside a union: modes: a compile error (`/(?<h>\d)?x/ & (h: "3" | capture("h"))`; `(h: <5 & capture("h"))`, `($a: capture("h"))` and `some((h: capture("h")))` alike: for now).
-Candidate (b) of capture-in-set, a union: WHOLE `3x` HOLDS, `5x` HOLDS, `x` FAILS / SEARCHED `5x 3x` `5x`@0 / FIND-ALL `3x 5x x` [`3x`@0, `5x`@3] (`/(?<h>\d)?x/ & (h: "3" | capture("h"))`)
-Candidate (b) of capture-in-set, an intersection: WHOLE `3x` HOLDS, `5x` FAILS, `x` FAILS / SEARCHED `5x 3x` `3x`@3 / FIND-ALL `3x 5x x` [`3x`@0] (`/(?<h>\d)?x/ & (h: <5 & capture("h"))`)
+- His words: "capture-in-set: error."
+- The two other cases, a value left of `:` and inside a group question: compile errors for now (the manager's
+  conservative readings; core/principles/conservative-first).
+- His discussion on the same answer (the conditions' shared operators, an effect written as a set) is a parked
+  idea: parked/ideas/effect-form.
+Inside a union: modes: a compile error (`/(?<h>\d)?x/ & (h: "3" | capture("h"))`: his ruling).
+Inside an intersection: modes: a compile error (`/(?<h>\d)?x/ & (h: <5 & capture("h"))`: his ruling).
+The plain request: WHOLE `3x` HOLDS, `5x` HOLDS, `x` FAILS / SEARCHED `5x 3x` `5x`@0 / FIND-ALL `3x 5x x` [`3x`@0, `5x`@3] (`/(?<h>\d)?x/ & (h: capture("h"))`)
 
 ### Making a label a capture   [lib/structural/capture/add-on]   under-construction 2026-11-23
 A label is made the caller's capture after the fact by the request (lib/structural/capture); the request for every setting of a looped label, the array request, is ruled and unbuilt.
