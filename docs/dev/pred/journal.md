@@ -1256,3 +1256,16 @@ wake.md says (read the draft WHOLE first; A4 is a ruled-words finding: read his 
   `worktrees/predmap`, cut at 956869507; deliver + empty rulings first; lanewatch armed; no subagents). My own
   thought on his "sequence map" told to him: one map, the joining chosen by the name applied (`join`, `any_order`).
 - NEXT: predmap's report -> put map-creator back to him with its findings; then strings; then the r90 questions.
+
+## 2026-11-25 — close: map-creator and string-literals RULED; predmap merged; nothing folded
+
+- Lane predmap DELIVERED (lanecheck DONE; `predmap_runs: 54 cases, 0 failed`), MERGED; stopped. A study, no
+  document change.
+- RULED by the owner: map-creator "Yes to all seven" (after: no deduplication, "a search which might be empty",
+  "F.z must exist or error", the key's order, his `.index` example); string-literals "Yes all five" (the triple
+  quote reserved, parked).
+- MY ERROR, recorded: I withdrew the key's-order answer on meaning-not-spelling without running it; he asked
+  "why otherwise"; the two spellings enumerate alike; withdrawal withdrawn.
+- FIVE rulings and his all-DFA goal are in the record, NOT in the documents. The fold lane (predfold1125) waits
+  for his go or the weekly reset (slow-burn week).
+- wake.md REWRITTEN from scratch; owner.md current; P-32 (pausing) posted; main told. Nothing in flight; no cron.

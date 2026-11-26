@@ -1,83 +1,99 @@
 # Predicate-language manager: wake-up brief
 
-Rewritten 2026-11-23 (late) at the owner's `/close`, eighth predicate-manager session (one review ruled and filed,
-one fold delivered to main, a second fold merged and not reviewed, eight rulings). Committed docs win on any
-disagreement.
+Rewritten 2026-11-25 (late) at the owner's close, ninth predicate-manager session (one review ruled, applied,
+filed and delivered to main; five rulings and one stated goal recorded, none folded; one study lane). Committed
+docs win on any disagreement.
 
 ## State
 
-- Branch `lane/pred-rev28` (worktree `worktrees/pred`), tip = the close commit. Lint 8,811 / 0; `make -s
+- Branch `lane/pred-rev28` (worktree `worktrees/pred`), tip = the close commit. Lint 9,182+ / 0; `make -s
   test-plan-lint` green.
-- ON MAIN (merged by main, P-28, tip 0dda97065): everything through label-doors; reviews r84, r86, r88 ruled,
-  applied, filed. 0dda97065 is the last REVIEWED tip.
-- ON THE BRANCH, MERGED, NOT REVIEWED, NOT DELIVERED: lane predfold1124's fold: shorthand-is-callers, path-rules
-  (the new piece core/labels/rule/paths), capture-in-set: error, exact-count-unspecified: error,
-  options-reach-constants: yes, option-hole-explicit: explicit, two closures of mine (options mid-file; an
-  argument literal takes the caller's file's options), the parked piece effect-form. Report
-  `docs/dev/lanes/predfold1124_report.md`; evidence `docs/dev/lanes/predfold1124_evidence/` (20 / 0; 20 plants
-  caught; SUCCESSOR re-runs 15 models, 50 reds declared by verbatim FAIL line; full run 66 s). After the merge I
-  added the two `rulings:` items the lane could not cite (lib/builtin/options, core/patterns/flags).
-- REVIEW NUMBER r90 is reserved by main for this fold (topic predfold1124). NOT launched.
-- No lane, no cron, nothing in the box queue. Stopped: crit-predfold1123b, predfix88, predfold1124.
+- ON MAIN (merged by main at 16625c1f7, P-31): everything through the 2026-11-23 fold (shorthand-is-callers,
+  path-rules, capture-in-set, exact-count-unspecified, options-reach-constants, option-hole-explicit) with review
+  r90 ruled, applied (lane predfix90) and filed. That is the last REVIEWED tip. The documents' `predfix90_model`
+  is 26 / 0 (grid of 3,050 path cells against a separate evaluator).
+- ON THE BRANCH, beyond main: RECORD entries only (the whole ninth session, from "2026-11-25 OWNER, on not-test"
+  to the end, about 30 entries), the journal, `to_main.md` P-30 to P-32, and lane predmap's study
+  (`docs/dev/lanes/predmap_report.md`, evidence `predmap_evidence/`, 54 cases / 0). NO predicate document changed
+  since main's merge.
+- FIVE RULINGS IN THE RECORD, NOT IN THE DOCUMENTS (one fold lane owed, name it predfold1125):
+  drop-not (`NOT` leaves; `!` on a pattern, set or condition; the negative peek is `peek(!A)`; `!peek(A)` and the
+  bare `when(!x, z)` stay errors; not-test closed); array-argument (the group questions take `@d` and a set;
+  `every` back, over the array; one array per call; group-truth and every-pass-spelling closed); brace-counts
+  (`x{a}`, `x{a,b}`, `x{a,}`, `x{,b}` postfix, lazy and possessive after; `rx.repeat` stays); map-creator (seven
+  lines: a labelled array with an enforcing literal; `m.a` must exist; `m[key]` a search in the key's order, no
+  deduplication, empty allowed; an infinite key under construction; binding = members, label = settings;
+  `X.a.index`); string-literals (five lines; the triple quote reserved, parked).
+- HIS STATED GOAL (not a slug ruling; a candidate for core/principles at the fold, his words quoted): "goal is all
+  dfa unless specified by user. I don't want "when" to force vm". His standing request: every feature discussed
+  carries its DFA category, "yes dfa, no not dfa under any circumstances, and maybe ... with a weight" (memory
+  `pcrec-pred-dfa-category`). Passed to main as P-30.
+- BUDGET: memory `pcrec-slow-burn-week` (2026-11-25, 85% of the weekly subscription): one lane at a time, sonnet
+  where it fits, no optional lanes, critic rounds sized small. I told him the fold lane waits for his go or the
+  weekly reset. ASK HIM before launching it.
+- No lane, no cron, nothing in the box queue. Stopped: crit-predfold1124, predfix90, predmap. Worktrees
+  predfold1124, predfix90 are main's to prune; predmap is merged into my branch (free to prune after main's next
+  merge).
 
 ## READ, IN THIS ORDER
 
-1. The skill.
-2. `core.md` (in parts), `library.md`, `parked.md` on the branch. NEW: core/labels/rule/paths (his six path
-   rules); the ownership table's argument row (legal in every column); the two lines now refused by rule 2.
-3. The record from "2026-11-23 MANAGER — review r88 (predfold1123b): the dispositions" to the end (about 15
-   entries: the whole eighth session). The rulings, by slug: shorthand-is-callers ("Setting a label closes a path
-   (through the shorthand in that binding) but doesn't block out the target"), capture-in-set: error,
-   exact-count-unspecified: error, path-rules (his four rules + my two readings + rules 5 and 6),
-   options-reach-constants: yes, option-hole-explicit: explicit.
-4. `docs/dev/lanes/predfold1124_report.md` (ANSWERS CHANGED: 11 compile-error lines now legal, 2 newly refused,
-   "Alone first" reads the labelled spot; MANAGER READINGS TESTED: four could not be tested).
-5. `journal.md` from "2026-11-23 — eighth session: wake"; `owner.md`.
+1. The skill. The memory index TO ITS END (it is cut off when loaded: read the file's tail).
+2. `core.md` (in parts), `library.md`, `parked.md` on the branch. NEW since the eighth session, from predfix90:
+   the terms block and the repeated rule 4 in core/labels/rule/paths; six open pieces (core/labels/rule/
+   sent-label-wall, skip-past-wall, equivalence-inside, alone-as-middle, group-node; core/labels/paths/
+   shorthand-outside), each with both candidates run.
+3. The record from "2026-11-25 OWNER, on not-test" to the end. Each ruling entry quotes the ASKED statement and
+   lists the manager's readings for the fold to test.
+4. `docs/dev/lanes/predmap_report.md` (the clash grid: 44 of 49 cells undecided before the ruling; its ten
+   question slugs) and `docs/dev/lanes/predfix90_report.md` (OWNER QUESTIONS LEFT).
+5. `journal.md` from "2026-11-25 — ninth session: wake"; `owner.md`.
 
 ## NEXT, in order
 
-1. LAUNCH r90 BEFORE the first question: coordinator `crit-predfold1124` (opus, background; pcrec-critic, design
-   mode), subject `lane/pred-rev28` frozen at its tip, scope `git diff 0dda97065..<tip> --
-   docs/design/predicates/`, record range = every entry after "MANAGER — review r88 (predfold1123b): the
-   dispositions" to the end. Denylist as r88's launch (the lane reports, docs/dev/pred/ except doc_format.md,
-   earlier pred reviews, the writers' scratch dirs). Lenses: RULING (each ASKED statement against the documents;
-   WHICH CASE each sentence of his was asked on); EXAMPLES / mode closure + the EXPANSION drill (`B(A)` against
-   `B([A = A])` for every body shape); FIX-INDUCED + general form (the six path rules against EVERY printed
-   example of core/labels/* and lib/*; what still says "the body's label blocks the caller"); a NAMES grid over
-   the path rules (start x crossing x skip x inside/outside); CHECK adequacy (header-mutation drill; are the 50
-   declared reds "documents moved" or real). Do not quote a run time: let the coordinator measure.
-2. Rule r90 (a record entry), ONE opus fix lane (it files the review), merge, lints, P-30 `done:`, tell main.
+1. ASK HIM for the go on the fold lane (budget). Then: ask main for a review number FIRST; lane predfold1125
+   (opus by the skill; say so to him given the budget), worktree cut from this branch, deliver + empty rulings
+   written first. Its brief quotes the five ASKED statements from the record (never my summaries), lists every
+   reading marked "for the fold to test", and adds the parked pieces owed: one name for two of a library's labels
+   by the export list; a selection of an array's settings by position; the triple-quote string; the general rule
+   "a complement written in place means cannot match here" (NOT taken; its own question); the peek family (which
+   forms are provided is NOT ruled; his spelling lean `peeknot` is moot); his all-DFA goal as a principle.
+   It re-spells every printed `NOT`, every group question, the `when` body (`peek(!test)`), core/filters/negation,
+   core/holes/insert (the lookaround row), core/operators/precedence (braces, the map literal), core/modules/map
+   (amended), core/values/metadata (`.index` ruled), lib/counting/* and closes lib/control/when-test/not,
+   core/model/table/group-truth, lib/counting/every-pass, core/conditions/form/record-in-some (my reading).
+2. A critic round on that fold, SIZED SMALL while the budget holds; then rule, fix, `done:`.
 
-## The question queue
+## The question queue (one per turn; each carries its DFA category)
 
-ASKED, not answered: **not-test** (`when(NOT x, z)`, x a bare pattern: a compile error naming `NOT peek(x)`, my
-leaning; or a negative peek). Re-ask it first (it has no underscores).
-Then: group-truth (a cheap closure: ASK it in one line, do not close it); optional-label-general (his flag) with
-optional-entry-edges and the PLAN item G3 (one optionality table); number-in-loop (may lose its subject under
-the `n` option); condition-group; record-in-some; every-pass-spelling; tuple-parts; default-imports;
-export-choice; any-case-body; a map written in place; a user macro taking a macro (budget or kinds); a label
-pre-defined as a symbol; `hide` / `identity` as provided names; macro types / declared labels; count-several.
+From review r90, runs for both candidates already in the documents: sent-label-wall, skip-past-wall,
+equivalence-inside, shorthand-outside, alone-as-middle. Mine to frame first: group-node (a named group of rx text
+as a path step).
+From today, left open by his rulings: a key read at match time (`m[$k]`, the table lookup; maybe about 0.7);
+brackets on a module; whether a join over a map keeps the parts' labels (his "sequence map"; my view recorded:
+one map, the joining chosen by the name applied); `.index` of a label whose alternative was not taken; which
+alternation counts when alternations nest; the general in-place complement rule; which peek forms are provided;
+the triple-quote form (parked, a minimal definition told to him).
+Older: optional-label-general with optional-entry-edges and the PLAN item G3; number-in-loop; condition-group;
+tuple-parts; default-imports; export-choice; any-case-body; a user macro taking a macro; a label pre-defined as a
+symbol; `hide` / `identity` as provided names; macro types / declared labels.
 Mine to write, not his: the optional-member idiom; duplicate keys.
-THE SPELLINGS REVIEW grew: `?:`, `l:`, `_:`, `l = ts:`, `@x.year`, `capture("name")`, `B(d=isodate)`, the
-unspecified mark, a compile-time conditional's `?` `:`, `padded_to`, `@options(-s)`.
-PLAN items carried: G3; r88's NAMES-5 (the never-placed argument); B10 (pool only if the full run passes ~2 min:
-66 s today).
-For a pcre2-reader, not him: the members of `(?i)k` per mode; what a by-name read returns for a duplicate name.
+THE SPELLINGS REVIEW grew: the array mark on a path (`@chars.ch` or his `x.@a`), the map literal (`{a = A}`, mine),
+the `occurs` parameter order, `peek(!A)`, the triple quote, plus the eighth session's list.
+PLAN items carried: G3; A12's unified reachability statement (trigger: the r90 questions answered, or the next
+export/path disagreement); the full mutant gate with main's [PRED-MUT-CHECK]; a `dfa:` line per piece (MY idea,
+not asked: put it to him before doing it).
 
-## Lessons (cases; the rule-shaped ones are in P-28 / P-29 for main)
+## Lessons (cases; the rule-shaped ones are in P-31 / P-32 for main)
 
-- THREE times this session a closure or extension of mine was overturned by his next message ("made by anyone,
-  the body included"; "stacked labels never chain"; "`X.m.h` from outside is an error"). Each carried a sentence
-  of his past the case it was asked on. Before closing anything on the record: name the case his sentence was
-  asked about; outside it, ASK in one line.
-- A reading of mine attached to one of HIS conditions is a separate line of the statement put to him; a table
-  derived through it says which rows rest on it (he ruled a table, then said the intent was otherwise).
-- When he answers a ruling question with "how about ..." it is a proposal: check whether an existing ruled form
-  already serves his purpose (the count 0) and show the candidates side by side as a small table of runs.
-- Underscores: he cannot see them in inline code either. FENCED BLOCKS ONLY for anything with an underscore;
-  his own arrive here intact.
-- A fold's "N checks, 0 failed" is read down to the per-model last lines (r88 B1: 13 dead predecessors declared
-  superseded; my "over ten minutes" was wrong). Predecessor models are pinned to their DELIVERY commits.
-- A lane idles on its own run unless told; the brief sentence "never wait for a notification" was still not
-  enough once (predfix88): nudge at the first idle notification.
+- I withdrew a told answer (the key's order for `m["a"|1]`) on a principle I had not run on the case, then had to
+  withdraw the withdrawal when he asked "why otherwise": `"a"|"b"` and `/a|b/` enumerate alike. Before invoking
+  meaning-not-spelling, RUN the two spellings through the rule (here `enumerate`'s order).
+- The slow-burn note was cut off from the loaded memory index; a full-size critic round and an opus lane ran
+  before I saw it. Read the index file's tail at wake.
+- His questions that begin "couldn't X handle it", "should these take ..." were each a better design than the
+  one on the table (drop-not, array-argument, `peek(!A)`, `every`): check the RECORD for where the current form
+  came from (three times it was mine, not his) before defending it.
+- A lane's `done` line is re-run at the MERGED tip before the `done:` to main (record entries land while a lane
+  runs; predfix90's model was 26 / 0 again, timings only).
 - Echo hand-backs arrive after merges (three today): "an echo, nothing new", once.
+- A helper subagent's hand-back can reach the manager when a lane spawned it; nothing to do but note it.
