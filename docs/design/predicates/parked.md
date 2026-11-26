@@ -331,13 +331,13 @@ modes: n/a (parked: not in the language)
 
 ### A form of its own for effects, and a condition operator   [parked/ideas/effect-form]   parked 2026-11-23
 A spelling for effects (the capture request) apart from sets, and an operator joining a condition to a pattern apart from `&` and the sequence operator.
-Trigger: a second kind of effect is built (the array request), or the capture request needs one more fence.
+Trigger: a second kind of effect is built (the array request), or the capture request needs one more fence (the manager's trigger).
 Source: his discussion with the capture-in-set ruling (the details entry).
 see: lib/structural/capture lib/structural/capture/in-set core/filters/and core/filters/negation/effects
 - The fences the capture request needs today: none under a negation, none inside a set operator, none on an open
   `0` (ruled); none with a value left of `:`, none inside a group question, none in `when`'s test (readings).
-- A condition joined by `&` is already the general form: `A & B` holds exactly when `A & (0: B)` holds
-  (core/filters/and), so the pattern filter is the special case; the effect is the stretch.
+- A condition joined by `&` is already the general form (the manager's reading): `A & B` holds exactly when
+  `A & (0: B)` holds (core/filters/and), so the pattern filter is the special case; the effect is the stretch.
 modes: n/a (parked: not in the language)
 
 ### Number operations over a base given by a class   [parked/ideas/class-base]   parked 2026-11-19

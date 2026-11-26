@@ -1,0 +1,61 @@
+INV CANARY:flips                                       CANARY: killed
+INV PATHS10:pins                                       PATHS10: killed
+INV PATHS10:A1 a public label between: `n.d` = `n.m.d` PATHS10: killed
+INV PATHS10:A2 depth 3: `n.d` = `n.m.k.d`              PATHS10: killed
+INV PATHS10:A2 two binding levels: `X.c.h` = `X.y.c.p.h` PATHS10: killed
+INV PATHS10:A3 the two-level wall                      PATHS10: killed
+INV PATHS10:A4 rule 6 below a label over an expression and a hole PATHS10: killed
+INV PATHS10:A5 (ii) through the call, the body's wall  PATHS10: killed
+INV PATHS10:A8 from outside: the written-out half legal PATHS10: killed
+INV PATHS10:A10 the EB line: `{0,}`                    PATHS10: killed
+INV PATHS10:sent-label-wall: (a) refused, (b) legal    PATHS10: killed
+INV PATHS10:skip-past-wall: each operator = its renamed control PATHS10: killed
+INV PATHS10:skip-past-wall candidate (b) runs          PATHS10: killed
+INV PATHS10:equivalence-inside: legal / refused inside, both refused outside PATHS10: killed
+INV PATHS10:alone-as-middle: `n.Q.d` refused, `n.d` and `Q.d` alike PATHS10: killed
+INV PATHS10:group-as-node: refused now, (b) legal      PATHS10: killed
+INV GRID:agree                                         GRID: killed
+INV GRID:sentences                                     GRID: killed
+INV GRID:undecided                                     GRID: killed
+INV READINGS10:0                                       READINGS10: killed
+INV READINGS10:1                                       READINGS10: killed
+INV READINGS10:2                                       READINGS10: killed
+INV READINGS10:3                                       READINGS10: killed
+INV READINGS10:4                                       READINGS10: killed
+INV READINGS10:5                                       READINGS10: killed
+INV READINGS10:6                                       READINGS10: killed
+INV READINGS10:7                                       READINGS10: killed
+INV TABLE10:declared                                   TABLE10: killed
+INV TABLE10:grounds                                    TABLE10: killed
+INV TABLE10:count                                      TABLE10: killed
+INV STACKCHAIN10:pins                                  STACKCHAIN10: killed
+INV STACKCHAIN10:ruled                                 STACKCHAIN10: killed
+INV SWEEP:control                                      SWEEP: killed
+INV SWEEP:undeclared                                   SWEEP: killed
+INV SWEEP:moved                                        SWEEP: killed
+INV SWEEP:gone                                         SWEEP: killed
+INV SWEEP:stale                                        SWEEP: killed
+INV ERRSWEEP:read                                      ERRSWEEP: killed
+INV ERRSWEEP:bad                                       ERRSWEEP: killed
+INV ERRSWEEP:skipped                                   ERRSWEEP: killed
+INV ERRSWEEP:change                                    ERRSWEEP: killed
+INV ERRSWEEP:stale                                     ERRSWEEP: killed
+INV QUOTES:quotes                                      QUOTES: killed
+INV QUOTES:titles                                      QUOTES: killed
+INV DOC:lines                                          DOC: killed
+INV DOC:missing                                        DOC: killed
+DEL CANARY:flips                                       under q1: the plant goes uncaught (caught by this arm)
+DEL PATHS10:A3 the two-level wall                      under q2: the plant goes uncaught (caught by this arm)
+DEL GRID:agree                                         under q3: the plant goes uncaught (caught by this arm)
+DEL GRID:agree                                         under q4: the plant goes uncaught (caught by this arm)
+DEL READINGS10:4                                       under q5: the plant goes uncaught (caught by this arm)
+DEL PATHS10:pins                                       under q6: the plant goes uncaught (caught by this arm)
+DEL TABLE10:grounds                                    under q8: the plant goes uncaught (caught by this arm)
+DEL STACKCHAIN10:pins                                  under q9: the plant goes uncaught (caught by this arm)
+DEL SWEEP:moved                                        under q11: the plant goes uncaught (caught by this arm)
+DEL ERRSWEEP:skipped                                   under q12: the plant goes uncaught (caught by this arm)
+DEL QUOTES:quotes                                      under q14: the plant goes uncaught (caught by this arm)
+DEL DOC:missing                                        under q15: the plant goes uncaught (caught by this arm)
+DEL GRID:undecided                                     under q16: the plant goes uncaught (caught by this arm)
+DEL ERRSWEEP:change                                    under q18: the plant goes uncaught (caught by this arm)
+predfix90_mutation: 46 arms inverted, 14 plant arms deleted; failing: none

@@ -1157,6 +1157,7 @@ readings:
 evidence:
 history:
 - 2026-11-23 (lane predfold1124, the fold of the 2026-11-23 rulings after review r88; record "2026-11-23 OWNER RULING — capture-in-set: error; and a DISCUSSION: "we are already pushing it by using the operators that we are ... it's a tool not a logical proofs language""): a new parked piece, at the record's note "A watch, not a build: a parked piece \"a form of its own for effects (and a condition operator)\", trigger: a second kind of effect arrives (the array request being built), or the capture request needs one more fence."
+- 2026-11-25 (lane predfix90, review r90 B7; record "2026-11-25 MANAGER — review r90 (predfold1124): the dispositions; no owner words"): the trigger marked the manager's; the general-form bullet marked the manager's reading; the text until then, verbatim: "Trigger: a second kind of effect is built (the array request), or the capture request needs one more fence. / - A condition joined by `&` is already the general form: `A & B` holds exactly when `A & (0: B)` holds (core/filters/and), so the pattern filter is the special case; the effect is the stretch.".
 
 ## parked/ideas/class-base — Number operations over a base given by a class
 slugs: 
