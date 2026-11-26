@@ -11279,3 +11279,47 @@ reorder under `join` (`[J2.dmy]`, the key's order as the sequence's order) is th
 manager's objection is ONE case: a key `enumerate` refuses (an infinite set, `m[/a.*/]`): no enumeration, so no
 key's order; the manager's proposal for it: under construction for now (the lift's own rule for an unbounded
 operand, core/values/functions), not the map's order as a second rule.
+
+### 2026-11-25 OWNER RULING — map-creator: "Yes to all seven"
+tags: core/modules/map core/arrays/lift core/values/metadata core/values/one-type core/labels/numbers core/labels/paths core/labels/labels-vs-captures/array-vs-passes core/operators/precedence core/modules/names core/diagnostics/errors core/diagnostics/warnings core/diagnostics/under-construction lib/modifiers/month-numbered lib/strings/join core/spellings/placeholders
+
+ASKED AS A RULING (slug map-creator, 2026-11-25, the statement as last put to him: "1. A map is created as an
+array every element of which is labelled; its literal makes a missing label a syntax error. A numeral is not a
+label name. 2. As a pattern it is the alternation of its elements in written order, each under its label.
+3. `m.a` names a thing that must exist, or it is a compile error. It is the element where a pattern is expected
+and the label's text left of a colon. 4. `m[key]` is a search. A numeral is a position; any other string is a
+name. Each string of the key is looked up in the key's order; every result is kept, with no deduplication;
+finding nothing gives the empty array. 5. A key that cannot be listed out (an infinite set) is under
+construction for now. 6. Left of the bracket, a binding gives members and a label gives settings.
+7. `X.a.index` is the position, among X's alternatives, of the alternative `a` was set in: a constant for a label
+inside one alternative (your 1, 1, 2), the matched member for a label over the whole array."; "Left for later,
+each its own question: a key read at match time, brackets on a module, labels under a join, and the two `.index`
+edges (a label whose alternative was not taken; nested alternations)."; the manager's leaning yes; DFA category
+told: yes for all seven; the runs in the entries above and in docs/dev/lanes/predmap_evidence/). HIS WORDS, whole:
+
+"Yes to all seven"
+
+Class: a RULING on the seven lines as put. The lines carry his own words of the entries above: the creator ("an
+array but each element is labeled", "literal form enforces labeling syntactically"), "I would not deduplicate",
+"a search which might be empty", "F.z must exist or error", the key's order, his `.index` example.
+It AMENDS core/modules/map's "A map interface is not a created value: no map value is passed around" (agreed
+2026-11-15) by his "the interface concept is true excepting": an array and this degenerate map can be created.
+It RULES `.index` where core/values/metadata was a reading: line 7 keeps that reading's answer for a label over a
+whole array (the month number) and adds the constant for a label inside one alternative.
+NOT ruled (kept open, each a question of its own): a key read at match time (`m[$k]`); brackets on a module;
+whether a join over a map keeps the parts' labels (his "sequence map" question, the manager's view recorded);
+`.index` of a label whose alternative was not taken; which alternation counts when alternations nest.
+The manager's readings (marked; for the fold to test): (a) the literal's spelling is a placeholder
+(`{a = A, b = B}`); `[a = A | b = B]`, the labelled array, stays legal and unenforced; (b) the accessor works on
+ANY pattern with labels, as his `F := [a=99]seq [b=76]|[c=87]` shows: positions over its alternatives, names over
+the labels its path rules make visible; the map literal only guarantees every element is named; (c) a bare name
+inside the brackets is a binding's value, as on any value side; the name itself is written as a string or with
+the dot; (d) a single-name search result is still the source's element (`F["a"].index is F.a.index`): its index
+is not renumbered; the positions of a several-result selection are not stated; (e) the empty array from a search
+is the never-matching pattern, with the can-never-match warning where known at compile time; (f) `X[0]` stays
+"the whole rx"; (g) a name looked up on a plain unlabelled array finds nothing; (h) "under construction" for an
+infinite key is the under-construction error, a direction acknowledged (a selector over the names); (i) the
+same result twice in an alternation matches as once (the first occurrence wins), and twice under a `join`.
+DFA category (his standing question): YES for all seven lines (settled at compile time; the matched member of
+line 7 is "which alternative was taken", maybe about 0.8 where alternatives overlap).
+For the next fold, with drop-not, array-argument and brace-counts.
