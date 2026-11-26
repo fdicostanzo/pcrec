@@ -11098,3 +11098,42 @@ error; several values make copies; an illegal copy removed); a count read at mat
 construction, as in a count hole; (e) white space inside the braces is layout.
 DFA category (his standing question): YES for constant counts (the states grow with the count).
 For the next fold, with drop-not and array-argument.
+
+### 2026-11-25 OWNER, on maps: "I want to provide a map creator ... essentially an array but each element is labeled"; the accessor "current plus a postfix form. I want to use []"; a QUESTION: "m["a"|1] what does that return?"
+tags: core/modules/map core/arrays/lift core/values/metadata core/labels/numbers core/operators/precedence core/labels/paths core/modules/binding-list parked/ideas/call-head-forms core/spellings/placeholders
+
+Said on the manager's summary of where maps stand and its question (which problem maps are to solve). HIS WORDS,
+whole:
+
+"I want to provide a map creator. We have an array creator so the interface concept is true excepting you can
+create a (in the case of maps) a degenerate form for maps:
+1. essentially an array but each element is labeled.
+2. literal form enforces labeling syntactically
+That's it for map creation. It acts like an array pattern. You can access the elements like a map currently.
+Accessor is current plus a postfix form. I want to use [] but when we last discussed it the issue was the clash
+as which interface you were accessing depended on the argument you provided. m["a"|1] what does that return?"
+
+Class: a PROPOSAL stated as what he wants ("I want to provide a map creator"), its definition in his words (an
+array each of whose elements is labelled; a literal form that enforces the labelling by its syntax; "It acts like
+an array pattern"; the elements reached as a map's are today); a LEAN on the accessor (the current `.` plus a
+postfix form, `[]` wanted); and a QUESTION he poses on the clash: `m["a"|1]`. NOT asked as a ruling; nothing ruled.
+It qualifies the agreed "ARRAY and MAP are INTERFACES applied to a thing, not values that can be created"
+(2026-11-15): "the interface concept is true excepting" the array creator and this degenerate map creator.
+CHECKED AGAINST THE DOCUMENTS: `[a, b, c]` is `a | b | c` (core/operators/precedence); inside `[ ]` a label set
+may stand on an entry (`[a = A | b = B]` "is two labelled entries"), so a labelled array is already writable, not
+enforced; a part label over an array carries `.index` and `.label`, "that member's name" (core/values/metadata);
+`X[..]` is the index, postfix after an operand, 1-based, "`[0]` is the whole rx"; a number and a name are already
+"two names of one label" for a group, and a group's name never looks like a number (core/labels/numbers).
+RUN before answering (python `re`; the map m with a = `/ab/`, b = `/a/`, as the alternation it would be, and the
+selection in the key's order; output pasted):
+m, a = /ab/, b = /a/ : (?:ab)|(?:a) | WHOLE 'ab' HOLDS 'a' HOLDS 'b' FAILS | SEARCHED ('ab', 0) | FIND-ALL [('ab', 0), ('a', 3), ('ab', 5), ('ab', 7)]
+m["b"|1] : (?:a)|(?:ab) | WHOLE 'ab' HOLDS 'a' HOLDS 'b' FAILS | SEARCHED ('a', 0) | FIND-ALL [('a', 0), ('a', 3), ('a', 5), ('a', 7)]
+m["b"] : (?:a) | WHOLE 'ab' FAILS 'a' HOLDS 'b' FAILS | SEARCHED ('a', 0) | FIND-ALL [('a', 0), ('a', 3), ('a', 5), ('a', 7)]
+The manager's answer (told to him; the manager's reading; nothing applied): the clash does not arise if a map's
+keys are label NAMES: a name is never a numeral, so inside `[ ]` a canonical numeral is a position and anything
+else is a name, as PCRE's own references take a number or a name in one slot. A key of several strings is the
+lift (core/arrays/lift): `m["a"|1]` is `m["a"] | m[1]`, the selected elements as an array, labels kept, in the
+key's order. Edges named to him: a key no element has (a compile error when known at compile time); a key read at
+match time; a key that is an infinite set (a selector, as `@warn.off` takes). Put to him as a ruling, slug
+map-creator. DFA category: creation YES (an alternation); a key known at compile time YES; a key read at match
+time MAYBE, about 0.6 (a choice among finitely many alternatives by a read).
