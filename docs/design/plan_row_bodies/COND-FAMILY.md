@@ -11256,3 +11256,26 @@ The manager's reading (marked): `F["z"]` with no `z` is the empty array, the pat
 (core/holes/zero-values/pattern's `(?!)`), with the can-never-match warning where it is known at compile time; so
 his `F["a"].index is F.a.index` holds where `a` exists, and where it does not the bracket form is empty and the
 dot form refused.
+
+### 2026-11-25 OWNER, on key-order: "I'd see it as the keys order. Why otherwise and how would you order results in a particular way?"
+tags: core/modules/map core/arrays/lift core/values/one-type lib/builtin/enumerate core/principles/meaning-not-spelling lib/strings/join
+
+Asked **key-order** (the results of `m[S]` in the map's order, the manager's leaning, or in the key's order). HIS
+WORDS, whole:
+
+"Key order: I'd see it as the keys order. Why otherwise and how would you order results in a particular way?"
+
+Class: a LEAN (the key's order) with two QUESTIONS to the manager (why the map's order; how a user would then
+order results). NOT a ruling.
+The manager's answer (told to him; marked; nothing applied): he is right, and the manager's withdrawal of the
+entry "after lane predmap" is itself WITHDRAWN in its reason. Re-derived: core/values/one-type has an rx as "a
+set of strings offered in an order", and `enumerate` gives that order ("at each choice point the first
+alternative first", a class ascending): `"a"|"b"` and `/a|b/` enumerate alike (a, then b), so the key's order does
+NOT part two spellings of one key; the manager's meaning-not-spelling argument was wrong for every key
+`enumerate` accepts. The key's order is the ruled lift (core/arrays/lift: "the nested loop over each operand's
+`enumerate`"), which is what the manager first answered. To his second question: under the map's order a reorder
+could only be written by building a new array by hand, which is the cost he points at; the lane's run of the
+reorder under `join` (`[J2.dmy]`, the key's order as the sequence's order) is the use. What is left of the
+manager's objection is ONE case: a key `enumerate` refuses (an infinite set, `m[/a.*/]`): no enumeration, so no
+key's order; the manager's proposal for it: under construction for now (the lift's own rule for an unbounded
+operand, core/values/functions), not the map's order as a second rule.
