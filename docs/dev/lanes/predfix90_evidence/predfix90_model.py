@@ -54,20 +54,72 @@ PLANTS10 = [
     ("q5", "READINGS10", "the sent label crosses the body's blank below it (reading A5 (i) reversed)", "sent-label-wall"),
     ("q6", "PATHS10", "the reading clause \"rule 4 applies repeatedly\" dropped from core.md as read", "MISSING"),
     ("q7", "CONTROL", "a provided body's direct regex written for the wrong digit", "differing"),
-    ("q8", "TABLE", "a table cell's ground changed (rule 2 -> rule 6) in core.md as read", "ground"),
-    ("q9", "STACKCHAIN", "the stacked-chain lede's `m.d` sentence reversed in core.md as read", "MISSING"),
-    ("q10", "READINGS", "the engine crashes on a reading's program (a CRASH is no support)", "NOT SUPPORTED"),
+    ("q8", "TABLE10", "a table cell's ground changed (rule 2 -> rule 6) in core.md as read", "ground"),
+    ("q9", "STACKCHAIN10", "the stacked-chain lede's `m.d` sentence reversed in core.md as read", "MISSING"),
+    ("q10", "READINGS", "the engine crashes on a reading's program (a CRASH is no support)",
+     "shorthand-is-callers (b)"),
     ("q11", "SWEEP", "one printed answer moved in BOTH the engine's run and the document (status stays same)",
      "moved or gone and not declared 1"),
     ("q12", "ERRSWEEP", "one printed compile-error line respelled so the parser skips it", "skipped 1"),
     ("q13", "SUCCESSOR10", "a declared red's missing-line set altered", "MISSING SET CHANGED"),
     ("q14", "QUOTES", "path rule 4 altered in the base piece only", "missing: [("),
     ("q15", "DOC", "a formatted line altered", "missing: 1"),
-    ("q16", "GRID", "one undecided cell given an expected answer it lacks", "undecided"),
+    ("q16", "GRID", "a cell the rules decide left undecided by the evaluator (a rule dropped silently)",
+     "undecided 17 (declared 16)"),
     ("q17", "NAMEGRID", "a cell's deciding sentence dropped from its piece as read", "sentence missing"),
-    ("q18", "ERRSWEEP", "a legality change of the start commit left out of the declared list", "undeclared change"),
+    ("q18", "ERRSWEEP", "a starting-commit compile-error line made legal in the engine run, no declaration", "undeclared change 1"),
 ]
 HEAVY10 = {"SUCCESSOR10"}
+# C9's mutation gate for the arms this lane adds: PREDFIX90_MUT=KEY:inv inverts one arm (its check must turn FAIL: the
+# arm reaches its verdict); KEY:del deletes it, run under the plant that names it (the plant must go uncaught: the
+# plant is caught BY that arm). PREDFIX90_SABOTAGE=mut runs both over every arm (LIGHT; SUCCESSOR10's arms excepted).
+MUT10 = os.environ.get("PREDFIX90_MUT", "")
+ARMS10 = []
+PLANT_ARM10 = {"q1": "CANARY:flips", "q2": "PATHS10:A3 the two-level wall", "q3": "GRID:agree", "q4": "GRID:agree",
+               "q5": "READINGS10:4", "q6": "PATHS10:pins", "q8": "TABLE10:grounds", "q9": "STACKCHAIN10:pins",
+               "q11": "SWEEP:moved", "q12": "ERRSWEEP:skipped", "q14": "QUOTES:quotes", "q15": "DOC:missing",
+               "q16": "GRID:undecided", "q18": "ERRSWEEP:change"}   # q7, q10, q17: predfold1124's patched checks
+
+
+def arm10(key, val):
+    if key not in ARMS10:
+        ARMS10.append(key)
+    if MUT10 == key + ":inv":
+        return not val
+    if MUT10 == key + ":del":
+        return True
+    return bool(val)
+
+
+if "mut" in SAB10:
+    def _run10(extra):
+        env = {k: v for k, v in os.environ.items() if not k.startswith("PREDFIX90_")}
+        env.update(extra)
+        env["PREDFIX90_LIGHT"] = "1"
+        r = subprocess.run([sys.executable, "-I", "-B", os.path.abspath(__file__)], capture_output=True, text=True,
+                           env=env, timeout=UNIT_TIMEOUT10 * 4)
+        out = r.stdout + r.stderr
+        return {m.group(2): m.group(1) for m in re.finditer(r"^(PASS|FAIL) (\w+):", out, re.M)}, out
+    st0, out0 = _run10({})
+    keys = next(x for x in out0.split("\n") if x.startswith("ARMS10 "))[7:].split("|")
+    bad = []
+    for k in keys:
+        chk = k.split(":")[0]
+        st, out = _run10({"PREDFIX90_MUT": k + ":inv"})
+        tb = "Traceback" in out
+        ok = st.get(chk) == "FAIL" and not tb
+        bad += [] if ok else [("INV", k)]
+        print("INV %-50s %s: %s%s" % (k, chk, "killed" if ok else "SURVIVED", " (traceback)" if tb else ""), flush=True)
+    for pn, k in sorted(PLANT_ARM10.items(), key=lambda kv: int(kv[0][1:])):
+        chk = k.split(":")[0]
+        st, out = _run10({"PREDFIX90_MUT": k + ":del", "PREDFIX90_SABOTAGE": pn})
+        ok = st.get(chk) == "PASS" and "Traceback" not in out
+        bad += [] if ok else [("DEL", pn, k)]
+        print("DEL %-50s under %s: %s" % (k, pn, "the plant goes uncaught (caught by this arm)" if ok else
+                                          "the plant is STILL CAUGHT (another arm catches it)"), flush=True)
+    print("predfix90_mutation: %d arms inverted, %d plant arms deleted; failing: %s" % (
+        len(keys), len(PLANT_ARM10), bad or "none"))
+    sys.exit(1 if bad else 0)
 STRICT10 = re.compile(r"^predfix90_model: (\d+) checks, (\d+) failed(?: \(([^)]*)\))?$")
 if "all" in SAB10:                                           # the plant runner: each plant alone, a subprocess each
     rows, notc = [], 0
@@ -477,7 +529,7 @@ def g_eval(kind, layers, steps):
             k += 1
     if k < len(steps):
         return "refused", [1]
-    if und and not s10("q16"):
+    if und or (s10("q16") and kind == "in" and not layers and not steps):   # q16: a decided cell left undecided
         return "undecided", ["alone-as-middle"]
     skipped = len(pubs) - len(steps)
     if s10("q3") and skipped >= 2:
@@ -619,7 +671,10 @@ if s10("q14"):
     D10["core.md"] = D10["core.md"].replace("4. if a legal path exists a.b.c and c can be unambiguously referenced from a, "
                                             "then b can be skipped a.c", "4. a middle label may be skipped", 1)
 if s10("q17"):
-    D10["core.md"] = D10["core.md"].replace("the same-label-twice rules", "the rules", 1)
+    _a = D10["core.md"].index("   [core/labels/paths/argument-default]   ")       # in that piece only
+    _b = D10["core.md"].index("\n### ", _a)
+    D10["core.md"] = D10["core.md"][:_a] + D10["core.md"][_a:_b].replace("same-label-twice", "same-label") + \
+        D10["core.md"][_b:]
 D8.clear()
 D8.update(D10)
 
@@ -764,7 +819,7 @@ for e_, b_ in CAN10:
     can_rows.append((e_, "legal" if off_ else "refused", "legal" if on_ else "refused"))
     print("   CANARY `%s`: PATH10 off %s, on %s" % can_rows[-1])
 can_ok = all(r_[1] != r_[2] for r_ in can_rows)
-check("CANARY", can_ok, "%d canaries; the control is %s" % (len(can_rows), "predfold1124's engine: each flips" if can_ok
+check("CANARY", arm10("CANARY:flips", can_ok), "%d canaries; the control is %s" % (len(can_rows), "predfold1124's engine: each flips" if can_ok
                                                            else "not predfold1124's engine: %s" % can_rows))
 
 unit10("PATHS10", "review r90's cells A1-A8, A10, A11 as printed lines, each run; the readings and clauses pinned")
@@ -866,7 +921,7 @@ pa10_arms = {
     answers(P_o4, QK10) == answers(P_o4b, QK10),
     "group-as-node: refused now, (b) legal": ok_o5 and wh_(P_o5b, ["3x", "7x"]) == [True, False],
 }
-check("PATHS10", all(pa10_arms.values()), "arms failing: %s; pins MISSING: %s" % (
+check("PATHS10", all([arm10("PATHS10:" + k, v) for k, v in pa10_arms.items()]), "arms failing: %s; pins MISSING: %s" % (
     [k for k, v in pa10_arms.items() if not v] or "none", pa10_miss or "none"))
 
 unit10("GRID", "start kind x stack (labels, walls, an expression, a hole, up to two binding levels; depth 0-3) x every "
@@ -893,7 +948,8 @@ for kind, layers, steps, want, why, e, b, rx, got, err, diff in gres:
         g_bad.append((kind, stk, ".".join(steps), want, got, diff, (err or "")[:80]))
 G_UND10 = 16                                                 # declared: the alone-as-middle cells (inside, through a
 #                                                              binding used alone below a label over an expression)
-check("GRID", not g_bad and not g_miss and len(g_und) == G_UND10,
+check("GRID", all([arm10("GRID:agree", not g_bad), arm10("GRID:sentences", not g_miss),
+                   arm10("GRID:undecided", len(g_und) == G_UND10)]),
       "%d cells (%s); disagreeing: %s; undecided %d (declared %d); sentences missing: %s" % (
           len(gres), ", ".join("%s->%s %d" % (a_, b_, n_) for (a_, b_), n_ in sorted(g_cnt.items())),
           g_bad[:6] or "none", len(g_und), G_UND10, g_miss or "none"))
@@ -927,7 +983,7 @@ RD10.append(("(8) the shorthand's expansion: the same READ inside the binding, p
              all(a_ and b_ is not None for a_, b_ in P_8out)))
 for a_, v_ in RD10:
     print("   %s: %s" % ("SUPPORTED" if v_ else "NOT SUPPORTED", a_))
-check("READINGS10", all(v_ for _, v_ in RD10), "%d readings run: %s" % (
+check("READINGS10", all([arm10("READINGS10:%d" % i_, v_) for i_, (_, v_) in enumerate(RD10)]), "%d readings run: %s" % (
     len(RD10), [a_[:60] for a_, v_ in RD10 if not v_] or "all SUPPORTED"))
 
 unit10("TABLE10", "C5: every ownership-table cell's GROUNDS (line n, rule n, condition n, a piece, \"a reading\") "
@@ -950,7 +1006,8 @@ GROUNDS10 = {(0, 0): [], (0, 1): ['line 1'], (0, 2): ['lines 1, 2'], (0, 3): ['l
 tb10_bad = [(k_, GROUNDS10.get(k_), v_) for k_, v_ in sorted(GOT10.items()) if GROUNDS10.get(k_) != v_]
 if not GROUNDS10:
     print("   GROUNDS10 (to declare): %r" % GOT10)
-check("TABLE10", GROUNDS10 and not tb10_bad and len(GOT10) == len(GROUNDS10),
+check("TABLE10", all([arm10("TABLE10:declared", bool(GROUNDS10)), arm10("TABLE10:grounds", not tb10_bad),
+                      arm10("TABLE10:count", len(GOT10) == len(GROUNDS10))]),
       "%d cells read, each cell's ground set against the declared one; changed ground: %s" % (
           len(GOT10), tb10_bad[:4] or "none"))
 
@@ -961,7 +1018,8 @@ sc10_pins = [(SC10_T, "`n.m.d` is the full path, `n.d` skips `m` (rule 4), `m.d`
              (SC10_T, "The nested form `[n = ([m = P])]`, two spots, reads the same"),
              (SC10_T, "From outside (rule 5) the binding's name starts the same tree")]
 sc10_miss = [(t_, s_) for t_, s_ in sc10_pins if ws(s_) not in ws(piece8(t_))]
-check("STACKCHAIN10", not sc10_miss and " ruled " in piece8(SC10_T).split("\n")[0],
+check("STACKCHAIN10", all([arm10("STACKCHAIN10:pins", not sc10_miss),
+                           arm10("STACKCHAIN10:ruled", " ruled " in piece8(SC10_T).split("\n")[0])]),
       "%d sentences pinned; MISSING: %s" % (len(sc10_pins), sc10_miss or "none"))
 
 unit10("SWEEP", "C8: every printed three-mode line (`rejected:` and history skipped): predfold1124's engine (PATH10 off) "
@@ -1018,7 +1076,9 @@ for x_ in stale10:
     print("   STALE DECLARATION %s" % x_)
 for k_, why_ in sorted(MOVED10.items()):
     print("   DECLARED MOVE OR GONE %s: %s" % (k_[:160], why_))
-check("SWEEP", OLD_T10 and not sw_bad and not sw_moved and not sw_gone and not stale10,
+check("SWEEP", all([arm10("SWEEP:control", bool(OLD_T10)), arm10("SWEEP:undeclared", not sw_bad),
+                    arm10("SWEEP:moved", not sw_moved), arm10("SWEEP:gone", not sw_gone),
+                    arm10("SWEEP:stale", not stale10)]),
       "%d printed lines now (%s), %d at the starting commit under predfold1124's engine; undeclared %d; moved or gone "
       "and not declared %d; declared %d; added %d; stale declarations %d" % (
           len(NEW_T10), ", ".join("%s %d" % kv for kv in sorted(cnt10.items())), len(OLD_T10), len(sw_bad),
@@ -1057,13 +1117,11 @@ for f_, ln_, e_, b_ in err_lines(OLD10):
     Po = run(e_, b_)[0]
     X10[0] = True
     Pn = run(e_, b_)[0]
+    if s10("q18") and not es_chg and Pn is None:             # q18: one legality change, the engine's, not declared
+        Pn = "planted"
     if (Po is None) != (Pn is None):
         es_chg.append((f_, e_, tuple(b_), "refused" if Po is None else "legal", "refused" if Pn is None else "legal"))
-for f_, e_, b_ in [x_[:3] for x_ in es_chg]:
-    pass
 ES_DECL10 = dict(ES_CHG10)
-if s10("q18") and ES_DECL10:
-    ES_DECL10.pop(sorted(ES_DECL10)[0])
 es_und_chg = [x_ for x_ in es_chg if x_[:3] not in ES_DECL10]
 es_stale = [k_ for k_ in ES_DECL10 if k_ not in set(x_[:3] for x_ in es_chg)]
 for x_ in es_chg:
@@ -1073,7 +1131,9 @@ for x_ in es_skip:
     print("   SKIPPED (the parser cannot read it) %s `%s`: %s" % (x_[0], x_[1], SKIP10.get(x_, "UNDECLARED")))
 for x_ in es_bad:
     print("   BAD (printed a compile error, runs legal or crashes) %s" % (x_,))
-check("ERRSWEEP", es_now and not es_bad and not es_und_skip and not es_und_chg and not es_stale,
+check("ERRSWEEP", all([arm10("ERRSWEEP:read", bool(es_now)), arm10("ERRSWEEP:bad", not es_bad),
+                       arm10("ERRSWEEP:skipped", not es_und_skip), arm10("ERRSWEEP:change", not es_und_chg),
+                       arm10("ERRSWEEP:stale", not es_stale)]),
       "%d compile-error lines read, each refused with no crash: bad %d; skipped %d (undeclared skipped %d); of the "
       "starting commit's lines %d changed legality (undeclared change %d, stale %d)" % (
           len(es_now), len(es_bad), len(es_skip), len(es_und_skip), len(es_chg), len(es_und_chg), len(es_stale)))
@@ -1102,7 +1162,7 @@ CRASH10 = re.compile(r"\bCRASH [A-Z]\w*(Error|Exception)\b|'CRASH', ")
 
 def norm10(t):
     """C1: a key with no document line numbers."""
-    t = re.sub(r"\('(\w+\.md)', \d+", r"('\1', N", t)
+    t = re.sub(r"'(\w+\.md)', \d+", r"'\1', N", t)
     t = re.sub(r"(\w+\.md):\d+", r"\1:N", t)
     return t
 
@@ -1119,6 +1179,8 @@ def red_key10(name, out_lines, fline):
         if on:
             sec.append(x_)
     crash = sorted(set(norm10(x_.strip()) for x_ in sec if CRASH10.search(x_)))
+    if re.search(r"\bCRASH [1-9]", fline):                  # C3: a crash COUNT in the verdict is a crash too
+        crash.append(norm10(fline))
     if crash:
         return "CRASH", " || ".join(crash)
     miss = sorted(set(norm10(x_.strip()) for x_ in sec if x_.strip().startswith("MISSING")))
@@ -1226,7 +1288,7 @@ TT10 = ["2026-11-23 OWNER RULING — path-rules: yes (his four rules for paths w
         "2026-11-25 MANAGER — review r90 (predfold1124): the dispositions; no owner words"]
 DET10 = D8["core_details.md"] + D8["library_details.md"] + D8["parked_details.md"]
 t10_miss = [t_[:60] for t_ in TT10 if ws(t_) not in heads8(REC10) or ws(t_) not in ws(DET10)]
-check("QUOTES", not q10_miss and not t10_miss,
+check("QUOTES", all([arm10("QUOTES:quotes", not q10_miss), arm10("QUOTES:titles", not t10_miss)]),
       "%d quoted sentences, each in the record at %s AND in its own piece, missing: %s; %d record titles cited, not a "
       "title or not cited: %s" % (len(QQ10), START10, q10_miss or "none", len(TT10), t10_miss or "none"))
 
@@ -1239,8 +1301,9 @@ D8.update(NOWS)
 d10_miss = [(t_, L_) for t_, L_ in DLN10 if ws(L_) not in ws(piece8(t_))]
 for t_, L_ in d10_miss:
     print("   MISSING [%s] %s" % (t_, L_))
-check("DOC", DLN10 and not d10_miss, "%d lines, each in its own piece; missing: %d" % (len(DLN10), len(d10_miss)))
+check("DOC", all([arm10("DOC:lines", bool(DLN10)), arm10("DOC:missing", not d10_miss)]), "%d lines, each in its own piece; missing: %d" % (len(DLN10), len(d10_miss)))
 
+print("ARMS10 " + "|".join(ARMS10))
 failed10 = [n_ for n_, ok_ in RESULTS if not ok_]
 print("predfix90_model: %d checks, %d failed%s" % (len(RESULTS), len(failed10),
                                                   (" (%s)" % ", ".join(failed10)) if failed10 else ""))
