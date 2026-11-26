@@ -1222,3 +1222,20 @@ wake.md says (read the draft WHOLE first; A4 is a ruled-words finding: read his 
 - LAUNCHED lane predfix90 (opus; worktree `worktrees/predfix90`, cut at 33abd6926; deliver + empty rulings first;
   lanewatch armed): applies r90, adds the path GRID against a separate rule evaluator, files the review.
 - NEXT: his answer on drop-not; at predfix90's delivery: merge, lints, P-31 `done:`, tell main.
+
+## 2026-11-25 — drop-not RULED; array-argument asked; predfix90 merged; P-31 done:
+
+- RULED by the owner: drop-not ("I agree with our conclusions: peek(!A)"): `NOT` leaves; `!` on a pattern, set or
+  condition; the negative peek is `peek(!A)`; `!peek(A)` and the bare `when(!x, z)` stay errors; not-test closed.
+  NOT folded (its own lane, after the budget question).
+- His standing request: each feature discussed carries its DFA category (yes / never / maybe + weight); memory
+  `pcrec-pred-dfa-category`; the peek and `when` forms classed for him.
+- /q: group-truth asked -> his idea: the group questions take the ARRAY form (`@d`) -> array-argument ASKED (four
+  lines; group-truth closes inside it) -> he asked to discuss the "against" (a condition as a ready-made argument):
+  census of printed calls told (every running call is one entry in place). NOT answered.
+- Lane predfix90 DELIVERED (lanecheck DONE), MERGED; lint 9,106 / 0; plan-lint green; the model re-run at the merged
+  tip 26 / 0. C3 ruled on the lane's flag (a crash is its own declared class). Lane and coordinator stopped.
+- P-31 `done:` posted; main told. SLOW-BURN WEEK (memory, seen late): no other lane or round this week unless the
+  owner says so; the drop-not (+ array-argument, if ruled) fold waits.
+- NEXT: his answer on array-argument; then the r90 questions one at a time (sent-label-wall, skip-past-wall,
+  equivalence-inside, shorthand-outside, alone-as-middle); the fold lane when he says go or the week resets.

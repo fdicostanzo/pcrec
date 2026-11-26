@@ -10931,3 +10931,21 @@ be used by natives"): `some`, `count`, `occurs` are natives, so they may take `@
 set, or the finished question; (4) a middle form, the condition's shape with the array marked in it
 (`some((@d: "7"))`), keeps a condition as the argument and ends the two readings, at the price of rules for
 `(@d: S)` standing alone, for mixed entries, and of record-in-some staying open.
+
+### 2026-11-25 MANAGER — after lane predfix90: review r90 applied and filed; readings tested (no owner words)
+tags: core/labels/rule core/labels/rule/paths core/labels/ownership core/labels/export core/labels/paths core/labels/paths/argument-default core/labels/paths/closed-argument
+
+Lane predfix90 (delivered, lanecheck DONE; merged into `lane/pred-rev28`) applied the dispositions of the entry
+"review r90 (predfold1124): the dispositions" and filed the review (docs/dev/reviews/2026-11-25-r90-predfold1124.md).
+At the merged tip: lint `checks passed 9106, failed 0`; the model re-run by the manager, last line
+`predfix90_model: 26 checks, 0 failed` (its output differs from the committed one in run times only).
+- No printed answer of the fold moved (the lane's SWEEP and ERRSWEEP: 0). The evidence engine now answers the
+  cells of A1 to A5 as the path rules say; those cells are printed lines.
+- The manager's eight readings listed in the brief: each SUPPORTED by a run (the lane's READINGS10); they stay
+  READINGS, marked, until the owner rules the questions they rest on.
+- OPEN pieces added, each with both candidates run: core/labels/rule/sent-label-wall, skip-past-wall,
+  equivalence-inside, alone-as-middle, group-node (PLAN, the manager's to frame); core/labels/paths/shorthand-outside.
+- C3, ruled by the manager on the lane's flag: a predecessor model's engine CRASH is a class of its own in the
+  successor declaration (keyed by its crash rows, its reason naming the crash, never "documents moved"; a new or
+  changed crash row fails). Four historical models carry one; their files are not edited.
+- A12's unified reachability statement: not done, PLAN, its trigger as ruled.
