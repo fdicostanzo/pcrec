@@ -10985,3 +10985,47 @@ name give one array); from the USER's side of a library two things are not state
 give two of a part's labels one name (`[(x = a, x = b) = lib]`), and any selection of an array's settings by
 position. DFA category: `every` maybe about 0.8, as the other group questions; a selection by position adds a
 small counter, maybe about 0.7.
+
+### 2026-11-25 OWNER RULING — array-argument: "yes including every"
+tags: lib/counting/some lib/counting/count lib/counting/occurs lib/counting/every-pass core/model/table/group-truth core/labels/labels-vs-captures/array-vs-passes core/labels/labels-vs-captures core/conditions/form core/conditions/form/record-in-some core/conditions/form/value-left core/conditions/form/optional-entry core/values/tuples lib/modifiers/length lib/search/hits lib/search/occurrences lib/structural/capture core/spellings/placeholders core/diagnostics/errors
+
+ASKED AS A RULING (slug array-argument, 2026-11-25, the statement put to him: "1. The group questions take the
+array form of a label and a set, not a condition: `some(@d, "7")`, `occurs.none(@d, "7")`,
+`occurs.exactly(2, @d, "7")`, `count(@d, "7")`, and `count(@d)` for how many settings there are. The spellings are
+placeholders, yours where you gave them. 2. A condition `(d: S)` reads the label, the same everywhere. The array
+is only ever written with its mark. 3. One array per call. "Some h is 5 and some m is 3" is written as two calls
+joined by `&`. Pairing two arrays stays refused for now, as you ruled for the joint entry. 4. Group-truth closes
+inside it. Since a setting is never absent, the negation moves to the set: `!some(@d, "7")` and
+`occurs.none(@d, "7")` are one question; `occurs.none(@d, !"7")` is the other, "every setting is 7"."; then, after
+his proposal of the entry above, "If you rule it yes, I would add `every(@d, S)` to it as a fifth line", `every`
+as told to him: "every setting of d is in S. That is the same as `occurs.none(@d, !S)`, and it is true when
+there are no settings"; the manager's leaning yes; the answers RUN in the entries "on group-truth" and "on
+arrays" above). HIS WORDS, whole:
+
+"array-argument: yes including every"
+
+Class: a RULING: lines 1 to 4 as put, and `every(@d, S)` as told. It REVISES the argument shape of `some(c)`
+(2026-11-15) and of `count`, `occurs` (a condition becomes the array form and a set); it keeps WHAT they read
+(array-vs-passes, 2026-11-21). It REVERSES "all-question: retire" (2026-11-16) for a question over the ARRAY, by
+his own proposal ("Before it wasn't but if it's on an array ..."): the retired thing was `all` over passes.
+It CLOSES: group-truth (line 4); every-pass-spelling (the named form is `every`, over settings; the item form
+stays the way to judge every ITEM, a pass that sets nothing included).
+It DISSOLVES (the manager's reading, told to him as a force of the question, marked): record-in-some (no record
+stands inside a group question; line 3); the fences "a value entry / a joint entry / `?:` inside a group
+question" (no condition stands there); "what `count` counts on several entries".
+The manager's readings (marked; for the fold to test): (a) the old form, a condition as the argument
+(`some((d: "7"))`), is a compile error whose message names the array form (one head per name, call-forms);
+(b) the array mark on a path is a placeholder (`@chars.ch`, or his `x.@a`): for the spellings review; (c) the set
+may read a label as it stands (`some(@h, $m)`), an ordinary read; (d) the finished question is a test: it stands
+in an `&` chain, a sequence or a hole as before, may be passed as an argument, and takes `!` as a condition does
+(drop-not); (e) on `0` there is no array: `@0` is a compile error (zero-open); (f) the array's scope is unchanged
+(array-scope, array-in-piece); (g) a capture request as the set of a group question stays a compile error for
+now; (h) `every` on an empty array holds and `some` fails; "at least one and all" is the two joined by `&`;
+(i) the parameter order of the `occurs` members is a placeholder.
+PARKED by the manager from his IDEA of the entry above (two pieces owed at the fold, trigger: adapting a
+library's labels from the user's side): an export list giving two of a part's labels one name; a selection of an
+array's settings by position.
+DFA category (his standing question): maybe, about 0.8, for each group question, `every` included (a per-setting
+test against a fixed set and a capped counter; it rests on DFA captures for a looped label); the ruling changes
+no category.
+For the next fold, with drop-not (one lane: both re-spell the same printed lines).
