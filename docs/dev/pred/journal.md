@@ -1239,3 +1239,20 @@ wake.md says (read the draft WHOLE first; A4 is a ruled-words finding: read his 
   owner says so; the drop-not (+ array-argument, if ruled) fold waits.
 - NEXT: his answer on array-argument; then the r90 questions one at a time (sent-label-wall, skip-past-wall,
   equivalence-inside, shorthand-outside, alone-as-middle); the fold lane when he says go or the week resets.
+
+## 2026-11-25 — array-argument and brace-counts RULED; main merged P-31; maps: lane predmap launched
+
+- Main: `lane/pred-rev28` 16625c1f7 MERGED into main (r90's fold); P-30 journaled for [COND-FAMILY]; P-31's skill
+  edits join main's owed doc lane; predfold1124 and predfix90 to be pruned by main.
+- RULED by the owner: array-argument "yes including every" (the group questions take `@d` and a set; `every`
+  back, over the array; group-truth and every-pass-spelling closed; record-in-some dissolved, my reading);
+  brace-counts "I rule we should do this" (`x{a,b}` postfix, lazy and possessive forms; `rx.repeat` stays).
+  With drop-not: THREE rulings in the record, not in the documents; one fold lane owed (waits for his go or the
+  weekly reset).
+- His ideas parked (pieces owed at the fold): one name for two of a library's labels by the export list; a
+  selection of an array's settings by position.
+- MAPS (his order: maps, then strings): his proposal of a map creator recorded; map-creator ASKED (five lines);
+  he LEANS yes and asked for a lane on the accessor's uses: lane predmap LAUNCHED (sonnet, a study; worktree
+  `worktrees/predmap`, cut at 956869507; deliver + empty rulings first; lanewatch armed; no subagents). My own
+  thought on his "sequence map" told to him: one map, the joining chosen by the name applied (`join`, `any_order`).
+- NEXT: predmap's report -> put map-creator back to him with its findings; then strings; then the r90 questions.
