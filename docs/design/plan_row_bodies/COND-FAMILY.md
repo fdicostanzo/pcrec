@@ -11237,3 +11237,22 @@ alternative that is a constant (his 1, 1, 2); for a label over the whole array i
 constant); which alternation counts when alternations nest (the source named in the path). His
 `F["a"].index is F.a.index` says a single-name bracket and the dot reach the same thing, the index staying F's:
 a result of the search is still F's element, not a renumbered copy.
+
+### 2026-11-25 OWNER, on map-creator: "Specifically F["z"] is a search and F.z must exist or error"
+tags: core/modules/map core/labels/paths core/values/metadata core/diagnostics/errors core/diagnostics/warnings
+
+Said after the manager took his "a search which might be empty" and asked the order of the results (slug
+key-order). HIS WORDS, whole:
+
+"Specifically F["z"] is a search and F.z must exist or error"
+
+Class: a STATEMENT of the difference between the two accessors, his: the bracket is a SEARCH (finding nothing is
+a result); the dot NAMES a thing that must exist, or it is an error. Not asked as a ruling; map-creator and
+key-order are NOT answered by it.
+CHECKED AGAINST THE DOCUMENTS: the dot half is what core/labels/paths already has as a reading: "A path to a label
+NOT VISIBLE through its source is a compile error, a typo'd path (`c.e`) alike". The bracket half replaces the
+manager's line 5 ("A listed key that no element has is a compile error"): withdrawn.
+The manager's reading (marked): `F["z"]` with no `z` is the empty array, the pattern that never matches
+(core/holes/zero-values/pattern's `(?!)`), with the can-never-match warning where it is known at compile time; so
+his `F["a"].index is F.a.index` holds where `a` exists, and where it does not the bracket form is empty and the
+dot form refused.
