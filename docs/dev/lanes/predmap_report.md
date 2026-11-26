@@ -9,6 +9,7 @@ Placeholder spelling for the literal: `{a = A, b = B}` (the manager's, not his).
 words: yes / never / maybe (weight 0..1, and what it depends on).
 
 ## STATE AT HANDOFF
+OWED: none.
 Rulings file docs/dev/lanes/predmap_rulings.md: empty at the last read (before writing the report). Premise test: pred_doc_lint
 "failed 0"; core/modules/map "ruled 2026-11-15". Script last line: see EVIDENCE. Stopped: nothing. No premise failed.
 One contradiction in the documents to know first (hand-worked): core/modules/map says "A map interface is not a created value:
