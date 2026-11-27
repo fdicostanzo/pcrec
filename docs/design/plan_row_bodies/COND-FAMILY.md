@@ -11907,3 +11907,55 @@ hold here", for now on zero-width tests only (a condition, `^A`, `~A`, a group q
 entry only); `A &! B`; no `?:!`; the complement object leaves; match-and-filter restated or retired as its own
 question. V-D (`!A` on a consuming pattern = `(?!A)`) is V-C with one error relaxed, no answer moving. The
 manager agrees with it and puts it to the owner as bang-split, re-asked.
+
+### 2026-11-27 OWNER, PROPOSAL — `!` the logical not, `~A` the complement; no `:!` operator
+tags: core/filters/complement core/filters/negation core/filters/kinds core/conditions/optional-entry lib/control/when
+His words, verbatim (after the manager's report of review r109 and the re-asked bang-split):
+"Let's say ! Is the logical not. For conditions and lookarounds its meaning is clear. My initial concern that set
+this off is that ! had two meanings. Now it doesn't. What that leaves is the need for a "complement" operator to
+take the place of !A. I'm going to steal our lookback operator for historical reasons. ~A means everything not in
+A, which has constraints around its usage, then the compound forms become easier and require no special :!
+Operator. Validate"
+Class: PROPOSAL (not an answer by slug to bang-split; nothing ruled). It answers the re-asked statement in part:
+its line 1 (`!` = the logical not of a test) is taken up; its lines 4 to 6 (`:!`, `&!`, "the complement object
+leaves") are replaced by a complement operator `~`.
+The run (`docs/dev/lanes/predbang_evidence/tilde.py`, output pasted from `tilde.out`):
+```
+1. entries, 11 states of h
+  (h: ~<5)  vs "present and outside": 0 of 11 differ
+  (h ?: ~<5) vs "absent or outside":   0 of 11 differ
+  !(h: <5)  vs (h ?: ~<5):             0 of 11 differ
+  !(h ?: <5) vs (h: ~<5):              0 of 11 differ
+  !(h: <5)  vs (h: ~<5):               1 of 11 differ (the absent state)
+  /(?<h>\d)?x/ & (h: ~<5)  | WHOLE x FAILS 3x FAILS 7x HOLDS | SEARCHED 7x@0 | FIND-ALL ['7x@0']
+  /(?<h>\d)?x/ & (h ?: ~<5) | WHOLE x HOLDS 3x FAILS 7x HOLDS | SEARCHED 7x@0 | FIND-ALL ['7x@0', 'x@4', 'x@6']
+  /(?<h>\d)?x/ & !(h: <5)  | WHOLE x HOLDS 3x FAILS 7x HOLDS | SEARCHED 7x@0 | FIND-ALL ['7x@0', 'x@4', 'x@6']
+2. records, 121 states of (a, b), S = <5, T = >=3
+  (a: ~S, b: ~T) vs "a present outside S and b present outside T": 0 of 121 differ
+  (a: ~S, b: ~T) vs !(a: S, b: T): 71 of 121 differ
+  !(a: S, b: T) vs (a ?: ~S) | (b ?: ~T): 0 of 121 differ
+  (a: S, b: ~T) holds in 15 of 121 states (5 values of a times 3 of b = 15)
+3. patterns: A & ~B, the stretch of A that B does not match whole
+  /\d+/ & ~/7\d*/ : WHOLE 123 HOLDS 712 FAILS | SEARCHED 12@2 | FIND-ALL ['12@2', '37@8']
+  /\d+/ & ~/7\d*/ & ~/\d*2/ : WHOLE 123 HOLDS 712 FAILS 12 FAILS | SEARCHED 1@2 | FIND-ALL ['1@2', '37@8']
+  ~B & ~C vs ~(B | C), as filters: 0 of 1093 strings differ
+  ~~B vs B, as filters: 0 of 1093 strings differ
+  C | ~B vs ~(B & ~C), as filters: 0 of 1093 strings differ
+4. the two words part: "x" seq !^/\d/  against  "x" seq ^~/\d/  (a stretch ahead that is not one digit)
+  differ at 1094 of 2005 positions of x (the empty stretch is always outside /\d/)
+```
+The manager's readings (each for the fold to test; none his words):
+- His `~A` is today's ruled complement (core/filters/complement: "takes a pattern or a set and is filter-only")
+  respelled; the piece's printed line `/\d+/ & !/7\d*/` reproduces under `~` (run 3, first line). So the
+  complement object STAYS (r109's line 6 falls), and his 2026-11-18 "can match, can filter" ruling stands
+  untouched: the follow-up question "what becomes of rx that can filter" is no longer owed.
+- `:!`, `?:!` and `&!` are not needed: `(h: ~S)`, `(h ?: ~S)`, `A & ~B` (run 1, run 3). r109 F4 (`:!` inside a
+  record) and F6 (`&!` chaining) have no subject: a record stays a product of sets (run 2), `&` chains as today.
+- `!X` takes a test only (a condition, a lookaround, a group question, another `!X`); `~X` takes a set or a
+  pattern only. `(h: !<5)`, `A & !B`, `X := !B` become errors naming `~`; `~(cond)` an error naming `!`.
+- The two do not collapse into one: a lookahead for a complement is nearly always true (run 4), so `!^A` cannot
+  be written `^~A`.
+- NOT SETTLED by his words: the spelling of the lookbehind operator, now that `~` is taken ("steal our lookback
+  operator"); the base documents print no lookbehind operator today (a grep: no code span holds `~`).
+- Census (`bang_census.py`, re-run today): of the printed `!` outside rx text, "11 after :", "11 after &" and
+  "19 span starts with !" are the complement sites to re-spell; the fold classes each by its operand.
