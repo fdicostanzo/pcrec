@@ -34,6 +34,6 @@ Bound 0 (pure reduction). Measured on shard 1/12 of the `MG_ENC=1 MG_ENG=2` popu
 
 ## STATE AT HANDOFF
 
-- Branch `lane/scope4fix`; rulings file `scope4fix_rulings.md` was empty at each re-read; last R-n applied: none.
+- Branch `lane/scope4fix`; rulings file `scope4fix_rulings.md`: last R-n applied R-1 (scope4 mech confirms S3644 UNDETECTED; the A fix is what clears it).
 - OWED queue keys (scripts in `$PCREC_TMPDIR/scratch/scope4fix/`): `200-scope4fix-test` (make test), `200-scope4fix-mech` (S3643 S3644 S3648 S3613 S3615 S3584 S3572; S3644/S3648 must read UNDETECTED as declared), `200-scope4fix-mg` (make memgate BASE 7b32adce6 bound 0, default population peak+rungs+instr, then peak under MG_ENC=1 MG_ENG=2), `190-scope4fix-alloc` (make alloc).
 - Not done: the owed runs; `make strict`.
