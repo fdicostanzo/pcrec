@@ -28747,3 +28747,19 @@ Next
 - 22:10 (11-26) 200-f2f6fix-alloc GREEN (279 s; full make alloc incl. the 264 floor and whole_run). Only mgfix-mg left before landing.
 - 22:31 (11-26) 200-mgfix-mg GREEN (1265 s): peak, rungs, instr (ASLR off) on lane/mgfix (F2+F6+r105 fixes+memgate fix). All gates green; r106 mgfix (manager inline) filed. Landing next.
 - 22:42 (11-26) [ARENA-SCOPES] F2+F6 LANDED: merge lane/mgfix (f2f6 + f2f6tri + f2f6fix + mgfix), MGFIX-1 fixed, plan row + ledger line, strict / plan-lint / memgate control green, pushed 14d37107b (CI on 45735332771 green before push). Worktrees pruned (5); merged branches wait for the 120-min quiet gate. full_suite_ledger lacks lines for the 11-24/25 landings: D177 recount owed before the next window. Next: F3.
+
+## 2026-11-27 (session 144, morning): [ARENA-SCOPES] F3 landed
+
+- Owner "Go" (f3-start). Lane f3 (opus): S10 `nb`, S11 `tail`, S12 `o` as STRBUF scope clients with `pcrec_sb_adopt`;
+  deleted the 3 scanner ALLOW rows, `shape:NAME`, and alloc_check's now-empty filed-stranding table with its stack
+  recording; W6 re-pinned UP 1014 of 1057; K155 closed (plan row moved to plan_completed.md).
+- Gates: alloc, mech, make test GREEN; memgate peak WITHIN (bound 256 B, +248 B per compile), rungs IDENTICAL, instr
+  WITHIN. Cloud growth run 46006280689: the 13 K155 leak shards GREEN (pre-F3 run 45492837175 had 15 red); the 2 reds
+  are the known ASan strstr timeouts (matrix/lookbehind.plus.second.lit@15, spine/uni@131069).
+- r107 arenaf3 (2 critics): no answer/speed/size findings, 128/128 emitted pairs identical. A (S3572's re-aimed plant
+  leaked on the normal path; re-spelled as the faithful two-edit shape), B, C, E FIX-NOW and D DOC, applied by lane
+  f3fix (sonnet; src diff comments only; S3572 cloud mechrows GREEN 46011008175; alloc GREEN). Critic skill §3 gained
+  the faithful-old-shape plant rule.
+- SCOPE-4 measured by f3: emit_whole as a scope client moves 108 of 7,402 VM+UTF-8 compiles, all DOWN (median -131 KB,
+  max -328 KB); the trigger r105 recorded has fired. Merged + pushed 7427475af.
+- Next: the emit_whole client (F2's shape) and F4 (K163), one lane at a time.
