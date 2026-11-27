@@ -11789,3 +11789,40 @@ The manager's answer (told to him; the manager's reading; nothing applied):
   changing an answer; the silent reading could not be taken back.
 - The cost returns: the printed forms of the list are re-spelled at the fold (mechanical: each is a single atom).
 DFA category (his standing question): YES, unchanged (a spelling and an error).
+
+### 2026-11-27 OWNER, "agree" on the one-token reading; and a PROPOSAL: "we keep ! out of the language and use ^ ^! ~ ~! ... the alternative is ^^ and ^^!"
+tags: core/filters/negation core/filters/complement core/conditions/form core/patterns/lookaround lib/control/peek lib/control/when core/operators/precedence core/spellings/placeholders core/conditions/two-valued
+
+Said on the manager's leaning that `:!`, `?:!` and `&!` are each one token and `(a: !<v)` and `A & !B` are
+compile errors naming them. HIS WORDS, whole:
+
+"agree. and idea: we split off ! because in different places the negation/complement idea was different
+semantics. i don't disagree with that. i propose we keep ! out of the language and use ^ ^! ~ ~! because frankly
+we are running out of keyboard symbols. i know ~ meant search but i don't think we use it like that anymore. the
+alternative is ^^ and ^^!"
+
+Class: (1) AGREEMENT with the leaning of the entry above (READING TAKEN: `:!`, `?:!`, `&!` one token each;
+`(a: !<v)` and `A & !B` compile errors; not asked under a slug, so it goes into the ruling statement to be put to
+him, not recorded as a ruling by itself). (2) a PROPOSAL: no `!` by itself in the language; four prefix
+operators, READ AS `^A` ahead, `^!A` not ahead, `~A` behind, `~!A` not behind (`^^` and `^^!` his alternative
+spelling for the behind pair); spellings are placeholders. (3) a RECOLLECTION: `~` meant search and is no longer
+used so. CHECKED: the record has his `=~` lean of 2026-11-13 ("instead of search() use Perl =~"); the three base
+documents hold no `~` today (grep: none), and the search inside a text is written `contains(..)`.
+RUN (python `re`, subject `1x2 x3 4x x`, A := `\d`; output pasted; the four lines agree with the peek-family run
+of 2026-11-25):
+x SEQ ^A: x(?=\d) | WHOLE x FAILS | SEARCHED ('x', 1) | FIND-ALL [('x', 1), ('x', 4)]
+x SEQ ^!A: x(?!\d) | WHOLE x HOLDS | SEARCHED ('x', 8) | FIND-ALL [('x', 8), ('x', 10)]
+~A SEQ x: (?<=\d)x | WHOLE x FAILS | SEARCHED ('x', 1) | FIND-ALL [('x', 1), ('x', 8)]
+~!A SEQ x: (?<!\d)x | WHOLE x HOLDS | SEARCHED ('x', 4) | FIND-ALL [('x', 4), ('x', 10)]
+The manager's thoughts (told to him; the manager's reading; nothing applied):
+- It restores the general form withdrawn two entries above: `!` is never an operator by itself, only the
+  negative mark of an operator (`:!`, `?:!`, `&!`, `^!`, `~!`). The withdrawal is withdrawn with its ground (a
+  prefix `!` as the negative lookahead), which this proposal sets aside.
+- It answers the behind pair, left open by the peek operators. `~` over `^^`: one character, and the two
+  directions then look different.
+- THE READING TAKEN of "keep ! out", to be confirmed in the ruling: the prefix `!` on a condition leaves too;
+  "the condition fails here" is written `^!(h: <5)` in a sequence (the documents: "a negative lookahead at its
+  point"), `A &! (h: <5)` beside a pattern, and `(h ?:! <5)` for one entry. It re-spells condition-not, with no
+  change of meaning.
+DFA category (his standing question): `^` and `^!` YES (classed 2026-11-25); `~` and `~!` YES by the same closure,
+the manager's estimate, nothing run; in pcrec today every lookaround is VM (the build side is main's).
