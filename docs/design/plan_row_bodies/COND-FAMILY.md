@@ -12197,3 +12197,16 @@ every printed program that reads through an underscore-named group is found and 
 capture semantics": what a group contributes to the caller's captures is unchanged (capture by request,
 lib/structural/capture; core/labels/labels-vs-captures); (e) the same-name rules for a group mentioned twice are
 the label rules already printed.
+
+### 2026-11-27 OWNER, a RECOLLECTION on group-node: "there was also difference in explicit back reference"
+tags: core/labels/rule/group-node core/labels/backreferences core/labels/labels-vs-captures
+His words, verbatim: "I think there was also difference in explicit back reference"
+Class: a RECOLLECTION ("I think"), checked against the documents; it adds a second exception to his statement of
+the entry before ("Group names should be labels almost exactly excepting the explicit capture semantics").
+What the documents say (quoted, core/labels/backreferences, ruled 2026-11-18): "`\k<y>` reads PCRE's capture";
+"A reference inside an rx to a name that rx does not define is a compile error, never a look into the
+surroundings"; and core/labels/labels-vs-captures: "`[x = A]` makes a label and no capture". So the recollection
+holds: a group's name can be the target of `\k<name>` inside its own rx text and reads PCRE's carried capture; a
+part label cannot be a backreference's target. The manager's reading, for the fix lane after r111: group-node's
+text states the two exceptions together (capture by request; `\k<name>` reads the group's PCRE capture), and
+nothing in the group-node ruling changes either.
