@@ -448,6 +448,7 @@ evidence: docs/dev/lanes/predfold1125_evidence/ predfold1125_model.py STRINGS, S
 history:
 - 2026-11-27 (lane predfold1125, the fold of drop-not, array-argument, brace-counts, map-creator, string-literals, bang-split and and-not): a new piece (string-literals).
 - 2026-11-27 (lane predfix111, review r111 F19(d), F20, the manager's dispositions): seven escapes listed; the message naming the rx form and escaping the quote that does not delimit are readings; the error line names string-literals line 3.
+- 2026-11-27 (lane predfix111, review r111 F20, the manager's dispositions): two lines, an escaped quote and `\n` (the text `a\nb` holding a line end, as the documents write texts), RUN.
 
 ## core/patterns/flags — Flags in a literal
 slugs: option-hole-explicit
@@ -2106,7 +2107,7 @@ rulings:
 rejected:
 - `/a|b|c/[1]` = `/b/` and an ordinal from 0 — by owner ruling — the leans agreed (Q7, 1-based).
 readings:
-- `.index` the original position and `.label` the original name: the record's "2026-11-14 — each's bindings" (a LEAN), with his "So d[1][1] is "a"" (record "2026-11-14 — index base") — a reading.
+- `.label` the original name (the `.index` half RULED by map-creator line 7): the record's "2026-11-14 — each's bindings" (a LEAN), with his "So d[1][1] is "a"" (record "2026-11-14 — index base") — a reading.
 - a user label named `index` or `label` an error — the draft's LEAN, UNTESTED.
 - `/${days}/ & (w.index: >= 2)`: WHOLE `Tue` HOLDS, `Mon` FAILS / SEARCHED `Wed`@4 / FIND-ALL [`Tue`@0, `Wed`@8] — SUPPORTED (preddoc4 PART ME; sabotage s10, 0-based, caught).
 evidence: docs/dev/lanes/preddoc4_evidence/ PART ME.
@@ -2115,6 +2116,7 @@ history:
 - 2026-11-22 (lane predref, label-reference sweep and helper-captures fold): the line's program `/${days}/ & (w.index: >= 2)` re-spelled `/${days}/ & (days.w.index: >= 2)` (label-reference; predbound META had run it); the bullet "Read like labels" says where the bare form stands. Answers unchanged (docs/dev/lanes/predref_evidence/ predref_model.py RESPELL). Status date 2026-11-19 to 2026-11-22.
 - 2026-11-22 (lane predfix82, review r82 GENERAL-8; record "2026-11-22 MANAGER — review r82 (predfold1122): dispositions ruled; two corrections of record entries (no owner words)"): `needs:` core/values/computed-labels retargeted to core/conditions/form/value-left.
 - 2026-11-27 (lane predfold1125, the fold of drop-not, array-argument, brace-counts, map-creator, string-literals, bang-split and and-not): restated by the rulings named in its rulings field (status and date only).
+- 2026-11-27 (lane predfix111, review r111 F13, the manager's dispositions): the statement quotes line 7 whole ("among X's alternatives", the constant for a label inside one alternative); `.label` is out of the statement, a reading; two lines on his F (`F.c.index` is `2`, a constant), RUN.
 
 ## core/values/arithmetic — Arithmetic
 slugs: plus-operands number-edges
@@ -3089,7 +3091,7 @@ slugs:
 rulings:
 - 2026-11-15 "3. this leans into the idea of an interface to a type over the type. Array and map are interfaces that can be applied to regex but interfaces aren't themselves values that can be created. So what import is is less important than that its interface is a map. 4. agree." (record: "2026-11-14 RULINGS on rev 3's contradictions"); under its bold line "2026-11-15 RULINGS — answers to the four questions of review r8"
 - 2026-11-25 "Yes to all seven" (record: "2026-11-25 OWNER RULING — map-creator: "Yes to all seven""); lines 1, 2, 5 and 6; it AMENDS "A map interface is not a created value"
-- 2026-11-25 "m["a"|1]: I would not deduplicate. This is two results" (record: "2026-11-25 OWNER, on map-creator: "m["a"|1]: I would not deduplicate. This is two results ... it's a search which might be empty"; and a QUESTION with an example: "how do I get an index from a label in a map? .index? And is that the index of the alternation?"")
+- [MOVED 2026-11-27 to core/modules/map/access: said of a search's results, map-creator line 4] 2026-11-25 "m["a"|1]: I would not deduplicate. This is two results" (record: "2026-11-25 OWNER, on map-creator: "m["a"|1]: I would not deduplicate. This is two results ... it's a search which might be empty"; and a QUESTION with an example: "how do I get an index from a label in a map? .index? And is that the index of the alternation?"")
 rejected:
 - a module as a third value kind, a namespace (the manager's 2026-11-14 lean (1)) — by owner ruling — the follow-up (MODULE = MAP) and "what import is is less important than that its interface is a map".
 - DECLARED TYPES (`type(...)`, `isodate: date`), TYPE MEMBERS declared with a type, SCOPE-LIMITED UFCS (`d.weekday` resolving to a scoped macro), `types()` (and the record's `kind()`) in the first spec — by owner ruling — the §9 cut (predx Q8, the draft §9 STATUS "RULED (CF:583, predx Q8)"); declared types may return as library packaging after a build.
@@ -3105,6 +3107,7 @@ history:
 - 2026-11-22 (lane predfix83, review r83 D9; record "2026-11-22 MANAGER — review r83 (preddef1122): dispositions ruled; one correction; idiom-confirm closed on default-export (no owner words)"): the bullet until then: "Only what `.` reaches is reachable from outside: the public names, decided by the `_` rule (core/labels/export);" ("public" read as "reachable from outside", the old sense). Now: the names the thing exports, by the `_` rule and default-export.
 - 2026-11-27 (lane predfold1125, the fold of drop-not, array-argument, brace-counts, map-creator, string-literals, bang-split and and-not): restated by the rulings named in its rulings field. The statement until then, verbatim: "A module is described by its map interface: its members are its fields, reached by the one `.`; what kind of thing a module is is not ruled.".
 - 2026-11-27 (lane predfold1125, the fold of drop-not, array-argument, brace-counts, map-creator, string-literals, bang-split and and-not): the bullet "A map interface is not a created value: no map value is passed around." removed (amended by map-creator); the open map questions (a key read at match time, brackets on a module, labels under a join, the two `.index` edges) listed in the body.
+- 2026-11-27 (lane predfix111, review r111 F13, F14, the manager's dispositions): the no-deduplication bullet and its line (`{a = "x", b = "x"}`) left the piece: his words are of a SEARCH's results (map-creator line 4), now in core/modules/map/access; the open `.index` edges named as asked (a label whose alternative was not taken; nested alternations).
 
 ## core/modules/map/access — Members and selection
 slugs: map-creator key-order
@@ -3112,6 +3115,7 @@ rulings:
 - 2026-11-25 "Yes to all seven" (record: "2026-11-25 OWNER RULING — map-creator: "Yes to all seven""); lines 3 to 5
 - 2026-11-25 "Specifically F["z"] is a search and F.z must exist or error" (record: "2026-11-25 OWNER, on map-creator: "Specifically F["z"] is a search and F.z must exist or error"")
 - 2026-11-25 "I'd see it as the keys order. Why otherwise and how would you order results in a particular way?" (record: "2026-11-25 OWNER, on key-order: "I'd see it as the keys order. Why otherwise and how would you order results in a particular way?"")
+- 2026-11-25 "m["a"|1]: I would not deduplicate. This is two results, if they both exist. The key is that it's a search which might be empty" (record: "2026-11-25 OWNER, on map-creator: "m["a"|1]: I would not deduplicate. This is two results ... it's a search which might be empty"; and a QUESTION with an example: "how do I get an index from a label in a map? .index? And is that the index of the alternation?""); of the search's results (line 4), moved here from core/modules/map.
 rejected:
 readings:
 - (b) the accessor on any pattern with labels; (c) a bare name in the brackets a binding's value; (d) a one-name result not renumbered; (f) `m[0]` the whole rx; (g) a name on an unlabelled array finds nothing — UNTESTED (the front end selects on map literals only).
@@ -3121,6 +3125,7 @@ readings:
 evidence: docs/dev/lanes/predfold1125_evidence/ predfold1125_model.py MAP11, SPECLINES.
 history:
 - 2026-11-27 (lane predfold1125, the fold of drop-not, array-argument, brace-counts, map-creator, string-literals, bang-split and and-not): a new piece, lines 3, 4 and 7 of map-creator.
+- 2026-11-27 (lane predfix111, review r111 F14, F15, the manager's dispositions): the no-deduplication bullet, his words whole, moved here (said of the search's results); it is seen only through `.index` or a count. The key's-order line re-picked so the order can fail (m := `{a = /\d/, b = /\d\d/}`, `m["b" | "a"]` against `m["a" | "b"]`, the two printed): the old line's disjoint elements gave one answer under either order.
 
 ## core/modules/binding-list — The named binding list
 slugs: import-symbols

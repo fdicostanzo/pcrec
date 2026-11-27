@@ -271,6 +271,8 @@ Character literals: WHOLE `a.b+` HOLDS, `axb` FAILS, `axbbb` FAILS / SEARCHED `a
 Either quote delimits: WHOLE `a"b` HOLDS, `ab` FAILS / SEARCHED `xa"b` `a"b`@1 / FIND-ALL `a"b ab` [`a"b`@0] (`'a"b'`)
 A code: WHOLE `Ab` HOLDS, `ab` FAILS / SEARCHED `ab Ab` `Ab`@3 / FIND-ALL `Ab ab Ab` [`Ab`@0, `Ab`@6] (`"\x{41}b"`)
 A hole mark is plain text: WHOLE `${x}` HOLDS, `x` FAILS / SEARCHED `a ${x}` `${x}`@2 / FIND-ALL `${x} x` [`${x}`@0] (`"${x}"`)
+An escaped quote: WHOLE `a"b` HOLDS, `ab` FAILS / SEARCHED `xa"b` `a"b`@1 / FIND-ALL `a"b ab a"b` [`a"b`@0, `a"b`@7] (`"a\"b"`)
+A newline: WHOLE `a\nb` HOLDS, `anb` FAILS / SEARCHED `anb a\nb` `a\nb`@4 / FIND-ALL `a\nb axb a\nb` [`a\nb`@0, `a\nb`@8] (`"a\nb"`)
 Not a string escape: modes: a compile error (`"a\d"`: only the escapes of string-literals line 3; a class is rx text, `/\d/`).
 Adjacent strings: modes: a compile error (`"ab" "cd"`: no juxtaposition; `"ab" SEQ "cd"` is the join).
 
@@ -1761,16 +1763,22 @@ see: core/values/arithmetic lib/modifiers/length lib/modifiers/month-numbered co
 In a set: WHOLE `3+4` HOLDS, `7+8` FAILS / SEARCHED `7+8 2+2` `2+2`@4 / FIND-ALL `1+1 9+9 5+4` [`1+1`@0, `5+4`@8] (`/(?<a>\d)\+(?<b>\d)/ & (a: <(10 - $b))`)
 
 ### Metadata of a member   [core/values/metadata]   ruled 2026-11-25
-A part label over an array carries two fields: `.index`, the 1-based position in the array of the member that matched, and `.label`, that member's name.
+`X.a.index` is the 1-based position, among X's alternatives, of the alternative `a` was set in: a constant for a label inside one alternative, the matched member for a label over the whole array.
 needs: core/labels/paths core/conditions/form/value-left
 see: core/arrays/lift core/modules/map core/modules/map/access lib/modifiers/month-numbered lib/structural/capture
-- His ruling, map-creator line 7: "`X.a.index` is the position of the alternative `a` was set in"; on a map the
-  label is the element's (`m.b.index` is `2` where the alternative b matched). `.label` stays a reading.
+- His ruling, map-creator line 7, whole: "`X.a.index` is the position, among X's alternatives, of the alternative
+  `a` was set in: a constant for a label inside one alternative (your 1, 1, 2), the matched member for a label over
+  the whole array." On a map the label is the element's (`m.b.index` is `2` where the alternative b matched).
+- His F, `F := [a=99]seq [b=76]|[c=87]`: `a` and `b` are inside alternative 1, `c` inside alternative 2, so
+  `F.a.index` and `F.b.index` are `1`, `F.c.index` is `2`, constants (the lines "His F").
+- `.label`, the matched member's name, is a reading, not ruled.
 - `days := [w = [/Mon/, /Tue/, /Wed/]]`: on `Tue`, `w.index` is `2`.
 - 1-based everywhere, as PCRE's group numbers are; `[0]` is the whole rx.
 - A user label named `index` or `label` would hide them: a compile error (a reading).
 - Read like labels: `$w.index`, or left of `:` (`(w.index: >= 2)`), in the definition that writes `w`; from a
   definition that uses `days`, through its name (`days.w.index`: core/labels/paths/label-reference).
+His F, a label inside one alternative: WHOLE `87` HOLDS, `9976` FAILS / SEARCHED `9976 87` `87`@5 / FIND-ALL `9976 87 99` [`87`@5] (`F & (F.c.index: 2)`, F := `[a = "99"] SEQ [b = "76"] | [c = "87"]`)
+His F, the other position: WHOLE `87` FAILS, `9976` FAILS / SEARCHED `9976 87` FAILS / FIND-ALL `9976 87` [] (`F & (F.c.index: 1)`, F := `[a = "99"] SEQ [b = "76"] | [c = "87"]`)
 WHOLE `Tue` HOLDS, `Mon` FAILS / SEARCHED `Mon Wed` `Wed`@4 / FIND-ALL `Tue Mon Wed` [`Tue`@0, `Wed`@8] (`/${days}/ & (days.w.index: >= 2)`, days := `[w = [/Mon/, /Tue/, /Wed/]]`)
 
 ### Arithmetic   [core/values/arithmetic]   ruled 2026-11-19
@@ -2624,7 +2632,6 @@ see: core/modules/map/access core/values/metadata core/labels/export parked/idea
   reached by the one `.` (the earlier ruling, which stands); what kind of thing a module is is not ruled.
 - The literal enforces the labels: an element with no label is a compile error; a numeral is not a label name.
   The literal's spelling is a placeholder; the labelled array `[a = A | b = B]` stays legal, unenforced (readings).
-  No deduplication: two elements of one text stay two ("m["a"|1]: I would not deduplicate").
 - As a pattern `m` is `A | B` in written order; each alternative carries its element's label (`m.a` after a match
   reads the alternative `a`, `.index` its position: core/values/metadata).
 - `.` has one meaning: a field of the map interface of the thing on its left (a label, a module member, metadata).
@@ -2634,9 +2641,8 @@ see: core/modules/map/access core/values/metadata core/labels/export parked/idea
   member, `h[2]` on a label the second setting (core/labels/labels-vs-captures/array-vs-passes).
 - An infinite key is under construction (core/diagnostics/under-construction).
 - Open, not ruled: a key read at match time; brackets on a module; the labels under a join; the two `.index`
-  edges (an alternative set twice, one never set): listed in the details entry.
+  edges (a label whose alternative was not taken; nested alternations): listed in the details entry.
 As a pattern: WHOLE `7` HOLDS, `x` HOLDS, `7x` FAILS / SEARCHED `-x7` `x`@1 / FIND-ALL `7x-y` [`7`@0, `x`@1, `y`@3] (`m`, m := `{a = /\d/, b = /[a-z]/}`)
-No deduplication: WHOLE `x!` HOLDS, `y!` FAILS / SEARCHED `ax!` `x!`@1 / FIND-ALL `x! y! x!` [`x!`@0, `x!`@6] (`m SEQ "!"`, m := `{a = "x", b = "x"}`)
 An element with no label: modes: a compile error (`m`, m := `{a = /x/, /y/}`: the map literal labels every element).
 
 ### Members and selection   [core/modules/map/access]   ruled 2026-11-25
@@ -2645,16 +2651,20 @@ needs: core/modules/map
 see: core/values/metadata core/arrays/lift
 - His words: "Specifically F["z"] is a search and F.z must exist or error"; on the order: "I'd see it as the keys
   order".
-- The result is in the KEY's order: `m["b" | 1]` is b then the first element; every result kept, none
-  deduplicated; nothing found gives the empty array (the never-matching rx as a pattern: core/holes/zero-values).
+- The result is in the KEY's order: `m["b" | 1]` is b then the first element; nothing found gives the empty array
+  (the never-matching rx as a pattern: core/holes/zero-values). The order shows where one element's match is a
+  prefix of another's (the lines "the key's order").
+- Every result kept, none deduplicated, his words of the search's results: "m["a"|1]: I would not deduplicate". It
+  is seen only through `.index` or a count; as a pattern the same result twice matches as once (a reading).
 - `m.a` is the element where a pattern is expected and the label's text left of a colon (his line 3).
 - The manager's readings: the accessor works on any pattern with labels (positions over its alternatives, names
   over its visible labels); a bare name in the brackets is a binding's value; a one-name result is the source's
   element, not renumbered (`m["a"].index` is `m.a.index`); `m[0]` stays the whole rx; a name on an unlabelled array
   finds nothing; the same result twice matches as once; an empty result draws the can-never-match warning.
-- `X.a.index` is the position of the alternative `a` was set in (core/values/metadata).
+- `X.a.index` is the position, among X's alternatives, of the alternative `a` was set in (core/values/metadata).
 A member: WHOLE `7` FAILS, `x` HOLDS / SEARCHED `7x` `x`@1 / FIND-ALL `7x y` [`x`@1, `y`@3] (`m.b`, m := `{a = /\d/, b = /[a-z]/}`)
-A search, the key's order: WHOLE `7x` HOLDS, `x7` HOLDS, `77` HOLDS / SEARCHED `-77 x7` `77`@1 / FIND-ALL `7x x7 77` [`7x`@0, `x7`@3, `77`@6] (`m["b" | 1] SEQ /\w/`, m := `{a = /\d/, b = /[a-z]/}`)
+A search, the key's order: WHOLE `12` HOLDS, `1` HOLDS, `123` FAILS / SEARCHED `123` `12`@0 / FIND-ALL `123` [`12`@0, `3`@2] (`m["b" | "a"]`, m := `{a = /\d/, b = /\d\d/}`)
+The key's order, the other way: WHOLE `12` HOLDS, `1` HOLDS, `123` FAILS / SEARCHED `123` `1`@0 / FIND-ALL `123` [`1`@0, `2`@1, `3`@2] (`m["a" | "b"]`, m := `{a = /\d/, b = /\d\d/}`)
 A search by position: WHOLE `7` FAILS, `x` HOLDS / SEARCHED `7x` `x`@1 / FIND-ALL `7x y` [`x`@1, `y`@3] (`m[2]`, m := `{a = /\d/, b = /[a-z]/}`)
 Nothing found: WHOLE `q` HOLDS, `7` FAILS, `x` FAILS / SEARCHED `7xq` `q`@2 / FIND-ALL `7 q x` [`q`@2] (`m["z"] | "q"`, m := `{a = /\d/, b = /[a-z]/}`)
 A member the map lacks: modes: a compile error (`m.z`, m := `{a = /x/, b = /y/}`: no member z; `m["z"]` is the search, empty).
