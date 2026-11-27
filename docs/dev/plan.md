@@ -588,8 +588,8 @@ Owner waits: a row or stage waiting on the OWNER (a charter, a build go, an answ
   DIRECTION library-vs-process (Frank 2026-11-20, his words): "Also, library vs process. I want to see if a series of tests run in a single process using the library crashes. That will test if it cleans up". The runner gains a LIBRARY mode: one process calls pcrec_compile on the whole cell series (refusals and memory-cap failures included) and must not crash, must leave no leak (LeakSanitizer) and must still compile a control pattern correctly at the end; the CLI-per-cell mode stays.
 - [ARENA-SCOPES] STATE:started — scoped arenas registered on the Ctx: freed LIFO on the way out, all at once on a longjmp
   filed: 2026-11-24 manager, from the owner's direction during K155 (D203)
-  status (2026-11-26): CORE + F2 + F6 LANDED (clskit and uprops_produce are scope clients; r105 arenaclients + r106 mgfix ruled and fixed; make test, mech, alloc, core, memgate green; memgate instr now under ASLR off, its A==B noise read was blind). Units left: F3, F4 (F5 OUT)
-  next: F3 (K155 rewrites S10-S12 + sb_adopt; growth LSan cloud run; also measure r105 SCOPE-4, emit_whole retained scratch), then F4 (K163); one at a time (slow burn)
+  status (2026-11-27): CORE + F2 + F6 + F3 LANDED (F3: rewrites S10-S12 are STRBUF scope clients, K155 closed; growth run 46006280689: 13 leak shards green; memgate WITHIN +248 B; r107 arenaf3 ruled, fixed in f3fix). Left: SCOPE-4 client, F4
+  next: emit_whole as an F2-shaped scope client (r105 SCOPE-4 trigger FIRED at F3: 108 of 7,402 VM+UTF-8 compiles move, all down, median -131 KB, max -328 KB; byte/auto population 0 movers), then F4 (K163); one at a time (slow burn)
   refs: owner 2026-11-24 "the arena memory system is in my mind a stack memory extension system"; src/core/arena.c; src/core/compile.c job_cleanup; known_issues K155; D203; review r96 GENFORM-5/8/9, COST-2; growth run 45492837175 (13 leaks = grow9fix set, site attribution needs a fast_unwind_on_malloc=0 repro); design docs/design/arena_scopes.md (rev 2, review r102); UNLOCK (r102 B27, not built here): the trace build's arrival restores (`pcrec_cand_eval_reset` at compile_driver's handler top, where the design adds the scope unwind, and the 6 `pcrec_cand_trace_quiet` brackets a longjmp skips) are GENFORM-9's possible second non-memory member, a restore entry kind under U6; trigger: a manager ruling that trace-only members count toward GENFORM-9, or a longjmp-skipped bracket that the trace floor catches in a shipped trace run
 
 
@@ -2477,11 +2477,6 @@ Owner waits: a row or stage waiting on the OWNER (a charter, a build go, an answ
   status (2026-11-21): filed; nothing built. group.star.last.lit starts giving up (exit 3) at depth 45 on 'abc'; stamped capacity 2048 resume / 3072 trail frames, .subject_ceiling 4; libpcre2 10.46 answers; four growth cells carry K157:MATCHER
   trigger: the next change to the VM's backtracking frames (resume-stack or trail sizing, per-iteration frame need of a nested `*`, or the stamped subject ceiling); the compatibility defect is the give-up where PCRE2 answers
   refs: known_issues K157; docs/dev/lanes/grow6_report.md; tests/growth/run_growth.py (K157_CELLS); docs/spec/limits.md §8a, match_api.md §4¶3
-- [K155-STAMPS-LEAK] STATE:not-started — target_headers_render leaks its 32 KB pass-2 buffer on an out-of-memory refusal (K155)
-  filed: 2026-11-21 lane grow2, from grow1's library stage (NEW-2)
-  status (2026-11-24): lane k155fix: census + general rule enforced (23 small builders on pcrec_sb_scratch, compound texts arena-owned, scratch_builder_check.py in make test, alloc_check stranded-heap property); THIS site and the other two whole-artifact rewrites stay heap by ruling R-3, waiting on [ARENA-SCOPES]
-  next: [ARENA-SCOPES] lands, then move nb/render_buf/splice tail onto a scoped arena; the library stage of make test-growth goes green on it; drop their guard allowlist rows and alloc_check's filed stranding
-  refs: known_issues K155; docs/dev/lanes/grow2_report.md; docs/dev/lanes/k155fix_report.md; src/gen/memfn_stamps.c
 - [K150-LMCAT-QUADRATIC] STATE:not-started — the landmark walk's lm_cat rebuilds a CAT spine per candidate: quadratic compile memory (K150)
   filed: 2026-11-20 lane growfile, from growsurv KR-D
   status (2026-11-20): filed; nothing built. `(?:a|b)` x 5,000 spends 3.46 GB with no refusal; the size cap fires only past about 8,000

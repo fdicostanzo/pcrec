@@ -6685,3 +6685,8 @@ Mostly PCRE2 catch-up: libpcre2 10.46 accepts 53 binary properties and Bidi_Clas
   trigger: span_pick unit 3.0
   refs: docs/dev/reviews/2026-11-05-r2-memfn-sp1e.md (F5, F6, F9); docs/dev/lanes/sp1e_report.md
   completed: 2026-11-24 lane kitdrift: the asker fact SF_ASKER_PAIR (and fd_stop.renders_pair) was deleted by b5d1f8dd4 (memfn 3.0a commit 2, plan_frame.md rev 2.2 §2.4); the composer's fd_renderers rows moved into window.c's renderer tables (ren_skel/ren_search/ren_stream/ren_check/ren_fused, read through the one accessor ren_find) and the finder asks the frame's renderable set (wf_renders). The renderers are five tables behind one accessor, not a single (frame, pick, layer) table: that spelling was not kept
+- [K155-STAMPS-LEAK] STATE:completed — target_headers_render leaks its 32 KB pass-2 buffer on an out-of-memory refusal (K155)
+  filed: 2026-11-21 lane grow2, from grow1's library stage (NEW-2)
+  status (2026-11-24): lane k155fix: census + general rule enforced (23 small builders on pcrec_sb_scratch, compound texts arena-owned, scratch_builder_check.py in make test, alloc_check stranded-heap property); THIS site and the other two whole-artifact rewrites stay heap by ruling R-3, waiting on [ARENA-SCOPES]
+  refs: known_issues K155; docs/dev/lanes/grow2_report.md; docs/dev/lanes/k155fix_report.md; src/gen/memfn_stamps.c
+  completed: 2026-11-27 [ARENA-SCOPES] F3 (lanes f3 + f3fix, review r107): nb, tail and o are STRBUF scope clients with pcrec_sb_adopt; cloud growth run 46006280689 shows the 13 leak shards green
