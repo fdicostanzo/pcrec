@@ -1289,3 +1289,13 @@ wake.md says (read the draft WHOLE first; A4 is a ruled-words finding: read his 
   `$PCREC_TMPDIR/scratch/crit-predbang/`.
 - Still owed: the fold of the five rulings of 2026-11-25 (waits; it will fold with whatever he rules on `!`).
 - NEXT: the round's draft -> rule dispositions -> put its answers and suggestion to him -> bang-split re-asked.
+
+### 2026-11-27 — tenth session: r109 handed back and ruled; bang-split RULED
+- Review r109 (predbang) handed back, dispositions ruled by the manager, filed
+  (`docs/dev/reviews/2026-11-27-r109-predbang.md`); coordinator stopped. Reported to the owner with a re-asked
+  bang-split (the round's V-C).
+- The owner replaced it with his own form: `!` the logical not of a test, `~` the complement (today's ruled
+  complement respelled), no `:!`/`?:!`/`&!`. Validated by run (`predbang_evidence/tilde.py`), re-asked, and RULED:
+  "bang-split: yes". His question on binding a complement is answered by complement-place (2026-11-18).
+- r109's F1, F4, F6 (`&!`, `:!` in a record) have no subject under the ruling; F5, F7, F13 go to the fold brief.
+- Waiting: his go for the fold lane (six rulings now). Nothing running.

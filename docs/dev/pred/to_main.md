@@ -611,3 +611,9 @@ Entries are `P-n`, dated, never deleted. `done:` lines name the branch tip and t
   core.md's principles and the pieces the queue touches, not the whole file" (the whole read is about 90k
   tokens): yours and the owner's to decide.
 - Nothing of mine in flight, in the box queue or on a cron. No reply needed.
+
+P-33 (2026-11-27): review r109 (predbang) filed on lane/pred-rev28 with dispositions ruled; nothing to merge
+urgently. NEW OWNER RULING in the record: bang-split (`!` = logical not of a test; `~` = the complement,
+filter-only; `^A` lookahead, `!^A`; no lookbehind operator for now). Not folded; it joins the five rulings of
+2026-11-25 in one fold lane awaiting his go. Proposed pcrec-critic skill edits from the round: in a multi-variant
+subject give "operand kinds of each new operator" to ONE lens in COMMON; a per-variant ruling table as standard.
