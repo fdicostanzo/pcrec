@@ -105,6 +105,10 @@ check("peak over bound exits nonzero (MEMGATE-2)", run_peak(8, 0), bad)
 check("instr within band exits 0", run_instr(1.0), ok)
 check("instr over band exits nonzero (MEMGATE-2)", run_instr(1.5), bad)
 
+ia, pa = mg.drv_argv("/s", "mg_instr"), mg.drv_argv("/s", "mg_peak")
+check("instr driver runs with ASLR off (setarch -R)", ia, lambda c: c[0] == "setarch" and "-R" in c and c[-1] == "/s/mg_instr")
+check("peak driver is run directly", pa, lambda c: c == ["/s/mg_peak"])
+
 if fails:
     print("test_verdicts: %d of %d FAILED" % (len(fails), n))
     for f in fails:

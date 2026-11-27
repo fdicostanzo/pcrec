@@ -255,8 +255,8 @@ size_t pcrec_clskit_byte_tests(ClsSite site, PcrecAxisCand *out, size_t cap);
 const char *pcrec_clskit_leaf_name(ClsLeaf l);
 const char *pcrec_clskit_form_name(ClsForm f);
 
-void pcrec_clskit_emit_kit(StrBuf *c, const char *fn, const ClsKit *k,
-                           unsigned cp_max);
+void pcrec_clskit_emit_kit(StrBuf *c, Arena *parent, const char *fn,
+                           const ClsKit *k, unsigned cp_max);
 void pcrec_clskit_emit_inline(StrBuf *c, const ClsChoice *ch, const char *byte);
 const char *pcrec_clskit_read(Arena *a, ClsTest t, ClsTabForm f,
                               const char *name, const char *byte);

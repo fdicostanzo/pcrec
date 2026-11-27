@@ -3,8 +3,10 @@
 
 Made reproducible from lane k155fix's scratch tool (the manager's R-1 memory gate). Opt-in
 (`make memgate`), never in `make test`. Every mode compares two BUILT SIDES compile by compile
-over one population, so a side compared with itself is the noise read (design G5: two
-identical base runs must print identical numbers).
+over one population. The noise read (design G5: two identical base runs must print identical numbers) is a
+side against a SECOND DIRECTORY holding the same binaries and TREE (`cp` the drivers + TREE, link `plain`);
+the SAME directory twice is refused: results are keyed by side, so the second run would overwrite the
+first and every ratio would be 1 by construction (that is why T1's first noise read saw no jitter).
 
   memgate.py prep SIDE_DIR (--tree TREE | --ref REF [--repo TREE]) [--jobs J]
       build one side into SIDE_DIR (nothing is written in TREE): with --ref, `git archive REF`
@@ -32,7 +34,8 @@ identical base runs must print identical numbers).
       | MOVED.
   memgate.py instr A B OUT [--jobs J] [--limit N] [--shard K/N]
       per-compile user-mode instruction count around pcrec_compile, B/A ratio: p95 and max,
-      every compile over --band (default 1.02) listed OVER-BAND.
+      every compile over --band (default 1.02) listed OVER-BAND. The driver runs under `setarch -R`
+      (ASLR off): the count is address-dependent otherwise (drv_argv).
 
 Exit status (r104 MEMGATE-2): after the full report, 1 on a STOP / MOVED verdict or any ERR side; 0 on WITHIN /
 IDENTICAL / LAYOUT. `python3 -I tests/core/memgate/test_verdicts.py` is the control for the verdict logic (fake sides).
@@ -158,12 +161,21 @@ def population(a):
     return items
 
 
+def drv_argv(side, binname):
+    """The command line for one driver. mg_instr runs under `setarch ARCH -R` (ADDR_NO_RANDOMIZE): its user-mode
+    instruction count depends on the address-space layout (a ~2,000-instruction run-to-run spread on a 91k-instruction
+    compile with ASLR on, lane f2f6cost), so the layout must be fixed. mg_drv.c re-checks the personality flag and
+    refuses to count without it. mg_peak counts REQUESTED bytes (no address enters), gdrv is not an instruction count."""
+    exe = os.path.join(side, binname)
+    return ["setarch", os.uname().machine, "-R", exe] if binname == "mg_instr" else [exe]
+
+
 def drv_one(binname, sides):
     def one(item):
         key, raise_, feat, eng, pf = item
         out = {}
         for s in sides:
-            rc, so = run([os.path.join(s, binname)], "%d\t%s\t%d\t%s\n" % (raise_, feat or "-", eng, pf))
+            rc, so = run(drv_argv(s, binname), "%d\t%s\t%d\t%s\n" % (raise_, feat or "-", eng, pf))
             nums = (so or "").split()
             out[s] = tuple(int(x) for x in nums) if rc == 0 and nums and all(re.match(r"-?\d+$", x) for x in nums) \
                 else ("ERR", rc)
@@ -375,6 +387,8 @@ def main():
     if a.mode == "prep":
         return prep(a)
     a.A, a.B, a.out = os.path.abspath(a.A), os.path.abspath(a.B), os.path.abspath(a.out)
+    if a.A == a.B:   # results are keyed by side: one dir twice would compare a run with itself (ratio 1 by construction)
+        sys.exit("memgate: A and B are the same directory; the noise read needs two (a second dir of links to the first)")
     os.makedirs(os.path.join(a.out, "pat"), exist_ok=True)
     items = population(a)
     print("%s: %d compiles per side (A %s, B %s)" % (a.mode, len(items), a.A, a.B), flush=True)

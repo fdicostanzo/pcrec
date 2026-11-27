@@ -13310,7 +13310,8 @@ static void vm_emit_search_body(Vm *v, const GenNames *g, const VmPlan *pl,
                 break;
             case VCR_KIT:
                 /* [CLS-TREE] S2 the `byte-kit` row, size-leaning positions only */
-                pcrec_clskit_emit_kit(c, pcrec_sb_fragf(&cx->arena, "%s_class_kit%d", v->p, i),
+                pcrec_clskit_emit_kit(c, &cx->arena,
+                                      pcrec_sb_fragf(&cx->arena, "%s_class_kit%d", v->p, i),
                                       &v->clsch[i].kit, 0xFFu);
                 break;
             case VCR_SITE:
@@ -13341,7 +13342,7 @@ static void vm_emit_search_body(Vm *v, const GenNames *g, const VmPlan *pl,
             const VmWcls *w = &v->wcls[i];
             const char *fn = pcrec_sb_fragf(&cx->arena, "%s_wcls%d", v->p, i);
             if (w->ch.form == CLSF_KIT)
-                pcrec_clskit_emit_kit(c, fn, &w->ch.kit, UINT_MAX);
+                pcrec_clskit_emit_kit(c, &cx->arena, fn, &w->ch.kit, UINT_MAX);
             else
                 pcrec_clskit_emit_whole(c, &cx->arena, fn, w->ch.form, w->iv, w->n);
         }

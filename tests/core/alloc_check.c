@@ -232,10 +232,6 @@ static int show_sites = 0;   /* --sites */
 static const struct { const char *file, *fn, *row; } known_stranded[] = {
     /* K155's own site: the whole-artifact rewrite buffer of csb */
     { "src/core/sb.c", "target_headers_render", "[ARENA-SCOPES] (K155, target_headers_render nb)" },
-    /* the transient \p decode's hand-kept arena (`Arena tmp`), live across
-     * pcrec_ast_class_from_iv's arena allocations; seen by W7's hand-kept
-     * window under W3 (the SEEN gate). Unit F6 scopes it and deletes this. */
-    { "src/core/arena.c", "uprops_produce", "[ARENA-SCOPES] (uprops_produce tmp arena)" },
 };
 /* the files whose blocks record their allocation stack (every `fn` row's
  * file): a StrBuf's storage comes from sb.c, an arena's blocks from arena.c */
@@ -1104,12 +1100,13 @@ static int w7_plant(pcrec_error *err)
 /* W7's compile rows: a malloc witness whose compile has a NONEMPTY window.
  * Measured at F1: W1, W2, W4 and W6 have none (their minimize merges
  * nothing and they hold no hand-kept arena), so they have no row (a row of
- * population 0 is a gate that passes by emptiness, K35); W3 has two
- * windows, `uprops_produce`'s tmp arena and minimize's scope. `min_total`
- * is half the population measured at R-1's stride (535, lane arenabuild2;
- * D110). */
+ * population 0 is a gate that passes by emptiness, K35); W3 has its
+ * windows in minimize's scope and `uprops_produce`'s (F6: a scope on the attempt
+ * arena, so the class constructor's allocations are scope-window points). `min_total`
+ * is half the population measured after F6 (528, from `ALLOC_ARGS=--w7-only make alloc`, lane f2f6; 535 at R-1,
+ * lane arenabuild2, when the hand-kept `uprops_produce` window was in it; D110). */
 #define W7_ROWS \
-    { "W7/W3 (unicode-props/utf8)", "\\p{L}", PCREC_ENC_UTF8, 1, 0, 267, 0, 0, NULL, NULL, 0 }, \
+    { "W7/W3 (unicode-props/utf8)", "\\p{L}", PCREC_ENC_UTF8, 1, 0, 264, 0, 0, NULL, NULL, 0 }, \
 
 
 int main(int argc, char **argv)
@@ -1122,10 +1119,16 @@ int main(int argc, char **argv)
         else if (!strcmp(argv[i], "--sites")) { show_sites = 1; }
         else if (!strcmp(argv[i], "--w7-only")) { w7_only = 1; }   /* measuring W7 alone */
         else {
-            fprintf(stderr, "usage: %s [--sustained|--both] [--sites]\n", argv[0]);
+            fprintf(stderr, "usage: %s [--sustained|--both] [--sites] [--w7-only]\n", argv[0]);
             return 2;
         }
     }
+
+    /* every statement after the witness loops that judges the WHOLE run (the
+     * K60 table, the stale known_stranded rows, W5) is gated by this one
+     * predicate: --w7-only runs one witness and cannot judge the whole run
+     * (r105 CHECKS-5). */
+    const int whole_run = !w7_only;
 
     static const Witness witnesses[] = {
         /* [D105] W1 and W3 are the LEGEND-CLASS witnesses: every one of
@@ -1246,7 +1249,7 @@ int main(int argc, char **argv)
         arena_mode = 0;
     }
 
-    if (do_single && do_sustained) {
+    if (whole_run && do_single && do_sustained) {
         /* [K60MEAS] THE DECISIVE COMPARISON, printed as data rather than
          * asserted: an absorption count that SURVIVES sustained failure is a
          * fallback path that genuinely does not need the memory; one that
@@ -1266,8 +1269,9 @@ int main(int argc, char **argv)
 
     /* [K155] every filed stranding must still be reached: one no witness
      * strands any more is fixed (or out of reach), and its exception is
-     * stale -- the allowlist that quietly stops matching. */
-    for (size_t j = 0; j < N_KNOWN_STRANDED; j++) {
+     * stale -- the allowlist that quietly stops matching. A whole-run
+     * assertion (whole_run). */
+    for (size_t j = 0; j < N_KNOWN_STRANDED && whole_run; j++) {
         if (known_stranded_seen[j])
             ok("known stranding %s (%s%s%s): reached, %lld trial(s)", known_stranded[j].row,
                known_stranded[j].file, known_stranded[j].fn ? " under " : "",
@@ -1279,7 +1283,7 @@ int main(int argc, char **argv)
     }
 
     /* [W5] single-shot only, see its comment block. */
-    if (do_single) w5_run();
+    if (whole_run && do_single) w5_run();
 
     printf("\nchecks passed: %d\n", pass_n);
     printf("checks failed: %d\n", fail_n);

@@ -62,6 +62,10 @@ Ranked; a higher goal wins a conflict. Each has who benefits and a checkable for
    Check: memgate `instr` (user-mode instruction count around each `pcrec_compile`, in-process) before vs after: p95
    per-compile ratio <= 1.01 and max <= 1.02. Both bands are UNMEASURED defaults until T1 measures the instrument's
    noise (two identical runs); any compile over 1.02 is named and is a STOP for its unit.
+   MEASURED A/A noise (lane mgfix, 2026-11-26, 4,500 corpus compiles, base against a copy of base): with ASLR ON the
+   ratio spans 0.979..1.022 (max |delta| 20,770 instructions; 3 compiles over 1.02), so `instr` runs under ASLR off
+   (`setarch -R`), where the same read is max ratio 1.00001 (max |delta| 246, on the multi-million-instruction
+   compiles; the 91k refusal compiles agree within 1). The bands are unchanged.
 
 NON-GOALS. COST-1's grow-by-copy retention class (D-5; [ARENA-REGROW]); converting `job_cleanup`'s named list (D-3; P4
 keeps its trigger); the memo's compile lifetime (S7; U3/U9 keep RM-2's trigger); non-memory entries (FILE*, end
@@ -190,6 +194,9 @@ Rules; each has its check in "Discipline and checks".
   registry. The true reason is D77: no client needs a scope inside a child, and the check is one line. TRIGGER to
   lift it: the first client that needs marks inside a bump area (the owner's "special areas" form), or a helper
   reached from both a parent and a child arena that must open a scope (clskit.c `intern_records` is the candidate).
+  STATE (r105 SCOPE-5, 2026-11-26): the second half of the trigger has HALF-FIRED: after F2, `intern_records` is reached
+  from both a parent arena and clskit's child, but it opens no scope, so L5 stands; REGISTRY-1's trigger is unchanged
+  (the force loop reaches only `pf_derive` readers, 0 scope opens after force entry on 3 patterns hitting both clients).
 - L6 (B1) `pcrec_scope_free(s, p)` releases one HEAP entry of the INNERMOST scope only: it passes L1's check, then
   searches from `a->top` down to (not including) `s->mark` for a HEAP record holding `p`. MARK records are never matched
   (kind test), and the search cannot pass `s->mark`, so no call can unlink a nested scope's mark or an enclosing scope's
@@ -624,13 +631,16 @@ hold replaces `Arena.owned` itself (one record type, one walk, B7), and `walk_pa
   - BUDGET: W7 adds at most 2,000 trials and 60 s to `test-alloc` (unmeasured defaults; today about 162 malloc trials
     for W4 in about 60 s). A larger population at F1's profiling run is a STOP for F1; the fallback is a stated stride.
     DEVIATION AT BUILD (lane arenabuild2, ruling R-1): F1 measured 2,112 trials; the stride is 4 on scope-window-only
-    points, every hand-kept-window point kept (W7/W3: 535 trials), and the DFA memo arena is excluded from the
+    points, every hand-kept-window point kept (W7/W3: 535 trials at R-1, 528 after F6 removed the uprops hand-kept window; reproduce: `ALLOC_ARGS=--w7-only make alloc` prints W7/W3's population), and the DFA memo arena is excluded from the
     hand-kept window, its premise (compile_driver frees it on every arrival) asserted by alloc_check (sabotage S3603);
     "Deviations at build" below.
   - CONTROLS: sabotage (1) (drop the registry walk from `pcrec_arena_free`) makes W7 strand minimize's tables; C0(d)
     shows the lent window stranding the `into` copy on today's tree. After F4 the lent window's population is 0 by
     construction (C10): it stays as the pre-fix control only, and its floor is 0 for sabotage (9)'s member, so it is
     never counted as a gate that passes.
+  - r105 CHECKS-3 (the trade the SEEN gate now carries): after F6 no real compile exercises W7's hand-kept window (9 trial
+    points removed, 535 -> 528); the planted control (S3602's w7_plant) is the ONLY net on the hand-kept branch of the
+    wrap. The hand-kept window has a single control, and `SAB_REACH_POP` proves a definition exists, not that the control is wired.
   - THE SEEN GATE (r103 NEW, C20): `make test-alloc` is GREEN with the `uprops_produce` strand present, because its W3
     witness is `\p{L}` and a failure of `pcrec_ast_class_from_iv`'s arena allocations takes no malloc (they fit the
     compile arena's open block), while the `tmp` arena's block was taken earlier: alloc_check's malloc-trial counter never
@@ -775,6 +785,14 @@ Listed for the pre-go briefing; under D191 addendum 2 they need no go of their o
   move. Numbers: `docs/dev/lanes/arenabuild2_report.md`.
 - R-6, the rung rule (the owner, 2026-11-25, "rung-edge: agree with lean"): rungs are judged on requested bytes; D-9
   states it and memgate `rungs` applies it.
+- F2 and F6 BUILT (lane f2f6, 2026-11-26; the Clients rows F2 and F6 above are delivered, validation OWED to the queue,
+  `docs/dev/lanes/f2f6_report.md`). F2: `pcrec_clskit_emit_kit(c, parent, fn, k, cp_max)`; the scope opens AFTER the
+  empty-set return, so the empty path opens no scope and takes no record; the D-11 rule is `d11_findings` in
+  `scratch_builder_check.py` (type-keyed on `mf_arena`, both spellings, `mf_art_begin(` callers; floor: one allowed binder
+  seen); sabotage S3613 (close deleted), S3614 (binder spelled through a cast). F6: `uprops_produce` opens its scope on
+  `&cx->arena` and `pcrec_ucd_find` allocates into the child; `SCOPE_PARSE_ALLOW` carries the one row; the scanner's
+  uprops `ALLOW` row, the filed `uprops_produce` `known_stranded` row and K155's uprops sibling line are deleted; S3602's
+  re-aim (its witness was that row) is the planted-strand control alone; sabotage S3615 (close deleted).
 - r104 (code review of F1, the manager's ruling 2026-11-25), REGISTRY-1: sabotage (3), dropping the handler-top
   `pcrec_scope_unwind`, is UNREACHED. Its one reason is FIT_FORCE_NEXT, and the only scope client (minimize, a leaf)
   is not reachable from `pcrec_facts_force_all`, so no witness exists (C0(e) answers: none) and no row is built

@@ -22,7 +22,8 @@
  *   informational, ATT is the gate (design G2a).
  * -DMG_INSTR (linked against the plain -O2 library): "INSTR RC" where INSTR
  *   is the user-mode instruction count (perf_event_open, exclude_kernel)
- *   around the one `pcrec_compile` call.
+ *   around the one `pcrec_compile` call. Needs ADDR_NO_RANDOMIZE (the count
+ *   moves ~2% with the layout): exits 3 without it.
  *
  * Deterministic by construction (no wall clock); memgate.py's noise read runs
  * a side against itself to prove it. */
@@ -188,6 +189,7 @@ void __wrap_pcrec_arena_free(Arena *a)
 
 #ifdef MG_INSTR
 #include <linux/perf_event.h>
+#include <sys/personality.h>
 #include <sys/ioctl.h>
 #include <sys/syscall.h>
 #include <unistd.h>
@@ -228,6 +230,12 @@ int main(void)
 {
     char line[8192];
 #ifdef MG_INSTR
+    /* The count depends on the address-space layout: memgate.py starts this under `setarch -R`; refuse otherwise. */
+    int pers = personality(0xffffffff);
+    if (pers < 0 || !(pers & ADDR_NO_RANDOMIZE)) {
+        fprintf(stderr, "mg_instr: ASLR is on; run under `setarch $(uname -m) -R`\n");
+        return 3;
+    }
     int fd = instr_fd();
 #endif
     while (fgets(line, sizeof line, stdin)) {

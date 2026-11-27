@@ -344,11 +344,12 @@ typedef struct ABlock {
 /* [ARENA-SCOPES] an entry record of an arena's REGISTRY (arena.c). */
 typedef struct LEnt LEnt;
 
-/* Three kinds ([ARENA-SCOPES] D-10). A Ctx's own (`cx` set, freed by its
- * teardown). Ctx-bound and freed by hand (`DfaMemo.arena`: `.cx` re-pointed
- * per attempt, freed by `compile_driver`'s hand calls; and two LOCALS:
- * clskit's and `uprops_produce`'s `tmp`). Detached (`cx` NULL, freed by its
- * owner; a failure aborts).
+/* Two kinds and a scope's child ([ARENA-SCOPES] D-10). A Ctx's own (`cx` set,
+ * freed by its teardown). Ctx-bound and freed by hand (`DfaMemo.arena`: `.cx`
+ * re-pointed per attempt, freed by `compile_driver`'s hand calls). Detached
+ * (`cx` NULL, freed by its owner; a failure aborts). A scope's child (`child`
+ * set, an ARENA entry: freed at its scope's close, or by its parent's
+ * teardown; no scope opens on it): clskit's and `uprops_produce`'s scratch.
  * `top`/`open`/`gen` are the registry (`pcrec_scope_open`), written and read
  * by arena.c only; `child` is set only by `pcrec_scope_arena`. Every field's
  * zero is valid, so a zeroed or `{ .cx = cx }` Arena is an empty one. */

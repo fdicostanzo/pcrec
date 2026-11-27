@@ -13222,7 +13222,8 @@ static void emit_scan_defs(StrBuf *c, const DfaForm *f)
         ClsChoice ch;
         scan_choice(f->cx, f->d, f->scan[k], &ch);
         if (pcrec_clskit_test(&ch) == CLS_TEST_KIT)
-            pcrec_clskit_emit_kit(c, scan_name(f, CLS_TEST_KIT, f->scan[k]), &ch.kit, 0xFFu);
+            pcrec_clskit_emit_kit(c, &f->cx->arena, scan_name(f, CLS_TEST_KIT, f->scan[k]),
+                                  &ch.kit, 0xFFu);
     }
 }
 
