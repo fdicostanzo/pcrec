@@ -393,6 +393,7 @@ history:
 - 2026-11-22 (lane predfix77, review r77 D3; record "2026-11-22 MANAGER — review r77 (predfold1121): dispositions ruled (no owner words)"): the binding row's text column read "none of its own (X where `name` is used)"; it is now scoped to flags and matching, its reads its own (bare-nested-scope case 2). No answer moved.
 - 2026-11-23 (lane predfix84, review r84 A2; record "2026-11-23 MANAGER — review r84 (predspot1122): the dispositions, ruled with the 2026-11-23 rulings in hand; no owner words"): the binding row's column until then: "for flags and matching, X where `name` is used; its reads are its own (core/holes/bare-condition/nested-scope)". Now for matching where used, for flags where WRITTEN plus an explicit `i` from the hole: under program options the two part (core/holes/flags/in-filter, the lines "Bound in a library" and "Written in the hole"; docs/dev/lanes/predfix84_evidence/ predfix84_model.py FILTER).
 - 2026-11-27 (lane predfold1125, the fold of drop-not, array-argument, brace-counts, map-creator, string-literals, bang-split and and-not): restated by the rulings named in its rulings field (status and date only).
+- 2026-11-27 (lane predfix111, review r111 F4, the manager's dispositions): the `^A` row split into a lookahead row (core/patterns/lookaround/ahead) and a lookbehind-in-rx-text row; no lookbehind operator (bang-split).
 
 ## core/model/places/outermost-view — The outermost view
 slugs: nested-pass outer-pass-forms
@@ -446,6 +447,8 @@ readings:
 evidence: docs/dev/lanes/predfold1125_evidence/ predfold1125_model.py STRINGS, SPECLINES, ERRSWEEP11.
 history:
 - 2026-11-27 (lane predfold1125, the fold of drop-not, array-argument, brace-counts, map-creator, string-literals, bang-split and and-not): a new piece (string-literals).
+- 2026-11-27 (lane predfix111, review r111 F19(d), F20, the manager's dispositions): seven escapes listed; the message naming the rx form and escaping the quote that does not delimit are readings; the error line names string-literals line 3.
+- 2026-11-27 (lane predfix111, review r111 F20, the manager's dispositions): two lines, an escaped quote and `\n` (the text `a\nb` holding a line end, as the documents write texts), RUN.
 
 ## core/patterns/flags — Flags in a literal
 slugs: option-hole-explicit
@@ -593,6 +596,7 @@ readings:
 evidence: docs/dev/lanes/predfold1125_evidence/ predfold1125_model.py READINGS11, SPECLINES; docs/dev/lanes/predbang_evidence/tilde.py.
 history:
 - 2026-11-27 (lane predfold1125, the fold of drop-not, array-argument, brace-counts, map-creator, string-literals, bang-split and and-not): a new piece (bang-split lines 5 and 6).
+- 2026-11-27 (lane predfix111, review r111 F9, the manager's dispositions): a label set only inside `!^A` and read after it is a compile error (a marked reading); `^c` on a condition is c (a marked reading); line "Not ahead, its labels" added.
 
 ## core/labels/rule — The general rule of labels
 slugs: label-doors binding-as-label spot-read-name shorthand-is-callers list-is-label
@@ -637,14 +641,15 @@ readings:
 - rule 6's "is a start inside its own binding": `A SEQ "!" & (A.h: <5)` legal — SUPPORTED as run (docs/dev/lanes/predfold1124_evidence/ predfold1124_model.py PATHS).
 - (e) of path-rules, restricted: a caller-side start (an argument's label, a sent label, the shorthand label) is a start under the body's wall, never a licence to cross a wall below it — RUN (docs/dev/lanes/predfix90_evidence/ predfix90_model.py PATHS10 `B.a.d` refused, READINGS10 (4): `a.h` legal, `B([a = [_x = A]]) & (a.h: <5)` refused; GRID: the start kinds arg, sent, short under every wall).
 - rule 4 applies repeatedly, two or more middle labels skipped at once (ground: the asked statement's `X.h`, `X.m.h` "all legal" for `[n = [m = A]]`) — RUN (docs/dev/lanes/predfix90_evidence/ predfix90_model.py PATHS10 depth 3 and two binding levels; READINGS10 (1): every GRID cell skipping two or more labels legal, its answers the built regex's).
-- rule 4's candidates count only the targets a legal path reaches — RUN per operator (core/labels/rule/skip-past-wall; docs/dev/lanes/predfix90_evidence/ predfix90_model.py READINGS10 (6)).
-- an implicit label is never a middle — RUN (core/labels/rule/alone-as-middle; docs/dev/lanes/predfix90_evidence/ predfix90_model.py READINGS10 (3)).
+- [RULED 2026-11-27 by skip-past-wall (record "2026-11-27 OWNER RULING — skip-past-wall")] rule 4's candidates count only the targets a legal path reaches — RUN per operator (core/labels/rule/skip-past-wall; docs/dev/lanes/predfix90_evidence/ predfix90_model.py READINGS10 (6)).
+- [REJECTED 2026-11-27 by alone-as-middle (record "2026-11-27 OWNER RULING — alone-as-middle"): it REPLACES this reading; a part used alone is a middle step inside its binding, never skipped] an implicit label is never a middle — RUN (core/labels/rule/alone-as-middle; docs/dev/lanes/predfix90_evidence/ predfix90_model.py READINGS10 (3)).
 - rule 5's start by a binding's or macro's name is line 3's shorthand under its four conditions (review r90 A12, the cross-reference clause only) — no answer moves (each printed line is decided by a more specific piece).
 - the terms block (a node, "contain", "within a binding"): the manager's wording of terms, no answer moves (review r90 A11).
 evidence: docs/dev/lanes/predfix90_evidence/ predfix90_model.py PATHS10, GRID, READINGS10 (sabotage q2, q3, q4, q6 caught); docs/dev/lanes/predfold1124_evidence/ predfold1124_model.py PATHS, STACKCHAIN, NAMEGRID, READINGS, ERRSWEEP (sabotage p3, p4 caught).
 history:
 - 2026-11-23 (lane predfold1124, the fold of the 2026-11-23 rulings after review r88; record "2026-11-23 OWNER RULING — path-rules: yes (his four rules for paths within a binding, the manager's two readings of them, and rules 5 and 6 across bindings)"): a new ruled piece, the six path rules, cut from core/labels/rule (at its 40-line cap) with the lines that run them. The lines "Outer the caller's, inner private" (printed legal until then: WHOLE `37` HOLDS, `73` FAILS, `3` FAILS / SEARCHED `73 37` `37`@3 / FIND-ALL `37 73 14` [`37`@0, `14`@6]) and "A blank label in the stack" (the same answers, printed in core/labels/ownership) are compile errors by rule 2; "Something between the two labels" keeps its legality on a new ground (rule 2, not the manager's reading (a) of label-doors).
 - 2026-11-25 (lane predfix90, review r90 A1, A2, A5, A6, A7, A11, A12; record "2026-11-25 MANAGER — review r90 (predfold1124): the dispositions; no owner words"): the statement's "crosses no underscore label" became his "contains no underscore label"; a terms block; his picture stated as the outside view, the inside half open equivalence-inside; the readings bullet: (e) restricted, rule 4 applied repeatedly, the legal-path candidates, an implicit label never a middle, rule 5's name start as line 3's shorthand; printed lines "A public label between" (A1) and "The caller's label, a start under the body's wall" (was "... a start whatever the body stacks"); the lines "A blank label in the stack" and "Through a call, a private label in the body" moved to core/labels/ownership.
+- 2026-11-27 (lane predfix111, review r111 F17 (a) (RULING-8 (a)), the manager's dispositions): the two readings above marked: rule 4's legal-paths-only candidates RULED by skip-past-wall; "an implicit label is never a middle" REJECTED by alone-as-middle. The base change lane predfold1125 made (recorded here, its own history line missing): the readings bullet until then, verbatim: "rule 4's candidates count only the targets a legal path reaches (core/labels/rule/skip-past-wall); an implicit label is never a middle (core/labels/rule/alone-as-middle);"; and the picture bullet's "Inside the binding the two part (core/labels/rule/equivalence-inside)."
 
 ## core/labels/rule/stacked-chain — Two public labels stacked
 slugs: stacked-chain
@@ -667,23 +672,26 @@ history:
 slugs: sent-label-wall
 rulings:
 - 2026-11-23 "path-rules: yes" (record: "2026-11-23 OWNER RULING — path-rules: yes (his four rules for paths within a binding, the manager's two readings of them, and rules 5 and 6 across bindings)"); the rules the question is asked under.
+- 2026-11-27 "sent-label-wall: error. The path would be x._.h which is not an allowed path. If the R macro reversed the label order it would be ok. If the caller put a label in A it could access A through that. Validate." (record: "2026-11-27 OWNER RULING — sent-label-wall: error; and a STATEMENT: a body may not use an unmarked parameter as a label"); RULED: candidate (a) as asked, "a compile error. The blank is in the path and is not its start." His side note in the same message is a statement, put to him as label-needs-mark (core/operators/bindings/label-needs-mark).
 rejected:
-- (b) legal, the sent label a backdoor past the body's blank too — by owner ruling — "sent-label-wall: error" (R-1 of this lane's rulings file; the record entry "2026-11-27 OWNER RULING — sent-label-wall" is on lane/pred-rev28 after this lane's start, its rulings item owed at the merge).
+- (b) legal, the sent label a backdoor past the body's blank too — by owner ruling — "sent-label-wall: error" (record: "2026-11-27 OWNER RULING — sent-label-wall: error; and a STATEMENT: a body may not use an unmarked parameter as a label").
 readings:
 - (a) of sent-label-wall, the compile error by rule 2, now his ruling — RUN (docs/dev/lanes/predfix90_evidence/ predfix90_model.py PATHS10, GRID: `R(x:, A) & (x.h: <5)` refused with the sent-label reading; sabotage q5 caught).
 - (b) of sent-label-wall, legal, the backdoor past the body's blank — its answers RUN as the body that writes the wall above the sent label (docs/dev/lanes/predfix90_evidence/ predfix90_model.py PATHS10).
 evidence: docs/dev/lanes/predfix90_evidence/ predfix90_model.py PATHS10, GRID, READINGS10.
 history:
 - 2026-11-25 (lane predfix90, review r90 A5 (i); record "2026-11-25 MANAGER — review r90 (predfold1124): the dispositions; no owner words"): a new open piece, slug sent-label-wall, an owner question: the round found the evidence engine answering a path that contains the body's blank below a sent label (review r90 A5 (i)).
-- 2026-11-27 (lane predfold1125, R-1 of its rulings file): CLOSED as RULED candidate (a), the compile error; his words, from R-1: "sent-label-wall: error. The path would be x._.h which is not an allowed path. If the R macro reversed the label order it would be ok. If the caller put a label in A it could access A through that." The statement until then, verbatim: "When a body places a sent label ABOVE its own blank (`R(l:, v) := /${[l = [_ = v]]}xx/`), may the caller read through the sent label past the blank?"; the line "Candidate (b)'s answers: the wall written above the sent label" became "The wall above the sent label". His side note in that entry (an unmarked parameter used as a label) is not ruled and not applied.
+- 2026-11-27 (lane predfold1125, R-1 of its rulings file): CLOSED as RULED candidate (a), the compile error; his words, from R-1: "sent-label-wall: error. The path would be x._.h which is not an allowed path. If the R macro reversed the label order it would be ok. If the caller put a label in A it could access A through that." The statement until then, verbatim: "When a body places a sent label ABOVE its own blank (`R(l:, v) := /${[l = [_ = v]]}xx/`), may the caller read through the sent label past the blank?"; the line "Candidate (b)'s answers: the wall written above the sent label" became "The wall above the sent label". His side note in that entry (an unmarked parameter used as a label) is not ruled and not applied [RE-POINTED 2026-11-27, review r111 F18: the side note is a statement, not a ruling, but the rule it states was RULED the same day as label-needs-mark and is applied: core/operators/bindings/label-needs-mark].
+- 2026-11-27 (lane predfix111, review r111 F11 (RULING-1), the manager's dispositions): the rulings item added, citing the record entry (until then lane predfold1125's rulings file R-1); the rejected item's "its rulings item owed at the merge" closed. F18 (RULING-9): the history line of 2026-11-27 above says the side note "is not ruled and not applied"; the rule it states was RULED the same day as label-needs-mark and applied (core/operators/bindings/label-needs-mark).
 
 ## core/labels/rule/skip-past-wall — Skipping past a private part
 slugs: skip-past-wall
 rulings:
 - 2026-11-23 "path-rules: yes" (record: "2026-11-23 OWNER RULING — path-rules: yes (his four rules for paths within a binding, the manager's two readings of them, and rules 5 and 6 across bindings)"); the rules the question is asked under.
+- 2026-11-27 "skip-past-wall: agree with lean" (record: "2026-11-27 OWNER RULING — skip-past-wall: "agree with lean""); RULED: the lean as put, "(a). A private part should behave as if its labels were not there.", and candidate (a) as asked: "only a `d` that a legal path reaches counts. The private one does not exist for this read, so `n.d` is `m`'s."
 rejected:
-- (b) every target counts by the existing rule as worded (in a sequence the last mention, across `&` the ambiguous reference, across `|` the branch taken), its three lines: Candidate (b) in a sequence, the last mention read: WHOLE `3,7` FAILS, `7,3` HOLDS / SEARCHED `7,3 3,7` `7,3`@0 / FIND-ALL `3,7 7,3 4,1` [`7,3`@4, `4,1`@8] (`[n = ([m = P] SEQ [k = Q])] & (n.d: <5)`, P := `/(?<d>\d)/`, Q := `/,(?<d>\d)/`): Q's `d` ; Candidate (b) across `&`: modes: a compile error (`[n = ([m = P] & [k = Q])] & (n.d: <5)`, P := `/(?<d>\d)\d/`, Q := `/\d(?<d>\d)/`: both sides set `d`, the ambiguous reference). ; Candidate (b) across `|`, the branch taken: WHOLE `3` HOLDS, `a3` HOLDS, `a7` FAILS / SEARCHED `a7 a3` `a3`@3 / FIND-ALL `3 a7 a4` [`3`@0, `a4`@5] (`[n = ([m = P] | [k = Q])] & (n.d: <5)`, P := `/(?<d>\d)/`, Q := `/a(?<d>\d)/`) — by owner ruling — "skip-past-wall: agree with lean" (R-3 of this lane's rulings file; the record entry is on lane/pred-rev28 after this lane's start, its rulings item owed at the merge).
-- the middle road, a compile error where a walled label would have won or tied — by owner ruling — "skip-past-wall: agree with lean" (R-3, as above).
+- (b) every target counts by the existing rule as worded (in a sequence the last mention, across `&` the ambiguous reference, across `|` the branch taken), its three lines: Candidate (b) in a sequence, the last mention read: WHOLE `3,7` FAILS, `7,3` HOLDS / SEARCHED `7,3 3,7` `7,3`@0 / FIND-ALL `3,7 7,3 4,1` [`7,3`@4, `4,1`@8] (`[n = ([m = P] SEQ [k = Q])] & (n.d: <5)`, P := `/(?<d>\d)/`, Q := `/,(?<d>\d)/`): Q's `d` ; Candidate (b) across `&`: modes: a compile error (`[n = ([m = P] & [k = Q])] & (n.d: <5)`, P := `/(?<d>\d)\d/`, Q := `/\d(?<d>\d)/`: both sides set `d`, the ambiguous reference). ; Candidate (b) across `|`, the branch taken: WHOLE `3` HOLDS, `a3` HOLDS, `a7` FAILS / SEARCHED `a7 a3` `a3`@3 / FIND-ALL `3 a7 a4` [`3`@0, `a4`@5] (`[n = ([m = P] | [k = Q])] & (n.d: <5)`, P := `/(?<d>\d)/`, Q := `/a(?<d>\d)/`) — by owner ruling — "skip-past-wall: agree with lean" (record: "2026-11-27 OWNER RULING — skip-past-wall: "agree with lean"").
+- the middle road, a compile error where a walled label would have won or tied — by owner ruling — "skip-past-wall: agree with lean" (record: "2026-11-27 OWNER RULING — skip-past-wall: "agree with lean"").
 readings:
 - (a) of skip-past-wall, rule 4's candidates count only the targets a legal path reaches, now his ruling — RUN per operator `SEQ`, `&`, `|`, each answer equal to the same program with the private competitor's label renamed (docs/dev/lanes/predfix90_evidence/ predfix90_model.py PATHS10, READINGS10 (6)).
 - (b) of skip-past-wall, every target counts by the existing rule as worded — RUN (docs/dev/lanes/predfix90_evidence/ predfix90_model.py PATHS10: the three candidate (b) lines).
@@ -691,13 +699,15 @@ evidence: docs/dev/lanes/predfix90_evidence/ predfix90_model.py PATHS10, READING
 history:
 - 2026-11-25 (lane predfix90, review r90 A6; record "2026-11-25 MANAGER — review r90 (predfold1124): the dispositions; no owner words"): a new open piece, slug skip-past-wall, an owner question: rule 4's "unambiguously" when one route to the target crosses an underscore label was undecided (review r90 A6).
 - 2026-11-27 (lane predfold1125, R-3 of its rulings file): CLOSED as RULED candidate (a); his words, from R-3: "skip-past-wall: agree with lean"; the lean as put: "(a). A private part should behave as if its labels were not there."; (a) as asked: "only a `d` that a legal path reaches counts. The private one does not exist for this read, so `n.d` is `m`'s." Candidate (b)'s three lines and the middle road moved here, not taken.
+- 2026-11-27 (lane predfix111, review r111 F11 (RULING-1), the manager's dispositions): the rulings item added, citing the record entry (until then lane predfold1125's rulings file R-3).
 
 ## core/labels/rule/equivalence-inside — His equivalence inside the binding
 slugs: equivalence-inside
 rulings:
 - 2026-11-23 (class: PROPOSAL) "Another way of looking at it is that [_t = A ] is equivalent to [_ = [t = A ]]" (record: "2026-11-23 OWNER, on "stacked labels do not chain": a refinement framing: flat inside the binding, the tree's paths from outside; "[_t = A ] is equivalent to [_ = [t = A ]]""); the sentence the question reads.
+- 2026-11-27 "equivalence-inside: agree with lean. As you said, the line was only about accessibility" (record: "2026-11-27 OWNER RULING — equivalence-inside: "agree with lean""); RULED: the lean as put, "no `t`; the read is `_t.h`."
 rejected:
-- (b) the equivalence holds inside too, `t.h` legal with the answers of the line "Inside, the blank above `t`" — by owner ruling — "equivalence-inside: agree with lean. As you said, the line was only about accessibility" (R-4 of this lane's rulings file; the record entry is on lane/pred-rev28 after this lane's start, its rulings item owed at the merge).
+- (b) the equivalence holds inside too, `t.h` legal with the answers of the line "Inside, the blank above `t`" — by owner ruling — "equivalence-inside: agree with lean. As you said, the line was only about accessibility" (record: "2026-11-27 OWNER RULING — equivalence-inside: "agree with lean"").
 readings:
 - (a) of equivalence-inside, reading (g) (no label `t` is made), now his ruling — RUN (docs/dev/lanes/predfix90_evidence/ predfix90_model.py PATHS10, READINGS10 (7): inside, `[_ = [t = A]]` legal and `[_t = A]` refused; outside both refused).
 - (b) of equivalence-inside, the equivalence inside too — its answers RUN as the line "Inside, the blank above `t`" (docs/dev/lanes/predfix90_evidence/ predfix90_model.py PATHS10).
@@ -705,36 +715,73 @@ evidence: docs/dev/lanes/predfix90_evidence/ predfix90_model.py PATHS10, READING
 history:
 - 2026-11-25 (lane predfix90, review r90 A7; record "2026-11-25 MANAGER — review r90 (predfold1124): the dispositions; no owner words"): a new open piece, slug equivalence-inside, an owner question: his equivalence holds from outside and fails inside under reading (g) (review r90 A7); "UNTESTABLE" withdrawn.
 - 2026-11-27 (lane predfold1125, R-4 of its rulings file): CLOSED as RULED candidate (a); his words, from R-4: "equivalence-inside: agree with lean. As you said, the line was only about accessibility"; the lean as put: "no `t`; the read is `_t.h`. I'd keep your sentence in the documents as the picture of how a private label looks from outside, which is what it was said about." His sentence stays in core/labels/rule/paths as the picture from outside.
+- 2026-11-27 (lane predfix111, review r111 F11 (RULING-1), the manager's dispositions): the rulings item added, citing the record entry (until then lane predfold1125's rulings file R-4).
 
 ## core/labels/rule/alone-as-middle — A part used alone as a middle label
 slugs: alone-as-middle
 rulings:
 - 2026-11-23 "path-rules: yes" (record: "2026-11-23 OWNER RULING — path-rules: yes (his four rules for paths within a binding, the manager's two readings of them, and rules 5 and 6 across bindings)"); the rules the question is asked under.
+- 2026-11-27 "alone-as-middle: yes to the gate" (record: "2026-11-27 OWNER RULING — alone-as-middle: "yes to the gate"; a side note on `some` and the array form"); RULED on the statement as re-asked: "inside the definition that uses it, a part used alone is a label of its own name that may start a path or be a middle step (`n.Q.d`), and is never skipped (`n.d` through it is a compile error naming `n.Q.d`). From outside it exports nothing, as today."; told with it: "A label someone wrote, like `[a = P]`, is still skippable by rule 4"; used more than once, its name is refused as a step as it already is as a start. It REPLACES the manager's reading "an implicit label is a start, never a middle".
 rejected:
-- (a) the compile error, an implicit label a start and never a middle — by owner ruling — "alone-as-middle: yes to the gate" (R-5 of this lane's rulings file; the record entry is on lane/pred-rev28 after this lane's start, its rulings item owed at the merge).
-- `n.d` legal through a part used alone, by rule 4 as worded (the line "Through the part used alone, skipped" printed Q's `d`, the last mention) — by owner ruling — "alone-as-middle: yes to the gate" (R-5, as above: "never skipped").
+- (a) the compile error, an implicit label a start and never a middle — by owner ruling — "alone-as-middle: yes to the gate" (record: "2026-11-27 OWNER RULING — alone-as-middle: "yes to the gate"; a side note on `some` and the array form").
+- `n.d` legal through a part used alone, by rule 4 as worded (the line "Through the part used alone, skipped" printed Q's `d`, the last mention) — by owner ruling — "alone-as-middle: yes to the gate" (record: "2026-11-27 OWNER RULING — alone-as-middle: "yes to the gate"; a side note on `some` and the array form"); the ruled words "never skipped".
 readings:
 - (a) of alone-as-middle, the compile error: an implicit label is a start, never a middle (the manager's reading) — RUN (docs/dev/lanes/predfix90_evidence/ predfix90_model.py PATHS10, READINGS10 (3); GRID declares its 16 cells of this family undecided).
 - (b) of alone-as-middle, `n.Q.d` read as `Q.d` — its answers RUN (docs/dev/lanes/predfix90_evidence/ predfix90_model.py PATHS10).
 - the ruled statement, its three parts: `n.Q.d` legal with `Q.d`'s answers; `n.d` through it a compile error naming `n.Q.d`; used twice, refused as a step — RUN with the path walker patched as declared (docs/dev/lanes/predfold1125_evidence/ predfold1125_model.py R5PATCH11, SPECLINES, ERRSWEEP11, GRID: its 16 undecided cells now decided refused, each agreeing with the evaluator; sabotage q15 caught).
 - from outside, `X.Q.d` for X := `[n = (P SEQ Q)]` is rule 6's wall — RUN (predfold1125_model.py READINGS11). predfix90's walker raised "undecided" on a step naming a part used alone and handed the read to the loaded engine, which answered it legal against core/labels/export statement 3: a model defect, fixed by R5PATCH11.
 - core/labels/export statement 2 and path rule 6 checked against the ruling: rule 6 (his words) stands as worded; statement 2 gains the middle step and "never skipped".
-evidence: docs/dev/lanes/predfix90_evidence/ predfix90_model.py PATHS10, GRID, READINGS10; docs/dev/lanes/predfold1125_evidence/ predfold1125_model.py R5PATCH11, GRID, SWEEP11, READINGS11.
+- gate-twice-scope (review r111 F2), a MARKED reading, owner question: (a) "more than once" counted over the definition: `[n = (P SEQ Q)] SEQ ";" SEQ [m = (P SEQ Q)] & (n.Q.d: <5)` a compile error; (b) under the read's prefix: legal, n's Q's `d` (the printed line) — both RUN by WALK111's switch (docs/dev/lanes/predfix111_evidence/ predfix111_model.py READ2); predfold1125 answered it by rewriting the read to `Q.d`, the message naming a read nobody wrote.
+- gate-beside-label (review r111 F3), a MARKED reading, owner question: `[n = ([a = P] SEQ Q)] & (n.d: <5)`: (i) a compile error, naming `n.Q.d`; (ii) a's `d`, the gated targets not counted (the printed line); (iii) Q's `d`, the last mention — all three RUN (predfix111_model.py READ3); the critic's lean is (i), the model's printed answer (ii).
+- a macro call used alone is the same node (review r111 F6): `n.B.p.d`, `n.B.d` legal, `n.d` refused naming `n.B.d` or `n.P.d` — RUN (predfix111_model.py SPECLINES111).
+- parentheses aside (review r111 F7): `[n = (Q)]` reads as `[n = Q]` — RUN (predfix111_model.py SPECLINES111).
+- the wall's message names the gate first (review r111 F25): `[n = ([_ = P] SEQ Q)] & (n.d: <5)` refused naming `n.Q.d` — RUN (predfix111_model.py ERRSWEEP111).
+evidence: docs/dev/lanes/predfix90_evidence/ predfix90_model.py PATHS10, GRID, READINGS10; docs/dev/lanes/predfix111_evidence/ predfix111_model.py WALK111, READ2, READ3, SPECLINES111; docs/dev/lanes/predfold1125_evidence/ predfold1125_model.py R5PATCH11, GRID, SWEEP11, READINGS11.
 history:
 - 2026-11-25 (lane predfix90, review r90 A4; record "2026-11-25 MANAGER — review r90 (predfold1124): the dispositions; no owner words"): a new open piece, slug alone-as-middle: `n.Q.d` inside the binding, through a label then a part used alone, was decided by no sentence (review r90 A4).
 - 2026-11-27 (lane predfold1125, R-5 of its rulings file): CLOSED as RULED; his words, from R-5: "alone-as-middle: yes to the gate"; the statement as re-asked: "inside the definition that uses it, a part used alone is a label of its own name that may start a path or be a middle step (`n.Q.d`), and is never skipped (`n.d` through it is a compile error naming `n.Q.d`). From outside it exports nothing, as today." The line "A part used alone as a middle, inside" became legal with `Q.d`'s answers, the line "Through the part used alone, skipped" a compile error; two lines added (used twice; from outside). Three printed programs elsewhere skipped through a part used alone (core/patterns/alternation, core/patterns/atomic, core/operators/precedence: `[ab = (B | A)] & (ab.l: <20)` and kin); each re-spelled with written labels, `[ab = ([b = B] | [a = A])]`, its answers unchanged (SWEEP11's RESPELL11).
+- 2026-11-27 (lane predfix111, review r111 F11 (RULING-1), the manager's dispositions): the rulings item added, citing the record entry (until then lane predfold1125's rulings file R-5).
+- 2026-11-27 (lane predfix111, review r111 F2, F3, F6, F7, F24, the manager's dispositions): bullets for a macro's use (a reading), the scope of "more than once" (a marked reading, owner question gate-twice-scope), a part used alone beside a written label (a marked reading, owner question gate-beside-label); four lines, RUN by a path walker written from core/labels/rule/kinds, not by patching the loaded one (F24).
 
 ## core/labels/rule/group-node — A group of rx text as a node of a path
-slugs: group-as-node
+slugs: group-as-node group-node
 rulings:
 - 2026-11-23 "path-rules: yes" (record: "2026-11-23 OWNER RULING — path-rules: yes (his four rules for paths within a binding, the manager's two readings of them, and rules 5 and 6 across bindings)"); the rules the question is asked under.
+- 2026-11-27 "group-node: agree group as a step. Group names should be labels almost exactly excepting the explicit capture semantics" (record: "2026-11-27 OWNER RULING — group-node: "agree group as a step"; "Group names should be labels almost exactly excepting the explicit capture semantics""); RULED on the statement as last put: "a named group in rx text is a step in a path like a part label. `g.d` is legal, the flat read still works by skipping, and an underscore group walls what is inside it."; his second sentence a STATEMENT of the direction behind it.
+- 2026-11-27 (class: RECOLLECTION) "I think there was also difference in explicit back reference" (record: "2026-11-27 OWNER, a RECOLLECTION on group-node: "there was also difference in explicit back reference""); checked against core/labels/backreferences, where `\k<y>` reads PCRE's capture: it holds; the second exception, stated with the first.
 rejected:
+- (a) of group-as-node, a group a label but no middle of a path — by owner ruling — "group-node: agree group as a step" (record: "2026-11-27 OWNER RULING — group-node: "agree group as a step"; "Group names should be labels almost exactly excepting the explicit capture semantics"").
 readings:
-- (a) of group-as-node, a group is no middle of a path — RUN as the evidence engine's refusal (docs/dev/lanes/predfix90_evidence/ predfix90_model.py PATHS10); no sentence decides it.
-- (b) of group-as-node, a group a node like a part label — its answers RUN as the outer group written as a part label (docs/dev/lanes/predfix90_evidence/ predfix90_model.py PATHS10).
-evidence: docs/dev/lanes/predfix90_evidence/ predfix90_model.py PATHS10.
+- [REJECTED 2026-11-27 by group-node (record "2026-11-27 OWNER RULING — group-node")] (a) of group-as-node, a group is no middle of a path — RUN as the evidence engine's refusal (docs/dev/lanes/predfix90_evidence/ predfix90_model.py PATHS10); no sentence decides it.
+- [RULED 2026-11-27 by group-node (record "2026-11-27 OWNER RULING — group-node")] (b) of group-as-node, a group a node like a part label — its answers RUN as the outer group written as a part label (docs/dev/lanes/predfix90_evidence/ predfix90_model.py PATHS10).
+- the manager's reading (a) of the ruling entry: the two printed lines flip, `g.d` legal with the second line's answers — SUPPORTED as run (docs/dev/lanes/predfix111_evidence/ predfix111_model.py GROUPNODE, SPECLINES111; MECH111 agrees).
+- (b): a read from outside or above through an underscore group a compile error by rule 2 (`X.d`, `n.d`, groupwall.out lines 2 and 3) — SUPPORTED as run (predfix111_model.py GROUPNODE); the printed programs naming an underscore group, found by grep (`(?<_`, three base files): two, core/labels/export's and core/values/reads's `year`, both read `_v` itself, none through it (predfix111_model.py GROUPNODE, UGROUPS).
+- (c): a group around a hole is `[g = A]` for paths: `g.A.h` legal, `A.h` legal (A's own start), `g.h` a compile error, the path skipping A, a part used alone (a gate) — RUN, not assumed (predfix111_model.py GROUPNODE); `g.h` refused is the gate rule's answer, printed.
+- (d): what a group gives the caller's captures is unchanged (capture by request) — SUPPORTED: no capture line moved (predfix111_model.py SWEEP111); stated in the piece.
+- (e): a group named twice follows the label rules already printed (core/labels/flow) — SUPPORTED as run for a sequence (last mention) and `&` (ambiguous) (predfix111_model.py GROUPNODE).
+evidence: docs/dev/lanes/predfix90_evidence/ predfix90_model.py PATHS10; docs/dev/lanes/predfix111_evidence/ predfix111_model.py GROUPNODE, SPECLINES111, WALK111.
 history:
 - 2026-11-25 (lane predfix90, review r90 A11; record "2026-11-25 MANAGER — review r90 (predfold1124): the dispositions; no owner words"): a new open piece, slug group-as-node, PLAN: the question waits until the manager can frame it (review r90 A11).
+- 2026-11-27 (lane predfix111, review r111 the group-node fold, the manager's dispositions): CLOSED as RULED (record "2026-11-27 OWNER RULING — group-node: "agree group as a step"; "Group names should be labels almost exactly excepting the explicit capture semantics""); the two printed lines flipped (`g.d` legal); the two exceptions stated together (capture by request; `\k<name>` reads the group's PCRE capture); lines for an underscore group's wall, its start, and a group around a hole added, each RUN.
+
+## core/labels/rule/kinds — The kinds of labels, door by door
+slugs: label-door-table
+rulings:
+- 2026-11-23 "path-rules: yes" (record: "2026-11-23 OWNER RULING — path-rules: yes (his four rules for paths within a binding, the manager's two readings of them, and rules 5 and 6 across bindings)"); rules 1 to 6, the cells that name them.
+- 2026-11-27 "skip-past-wall: agree with lean" (record: "2026-11-27 OWNER RULING — skip-past-wall: "agree with lean" (legal paths only)"); the underscore and blank rows' skippable cells.
+- 2026-11-27 "equivalence-inside: agree with lean" (record: "2026-11-27 OWNER RULING — equivalence-inside: "agree with lean" (no label `t`; the read is `_t.h`)"); the underscore part label's start cell.
+- 2026-11-27 "alone-as-middle: yes to the gate" (record: "2026-11-27 OWNER RULING — alone-as-middle: "yes to the gate"; a side note on `some` and the array form"); the part used alone row.
+- 2026-11-27 "shorthand-outside: error. Agree." (record: "2026-11-27 OWNER RULING — shorthand-outside: "error. Agree.""); the shorthand row's outside cells.
+- 2026-11-27 "group-node: agree group as a step" (record: "2026-11-27 OWNER RULING — group-node: "agree group as a step"; "Group names should be labels almost exactly excepting the explicit capture semantics""); the two group rows.
+rejected:
+readings:
+- the table itself, the manager's assembly of the rulings it cites (review r111 F26, built with the group-node fold) — RUN: every row is a row of WALK111's table KINDS111 and TABLE111 compares the two (docs/dev/lanes/predfix111_evidence/ predfix111_model.py TABLE111).
+- "a path is inside while it crosses no call boundary" (review r111 F26's sentence) — a marked reading, RUN (predfix111_model.py WALK111, SPECLINES111: `pub.A.h` refused, `n.Q.d` legal).
+- the macro call row, as the part used alone row (review r111 F6) — RUN (predfix111_model.py SPECLINES111).
+- the three open sub-cases of review r111 F26, listed for the manager: (1) whether "inside" is one definition's text or one call level (the sentence above takes the call level); (2) "protected" names an underscore part label (refused as a middle step) and a part used alone (a gate, legal as a step): the table keeps both rows apart; (3) a sent label and a caller's label in an argument outside the caller: taken as written labels, readings — UNTESTED (none) beyond the rows' lines.
+evidence: docs/dev/lanes/predfix111_evidence/ predfix111_model.py TABLE111, WALK111, SPECLINES111.
+history:
+- 2026-11-27 (lane predfix111, review r111 F26, the manager's dispositions): a new reading piece, the label-kind table, built with the group-node fold (its trigger fired); each label piece points at its row.
 
 ## core/labels/ownership — Who reads a label, and how
 slugs: label-doors shorthand-is-callers path-rules
@@ -995,6 +1042,7 @@ history:
 - 2026-11-23 (lane predfold1123b, the fold of the 2026-11-23 rulings after zero-open): the closing-own-label ruling, cited until now only in history lines (lane predfix86), is a `rulings:` item.
 - 2026-11-23 (lane predfix88, review r88 A7, A14; record "2026-11-23 MANAGER — review r88 (predfold1123b): the dispositions; no owner words"): statement 2's "a reading, the one statement of it" replaced by its ground (core/labels/rule line 3); statement 3 gains "labels stacked on one spot one step (core/labels/rule line 5)".
 - 2026-11-25 (lane predfix90, review r90 A3; record "2026-11-25 MANAGER — review r90 (predfold1124): the dispositions; no owner words"): statement 3 names rule 2: a label under an underscore label is not exported (a reading).
+- 2026-11-27 (lane predfix111, review r111 F7, the manager's dispositions): statement 2 gains "parentheses aside": `[n = (Q)]` is a labelled use; a named group of rx text is a spot (group-node); its line is in core/labels/rule/alone-as-middle.
 
 ## core/labels/export/flat-read-outside — A flat read of a part's label from outside
 slugs: flat-read-outside
@@ -1369,8 +1417,9 @@ history:
 slugs: shorthand-outside
 rulings:
 - 2026-11-23 "shorthand-is-callers: yes thats it exactly. Setting a label closes a path (through the shorthand in that binding) but doesn't block out the target." (record: "2026-11-23 OWNER RULING — shorthand-is-callers: "yes thats it exactly. Setting a label closes a path (through the shorthand in that binding) but doesn't block out the target.""); the sentence the question reads.
+- 2026-11-27 "shorthand-outside: error. Agree." (record: "2026-11-27 OWNER RULING — shorthand-outside: "error. Agree.""); RULED: candidate (a) as asked, "compile error: the shorthand label is protected and adds no export"; the lean as put: "An implicit name, whether from a part used alone or from an argument passed by name, behaves one way: named inside, invisible outside."
 rejected:
-- (b) the expansion holds from outside too, `pub.A.h` reading A's `h` as the written-out `[pub = B([A = A])]` does — by owner ruling — "shorthand-outside: error. Agree." (R-6 of this lane's rulings file; the record entry is on lane/pred-rev28 after this lane's start, its rulings item owed at the merge).
+- (b) the expansion holds from outside too, `pub.A.h` reading A's `h` as the written-out `[pub = B([A = A])]` does — by owner ruling — "shorthand-outside: error. Agree." (record: "2026-11-27 OWNER RULING — shorthand-outside: "error. Agree."").
 readings:
 - (a) of shorthand-outside, reading (b) of shorthand-is-callers: the shorthand label protected, no export, now his ruling — RUN on a labelling body and a listing body (docs/dev/lanes/predfix90_evidence/ predfix90_model.py PATHS10, READINGS10 (8)).
 - (b) of shorthand-outside, the expansion from outside too — its answers RUN as the written-out `[pub = B([A = A])]` (docs/dev/lanes/predfix90_evidence/ predfix90_model.py PATHS10).
@@ -1378,6 +1427,7 @@ evidence: docs/dev/lanes/predfix90_evidence/ predfix90_model.py PATHS10, READING
 history:
 - 2026-11-25 (lane predfix90, review r90 A8; record "2026-11-25 MANAGER — review r90 (predfold1124): the dispositions; no owner words"): a new open piece, slug shorthand-outside, an owner question: only reading (b) decides whether "means `B([A = A])`" covers a read from outside (review r90 A8).
 - 2026-11-27 (lane predfold1125, R-6 of its rulings file): CLOSED as RULED candidate (a); his words, from R-6: "shorthand-outside: error. Agree."; (a) as asked: "compile error: the shorthand label is protected and adds no export"; the lean as put: "An implicit name, whether from a part used alone or from an argument passed by name, behaves one way: named inside, invisible outside." Text and lines as they read; candidate (b) moved here, not taken.
+- 2026-11-27 (lane predfix111, review r111 F11 (RULING-1), the manager's dispositions): the rulings item added, citing the record entry (until then lane predfold1125's rulings file R-6).
 
 ## core/labels/paths/two-sources — A name with two sources
 slugs: two-sources
@@ -1540,6 +1590,7 @@ history:
 - 2026-11-22 (lane predfix82, review r82 ANS-3, RULING-8 (d); record "2026-11-22 MANAGER — review r82 (predfold1122): dispositions ruled; two corrections of record entries (no owner words)"): "answer alike in every mode" restricted to outside a group question; a value entry inside one a compile error for now (a reading; the line "Inside a group question", predfix82 VALUEGQ); the default clause marked a reading.
 - 2026-11-23 (lane predfold1123, the fold of 2026-11-22 late and 2026-11-23; record "2026-11-23 OWNER, on optional-label-general: the `?` in conditions "is a special case"; where it sits; `?` for optional macro arguments; a value left of `:` with no label"): a bullet and the line "A value with no label" (his `("Frank": ...)`, "silly but useful for generated code"; a reading, not ruled).
 - 2026-11-27 (lane predfold1125, the fold of drop-not, array-argument, brace-counts, map-creator, string-literals, bang-split and and-not): restated by the rulings named in its rulings field. The statement until then, verbatim: "A value may stand in the left part of a condition entry, written in place: `P & (count((d: "7")): ==2)`, `(($a + $b): <10)`; the entry holds when the value is in its set.".
+- 2026-11-27 (lane predfix111, review r111 F19 (c) (RULING-10 (c)), the manager's dispositions): the condition-argument compile error marked the manager's reading (a) of array-argument (the line's "for now" restored in optional-entry); it was unmarked since lane predfold1125.
 
 ## core/conditions/form/optional-entry — The optional entry operator
 slugs: optional-label optional-place
@@ -1561,6 +1612,7 @@ history:
 - 2026-11-23 (lane predfold1123, the fold of 2026-11-22 late and 2026-11-23; records "2026-11-23 OWNER, on capture-optional: he likes the defaults way; proposes the mark on the label, `(h?: capture("h"))`", "2026-11-23 OWNER RULING — optional-label: yes (`(h?: S)` holds when h is absent or in S); and a FLAG: is it a special form or the general case of an expression left of `:`", "2026-11-23 OWNER, on optional-label-general: the `?` in conditions "is a special case"; where it sits; `?` for optional macro arguments; a value left of `:` with no label", "2026-11-23 OWNER, on optional-place: "Before the colon"; and a proposal: an alternative operator to the colon, `:` and `?:`", "2026-11-23 MANAGER — two notes after capture-negated (the guard edge taken literally; the array request's placeholder); no owner words"): a new piece. The ruled form was put as the mark on the label, `(h?: S)` ("optional-label: yes" answered that statement); his lean of the same day moves it before the colon as a second entry operator, `(h ?: S)`; the documents write his lean, a placeholder. "Drop-mark: yes" (2026-11-16, core/conditions/defaults) dropped a different mark, per part, `((h, m?): R)`, meaning "some value the label could hold"; this operator is a one-row test.
 - 2026-11-23 (lane predfix86, review r86 A1, A7, C7, C10; record "2026-11-23 MANAGER — review r86 (predfold1123): the dispositions; three errors of the manager's own brief named; no owner words"): the conservative edges of the statement he answered restored as compile errors for now (the joint and value lines were printed legal from the manager's reading (a), which the dispositions withdraw: those lines are now the candidate (b) lines of core/conditions/form/optional-edges); optional-label-general re-opened (it had been closed on the manager's thought (b): core/conditions/form/optional-general); the qualifier on the place restored; the statement narrowed from "its left part" to the label; the empty-pass sentence and line added. Moved here from `rejected:` (a lean decides nothing: grounds are owner ruling, run or review): the mark on the label, `(h?: S)` (the shape ruled as optional-label) — by his lean on optional-place ("then we aren't using ? For two different meanings") — the earlier spelling goes to history; the meaning is the same. Moved here from `readings:`: (a) nothing about the left part changes; a joint holds when a part is absent, a value when it is nothing — SUPPORTED as run (docs/dev/lanes/predfold1123_evidence/ predfold1123_model.py OPTENTRY: `((a, b) ?: >= (5, 3))` and `(($a + $b) ?: <10)`, the record's run of the joint reproduced in every mode); marked readings, his words do not rule the joint and value cases. (b) `h+`, `h*`, `(a?, b)` are not forms — UNTESTABLE (no form to run; the parse refuses them). The third rulings item moved to core/conditions/form/optional-general.
 - 2026-11-27 (lane predfold1125, the fold of drop-not, array-argument, brace-counts, map-creator, string-literals, bang-split and and-not): printed `NOT` re-spelled `!`, a complement's `!` re-spelled `~`, a group question's condition re-spelled to the array form, as the rulings carry; no answer changed (model SWEEP11).
+- 2026-11-27 (lane predfix111, review r111 F19 (c) (RULING-10 (c)), the manager's dispositions): the condition-argument compile error marked the manager's reading (a) of array-argument (the line's "for now" restored in optional-entry); it was unmarked since lane predfold1125.
 
 ## core/conditions/form/optional-edges — The edges of the optional entry
 slugs: optional-entry-edges
@@ -1843,11 +1895,12 @@ rulings:
 rejected:
 - lower-case `not` (the kinds example's `not /7\d*/`) — by the record — no-alpha-operators (the 2026-11-14 Q6 + Q9 entry: "a word is always a NAME"); the example now writes `!`.
 - `NOT` on a condition as three-valued (the where-clause NOT of condition-not) — by owner ruling — absent-under-not ("use regex rules"): two-valued, a negative lookahead (core/conditions/two-valued).
-- `peeknot(A)` (record: "2026-11-27 OWNER, two ALTERNATIVES for the `when` guard: "peeknot(A) := /(?!${A})/ is an ugly little function but in the case of when is hidden"; and "does this work for when := A seq B | C &! A"") — by owner ruling — drop-not ("No `peeknot`") and then bang-split's `!^A`.
+- `peeknot(A)` (record: "2026-11-27 OWNER, two ALTERNATIVES for the `when` guard: "peeknot(A) := /(?!${A})/ is an ugly little function but in the case of when is hidden"; and "does this work for when := A seq B | C &! A"") — by owner ruling — drop-not (its reading-taken line 2, the manager's: "No `peeknot`"; not his words nor the asked statement, review r111 F21 (d)) and then bang-split's `!^A`.
 - `!` with two meanings by operand (drop-not's complement on a pattern) — by owner ruling — bang-split line 4: `!` on a set or pattern is an error naming `~`.
 readings:
 - "NOT is a negative lookahead" is the manager's wording when-meaning agreed to; that it covers a zero-width PATTERN (`peek(A)`) and not only a condition is the reading the ruled `when` body needs (`NOT peek(test)`) — SUPPORTED as a lowering (preddoc4 PART NE: `\d(?!x)`; sabotage s6 caught).
 - `NOT` as an exception to the no-alphabetic-operators rule: the record uses `NOT` in the owner's own ruled words ("Use NOT to get else behavior") — a reading that the rule's exception list holds it; spellings are placeholders (D193 addendum 4).
+- in today's spelling (drop-not, bang-split): the negative lookahead is `!^A`, and `when`'s guard `!^test` covers a lookahead and a condition alike (core/filters/family, its third row's readings) — SUPPORTED (SPECLINES "Not ahead", predfold1125; predfix111 SPECLINES111 "A condition test in `when`"). The two readings above are as run, in the spelling of their runs (`NOT`, `NOT peek(test)`).
 - `!!X` is X — SUPPORTED (SPECLINES "Twice", answers equal to `(h: <5)`).
 - the error before a compound set names the parenthesised form (review r109 F5) — SUPPORTED as a refusal's text (ERRSWEEP11 reads the message).
 - whether `!A` on a consuming pattern may later mean `(?!A)` — not ruled; an owner question left.
@@ -1858,6 +1911,7 @@ history:
 - 2026-11-23 (lane predfold1123, the fold of 2026-11-22 late and 2026-11-23; record "2026-11-23 OWNER RULING — capture-negated: broadened: "any effect macro cannot be under negation""): `see:` gains core/filters/negation/effects.
 - 2026-11-27 (lane predfold1125, the fold of drop-not, array-argument, brace-counts, map-creator, string-literals, bang-split and and-not): restated by the rulings named in its rulings field. The statement until then, verbatim: "`!X` is the complement of a pattern or set; `NOT c` on a condition holds exactly when c fails, a negative lookahead at its point.".
 - 2026-11-27 (lane predfold1125, the fold of drop-not, array-argument, brace-counts, map-creator, string-literals, bang-split and and-not): the readings on `NOT T`, a zero-width pattern, and on `NOT` as the one alphabetic operator retired with `NOT` (drop-not); the piece now carries bang-split lines 1, 3 and 4.
+- 2026-11-27 (lane predfix111, review r111 F12 (RULING-6), F23 (EXAMPLES-9), the manager's dispositions): the bullet until then, verbatim: "`!` on a set or a pattern is a compile error whose message names the form to write: the complement `~X`, and `!^X` for "cannot match here"; before a compound set it names the parenthesised form (`!(<5 | >8)` names `~(<5 | >8)`; the manager's reading of the error's text).": the `!^X` half now marked the reading; a twin reading in today's spelling.
 
 ## core/filters/negation/effects — An effect under negation
 slugs: capture-negated effect-in-guard
@@ -1871,6 +1925,7 @@ readings:
 - (b) "under negation" is inside `NOT` or `!` at any depth — SUPPORTED as run (docs/dev/lanes/predfold1123_evidence/ predfold1123_model.py NEGATION: under `NOT` and under `!` refused; beside a negation legal).
 - (effect-in-guard, the manager's reading; not asked: "his words cover it as written") a request in `when`'s test reaches the guard's `NOT peek(test)`: a compile error — SUPPORTED as run (docs/dev/lanes/predfold1123_evidence/ predfold1123_model.py NEGATION: the `when` body read from library.md, laid out with the call's test, refused); the suggested spelling `when(..) & (when.d ?: capture("d"))` UNTESTED (the model has no `when` call).
 - (c of capture-negated, a group question) `some((h: capture("h")))` a compile error for now — the manager's proposal, NOT ruled; the model accepts it (no rule applied).
+- in today's spelling (bang-split): the guard is `!^test` (lib/control/when); a request in `when`'s test reaches it, a compile error — SUPPORTED (predfold1125 ERRSWEEP11, the line "In `when`'s test"). The readings above are as run, in the spelling of their runs (`NOT`, `NOT peek(test)`).
 - (b) under `!` or `~` at any depth (review r109 F7: capture-negated applies to `!`; `~` stands with it) — SUPPORTED as refusals (ERRSWEEP11: both lines).
 evidence: docs/dev/lanes/predfold1123_evidence/ predfold1123_model.py NEGATION.
 history:
@@ -1878,6 +1933,7 @@ history:
 - 2026-11-23 (lane predfix86, review r86 C7, A12; record "2026-11-23 MANAGER — review r86 (predfold1123): the dispositions; three errors of the manager's own brief named; no owner words"): statement until then: "An effect (a form whose meaning is more than which texts it accepts; today the capture request) cannot stand under a negation, `NOT` or `!`, at any depth: a compile error."; the definition (the manager's reading (a)) and "`NOT` or `!` ... at any depth" (reading (b)) moved to the marked bullets, the statement keeping what his words carry. core/operators/statements' "effects cannot drop it" narrowed to `@` statements (compile-time effects), and lib/builtin's "An effect: written after `@` only" to a compile-time effect (review r86 A12).
 - 2026-11-27 (lane predfold1125, the fold of drop-not, array-argument, brace-counts, map-creator, string-literals, bang-split and and-not): restated by the rulings named in its rulings field. The statement until then, verbatim: "An effect cannot stand under a negation: a compile error. What an effect is, and `NOT` or `!` at any depth: the manager's readings (a), (b) below.".
 - 2026-11-27 (lane predfold1125, the fold of drop-not, array-argument, brace-counts, map-creator, string-literals, bang-split and and-not): "Under `NOT`" and "Under `!`" became "Under `!`" and "Under `~`" (review r109 F7).
+- 2026-11-27 (lane predfix111, review r111 F19 (a) (RULING-10 (a)), F23 (EXAMPLES-9), the manager's dispositions): the statement until then, verbatim: "An effect cannot stand under a negation, `!` or `~`: a compile error. What an effect is, and the depth: the manager's readings (a), (b) below.": which operators count as a negation is reading (b), now said so; a twin reading in today's spelling.
 
 ## core/filters/family — The not, complement and lookahead family
 slugs: bang-split and-not
@@ -1895,6 +1951,7 @@ readings:
 evidence: docs/dev/lanes/predfold1125_evidence/ predfold1125_model.py READINGS11, CENSUS11.
 history:
 - 2026-11-27 (lane predfold1125, the fold of drop-not, array-argument, brace-counts, map-creator, string-literals, bang-split and and-not): a new piece: review r109's F13 table (the family with a DFA column), folded with bang-split.
+- 2026-11-27 (lane predfix111, review r111 F4, the manager's dispositions): the two error rows became an operand-kind by operator table: `!` on a lookaround in rx text is its opposite lookaround (`!/(?=x)/` is `/(?!x)/`, a marked reading), `^c` on a condition is c (a marked reading), `~` on a lookahead stays a compile error; a lookbehind bullet points at parked/ideas/lookbehind-operator; lines added for each, RUN by predfix111_model.py SPECLINES111.
 
 ## core/values/reads — Reading a label
 slugs: value-filter pass-list-read
@@ -2050,7 +2107,7 @@ rulings:
 rejected:
 - `/a|b|c/[1]` = `/b/` and an ordinal from 0 — by owner ruling — the leans agreed (Q7, 1-based).
 readings:
-- `.index` the original position and `.label` the original name: the record's "2026-11-14 — each's bindings" (a LEAN), with his "So d[1][1] is "a"" (record "2026-11-14 — index base") — a reading.
+- `.label` the original name (the `.index` half RULED by map-creator line 7): the record's "2026-11-14 — each's bindings" (a LEAN), with his "So d[1][1] is "a"" (record "2026-11-14 — index base") — a reading.
 - a user label named `index` or `label` an error — the draft's LEAN, UNTESTED.
 - `/${days}/ & (w.index: >= 2)`: WHOLE `Tue` HOLDS, `Mon` FAILS / SEARCHED `Wed`@4 / FIND-ALL [`Tue`@0, `Wed`@8] — SUPPORTED (preddoc4 PART ME; sabotage s10, 0-based, caught).
 evidence: docs/dev/lanes/preddoc4_evidence/ PART ME.
@@ -2059,6 +2116,7 @@ history:
 - 2026-11-22 (lane predref, label-reference sweep and helper-captures fold): the line's program `/${days}/ & (w.index: >= 2)` re-spelled `/${days}/ & (days.w.index: >= 2)` (label-reference; predbound META had run it); the bullet "Read like labels" says where the bare form stands. Answers unchanged (docs/dev/lanes/predref_evidence/ predref_model.py RESPELL). Status date 2026-11-19 to 2026-11-22.
 - 2026-11-22 (lane predfix82, review r82 GENERAL-8; record "2026-11-22 MANAGER — review r82 (predfold1122): dispositions ruled; two corrections of record entries (no owner words)"): `needs:` core/values/computed-labels retargeted to core/conditions/form/value-left.
 - 2026-11-27 (lane predfold1125, the fold of drop-not, array-argument, brace-counts, map-creator, string-literals, bang-split and and-not): restated by the rulings named in its rulings field (status and date only).
+- 2026-11-27 (lane predfix111, review r111 F13, the manager's dispositions): the statement quotes line 7 whole ("among X's alternatives", the constant for a label inside one alternative); `.label` is out of the statement, a reading; two lines on his F (`F.c.index` is `2`, a constant), RUN.
 
 ## core/values/arithmetic — Arithmetic
 slugs: plus-operands number-edges
@@ -2260,6 +2318,7 @@ history:
 - 2026-11-18: name-hole; the future possibility (an array of names as an interim product) is parked/ideas/cartesian.
 - 2026-11-23 (lane predfix86, review r86 A15; the ruling label-hole-full, folded beside it; record "2026-11-23 MANAGER — review r86 (predfold1123): the dispositions; three errors of the manager's own brief named; no owner words"): ruled 2026-11-18 to 2026-11-23 with label-hole-full (record "2026-11-23 OWNER RULING — label-hole-full: a pure label's name hole must be whole; a capture's name may be partial, "but again, the label portion is lost"; and a sketch of the repeat head with a conditional default"); statement until then: "A group-name hole takes exactly one name; an array of names there is a compile error."; the sentence "A hole may form part of a name (`(?<f_${i}>...)`)." narrowed to a capturing group's name; his words, two bullets and the line "A partial label-only name" added. The second half of that entry (the repeat head) is not folded here.
 - 2026-11-23 (lane predfix88, review r88 A11; record "2026-11-23 MANAGER — review r88 (predfold1123b): the dispositions; no owner words"): the manager's reading: `_` into a capturing group's whole-name hole is `(...)` (the line "A capturing group, the unspecified label", run through libpcre2).
+- 2026-11-27 (lane predfix111, review r111 F8, the manager's dispositions): the line is now `C(_:)` with `C(n:) := /(?<${n}>\d)x/`, whole `(\d)x`: a group's whole name from a parameter takes the label mark (label-needs-mark); an unmarked one is refused, a marked reading.
 
 ## core/holes/class — The class-member hole
 slugs: other-holes
@@ -2788,6 +2847,7 @@ history:
 - 2026-11-23 (lane predfix86, review r86 D2; record "2026-11-23 MANAGER — review r86 (predfold1123): the dispositions; three errors of the manager's own brief named; no owner words"): row 10 gains `?:` (one token at `:`'s level), and a row for the label mark in a head or an argument (`l = x:` is `l = (x:)`, not `(l = x):` as row 10 alone would read it); both readings.
 - 2026-11-27 (lane predfold1125, the fold of drop-not, array-argument, brace-counts, map-creator, string-literals, bang-split and and-not): restated by the rulings named in its rulings field. The statement until then, verbatim: "Tightest first: field, call and index; postfix quantifiers; prefix `!`, `NOT` and comparisons; `* %`; `+ -`; the sequence operator; `&`; the label set; `|`; the entry marks; `:=`.".
 - 2026-11-27 (lane predfold1125, R-5 alone-as-middle): its line `[ab = B | A] & (ab.l: <20)` skipped through a part used alone, now a compile error; re-spelled with written labels (`b`, `a`), which rule 4 still skips, its answers unchanged (predfold1125_model.py SWEEP11, RESPELL11).
+- 2026-11-27 (lane predfix111, review r111 F16, the manager's dispositions): row 3's ground is a reading (bang-split rules no binding strength); the `@` clause names group questions and `capture(@x)`.
 
 ## core/operators/bindings — Bindings and macros
 slugs:
@@ -2828,19 +2888,17 @@ history:
 - 2026-11-27 (lane predfold1125, the fold of drop-not, array-argument, brace-counts, map-creator, string-literals, bang-split and and-not): printed `NOT` re-spelled `!`, a complement's `!` re-spelled `~`, a group question's condition re-spelled to the array form, as the rulings carry; no answer changed (model SWEEP11).
 
 ## core/operators/bindings/label-variables — Macro variables: a parameter that is a label
-slugs: label-parameter-twice label-needs-mark
+slugs: label-parameter-twice
 rulings:
 - 2026-11-22 "bound-condition: the form A := (x: blah) has to be illegal. x has no references in the binding. further A := /x/ & (y: blah) is also illegal as y has no target. this is the only read consistent with the earlier binding decisions. this is my read. please respond. alternatives: 1. macro variables A(x:) := (x: < 2100) 2. macro types B(d & isodate) := B(year: < 2100) (spellings tbd)" (record: "2026-11-22 OWNER, on bound-condition: "the form A := (x: blah) has to be illegal"; his read, a response asked for; two alternatives"); alternative 1, "macro variables", his spelling a placeholder, "spellings tbd"
 - 2026-11-22 "cound-condition: mostly confirmed. i leave the c := (0: 5) open" (record: "2026-11-22 OWNER RULING — bound-condition: "mostly confirmed"; `c := (0: 5)` left open"); "Both alternatives are marked under construction: directions acknowledged, spellings open" was on the confirmed list
 - 2026-11-23 (class: DIRECTION) "lets tentatively work with it. it seems like label-paramter-twice is answered by standard same label twice rules" (record: "2026-11-23 OWNER, on approach 1 (a macro takes a label): "lets tentatively work with it"; label-parameter-twice "seems" answered by the same-label-twice rules"); approach 1 taken as a working direction, not a ruling; label-parameter-twice answered by the same-label-twice rules, as his "seems" says.
 - 2026-11-23 (class: PROPOSAL) "1. label binding in macros. this means a macro can take a label and, maybe, a label can be pre-defined as a symbol. A(l:,B) := [l = B] or A(l:) := /(?<:${l}>\d+)/ then A(x:) & (x: 5)." (record: "2026-11-23 OWNER, two other approaches to a label named by a macro's caller: (1) label binding in macros; (2) conditions allow expressions for the reference"); the body SETS the label; the pre-defined symbol parked (parked/ideas/label-symbol).
 rejected:
-- a body label literally named as an unmarked parameter (`R(x, A)` with R(l, v) := `/${[l = v]}xx/` writing a label `l`, `R.l.h` legal) — by owner ruling — "label-needs-mark: yes" (R-2 of this lane's rulings file; the record entry is on lane/pred-rev28 after this lane's start, its rulings item owed at the merge).
 readings:
 - the body names the parameter, so the label has its target at the call (the manager's reading of the direction) — SUPPORTED as run (docs/dev/lanes/predfold1123_evidence/ predfold1123_model.py LABELPARAM: `A(x:) & (x: 5)`, A(l:) := `/(?<:${l}>\d+)/`, the record's run reproduced).
 - his earlier words "we note that l is a label variable" (record "2026-11-21 OWNER RULING — bare-nested-scope, case 1: a compile error at inner; and a question on a label variable") are the same direction — a reading.
 - label-parameter-twice: placed twice, the plain read the last mention, a group question both, the index in order; across `&` the ambiguous reference — SUPPORTED as run (docs/dev/lanes/predfold1123_evidence/ predfold1123_model.py READINGS, LPRULES).
-- label-needs-mark, the second sentence "yes to literal issue": the group-name form `(?<:${l}>...)` with an unmarked `l` is the same error (the manager's reading, R-2) — RUN (docs/dev/lanes/predfold1125_evidence/ predfold1125_model.py ERRSWEEP11, TR11: both lines refused with the mark named; SWEEP11: no other printed program refused by it).
 evidence: docs/dev/lanes/predfold1125_evidence/ predfold1125_model.py ERRSWEEP11, TR11, SWEEP11; docs/dev/lanes/predfold1123_evidence/ predfold1123_model.py LABELPARAM, LPRULES, READINGS.
 history:
 - 2026-11-22 (lane predbound, bound-condition ruled): a new under-construction piece; the older idea stays parked (parked/ideas/label-parameter), pointing here.
@@ -2848,6 +2906,23 @@ history:
 - 2026-11-23 (lane predfix86, review r86 C9; record "2026-11-23 MANAGER — review r86 (predfold1123): the dispositions; three errors of the manager's own brief named; no owner words"): the PROPOSAL item's quotation had `\d` for his `\d+`; re-quoted word for word.
 - 2026-11-27 (lane predfold1125, the fold of drop-not, array-argument, brace-counts, map-creator, string-literals, bang-split and and-not): printed `NOT` re-spelled `!`, a complement's `!` re-spelled `~`, a group question's condition re-spelled to the array form, as the rulings carry; no answer changed (model SWEEP11).
 - 2026-11-27 (lane predfold1125, R-2 of its rulings file): label-needs-mark RULED, asked "if a body writes `[l = ...]` and `l` is a parameter that was not marked as a label (`l:`), is that a compile error at the definition?"; his words, from R-2: "label-needs-mark: yes. And yes to literal issue". A bullet and two compile-error lines added; before it, the body wrote a label literally named `l` (`R.l.h` legal).
+- 2026-11-27 (lane predfix111, review r111 F18 (RULING-9), F11 (RULING-1), the manager's dispositions): label-needs-mark, a ruled rule held by this under-construction piece, moved to its own ruled piece core/operators/bindings/label-needs-mark with its two compile-error lines, its rejected item and its reading; the bullet until then, verbatim: "A body that places a parameter's name as a label needs the mark: `[l = ...]` or `(?<:${l}>...)` with `l` not marked `l:` is a compile error at the definition. His words: "label-needs-mark: yes. And yes to literal issue"."
+
+## core/operators/bindings/label-needs-mark — A label under a parameter's name needs the mark
+slugs: label-needs-mark
+rulings:
+- 2026-11-27 "label-needs-mark: yes. And yes to literal issue" (record: "2026-11-27 OWNER RULING — label-needs-mark: yes"); RULED on the statement as asked: "if a body writes `[l = ...]` and `l` is a parameter that was not marked as a label (`l:`), is that a compile error at the definition?", told with it: "The definition itself is refused, with a message naming the missing mark."
+- 2026-11-27 (class: STATEMENT) "Side note: a binding cannot use an argument as a label. if the macro definition didn't set l as a label argument, then the later l = would be an error. This is to catch an unintended miss of not setting the arg as a label arg." (record: "2026-11-27 OWNER RULING — sent-label-wall: error; and a STATEMENT: a body may not use an unmarked parameter as a label"); the statement the question was made from, not itself a ruling.
+rejected:
+- a body label literally named as an unmarked parameter (`R(x, A)` with R(l, v) := `/${[l = v]}xx/` writing a label `l`, `R.l.h` legal) — by owner ruling — "label-needs-mark: yes" (R-2 of this lane's rulings file; the record entry is on lane/pred-rev28 after this lane's start, its rulings item owed at the merge).
+readings:
+- label-needs-mark, the second sentence "yes to literal issue": the group-name form `(?<:${l}>...)` with an unmarked `l` is the same error (the manager's reading, R-2) — RUN (docs/dev/lanes/predfold1125_evidence/ predfold1125_model.py ERRSWEEP11, TR11: both lines refused with the mark named; SWEEP11: no other printed program refused by it).
+- the capturing group's whole name from an unmarked parameter, `(?<${n}>...)`, is the same error (review r111 F8, EXAMPLES-3; a MARKED reading the manager tells the owner; its ground is group-node's "Group names should be labels almost exactly") — RUN (docs/dev/lanes/predfix111_evidence/ predfix111_model.py MARKED111: `C(x)`, C(n) := `/(?<${n}>\d)x/`, refused at the definition naming the mark; `C(_:)`, C(n:) its re-spelling, `(\d)x`'s answers).
+- the rule is about a label WRITTEN under a plain parameter's name; a body's own label sharing no name with a parameter is untouched; a parameter marked `l:` is unchanged — the manager's readings for the fold to test (record "2026-11-27 OWNER RULING — label-needs-mark: yes") — SUPPORTED (predfix111_model.py MARKED111: the line "The mark written").
+evidence: docs/dev/lanes/predfold1125_evidence/ predfold1125_model.py ERRSWEEP11, TR11, SWEEP11; docs/dev/lanes/predfix111_evidence/ predfix111_model.py MARKED111, SPECLINES111.
+history:
+- 2026-11-27 (lane predfold1125, R-2 of its rulings file): label-needs-mark RULED, asked "if a body writes `[l = ...]` and `l` is a parameter that was not marked as a label (`l:`), is that a compile error at the definition?"; his words, from R-2: "label-needs-mark: yes. And yes to literal issue". A bullet and two compile-error lines added; before it, the body wrote a label literally named `l` (`R.l.h` legal).
+- 2026-11-27 (lane predfix111, review r111 F18 (RULING-9), F11 (RULING-1), F8 (EXAMPLES-3), F21 (b), the manager's dispositions): a new ruled piece split from core/operators/bindings/label-variables (that piece's history names what moved); its rulings item cites the record entry (until then the rulings file's R-2); the group-name form marked the reading taken; the capturing group's whole-name form added as a marked reading, with its line and "The mark written".
 
 ## core/operators/bindings/label-omitted — The unspecified label
 slugs: label-parameter-omitted
@@ -3016,7 +3091,7 @@ slugs:
 rulings:
 - 2026-11-15 "3. this leans into the idea of an interface to a type over the type. Array and map are interfaces that can be applied to regex but interfaces aren't themselves values that can be created. So what import is is less important than that its interface is a map. 4. agree." (record: "2026-11-14 RULINGS on rev 3's contradictions"); under its bold line "2026-11-15 RULINGS — answers to the four questions of review r8"
 - 2026-11-25 "Yes to all seven" (record: "2026-11-25 OWNER RULING — map-creator: "Yes to all seven""); lines 1, 2, 5 and 6; it AMENDS "A map interface is not a created value"
-- 2026-11-25 "m["a"|1]: I would not deduplicate. This is two results" (record: "2026-11-25 OWNER, on map-creator: "m["a"|1]: I would not deduplicate. This is two results ... it's a search which might be empty"; and a QUESTION with an example: "how do I get an index from a label in a map? .index? And is that the index of the alternation?"")
+- [MOVED 2026-11-27 to core/modules/map/access: said of a search's results, map-creator line 4] 2026-11-25 "m["a"|1]: I would not deduplicate. This is two results" (record: "2026-11-25 OWNER, on map-creator: "m["a"|1]: I would not deduplicate. This is two results ... it's a search which might be empty"; and a QUESTION with an example: "how do I get an index from a label in a map? .index? And is that the index of the alternation?"")
 rejected:
 - a module as a third value kind, a namespace (the manager's 2026-11-14 lean (1)) — by owner ruling — the follow-up (MODULE = MAP) and "what import is is less important than that its interface is a map".
 - DECLARED TYPES (`type(...)`, `isodate: date`), TYPE MEMBERS declared with a type, SCOPE-LIMITED UFCS (`d.weekday` resolving to a scoped macro), `types()` (and the record's `kind()`) in the first spec — by owner ruling — the §9 cut (predx Q8, the draft §9 STATUS "RULED (CF:583, predx Q8)"); declared types may return as library packaging after a build.
@@ -3032,6 +3107,7 @@ history:
 - 2026-11-22 (lane predfix83, review r83 D9; record "2026-11-22 MANAGER — review r83 (preddef1122): dispositions ruled; one correction; idiom-confirm closed on default-export (no owner words)"): the bullet until then: "Only what `.` reaches is reachable from outside: the public names, decided by the `_` rule (core/labels/export);" ("public" read as "reachable from outside", the old sense). Now: the names the thing exports, by the `_` rule and default-export.
 - 2026-11-27 (lane predfold1125, the fold of drop-not, array-argument, brace-counts, map-creator, string-literals, bang-split and and-not): restated by the rulings named in its rulings field. The statement until then, verbatim: "A module is described by its map interface: its members are its fields, reached by the one `.`; what kind of thing a module is is not ruled.".
 - 2026-11-27 (lane predfold1125, the fold of drop-not, array-argument, brace-counts, map-creator, string-literals, bang-split and and-not): the bullet "A map interface is not a created value: no map value is passed around." removed (amended by map-creator); the open map questions (a key read at match time, brackets on a module, labels under a join, the two `.index` edges) listed in the body.
+- 2026-11-27 (lane predfix111, review r111 F13, F14, the manager's dispositions): the no-deduplication bullet and its line (`{a = "x", b = "x"}`) left the piece: his words are of a SEARCH's results (map-creator line 4), now in core/modules/map/access; the open `.index` edges named as asked (a label whose alternative was not taken; nested alternations).
 
 ## core/modules/map/access — Members and selection
 slugs: map-creator key-order
@@ -3039,6 +3115,7 @@ rulings:
 - 2026-11-25 "Yes to all seven" (record: "2026-11-25 OWNER RULING — map-creator: "Yes to all seven""); lines 3 to 5
 - 2026-11-25 "Specifically F["z"] is a search and F.z must exist or error" (record: "2026-11-25 OWNER, on map-creator: "Specifically F["z"] is a search and F.z must exist or error"")
 - 2026-11-25 "I'd see it as the keys order. Why otherwise and how would you order results in a particular way?" (record: "2026-11-25 OWNER, on key-order: "I'd see it as the keys order. Why otherwise and how would you order results in a particular way?"")
+- 2026-11-25 "m["a"|1]: I would not deduplicate. This is two results, if they both exist. The key is that it's a search which might be empty" (record: "2026-11-25 OWNER, on map-creator: "m["a"|1]: I would not deduplicate. This is two results ... it's a search which might be empty"; and a QUESTION with an example: "how do I get an index from a label in a map? .index? And is that the index of the alternation?""); of the search's results (line 4), moved here from core/modules/map.
 rejected:
 readings:
 - (b) the accessor on any pattern with labels; (c) a bare name in the brackets a binding's value; (d) a one-name result not renumbered; (f) `m[0]` the whole rx; (g) a name on an unlabelled array finds nothing — UNTESTED (the front end selects on map literals only).
@@ -3048,6 +3125,7 @@ readings:
 evidence: docs/dev/lanes/predfold1125_evidence/ predfold1125_model.py MAP11, SPECLINES.
 history:
 - 2026-11-27 (lane predfold1125, the fold of drop-not, array-argument, brace-counts, map-creator, string-literals, bang-split and and-not): a new piece, lines 3, 4 and 7 of map-creator.
+- 2026-11-27 (lane predfix111, review r111 F14, F15, the manager's dispositions): the no-deduplication bullet, his words whole, moved here (said of the search's results); it is seen only through `.index` or a count. The key's-order line re-picked so the order can fail (m := `{a = /\d/, b = /\d\d/}`, `m["b" | "a"]` against `m["a" | "b"]`, the two printed): the old line's disjoint elements gave one answer under either order.
 
 ## core/modules/binding-list — The named binding list
 slugs: import-symbols
@@ -3258,6 +3336,7 @@ history:
 - 2026-11-23 (lane predfold1123, the fold of 2026-11-22 late and 2026-11-23; records "2026-11-23 OWNER RULING — argument-label: yes (a label the caller writes inside an argument is the caller's own); and: these mechanisms ease his concern about the default hiding", "2026-11-22 OWNER RULING — zero-condition-binding: an error, to be reconsidered later (`c := (0: 5)` bound alone)", "2026-11-23 OWNER RULING — capture-negated: broadened: "any effect macro cannot be under negation"", "2026-11-23 OWNER RULING — label-kinds: yes, one mark, one meaning; the reference kind is for natives, off limits for users for now"): the argument-default row until then: "a read of an argument's label by the caller where the body uses the argument alone (`A.d`, a group written in place); a part label written on an argument at a call (`B([a = A])`, then `a.d`)" (both withdrawn by argument-label); the bound-condition row gains zero-condition-binding; a row for `0`'s settings, the request on an open `0` and an effect under negation; the PARTIAL list's "a `:` in a definition head" narrowed by the label parameter, with label-kinds' two errors.
 - 2026-11-25 (lane predfix90, review r90 A9; record "2026-11-25 MANAGER — review r90 (predfold1124): the dispositions; no owner words"): the row naming four legal programs as compile errors replaced by rule 2's and rule 6's errors and conditions 1 and 4.
 - 2026-11-27 (lane predfold1125, the fold of drop-not, array-argument, brace-counts, map-creator, string-literals, bang-split and and-not): printed `NOT` re-spelled `!`, a complement's `!` re-spelled `~`, a group question's condition re-spelled to the array form, as the rulings carry; no answer changed (model SWEEP11).
+- 2026-11-27 (lane predfix111, review r111 F12, F19(d), F20, F26, the manager's dispositions): the `!`-on-a-set row names `~` (naming `!^` too is a reading); the string-escape row names string-literals line 3's seven escapes; the path row adds an underscore group of rx text (rule 2, group-node), skipping a part used alone, and stepping through a part used more than once (alone-as-middle).
 
 ## core/diagnostics/under-construction — The under-construction error
 slugs: under-construction-class
@@ -3405,6 +3484,7 @@ history:
 - 2026-11-23 (lane predfix86, review r86 D1; record "2026-11-23 MANAGER — review r86 (predfold1123): the dispositions; three errors of the manager's own brief named; no owner words"): the row "| the CAPTURE forms: a wrapper (his `[ d = capture(digits) ]`), after the fact (his `[ d = digits ] & capture(d)`); `capture(name, x)` | lib/structural/capture, lib/structural/capture/add-on |" removed (the forms are retired: optional-label replaced them by the request); the request's array placeholder `capture(@x)` until then (add-on: under the request's shape the array's spelling is not stated); "the label mark `[x = R]`" dropped from the LABEL PATH row (it was listed twice; it is the LABEL SET row).
 - 2026-11-23 (lane predfix88, review r88 A13; record "2026-11-23 MANAGER — review r88 (predfold1123b): the dispositions; no owner words"): the padded row: `padded_to` (the name, the manager's) and its width.
 - 2026-11-27 (lane predfold1125, the fold of drop-not, array-argument, brace-counts, map-creator, string-literals, bang-split and and-not): printed `NOT` re-spelled `!`, a complement's `!` re-spelled `~`, a group question's condition re-spelled to the array form, as the rulings carry; no answer changed (model SWEEP11).
+- 2026-11-27 (lane predfix111, review r111 F20, the manager's dispositions): names the seven escapes of string-literals line 3.
 
 ## core/spellings/condition-parentheses — A condition keeps its parentheses
 slugs:

@@ -329,18 +329,18 @@ WHOLE `Jun` HOLDS, `Jul` FAILS / SEARCHED `Dec Feb` `Feb`@4 / FIND-ALL `Mar Oct 
 
 The conditional, the transform that makes its test a peek, and the name of the atomic part. Each is a body over the core's lookahead, atomic group, pattern hole, sequence and alternation.
 
-### peek   [lib/control/peek]   open peek-name 2026-11-27
-Does the library keep `peek(A)` as a name for the lookahead `^A`, `peek(A) := ^[(=) = A]`, or is `^A` the one spelling?
+### peek   [lib/control/peek]   ruled 2026-11-27
+`peek(A) := ^[(=) = A]` is the library's named form of the lookahead `^A`: A tested where it stands, consuming nothing, A's labels passed on.
 needs: core/patterns/lookaround/ahead core/holes/labels lib/convention/argument-labels
 module: ?
 default: yes
 defined: language
-- No ruled text needs the name: the `when` body is written with `^` (bang-split line 5); its earlier body
-  `/(?=${[(=) = A]})/` is `^A` with the argument list's labels passed through the call (`peek.d`).
-- Candidates: (a) keep `peek` as the named form, as `rx.repeat` stays beside the braces (the manager's lean, by
-  that parallel); (b) drop it, `^A` alone. The default-imported set's lean "holding `peek`" goes with (a).
-- The negative is `!^A` either way. Under (a) `!peek(A)` is `!` on a lookaround, a test (bang-split line 1), so it
-  is `!^A` and no longer an error (the manager's reading; the line "Its not").
+- His words: "Peek name: keep. We can review choice later. I'm not sure either." The name is kept and marked
+  reviewable: a later question may drop it.
+- The body is `^A` with the argument list on its spot, so a call passes A's labels on (`peek.d`;
+  lib/convention/argument-labels); `^A` itself is the core's operator (core/patterns/lookaround/ahead).
+- Which peek forms the library provides: the lookahead only. The negative is `!^A` or `!peek(A)`: `!` on a
+  lookaround, a test (bang-split line 1), so `!peek(A)` is `!^A` (the line "Its not"); no lookbehind form.
 Its not: WHOLE `a` HOLDS, `7` FAILS / SEARCHED `7a` `a`@1 / FIND-ALL `7a b` [`a`@1, `b`@3] (`!peek(/\d/) SEQ /\w/`)
 WHOLE `37` HOLDS (peek.d = `3`), `3` FAILS / SEARCHED `x37` `37`@1 / FIND-ALL `37 4 56` [`37`@0, `56`@5] (`peek(/(?<d>\d)/) SEQ /\d\d/` is `(?=(?:(?<d>\d)))\d\d`, as `^/(?<d>\d)/ SEQ /\d\d/`)
 Through the argument's name: WHOLE `3` HOLDS, `7` FAILS / SEARCHED `7 3` `3`@2 / FIND-ALL `3 7 4` [`3`@0, `4`@4] (`peek(A) SEQ /\d/ & (A.d: <5)`, A := `/(?<d>\d)/`)
@@ -392,16 +392,17 @@ defined: language
   an argument is bare, so the warning is not the body's.
 - A read is an rx like any other: `$y` as the test is a bare pattern and consumes; `(y: 1492)` is a condition.
 - A filter-only rx (a complement) as the test: not stated by any ruling.
-- `!x` on a bare pattern x is the compile error naming `!^x` (lib/control/when-test/not).
+- `!x` on a bare pattern x is the compile error naming `~x` (bang-split line 4), and `!^x`, the form a test wants
+  (the manager's reading of the message; lib/control/when-test/not).
 WHOLE `12` FAILS, `123` HOLDS / SEARCHED `x123` `x`@0 / FIND-ALL `12 x 123 1x 7` [`x`@3, `123`@5, `x`@10] (`when(/\d/, /\d\d/, else = /\w/)`, a bare test, is `\d\d\d|(?!\d)\w`)
 
 ### `!` on a bare pattern test   [lib/control/when-test/not]   ruled 2026-11-27
-In `when(!x, z)` with x a bare pattern, `!x` is `!` on a pattern: a compile error whose message names `!^x`, the negative lookahead.
+In `when(!x, z)` with x a bare pattern, `!x` is `!` on a pattern: a compile error naming `~` (bang-split line 4); its message names `!^x` too (a reading).
 needs: lib/control/when-test core/filters/negation
 module: ?
 defined: language
-- His words: "bang-split: yes"; its line 4: "`!` on a set or pattern is an error naming `~`"; the message names
-  `!^x` too, the form a test wants (the manager's reading of the message).
+- His words: "bang-split: yes"; its line 4: "`!` on a set or pattern is an error naming `~`": the message names
+  `~x`, the complement; that it names `!^x` too, the form a test wants, is the manager's reading of the message.
 - The clear forms stand: `when(!^x, z)`, and `when(!c, z)` for a condition c.
 - Whether `!A` on a consuming pattern may later mean `(?!A)` is not ruled (core/filters/negation).
 The negative lookahead as the test: WHOLE `a` HOLDS, `x` FAILS, `` FAILS / SEARCHED `xa` ``@0 / FIND-ALL `xa b` [``@0, `a`@1, `b`@3] (`when(!^/x/, /\w/)`)
@@ -475,7 +476,7 @@ defined: language
   is the whole subject.
 - "Every hit under 100": `1234` FAILS (hits [`1234`]), `12 34` HOLDS, `12 345` FAILS, `x300 12` FAILS. Written as a
   group question on the array of `hit`, one setting per hit, the call labelled: `[h = hits(/\d+/)] &
-  occurs.none((h.hit: >= 100))` (a reading; core/labels/paths/call-prefix).
+  occurs.none(@h.hit, >= 100)` (a reading; core/labels/paths/call-prefix).
 - The body's `hit` is the label-only group: a label and no capture (helper-captures: lib/search/occurrences). It is
   the spot the body labels, so the argument's labels pass on through it (`hits.hit.g`) and the body writes no `(=)`
   (the manager's reading (d); lib/convention/argument-labels). A group written in the argument in place is the
@@ -503,7 +504,7 @@ module: ?
 defined: language
 - The gaps cross line breaks. Inside the argument `^` and `$` are the ends of the value filtered:
   `contains(/^err/)` is "starts with `err`" (WHOLE, 0 of 1,365 texts differ from `startsWith("err")`).
-- The negated test is `~contains(x)`.
+- Its complement, a value not holding x, is `~contains(x)`.
 - s's labels pass on (lib/convention/argument-labels): `contains.n`, the LAST occurrence (the leading gap is
   greedy, as endsWith's; the line "The last occurrence"); under `~contains(x)` none is visible.
 WHOLE `xerrx` HOLDS, `er` FAILS / SEARCHED `a err b` `a err b`@0 / FIND-ALL `err err` [`err err`@0] (`contains("err")` is `(?s:.*)(?:err)(?s:.*)`)
@@ -590,7 +591,7 @@ S's labels, through the call: WHOLE `abcz` HOLDS, `abz` FAILS, `xyzz` FAILS / SE
 ## Counting   [lib/counting]
 
 ### some   [lib/counting/some]   ruled 2026-11-25
-`some(@d, S)` holds when at least one setting in the array of d is in S; on an empty array it is false.
+`some(@d, S)` holds when at least one setting in the array of d is in S; on an empty array it is false (a reading).
 needs: core/model/table core/conditions/form core/labels/labels-vs-captures/array-vs-passes
 see: core/model/table/group-truth lib/counting/every lib/assert/assert
 module: ?
@@ -603,8 +604,8 @@ defined: native (a question over a name's array of settings; no expression of th
   (core/labels/labels-vs-captures/array-vs-passes), those visible in the definition the question is written in, a
   bound piece's own (array-in-piece); "false on an empty array" is a reading of that ruling.
 - `0` has no settings, so `some(@0, ..)` is a compile error (core/conditions/match-so-far).
-- `some` is the one spelling of "at least one"; `all` is retired: every pass is written with the condition
-  inside the loop, on the item (core/conditions/in-sequence).
+- `some` is the one spelling of "at least one". A question over every SETTING is `every` (lib/counting/every);
+  every PASS is written with the condition inside the loop, on the item (core/conditions/in-sequence).
 - Two arrays are two calls (core/conditions/form/record-in-some). "Same item" is the on-item label, then
   `some(@ok, anything)`.
 - `!some(@d, S)` and `occurs.none(@d, S)` are one question (core/model/table/group-truth).
@@ -650,8 +651,9 @@ see: core/model/table/group-truth core/conditions/in-sequence
 module: ?
 defined: language (`every(@d, S) := occurs.none(@d, ~S)`)
 - His words: "array-argument: yes including every".
-- It reads SETTINGS: a pass that sets nothing is not judged, so where the label is optional, or the loop can make
-  no pass, it is not the item form, the condition written inside the loop (the lines below).
+- It reads SETTINGS: a pass that sets nothing is not judged, so where the label is optional it is not the item
+  form, the condition written inside the loop (the lines "Every setting" and "The item form"); a loop that can make
+  no pass parts nothing, both true there (the two "No pass" lines).
 - "Set at least once and every setting in S" is `some(@d, S) & every(@d, S)`.
 Every setting: WHOLE `7,7,` HOLDS, `7,,` HOLDS, `7,1,` FAILS, `,` HOLDS / SEARCHED `1, 7,,` `,`@1 / FIND-ALL `7,, 7,1, 7,7,` [`7,,`@0, `7,`@4, `,`@7, `7,7,`@9] (`/(?:(?<d>\d)?,)+/ & every(@d, "7")`)
 Set at least once: WHOLE `7,7,` HOLDS, `7,,` HOLDS, `7,1,` FAILS / SEARCHED `7,, 7,7,` `7,,`@0 / FIND-ALL `7,, 7,1, 7,7,` [`7,,`@0, `7,`@4, `7,7,`@9] (`/(?:(?<d>\d)?,)+/ & some(@d, "7") & every(@d, "7")`)

@@ -204,7 +204,8 @@ by: core/principles/operand-world
 | a condition as a sequence operand | zero width at its point | a test | n/a | core/conditions/in-sequence |
 | a loop body, a postfix operand | each pass, in place | can match | yes, pass by pass | core/labels/one-rule |
 | an atomic part | in place | can match | no | core/patterns/atomic |
-| a positive lookahead or lookbehind (`^A`) | from its point, consuming nothing | can match | no | core/patterns/lookaround |
+| a lookahead `^A`, `!^A` | from its point, consuming nothing | can match; a test for `!` | no | core/patterns/lookaround/ahead |
+| a lookbehind, in rx text only (`(?<=x)`, `(?<!x)`) | back from its point, consuming nothing | can match; a test for `!` | no | core/patterns/lookaround |
 | a pattern hole `${X}` | in place, `(?:X)` | can match | yes | core/holes/pattern |
 | a `label:` set | the label's text, whole | can filter | no | core/conditions/form |
 | the operand of a complement | the stretch's own text, whole | can filter | no | core/filters/complement |
@@ -254,8 +255,9 @@ needs: core/patterns/literals
 see: core/values/one-type lib/builtin/options lib/strings/join parked/ideas/triple-quote
 - His words: "Yes all five"; lines 1 and 2 are his own: "a string has no pattern operators. Everything is a
   character literal. Obvious but should be said"; "either " or ' delimits".
-- The escapes are the backslash, the two quotes, `\n`, `\r`, `\t` and `\x{..}`; any other backslash sequence is a
-  compile error, its message naming the rx form (`"\d"` names `/\d/`).
+- The escapes are the backslash, the two quotes, `\n`, `\r`, `\t` and `\x{..}`, seven sequences; any other
+  backslash sequence is a compile error. That its message names the rx form (`"\d"` names `/\d/`) is a reading;
+  so is that the quote which does not delimit may be escaped too (`"\'"` is `'`).
 - Adjacent strings do not join: joining is the sequence operator or `join`; `"ab" SEQ "cd"` is the one string
   `abcd`, a constant where a constant is needed (a reading).
 - A string ends on the line it starts on: a newline in it is written `\n`, a raw line end is a compile error (a
@@ -269,7 +271,9 @@ Character literals: WHOLE `a.b+` HOLDS, `axb` FAILS, `axbbb` FAILS / SEARCHED `a
 Either quote delimits: WHOLE `a"b` HOLDS, `ab` FAILS / SEARCHED `xa"b` `a"b`@1 / FIND-ALL `a"b ab` [`a"b`@0] (`'a"b'`)
 A code: WHOLE `Ab` HOLDS, `ab` FAILS / SEARCHED `ab Ab` `Ab`@3 / FIND-ALL `Ab ab Ab` [`Ab`@0, `Ab`@6] (`"\x{41}b"`)
 A hole mark is plain text: WHOLE `${x}` HOLDS, `x` FAILS / SEARCHED `a ${x}` `${x}`@2 / FIND-ALL `${x} x` [`${x}`@0] (`"${x}"`)
-Not a string escape: modes: a compile error (`"a\d"`: only the six escapes; a class is rx text, `/\d/`).
+An escaped quote: WHOLE `a"b` HOLDS, `ab` FAILS / SEARCHED `xa"b` `a"b`@1 / FIND-ALL `a"b ab a"b` [`a"b`@0, `a"b`@7] (`"a\"b"`)
+A newline: WHOLE `a\nb` HOLDS, `anb` FAILS / SEARCHED `anb a\nb` `a\nb`@4 / FIND-ALL `a\nb axb a\nb` [`a\nb`@0, `a\nb`@8] (`"a\nb"`)
+Not a string escape: modes: a compile error (`"a\d"`: only the escapes of string-literals line 3; a class is rx text, `/\d/`).
 Adjacent strings: modes: a compile error (`"ab" "cd"`: no juxtaposition; `"ab" SEQ "cd"` is the join).
 
 ### Flags in a literal   [core/patterns/flags]   ruled 2026-11-22
@@ -396,7 +400,10 @@ see: core/filters/negation core/filters/family lib/control/peek lib/control/when
 - `^A` is a zero-width pattern that can match, usable wherever a pattern is (a sequence, a binding, an argument, a
   hole); as an `&` operand it looks outside the stretch, core/filters/operand-context's compile error (a reading).
 - `^` and `!` are prefix operators on ONE atom (core/operators/precedence): `!^A SEQ C` is `(!^A) SEQ C`.
-- `^A` passes A's labels on, as a lookahead's labels are visible (core/patterns/lookaround); `!^A` passes none.
+- `^A` passes A's labels on, as a lookahead's labels are visible (core/patterns/lookaround); `!^A` passes none: a
+  label set only inside `!^A` and read after it is a compile error, not visible through its source (core/labels/paths;
+  a MARKED reading; the line "Not ahead, its labels").
+- On a condition `^c` is c, zero width already (a MARKED reading; core/filters/family).
 - `!^A` cannot be written `^~A`: a complement cannot match by itself, so `^~A` is a compile error naming `!^A` (a
   reading; the line "Not `^~A`").
 - `^A` is atomic, as PCRE's lookahead is: no later piece makes it retry another way of matching A (the non-atomic
@@ -405,6 +412,7 @@ see: core/filters/negation core/filters/family lib/control/peek lib/control/when
 Ahead: WHOLE `x` FAILS, `x1` FAILS / SEARCHED `1x2 x3 4x x` `x`@1 / FIND-ALL `1x2 x3 4x x` [`x`@1, `x`@4] (`"x" SEQ ^/\d/`)
 Not ahead: WHOLE `x` HOLDS, `x1` FAILS / SEARCHED `1x2 x3 4x x` `x`@8 / FIND-ALL `1x2 x3 4x x` [`x`@8, `x`@10] (`"x" SEQ !^/\d/`)
 Its labels: WHOLE `37` HOLDS, `73` FAILS / SEARCHED `x73 37` `37`@4 / FIND-ALL `37 73 56` [`37`@0] (`^/(?<d>\d)/ SEQ /\d\d/ & (d: <5)`)
+Not ahead, its labels: modes: a compile error (`!^/(?<d>\d)/ SEQ /\w/ & (d: <5)`: `d` is set only inside `!^`, never visible after it; a marked reading).
 Not `^~A`: modes: a compile error (`"x" SEQ ^~/\d/`: a complement cannot match by itself; the negative lookahead is `!^/\d/`).
 
 ## Labels   [core/labels]
@@ -447,7 +455,7 @@ The caller's own shorthand, under a closing body: WHOLE `3xx` HOLDS, `7xx` FAILS
 ### The paths of labels, start to target   [core/labels/rule/paths]   ruled 2026-11-23
 A path runs from a start label to its target and contains no underscore label unless that label is its start; inside a binding any label it writes may start a path; a middle label may be skipped.
 needs: core/labels/rule
-see: core/labels/rule/stacked-chain core/labels/ownership core/labels/export core/labels/export/flat-read-outside core/labels/paths/label-reference core/labels/paths/closed-argument core/labels/rule/sent-label-wall core/labels/rule/skip-past-wall core/labels/rule/equivalence-inside core/labels/rule/alone-as-middle core/labels/rule/group-node
+see: core/labels/rule/stacked-chain core/labels/ownership core/labels/export core/labels/export/flat-read-outside core/labels/paths/label-reference core/labels/paths/closed-argument core/labels/rule/sent-label-wall core/labels/rule/skip-past-wall core/labels/rule/equivalence-inside core/labels/rule/alone-as-middle core/labels/rule/group-node core/labels/rule/kinds
 - His words: "path-rules: yes", on his four rules for paths within a binding, as he wrote them:
   1. in the label DAG there is a target label and a starting label. The starting label has at least one path to
      the target label
@@ -507,7 +515,7 @@ Two binding levels, the middles skipped: WHOLE `3xx!;` HOLDS, `7xx!;` FAILS / SE
 ### A sent label above the body's blank   [core/labels/rule/sent-label-wall]   ruled 2026-11-27
 When a body places a sent label ABOVE its own blank (`R(l:, v) := /${[l = [_ = v]]}xx/`), a caller's read through the sent label past the blank is a compile error.
 needs: core/labels/rule/paths
-see: core/operators/bindings/label-in-argument
+see: core/operators/bindings/label-in-argument core/labels/rule/kinds
 - His words: "sent-label-wall: error. The path would be x._.h which is not an allowed path."; and the two ways he
   names, in the details entry.
 - The path x, `_`, h contains the blank, not its start (rule 2); the sent label is a start, never a licence to cross
@@ -518,7 +526,7 @@ The wall above the sent label: WHOLE `3xx` HOLDS, `7xx` FAILS / SEARCHED `7xx 3x
 ### Skipping past a private part   [core/labels/rule/skip-past-wall]   ruled 2026-11-27
 Rule 4's candidates count only the targets a legal path reaches: a private part behaves as if its labels were not there, so `n.d` reads m's `d` past `[_x = Q]`, per operator.
 needs: core/labels/rule/paths
-see: core/labels/export/flat-read-outside
+see: core/labels/export/flat-read-outside core/labels/rule/kinds
 - His words: "skip-past-wall: agree with lean"; the lean as put: "(a). A private part should behave as if its
   labels were not there."
 - The inside twin of flat-read-outside's "a source it keeps protected does not exist for that read". Written
@@ -529,6 +537,7 @@ Across `|`: WHOLE `3` HOLDS, `a3` FAILS, `a7` FAILS / SEARCHED `a7 a3` `3`@4 / F
 ### His equivalence inside the binding   [core/labels/rule/equivalence-inside]   ruled 2026-11-27
 Inside the binding that writes it, `[_t = A]` makes no label `t`: inside, `t.h` is a compile error and `_t.h` the read.
 needs: core/labels/rule/paths
+see: core/labels/rule/kinds
 - His words: "equivalence-inside: agree with lean. As you said, the line was only about accessibility"; the lean
   as put: "no `t`; the read is `_t.h`."
 - His sentence "[_t = A ] is equivalent to [_ = [t = A ]]" is the picture of how a private label looks from
@@ -539,26 +548,82 @@ From outside, both: modes: a compile error (`X & (X.t.h: <5)`, A := `/(?<h>\d)/`
 ### A part used alone as a middle label   [core/labels/rule/alone-as-middle]   ruled 2026-11-27
 Inside its binding a part used alone is a label of its own name that may start a path or be a middle step (`n.Q.d`), never skipped: `n.d` through it is a compile error naming `n.Q.d`.
 needs: core/labels/rule/paths
-see: core/labels/export
+see: core/labels/export core/labels/rule/kinds
 - His words: "alone-as-middle: yes to the gate"; the statement as re-asked: "inside the definition that uses it, a
   part used alone is a label of its own name that may start a path or be a middle step (`n.Q.d`), and is never
   skipped (`n.d` through it is a compile error naming `n.Q.d`). From outside it exports nothing, as today."
 - A label someone WROTE (`[a = P]`) is still skipped by rule 4. A part used more than once is refused as a step,
   as it is as a start. From outside, `X.Q.d` crosses Q as a wall (rule 6), and `X.n.Q.d` alike.
+- A binding's or a macro's use alike (a reading: "a binding's or a macro's name on its part", the paths' terms): a
+  macro call used alone, `B(Q)`, is the step `B`; `n.B.p.d` and `n.B.d` are legal, `n.d` through it refused.
+- "More than once" counts the uses under the read's prefix, as rule 4 measures from the start (a marked reading;
+  owner question gate-twice-scope): `n.Q.d` is legal where a second `Q` is under `m` only. Counted over the whole
+  definition, it is a compile error; both are RUN in the details entry.
+- Beside a written label (`[n = ([a = P] SEQ Q)]`, `n.d`), the gated part's targets are not counted, so `n.d` is a's
+  `d` (a marked reading; owner question gate-beside-label). The other readings, a compile error or Q's `d` as the
+  last mention, are RUN in the details entry.
+- Its rows: core/labels/rule/kinds, "a part used alone" and "a macro call used alone".
 A part used alone as a middle, inside: WHOLE `7,3` HOLDS, `3,7` FAILS / SEARCHED `3,7 7,3` `7,3`@4 / FIND-ALL `7,3 3,7 4,1` [`7,3`@0, `4,1`@8] (`[n = (P SEQ Q)] & (n.Q.d: <5)`, P := `/(?<d>\d)/`, Q := `/,(?<d>\d)/`)
 Through the part used alone, skipped: modes: a compile error (`[n = (P SEQ Q)] & (n.d: <5)`, P := `/(?<d>\d)/`, Q := `/,(?<d>\d)/`: the path skips a part used alone, which is never skipped inside its binding: write `n.P.d` or `n.Q.d`).
 Its own start, alike: WHOLE `7,3` HOLDS, `3,7` FAILS / SEARCHED `3,7 7,3` `7,3`@4 / FIND-ALL `7,3 3,7 4,1` [`7,3`@0, `4,1`@8] (`[n = (P SEQ Q)] & (Q.d: <5)`, P := `/(?<d>\d)/`, Q := `/,(?<d>\d)/`)
 Used twice, not a step: modes: a compile error (`[n = (Q SEQ Q)] & (n.Q.d: <5)`, Q := `/,(?<d>\d)/`: `Q` is used more than once here, so it is not a step).
 From outside, the part used alone: modes: a compile error (`X & (X.Q.d: <5)`, P := `/(?<d>\d)/`, Q := `/,(?<d>\d)/`, X := `[n = (P SEQ Q)]`: the path crosses `Q`, a part used alone in it (rule 6)).
-### A group of rx text as a node of a path   [core/labels/rule/group-node]   open group-as-node 2026-11-25
-Is a named group of rx text a node of the label DAG, so that `g.d` reads `d` through the outer group `g` of `/(?<g>(?<d>\d))x/`?
+A macro call used alone, a step: WHOLE `7,3xx` HOLDS, `3,7xx` FAILS / SEARCHED `3,7xx 7,3xx` `7,3xx`@6 / FIND-ALL `7,3xx 3,7xx 4,1xx` [`7,3xx`@0, `4,1xx`@12] (`[n = (P SEQ B(Q))] & (n.B.p.d: <5)`, P := `/(?<d>\d)/`, Q := `/,(?<d>\d)/`, B(rx) := `/${[p = rx]}xx/`)
+A macro call used alone, skipped: modes: a compile error (`[n = (P SEQ B(Q))] & (n.d: <5)`, P := `/(?<d>\d)/`, Q := `/,(?<d>\d)/`, B(rx) := `/${[p = rx]}xx/`: the path skips a part used alone: write `n.B.d` or `n.P.d`).
+Two uses, one under the read's prefix: WHOLE `7,3;7,7` HOLDS, `7,7;7,3` FAILS / SEARCHED `7,7;7,3 7,3;7,7` `7,3;7,7`@8 / FIND-ALL `7,3;7,7 7,7;7,3 1,2;3,4` [`7,3;7,7`@0, `1,2;3,4`@16] (`[n = (P SEQ Q)] SEQ ";" SEQ [m = (P SEQ Q)] & (n.Q.d: <5)`, P := `/(?<d>\d)/`, Q := `/,(?<d>\d)/`): a marked reading
+Parentheses aside, a labelled use (core/labels/export statement 2): WHOLE `,3` HOLDS, `,7` FAILS / SEARCHED `,7 ,3` `,3`@3 / FIND-ALL `,3 ,7 ,4` [`,3`@0, `,4`@6] (`[n = (Q)] & (n.d: <5)`, Q := `/,(?<d>\d)/`)
+Beside a written label: WHOLE `3,7` HOLDS, `7,3` FAILS / SEARCHED `7,3 3,7` `3,7`@4 / FIND-ALL `3,7 7,3 4,1` [`3,7`@0, `4,1`@8] (`[n = ([a = P] SEQ Q)] & (n.d: <5)`, P := `/(?<d>\d)/`, Q := `/,(?<d>\d)/`): a's `d`, a marked reading
+### A group of rx text as a node of a path   [core/labels/rule/group-node]   ruled 2026-11-27
+A named group of rx text is a step in a path like a part label (`g.d` legal, the flat read by skipping, an underscore group a wall); capture and `\k<name>` stay a group's own.
 needs: core/labels/rule/paths
-see: core/labels/labels-vs-captures
-The reading today: no sentence decides it; the evidence engine refuses the read (the first line). Candidates: (a)
-a group is a label but no middle of a path; (b) a group is a node like a part label (the second line's answers,
-the outer group written as a part label). Kept to be asked when the manager can frame it.
-A group inside a group: modes: a compile error (`/(?<g>(?<d>\d))x/ & (g.d: <5)`: the evidence engine reads no group as a middle; no sentence decides it).
-Candidate (b)'s answers: the outer group written as a part label: WHOLE `3x` HOLDS, `7x` FAILS / SEARCHED `7x 3x` `3x`@3 / FIND-ALL `3x 7x 4x` [`3x`@0, `4x`@6] (`[g = /(?<d>\d)/] SEQ /x/ & (g.d: <5)`)
+see: core/labels/labels-vs-captures core/labels/backreferences core/labels/rule/kinds
+- His words: "group-node: agree group as a step. Group names should be labels almost exactly excepting the explicit
+  capture semantics"; the statement as last put: "a named group in rx text is a step in a path like a part label.
+  `g.d` is legal, the flat read still works by skipping, and an underscore group walls what is inside it."
+- The two exceptions, together: a group's name is a capture only by request (lib/structural/capture,
+  core/labels/labels-vs-captures); `\k<name>` inside its rx text reads the group's PCRE capture, which a part label
+  never is (core/labels/backreferences; his recollection, in the details entry).
+- A group in a literal reads as its part label: `/(?<g>(?<d>\d))x/` as `[g = /(?<d>\d)/] SEQ /x/`; a group around a
+  hole, `/(?<g>${A})x/`, as `[g = A]`, so A under it is a part used alone: named, never skipped
+  (core/labels/rule/alone-as-middle), and its own start.
+- An underscore group is an underscore label: a start, never crossed (rule 2), inside and from outside alike. No
+  printed program reads through one; the two that name one (`year`) read the group itself.
+- A group named twice follows the label rules already printed (core/labels/flow; a reading).
+- Its row: core/labels/rule/kinds, "a named group of rx text" and "an underscore group".
+A group inside a group: WHOLE `3x` HOLDS, `7x` FAILS / SEARCHED `7x 3x` `3x`@3 / FIND-ALL `3x 7x 4x` [`3x`@0, `4x`@6] (`/(?<g>(?<d>\d))x/ & (g.d: <5)`)
+The flat read, by skipping: WHOLE `3x` HOLDS, `7x` FAILS / SEARCHED `7x 3x` `3x`@3 / FIND-ALL `3x 7x 4x` [`3x`@0, `4x`@6] (`/(?<g>(?<d>\d))x/ & (d: <5)`)
+From outside, the group's name: WHOLE `3x` HOLDS, `7x` FAILS / SEARCHED `7x 3x` `3x`@3 / FIND-ALL `3x 7x 4x` [`3x`@0, `4x`@6] (`X & (X.g.d: <5)`, X := `/(?<g>(?<d>\d))x/`)
+An underscore group walls, from outside: modes: a compile error (`X & (X.d: <5)`, X := `/(?<_g>(?<d>\d))x/`: the path crosses the underscore group `_g`, not its start (rule 2)).
+An underscore group walls, from above: modes: a compile error (`[n = /(?<_g>(?<d>\d))x/] & (n.d: <5)`: the path crosses the underscore group `_g` (rule 2)).
+The underscore group as the start: WHOLE `3x` HOLDS, `7x` FAILS / SEARCHED `7x 3x` `3x`@3 / FIND-ALL `3x 7x 4x` [`3x`@0, `4x`@6] (`/(?<_g>(?<d>\d))x/ & (_g.d: <5)`)
+A group around a hole, A named: WHOLE `3x` HOLDS, `7x` FAILS / SEARCHED `7x 3x` `3x`@3 / FIND-ALL `3x 7x 4x` [`3x`@0, `4x`@6] (`/(?<g>${A})x/ & (g.A.h: <5)`, A := `/(?<h>\d)/`)
+A group around a hole, A skipped: modes: a compile error (`/(?<g>${A})x/ & (g.h: <5)`, A := `/(?<h>\d)/`: the path skips A, a part used alone, which is never skipped: write `g.A.h`).
+A group around a hole, A's own start: WHOLE `3x` HOLDS, `7x` FAILS / SEARCHED `7x 3x` `3x`@3 / FIND-ALL `3x 7x 4x` [`3x`@0, `4x`@6] (`/(?<g>${A})x/ & (A.h: <5)`, A := `/(?<h>\d)/`)
+
+### The kinds of labels, door by door   [core/labels/rule/kinds]   reading 2026-11-27
+Each kind of label has one row of doors: whether it starts a path inside, is a middle step inside, may be skipped inside, is crossed from outside, and is exported.
+needs: core/labels/rule/paths core/labels/rule/group-node
+see: core/labels/rule/alone-as-middle core/labels/export core/labels/export/arguments core/labels/paths/shorthand-outside core/operators/bindings/label-in-argument
+- The table is the manager's assembly; each cell names its ground, a ruling by its slug or "a reading". "Inside" is
+  the text of one definition; "outside" the bindings that use it (path-rules rule 5).
+  | the kind | start inside | middle step inside | skippable inside | crossed from outside | exported |
+  |---|---|---|---|---|---|
+  | a written part label `[x = A]` | yes (path-rules 3) | yes (path-rules 1) | yes (path-rules 4) | yes (path-rules 5) | yes (export 3) |
+  | an underscore part label `[_x = A]` | yes, as `_x` (equivalence-inside) | no (path-rules 2) | no: its labels count as absent (skip-past-wall) | no (path-rules 2) | no (export 6) |
+  | the blank label `[_ = A]` | no, it has no name (a reading) | no (path-rules 2) | no (skip-past-wall) | no (path-rules 2) | no (label-doors, export 7) |
+  | a part used alone `Q` | yes (path-rules 6) | yes (alone-as-middle) | no, a gate (alone-as-middle) | no, a wall (path-rules 6) | no (export 3) |
+  | a macro call used alone `B(Q)` | yes, as `B` (a reading) | yes (a reading) | no, a gate (a reading) | no, a wall (a reading) | no (a reading) |
+  | an argument's shorthand label (`A` in `B(A)`) | yes, the caller's (shorthand-is-callers) | no, a start only (a reading) | yes, past the body's label: `B.h` (a reading) | no (shorthand-outside) | no (shorthand-outside) |
+  | a sent label (`x` of `R(x:, A)`) | yes, read bare (label-in-argument) | no, a start only (sent-label-wall) | no wall below it is crossed (sent-label-wall) | as a written label (a reading) | as a written label (a reading) |
+  | a label the caller writes in an argument | yes, the caller's own (closing-own-label) | as a written label (a reading) | as a written label (a reading) | as a written label (a reading) | as a written label (a reading) |
+  | a named group of rx text `(?<g>X)` | yes (path-rules 3) | yes (group-node) | yes (group-node) | yes (group-node) | yes (export 3) |
+  | an underscore group `(?<_g>X)` | yes, as `_g` (group-node) | no (group-node) | no (group-node) | no (group-node) | no (export 3) |
+- A path is inside while it crosses no call boundary: past a call, the body's labels are reached from outside, and
+  an argument's own uses below the call are crossed as from outside (a marked reading; so `pub.A.h` for
+  `[pub = B(A)]` is refused while `n.Q.d` is legal in one definition).
+- A label set only inside `!^A` is not visible after it (core/patterns/lookaround/ahead, a marked reading), whatever
+  its row.
+modes: n/a (each row's lines are in the piece it points at)
 
 ### Who reads a label, and how   [core/labels/ownership]   ruled 2026-11-23
 One table, by who writes a label's name and what is done with the spot that holds it: the legal read and its spelling, or the compile error, each cell with its ground.
@@ -735,12 +800,12 @@ Composed: modes: a compile error (`D1 & (D1.c: "3")`, D1 := `CA SEQ CB`, CA := `
 A label is public unless its name begins with `_`; a binding exports the labels its own text writes and those a public part label passes; a part used alone is seen inside it and not exported.
 needs: core/labels/flow
 by: core/principles/namespace-at-reference
-see: core/labels/backreferences core/labels/export/flat-read-outside core/labels/export/capture-export core/labels/export/export-list core/modules/names
+see: core/labels/rule/kinds core/labels/backreferences core/labels/export/flat-read-outside core/labels/export/capture-export core/labels/export/export-list core/modules/names
 1. A private label (a `_` LABEL) is visible only inside the binding it is written in; a `_` PART LABEL is protected
    (statement 6); the bare `_` of `[_ = A]` is a leave-out's unusable name (core/modules/leave-out; statement 7).
 2. Inside a binding the public labels of everything written or used there are visible, read as labels are (last
    mention; an ambiguous reference is the error). An UNLABELLED use carries the implicit label of the binding's name,
-   protected, exported nowhere: `A.h`, a step `n.A.h`, never skipped (rule/alone-as-middle; rule line 3).
+   protected, exported nowhere: `A.h`, a step `n.A.h`, never skipped (rule/alone-as-middle; rule line 3). Parentheses aside: `[n = (Q)]` is `[n = Q]`, a labelled use (bare parentheses are no spot; a NAMED group of rx text is one, rule/group-node).
 3. Outside a binding, what passes out is what it EXPORTS: its OWN names (a group in its literals, a part label it
    writes, a label an export list it writes takes; none beginning with `_`) and, through a public part label, the
    labels that part exports, by path (`pub.a.h`, core/labels/rule/paths rules 1 and 5, a member's metadata alike)
@@ -862,7 +927,7 @@ Through a call that passes its argument's labels on: WHOLE `3` HOLDS, `7` FAILS 
 ### What the caller writes inside an argument   [core/labels/export/arguments]   ruled 2026-11-23
 A label the caller writes in its own text inside an argument (a part label, a group of an in-place literal, a sent label) is the caller's own, set where the body places the template.
 needs: core/labels/export core/labels/export/export-list
-see: core/labels/paths/argument-default core/labels/paths/two-sources core/labels/paths/label-reference core/operators/bindings/label-in-argument lib/convention/argument-labels
+see: core/labels/paths/argument-default core/labels/paths/two-sources core/labels/paths/label-reference core/operators/bindings/label-in-argument lib/convention/argument-labels core/labels/rule/kinds
 - His words: "argument label: yes. these mechanisms, a: and B(x=A), alleviates some of my concerns about the default
   hiding the internal labels." (his `B(x=A)` is `B([x = A])`, core/spellings/placeholders).
 - Placed once by the body it is set once; twice, the same-label-twice rules; never, the never-pass warning.
@@ -1071,7 +1136,7 @@ The caller's own label, under a closing body: WHOLE `3xx` HOLDS, `7xx` FAILS / S
 ### The caller's read of an argument's labels by its name   [core/labels/paths/argument-default]   ruled 2026-11-23
 The caller reads the labels of an argument's binding through its name (`A.d` in `B(A)`): the caller's own shorthand label on the spot, whatever the body does with it.
 needs: core/labels/paths/closed-argument core/labels/export core/principles/label-names-spot
-see: core/labels/paths/call-prefix core/labels/paths/two-sources core/holes/bare-condition/nested-scope lib/convention/argument-labels
+see: core/labels/paths/call-prefix core/labels/paths/two-sources core/holes/bare-condition/nested-scope lib/convention/argument-labels core/labels/rule/kinds
 - His words: "shorthand-is-callers: yes thats it exactly. Setting a label closes a path (through the shorthand in
   that binding) but doesn't block out the target.", on: "The shorthand label is the caller's own: `B(A)` read
   through `A.d` means `B([A = A])`, whatever B's body does with the spot. Condition 4 counts only labels made in
@@ -1111,6 +1176,7 @@ Through a part label in the body: WHOLE `42xx` HOLDS, `100xx` FAILS, `042xx` FAI
 ### The shorthand read from outside   [core/labels/paths/shorthand-outside]   ruled 2026-11-27
 The shorthand label is protected and adds no export: a read from outside the caller through a label on the call (`pub.A.h` for `[pub = B(A)]`) is a compile error.
 needs: core/labels/paths/argument-default
+see: core/labels/rule/kinds
 - His words: "shorthand-outside: error. Agree."; the lean as put: "An implicit name, whether from a part used
   alone or from an argument passed by name, behaves one way: named inside, invisible outside."
 - The written-out `[pub = B([A = A])]` reads A's `h` (the second line); the not-taken candidate is in the details
@@ -1239,7 +1305,8 @@ see: core/values/reads core/values/computed-labels lib/counting/count core/value
 - Outside a group question `($h: S)` and `(h: S)` answer alike in every mode ("`$x` and `x:` never disagree",
   core/values/reads), so the label form is the value form's common case (a reading; the line "A read on the left").
   A group question takes no entry (`some(@h, "7")` reads the array, `$h` the label as it stands): a condition as its
-  argument is a compile error naming the array form (the line "Inside a group question").
+  argument is a compile error naming the array form (the manager's reading (a) of array-argument; the line "Inside
+  a group question").
 - Each component of a joint entry's left part may be a value, each single (a reading; the line "A joint entry with
   a value"); a default (`h = v`) stays a label form (a reading, the manager's answer to his question).
 - His observation, "it suggests $h could go there which is also new": the `$h` form, the line below (a reading).
@@ -1250,7 +1317,7 @@ WHOLE `3+4` HOLDS, `7+8` FAILS / SEARCHED `7+8 2+2` `2+2`@4 / FIND-ALL `1+1 9+9 
 Nothing fails the entry: WHOLE `7` HOLDS, `3` FAILS / SEARCHED `x3 7` `7`@3 / FIND-ALL `3 7 5 1` [`7`@2, `5`@4] (`/(?<a>\d)/ & (($a - 5): >= 0)`: `3 - 5` is nothing)
 Its not holds on nothing: WHOLE `7` FAILS, `3` HOLDS / SEARCHED `x3 7` `3`@1 / FIND-ALL `3 7 5 1` [`3`@0, `1`@6] (`/(?<a>\d)/ & !(($a - 5): >= 0)`)
 A read on the left: WHOLE `3x` HOLDS, `x` FAILS, `7x` FAILS / SEARCHED `7x 3x` `3x`@3 / FIND-ALL `3x x 7x` [`3x`@0] (`/(?<h>\d)?x/ & ($h: <5)`, as `(h: <5)`)
-Inside a group question: modes: a compile error (`/(?<h>\d);(?:(?<h>\d);)*/ & some(($h: "7"))`: a group question takes the array, `some(@h, "7")`; `count((($a + $b): <10))` alike).
+Inside a group question: modes: a compile error (`/(?<h>\d);(?:(?<h>\d);)*/ & some(($h: "7"))`: a group question takes the array, `some(@h, "7")`; `count((($a + $b): <10))` alike; a reading).
 A value with no label: WHOLE `x` HOLDS / SEARCHED `ax` `x`@1 / FIND-ALL `x x` [`x`@0, `x`@2] (`/x/ & ("Frank": /F.*/)`)
 A joint entry with a value: WHOLE `3+4=7` HOLDS, `7+8=1` FAILS, `1+2=34` FAILS / SEARCHED `7+8=1 2+2=4` `2+2=4`@6 / FIND-ALL `1+1=2 9+9=1 5+4=12` [`1+1=2`@0, `5+4=1`@12] (`/(?<a>\d)\+(?<b>\d)=(?<c>\d+)/ & ((($a + $b), c): (<10, /\d/))`)
 
@@ -1286,7 +1353,7 @@ A loop that can match empty: WHOLE `x` HOLDS, `3x` HOLDS, `7x` HOLDS, `73x` HOLD
 A joint left part: modes: a compile error for now (`/(?<a>\d)?,(?<b>\d)?/ & ((a, b) ?: >= (5, 3))`).
 A value left part: modes: a compile error for now (`/(?<a>\d)?,(?<b>\d)?/ & (($a + $b) ?: <10)`).
 Its not, the plain entry: WHOLE `x` HOLDS, `3x` FAILS, `7x` HOLDS / SEARCHED `3x 7x` `x`@1 / FIND-ALL `7x 3x x` [`7x`@0, `x`@4, `x`@6] (`/(?<h>\d)?x/ & !(h: <5)`)
-Inside a group question: modes: a compile error (`/(?<h>\d);(?:(?<h>\d);)*/ & some((h ?: "7"))`: a group question takes the array, `some(@h, "7")`).
+Inside a group question: modes: a compile error (`/(?<h>\d);(?:(?<h>\d);)*/ & some((h ?: "7"))`: a group question takes the array, `some(@h, "7")`; for now, a reading).
 
 ### The edges of the optional entry   [core/conditions/form/optional-edges]   open optional-entry-edges 2026-11-23
 Is `?:` legal on a joint left part and on a value left of `:`, and what does it mean there? For now both are compile errors.
@@ -1513,9 +1580,9 @@ see: lib/control/when lib/control/when-test/not lib/counting/some core/filters/f
 - `!^A` is the negative lookahead (core/patterns/lookaround/ahead); `!some(@d, S)` is `occurs.none(@d, S)`.
 - `!!X` is X (a reading). There is no `:!`, `?:!` or `&!`: the complement after them is `~` (`(h: ~S)`,
   `(h ?: ~S)`, `A & ~B`).
-- `!` on a set or a pattern is a compile error whose message names the form to write: the complement `~X`, and
-  `!^X` for "cannot match here"; before a compound set it names the parenthesised form (`!(<5 | >8)` names
-  `~(<5 | >8)`; the manager's reading of the error's text). `~` on a test is the compile error naming `!`.
+- `!` on a set or a pattern is a compile error naming the complement `~X` (bang-split line 4); that it names
+  `!^X` too, for "cannot match here", and the parenthesised form before a compound set (`!(<5 | >8)` names
+  `~(<5 | >8)`), are the manager's readings of the error's text. `~` on a test is the compile error naming `!`.
 - Whether `!A` on a consuming pattern may later mean `(?!A)` is not ruled: an error today, allowable later without
   changing an answer (core/principles/conservative-first).
 - No other spelling of negation exists (a reading); lower-case `not` is no spelling: a word is a NAME, and no name
@@ -1528,7 +1595,7 @@ Twice: WHOLE `x` FAILS, `3x` HOLDS, `7x` FAILS / SEARCHED `7x 3x` `3x`@3 / FIND-
 `!` on a compound set: modes: a compile error (`/(?<h>\d)/ & (h: !(<5 | >8))`: the complement is `~(<5 | >8)`).
 
 ### An effect under negation   [core/filters/negation/effects]   ruled 2026-11-27
-An effect cannot stand under a negation, `!` or `~`: a compile error. What an effect is, and the depth: the manager's readings (a), (b) below.
+An effect cannot stand under a negation: a compile error. What an effect is, which operators negate (`!`, `~`) and the depth: the manager's readings (a), (b) below.
 needs: core/filters/negation
 see: lib/structural/capture lib/control/when core/operators/statements core/diagnostics/errors
 - His words: "capture-negated: broaden to any effect macro cannot be under negation."; "cannot" is read as a
@@ -1564,12 +1631,27 @@ see: core/principles/all-dfa core/filters/kinds core/operators/precedence
 | `!^A` | a pattern | A cannot match here | can match | yes |
 | `(h: ~S)` | a set | h present and outside S | a test | yes |
 | `A & ~B` | a pattern | A's paths whose stretch B does not match whole | filter only | maybe, about 0.8; build cost unmeasured |
-| `!X`, X a set or pattern | | a compile error naming `~` | | n/a |
-| `~T`, T a test | | a compile error naming `!` | | n/a |
 
-- Lookbehind has no operator for now (line 6): rx text writes it. `^` and `!` take ONE atom
+- One table of the operand's kind against the operator (the general form; each cell ruled where line 1, 2 or 4
+  says it, a reading where marked). A lookaround is zero width: it can match and is a test (line 1).
+
+| operand | `!` | `~` | `^` |
+|---|---|---|---|
+| a consuming pattern A | a compile error naming `~` (line 4; `!^A` too, a reading) | the complement, filter-only (line 2) | the lookahead `^A` (line 5) |
+| a lookaround: `^A`, `!^A`, rx text `/(?=x)/`, `/(?!x)/` | its not (line 1): `!^A`; `!/(?=x)/` is `/(?!x)/` (a MARKED reading) | a compile error naming `!` (`~^A` names `!^A`; a reading) | itself (a reading) |
+| a condition, a group question | its not (line 1) | a compile error naming `!` (line 4's twin) | `^c` is c, zero width already (a MARKED reading) |
+| a set S | a compile error naming `~` (line 4) | the complement `~S` (line 2) | not stated |
+
+- Lookbehind has no operator for now (line 6): rx text writes it, `/(?<=x)/` and `/(?<!x)/` (a lookaround in the
+  table's second row; parked/ideas/lookbehind-operator). That `^` and `!` take ONE atom is a reading
   (core/operators/precedence).
+- `when`'s guard is `!^test` (lib/control/when): for a condition test it is `!c` by the third row's two readings (the
+  line "A condition test in `when`").
 Ahead: WHOLE `7` FAILS, `7x` FAILS / SEARCHED `7x 8` `7`@0 / FIND-ALL `1x 2 3x4` [`1`@0, `3`@5] (`/\d/ SEQ ^/x/`)
+`!` on a lookaround in rx text: WHOLE `x` HOLDS, `x1` FAILS / SEARCHED `1x2 x3 4x x` `x`@8 / FIND-ALL `1x2 x3 4x x` [`x`@8, `x`@10] (`"x" SEQ !/(?=\d)/`)
+`^` on a condition: WHOLE `3x` HOLDS, `7x` FAILS / SEARCHED `7x 3x` `3x`@3 / FIND-ALL `3x 7x 4x` [`3x`@0, `4x`@6] (`/(?<h>\d)/ SEQ ^(h: <5) SEQ /x/`)
+A condition test in `when`: WHOLE `3a` HOLDS, `3b` FAILS, `7a` FAILS, `7b` HOLDS / SEARCHED `3b 7b` `7b`@3 / FIND-ALL `3a 7b 3b 7a` [`3a`@0, `7b`@3] (`/(?<h>\d)/ SEQ when((h: <5), /a/, /b/)`)
+`~` on a lookahead: modes: a compile error (`"x" SEQ ~^/\d/`: a lookaround is a test; its not is `!^/\d/`).
 Kinds: WHOLE `123` HOLDS, `812` FAILS / SEARCHED `7 8 12` `12`@4 / FIND-ALL `12 7 8 93` [`12`@0, `93`@7] (`/\d+/ & neither`, neither := `~/7\d*/ & ~/8\d*/`)
 
 ## Values   [core/values]
@@ -1681,16 +1763,22 @@ see: core/values/arithmetic lib/modifiers/length lib/modifiers/month-numbered co
 In a set: WHOLE `3+4` HOLDS, `7+8` FAILS / SEARCHED `7+8 2+2` `2+2`@4 / FIND-ALL `1+1 9+9 5+4` [`1+1`@0, `5+4`@8] (`/(?<a>\d)\+(?<b>\d)/ & (a: <(10 - $b))`)
 
 ### Metadata of a member   [core/values/metadata]   ruled 2026-11-25
-A part label over an array carries two fields: `.index`, the 1-based position in the array of the member that matched, and `.label`, that member's name.
+`X.a.index` is the 1-based position, among X's alternatives, of the alternative `a` was set in: a constant for a label inside one alternative, the matched member for a label over the whole array.
 needs: core/labels/paths core/conditions/form/value-left
 see: core/arrays/lift core/modules/map core/modules/map/access lib/modifiers/month-numbered lib/structural/capture
-- His ruling, map-creator line 7: "`X.a.index` is the position of the alternative `a` was set in"; on a map the
-  label is the element's (`m.b.index` is `2` where the alternative b matched). `.label` stays a reading.
+- His ruling, map-creator line 7, whole: "`X.a.index` is the position, among X's alternatives, of the alternative
+  `a` was set in: a constant for a label inside one alternative (your 1, 1, 2), the matched member for a label over
+  the whole array." On a map the label is the element's (`m.b.index` is `2` where the alternative b matched).
+- His F, `F := [a=99]seq [b=76]|[c=87]`: `a` and `b` are inside alternative 1, `c` inside alternative 2, so
+  `F.a.index` and `F.b.index` are `1`, `F.c.index` is `2`, constants (the lines "His F").
+- `.label`, the matched member's name, is a reading, not ruled.
 - `days := [w = [/Mon/, /Tue/, /Wed/]]`: on `Tue`, `w.index` is `2`.
 - 1-based everywhere, as PCRE's group numbers are; `[0]` is the whole rx.
 - A user label named `index` or `label` would hide them: a compile error (a reading).
 - Read like labels: `$w.index`, or left of `:` (`(w.index: >= 2)`), in the definition that writes `w`; from a
   definition that uses `days`, through its name (`days.w.index`: core/labels/paths/label-reference).
+His F, a label inside one alternative: WHOLE `87` HOLDS, `9976` FAILS / SEARCHED `9976 87` `87`@5 / FIND-ALL `9976 87 99` [`87`@5] (`F & (F.c.index: 2)`, F := `[a = "99"] SEQ [b = "76"] | [c = "87"]`)
+His F, the other position: WHOLE `87` FAILS, `9976` FAILS / SEARCHED `9976 87` FAILS / FIND-ALL `9976 87` [] (`F & (F.c.index: 1)`, F := `[a = "99"] SEQ [b = "76"] | [c = "87"]`)
 WHOLE `Tue` HOLDS, `Mon` FAILS / SEARCHED `Mon Wed` `Wed`@4 / FIND-ALL `Tue Mon Wed` [`Tue`@0, `Wed`@8] (`/${days}/ & (days.w.index: >= 2)`, days := `[w = [/Mon/, /Tue/, /Wed/]]`)
 
 ### Arithmetic   [core/values/arithmetic]   ruled 2026-11-19
@@ -1864,11 +1952,12 @@ Nothing is joined or copied. A hole may form part of a capturing group's name (`
   "A partial label-only name").
 - A capturing group's name may be partial and is then a capture only: no text writes the composed name, so no
   label is read by it (the manager's reading of "the label portion is lost", the reading taken, told to him).
-- `_` passed for a parameter that fills a capturing group's WHOLE name (`(?<${n}>...)`) is `(...)`, regex's
-  group with no name (the manager's reading; the line "A capturing group, the unspecified label").
+- `_:` passed for a label parameter that fills a capturing group's WHOLE name (`(?<${n}>...)`, n marked `n:`)
+  is `(...)`, regex's group with no name (the manager's reading; the line "A capturing group, the unspecified
+  label"); unmarked, n is refused at the definition (core/operators/bindings/label-needs-mark).
 WHOLE `7x` HOLDS, `x` FAILS / SEARCHED `a7x` `7x`@1 / FIND-ALL `7x 8x` [`7x`@0, `8x`@3] (`/(?<${n}>\d)x/`, n := "d")
 A partial label-only name: modes: a compile error (`A(x:) SEQ "!"`, A(l:) := `/(?<:f_${l}>\d)/`: the name hole of a label-only group must be the whole name).
-A capturing group, the unspecified label: WHOLE `7x` HOLDS, `x` FAILS / SEARCHED `a7x` `7x`@1 / FIND-ALL `7x 8x` [`7x`@0, `8x`@3] (`C(_)`, C(n) := `/(?<${n}>\d)x/`, is `(\d)x`)
+A capturing group, the unspecified label: WHOLE `7x` HOLDS, `x` FAILS / SEARCHED `a7x` `7x`@1 / FIND-ALL `7x 8x` [`7x`@0, `8x`@3] (`C(_:)`, C(n:) := `/(?<${n}>\d)x/`, is `(\d)x`)
 
 ### The class-member hole   [core/holes/class]   ruled 2026-11-21
 Several values in a class-member hole are an alternation of the class, one class per value, as a pattern hole is an alternation: `[${c}]`, c := [x, y], is `[x] | [y]`.
@@ -2244,7 +2333,7 @@ needs: core/patterns/sequence core/patterns/quantifiers core/filters/and core/va
 |---|---|---|---|
 | 1 | `.` field, call `f(..)`, index `X[..]` | postfix after an OPERAND, left | a reading |
 | 2 | `+ +? ++ * *? *+ ? ?? ?+` and the brace counts `{a,b}` on a pattern | postfix, stacking left to right | postfix and tightest of the four: ruled (core/patterns/quantifiers); stacking a reading |
-| 3 | prefix `!`, `~`, `^`, `!^`, `@`, `< <= > >= ==` | prefix, on ONE atom with its postfix operators | `!`, `~`, `^` on one atom: ruled (core/filters/family); the rest a reading |
+| 3 | prefix `!`, `~`, `^`, `!^`, `@`, `< <= > >= ==` | prefix, on ONE atom with its postfix operators | a reading (bang-split rules no binding strength) |
 | 4 | `* %` on numbers | binary, left | a reading |
 | 5 | `+ -` on numbers | binary, left | a reading |
 | 6 | the sequence operator | binary, n-ary | tighter than `&` and `|`: ruled (core/patterns/sequence) |
@@ -2263,7 +2352,8 @@ needs: core/patterns/sequence core/patterns/quantifiers core/filters/and core/va
   "the precedence needs clarifying hence []"). `,` also separates entries there, loosest: `[a, b, c]` is
   `a | b | c` (his "a macro that takes a,b,c and turns it into an array"; a reading).
 - The prefix forms take ONE atom: `!^A SEQ C` is `(!^A) SEQ C`, `~A & B` is `(~A) & B`, `!some(@d, S) & P` is
-  `(!some(@d, S)) & P`; `@d` marks an array only as a group question's argument (readings, core/filters/family).
+  `(!some(@d, S)) & P`; `@d` marks an array where a group question or the capture request takes one
+  (`some(@d, S)`, `capture(@x)`, lib/structural/capture) (readings).
 - A `{` directly after an operand is a brace count (core/patterns/quantifiers/braces); a `{` that begins an operand
   is a map literal (core/modules/map); `m[key]` is a selection, `m.a` a member (readings).
 - A string runs from its quote to the same quote on its line (core/patterns/strings); nothing inside it is an operator.
@@ -2312,15 +2402,31 @@ see: parked/ideas/label-parameter core/holes/bare-condition/nested-scope core/la
 - His first alternative to a condition bound alone, `A(x:) := (x: < 2100)`, reads a label it never places: the
   reference kind, off limits for users (core/operators/bindings/label-kinds).
 - Not defined: whether a body may read its label parameter with `$`.
-- A body that places a parameter's name as a label needs the mark: `[l = ...]` or `(?<:${l}>...)` with `l` not
-  marked `l:` is a compile error at the definition. His words: "label-needs-mark: yes. And yes to literal issue".
+- One rule here is ruled, in its own sub-piece: a label placed under an unmarked parameter's name is a compile
+  error at the definition (core/operators/bindings/label-needs-mark).
 His example: WHOLE `5` HOLDS, `55` FAILS, `7` FAILS / SEARCHED `7 5` `5`@2 / FIND-ALL `5 7 56 15` [`5`@0, `5`@4, `5`@8] (`A(x:) & (x: 5)`, A(l:) := `/(?<:${l}>\d+)/`)
 Placed twice, the plain read: WHOLE `7,5` HOLDS, `5,7` FAILS, `5,5` HOLDS / SEARCHED `5,7 7,5` `7,5`@4 / FIND-ALL `7,5 5,7 1,5 5,5` [`7,5`@0, `1,5`@8, `5,5`@12] (`A(x:) SEQ "," SEQ A(x:) & (x: 5)`, A(l:) := `/(?<:${l}>\d+)/`)
 Placed twice, a group question: WHOLE `7,5` HOLDS, `5,7` HOLDS, `7,7` FAILS / SEARCHED `7,7 5,7` `5,7`@4 / FIND-ALL `7,5 5,7 1,2 5,5` [`7,5`@0, `5,7`@4, `5,5`@12] (`A(x:) SEQ "," SEQ A(x:) & some(@x, "5")`, A(l:) := `/(?<:${l}>\d+)/`)
 Placed twice, the index: WHOLE `7,5` FAILS, `5,7` HOLDS / SEARCHED `7,5 5,7` `5,7`@4 / FIND-ALL `7,5 5,7 1,5 5,5` [`5,7`@4, `5,5`@12] (`A(x:) SEQ "," SEQ A(x:) & (x[1]: 5)`, A(l:) := `/(?<:${l}>\d+)/`)
 Across `&`: modes: a compile error (`A(x:) & A(x:) & (x: 5)`, A(l:) := `/(?<:${l}>\d+)/`: both sides set x, an ambiguous reference (core/labels/flow)).
+
+### A label under a parameter's name needs the mark   [core/operators/bindings/label-needs-mark]   ruled 2026-11-27
+A body that writes a label under the name of a parameter not marked as a label (`[l = ...]` with `l` not `l:`) is a compile error at the definition, the message naming the mark.
+needs: core/operators/bindings/label-variables
+see: core/holes/name core/labels/rule/sent-label-wall
+- His words: "label-needs-mark: yes. And yes to literal issue"; as asked: "if a body writes `[l = ...]` and `l` is a
+  parameter that was not marked as a label (`l:`), is that a compile error at the definition?"
+- The group-name form `(?<:${l}>...)` with `l` unmarked is the same error: the manager's reading of "yes to literal
+  issue", told to him as the reading taken.
+- A capturing group's whole name from a parameter, `(?<${n}>...)` with `n` unmarked, is the same error (a MARKED
+  reading: a group's name is a label almost exactly, core/labels/rule/group-node); written `n:`, the line "A
+  capturing group, the unspecified label" (core/holes/name).
+- A body's own label that shares no name with a parameter is untouched; a parameter marked `l:` is unchanged (the
+  manager's readings).
 The label parameter not marked: modes: a compile error (`R(x, A)`, A := `/(?<h>\d)/`, R(l, v) := `/${[l = v]}xx/`: the body places the parameter `l` as a label; a label parameter is marked `l:` in the head).
 The group-name form not marked: modes: a compile error (`A(x)`, A(l) := `/(?<:${l}>\d+)/`: the body places the parameter `l` as a label; a label parameter is marked `l:` in the head).
+The mark written: WHOLE `3xx` HOLDS, `7xx` FAILS / SEARCHED `7xx 3xx` `3xx`@4 / FIND-ALL `3xx 7xx 4xx` [`3xx`@0, `4xx`@8] (`R(x:, A) & (x.h: <5)`, A := `/(?<h>\d)/`, R(l:, v) := `/${[l = v]}xx/`)
+A capturing group's name, not marked: modes: a compile error (`C(x)`, C(n) := `/(?<${n}>\d)x/`: the body places the parameter `n` as a group's whole name, a label; a label parameter is marked `n:` in the head; a marked reading).
 
 ### The unspecified label   [core/operators/bindings/label-omitted]   ruled 2026-11-23
 At a call `_` is the unspecified label (`string(_:)`, lib/json/members' sketch, whose body only places `l`); a parameter with no default is never omitted, labels or not.
@@ -2381,7 +2487,7 @@ A body reading its own label after placing it: WHOLE `3` HOLDS, `7` FAILS / SEAR
 ### A label sent inside an argument   [core/operators/bindings/label-in-argument]   ruled 2026-11-23
 A caller may send a label parameter inside an in-place argument (`W(_:, S(body:))`): the name is the caller's own, read bare; nothing on the outer spot closes it (core/labels/rule line 4).
 needs: core/operators/bindings/label-variables core/operators/bindings/label-omitted
-see: core/labels/export/arguments core/labels/paths/argument-default lib/json/members
+see: core/labels/export/arguments core/labels/paths/argument-default lib/json/members core/labels/rule/kinds
 - His words: "for this issue, sending the unbound label is ok and! i would say it wouldn't be affected by the _ as it
   becomes an accepted backdoor into the inner pattern- which is almost the whole point."
 - Placed once, twice or never by the receiving body: set once, the same-label-twice rules, the never-pass warning
@@ -2526,7 +2632,6 @@ see: core/modules/map/access core/values/metadata core/labels/export parked/idea
   reached by the one `.` (the earlier ruling, which stands); what kind of thing a module is is not ruled.
 - The literal enforces the labels: an element with no label is a compile error; a numeral is not a label name.
   The literal's spelling is a placeholder; the labelled array `[a = A | b = B]` stays legal, unenforced (readings).
-  No deduplication: two elements of one text stay two ("m["a"|1]: I would not deduplicate").
 - As a pattern `m` is `A | B` in written order; each alternative carries its element's label (`m.a` after a match
   reads the alternative `a`, `.index` its position: core/values/metadata).
 - `.` has one meaning: a field of the map interface of the thing on its left (a label, a module member, metadata).
@@ -2536,9 +2641,8 @@ see: core/modules/map/access core/values/metadata core/labels/export parked/idea
   member, `h[2]` on a label the second setting (core/labels/labels-vs-captures/array-vs-passes).
 - An infinite key is under construction (core/diagnostics/under-construction).
 - Open, not ruled: a key read at match time; brackets on a module; the labels under a join; the two `.index`
-  edges (an alternative set twice, one never set): listed in the details entry.
+  edges (a label whose alternative was not taken; nested alternations): listed in the details entry.
 As a pattern: WHOLE `7` HOLDS, `x` HOLDS, `7x` FAILS / SEARCHED `-x7` `x`@1 / FIND-ALL `7x-y` [`7`@0, `x`@1, `y`@3] (`m`, m := `{a = /\d/, b = /[a-z]/}`)
-No deduplication: WHOLE `x!` HOLDS, `y!` FAILS / SEARCHED `ax!` `x!`@1 / FIND-ALL `x! y! x!` [`x!`@0, `x!`@6] (`m SEQ "!"`, m := `{a = "x", b = "x"}`)
 An element with no label: modes: a compile error (`m`, m := `{a = /x/, /y/}`: the map literal labels every element).
 
 ### Members and selection   [core/modules/map/access]   ruled 2026-11-25
@@ -2547,16 +2651,20 @@ needs: core/modules/map
 see: core/values/metadata core/arrays/lift
 - His words: "Specifically F["z"] is a search and F.z must exist or error"; on the order: "I'd see it as the keys
   order".
-- The result is in the KEY's order: `m["b" | 1]` is b then the first element; every result kept, none
-  deduplicated; nothing found gives the empty array (the never-matching rx as a pattern: core/holes/zero-values).
+- The result is in the KEY's order: `m["b" | 1]` is b then the first element; nothing found gives the empty array
+  (the never-matching rx as a pattern: core/holes/zero-values). The order shows where one element's match is a
+  prefix of another's (the lines "the key's order").
+- Every result kept, none deduplicated, his words of the search's results: "m["a"|1]: I would not deduplicate". It
+  is seen only through `.index` or a count; as a pattern the same result twice matches as once (a reading).
 - `m.a` is the element where a pattern is expected and the label's text left of a colon (his line 3).
 - The manager's readings: the accessor works on any pattern with labels (positions over its alternatives, names
   over its visible labels); a bare name in the brackets is a binding's value; a one-name result is the source's
   element, not renumbered (`m["a"].index` is `m.a.index`); `m[0]` stays the whole rx; a name on an unlabelled array
   finds nothing; the same result twice matches as once; an empty result draws the can-never-match warning.
-- `X.a.index` is the position of the alternative `a` was set in (core/values/metadata).
+- `X.a.index` is the position, among X's alternatives, of the alternative `a` was set in (core/values/metadata).
 A member: WHOLE `7` FAILS, `x` HOLDS / SEARCHED `7x` `x`@1 / FIND-ALL `7x y` [`x`@1, `y`@3] (`m.b`, m := `{a = /\d/, b = /[a-z]/}`)
-A search, the key's order: WHOLE `7x` HOLDS, `x7` HOLDS, `77` HOLDS / SEARCHED `-77 x7` `77`@1 / FIND-ALL `7x x7 77` [`7x`@0, `x7`@3, `77`@6] (`m["b" | 1] SEQ /\w/`, m := `{a = /\d/, b = /[a-z]/}`)
+A search, the key's order: WHOLE `12` HOLDS, `1` HOLDS, `123` FAILS / SEARCHED `123` `12`@0 / FIND-ALL `123` [`12`@0, `3`@2] (`m["b" | "a"]`, m := `{a = /\d/, b = /\d\d/}`)
+The key's order, the other way: WHOLE `12` HOLDS, `1` HOLDS, `123` FAILS / SEARCHED `123` `1`@0 / FIND-ALL `123` [`1`@0, `2`@1, `3`@2] (`m["a" | "b"]`, m := `{a = /\d/, b = /\d\d/}`)
 A search by position: WHOLE `7` FAILS, `x` HOLDS / SEARCHED `7x` `x`@1 / FIND-ALL `7x y` [`x`@1, `y`@3] (`m[2]`, m := `{a = /\d/, b = /[a-z]/}`)
 Nothing found: WHOLE `q` HOLDS, `7` FAILS, `x` FAILS / SEARCHED `7xq` `q`@2 / FIND-ALL `7 q x` [`q`@2] (`m["z"] | "q"`, m := `{a = /\d/, b = /[a-z]/}`)
 A member the map lacks: modes: a compile error (`m.z`, m := `{a = /x/, b = /y/}`: no member z; `m["z"]` is the search, empty).
@@ -2721,14 +2829,14 @@ needs: core/values/functions core/operators/statements core/modules/conflicts
 | a plain, `$` or index read of a name two sides of one `&` set, where the read sees both: written in place, from outside a binding, through a part label over the chain, through two export lists (`d.h`, d := `/(?<h>\d)\d/ & /\d(?<h>\d)/`) | core/labels/flow |
 | an export list naming a label the part does not export (`[(=hour) = isodate]`; `[(=d) = B(A)]`, B's body using its argument alone); the cross case `(=year) := isodate` (for now) (readings) | core/labels/export/export-list |
 | a condition as a group question's argument (it names the array form); pairing two arrays in one call (for now) | core/labels/labels-vs-captures/array-vs-passes, lib/counting/some |
-| `!` on a set or pattern (it names `~` and `!^`); `~` on a test (it names `!`); `^~A` (it names `!^A`); `x{}` and `x{,}`; braces on a condition | core/filters/negation, core/filters/complement, core/patterns/lookaround/ahead, core/patterns/quantifiers/braces |
-| a string escape not among the six (it names the rx form); a raw line end in a string; adjacent strings; a map member `m.a` the map lacks; a numeral as a label name in a map literal | core/patterns/strings, core/modules/map, core/modules/map/access |
+| `!` on a set or pattern (it names `~`; that it names `!^` too, a reading); `~` on a test (it names `!`); `^~A` (it names `!^A`); `x{}` and `x{,}`; braces on a condition | core/filters/negation, core/filters/complement, core/patterns/lookaround/ahead, core/patterns/quantifiers/braces |
+| a string escape not among string-literals line 3's (that it names the rx form, a reading); a raw line end in a string; adjacent strings; a map member `m.a` the map lacks; a numeral as a label name in a map literal | core/patterns/strings, core/modules/map, core/modules/map/access |
 | a separately defined piece naming a label it does not hold, at its definition | core/holes/bare-condition/nested-scope |
 | a condition, computed value or set bound alone naming a label with no target in its binding, at the binding; a condition naming only `0` bound alone (for now) | core/holes/bare-condition/bound-condition, core/holes/bare-condition/zero-binding |
 | a group question or an index on `0`; a capture request on an open `0` (for now); an effect under `!` or `~`, `when`'s test included (a reading) | core/conditions/match-so-far, lib/structural/capture, core/filters/negation/effects |
 | a value of several strings left of `:` (for now) | core/conditions/form/value-left |
 | a plain read through a binding's or a macro's prefix, used more than once (it says to label the part); the index through `&`-joined uses (for now) | core/labels/paths/binding-prefix, core/labels/paths/call-prefix |
-| a path that contains an underscore label not its start (rule 2), or reads from outside through a part used alone (rule 6); the caller's `A.d` where the caller labels the argument itself (condition 4) or references A twice in its text (condition 1) | core/labels/rule/paths, core/labels/paths/argument-default, core/labels/ownership |
+| a path that contains an underscore label or an underscore group not its start (rule 2; group-node), or reads from outside through a part used alone (rule 6); a path that skips a part used alone, or steps through one used more than once (alone-as-middle); the caller's `A.d` where the caller labels the argument itself (condition 4) or references A twice in its text (condition 1) | core/labels/rule/paths, core/labels/paths/argument-default, core/labels/ownership |
 | a positional entry after a named one (for now); a parameter filled twice or a name the head lacks; two heads for one name; a default naming a later parameter; `_` where the construct has no form without the part | core/operators/bindings/call-forms, core/operators/bindings/unspecified |
 | a quantifier on a condition; a piece of a filter operand that might look outside the matched text | core/conditions/quantified, core/filters/operand-context |
 | an rx where the other kind is needed (can match, can filter) | core/filters/kinds |
@@ -2825,7 +2933,7 @@ Every spelling in these documents is a placeholder, settled together in one spel
 | a part's LABEL PATH (`aa.h`); the private `_` prefix; `[_ = A]`; the part label named for its binding (his `[=year]`, read as `[year = year]`) | core/labels/paths, core/labels/export |
 | the CONDITIONAL (`when(A, B, else = C)`), its argument shape, a `when` operator, the comma-free keyword form; a library name `peek(A)` | lib/control/when, lib/control/peek |
 | the NOT `!X`, the COMPLEMENT `~X`, the LOOKAHEAD `^A`, `!^A`; the GROUP QUESTION's `@d` and `every`; the BRACE COUNTS | core/filters/family, core/patterns/lookaround/ahead, lib/counting/some, lib/counting/every, core/patterns/quantifiers/braces |
-| the MAP literal `{a = A}`, `m.a`, `m[key]`; the STRING delimiters, the six escapes, the reserved triple quote | core/modules/map, core/modules/map/access, core/patterns/strings |
+| the MAP literal `{a = A}`, `m.a`, `m[key]`; the STRING delimiters, the seven escapes of string-literals line 3, the reserved triple quote | core/modules/map, core/modules/map/access, core/patterns/strings |
 | the condition's parentheses (`(0: rx.digit)`) | core/spellings/condition-parentheses |
 | the ANY-TEXT pattern (`anything`); a constant for the never-matching rx | lib/sets/anything, parked/ideas/never-constant |
 | the EXPLICIT PRODUCT (`cartesian(...)`), if adopted | parked/ideas/cartesian |

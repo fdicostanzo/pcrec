@@ -391,14 +391,16 @@ history:
 
 ## lib/control/peek — peek
 was: core/conditional/peek (2026-11-19, the owner: core document macros are defined in the library unless primitive; since refined the same day: every call-form name is a library piece, the "primitive" designation withdrawn)
-slugs: when-peek
+slugs: when-peek peek-name
 rulings:
 - 2026-11-18 "When: I agree peek A. Automatic or enforced? peek() transform" (record: "2026-11-18 OWNER RULING — when-test: A is a peek; and his question, automatic or enforced")
 - 2026-11-18 "When peek: warn. A test pattern does consume and warns that it is." (record: "2026-11-18 OWNER RULING — when-peek: a bare pattern as the test CONSUMES, with a warning; `peek()` makes it a peek")
 - 2026-11-22 "wrapper-export: agree (a). I was worried you'd say peek() doesn't work. It's just a definition change. Do transforms in general then pass their labels on? Padded, etc." (record: "2026-11-22 OWNER RULING — wrapper-export: agree (a) (the provided wrappers pass their argument's labels on); and a question: do transforms in general"); answer (a): this body writes the export list on its spot (lib/convention/argument-labels).
 - [REVISED IN PART 2026-11-23 by shorthand-is-callers (record "2026-11-23 OWNER RULING — shorthand-is-callers: "yes thats it exactly. Setting a label closes a path (through the shorthand in that binding) but doesn't block out the target.""): the reading "by anyone on that use, the body included" WITHDRAWN; the table's rows for a body that labels or closes the spot REVERSED (`A.d` legal); the four conditions stand] 2026-11-23 "binding-as-label: yes" (record: "2026-11-23 OWNER RULING — binding-as-label: yes (a path is canonically a chain of labels; a binding's name is a shorthand for a skipped label, under four conditions)"); RULED on the statement as put: "A binding's name may be used in a path as shorthand for a skipped label where: 1. the binding is referenced unambiguously; 2. a label could have been set on it there; 3. the reference reads as though through that label; 4. no label has already been made on it there."; with the reading that "already been made" is by anyone on that use, the body included, and the table for `B(A)`: alone `A.d` LEGAL; labelled a compile error, read `B.p.d`; closed a compile error; the caller labels it: `a.d`, `A.d` a compile error.
 - 2026-11-23 "shorthand-is-callers: yes thats it exactly. Setting a label closes a path (through the shorthand in that binding) but doesn't block out the target. This has been a good trajectory. We started out all open, then moved to mostly all closed. Now we are seeing the balance. Very Buddha" (record: "2026-11-23 OWNER RULING — shorthand-is-callers: "yes thats it exactly. Setting a label closes a path (through the shorthand in that binding) but doesn't block out the target.""); RULED on the statement as put: "The shorthand label is the caller's own: `B(A)` read through `A.d` means `B([A = A])`, whatever B's body does with the spot. Condition 4 counts only labels made in the text that writes the shorthand."; the closing body included.
+- 2026-11-27 "Peek name: keep. We can review choice later. I'm not sure either." (record: "2026-11-27 OWNER RULING — peek-name: keep"); RULED on the question as asked, "does the library still provide `peek(A)` as a named form of it, or is `^A` the only spelling?": keep, candidate (a), `peek(A) := ^[(=) = A]`, in the default set; he marks it reviewable. His idea in the same message (`map(fn, A)`), set aside by him for peek, as no different than `peek(A)`: not applied.
 rejected:
+- drop the name, `^A` the one spelling (candidate (b) of peek-name) — by owner ruling — peek-name: "keep"; the choice reviewable later.
 - the test peeked automatically (a bare pattern silently a peek) — by owner ruling — when-peek: a bare pattern consumes; the user writes `peek()`.
 readings:
 - the body `peek(A) := /(?=${A})/` reproduces every ruled example that uses `peek` (the when-test table's peek column, lookahead-labels on `37`, R.1.10's peek rows and `when(NOT peek(x), z)`) — SUPPORTED (preddoc2 PARTS PE, W1, WT, WD, WN; each with its sabotage caught).
@@ -406,7 +408,7 @@ readings:
 - `default: yes` (in the default-imported set) — the owner's LEAN, not a ruling ("there can be a special imported by default set which includes peek()"); the rest of the set is NOT stated (owner question default-set).
 - `module: ?`: no module is stated; `sys` in his `sys.peek()` is his example, not a ruling.
 - drop-not's `!peek(A)` error is gone: `!` on a lookaround is a test — SUPPORTED (SPECLINES "Its not", answers equal to `!^/\d/ SEQ /\w/`).
-- `peek(A)` stays only if a ruled text needs it — the when body does not; the question listed as peek-name.
+- [ANSWERED 2026-11-27 by peek-name: keep] `peek(A)` stays only if a ruled text needs it — the when body does not; the question listed as peek-name (a lane's ground, not his: review r111 F10).
 evidence: preddoc2 PARTS PE, W1, WT, WD, WN; the draft R.1.10 (3), (4); rev 26.1's PART COND (the draft's own runs); docs/dev/lanes/predspot_evidence/ predspot_model.py SWEEP (lane predspot).; docs/dev/lanes/predfold1123b_evidence/ predfold1123b_model.py LIBLINES; docs/dev/lanes/predfold1124_evidence/ predfold1124_model.py LIBLINES (the read against its written-out `[A = A]` form; sabotage p7 caught)
 history:
 - 2026-11-18: `peek()` is his placeholder for the transform (when-test), made THE way to test without consuming by when-peek.
@@ -421,6 +423,7 @@ history:
 - 2026-11-25 (lane predfix90, review r90 B2; record "2026-11-25 MANAGER — review r90 (predfold1124): the dispositions; no owner words"): the binding-as-label `rulings:` item marked revised in part by shorthand-is-callers; the text until then, verbatim: "- 2026-11-23 \"binding-as-label: yes\" (record: \"2026-11-23 OWNER RULING — binding-as-label: yes (a path is canonically a chain of labels; a binding's name is a shorthand for a skipped label, under four conditions)\"); RULED on the statement as put: ...".
 - 2026-11-27 (lane predfold1125, the fold of drop-not, array-argument, brace-counts, map-creator, string-literals, bang-split and and-not): restated by the rulings named in its rulings field. The statement until then, verbatim: "`peek(A)` tests A where it stands without consuming it: the macro `/(?=${[(=) = A]})/`, a lookahead around a pattern hole that passes A's labels on.".
 - 2026-11-27 (lane predfold1125, the fold of drop-not, array-argument, brace-counts, map-creator, string-literals, bang-split and and-not): ruled became open peek-name: no ruled text needs the name once `when`'s guard is `!^test`; the statement and body kept as candidate (a).
+- 2026-11-27 (lane predfix111, review r111 F10 and the ruling peek-name; record "2026-11-27 OWNER RULING — peek-name: keep ("We can review choice later"); an IDEA set aside, `map(fn, A)`"): open peek-name became ruled 2026-11-27, bodied over `^`. The statement until then, verbatim: "Does the library keep `peek(A)` as a name for the lookahead `^A`, `peek(A) := ^[(=) = A]`, or is `^A` the one spelling?"; the bullets until then, verbatim: "No ruled text needs the name: the `when` body is written with `^` (bang-split line 5); its earlier body `/(?=${[(=) = A]})/` is `^A` with the argument list's labels passed through the call (`peek.d`)." / "Candidates: (a) keep `peek` as the named form, as `rx.repeat` stays beside the braces (the manager's lean, by that parallel); (b) drop it, `^A` alone. The default-imported set's lean "holding `peek`" goes with (a)." / "The negative is `!^A` either way. Under (a) `!peek(A)` is `!` on a lookaround, a test (bang-split line 1), so it is `!^A` and no longer an error (the manager's reading; the line "Its not")."
 
 ## lib/control/when — when
 was: core/conditional/when (2026-11-19, the owner: core document macros are defined in the library unless primitive; since refined the same day: every call-form name is a library piece, the "primitive" designation withdrawn)
@@ -494,6 +497,7 @@ history:
 - 2026-11-23 (lane predfix84, review r84 D7; record "2026-11-23 MANAGER — review r84 (predspot1122): the dispositions, ruled with the 2026-11-23 rulings in hand; no owner words"): the bullet until then: "These are when's body read per kind of test: `test SEQ then` consumes what the test consumes." Now the ruled body's `[(=) = test] SEQ [(=) = then]`, the list moving no match; the label reading marked.
 - 2026-11-23 (lane predfix86, review r86 A4; record "2026-11-23 MANAGER — review r86 (predfold1123): the dispositions; three errors of the manager's own brief named; no owner words"): the SUPERSEDED reading marked: its "compile error there" half rested on a withdrawn reading (lib/control/when).
 - 2026-11-27 (lane predfold1125, the fold of drop-not, array-argument, brace-counts, map-creator, string-literals, bang-split and and-not): restated by the rulings named in its rulings field. The statement until then, verbatim: "A condition or a `peek(A)` as the test consumes nothing and then starts where the test stands; a bare pattern as the test is consumed and then continues after it.".
+- 2026-11-27 (lane predfix111, review r111 F12 (RULING-6), the manager's dispositions): the bullet until then, verbatim: "`!x` on a bare pattern x is the compile error naming `!^x` (lib/control/when-test/not).": bang-split line 4 names `~`; `!^x` is the manager's reading of the message.
 
 ## lib/control/when-test/not — NOT on a bare pattern test
 slugs: not-test
@@ -509,6 +513,7 @@ history:
 - 2026-11-19 (lane preddoc2): split from the test piece (one piece, one status: the test is ruled, this is open).
 - 2026-11-27 (lane predfold1125, the fold of drop-not, array-argument, brace-counts, map-creator, string-literals, bang-split and and-not): restated by the rulings named in its rulings field. The statement until then, verbatim: "In `when(NOT x, z)` with x a bare pattern, is `NOT x` a complement, so a compile error, or a negative peek, as `when(NOT peek(x), z)`?".
 - 2026-11-27 (lane predfold1125, the fold of drop-not, array-argument, brace-counts, map-creator, string-literals, bang-split and and-not): CLOSED (candidate (a), the compile error); title "NOT on a bare pattern test" became "`!` on a bare pattern test".
+- 2026-11-27 (lane predfix111, review r111 F12 (RULING-6), the manager's dispositions): the statement until then, verbatim: "In `when(!x, z)` with x a bare pattern, `!x` is `!` on a pattern: a compile error whose message names `!^x`, the negative lookahead."; the bullet's "the message names `!^x` too, the form a test wants (the manager's reading of the message)" now names `~x` as ruled and marks the `!^x` half the reading.
 
 ## lib/control/atomic — atomic
 slugs:
@@ -623,6 +628,7 @@ history:
 - 2026-11-23 (lane predfold1124, the fold of the 2026-11-23 rulings after review r88; record "2026-11-23 OWNER RULING — shorthand-is-callers: "yes thats it exactly. Setting a label closes a path (through the shorthand in that binding) but doesn't block out the target.""): the clause until then: "through `hit`, not by its own name"; the line "Through the argument's name" (a compile error until then) is legal.
 - 2026-11-25 (lane predfix90, review r90 B2; record "2026-11-25 MANAGER — review r90 (predfold1124): the dispositions; no owner words"): the binding-as-label `rulings:` item marked revised in part by shorthand-is-callers; the text until then, verbatim: "- 2026-11-23 \"binding-as-label: yes\" (record: \"2026-11-23 OWNER RULING — binding-as-label: yes (a path is canonically a chain of labels; a binding's name is a shorthand for a skipped label, under four conditions)\"); RULED on the statement as put: ...".
 - 2026-11-27 (lane predfold1125, the fold of drop-not, array-argument, brace-counts, map-creator, string-literals, bang-split and and-not): printed `NOT` re-spelled `!`, a complement's `!` re-spelled `~`, a group question's condition re-spelled to the array form, as the rulings carry; no answer changed (model SWEEP11).
+- 2026-11-27 (lane predfix111, review r111 F1 (RULING-2), the manager's dispositions): the bullet's program until then, verbatim: "`[h = hits(/\d+/)] & occurs.none((h.hit: >= 100))`", the condition-argument form array-argument refuses; now `occurs.none(@h.hit, >= 100)`.
 
 ## lib/search/contains — contains
 was: lib/search/contains/by-occurrences (2026-11-19, merged: a second present-tense definition of `contains` in the base; its body is a reading line here (review r60 COLD-10))
@@ -649,6 +655,7 @@ history:
 - 2026-11-22 (lane predspot, wrapper-export / transform-export folded; record "2026-11-22 OWNER RULING — transform-export: yes (a provided body that places its argument passes its labels on); and two definitions he writes: `hide`, `identity`"): ruled 2026-11-15 re-dated 2026-11-22. Statement until then: "`contains(s)` is the plain gap body `/(?s:.*)(?:${s})(?s:.*)/`: no anchors of its own; in a filter role it accepts a value holding s."; a bullet added.
 - 2026-11-23 (lane predfix84, review r84 D5; record "2026-11-23 MANAGER — review r84 (predspot1122): the dispositions, ruled with the 2026-11-23 rulings in hand; no owner words"): the label bullet gains which occurrence `contains.n` reads, with the line "The last occurrence".
 - 2026-11-27 (lane predfold1125, the fold of drop-not, array-argument, brace-counts, map-creator, string-literals, bang-split and and-not): printed `NOT` re-spelled `!`, a complement's `!` re-spelled `~`, a group question's condition re-spelled to the array form, as the rulings carry; no answer changed (model SWEEP11).
+- 2026-11-27 (lane predfix111, review r111 F22 (EXAMPLES-8), the manager's dispositions): the bullet until then, verbatim: "The negated test is `~contains(x)`.": `contains(x)` is a pattern, so `~` is right; "test" is now `!`'s word (bang-split line 1).
 
 ## lib/search/starts-with — startsWith
 slugs:
@@ -769,13 +776,13 @@ rulings:
 - 2026-11-21 "join-in-some: agree and elegant. that said, no one would know to write it." (record: "2026-11-21 OWNER RULING — joint-in-some: agree"); a joint entry inside `some` is refused for now; "same item" is the on-item label, then `some` on that label
 - 2026-11-15 "3. could you use some() to get some hits?" (record: "2026-11-14 RULINGS on rev 3's contradictions"); under its bold line "2026-11-15 RULING — SEARCH IS A TRANSFORM"
 - 2026-11-15 "Do it" (record: "2026-11-14 RULINGS on rev 3's contradictions"); under its bold line "2026-11-15 RULING — SEARCH IS A TRANSFORM"
-- 2026-11-16 "all-question: retire" (record: "2026-11-16 OWNER RULING — all-question: retire")
+- [REVERSED IN PART 2026-11-25 by array-argument: over the array, `every` (lib/counting/every)] 2026-11-16 "all-question: retire" (record: "2026-11-16 OWNER RULING — all-question: retire")
 - 2026-11-17 "after-loop-read: ok I see it. Last pass own label makes sense" (record: "2026-11-17 OWNER RULING — after-loop-read: the last pass's own label")
 - 2026-11-22 "array-in-piece: if it was written A & /B-defintion/ then the some(h) would see the h from A. but because B is bound first, its internal references refer only to what can be seen at that point." (record: "2026-11-22 OWNER RULING — array-in-piece: b (a group question inside a bound piece reads only what that piece can see)")
 - 2026-11-23 "zero-open: yes all 4" (record: "2026-11-23 OWNER RULING — zero-open: yes, all four (`0` is the one name read open; never absent; no settings; `$0` legal; a capture request only where `0` is complete)"); no settings, so no array: a group question on `0` is a compile error (consequence 2).
 - 2026-11-25 "array-argument: yes including every" (record: "2026-11-25 OWNER RULING — array-argument: "yes including every"")
 rejected:
-- `all` as a group question — by owner ruling — all-question: retire.
+- `all` as a group question — by owner ruling — all-question: retire [REVERSED IN PART 2026-11-25 by array-argument: a question over every SETTING is `every`, lib/counting/every].
 - `occurs.some` — by the draft (rev 7's, removed, not aliased) — `some(c)` is the one spelling.
 readings:
 - false on zero passes, each pass judged with its own labels (the draft §4.3's group-questions table) — the draft's reading; SUPPORTED for its example (preddoc4 PART SO; sabotage s8, "every pass", caught); REPLACED by array-vs-passes (a): false on an EMPTY array (a reading of the ruling; predarr EMPTY).
@@ -792,6 +799,7 @@ history:
 - 2026-11-23 (lane predfold1123, the fold of 2026-11-22 late and 2026-11-23; R1 of the rulings file): a bullet: `0` has no settings, so a group question on it is a compile error (zero-open (2)). the zero-open entries are recorded on lane/pred-rev28 after this lane's cut, so they are cited here in history only (record "2026-11-23 OWNER RULING — zero-open: yes, all four (`0` is the one name read open; never absent; no settings; `$0` legal; a capture request only where `0` is complete)"), not as a `rulings:` item (lint L4 would fail on this worktree's record; to add at the merge).
 - 2026-11-23 (lane predfix86, review r86 C1; record "2026-11-23 MANAGER — review r86 (predfold1123): the dispositions; three errors of the manager's own brief named; no owner words"): the zero-open ruling added as a `rulings:` item (cited until then in history only).
 - 2026-11-27 (lane predfold1125, the fold of drop-not, array-argument, brace-counts, map-creator, string-literals, bang-split and and-not): restated by the rulings named in its rulings field. The statement until then, verbatim: "`some(c)` holds when at least one setting in the array of c's label meets c; on an empty array it is false (a reading).".
+- 2026-11-27 (lane predfix111, review r111 F17 (RULING-8 (b)), F19 (b), the manager's dispositions): the statement's "on an empty array it is false" marked "(a reading)" again (it was a reading at the start, "(a reading)" dropped by the fold); the bullet until then, verbatim: "`some` is the one spelling of "at least one"; `all` is retired: every pass is written with the condition inside the loop, on the item (core/conditions/in-sequence)."
 
 ## lib/counting/count — count
 slugs: count-budget
@@ -810,6 +818,7 @@ rejected:
 readings:
 - `/(?:(?<d>\d),)+/ & (count((d: "7")): ==2)` written in place (then `n := count((d: "7"))`, `(n: ==2)`): WHOLE `7,1,7,` HOLDS, `7,1,` FAILS / SEARCHED `7,7,7,` `7,7,`@0 / FIND-ALL [`7,7,`@0, `1,7,7,`@7] — SUPPORTED (preddoc4 PART CO; sabotage s9, every pass counted, caught).
 - the printed line under the settings reading — the SAME answers (one setting per pass): SUPPORTED (predarr CHANGED). On an empty array the count is zero (a reading; predarr EMPTY: `count(NOT (d: "7"))` on `,` is 0 on the array, 1 on the passes). On a condition of several entries what is counted is not stated (the manager's reading (b); an owner question, count-several, proposed).
+- in today's spelling (array-argument): `(count(@d, "7"): ==2)` is the printed line; `count(@d)` counts every setting, `count(@d, anything)` alike (his ruling; the manager's reading for `anything`) — SUPPORTED (SPECLINES "Every setting counted", predfold1125; predfix111 SWEEP111). The two readings above are as run, in the spelling of their runs (`count((d: "7"))`, `count(NOT (d: "7"))` = `count(@d, ~"7")` today).
 - the budget is one measured quantity, named with the "too many classes" budget (the five open items, (3)); no number stated.
 - the in-place form gives the printed line unchanged — SUPPORTED (predbound FIVE: rebuilt from the program text, equal to the line printed at 1e0384941; WHOLE against "two 7s", 0 of 1,093 texts over `17,` differ).
 evidence: docs/dev/lanes/preddoc4_evidence/ PART CO; plan row [COUNT-TO-OCCURS]. predbound_model.py FIVE.
@@ -830,11 +839,12 @@ rulings:
 - 2026-11-22 "array-in-piece: if it was written A & /B-defintion/ then the some(h) would see the h from A. but because B is bound first, its internal references refer only to what can be seen at that point." (record: "2026-11-22 OWNER RULING — array-in-piece: b (a group question inside a bound piece reads only what that piece can see)")
 - 2026-11-25 "array-argument: yes including every" (record: "2026-11-25 OWNER RULING — array-argument: "yes including every"")
 rejected:
-- `occurs.some` and `occurs.all` — by the draft (rev 7's, removed, not aliased; LEAN) — `some(c)` is the one spelling; `all` was retired (all-question).
+- `occurs.some` and `occurs.all` — by the draft (rev 7's, removed, not aliased; LEAN) — `some(c)` is the one spelling; `all` was retired (all-question) [REVERSED IN PART 2026-11-25 by array-argument: over the array, `every`, lib/counting/every].
 - a namespace `label` (`label.exactly(1, ...)`) — by the record — it clashes with element metadata `x.label`.
 readings:
 - the family is RULED as a library (2026-11-14); the name `occurs` ruled in use (the draft §8 STATUS).
 - over the array, `NOT some(c)` = `occurs.none(c)` by definition and `occurs.none(NOT c)` is "every setting meets c" — SUPPORTED (predarr TRUTH); the every-pass form over the array is not the item form where the label is optional (predarr EVERYPASS; lib/counting/every-pass).
+- in today's spelling (drop-not, array-argument, bang-split): `!some(@d, S)` = `occurs.none(@d, S)`, and `occurs.none(@d, ~S)` is `every(@d, S)`, "every setting is in S" — SUPPORTED (GROUP11, predfold1125). The readings above and below are as run, in the spelling of their runs.
 - `NOT some(c)` = `occurs.none(c)`; the every-pass form `some(c) & occurs.none(NOT c)` equals `REP & c` on 364 texts (the draft R.4's W1-W9 table) — the draft's runs, not re-run here.
 - `count(c)` first, `occurs` the fallback (LEAN); `count()` refused only on budget (RULED) — the core's group questions, which have no core piece yet.
 evidence: the draft §8, §4.3, R.4.
@@ -855,7 +865,7 @@ rejected:
 readings:
 - OPEN in the draft (§R.8, row every-pass-home: "the conditioned item inside `repeat` is the item form"; the draft R.4's W1a, W1b); the owner, the evening of 2026-11-16 as the draft quotes him: "assign the condition inside the loop to get the all behavior" — the item form, today's way; whether a name exists is not asked.
 - `some(c) & occurs.none(NOT c)` equals `REP & c` on 364 texts (the draft R.4's W1-W9 table) — the draft's runs, under the PASS reading; NOT SUPPORTED over the array where the label is optional: on `7,,` every setting is `7` and the form HOLDS while the item form FAILS (predarr EVERYPASS; sabotage s11 caught). The pass-reading line, verbatim as run: `Passes: WHOLE `7,7,` HOLDS, `7,,` FAILS, `7,1,` FAILS / SEARCHED `7,, 7,7,` `7,`@0 / FIND-ALL `7,, 7,1, 7,7,` [`7,`@0, `7,`@4, `7,7,`@9] (`/(?:(?<d>\d)?,)+/ & some((d: "7")) & occurs.none(NOT (d: "7"))`)`.
-- the settings form and the item form part on a loop that can make no pass as well (review r77 MODES-12) — SUPPORTED by a run (predfix77 EVERYNONE: on `x` the settings form FAILS, `some` false on an empty array, the item form HOLDS; sabotage s14 caught).
+- [RETIRED 2026-11-25 with the settings form, by array-argument] the settings form and the item form part on a loop that can make no pass as well (review r77 MODES-12) — SUPPORTED by a run of the RETIRED settings form `some(c) & occurs.none(NOT c)` (predfix77 EVERYNONE: on `x` it FAILS, `some` false on an empty array, the item form HOLDS; sabotage s14 caught). For the ruled `every` (true on an empty array) it is NOT SUPPORTED: `every` and the item form part only where the label is optional (review r111 F5, EXAMPLES-1: 0/0/0 of 5,461 texts with the label required; predfix111 EVERY111).
 - (h) `every` on an empty array holds, `some` fails — SUPPORTED (SPECLINES "No pass"; GROUP11).
 - `every(@d, S)` = `occurs.none(@d, ~S)` — SUPPORTED (GROUP11, 364 texts).
 evidence: the draft R.4, §R.8; docs/dev/lanes/predarr_evidence/ EVERYPASS. predfix77_model.py EVERYNONE.
@@ -864,6 +874,7 @@ history:
 - 2026-11-21 (lane predarr, array-vs-passes ruled): the statement until then, verbatim: "Is there a named group question for "every pass meets c", equal to `some(c) & occurs.none(NOT c)`, or is every pass written only with the condition on the item?"; candidate (b) until then "a named group question equal to `some(c) & occurs.none(NOT c)`"; the `modes:` line "modes: n/a (a question; the draft's runs are cited in the details entry)" replaced by two run lines. Over the array the form says every SETTING, not every pass; the question stays open. Status date 2026-11-19 to 2026-11-21.
 - 2026-11-22 (lane predfix77, review r77 D12 (MODES-12); record "2026-11-22 MANAGER — review r77 (predfold1121): dispositions ruled (no owner words)"): "where the label is optional it is not the item form" became "where the label is optional, or the loop can make no pass, ..."; the two lines "No pass, every setting", "No pass, the item form" added.
 - 2026-11-27 (lane predfold1125, the fold of drop-not, array-argument, brace-counts, map-creator, string-literals, bang-split and and-not): the open piece every-pass moved here, ruled; its statement until then, verbatim: "Is there a named question for "every pass meets c", or is every pass written only with the condition on the item?"; candidates (a) to (c) closed by (b)'s settings form.
+- 2026-11-27 (lane predfix111, review r111 F5 (EXAMPLES-1), the manager's dispositions): the bullet until then, verbatim: "It reads SETTINGS: a pass that sets nothing is not judged, so where the label is optional, or the loop can make no pass, it is not the item form, the condition written inside the loop (the lines below)."
 
 ## lib/strings/join — join
 slugs:

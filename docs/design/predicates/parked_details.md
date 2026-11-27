@@ -1329,6 +1329,18 @@ readings:
 evidence: none (parked).
 history:
 - 2026-11-27 (lane predfold1125, the fold of drop-not, array-argument, brace-counts, map-creator, string-literals, bang-split and and-not): a new parked piece.
+- 2026-11-27 (lane predfix111, review r111 F21 (c) (RULING-11 (c)), the manager's dispositions): the statement's "`!^A` answers yes or no and is untouched" marked a reading (the manager's, hand-reasoned, not run).
+
+## parked/ideas/lookbehind-operator — A lookbehind operator
+slugs:
+rulings:
+- 2026-11-27 (class: RULING, its line 6) "bang-split: yes. This is clean and what I was looking for." (record: "2026-11-27 OWNER RULING — bang-split: yes")
+rejected:
+readings:
+- the trigger is the review's (r111 GENFORM-9) and the manager's PLAN disposition — a reading.
+evidence: the count of `(?<=`/`(?<!` in rx text by review r111 (review/genform.md, PROBED-AND-HELD).
+history:
+- 2026-11-27 (lane predfix111, review r111 F4 (GENFORM-9), PLAN, the manager's dispositions): a new parked piece.
 
 ## parked/ideas/in-place-complement — A complement written in place means "cannot match here"
 slugs:
