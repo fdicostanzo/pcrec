@@ -1083,9 +1083,9 @@ see: core/labels/paths/call-prefix core/labels/paths/two-sources core/holes/bare
   rules: the last mention in a sequence, the branch taken, across `&` the ambiguous reference (the manager's
   reading; the lines "Both uses" and "Alone first"); never placed, the never-pass warning (a reading, not run).
 - The shorthand label is protected, as statement 2's implicit label is (core/labels/export): it adds no export the
-  caller did not write, so the expansion is the same READ, not the same export (the manager's reading (b); on a
-  labelling body the lines "From outside" and "From outside, written out" part; open shorthand-outside:
-  core/labels/paths/shorthand-outside).
+  caller did not write, so the expansion is the same READ, not the same export (his ruling, shorthand-outside:
+  core/labels/paths/shorthand-outside; on a labelling body the lines "From outside" and "From outside, written
+  out" part).
 - Condition 1: the binding referenced more than once in the caller's text: a compile error (label the uses;
   core/labels/paths/binding-prefix). Condition 4 counts the caller's own labels: the caller's own `B([a = A])`
   makes `A.d` a compile error (the line "The caller's label, then the binding's name" of core/labels/ownership).
@@ -1103,21 +1103,20 @@ Written out: WHOLE `3xx` HOLDS, `7xx` FAILS / SEARCHED `7xx 3xx` `3xx`@4 / FIND-
 Both uses: WHOLE `7-3` HOLDS, `3-7` FAILS / SEARCHED `7-3 3-7` `7-3`@0 / FIND-ALL `7-3 3-7 1-2 9-9` [`7-3`@0, `1-2`@8] (`B(A) & (A.d: <5)`, B(rx) := `/${[p = rx]}-${rx}/`, A := `/(?<d>\d)/`)
 Alone first: WHOLE `3-7` FAILS, `7-3` HOLDS / SEARCHED `7-3 3-7` `7-3`@0 / FIND-ALL `7-3 3-7 1-2 9-9` [`7-3`@0, `1-2`@8] (`B(A) & (A.d: <5)`, B(rx) := `/${rx}-${[p = rx]}/`, A := `/(?<d>\d)/`): the last mention, the labelled spot
 Alone first, written out: WHOLE `3-7` FAILS, `7-3` HOLDS / SEARCHED `7-3 3-7` `7-3`@0 / FIND-ALL `7-3 3-7 1-2 9-9` [`7-3`@0, `1-2`@8] (`B([A = A]) & (A.d: <5)`, B(rx) := `/${rx}-${[p = rx]}/`, A := `/(?<d>\d)/`)
-From outside: modes: a compile error (`[pub = B(A)] & (pub.A.h: <5)`, A := `/(?<h>\d)/`, B(rx) := `/${[p = rx]}xx/`: the shorthand label is protected: it adds no export (the manager's reading (b); open shorthand-outside)).
+From outside: modes: a compile error (`[pub = B(A)] & (pub.A.h: <5)`, A := `/(?<h>\d)/`, B(rx) := `/${[p = rx]}xx/`: the shorthand label is protected: it adds no export (core/labels/paths/shorthand-outside)).
 From outside, written out: WHOLE `3xx` HOLDS, `7xx` FAILS / SEARCHED `7xx 3xx` `3xx`@4 / FIND-ALL `3xx 7xx 4xx` [`3xx`@0, `4xx`@8] (`[pub = B([A = A])] & (pub.A.h: <5)`, A := `/(?<h>\d)/`, B(rx) := `/${[p = rx]}xx/`)
 A label written on the argument: WHOLE `42xx` HOLDS, `100xx` FAILS, `042xx` FAILS / SEARCHED `x100xx 42xx` `0xx`@3 / FIND-ALL `100xx 42xx 7xx 300xx` [`0xx`@2, `42xx`@6, `7xx`@11, `0xx`@17] (`B([a = A]) & (a.d: <100)`, A := `[d = rx.digits]`, B(rx) := `/${rx}xx/`)
 Through a part label in the body: WHOLE `42xx` HOLDS, `100xx` FAILS, `042xx` FAILS / SEARCHED `x100xx 42xx` `0xx`@3 / FIND-ALL `100xx 42xx 7xx 300xx` [`0xx`@2, `42xx`@6, `7xx`@11, `0xx`@17] (`B(A) & (B.dd.d: <100)`, A := `[d = rx.digits]`, B(rx) := `/${[dd = rx]}xx/`)
 
-### The shorthand read from outside   [core/labels/paths/shorthand-outside]   open shorthand-outside 2026-11-25
-Does "`B(A)` read through `A.d` means `B([A = A])`" cover a read from OUTSIDE the caller, through a label on the call (`pub.A.h` for `[pub = B(A)]`)?
+### The shorthand read from outside   [core/labels/paths/shorthand-outside]   ruled 2026-11-27
+The shorthand label is protected and adds no export: a read from outside the caller through a label on the call (`pub.A.h` for `[pub = B(A)]`) is a compile error.
 needs: core/labels/paths/argument-default
-The reading today: the shorthand label is protected, as statement 2's implicit label is (the manager's reading
-(b)): it adds no export, so `[pub = B(A)] & (pub.A.h: <5)` is a compile error while the written-out
-`[pub = B([A = A])]` reads A's `h`. Candidates: (a) reading (b); (b) the expansion holds from outside too: the
-second line's answers. They part on a labelling body (`/${[p = rx]}xx/`) and a listing body alike.
-From outside: modes: a compile error (`[pub = B(A)] & (pub.A.h: <5)`, A := `/(?<h>\d)/`, B(rx) := `/${[p = rx]}xx/`: the shorthand label is protected: it adds no export (the manager's reading (b); open shorthand-outside)).
+- His words: "shorthand-outside: error. Agree."; the lean as put: "An implicit name, whether from a part used
+  alone or from an argument passed by name, behaves one way: named inside, invisible outside."
+- The written-out `[pub = B([A = A])]` reads A's `h` (the second line); the not-taken candidate is in the details
+  entry.
+From outside: modes: a compile error (`[pub = B(A)] & (pub.A.h: <5)`, A := `/(?<h>\d)/`, B(rx) := `/${[p = rx]}xx/`: the shorthand label is protected: it adds no export).
 From outside, written out: WHOLE `3xx` HOLDS, `7xx` FAILS / SEARCHED `7xx 3xx` `3xx`@4 / FIND-ALL `3xx 7xx 4xx` [`3xx`@0, `4xx`@8] (`[pub = B([A = A])] & (pub.A.h: <5)`, A := `/(?<h>\d)/`, B(rx) := `/${[p = rx]}xx/`)
-
 ### A name with two sources   [core/labels/paths/two-sources]   ruled 2026-11-23
 A name read bare is a label the definition's own text writes, an in-place argument's group included; a label a part holds is read through its source, never bare.
 needs: core/labels/paths/closed-argument core/labels/flow
