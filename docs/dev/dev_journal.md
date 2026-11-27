@@ -28746,3 +28746,4 @@ Next
 - 22:07 (11-26) 200-f2f6fix-core GREEN (12 s). f2f6fix-alloc running, then mgfix-mg.
 - 22:10 (11-26) 200-f2f6fix-alloc GREEN (279 s; full make alloc incl. the 264 floor and whole_run). Only mgfix-mg left before landing.
 - 22:31 (11-26) 200-mgfix-mg GREEN (1265 s): peak, rungs, instr (ASLR off) on lane/mgfix (F2+F6+r105 fixes+memgate fix). All gates green; r106 mgfix (manager inline) filed. Landing next.
+- 22:42 (11-26) [ARENA-SCOPES] F2+F6 LANDED: merge lane/mgfix (f2f6 + f2f6tri + f2f6fix + mgfix), MGFIX-1 fixed, plan row + ledger line, strict / plan-lint / memgate control green, pushed 14d37107b (CI on 45735332771 green before push). Worktrees pruned (5); merged branches wait for the 120-min quiet gate. full_suite_ledger lacks lines for the 11-24/25 landings: D177 recount owed before the next window. Next: F3.
