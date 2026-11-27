@@ -624,7 +624,7 @@ hold replaces `Arena.owned` itself (one record type, one walk, B7), and `walk_pa
   - BUDGET: W7 adds at most 2,000 trials and 60 s to `test-alloc` (unmeasured defaults; today about 162 malloc trials
     for W4 in about 60 s). A larger population at F1's profiling run is a STOP for F1; the fallback is a stated stride.
     DEVIATION AT BUILD (lane arenabuild2, ruling R-1): F1 measured 2,112 trials; the stride is 4 on scope-window-only
-    points, every hand-kept-window point kept (W7/W3: 535 trials), and the DFA memo arena is excluded from the
+    points, every hand-kept-window point kept (W7/W3: 535 trials at R-1, 528 after F6 removed the uprops hand-kept window), and the DFA memo arena is excluded from the
     hand-kept window, its premise (compile_driver frees it on every arrival) asserted by alloc_check (sabotage S3603);
     "Deviations at build" below.
   - CONTROLS: sabotage (1) (drop the registry walk from `pcrec_arena_free`) makes W7 strand minimize's tables; C0(d)

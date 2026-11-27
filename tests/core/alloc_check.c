@@ -1103,10 +1103,10 @@ static int w7_plant(pcrec_error *err)
  * population 0 is a gate that passes by emptiness, K35); W3 has its
  * windows in minimize's scope and `uprops_produce`'s (F6: a scope on the attempt
  * arena, so the class constructor's allocations are scope-window points). `min_total`
- * is half the population measured at R-1's stride (535, lane arenabuild2;
- * D110). */
+ * is half the population measured after F6 (528, lane f2f6, job 190-f2f6-alloc; 535 at R-1,
+ * lane arenabuild2, when the hand-kept `uprops_produce` window was in it; D110). */
 #define W7_ROWS \
-    { "W7/W3 (unicode-props/utf8)", "\\p{L}", PCREC_ENC_UTF8, 1, 0, 267, 0, 0, NULL, NULL, 0 }, \
+    { "W7/W3 (unicode-props/utf8)", "\\p{L}", PCREC_ENC_UTF8, 1, 0, 264, 0, 0, NULL, NULL, 0 }, \
 
 
 int main(int argc, char **argv)
