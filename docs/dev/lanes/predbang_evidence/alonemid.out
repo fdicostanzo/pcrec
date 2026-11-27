@@ -1,0 +1,11 @@
+model last line: predfix90_model: 26 checks, 0 failed
+[n = (P SEQ Q)] & (n.Q.d: <5) | - | refused: `n.Q.d`: `Q.d` is not visible through `n` (a compile error, core/labels/paths)
+[n = (P SEQ Q)] & (Q.d: <5) | - | legal [(True, (0, 3), (('7,3', 0),)), (False, None, ()), (False, (4, 7), (('7,3', 4),)), (False, (0, 3), (('7,3', 0), ('4,1', 8)))]
+[n = (P SEQ Q)] & (n.d: <5) | - | legal [(True, (0, 3), (('7,3', 0),)), (False, None, ()), (False, (4, 7), (('7,3', 4),)), (False, (0, 3), (('7,3', 0), ('4,1', 8)))]
+[n = (P SEQ Q)] & (n.P.d: <5) | - | refused: `n.P.d`: `P.d` is not visible through `n` (a compile error, core/labels/paths)
+[n = (P SEQ Q)] & (P.d: <5) | - | legal [(False, None, ()), (True, (0, 3), (('3,7', 0),)), (False, (0, 3), (('3,7', 0),)), (False, (4, 7), (('3,7', 4), ('4,1', 8)))]
+X & (X.Q.d: <5) | X := [n = (P SEQ Q)] | legal [(True, (0, 3), (('7,3', 0),)), (False, None, ()), (False, (4, 7), (('7,3', 4),)), (False, (0, 3), (('7,3', 0), ('4,1', 8)))]
+X & (X.d: <5) | X := [n = (P SEQ Q)] | refused: `X.d`: `d` is not visible through `X`: the path crosses `P`, a part used alone in it (a compile error, path-rules rule 6)
+X & (X.n.Q.d: <5) | X := [n = (P SEQ Q)] | refused: `X.n.Q.d`: `n.Q.d` is not visible through `X` (a compile error, core/labels/paths)
+X & (X.n.d: <5) | X := [n = (P SEQ Q)] | refused: `X.n.d`: `n.d` is not visible through `X`: the path crosses `P`, a part used alone in it (a compile error, path-rules rule 6)
+[n = (Q SEQ Q)] & (Q.d: <5) | - | refused: `Q.d`: Q is used 2 times here; label the part (`[left = Q]`) to read one use

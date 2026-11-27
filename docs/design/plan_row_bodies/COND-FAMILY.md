@@ -12067,3 +12067,37 @@ RULED (answered by slug). The lean as put to him, quoted: "no `t`; the read is `
 the documents as the picture of how a private label looks from outside, which is what it was said about."
 "the line" is his "[_t = A ] is equivalent to [_ = [t = A ]]" (the manager's reading: it states what can be
 reached from outside, not that a label `t` is made). The piece closes as it reads; candidate (b) to details.
+
+### 2026-11-27 OWNER, DISCUSSION on alone-as-middle: "a binding acted like a label. So it's like [Q = Q] then n.Q.d seems pretty clean"
+tags: core/labels/rule/alone-as-middle core/labels/rule/paths core/labels/export
+His words, verbatim (to the question alone-as-middle, the manager's lean being the compile error): "You don't
+mention it but the relevant rule was that a binding acted like a label. So it's like [Q = Q] then n.Q.d seems
+pretty clean. The "restart" in my read is a statement that none of the labels in Q are visible directly (flat)
+outside."
+Class: DISCUSSION with a LEAN toward candidate (b) (not an answer by slug; nothing ruled). The rule he names is
+in the documents: core/labels/export statement 2, "An UNLABELLED use carries the implicit label of the binding's
+name, protected". The manager's reading of his last sentence: "restart" is rule 6's "is a start inside its own
+binding"; he reads rule 6 as saying what is NOT visible from outside, not as forbidding the part's name as a
+middle step inside.
+The manager's lean (the compile error) is WITHDRAWN and re-derived on his premise: rule 4 as he wrote it, "if a
+legal path exists a.b.c and c can be unambiguously referenced from a, then b can be skipped a.c", makes `n.d`
+legal BECAUSE a full path exists; the documents print `n.d` legal for `[n = (P SEQ Q)]` while refusing the full
+path `n.Q.d`. With the part's name as a label (`[Q = Q]`, protected), the full path exists and rule 4 reads as
+written. The run (`docs/dev/lanes/predbang_evidence/alonemid.py`, predfix90_model's engine, TODAY's reading;
+pasted from `alonemid.out`):
+```
+model last line: predfix90_model: 26 checks, 0 failed
+[n = (P SEQ Q)] & (n.Q.d: <5) | - | refused: `n.Q.d`: `Q.d` is not visible through `n` (a compile error, core/labels/paths)
+[n = (P SEQ Q)] & (Q.d: <5) | - | legal [(True, (0, 3), (('7,3', 0),)), (False, None, ()), (False, (4, 7), (('7,3', 4),)), (False, (0, 3), (('7,3', 0), ('4,1', 8)))]
+[n = (P SEQ Q)] & (n.d: <5) | - | legal [(True, (0, 3), (('7,3', 0),)), (False, None, ()), (False, (4, 7), (('7,3', 4),)), (False, (0, 3), (('7,3', 0), ('4,1', 8)))]
+[n = (P SEQ Q)] & (n.P.d: <5) | - | refused: `n.P.d`: `P.d` is not visible through `n` (a compile error, core/labels/paths)
+[n = (P SEQ Q)] & (P.d: <5) | - | legal [(False, None, ()), (True, (0, 3), (('3,7', 0),)), (False, (0, 3), (('3,7', 0),)), (False, (4, 7), (('3,7', 4), ('4,1', 8)))]
+X & (X.Q.d: <5) | X := [n = (P SEQ Q)] | legal [(True, (0, 3), (('7,3', 0),)), (False, None, ()), (False, (4, 7), (('7,3', 4),)), (False, (0, 3), (('7,3', 0), ('4,1', 8)))]
+X & (X.d: <5) | X := [n = (P SEQ Q)] | refused: `X.d`: `d` is not visible through `X`: the path crosses `P`, a part used alone in it (a compile error, path-rules rule 6)
+X & (X.n.Q.d: <5) | X := [n = (P SEQ Q)] | refused: `X.n.Q.d`: `n.Q.d` is not visible through `X` (a compile error, core/labels/paths)
+X & (X.n.d: <5) | X := [n = (P SEQ Q)] | refused: `X.n.d`: `n.d` is not visible through `X`: the path crosses `P`, a part used alone in it (a compile error, path-rules rule 6)
+[n = (Q SEQ Q)] & (Q.d: <5) | - | refused: `Q.d`: Q is used 2 times here; label the part (`[left = Q]`) to read one use
+```
+Noted for the fix lane (the manager's observation, not his): the engine answers `X.Q.d` from outside "legal" while
+refusing `X.n.Q.d` and `X.d`; core/labels/export statement 3 says "A part used alone exports nothing", so that
+line of the model looks wrong and is to be checked.
