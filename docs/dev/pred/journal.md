@@ -1299,3 +1299,6 @@ wake.md says (read the draft WHOLE first; A4 is a ruled-words finding: read his 
   "bang-split: yes". His question on binding a complement is answered by complement-place (2026-11-18).
 - r109's F1, F4, F6 (`&!`, `:!` in a record) have no subject under the ruling; F5, F7, F13 go to the fold brief.
 - Waiting: his go for the fold lane (six rulings now). Nothing running.
+- and-not RULED ("agree drop &!"); his "Budget is fine" read as the fold's go. Review number r111 from main.
+  LAUNCHED lane predfold1125 (opus; worktree worktrees/predfold1125 cut at 212e234e6; deliver + empty rulings
+  written first; lanewatch --follow armed). Seven rulings in its brief. Waiting on the lane's delivery.
