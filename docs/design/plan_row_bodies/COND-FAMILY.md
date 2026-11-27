@@ -11688,3 +11688,40 @@ The manager's thoughts (told to him; the manager's reading; nothing applied):
 - Not answered by it: the behind pair (PCRE's `(?<=`, `(?<!`) and PCRE2's two non-atomic forms; all stay
   writable in rx text.
 DFA category (his standing question): YES, unchanged: `^A` and `^!A` are the lookaheads classed YES 2026-11-25.
+
+### 2026-11-27 OWNER, a LEAN and a QUESTION on the peek operators: "i lean strongly to adopting this. one thing bothers me is that pcre has the (?!A) form and we are avoiding it ... if i said that !(A) := /(?!${A})/ would i be making a mistake because it exists and it even uses the same operator?"
+tags: lib/control/when lib/control/peek core/patterns/lookaround core/filters/negation core/filters/complement core/filters/operand-context core/conditions/two-valued core/principles/regex-default core/operators/precedence
+
+Said on the manager's thoughts on his peek and peeknot operators (`^A`, `^!A`; one body for `when`; `!` as the
+negative mark on an operator). HIS WORDS, whole:
+
+"i lean strongly to adopting this. one thing bothers me is that pcre has the (?!A) form and we are avoiding it.
+should we 1. accept the ground reality and include it in the language, 2. keep it but put it in a macro which is
+one level of obscuring, 3. keep it available as a literal hole like the above examples. in other words, am i
+pushing this is the wrong direction and if i said that !(A) := /(?!${A})/ would i be making a mistake because it
+exists and it even uses the same operator?"
+
+Class: a LEAN ("i lean strongly to adopting this": the peek operators with the sketch around them), a CONCERN
+(PCRE's `(?!A)` exists and the design avoids it), three OPTIONS he lists, and a QUESTION asked of the manager's
+judgement (is a prefix `!` defined as the negative lookahead a mistake). NOT a ruling.
+NOTHING NEW RUN; the runs relied on are in the record: the complement against the negative peek part
+("complement /\d+/ & !/7/ ... negative peek (?!7)\d+", 2026-11-25); `(?!(?!A))` against `(?=A)` as a `when`
+guard, "0 of 1093 differ" (the entry above).
+The manager's answer (told to him; the manager's judgement and reading; nothing applied):
+- Not a mistake, ONCE the complement object is gone. `!A` as the negative lookahead was refused on 2026-11-25 for
+  one reason: `!B` already meant the complement (a whole stretch is not B), and the two part. His sketch of today
+  moves that meaning to `&!` and the entry operators, so a prefix `!` on a pattern is free.
+- It then says one thing everywhere: "this cannot match (or hold) here". On a condition the documents already
+  read it so ("`NOT c` on a condition holds exactly when c fails, a negative lookahead at its point"), so `!` on a
+  condition and `!` on a pattern become one operator, PCRE's own, and `when(!x, z)` works as he expected on
+  2026-11-25 ("I'd expect as a user ... the "not" operator to provide not like behavior").
+- His three options do not exclude each other: (3) holds whatever is chosen (rx text is PCRE's, a hole included);
+  (2) is the same thing under a name; (1) taken as the prefix `!` is the one that adds something.
+- The cost: `A & !B`, written for weeks as the difference, becomes a lookahead used as a filter operand, a
+  compile error by the existing rule (core/filters/operand-context), whose message should name `A &! B`. An
+  error, never a changed answer; `A & !c` with a condition stays legal.
+- With it `^!` is not needed, and the general form told to him in the entry above ("`!` is never an operator by
+  itself") is WITHDRAWN: prefix `!` is the point test, `&!` and the entry `!` / `?!` are the membership tests.
+  The positive peek keeps a form of its own: his `^A`, or today's `peek(A)`; `!!A` has its answers but passes no
+  labels on.
+DFA category (his standing question): YES, unchanged.
