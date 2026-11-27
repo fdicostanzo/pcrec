@@ -12151,3 +12151,28 @@ His words, verbatim: "shorthand-outside: error. Agree."
 RULED (answered by slug): candidate (a) as asked: "compile error: the shorthand label is protected and adds no
 export"; the lean as put: "An implicit name, whether from a part used alone or from an argument passed by name,
 behaves one way: named inside, invisible outside." The piece closes as it reads; candidate (b) to details.
+
+### 2026-11-27 OWNER, a QUESTION on group-node: "_g comment: you mean wall the path?"
+tags: core/labels/rule/group-node core/labels/rule/paths core/labels/export
+His words, verbatim: "group-node: _g comment: you mean wall the path?"
+Class: a QUESTION about the asked statement (the line "a group named with an underscore, `(?<_g>...)`, would then
+wall off what is inside it, as `[_g = ...]` does", told to him as not run); not an answer; group-node stays open.
+The question as ASKED (slug group-node, the manager's framing; runs `predbang_evidence/groupnode.py`): "is a
+named group written in rx text a step in a path, the way a part label is?"; candidates "A group is a name for its
+own text only" (today) and "A group is a step like a part label"; the manager's leaning the second.
+The run his question called for (`docs/dev/lanes/predbang_evidence/groupwall.py`; the predfix90 ENGINE, today's
+reading; its own model line reads 6 failed because the documents it checks were folded since, which does not
+touch the engine; pasted from `groupwall.out`):
+```
+model last line: predfix90_model: 26 checks, 6 failed (PATHS10, GRID, SWEEP, ERRSWEEP, SUCCESSOR10, DOC)
+- || /(?<_g>(?<d>\d))x/ & (d: <5) | legal [(True, (0, 2), (('3x', 0),)), (False, None, ()), (False, (3, 5), (('3x', 3),)), (False, (0, 2), (('3x', 0), ('4x', 6)))]
+X := /(?<_g>(?<d>\d))x/ || X & (X.d: <5) | legal [(True, (0, 2), (('3x', 0),)), (False, None, ()), (False, (3, 5), (('3x', 3),)), (False, (0, 2), (('3x', 0), ('4x', 6)))]
+- || [n = /(?<_g>(?<d>\d))x/] & (n.d: <5) | legal [(True, (0, 2), (('3x', 0),)), (False, None, ()), (False, (3, 5), (('3x', 3),)), (False, (0, 2), (('3x', 0), ('4x', 6)))]
+- || [_g = /(?<d>\d)/] SEQ /x/ & (d: <5) | legal [(True, (0, 2), (('3x', 0),)), (False, None, ()), (False, (3, 5), (('3x', 3),)), (False, (0, 2), (('3x', 0), ('4x', 6)))]
+- || [_g = /(?<d>\d)/] SEQ /x/ & (_g.d: <5) | legal [(True, (0, 2), (('3x', 0),)), (False, None, ()), (False, (3, 5), (('3x', 3),)), (False, (0, 2), (('3x', 0), ('4x', 6)))]
+X := [_g = /(?<d>\d)/] SEQ /x/ || X & (X.d: <5) | refused: `X.d`: the path crosses the underscore label `_g`, not the start (a compile error, path-rules rule 2)
+- || [n = ([_g = /(?<d>\d)/] SEQ /x/)] & (n.d: <5) | refused: `n.d`: the path crosses the underscore label `_g`, not the start (a compile error, path-rules rule 2)
+```
+Read (the manager's): today an underscore GROUP walls nothing (`X.d`, `n.d` legal, lines 2 and 3) while an
+underscore PART LABEL walls the path (lines 6 and 7, rule 2). Under "a group is a step" lines 2 and 3 become
+compile errors like 6 and 7; the bare read inside (line 1) stays legal, as line 4 is.
