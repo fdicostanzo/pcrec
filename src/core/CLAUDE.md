@@ -41,7 +41,7 @@ Maintenance: update this file when files are added/removed or their roles change
 - `compile.c` — pipeline driver (`compile_driver`, retry/fit ladder, tune application, composer/tree hooks, compound walk, `pcrec_ctx_fail`, `pcrec_default_options`, `pcrec_count_groups`, `pcrec_compile_driver` exported face).
 - `compile_defs.c` — `pcrec_compile_defs` (`--source` composition entry) and nothing else.
 - `compound.c` — compound tool parts, admission rows, placement, shell build.
-- `arena.c` — zeroing arena allocator, its REGISTRY ([ARENA-SCOPES]) and `pcrec_err_chan`; never calls `pcrec_arena_alloc` (tests wrap it).
+- `arena.c` — zeroing arena allocator, its REGISTRY ([ARENA-SCOPES]), `pcrec_err_chan` + lent pair; never calls `pcrec_arena_alloc` (tests wrap it).
 - `sb.c` — string buffer, comment gate, SIMD/layout brackets, text layer, fragf, stamp writers, prefix render.
 - `tune.c` — `--tune` speed-vs-size policy table and accessors (+ part-layout preset columns).
 - `fold.c` — ASCII fold partition, Unicode simple fold walker, Latin-1 fold; `fold_tables.inc` generated.

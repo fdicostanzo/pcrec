@@ -61,7 +61,10 @@
  *       arena allocation that fits its block takes no malloc, so W1-W6's
  *       malloc counter cannot fail it where it matters (how K163 and the
  *       `uprops_produce` strand hid). The windows: a scope is open on the
- *       allocating arena (`pcrec_arena_open_p`), or a HAND-KEPT arena is
+ *       allocating arena (`pcrec_arena_open_p`), or the arena's Ctx is LENT
+ *       to a nested part compile (`pcrec_ctx_lent_p`, F4: its own row over
+ *       W6, empty by construction after the K163 fix, so an INFO line and
+ *       never a PASS; every lent point is a trial), or a HAND-KEPT arena is
  *       live (Ctx-bound, not its Ctx's own `&cx->arena`, not a scope's
  *       child, holding a block). The hook is the test link's alone:
  *       `-Wl,--wrap=pcrec_arena_alloc,--wrap=pcrec_arena_free` (both links:
@@ -279,6 +282,9 @@ static int hk_n = 0;
  * whole. */
 #define W7_SCOPE_STRIDE 4
 static long long scope_pt_n = 0;
+/* [K163] F4: this sweep's trial points are the LENT window's only (the
+ * allocating arena's Ctx is lent to a nested part compile), every one a trial */
+static int lent_only = 0;
 /* R-1: the live DFA memo arenas (a block taken, not yet freed). */
 static const Arena *mm[HK_CAP];
 static int mm_n = 0;
@@ -316,7 +322,9 @@ void __real_pcrec_arena_free(Arena *a);
  * opens the hand-kept window. */
 void *__wrap_pcrec_arena_alloc(Arena *a, size_t sz)
 {
-    if (hk_n > 0 || (pcrec_arena_open_p(a) && scope_pt_n++ % W7_SCOPE_STRIDE == 0)) {
+    int lent = pcrec_ctx_lent_p(a->cx);
+    if (lent_only ? lent
+                  : hk_n > 0 || lent || (pcrec_arena_open_p(a) && scope_pt_n++ % W7_SCOPE_STRIDE == 0)) {
         arena_n++;
         if (arena_fail_at && arena_n == arena_fail_at) {
             if (!fail_site[0])
@@ -442,6 +450,10 @@ typedef struct {
     int (*run)(pcrec_error *err);
     /* W7: every trial must read STRANDED (the control that can fail) */
     int expect_all_stranded;
+    /* [K163] W7's LENT window alone (F4): population 0 by construction on
+     * the fixed tree, so the row is the pre-fix control and sabotage (9)'s
+     * floor, never a gate that passes (K35): 0 trials prints an INFO line */
+    int lent_window;
 } Witness;
 
 /* [K60MEAS] what a child hands back: the profiling total (mode 0 only) and
@@ -463,6 +475,7 @@ static void child_attempt(const Witness *w, long long n, int sust, int fd)
     arena_n = 0;
     hk_n = 0;
     scope_pt_n = 0;
+    lent_only = w->lent_window;
     mm_n = 0;
     sustained = sust;
     call_n = 0;
@@ -604,6 +617,8 @@ static int sweep_mode(const Witness *w, int sust, Tally *t)
     t->first_signal_code = -1;
 
     long long total = profile(w);
+    if (total == 0 && w->lent_window)
+        return 1;   /* [K163] the empty lent window: report() prints its INFO line */
     if (total <= 0) {
         bad("%s: profiling pass did not succeed cleanly (K=%lld; a failed compile, or one that left heap live after pcrec_output_free) -- cannot sweep", w->name, total);
         return 0;
@@ -656,6 +671,14 @@ static void report(const Witness *w, const Tally *t, int sust)
     int pinned = want > 0 && w->absorbed_why && t->n_succeeded == want;
     long long bad_n = (pinned ? 0 : t->n_succeeded) + t->n_silent + t->n_signalled
                     + t->n_anomaly + t->n_leaked + t->n_memo;
+    /* [K163] the lent window on the fixed tree: no trial point exists, which
+     * is a reading, never a PASS (K35); a nonzero population is judged below
+     * like any other (a stranded trial is the K163 class back) */
+    if (w->lent_window && t->total == 0) {
+        printf("INFO: %s%s: 0 trial points (the lent window is empty by construction after F4: "
+               "the pre-fix control and sabotage (9)'s floor, not a gate)\n", w->name, tag);
+        return;
+    }
     /* [ARENA-SCOPES] the W7 control: a planted strand every trial must SEE */
     if (w->expect_all_stranded) {
         if (t->total >= w->min_total && t->n_leaked == t->total)
@@ -1032,7 +1055,7 @@ static int w7_plant(pcrec_error *err)
  * is half the population measured after F6 (528, from `ALLOC_ARGS=--w7-only make alloc`, lane f2f6; 535 at R-1,
  * lane arenabuild2, when the hand-kept `uprops_produce` window was in it; D110). */
 #define W7_ROWS \
-    { "W7/W3 (unicode-props/utf8)", "\\p{L}", PCREC_ENC_UTF8, 1, 0, 264, 0, 0, NULL, NULL, 0 }, \
+    { "W7/W3 (unicode-props/utf8)", "\\p{L}", PCREC_ENC_UTF8, 1, 0, 264, 0, 0, NULL, NULL, 0, 0 }, \
 
 
 int main(int argc, char **argv)
@@ -1069,7 +1092,7 @@ int main(int argc, char **argv)
          * [D110] `min_total` IS A FLOOR: 28 (half of 57, measured
          * 2026-09-18). See the struct comment for the ruling. */
         { "W1 (DFA)",              "[a-z]+",     PCREC_ENC_BYTE, 0, 0,
-          28, 0, 0, NULL, NULL, 0 },
+          28, 0, 0, NULL, NULL, 0, 0 },
         /* W2 forces --engine=vm: [a-z]{2,10} is capture-free and AUTO
          * selection routes it to the DFA by default (measured -- see
          * docs/dev/lanes/waveu_report.md), which never reaches
@@ -1079,10 +1102,10 @@ int main(int argc, char **argv)
          *
          * [D110] `min_total` floor: 5 (half of 11). */
         { "W2 (VM cursor rung)",   "[a-z]{2,10}", PCREC_ENC_BYTE, 0, PCREC_ENGINE_VM,
-          5, 0, 0, NULL, NULL, 0 },
+          5, 0, 0, NULL, NULL, 0, 0 },
         /* [D110] `min_total` floor: 151 (half of 303). */
         { "W3 (unicode-props/utf8)", "\\p{L}",   PCREC_ENC_UTF8, 1, 0,
-          151, 0, 0, NULL, NULL, 0 },
+          151, 0, 0, NULL, NULL, 0, 0 },
         /* [K60MEAS] W4 — THE SIZE-TERM LADDER, added because K60 names the
          * ladder's blanket "this K is out" catch as a mechanism and NONE of
          * W1-W3 enters the ladder at all (W1/W3 are DFA-engine artifacts,
@@ -1119,7 +1142,7 @@ int main(int argc, char **argv)
         { "W4 (size-term ladder)",
           "((?:(?:(?:[^a]{1,2}|[^a]??|.{0,2}?)+){0,8}(){2,3}){1,2}){2,3}",
           PCREC_ENC_BYTE, 0, 0,
-          81, 0, 0, NULL, NULL, 0 },
+          81, 0, 0, NULL, NULL, 0, 0 },
         /* [K155] W6 — THE COMPOUND WALK (review r96 GENFORM-1/CHECK-5): a
          * floor arm beside an end-pinned arm admits the `split` compound
          * row, so nested part compiles run and hand their heap `c_src` to
@@ -1130,8 +1153,12 @@ int main(int argc, char **argv)
          * THE ABSORPTION PIN IS BY DESIGN, not a filed defect: a part that
          * refuses ends the compound row and the compile falls back to the
          * plain artifact (compound.c: "Nothing here refuses the compile"),
-         * so single-shot failures inside a part's compile succeed (1014 of
-         * 1057 at [ARENA-SCOPES] F3, re-pinned UP from 1010 of 1045 (F1): the
+         * so single-shot failures inside a part's compile succeed (1016 of
+         * 1061 at [ARENA-SCOPES] F4, `make alloc`, lane f4, re-pinned UP from
+         * 1014 of 1057: per part, +1 hold record (an outer-point failure,
+         * diagnosed) and +1 heap forms copy made through the PART's own
+         * channel ([K163]: its failure refuses the part, absorbed by the
+         * fallback, where before it was an outer-arena copy); at F3, from 1010 of 1045 (F1): the
          * S11 `splice_mark`'s scope records (a MARK and a STRBUF, two heap
          * calls) are new in each of the two part compiles (S12 is skipped
          * there and S10 returns before its open), absorbed by the same fallback; `make alloc`, lane f3;
@@ -1141,9 +1168,9 @@ int main(int argc, char **argv)
          * pin is exact (D110); allocation-shape churn on the compound path
          * re-pins it. `min_total` floor: 504 (half of 1008, kept). */
         { "W6 (compound split)",   "^abc|x+$",   PCREC_ENC_BYTE, 0, 0,
-          504, 1014, 0,
+          504, 1016, 0,
           "the compound row's by-design fallback: a refused part compile "
-          "leaves the plain artifact (compound.c)", NULL, 0 },
+          "leaves the plain artifact (compound.c)", NULL, 0, 0 },
     };
     const size_t nw = sizeof witnesses / sizeof witnesses[0];
 
@@ -1166,8 +1193,17 @@ int main(int argc, char **argv)
     {
         static const Witness w7[] = {
             { "W7 control (planted hand-kept strand)", "", PCREC_ENC_BYTE, 0, 0,
-              1, 0, 0, NULL, w7_plant, 1 },
+              1, 0, 0, NULL, w7_plant, 1, 0 },
             W7_ROWS
+            /* [K163] F4: W7's LENT window over W6's compound walk. On the
+             * pre-F4 tree (C0(d), lane arenabuild) its points were the
+             * part's forms copy into the outer arena, and failing each
+             * stranded the part's compile; after F4 the copy is the part's
+             * own heap allocation, so the window is EMPTY by construction
+             * (floor 0, an INFO line, never a PASS). Sabotage S3653 restores
+             * the copy: the profiling compile refuses on the lent count. */
+            { "W7/W6 lent window (compound split)", "^abc|x+$", PCREC_ENC_BYTE, 0, 0,
+              0, 0, 0, NULL, NULL, 0, 1 },
         };
         arena_mode = 1;
         for (size_t i = 0; i < sizeof w7 / sizeof w7[0]; i++) {

@@ -844,6 +844,17 @@ Listed for the pre-go briefing; under D191 addendum 2 they need no go of their o
   floor `MIN_SCOPE_OPENS` re-derived 3 -> 4 (half of 8 sites, D110, command in its comment). r108 A: S3644 and S3648 are
   declared `UNDETECTED` (no mech suite can see an arena identity); their net is memgate `peak` under the levers with
   `--bound 0`. Sibling not scoped: `pcrec_clskit_partition`'s DP scratch is mixed-lifetime (`out->sec` lives on the parent).
+- F4 BUILT (lane f4, 2026-11-27; `docs/dev/lanes/f4_report.md`; K163 FIXED). D-4's six steps as written: `walk_part`
+  takes the `forms` and `text` holds, sets `PcrecPartFacts.hold = forms`, lends, compiles, unlends, stores the text,
+  refuses on a nonzero count. The part's copy is `part_forms_copy` (compile.c, static: exactly `strlen + 1` heap bytes
+  through the part's own Ctx, stored into `*hold` before anything else can refuse; its own scanner `ALLOW` row). The
+  accessor counts at `pcrec_arena_alloc` entry, `rec_take`, `sb_grow` past its capacity return, `pcrec_sb_take` and
+  `pcrec_sb_render_prefix` (rec_take added to D-7's four: it allocates through an Arena carrying a `.cx`, so the claim
+  needs it). The scanner's `readers` rule adds `pcrec_ctx_lent_p` (no src caller) and the lent pair (compound.c
+  `walk_part` only), with fixtures. W7's lent window is its own row over W6 (`lent_window`: only lent points are trials,
+  each one a trial); population 0 prints an INFO line, never a PASS. Sabotage (9) is S3653 (two edits: `walk_part`
+  hands the outer arena where the hold was, the part's compile_driver copies into it with `pcrec_sb_fragf`). Measured:
+  lent uses 0 over tests/compound/split.rxt; emitted C byte-identical (105 patterns, no abi move); W6 1016 of 1061.
 
 ## r102 disposition
 

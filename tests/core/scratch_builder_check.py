@@ -68,8 +68,10 @@ checks"), on the same noise-stripped text, each with fixtures that must FAIL:
              `pcrec_ctx_fail(` takes `pcrec_err_chan(` as its Ctx, and no
              arena.c function calls `pcrec_arena_alloc` (the test link wraps
              it; a call from inside arena.c would bypass the wrap);
-  readers    `pcrec_arena_open_p` (W7's read-only accessor) is called by no
-             file under src/, cli/ or lib/ (its reader is tests/core/alloc_check.c).
+  readers    `pcrec_arena_open_p` and `pcrec_ctx_lent_p` (W7's read-only
+             accessors) are called by no file under src/, cli/ or lib/ (their
+             reader is tests/core/alloc_check.c), and the lent pair
+             `pcrec_ctx_lend`/`_unlend` only by compound.c `walk_part` (D-7, K163).
 What they do NOT see: a scope handle passed to a callee that stores it; an
 open and close paired in one function but on different paths (the runtime's
 `pcrec_scope_check_closed` and the L1 stamp check are that control).
