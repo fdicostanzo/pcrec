@@ -11909,7 +11909,7 @@ question. V-D (`!A` on a consuming pattern = `(?!A)`) is V-C with one error rela
 manager agrees with it and puts it to the owner as bang-split, re-asked.
 
 ### 2026-11-27 OWNER, PROPOSAL — `!` the logical not, `~A` the complement; no `:!` operator
-tags: core/filters/complement core/filters/negation core/filters/kinds core/conditions/optional-entry lib/control/when
+tags: core/filters/complement core/filters/negation core/filters/kinds core/conditions/form/optional-entry lib/control/when
 His words, verbatim (after the manager's report of review r109 and the re-asked bang-split):
 "Let's say ! Is the logical not. For conditions and lookarounds its meaning is clear. My initial concern that set
 this off is that ! had two meanings. Now it doesn't. What that leaves is the need for a "complement" operator to
