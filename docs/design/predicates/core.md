@@ -1317,7 +1317,7 @@ WHOLE `3+4` HOLDS, `7+8` FAILS / SEARCHED `7+8 2+2` `2+2`@4 / FIND-ALL `1+1 9+9 
 Nothing fails the entry: WHOLE `7` HOLDS, `3` FAILS / SEARCHED `x3 7` `7`@3 / FIND-ALL `3 7 5 1` [`7`@2, `5`@4] (`/(?<a>\d)/ & (($a - 5): >= 0)`: `3 - 5` is nothing)
 Its not holds on nothing: WHOLE `7` FAILS, `3` HOLDS / SEARCHED `x3 7` `3`@1 / FIND-ALL `3 7 5 1` [`3`@0, `1`@6] (`/(?<a>\d)/ & !(($a - 5): >= 0)`)
 A read on the left: WHOLE `3x` HOLDS, `x` FAILS, `7x` FAILS / SEARCHED `7x 3x` `3x`@3 / FIND-ALL `3x x 7x` [`3x`@0] (`/(?<h>\d)?x/ & ($h: <5)`, as `(h: <5)`)
-Inside a group question: modes: a compile error, a reading (`/(?<h>\d);(?:(?<h>\d);)*/ & some(($h: "7"))`: a group question takes the array, `some(@h, "7")`; `count((($a + $b): <10))` alike).
+Inside a group question: modes: a compile error (`/(?<h>\d);(?:(?<h>\d);)*/ & some(($h: "7"))`: a group question takes the array, `some(@h, "7")`; `count((($a + $b): <10))` alike; a reading).
 A value with no label: WHOLE `x` HOLDS / SEARCHED `ax` `x`@1 / FIND-ALL `x x` [`x`@0, `x`@2] (`/x/ & ("Frank": /F.*/)`)
 A joint entry with a value: WHOLE `3+4=7` HOLDS, `7+8=1` FAILS, `1+2=34` FAILS / SEARCHED `7+8=1 2+2=4` `2+2=4`@6 / FIND-ALL `1+1=2 9+9=1 5+4=12` [`1+1=2`@0, `5+4=1`@12] (`/(?<a>\d)\+(?<b>\d)=(?<c>\d+)/ & ((($a + $b), c): (<10, /\d/))`)
 
@@ -1353,7 +1353,7 @@ A loop that can match empty: WHOLE `x` HOLDS, `3x` HOLDS, `7x` HOLDS, `73x` HOLD
 A joint left part: modes: a compile error for now (`/(?<a>\d)?,(?<b>\d)?/ & ((a, b) ?: >= (5, 3))`).
 A value left part: modes: a compile error for now (`/(?<a>\d)?,(?<b>\d)?/ & (($a + $b) ?: <10)`).
 Its not, the plain entry: WHOLE `x` HOLDS, `3x` FAILS, `7x` HOLDS / SEARCHED `3x 7x` `x`@1 / FIND-ALL `7x 3x x` [`7x`@0, `x`@4, `x`@6] (`/(?<h>\d)?x/ & !(h: <5)`)
-Inside a group question: modes: a compile error for now, a reading (`/(?<h>\d);(?:(?<h>\d);)*/ & some((h ?: "7"))`: a group question takes the array, `some(@h, "7")`).
+Inside a group question: modes: a compile error (`/(?<h>\d);(?:(?<h>\d);)*/ & some((h ?: "7"))`: a group question takes the array, `some(@h, "7")`; for now, a reading).
 
 ### The edges of the optional entry   [core/conditions/form/optional-edges]   open optional-entry-edges 2026-11-23
 Is `?:` legal on a joint left part and on a value left of `:`, and what does it mean there? For now both are compile errors.
