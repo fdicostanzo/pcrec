@@ -11828,7 +11828,7 @@ DFA category (his standing question): `^` and `^!` YES (classed 2026-11-25); `~`
 the manager's estimate, nothing run; in pcrec today every lookaround is VM (the build side is main's).
 
 ### 2026-11-27 OWNER, on bang-split (asked, not answered): "i've not written out ! forever ... its both logical not and set complement depending on context. !(cond) and !A mean different things."
-tags: core/filters/negation core/filters/complement core/conditions/two-valued core/patterns/lookaround core/principles/under-construction core/operators/precedence
+tags: core/filters/negation core/filters/complement core/conditions/two-valued core/patterns/lookaround core/principles/build-later core/principles/match-and-filter core/operators/precedence
 
 ASKED AS A RULING the same turn (slug bang-split; the statement put to him: "1. No `!` by itself. The complement
 object goes. `X := !B`, `(a: !<v)` and `A & !B` are compile errors that name the operator to use. 2. Entries,
