@@ -12000,3 +12000,9 @@ The manager's readings, told to him (none his words):
   labels, so nothing can backtrack into it; atomic or not cannot change its answer. The non-atomic question
   belongs to the POSITIVE `^A` only (whether a later piece may make `^A` retry another way of matching A). A
   parked piece is owed at the fold: "a non-atomic `^A`", trigger: a printed program whose answer needs the retry.
+
+### 2026-11-27 OWNER RULING — and-not: no `&!`; "and not in" is written `A & ~B`
+tags: core/filters/complement core/filters/and
+His words, verbatim: "and-not: agree drop &!"
+RULED (answered by slug), the statement AS ASKED, quoted: "confirm there is no `&!`, and "and not in" is written
+`A & ~B`?" It confirms bang-split line 3. The fold lane (predfold1125, review number r111 from main) may launch.
