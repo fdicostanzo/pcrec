@@ -2028,6 +2028,21 @@ static const char *fit_trace_labels(const Ctx *cx)
 #define FIT_TRACE(cxp, row, restart, site) ((void)sizeof("" site))
 #endif
 
+/* [ARENA-SCOPES] F4 ([K163], D-4's order): a part's forms string, copied to
+ * the HEAP through the part compile's own channel (`cx`, never the walk's)
+ * and stored into the walk's arena hold `*hold` the moment it exists, so the
+ * enclosing compile's arena owns it and no refusal falls between its birth
+ * and its owner. Exactly `strlen(s) + 1` bytes. */
+static const char *part_forms_copy(Ctx *cx, void **hold, const char *s)
+{
+    size_t n = strlen(s) + 1;
+    char *p = malloc(n);
+    if (!p) pcrec_ctx_nomem(cx);
+    memcpy(p, s, n);
+    *hold = p;
+    return p;
+}
+
 /* THE PIPELINE, and the tree's only `setjmp`: parse -> altcls -> discharge
  * atomic -> compose (`--source` only) -> call graph -> select engine ->
  * postresolve -> NFA -> DFA(s) -> emit, wrapped in a BOUNDED ONE-SHOT
@@ -3735,10 +3750,14 @@ facts_force:
             pf->scaf_size = cx.job->csb.scaf_size;
             pf->copyable = !cx.job->pl.uncopyable;
             pf->layout_bytes = cx.job->csb.layout_bytes;
-            if (!pf->into || !cx.job->memfn_forms)
+            if (!pf->hold || !cx.job->memfn_forms)
                 pcrec_ctx_fail(&cx, 0, "internal error: a part's facts have no "
-                               "arena or its forms were never stamped");
-            pf->memfn_forms = pcrec_sb_fragf(pf->into, "%s", cx.job->memfn_forms);
+                               "hold or its forms were never stamped");
+            /* [K163] the copy leaves this compile's arena on THIS compile's
+             * channel (a failure refuses here, so this compile's own
+             * teardown runs), and is owned by the walk's hold from the store
+             * on (a later refusal here strands nothing) */
+            pf->memfn_forms = part_forms_copy(&cx, pf->hold, cx.job->memfn_forms);
             pf->find_consulted = find_union | pcrec_find_asked(&cx);
             pf->meas_consulted = meas_union || cx.job->meas_consulted;
         }

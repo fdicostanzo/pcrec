@@ -50,6 +50,7 @@ static void sb_grow(StrBuf *sb, size_t need)
         pcrec_sb_len_decide(sb) + need > sb->abort_over && sb->cx)
         pcrec_ctx_fail(pcrec_err_chan(sb->cx), 0, "size-term ladder trial over its scratch bound");
     if (sb->len + need + 1 <= sb->cap) return;
+    (void)pcrec_err_chan(sb->cx);   /* D-7: a growth is a use, counted while lent */
     size_t cap = sb->cap ? sb->cap : 256;
     while (cap < sb->len + need + 1) cap *= 2;
     /* [M4.7b/K7] realloc into a TEMPORARY: on failure the old buffer is still
@@ -469,6 +470,7 @@ void pcrec_sb_printf(StrBuf *sb, const char *fmt, ...)
  * its function needs no take: `p` already does). */
 char *pcrec_sb_take(StrBuf *sb)
 {
+    (void)pcrec_err_chan(sb->cx);   /* D-7: a use, counted while lent */
     char *p = sb->p && !sb->ar ? sb->p : strdup(sb->p ? sb->p : "");
     if (!p) sb_nomem(sb);
     sb->p = NULL;
@@ -803,6 +805,7 @@ static size_t render_prefix(char *dst, size_t cap, const char *src, size_t n,
  * allocation failure leaves `sb` whole for the error path's pcrec_sb_free. */
 bool pcrec_sb_render_prefix(StrBuf *sb, const char *prefix)
 {
+    (void)pcrec_err_chan(sb->cx);   /* D-7: a use, counted while lent */
     bool stray = false;
     if (!sb->p) return true;
     size_t n = render_prefix(NULL, 0, sb->p, sb->len, prefix, &stray);

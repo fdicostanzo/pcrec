@@ -101,6 +101,7 @@ ALLOW = [
     ("src/core/arena.c", "rec_take", "heap", "[ARENA-SCOPES] the registry's entry record: linked at once, released by its scope's close or the arena's teardown"),
     ("src/core/arena.c", "pcrec_scope_malloc", "heap", "[ARENA-SCOPES] a HEAP entry's block, stored into a record already linked (holding NULL until then)"),
     ("src/core/compile.c", "compile_driver", "heap", "the Job itself, freed by job_cleanup"),
+    ("src/core/compile.c", "part_forms_copy", "heap", "[ARENA-SCOPES] F4 [K163]: a part's forms string, stored into the walk's arena hold the moment it exists (no refusal between)"),
     # -- heap arrays the Job owns from birth (job_cleanup frees them) ----
     ("src/ir/nfa.c", "nst", "heap", "the Job's NFA state array, realloc'd in place"),
     ("src/ir/dfa.c", "tab_grow", "heap", "the Job DFA's intern table (old one freed and NULLed first)"),
@@ -366,6 +367,10 @@ CHAN_CALL = re.compile(r"\bpcrec_ctx_(nomem|fail)\s*\(\s*(?!\s|pcrec_err_chan\s*
 CHAN_OPEN_EOL = re.compile(r"\bpcrec_ctx_(nomem|fail)\s*\(\s*$")
 ARENA_ALLOC_CALL = re.compile(r"\bpcrec_arena_alloc\s*\(")
 OPEN_P_CALL = re.compile(r"\bpcrec_arena_open_p\s*\(")
+LENT_P_CALL = re.compile(r"\bpcrec_ctx_lent_p\s*\(")
+# [K163] D-7: the lent pair's one caller is compound.c `walk_part` (the nested part compile)
+LEND_CALL = re.compile(r"\bpcrec_ctx_(un)?lend\s*\(")
+LEND_FILE, LEND_FN = "src/core/compound.c", "walk_part"
 # [ARENA-SCOPES] D-11 (r103 C12): keyed on the TYPE `mf_arena`, so both spellings of a binder are seen: an assignment
 # (`ma->u = X;`, `ma.u = X;`) and a brace initializer (`mf_arena ar = { X, ...};`, the kit's own idiom). The one allowed
 # binder is pcrec_memfn_art's, and it must bind `&cx->arena`; a `mf_art_begin(` call outside that function is a finding.
@@ -421,6 +426,11 @@ def scope_rule_findings(rel, clean, fnames):
             out.append((i + 1, "D-7", "an arena.c function calls pcrec_arena_alloc (it would bypass the test link's wrap)"))
         if OPEN_P_CALL.search(l) and fn and fn != "pcrec_arena_open_p":
             out.append((i + 1, "readers", "pcrec_arena_open_p is W7's read-only accessor: no caller under src/, cli/ or lib/"))
+        if LENT_P_CALL.search(l) and fn and fn != "pcrec_ctx_lent_p":
+            out.append((i + 1, "readers", "pcrec_ctx_lent_p is W7's read-only accessor: no caller under src/, cli/ or lib/"))
+        if LEND_CALL.search(l) and fn and fn not in ("pcrec_ctx_lend", "pcrec_ctx_unlend") and \
+                not (rel == LEND_FILE and fn == LEND_FN):
+            out.append((i + 1, "readers", "pcrec_ctx_lend/_unlend called outside compound.c walk_part (D-7: the one nested compile)"))
     for fn, ln in opens.items():
         if fn not in closes:
             out.append((ln, "L2-static", f"pcrec_scope_open in {fn or '<file scope>'} with no pcrec_scope_close in the same function"))
@@ -439,6 +449,9 @@ SCOPE_MUST_FAIL = [
     ("src/core/sb.c", "void h(StrBuf *sb)\n{\n    if (sb->cx) pcrec_ctx_nomem(sb->cx);\n}\n", "D-7"),
     ("src/core/arena.c", "void k(Arena *a)\n{\n    (void)pcrec_arena_alloc(a, 8);\n}\n", "D-7"),
     ("src/gen/x.c", "void m(Arena *a)\n{\n    if (pcrec_arena_open_p(a)) return;\n}\n", "readers"),
+    ("src/gen/x.c", "void m(Ctx *cx)\n{\n    if (pcrec_ctx_lent_p(cx)) return;\n}\n", "readers"),
+    ("src/core/compile.c", "void m(Ctx *cx)\n{\n    pcrec_ctx_lend(cx);\n}\n", "readers"),
+    ("src/core/compound.c", "void other(Ctx *cx)\n{\n    (void)pcrec_ctx_unlend(cx);\n}\n", "readers"),
 ]
 SCOPE_MUST_FAIL += [
     # L4's one src/parse/ row admits uprops_produce only: another function of the same file must still FAIL
@@ -465,6 +478,7 @@ SCOPE_MUST_PASS = [
     ("src/core/sb.c", "void h(StrBuf *sb)\n{\n    if (sb->cx) pcrec_ctx_fail(\n        pcrec_err_chan(sb->cx), 0, \"x\");\n}\n"),
     ("src/opt/x.c", "void f(Ctx *cx)\n{\n    Scope s = pcrec_scope_open(&cx->arena);\n    int *t = pcrec_scope_malloc(&s, 8);\n    pcrec_scope_free(&s, t);\n    pcrec_scope_close(&s);\n}\n"),
     ("src/core/sb.c", "void h(StrBuf *sb)\n{\n    if (sb->cx) pcrec_ctx_nomem(pcrec_err_chan(sb->cx));\n}\n"),
+    ("src/core/compound.c", "static int walk_part(CompWalk *w, int i)\n{\n    pcrec_ctx_lend(w->cx);\n    return (int)pcrec_ctx_unlend(w->cx);\n}\n"),
 ]
 
 def scope_self_test():
