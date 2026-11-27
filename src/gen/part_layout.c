@@ -600,7 +600,8 @@ static void render_buf(Ctx *cx, StrBuf *sb, unsigned char seen[PCREC_ENTRY_N + 1
     /* the new text is a scope's STRBUF entry ([ARENA-SCOPES] S12): `sb`
      * adopts its storage (no copy), so the close below frees nothing;
      * compile_driver's handler-top unwind releases it if a refusal leaves
-     * here first (teardown only on the count_groups/syntax_dump routes) */
+     * here first (the compile attempt, compile.c's pcrec_part_layout_render
+     * call, is this function's only route) */
     Scope sc = pcrec_scope_open(&cx->arena);
     StrBuf *o = pcrec_scope_sb(&sc);
     size_t i = 0;

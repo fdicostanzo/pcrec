@@ -370,7 +370,7 @@ are Job fields freed by `job_cleanup`, safe on every arrival); U1 (no measured p
 | S13 minimize | F1 | alloc_check `known_stranded` row "minimize.c tables" (reached in 8 trials, k155fix report) | |
 | S10 `nb` | F3 | alloc_check `known_stranded` row `target_headers_render` (20 trials across W1-W4); growth LSan shards | |
 | S11 `tail` | F3 | none filed: C0(c) names one if `alloc_check --sites` reaches `splice_mark`'s window | SINGLE-CONTROL (the scanner row only) |
-| S12 `o` | F3 | none filed: C0(c) names one if a witness reaches `render_buf` while `o` is live | SINGLE-CONTROL |
+| S12 `o` | F3 | none filed: C0(c) names one if a witness reaches `render_buf` while `o` is live | SINGLE-CONTROL; no sabotage row (r107 D: its heap plant is the scanner rule S3572 holds red; no alloc witness compiles a layout-marked artifact) |
 | S14 clskit | F2 | none filed; clskit did not appear in 3 single-compile profiles (r102 B22): C0(c) searches the clskit corpus | SINGLE-CONTROL |
 | S15 scanedge | F5 | none (its only refusals today free first) | SINGLE-CONTROL |
 | S29 `uprops_produce` | F6 | alloc_check W3 (`\p{L}` under `-e utf8`), SEEN by the stranded-arena gate (Tests and sabotage, "THE SEEN GATE"); the filed `known_stranded` row F1 adds for it is REACHED before F6 deletes it | |
@@ -816,8 +816,13 @@ Listed for the pre-go briefing; under D191 addendum 2 they need no go of their o
   (`classify` returns shapes only); `alloc_check.c`'s `target_headers_render` row WITH THE WHOLE filed-stranding table
   (`known_stranded`, its seen counts, exit code 5, the stale-row loop) and the allocation-stack recording and `fn`
   column. The table is deleted rather than left empty: with no row nothing can reach it (learnings section 3), and a
-  later filed stranding restores it with its first row. S3572 is RE-AIMED at S11 (the plant puts `tail` back on the
-  heap: S11 is SINGLE-CONTROL, the scanner its only net); S3584 is RE-AIMED at a heap second declarator beside
+  later filed stranding restores it with its first row. S3572 is RE-AIMED at S11 (the plant is the faithful pre-F3 shape: `tail` back on the
+  heap AND freed before the return, two edits; S11 is SINGLE-CONTROL for stranding, the scanner the only net that NAMES
+  the site; `alloc_check` W6's exact allocation pin also moves, incidentally, because the scope's STRBUF record is gone:
+  an allocation-count net, not a strand check, r107 A). No row aims at S12 `o` (r107 D): its plant (a heap `o`) is the
+  same scanner heap-builder rule S3572 already holds red, and no alloc witness compiles a layout-marked artifact (a heap
+  `o` is empty after the adopt, so not even a success-path leak shows); a scanner-only row per client is the cheap
+  option if one is ever wanted; S3584 is RE-AIMED at a heap second declarator beside
   `target_headers_render`'s scratch `lines` (per-declarator classification still matters without names).
   `MIN_SCOPE_OPENS` 2 -> 3 (half of 6 opening sites, D110).
 

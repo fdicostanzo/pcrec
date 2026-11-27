@@ -250,8 +250,8 @@ static bool splice_mark(Ctx *cx, StrBuf *sb, const char *mark, const char *text)
     size_t at = (size_t)(m - sb->p), cut = strlen(mark);
     /* the tail is a scope's STRBUF entry ([ARENA-SCOPES] S11): released at
      * the close below, or by compile_driver's handler-top unwind if a refusal
-     * (a nomem in the puts) leaves here; teardown only on the
-     * count_groups/syntax_dump routes */
+     * (a nomem in the puts) leaves here (the compile attempt, compile.c's
+     * pcrec_memfn_stamps_render call, is this function's only route) */
     Scope sc = pcrec_scope_open(&cx->arena);
     StrBuf *tail = pcrec_scope_sb(&sc);
     pcrec_sb_puts(tail, sb->p + at + cut);
@@ -367,7 +367,8 @@ static void target_headers_render(Ctx *cx)
      * The fresh buffer is a scope's STRBUF entry ([ARENA-SCOPES] S10, K155's
      * own site): csb adopts its storage (no copy), so the close below frees
      * nothing; compile_driver's handler-top unwind releases it if a refusal
-     * leaves here first (teardown only on the count_groups/syntax_dump routes) */
+     * leaves here first (the compile attempt, compile.c's
+     * pcrec_memfn_stamps_render call, is this function's only route) */
     Scope sc = pcrec_scope_open(&cx->arena);
     StrBuf *nb = pcrec_scope_sb(&sc);
     pcrec_sb_printf(nb, "%.*s%s", (int)at, c->p, text);

@@ -5172,8 +5172,8 @@ reaches. Witness W6 (`^abc|x+$`, review r96) runs the compound walk, the one
 fixed shape (a callee's heap result handed to the arena) the scan cannot
 see: BASE strands a part's text on 10 refusals, the fix 0; its 1014
 of 1057 (1010 of 1045 at [ARENA-SCOPES] F1, 982 of 1008 before F1's registry
-records; a one-array registry, tried and reverted, read 984; F3's three
-rewrite scopes added 4) single-shot absorptions are the compound row's by-design fallback, pinned
+records; a one-array registry, tried and reverted, read 984; F3's S11
+`splice_mark` scope, 2 records in each of 2 part compiles, added 4; S10/S12 do not run in a part compile) single-shot absorptions are the compound row's by-design fallback, pinned
 exactly with that reason (a pinned count prints a NOTE, any other count
 FAILS); sabotage S3580 drops the store into the part text's arena hold
 (`pcrec_arena_hold`, [ARENA-SCOPES] F1) and only W6 sees it. The

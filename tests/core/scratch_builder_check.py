@@ -476,7 +476,7 @@ def scope_self_test():
             out.append(f"the {rule} rule missed its fixture in {rel}")
     # floor plants (r105 CHECKS-1/2): one site seen is below the floor; an empty D-11 population trips its floor
     if not scope_floor_failures(1, D11_MIN_SEEN):
-        out.append("the scope-open floor did not trip on a single site (floor is half of 3)")
+        out.append("the scope-open floor did not trip on a single site (floor is half of 6)")
     if not scope_floor_failures(MIN_SCOPE_OPENS, 0):
         out.append("the D-11 binder floor did not trip on an empty population")
     for rel, text in SCOPE_MUST_PASS:
