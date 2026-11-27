@@ -419,10 +419,18 @@ see: core/patterns/strings
 modes: n/a (parked: not in the language)
 
 ### A non-atomic lookahead   [parked/ideas/non-atomic-ahead]   parked 2026-11-27
-A positive lookahead `^A` that a later piece may make retry another way of matching A; `!^A` answers yes or no and is untouched.
+A positive lookahead `^A` that a later piece may make retry another way of matching A; that `!^A` answers yes or no and is untouched is a reading.
 Trigger: a printed program whose answer needs the retry.
 Source: the record, the owner's future note "! with nonatomic lookaround?" (2026-11-27); the manager's reading that only `^A` is concerned (hand-reasoned, not run).
 see: core/patterns/lookaround/ahead
+modes: n/a (parked: not in the language)
+
+### A lookbehind operator   [parked/ideas/lookbehind-operator]   parked 2026-11-27
+A prefix or postfix operator for lookbehind, the mirror of `^A`; today rx text writes it (`(?<=x)`, `(?<!x)`).
+Trigger: three or more library bodies writing `(?<=` or `(?<!` in rx text because no operator exists (today: core 3, library 1, parked 0), or the stream roadmap's reverse DFA in a VM lookbehind as its first engine client.
+Source: the record, bang-split line 6 ("Lookbehind gets no operator for now"); parked by the manager from a review's general form.
+- It falls out of core/filters/family's kind table as one row: a lookbehind is a lookaround, a test for `!`.
+see: core/patterns/lookaround/ahead core/filters/family
 modes: n/a (parked: not in the language)
 
 ### A complement written in place means "cannot match here"   [parked/ideas/in-place-complement]   parked 2026-11-25
