@@ -12038,3 +12038,15 @@ THE SIDE NOTE is a STATEMENT of a rule, not asked as a question, so NOT recorded
 next as **label-needs-mark**. Today's documents do not have it: with `l` unmarked the body's `[l = v]` writes a
 label literally named `l` (line "unmarked, read as the body wrote it": `R.l.h` legal), and the caller's `x.h` is
 refused at the READ, not at the definition (line `unmarked`).
+
+### 2026-11-27 OWNER RULING — label-needs-mark: yes ("And yes to literal issue")
+tags: core/operators/bindings/label-variables core/operators/bindings/label-kinds
+His words, verbatim: "label-needs-mark: yes. And yes to literal issue"
+RULED (answered by slug), the statement AS ASKED, quoted: "if a body writes `[l = ...]` and `l` is a parameter
+that was not marked as a label (`l:`), is that a compile error at the definition?" Told to him with it: "The
+definition itself is refused, with a message naming the missing mark."
+"yes to literal issue": the manager's reading is that it answers the line put beside the question, "I would also
+apply it to the group-name form, so `(?<:${l}>...)` with an unmarked `l` is the same error" (the label written in
+rx literal text). Told to him as the reading taken.
+The manager's readings, for the fold to test: the rule is about a label WRITTEN under a plain parameter's name;
+a body's own label that shares no name with a parameter is untouched; a parameter marked `l:` is unchanged.
