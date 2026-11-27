@@ -617,3 +617,15 @@ urgently. NEW OWNER RULING in the record: bang-split (`!` = logical not of a tes
 filter-only; `^A` lookahead, `!^A`; no lookbehind operator for now). Not folded; it joins the five rulings of
 2026-11-25 in one fold lane awaiting his go. Proposed pcrec-critic skill edits from the round: in a multi-variant
 subject give "operand kinds of each new operator" to ONE lens in COMMON; a per-variant ruling table as standard.
+
+P-34 (2026-11-27) done: the fold of 2026-11-25/27 with review r111 ruled, applied and filed. Branch lane/pred-rev28,
+tip after this commit (the merge of lane/predfix111 is aa3f2c296). Reports: docs/dev/lanes/predfold1125_report.md,
+docs/dev/lanes/predfix111_report.md; reviews docs/dev/reviews/2026-11-27-r109-predbang.md and
+2026-11-27-r111-predfold1125.md. Fifteen owner rulings folded (drop-not, array-argument, brace-counts, map-creator,
+string-literals, bang-split, and-not, sent-label-wall, label-needs-mark, skip-past-wall, equivalence-inside,
+alone-as-middle, shorthand-outside, group-node, peek-name). Lint failed 0; plan-lint green; predfix111_model 14/0.
+Design documents and evidence only: nothing under src/ cli/ lib/ memfn/ tests/ scripts/. Worktrees predfold1125,
+predfix111 and their branches are free to prune after your merge. Proposed pcrec-critic skill edit (r111's
+process finding): when re-running evidence in a clone, create every branch ref the models read by name; models
+pin commits, not branch names. Plan-row status for [COND-FAMILY]: two owner questions open (gate-beside-label,
+gate-twice-scope); no build asked.

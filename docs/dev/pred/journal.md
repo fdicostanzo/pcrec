@@ -1315,3 +1315,7 @@ wake.md says (read the draft WHOLE first; A4 is a ruled-words finding: read his 
   stopped. LAUNCHED fix lane predfix111 (opus; worktree cut at cec257072; applies r111, folds group-node and
   peek-name, files the review; lanewatch armed). Owner questions from the round: gate-beside-label,
   gate-twice-scope (answers go to the lane's rulings file as R-n).
+- Lane predfix111 DELIVERED (lanewatch DONE; lint 9998/0; model 14/0; 14 plants caught; 67 successor reds
+  declared), merged at aa3f2c296, stopped. Review r111 filed by it. P-34 done line written; main told. Open with the
+  owner: gate-beside-label (asked; the lane printed (ii) as a marked reading; `g.h` over `/(?<g>${A})x/` is the
+  same cell), gate-twice-scope (next). Marked readings told to him at the r111 report.
