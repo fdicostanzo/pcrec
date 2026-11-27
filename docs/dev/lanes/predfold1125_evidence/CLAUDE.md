@@ -2,8 +2,8 @@
 
 Evidence for docs/dev/lanes/predfold1125_report.md. The fold puts seven owner rulings into the predicate
 documents: drop-not, array-argument, brace-counts, map-creator, string-literals, bang-split and and-not. It also
-takes review r109's F5, F7, F13 and F14, and the rulings file's R-1..R-4 (sent-label-wall, label-needs-mark,
-skip-past-wall, equivalence-inside). This is design evidence only. Nothing here rules, and no check under `make`
+takes review r109's F5, F7, F13 and F14, and the rulings file's R-1..R-6 (sent-label-wall, label-needs-mark,
+skip-past-wall, equivalence-inside, alone-as-middle, shorthand-outside). This is design evidence only. Nothing here rules, and no check under `make`
 reads it.
 
 ## Files
@@ -25,7 +25,11 @@ reads it.
   - It refuses each wrong form with a message naming the form to write.
   - RX11 (inlined, `RX11_SRC`) lowers into python `re` the programs the engine refuses (a negative lookahead,
     `when`, a pattern complement). It works MECHANICALLY from the body text.
-  - `X11[0]` switches the front end off. CANARY and SWEEP11's control run with it off.
+  - R5PATCH11 (R-5, alone-as-middle): predfix90's `walk10`, `path10` and `g_eval`, patched as declared text
+    replacements on their verbatim source (each applied once, each printed), switched by `X11[0]`. Inside its
+    binding a part used alone is a middle step and never skipped; used twice it is refused as a step; from outside
+    a step naming it is rule 6's wall (predfix90 handed that read to the loaded engine, which answered it legal).
+  - `X11[0]` switches the front end and R5PATCH11 off. CANARY and SWEEP11's control run with it off.
   - The checks, by name in its output:
     - CANARY;
     - TR11, the rule table;
@@ -37,7 +41,8 @@ reads it.
     - GROUP11, BRACES, STRINGS, MAP11: each against python `re` or a direct reading;
     - READINGS11: the manager's readings, each SUPPORTED, NOT SUPPORTED or UNTESTABLE;
     - SPECLINES: every new printed line, run from the SPEC11 table;
-    - GRID: predfix90's section verbatim, with one declared GRULE patch for R-1;
+    - GRID: predfix90's section verbatim, with declared patches: GRULE for R-1, GRULE["alone"] and 0 undecided
+      cells for R-5;
     - SUCCESSOR11;
     - QUOTES11: the owner's words, in the record at the starting commit and in their piece;
     - DOC11: every SPECLINES line verbatim in its piece.
@@ -50,7 +55,7 @@ reads it.
     - `PREDFOLD1125_LIGHT=1` skips SUCCESSOR11.
     - `PREDFOLD1125_SUCCDUMP=DIR` saves each successor's output. `PREDFOLD1125_READDUMP=1` re-reads those outputs.
     - `PREDFOLD1125_WRITEDECL=F` writes the seen reds as a declaration draft.
-  - `PREDFOLD1125_SABOTAGE=qN` plants one wrong rule, fact or text per check (the PLANTS11 table, q1..q14).
+  - `PREDFOLD1125_SABOTAGE=qN` plants one wrong rule, fact or text per check (the PLANTS11 table, q1..q15).
     `=all` runs every plant, one LIGHT subprocess each; q12 reads the dumped successor runs. Each plant must FAIL
     its target check, with no traceback.
 - `predfold1125_model.out`, `predfold1125_sabotage.out`: the committed runs at the delivered tip.
