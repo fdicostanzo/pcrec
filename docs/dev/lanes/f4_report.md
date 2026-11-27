@@ -166,6 +166,9 @@ The whole corpus's reading is `200-f4-test` (make test).
     Expect peak WITHIN, the arena column the same or lower, and rungs IDENTICAL or LAYOUT.
   - `190-f4-alloc`: `make alloc`. Expect W6 single "1016 of 1061" as a pinned NOTE, the lent row INFO 0, and
     everything else PASS.
+- Queue note: `200-f4-mech`'s `--dry-run` (VALIDATE_ONLY over 31 rows) took about 73 s with `200-f4-test` loading the
+  box (load 22), which is over boxqueue's 30 s dry-run bound. It was queued with `BOXQUEUE_DRY_BOUND=240`. If the
+  launch-time dry-run also times out, split the id list or re-add the job with the same override.
 - Sabotage ids used: S3653 only (S3654-S3662 unused). No new K or D numbers. No abi change.
 - For the manager:
   - the D109 addendum;
