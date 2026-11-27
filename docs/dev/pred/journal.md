@@ -1302,3 +1302,11 @@ wake.md says (read the draft WHOLE first; A4 is a ruled-words finding: read his 
 - and-not RULED ("agree drop &!"); his "Budget is fine" read as the fold's go. Review number r111 from main.
   LAUNCHED lane predfold1125 (opus; worktree worktrees/predfold1125 cut at 212e234e6; deliver + empty rulings
   written first; lanewatch --follow armed). Seven rulings in its brief. Waiting on the lane's delivery.
+- Asked and RULED while the lane ran (each sent to it as R-1..R-6): sent-label-wall (error), label-needs-mark
+  (yes), skip-past-wall (legal paths only), equivalence-inside (no label `t`), alone-as-middle ("yes to the
+  gate": a part used alone may be named as a step, never skipped; the manager's first lean withdrawn on his
+  point), shorthand-outside (error). group-node framed and ASKED (runs: predbang_evidence/groupnode.py).
+- Lane predfold1125 DELIVERED (lanewatch DONE; lint 9770/0; model 15/0; 15 plants caught), merged at ddad6c680
+  (lint 9795/0, plan-lint green), stopped. Owed by me at the fix: a rulings item per R-1..R-6 citing the record.
+- LAUNCHED critic round r111 (crit-predfold1125, opus coordinator, three critics, design mode, freeze ddad6c680).
+  Waiting on its draft and on the owner's group-node answer.
