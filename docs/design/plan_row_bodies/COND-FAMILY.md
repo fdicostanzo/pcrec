@@ -11826,3 +11826,31 @@ The manager's thoughts (told to him; the manager's reading; nothing applied):
   change of meaning.
 DFA category (his standing question): `^` and `^!` YES (classed 2026-11-25); `~` and `~!` YES by the same closure,
 the manager's estimate, nothing run; in pcrec today every lookaround is VM (the build side is main's).
+
+### 2026-11-27 OWNER, on bang-split (asked, not answered): "i've not written out ! forever ... its both logical not and set complement depending on context. !(cond) and !A mean different things."
+tags: core/filters/negation core/filters/complement core/conditions/two-valued core/patterns/lookaround core/principles/under-construction core/operators/precedence
+
+ASKED AS A RULING the same turn (slug bang-split; the statement put to him: "1. No `!` by itself. The complement
+object goes. `X := !B`, `(a: !<v)` and `A & !B` are compile errors that name the operator to use. 2. Entries,
+each one token: `:` present and in the set; `?:` absent, or in the set; `:!` present and outside the set; `?:!`
+absent, or outside the set. 3. `A &! B` is the difference: A's stretch is not a B. It is shorthand for
+`A & (0 :! B)`. 4. Four lookaround operators, prefix and zero width; each makes an ordinary pattern usable
+wherever a pattern is: `^A` (A matches ahead), `^!A` (cannot), `~A` (A matches behind), `~!A` (cannot). `^A`
+replaces `peek(A)` and passes A's labels on; the negatives pass none. 5. `when(T, B, C) := T seq B | ^!T seq C`.
+A bare test consumes, as today. `when(^A, B, C)` does not consume. `when(^!A, B, C)` is the negative. 6.
+Negating a condition (my reading of "keep ! out", so please confirm it): `!(h: <5)` is written `^!(h: <5)` in a
+sequence, `A &! (h: <5)` beside a pattern, or `(h ?:! <5)` for one entry. The meaning does not change."; the
+manager's leaning: yes to all six). HIS WORDS, whole:
+
+"i've not written out ! forever. but what ! means in regex depends on how and where it is used and the above
+contain it to those areas. the trouble is that its both logical not and set complement depending on context.
+!(cond) and !A mean different things."
+
+Class: an OBSERVATION giving his reason, and a STATEMENT OF INTENT. READING TAKEN (told to him): "written out" is
+"ruled out" or "written off": a bare `!` is not gone for good; for now its meanings are contained in the
+operators of the statement. NOT an answer to bang-split by its slug: it is NOT recorded as ruled, and line 6
+(his "!(cond)") is not confirmed by it.
+The manager's reading (told to him; nothing applied): by his method, what is not needed now is UNDER
+CONSTRUCTION, "a direction acknowledged", never illegal: the bare `!` would be RESERVED, its compile errors
+saying so, in place of line 1's "goes". The two meanings he names sit on the two sides of the split already:
+"outside the set" in `:!`, `?:!`, `&!`; "does not hold here" in `^!` and `~!`.
