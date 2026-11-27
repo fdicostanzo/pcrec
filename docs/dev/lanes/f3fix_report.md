@@ -30,8 +30,10 @@ moves, no compiler behaviour change (comments, one sabotage row, one test messag
 - Not run: make test-codegen (no emitted change).
 
 ## Cloud runs
-mechrows on the final commit: see STATE AT HANDOFF for the ref and ls-remote line.
+mechrows, row S3572, ref 6b0446cb5e255b41870e616be135fd9ba4bc3079 (code-identical to this report's commit):
+`git ls-remote origin 'refs/heads/cloud/main/*/f3fix*'` prints
+`6b0446cb5e255b41870e616be135fd9ba4bc3079 refs/heads/cloud/main/mechrows/f3fix.rows.S3572`. Verdict arrives via queuewatch.
 
 ## STATE AT HANDOFF
 Rulings file: no R-n entries (none applied). Owed: `200-f3fix-alloc` (make alloc on this worktree's final commit; the
-D110 pin check: expect the unplanted tree clean at 1014 of 1057). Cloud mechrows run: see below.
+D110 pin check: expect the unplanted tree clean at 1014 of 1057). Cloud mechrows run dispatched (see Cloud runs); queued key `200-f3fix-alloc`.
