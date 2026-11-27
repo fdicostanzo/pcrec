@@ -460,7 +460,7 @@ defined: language
   a match of the program) has no ruled spelling.
 WHOLE `1a2` HOLDS, `12` HOLDS, `1` FAILS / SEARCHED `x1y2` `x1y2`@0 / FIND-ALL `1 2 x 3` [`1 2 x 3`@0] (`occurrences(/\d+/, min = 2)`)
 Plain read, the last hit: WHOLE `a1b3` HOLDS, `a9b3` HOLDS, `a3b9` HOLDS, `a1b22` HOLDS, `ab` FAILS / SEARCHED `x9 3` `x9 3`@0 / FIND-ALL `a9b3 c7` [`a9b3 c7`@0] (`[hits = occurrences(/\d+/)] & (hits.hit: <5)`)
-Every hit, a group question: WHOLE `a1b3` HOLDS, `a9b3` HOLDS, `a3b9` HOLDS, `a1b22` HOLDS, `ab` HOLDS / SEARCHED `x9 3` `x9 3`@0 / FIND-ALL `a9b3 c7` [`a9b3 c7`@0, ``@7] (`[hits = occurrences(/\d+/)] & occurs.none((hits.hit: >= 5))`)
+Every hit, a group question: WHOLE `a1b3` HOLDS, `a9b3` HOLDS, `a3b9` HOLDS, `a1b22` HOLDS, `ab` HOLDS / SEARCHED `x9 3` `x9 3`@0 / FIND-ALL `a9b3 c7` [`a9b3 c7`@0, ``@7] (`[hits = occurrences(/\d+/)] & occurs.none(@hits.hit, >= 5)`)
 The argument's group, through the hit: WHOLE `a1b3` HOLDS, `a3b1` HOLDS, `ab` FAILS / SEARCHED `x1 3` `x1 3`@0 / FIND-ALL `a3 b1 3` [`a3 b1 3`@0] (`occurrences(/(?<n>\d+)/) & (occurrences.hit.n: "3")`)
 
 ### hits   [lib/search/hits]   ruled 2026-11-22
@@ -654,7 +654,8 @@ defined: language (`every(@d, S) := occurs.none(@d, ~S)`)
   no pass, it is not the item form, the condition written inside the loop (the lines below).
 - "Set at least once and every setting in S" is `some(@d, S) & every(@d, S)`.
 Every setting: WHOLE `7,7,` HOLDS, `7,,` HOLDS, `7,1,` FAILS, `,` HOLDS / SEARCHED `1, 7,,` `,`@1 / FIND-ALL `7,, 7,1, 7,7,` [`7,,`@0, `7,`@4, `,`@7, `7,7,`@9] (`/(?:(?<d>\d)?,)+/ & every(@d, "7")`)
-Set at least once: WHOLE `7,7,` HOLDS, `7,,` HOLDS, `7,1,` FAILS, `,` FAILS / SEARCHED `1, 7,,` `7,,`@3 / FIND-ALL `7,, 7,1, 7,7,` [`7,,`@0, `7,`@4, `7,7,`@9] (`/(?:(?<d>\d)?,)+/ & some(@d, "7") & every(@d, "7")`)
+Set at least once: WHOLE `7,7,` HOLDS, `7,,` HOLDS, `7,1,` FAILS / SEARCHED `7,, 7,7,` `7,,`@0 / FIND-ALL `7,, 7,1, 7,7,` [`7,,`@0, `7,`@4, `7,7,`@9] (`/(?:(?<d>\d)?,)+/ & some(@d, "7") & every(@d, "7")`)
+No pass, set at least once: WHOLE `x` FAILS, `7,x` HOLDS / SEARCHED `-x` FAILS / FIND-ALL `x 7,x 1,x` [`7,x`@2] (`/(?:(?<d>\d),)*x/ & some(@d, "7") & every(@d, "7")`)
 No pass: WHOLE `x` HOLDS, `7,x` HOLDS, `1,x` FAILS / SEARCHED `-x` `x`@1 / FIND-ALL `x 7,x 1,x` [`x`@0, `7,x`@2, `x`@8] (`/(?:(?<d>\d),)*x/ & every(@d, "7")`)
 The item form: WHOLE `7,7,` HOLDS, `7,,` FAILS, `7,1,` FAILS / SEARCHED `7,, 7,7,` `7,`@0 / FIND-ALL `7,, 7,1, 7,7,` [`7,`@0, `7,`@4, `7,7,`@9] (`/(?:(?<d>\d)?${(d: "7")},)+/`)
 No pass, the item form: WHOLE `x` HOLDS, `7,x` HOLDS / SEARCHED `-x` `x`@1 / FIND-ALL `x 7,x 1,x` [`x`@0, `7,x`@2, `x`@8] (`/(?:(?<d>\d)${(d: "7")},)*x/`)

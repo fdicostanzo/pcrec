@@ -2521,7 +2521,7 @@ placeholder (core/spellings/placeholders).
 A map is an array of labelled elements, written `{a = A, b = B}`; as a pattern it is the alternation of its elements in written order; `.` reaches its members.
 needs: core/operators/bindings core/arrays/lift
 see: core/modules/map/access core/values/metadata core/labels/export parked/ideas/export-two-labels parked/ideas/select-by-position
-- His words: "map-creator: Yes to all seven"; a module is described by its map interface, its members its fields,
+- His words: "Yes to all seven" (map-creator); a module is described by its map interface, its members its fields,
   reached by the one `.` (the earlier ruling, which stands); what kind of thing a module is is not ruled.
 - The literal enforces the labels: an element with no label is a compile error; a numeral is not a label name.
   The literal's spelling is a placeholder; the labelled array `[a = A | b = B]` stays legal, unenforced (readings).
