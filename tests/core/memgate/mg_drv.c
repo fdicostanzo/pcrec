@@ -25,8 +25,8 @@
  *   around the one `pcrec_compile` call. Needs ADDR_NO_RANDOMIZE (the count
  *   moves ~2% with the layout): exits 3 without it.
  *
- * Deterministic by construction (no wall clock); memgate.py's noise read runs
- * a side against itself to prove it. */
+ * Deterministic by construction (no wall clock; instr under ASLR off); memgate.py's noise read runs
+ * a side against a SECOND directory of the same binaries to prove it. */
 #include <malloc.h>
 #include <stdint.h>
 #include <stdio.h>
