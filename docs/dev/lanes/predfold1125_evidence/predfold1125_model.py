@@ -563,6 +563,24 @@ def _select(els, key, maps):
     return "(" + " | ".join("[%s = %s]" % (n, tr(e, maps)) for n, e in res) + ")"
 
 
+def _label_marks(head, body):
+    """label-needs-mark: a body that places a parameter's name as a label (`[l = ...]`, `(?<:${l}>`) needs the
+    parameter marked `l:` (a compile error at the definition)."""
+    m = re.fullmatch(r"[\w.]+\((.*)\)", head, re.S)
+    if not m:
+        return
+    for p in _top_split_commas(m.group(1)):
+        p = p.strip()
+        nm = re.match(r"\w+", p)
+        if not nm or p[nm.end():].lstrip().startswith(":") or p.endswith(":"):
+            continue
+        v = nm.group(0)
+        if re.search(r"(?<![\w.$])%s\s*=(?!=)" % re.escape(v), body) and re.search(r"\[[^\]]*(?<![\w.$])%s\s*=" % re.escape(v), body) \
+                or re.search(r"\(\?<:\$\{\s*%s\s*\}>" % re.escape(v), body):
+            raise TrError("the body places the parameter `%s` as a label; a label parameter is marked `%s:` in the "
+                          "head (label-needs-mark: a compile error at the definition)" % (v, v))
+
+
 def tr_prog(expr, binds):
     """The program and its bindings, read into the loaded engines' spelling."""
     maps = {}
@@ -574,6 +592,7 @@ def tr_prog(expr, binds):
     b2 = []
     for b in binds:
         n, _, body = b.partition(" := ")
+        _label_marks(n.strip(), body)
         if n.strip() in maps:
             b2.append(n + " := " + " | ".join("[%s = %s]" % (k, tr(v, maps)) for k, v in maps[n.strip()]))
         else:
@@ -905,6 +924,10 @@ QQ11 = [  # (his sentence, the piece that quotes it)
     ("`!` on a set or pattern is an error naming `~`", "lib/control/when-test/not"),
     ("capture-negated: broaden to any effect macro cannot be under negation.", "core/filters/negation/effects"),
 ]
+GONE11 = {  # old program -> why: a printed line a ruling removed (its text kept in the details entry's `rejected:`)
+    "[n = ([m = P] SEQ [k = Q])] & (n.d: <5)": "R-3, skip-past-wall: candidate (b)'s line, not taken",
+    "[n = ([m = P] | [k = Q])] & (n.d: <5)": "R-3, skip-past-wall: candidate (b)'s line, not taken",
+}
 MOVED11 = {}  # repr(program) -> why: an answer that moves (none expected: the fold changes no answer)
 HIST11 = {}   # (details file, program) -> why: a details line in the spelling of the run it records
 RESPELL11 = {  # old program -> (new program, why): a printed line whose key moves with the re-spelling; the
@@ -1084,6 +1107,9 @@ TRT11 = [  # (program, bindings, want: the engine text, or "ERR:" + a fragment o
     ("m", ["m := {a = /x/, /y/}"], "ERR:no label"),
     ("m", ["m := {1 = /x/}"], "ERR:numeral"),
     ("m.z", ["m := {a = /x/, b = /y/}"], "ERR:no member"),
+    ("R(x, A)", ["A := /(?<h>\\d)/", "R(l, v) := /${[l = v]}xx/"], "ERR:marked `l:`"),
+    ("A(x)", ["A(l) := /(?<:${l}>\\d+)/"], "ERR:marked `l:`"),
+    ("R(x:, A)", ["A := /(?<h>\\d)/", "R(l:, v) := /${[l = v]}xx/"], "R(x:, A)"),
 ]
 tr_bad = []
 for e_, b_, want in TRT11:
@@ -1228,6 +1254,10 @@ for k_, vs0 in OLD_T11.items():
         continue
     pr_old = vs[0][4]
     rs = RESPELL11.get(k_[0])
+    if rs is None and k_[0] in GONE11:
+        used11.add(k_[0])
+        print("   DROPPED BY A RULING %s:%d `%s`: %s" % (vs[0][0], vs[0][1], k_[0], GONE11[k_[0]]))
+        continue
     if rs is None:
         sw_gone.append((vs[0][0], vs[0][1], k_[0], vs[0][2]))
         continue
@@ -1236,7 +1266,7 @@ for k_, vs0 in OLD_T11.items():
     hits = [v_ for kk, vv in NEW_T11.items() if kk[0] == new_prog and kk[2:] == k_[2:] for v_ in vv if v_[0] == f0]
     if not hits or any(v_[4] != pr_old for v_ in hits):
         sw_moved.append((vs[0][0], k_[0] + " -> " + new_prog, pr_old[:140], hits[0][4][:140] if hits else "NO LINE"))
-stale11 = sorted(k_ for k_ in RESPELL11 if k_ not in used11)
+stale11 = sorted(k_ for k_ in list(RESPELL11) + list(GONE11) if k_ not in used11)
 oldk = set(OLD_T11)
 for k_, vs in NEW_T11.items():
     if key11(k_) not in oldk and not any(rs_[0] == k_[0] for rs_ in RESPELL11.values()):
@@ -1298,6 +1328,8 @@ MSG11 = {  # a compile-error line's program -> a fragment its refusal must carry
     "rx.digit{}": "`x*`",
     "m": "no label",
     "m.z": "no member",
+    "R(x, A)": "marked `l:`",
+    "A(x)": "marked `l:`",
 }
 es_bad, es_msg = [], []
 for f_, ln_, e_, b_ in es_now:

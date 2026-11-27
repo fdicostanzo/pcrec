@@ -466,10 +466,11 @@ see: core/labels/rule/stacked-chain core/labels/ownership core/labels/export cor
   binding's or a macro's name on its part: implicit) or a list's alias; "contain" is his word, so an underscore
   label that is the TARGET is in the path too; "within a binding" is the text of one definition.
 - His picture of rule 2: "[_t = A ] is equivalent to [_ = [t = A ]]". It holds from outside: `X.t.h` and `X.h`
-  are refused alike. Inside the binding the two part (core/labels/rule/equivalence-inside).
+  are refused alike: the picture of how a private label looks from outside. Inside, `[_t = A]` makes no `t`
+  (his ruling, core/labels/rule/equivalence-inside).
 - Readings (the manager's): the blank label is never a start, having no name; rule 4 applies repeatedly, two or
-  more middle labels skipped at once (its ground: `X.h`, `X.m.h` "all legal" for `[n = [m = A]]`, as asked); rule
-  4's candidates count only the targets a legal path reaches (core/labels/rule/skip-past-wall); an implicit label
+  more middle labels skipped at once (its ground: `X.h`, `X.m.h` "all legal" for `[n = [m = A]]`, as asked). His
+  ruling: rule 4's candidates count only the targets a legal path reaches (core/labels/rule/skip-past-wall); an implicit label
   is never a middle (core/labels/rule/alone-as-middle); a label the caller writes in an argument, a sent label and
   the caller's shorthand label are starts in the CALLER's binding, a start under the body's wall but never a
   licence to cross a wall below it; Rule 5's start by a binding's or macro's name is line 3's shorthand under its
@@ -513,34 +514,27 @@ see: core/operators/bindings/label-in-argument
   label the caller writes in A (core/labels/export/arguments).
 The sent label above the body's blank: modes: a compile error (`R(x:, A) & (x.h: <5)`, A := `/(?<h>\d)/`, R(l:, v) := `/${[l = [_ = v]]}xx/`: the path x, `_`, h crosses the blank (rule 2)).
 The wall above the sent label: WHOLE `3xx` HOLDS, `7xx` FAILS / SEARCHED `7xx 3xx` `3xx`@4 / FIND-ALL `3xx 7xx 4xx` [`3xx`@0, `4xx`@8] (`R(x:, A) & (x.h: <5)`, A := `/(?<h>\d)/`, R(l:, v) := `/${[_ = [l = v]]}xx/`)
-### Skipping past a private part   [core/labels/rule/skip-past-wall]   open skip-past-wall 2026-11-25
-When one route to a skipped label's target crosses an underscore label, does rule 4's "unambiguously" count that route's target?
+### Skipping past a private part   [core/labels/rule/skip-past-wall]   ruled 2026-11-27
+Rule 4's candidates count only the targets a legal path reaches: a private part behaves as if its labels were not there, so `n.d` reads m's `d` past `[_x = Q]`, per operator.
 needs: core/labels/rule/paths
 see: core/labels/export/flat-read-outside
-The reading today: rule 4's candidates count only the targets a legal path reaches (the manager's reading; the
-inside twin of flat-read-outside's "a source it keeps protected does not exist for that read"): `n.d` reads m's
-`d` past `[_x = Q]`, per operator. Candidates: (a) legal paths only; (b) every target counts, by the existing rule
-as worded: in a sequence the last mention (Q's `d`), across `&` the ambiguous reference, across `|` the branch
-taken. They part on every operator: the first three lines are (a), the last three (b) (`[k = Q]` written public
-gives (b)'s answers).
+- His words: "skip-past-wall: agree with lean"; the lean as put: "(a). A private part should behave as if its
+  labels were not there."
+- The inside twin of flat-read-outside's "a source it keeps protected does not exist for that read". Written
+  public (`[k = Q]`), the competitor counts by the rule as worded; the not-taken candidate is in the details entry.
 In a sequence, the private part last: WHOLE `3,7` HOLDS, `7,3` FAILS / SEARCHED `7,3 3,7` `3,7`@4 / FIND-ALL `3,7 7,3 4,1` [`3,7`@0, `4,1`@8] (`[n = ([m = P] SEQ [_x = Q])] & (n.d: <5)`, P := `/(?<d>\d)/`, Q := `/,(?<d>\d)/`): m's `d`
 Across `&`: WHOLE `37` HOLDS, `73` FAILS / SEARCHED `73 37` `37`@3 / FIND-ALL `37 73 14` [`37`@0, `14`@6] (`[n = ([m = P] & [_x = Q])] & (n.d: <5)`, P := `/(?<d>\d)\d/`, Q := `/\d(?<d>\d)/`): m's `d`
 Across `|`: WHOLE `3` HOLDS, `a3` FAILS, `a7` FAILS / SEARCHED `a7 a3` `3`@4 / FIND-ALL `3 a7 a4` [`3`@0, `4`@6] (`[n = ([m = P] | [_x = Q])] & (n.d: <5)`, P := `/(?<d>\d)/`, Q := `/a(?<d>\d)/`): m's `d`, unset where the private branch is taken
-Candidate (b) in a sequence, the last mention read: WHOLE `3,7` FAILS, `7,3` HOLDS / SEARCHED `7,3 3,7` `7,3`@0 / FIND-ALL `3,7 7,3 4,1` [`7,3`@4, `4,1`@8] (`[n = ([m = P] SEQ [k = Q])] & (n.d: <5)`, P := `/(?<d>\d)/`, Q := `/,(?<d>\d)/`): Q's `d`
-Candidate (b) across `&`: modes: a compile error (`[n = ([m = P] & [k = Q])] & (n.d: <5)`, P := `/(?<d>\d)\d/`, Q := `/\d(?<d>\d)/`: both sides set `d`, the ambiguous reference).
-Candidate (b) across `|`, the branch taken: WHOLE `3` HOLDS, `a3` HOLDS, `a7` FAILS / SEARCHED `a7 a3` `a3`@3 / FIND-ALL `3 a7 a4` [`3`@0, `a4`@5] (`[n = ([m = P] | [k = Q])] & (n.d: <5)`, P := `/(?<d>\d)/`, Q := `/a(?<d>\d)/`)
-
-### His equivalence inside the binding   [core/labels/rule/equivalence-inside]   open equivalence-inside 2026-11-25
-Inside the binding that writes it, is `[_t = A]` the same as `[_ = [t = A]]`, so that `t.h` reads A's `h`?
+### His equivalence inside the binding   [core/labels/rule/equivalence-inside]   ruled 2026-11-27
+Inside the binding that writes it, `[_t = A]` makes no label `t`: inside, `t.h` is a compile error and `_t.h` the read.
 needs: core/labels/rule/paths
-His words: "[_t = A ] is equivalent to [_ = [t = A ]]", said of rule 2. From outside the two agree (the third line).
-The reading today: no label `t` is made by `[_t = A]` (the manager's reading (g)), so inside, `t.h` is a compile
-error and `_t.h` the read. Candidates: (a) reading (g); (b) the equivalence holds inside too: `t.h` is legal, the
-answers of the first line. They part on the first two lines.
+- His words: "equivalence-inside: agree with lean. As you said, the line was only about accessibility"; the lean
+  as put: "no `t`; the read is `_t.h`."
+- His sentence "[_t = A ] is equivalent to [_ = [t = A ]]" is the picture of how a private label looks from
+  outside (core/labels/rule/paths; the third line). The not-taken candidate is in the details entry.
 Inside, the blank above `t`: WHOLE `3!` HOLDS, `7!` FAILS / SEARCHED `7! 3!` `3!`@3 / FIND-ALL `3! 7! 4!` [`3!`@0, `4!`@6] (`[_ = [t = A]] SEQ "!" & (t.h: <5)`, A := `/(?<h>\d)/`): rule 3
-Inside, his `[_t = A]`: modes: a compile error (`[_t = A] SEQ "!" & (t.h: <5)`, A := `/(?<h>\d)/`: no label `t` is made (the manager's reading (g)); `_t.h` is the read).
+Inside, his `[_t = A]`: modes: a compile error (`[_t = A] SEQ "!" & (t.h: <5)`, A := `/(?<h>\d)/`: no label `t` is made; `_t.h` is the read).
 From outside, both: modes: a compile error (`X & (X.t.h: <5)`, A := `/(?<h>\d)/`, X := `[_ = [t = A]] SEQ "!"`: the path crosses the blank (rule 2); X := `[_t = A] SEQ "!"` with `X.h` alike, crossing `_t`).
-
 ### A part used alone as a middle label   [core/labels/rule/alone-as-middle]   open alone-as-middle 2026-11-25
 Inside a binding, may a path name a part used alone as a MIDDLE step (`n.Q.d` for `[n = (P SEQ Q)]`)?
 needs: core/labels/rule/paths
@@ -2315,11 +2309,15 @@ see: parked/ideas/label-parameter core/holes/bare-condition/nested-scope core/la
 - His first alternative to a condition bound alone, `A(x:) := (x: < 2100)`, reads a label it never places: the
   reference kind, off limits for users (core/operators/bindings/label-kinds).
 - Not defined: whether a body may read its label parameter with `$`.
+- A body that places a parameter's name as a label needs the mark: `[l = ...]` or `(?<:${l}>...)` with `l` not
+  marked `l:` is a compile error at the definition. His words: "label-needs-mark: yes. And yes to literal issue".
 His example: WHOLE `5` HOLDS, `55` FAILS, `7` FAILS / SEARCHED `7 5` `5`@2 / FIND-ALL `5 7 56 15` [`5`@0, `5`@4, `5`@8] (`A(x:) & (x: 5)`, A(l:) := `/(?<:${l}>\d+)/`)
 Placed twice, the plain read: WHOLE `7,5` HOLDS, `5,7` FAILS, `5,5` HOLDS / SEARCHED `5,7 7,5` `7,5`@4 / FIND-ALL `7,5 5,7 1,5 5,5` [`7,5`@0, `1,5`@8, `5,5`@12] (`A(x:) SEQ "," SEQ A(x:) & (x: 5)`, A(l:) := `/(?<:${l}>\d+)/`)
 Placed twice, a group question: WHOLE `7,5` HOLDS, `5,7` HOLDS, `7,7` FAILS / SEARCHED `7,7 5,7` `5,7`@4 / FIND-ALL `7,5 5,7 1,2 5,5` [`7,5`@0, `5,7`@4, `5,5`@12] (`A(x:) SEQ "," SEQ A(x:) & some(@x, "5")`, A(l:) := `/(?<:${l}>\d+)/`)
 Placed twice, the index: WHOLE `7,5` FAILS, `5,7` HOLDS / SEARCHED `7,5 5,7` `5,7`@4 / FIND-ALL `7,5 5,7 1,5 5,5` [`5,7`@4, `5,5`@12] (`A(x:) SEQ "," SEQ A(x:) & (x[1]: 5)`, A(l:) := `/(?<:${l}>\d+)/`)
 Across `&`: modes: a compile error (`A(x:) & A(x:) & (x: 5)`, A(l:) := `/(?<:${l}>\d+)/`: both sides set x, an ambiguous reference (core/labels/flow)).
+The label parameter not marked: modes: a compile error (`R(x, A)`, A := `/(?<h>\d)/`, R(l, v) := `/${[l = v]}xx/`: the body places the parameter `l` as a label; a label parameter is marked `l:` in the head).
+The group-name form not marked: modes: a compile error (`A(x)`, A(l) := `/(?<:${l}>\d+)/`: the body places the parameter `l` as a label; a label parameter is marked `l:` in the head).
 
 ### The unspecified label   [core/operators/bindings/label-omitted]   ruled 2026-11-23
 At a call `_` is the unspecified label (`string(_:)`, lib/json/members' sketch, whose body only places `l`); a parameter with no default is never omitted, labels or not.

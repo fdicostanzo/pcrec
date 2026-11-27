@@ -680,24 +680,29 @@ slugs: skip-past-wall
 rulings:
 - 2026-11-23 "path-rules: yes" (record: "2026-11-23 OWNER RULING — path-rules: yes (his four rules for paths within a binding, the manager's two readings of them, and rules 5 and 6 across bindings)"); the rules the question is asked under.
 rejected:
+- (b) every target counts by the existing rule as worded (in a sequence the last mention, across `&` the ambiguous reference, across `|` the branch taken), its three lines: Candidate (b) in a sequence, the last mention read: WHOLE `3,7` FAILS, `7,3` HOLDS / SEARCHED `7,3 3,7` `7,3`@0 / FIND-ALL `3,7 7,3 4,1` [`7,3`@4, `4,1`@8] (`[n = ([m = P] SEQ [k = Q])] & (n.d: <5)`, P := `/(?<d>\d)/`, Q := `/,(?<d>\d)/`): Q's `d` ; Candidate (b) across `&`: modes: a compile error (`[n = ([m = P] & [k = Q])] & (n.d: <5)`, P := `/(?<d>\d)\d/`, Q := `/\d(?<d>\d)/`: both sides set `d`, the ambiguous reference). ; Candidate (b) across `|`, the branch taken: WHOLE `3` HOLDS, `a3` HOLDS, `a7` FAILS / SEARCHED `a7 a3` `a3`@3 / FIND-ALL `3 a7 a4` [`3`@0, `a4`@5] (`[n = ([m = P] | [k = Q])] & (n.d: <5)`, P := `/(?<d>\d)/`, Q := `/a(?<d>\d)/`) — by owner ruling — "skip-past-wall: agree with lean" (R-3 of this lane's rulings file; the record entry is on lane/pred-rev28 after this lane's start, its rulings item owed at the merge).
+- the middle road, a compile error where a walled label would have won or tied — by owner ruling — "skip-past-wall: agree with lean" (R-3, as above).
 readings:
-- (a) of skip-past-wall, rule 4's candidates count only the targets a legal path reaches (the manager's reading) — RUN per operator `SEQ`, `&`, `|`, each answer equal to the same program with the private competitor's label renamed (docs/dev/lanes/predfix90_evidence/ predfix90_model.py PATHS10, READINGS10 (6)).
+- (a) of skip-past-wall, rule 4's candidates count only the targets a legal path reaches, now his ruling — RUN per operator `SEQ`, `&`, `|`, each answer equal to the same program with the private competitor's label renamed (docs/dev/lanes/predfix90_evidence/ predfix90_model.py PATHS10, READINGS10 (6)).
 - (b) of skip-past-wall, every target counts by the existing rule as worded — RUN (docs/dev/lanes/predfix90_evidence/ predfix90_model.py PATHS10: the three candidate (b) lines).
 evidence: docs/dev/lanes/predfix90_evidence/ predfix90_model.py PATHS10, READINGS10.
 history:
 - 2026-11-25 (lane predfix90, review r90 A6; record "2026-11-25 MANAGER — review r90 (predfold1124): the dispositions; no owner words"): a new open piece, slug skip-past-wall, an owner question: rule 4's "unambiguously" when one route to the target crosses an underscore label was undecided (review r90 A6).
+- 2026-11-27 (lane predfold1125, R-3 of its rulings file): CLOSED as RULED candidate (a); his words, from R-3: "skip-past-wall: agree with lean"; the lean as put: "(a). A private part should behave as if its labels were not there."; (a) as asked: "only a `d` that a legal path reaches counts. The private one does not exist for this read, so `n.d` is `m`'s." Candidate (b)'s three lines and the middle road moved here, not taken.
 
 ## core/labels/rule/equivalence-inside — His equivalence inside the binding
 slugs: equivalence-inside
 rulings:
 - 2026-11-23 (class: PROPOSAL) "Another way of looking at it is that [_t = A ] is equivalent to [_ = [t = A ]]" (record: "2026-11-23 OWNER, on "stacked labels do not chain": a refinement framing: flat inside the binding, the tree's paths from outside; "[_t = A ] is equivalent to [_ = [t = A ]]""); the sentence the question reads.
 rejected:
+- (b) the equivalence holds inside too, `t.h` legal with the answers of the line "Inside, the blank above `t`" — by owner ruling — "equivalence-inside: agree with lean. As you said, the line was only about accessibility" (R-4 of this lane's rulings file; the record entry is on lane/pred-rev28 after this lane's start, its rulings item owed at the merge).
 readings:
-- (a) of equivalence-inside, reading (g) (no label `t` is made) — RUN (docs/dev/lanes/predfix90_evidence/ predfix90_model.py PATHS10, READINGS10 (7): inside, `[_ = [t = A]]` legal and `[_t = A]` refused; outside both refused).
+- (a) of equivalence-inside, reading (g) (no label `t` is made), now his ruling — RUN (docs/dev/lanes/predfix90_evidence/ predfix90_model.py PATHS10, READINGS10 (7): inside, `[_ = [t = A]]` legal and `[_t = A]` refused; outside both refused).
 - (b) of equivalence-inside, the equivalence inside too — its answers RUN as the line "Inside, the blank above `t`" (docs/dev/lanes/predfix90_evidence/ predfix90_model.py PATHS10).
 evidence: docs/dev/lanes/predfix90_evidence/ predfix90_model.py PATHS10, READINGS10.
 history:
 - 2026-11-25 (lane predfix90, review r90 A7; record "2026-11-25 MANAGER — review r90 (predfold1124): the dispositions; no owner words"): a new open piece, slug equivalence-inside, an owner question: his equivalence holds from outside and fails inside under reading (g) (review r90 A7); "UNTESTABLE" withdrawn.
+- 2026-11-27 (lane predfold1125, R-4 of its rulings file): CLOSED as RULED candidate (a); his words, from R-4: "equivalence-inside: agree with lean. As you said, the line was only about accessibility"; the lean as put: "no `t`; the read is `_t.h`. I'd keep your sentence in the documents as the picture of how a private label looks from outside, which is what it was said about." His sentence stays in core/labels/rule/paths as the picture from outside.
 
 ## core/labels/rule/alone-as-middle — A part used alone as a middle label
 slugs: alone-as-middle
@@ -2811,23 +2816,26 @@ history:
 - 2026-11-27 (lane predfold1125, the fold of drop-not, array-argument, brace-counts, map-creator, string-literals, bang-split and and-not): printed `NOT` re-spelled `!`, a complement's `!` re-spelled `~`, a group question's condition re-spelled to the array form, as the rulings carry; no answer changed (model SWEEP11).
 
 ## core/operators/bindings/label-variables — Macro variables: a parameter that is a label
-slugs: label-parameter-twice
+slugs: label-parameter-twice label-needs-mark
 rulings:
 - 2026-11-22 "bound-condition: the form A := (x: blah) has to be illegal. x has no references in the binding. further A := /x/ & (y: blah) is also illegal as y has no target. this is the only read consistent with the earlier binding decisions. this is my read. please respond. alternatives: 1. macro variables A(x:) := (x: < 2100) 2. macro types B(d & isodate) := B(year: < 2100) (spellings tbd)" (record: "2026-11-22 OWNER, on bound-condition: "the form A := (x: blah) has to be illegal"; his read, a response asked for; two alternatives"); alternative 1, "macro variables", his spelling a placeholder, "spellings tbd"
 - 2026-11-22 "cound-condition: mostly confirmed. i leave the c := (0: 5) open" (record: "2026-11-22 OWNER RULING — bound-condition: "mostly confirmed"; `c := (0: 5)` left open"); "Both alternatives are marked under construction: directions acknowledged, spellings open" was on the confirmed list
 - 2026-11-23 (class: DIRECTION) "lets tentatively work with it. it seems like label-paramter-twice is answered by standard same label twice rules" (record: "2026-11-23 OWNER, on approach 1 (a macro takes a label): "lets tentatively work with it"; label-parameter-twice "seems" answered by the same-label-twice rules"); approach 1 taken as a working direction, not a ruling; label-parameter-twice answered by the same-label-twice rules, as his "seems" says.
 - 2026-11-23 (class: PROPOSAL) "1. label binding in macros. this means a macro can take a label and, maybe, a label can be pre-defined as a symbol. A(l:,B) := [l = B] or A(l:) := /(?<:${l}>\d+)/ then A(x:) & (x: 5)." (record: "2026-11-23 OWNER, two other approaches to a label named by a macro's caller: (1) label binding in macros; (2) conditions allow expressions for the reference"); the body SETS the label; the pre-defined symbol parked (parked/ideas/label-symbol).
 rejected:
+- a body label literally named as an unmarked parameter (`R(x, A)` with R(l, v) := `/${[l = v]}xx/` writing a label `l`, `R.l.h` legal) — by owner ruling — "label-needs-mark: yes" (R-2 of this lane's rulings file; the record entry is on lane/pred-rev28 after this lane's start, its rulings item owed at the merge).
 readings:
 - the body names the parameter, so the label has its target at the call (the manager's reading of the direction) — SUPPORTED as run (docs/dev/lanes/predfold1123_evidence/ predfold1123_model.py LABELPARAM: `A(x:) & (x: 5)`, A(l:) := `/(?<:${l}>\d+)/`, the record's run reproduced).
 - his earlier words "we note that l is a label variable" (record "2026-11-21 OWNER RULING — bare-nested-scope, case 1: a compile error at inner; and a question on a label variable") are the same direction — a reading.
 - label-parameter-twice: placed twice, the plain read the last mention, a group question both, the index in order; across `&` the ambiguous reference — SUPPORTED as run (docs/dev/lanes/predfold1123_evidence/ predfold1123_model.py READINGS, LPRULES).
-evidence: docs/dev/lanes/predfold1123_evidence/ predfold1123_model.py LABELPARAM, LPRULES, READINGS.
+- label-needs-mark, the second sentence "yes to literal issue": the group-name form `(?<:${l}>...)` with an unmarked `l` is the same error (the manager's reading, R-2) — RUN (docs/dev/lanes/predfold1125_evidence/ predfold1125_model.py ERRSWEEP11, TR11: both lines refused with the mark named; SWEEP11: no other printed program refused by it).
+evidence: docs/dev/lanes/predfold1125_evidence/ predfold1125_model.py ERRSWEEP11, TR11, SWEEP11; docs/dev/lanes/predfold1123_evidence/ predfold1123_model.py LABELPARAM, LPRULES, READINGS.
 history:
 - 2026-11-22 (lane predbound, bound-condition ruled): a new under-construction piece; the older idea stays parked (parked/ideas/label-parameter), pointing here.
 - 2026-11-23 (lane predfold1123, the fold of 2026-11-22 late and 2026-11-23; records "2026-11-23 OWNER, on approach 1 (a macro takes a label): "lets tentatively work with it"; label-parameter-twice "seems" answered by the same-label-twice rules", "2026-11-23 OWNER, two other approaches to a label named by a macro's caller: (1) label binding in macros; (2) conditions allow expressions for the reference"): statement until then: "His first alternative to a condition bound alone: a macro parameter marked as a label, `A(x:) := (x: < 2100)` (his spelling, \"spellings tbd\"); the direction is acknowledged, nothing is defined."; status date 2026-11-22 to 2026-11-23, still under construction (his "tentatively"); the ruled parts split into the sibling pieces label-omitted, label-default, label-kinds, label-in-argument, label-forward; `A(x:) := (x: < 2100)` (a body reading a label it never places) is the reference kind (label-kinds). The lines "Placed once" .. are this lane's runs.
 - 2026-11-23 (lane predfix86, review r86 C9; record "2026-11-23 MANAGER — review r86 (predfold1123): the dispositions; three errors of the manager's own brief named; no owner words"): the PROPOSAL item's quotation had `\d` for his `\d+`; re-quoted word for word.
 - 2026-11-27 (lane predfold1125, the fold of drop-not, array-argument, brace-counts, map-creator, string-literals, bang-split and and-not): printed `NOT` re-spelled `!`, a complement's `!` re-spelled `~`, a group question's condition re-spelled to the array form, as the rulings carry; no answer changed (model SWEEP11).
+- 2026-11-27 (lane predfold1125, R-2 of its rulings file): label-needs-mark RULED, asked "if a body writes `[l = ...]` and `l` is a parameter that was not marked as a label (`l:`), is that a compile error at the definition?"; his words, from R-2: "label-needs-mark: yes. And yes to literal issue". A bullet and two compile-error lines added; before it, the body wrote a label literally named `l` (`R.l.h` legal).
 
 ## core/operators/bindings/label-omitted — The unspecified label
 slugs: label-parameter-omitted
