@@ -8,8 +8,7 @@ has 3 src callers (`emit_dfa.c:13225`, `emit_vm.c:13313`, `emit_vm.c:13344`) plu
 (b) `mod_uprops.c:296` `Arena tmp = { .cx = cx }`; (c) the scanner carried the clskit `arena:a` row and the uprops `arena:tmp` row;
 (d) `alloc_check.c:238` carried the `uprops_produce` `known_stranded` row. No emitted-byte change expected: 5 UTF-8 patterns
 (`\p{L}+`, `[\p{Lu}\p{Nd}]x`, a negated high range, a Greek/Han alternation, `\P{Han}\w+`) compile byte-identical to the older main build
-(`build/pcrec` of main), including the 815 KB `\p{L}+` text. The manager's emit sweep is the real 0-movers gate (OWED to the queue's test job? no:
-the sweep is the manager's; not run here). No abi bump.
+(`build/pcrec` of main), including the 815 KB `\p{L}+` text. The manager's emit sweep is the real 0-movers gate (not run here). No abi bump.
 
 ## F2
 
@@ -57,7 +56,7 @@ a measuring job.
 
 ## Scanner and register rows
 
-ALLOW rows: 25 -> 24 (clskit and uprops rows deleted; the net -2 of the design is -1 -1 here, with minimize's row gone at F1);
+ALLOW rows: 26 -> 24 reached sites (the clskit row at F2, the uprops row at F6);
 `SCOPE_PARSE_ALLOW`: 0 -> 1 (the L4 row). `known_stranded`: 1 -> 0 rows in alloc_check (the uprops row; the K155 `target_headers_render`
 row stays until F3). The design's "Clients" rows F2 and F6 are recorded as BUILT in "Deviations at build". `docs/dev/guide/architecture.md`
 carries no ARENA-SCOPES register row (grep: none), so nothing to update there. K155's own Status paragraph (history) still names clskit
