@@ -11461,3 +11461,38 @@ The manager's thoughts (told to him; every line the manager's reading; nothing a
 - Not covered by his three lines: the complement of a SET after a label, `(h: !<5)` ("h present and outside
   `<5`"; `!(h: <5)` also holds where h is absent), and `!<200` among the comparison sets.
 DFA category (his standing question): YES for every form, unchanged: each spelling lowers to the same regex.
+
+### 2026-11-27 OWNER, on the `!` idea: "would the test cases be solved using (x! <5) and (x?! <5)"
+tags: core/conditions/form core/conditions/form/optional-entry core/conditions/two-valued core/filters/complement core/filters/negation core/conditions/match-so-far core/spellings/placeholders core/operators/precedence
+
+Said on the manager's thoughts of the entry above (their last cost: the complement of a SET after a label,
+`(h: !<5)`, is not covered by his three lines). HIS WORDS, whole:
+
+"would the test cases be solved using (x! <5) and (x?! <5)"
+
+Class: a QUESTION carrying a PROPOSAL of two entry operators beside `:` and `?:` (spellings placeholders, D193
+addendum 4). NOT a ruling. THE READING TAKEN (told to him): "the test cases" = the set cases the manager said his
+three lines left out (phone autocorrect, or the cases under test); `(x! <5)` = x present and OUTSIDE the set (the
+negative of `?:`), `(x?! <5)` = x absent or outside (the negative of `:`).
+RUN before answering (python `re`, scratch `bang_entry.py`; the documents' own example `/(?<h>\d)?x/` of
+core/conditions/form/optional-entry, subject `7x 3x x`; output pasted):
+(h: <5)   present and in | WHOLE x FAILS 3x HOLDS 7x FAILS | SEARCHED ('3x', 3) | FIND-ALL [('3x', 3)]
+(h ?: <5) absent or in | WHOLE x HOLDS 3x HOLDS 7x FAILS | SEARCHED ('x', 1) | FIND-ALL [('x', 1), ('3x', 3), ('x', 6)]
+(h ! <5)  present and outside | WHOLE x FAILS 3x FAILS 7x HOLDS | SEARCHED ('7x', 0) | FIND-ALL [('7x', 0)]
+(h ?! <5) absent or outside | WHOLE x HOLDS 3x FAILS 7x HOLDS | SEARCHED ('7x', 0) | FIND-ALL [('7x', 0), ('x', 4), ('x', 6)]
+The first two rows reproduce the documents' printed lines ("The plain entry", "The entry `?:`"); the third the
+printed "Under `NOT`" line (`NOT (h ?: <5)`, which the documents equate with `(h: !S)`).
+The manager's thoughts (told to him; the manager's reading; nothing applied):
+- Yes: the four operators are the four cells of (present or absent-allowed) x (in or outside); `(h ! S)` is
+  today's `(h: !S)`, `(h ?! S)` is today's `!(h: S)`. The complement of a set after a label needs no `!` on a set.
+- They are each other's negations crosswise: `!(h: S)` = `(h ?! S)`, `!(h ?: S)` = `(h ! S)`. So a prefix `!` on a
+  ONE-entry condition becomes a second spelling of an operator; it is still wanted on a record of entries or a
+  compound (`!(a: S, b: T)`), unless he prefers those written out by hand.
+- His line 2 falls inside it: `A &! B` is `A & (0 ! B)`, and `0` is never absent, so `0 ! B` and `0 ?! B` agree
+  (hand-derived from "`A & B` holds exactly when `A & (0: B)` holds" and zero-open's "never absent").
+- Not solved by it: his line 3 (the negative peek, `when(!x, z)`): an entry reads a label that is set; a peek
+  asks about text not yet matched.
+- Spelling notes for the review: `(x! <5)` beside a set that begins with `!` no longer arises (no `!` on sets);
+  no `!=` comparison is in the documents today (grep of core.md: none), so `x! =5` has no rival reading now.
+DFA category (his standing question): YES where the entry itself is (one label against a fixed set, with the
+MAYBE of DFA captures for a label set in a loop or an optional, as told 2026-11-25); the operator adds nothing.
