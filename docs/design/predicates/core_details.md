@@ -666,12 +666,14 @@ slugs: sent-label-wall
 rulings:
 - 2026-11-23 "path-rules: yes" (record: "2026-11-23 OWNER RULING — path-rules: yes (his four rules for paths within a binding, the manager's two readings of them, and rules 5 and 6 across bindings)"); the rules the question is asked under.
 rejected:
+- (b) legal, the sent label a backdoor past the body's blank too — by owner ruling — "sent-label-wall: error" (R-1 of this lane's rulings file; the record entry "2026-11-27 OWNER RULING — sent-label-wall" is on lane/pred-rev28 after this lane's start, its rulings item owed at the merge).
 readings:
-- (a) of sent-label-wall, the compile error by rule 2 (the manager's reading for now) — RUN (docs/dev/lanes/predfix90_evidence/ predfix90_model.py PATHS10, GRID: `R(x:, A) & (x.h: <5)` refused with the sent-label reading; sabotage q5 caught).
+- (a) of sent-label-wall, the compile error by rule 2, now his ruling — RUN (docs/dev/lanes/predfix90_evidence/ predfix90_model.py PATHS10, GRID: `R(x:, A) & (x.h: <5)` refused with the sent-label reading; sabotage q5 caught).
 - (b) of sent-label-wall, legal, the backdoor past the body's blank — its answers RUN as the body that writes the wall above the sent label (docs/dev/lanes/predfix90_evidence/ predfix90_model.py PATHS10).
 evidence: docs/dev/lanes/predfix90_evidence/ predfix90_model.py PATHS10, GRID, READINGS10.
 history:
 - 2026-11-25 (lane predfix90, review r90 A5 (i); record "2026-11-25 MANAGER — review r90 (predfold1124): the dispositions; no owner words"): a new open piece, slug sent-label-wall, an owner question: the round found the evidence engine answering a path that contains the body's blank below a sent label (review r90 A5 (i)).
+- 2026-11-27 (lane predfold1125, R-1 of its rulings file): CLOSED as RULED candidate (a), the compile error; his words, from R-1: "sent-label-wall: error. The path would be x._.h which is not an allowed path. If the R macro reversed the label order it would be ok. If the caller put a label in A it could access A through that." The statement until then, verbatim: "When a body places a sent label ABOVE its own blank (`R(l:, v) := /${[l = [_ = v]]}xx/`), may the caller read through the sent label past the blank?"; the line "Candidate (b)'s answers: the wall written above the sent label" became "The wall above the sent label". His side note in that entry (an unmarked parameter used as a label) is not ruled and not applied.
 
 ## core/labels/rule/skip-past-wall — Skipping past a private part
 slugs: skip-past-wall

@@ -502,18 +502,17 @@ From outside, by name: WHOLE `3!` HOLDS, `7!` FAILS / SEARCHED `7! 3!` `3!`@3 / 
 Three stacked, both middles skipped: WHOLE `3xx` HOLDS, `7xx` FAILS / SEARCHED `7xx 3xx` `3xx`@4 / FIND-ALL `3xx 7xx 4xx` [`3xx`@0, `4xx`@8] (`[n = [m = [k = P]]] & (n.d: <5)`, P := `/(?<d>\d)xx/`): rule 4 applied repeatedly (a reading)
 Two binding levels, the middles skipped: WHOLE `3xx!;` HOLDS, `7xx!;` FAILS / SEARCHED `7xx!; 3xx!;` `3xx!;`@6 / FIND-ALL `3xx!; 7xx!; 4xx!;` [`3xx!;`@0, `4xx!;`@12] (`X & (X.c.h: <5)`, A := `/(?<h>\d)/`, B(rx) := `/${[p = rx]}xx/`, Y := `[c = B(A)] SEQ "!"`, X := `[y = Y] SEQ ";"`): rules 5 and 4, applied repeatedly (a reading)
 
-### A sent label above the body's blank   [core/labels/rule/sent-label-wall]   open sent-label-wall 2026-11-25
-When a body places a sent label ABOVE its own blank (`R(l:, v) := /${[l = [_ = v]]}xx/`), may the caller read through the sent label past the blank?
+### A sent label above the body's blank   [core/labels/rule/sent-label-wall]   ruled 2026-11-27
+When a body places a sent label ABOVE its own blank (`R(l:, v) := /${[l = [_ = v]]}xx/`), a caller's read through the sent label past the blank is a compile error.
 needs: core/labels/rule/paths
 see: core/operators/bindings/label-in-argument
-The reading today: a compile error by rule 2 for now (the manager's reading): the path x, `_`, h contains the blank,
-not its start; reading (e) makes the sent label a start, never a licence to cross a wall below it. Candidates: (a)
-the compile error; (b) legal, the sent label a backdoor past the body's blank too (his "it wouldn't be affected by
-the _ as it becomes an accepted backdoor into the inner pattern", said of a blank ABOVE the sent label). They part:
-(a) refuses the program; (b) gives the answers of the body that writes the wall above the label (second line).
-The sent label above the body's blank: modes: a compile error (`R(x:, A) & (x.h: <5)`, A := `/(?<h>\d)/`, R(l:, v) := `/${[l = [_ = v]]}xx/`: the path x, `_`, h crosses the blank (rule 2, the manager's reading)).
-Candidate (b)'s answers: the wall written above the sent label: WHOLE `3xx` HOLDS, `7xx` FAILS / SEARCHED `7xx 3xx` `3xx`@4 / FIND-ALL `3xx 7xx 4xx` [`3xx`@0, `4xx`@8] (`R(x:, A) & (x.h: <5)`, A := `/(?<h>\d)/`, R(l:, v) := `/${[_ = [l = v]]}xx/`)
-
+- His words: "sent-label-wall: error. The path would be x._.h which is not an allowed path."; and the two ways he
+  names, in the details entry.
+- The path x, `_`, h contains the blank, not its start (rule 2); the sent label is a start, never a licence to cross
+  a wall below it. The two ways he names: the body writing the wall above the sent label (the second line), or a
+  label the caller writes in A (core/labels/export/arguments).
+The sent label above the body's blank: modes: a compile error (`R(x:, A) & (x.h: <5)`, A := `/(?<h>\d)/`, R(l:, v) := `/${[l = [_ = v]]}xx/`: the path x, `_`, h crosses the blank (rule 2)).
+The wall above the sent label: WHOLE `3xx` HOLDS, `7xx` FAILS / SEARCHED `7xx 3xx` `3xx`@4 / FIND-ALL `3xx 7xx 4xx` [`3xx`@0, `4xx`@8] (`R(x:, A) & (x.h: <5)`, A := `/(?<h>\d)/`, R(l:, v) := `/${[_ = [l = v]]}xx/`)
 ### Skipping past a private part   [core/labels/rule/skip-past-wall]   open skip-past-wall 2026-11-25
 When one route to a skipped label's target crosses an underscore label, does rule 4's "unambiguously" count that route's target?
 needs: core/labels/rule/paths
