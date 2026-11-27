@@ -11959,3 +11959,27 @@ The manager's readings (each for the fold to test; none his words):
   operator"); the base documents print no lookbehind operator today (a grep: no code span holds `~`).
 - Census (`bang_census.py`, re-run today): of the printed `!` outside rx text, "11 after :", "11 after &" and
   "19 span starts with !" are the complement sites to re-spell; the fold classes each by its operand.
+
+### 2026-11-27 OWNER RULING — bang-split: yes (`!` the logical not of a test, `~` the complement)
+tags: core/filters/complement core/filters/negation core/filters/kinds core/conditions/form/optional-entry lib/control/when
+His words, verbatim: "bang-split: yes. This is clean and what I was looking for.
+Should we allow binding to complements? I lean yes."
+RULED (answered by slug), the statement AS ASKED, quoted:
+"1. `!X` is the logical not of a test: a condition, a lookaround, a group question, or another `!X`.
+2. `~X` is the complement of a set or a pattern, filter-only as ruled today: `(h: ~S)`, `(h ?: ~S)`, `A & ~B`.
+3. There is no `:!`, `?:!` or `&!`.
+4. `!` on a set or pattern is an error naming `~`; `~` on a test is an error naming `!`.
+5. `^A` looks ahead and `!^A` is its negative. `when(T, B, C) := T seq B | !^T seq C`.
+6. Lookbehind gets no operator for now."
+Told to him with it: DFA category yes for `~` on a set and for `!^A`; `A & ~B` on patterns maybe about 0.8
+(regular in principle, build cost unmeasured). Evidence: `docs/dev/lanes/predbang_evidence/tilde.py`.
+What it changes in earlier rulings (the manager's reading, for the fold to test): drop-not (2026-11-25) said `!`
+on a pattern, set or condition and the negative peek `peek(!A)`: the complement is now `~`, the negative peek
+`!^A`, and `!peek(A)`'s error is gone with `peek` re-spelled `^A`; `when(!x, z)` on a bare pattern stays an error
+by line 4 (naming `~x` or `!^x`). A bare `when` test consumes as today.
+His second sentence is a QUESTION with a LEAN (not a ruling asked by slug): binding a complement. The record
+answers it: complement-place, ruled 2026-11-18: "A complement is a filter-only value. It may be bound, named,
+passed around and combined with other complements. It may be used as an operand of `&` in a chain that has at
+least one positive pattern. Any use that needs it to produce a match by itself is a compile error at that use".
+The manager's reading: that ruling carries over under `~` word for word (`not_seven := ~seven`); nothing new to
+rule.
