@@ -12059,3 +12059,11 @@ were not there."; candidate (a) as asked: "only a `d` that a legal path reaches 
 exist for this read, so `n.d` is `m`'s." The piece core/labels/rule/skip-past-wall closes as it reads (its first
 three printed lines are (a)'s); candidate (b) and the middle road (an error where a walled label would have won
 or tied) go to details as not taken.
+
+### 2026-11-27 OWNER RULING — equivalence-inside: "agree with lean" (no label `t`; the read is `_t.h`)
+tags: core/labels/rule/equivalence-inside core/labels/rule/paths
+His words, verbatim: "equivalence-inside: agree with lean. As you said, the line was only about accessibility"
+RULED (answered by slug). The lean as put to him, quoted: "no `t`; the read is `_t.h`. I'd keep your sentence in
+the documents as the picture of how a private label looks from outside, which is what it was said about."
+"the line" is his "[_t = A ] is equivalent to [_ = [t = A ]]" (the manager's reading: it states what can be
+reached from outside, not that a label `t` is made). The piece closes as it reads; candidate (b) to details.
