@@ -260,7 +260,7 @@ void pcrec_clskit_emit_kit(StrBuf *c, Arena *parent, const char *fn,
 void pcrec_clskit_emit_inline(StrBuf *c, const ClsChoice *ch, const char *byte);
 const char *pcrec_clskit_read(Arena *a, ClsTest t, ClsTabForm f,
                               const char *name, const char *byte);
-void pcrec_clskit_emit_whole(StrBuf *c, Arena *a, const char *fn, ClsForm f,
+void pcrec_clskit_emit_whole(StrBuf *c, Arena *parent, const char *fn, ClsForm f,
                              const PcrecCpRange *iv, int n);
 void pcrec_clskit_emit_atom_table(StrBuf *c, const char *tab,
                                   const ClsAtomTable *t);

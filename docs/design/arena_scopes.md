@@ -372,6 +372,7 @@ are Job fields freed by `job_cleanup`, safe on every arrival); U1 (no measured p
 | S11 `tail` | F3 | none filed: C0(c) names one if `alloc_check --sites` reaches `splice_mark`'s window | SINGLE-CONTROL (the scanner row only) |
 | S12 `o` | F3 | none filed: C0(c) names one if a witness reaches `render_buf` while `o` is live | SINGLE-CONTROL; no sabotage row (r107 D: its heap plant is the scanner rule S3572 holds red; no alloc witness compiles a layout-marked artifact) |
 | S14 clskit | F2 | none filed; clskit did not appear in 3 single-compile profiles (r102 B22): C0(c) searches the clskit corpus | SINGLE-CONTROL |
+| S14b clskit whole | SCOPE-4 | none filed (the body allocates scratch only; same SINGLE-CONTROL reasoning as S14); S3643 (close deleted) is scored by the L2 runtime check + the scanner; S3644 (body back on the parent) has no strand witness, its nets are `make alloc`'s exact pins (incidental) and memgate `peak` under `MG_ENC=1 MG_ENG=2` | SINGLE-CONTROL |
 | S15 scanedge | F5 | none (its only refusals today free first) | SINGLE-CONTROL |
 | S29 `uprops_produce` | F6 | alloc_check W3 (`\p{L}` under `-e utf8`), SEEN by the stranded-arena gate (Tests and sabotage, "THE SEEN GATE"); the filed `known_stranded` row F1 adds for it is REACHED before F6 deletes it | |
 
@@ -825,6 +826,15 @@ Listed for the pre-go briefing; under D191 addendum 2 they need no go of their o
   option if one is ever wanted; S3584 is RE-AIMED at a heap second declarator beside
   `target_headers_render`'s scratch `lines` (per-declarator classification still matters without names).
   `MIN_SCOPE_OPENS` 2 -> 3 (half of 6 opening sites, D110).
+- SCOPE-4 BUILT (lane scope4, 2026-11-27; `docs/dev/lanes/scope4_report.md`; review r105 SCOPE-4, measured by lane f3).
+  `pcrec_clskit_emit_whole(c, parent, ...)` has F2's shape: the empty-set return first (no scope, no record), then a
+  scope on `parent`, the body (`emit_whole_body`, static) on `pcrec_scope_arena(&sc)`, the close. Client S14b. Its sole
+  compile route is the attempt (compile.c's `pcrec_emit_vm`/`pcrec_emit_dfa`; r107 C), so a refusal inside the body
+  is released by compile_driver's handler-top unwind. Emitted C is byte-identical (no abi change). Measured at f3:
+  under `-e utf8` + VM, 108 of 7,402 compiles move, all down (median -131,120 B, max -327,920 B). The memgate gate
+  needed two levers to see it: `MG_ENC` (encoding) and `MG_ENG` (corpus engine), tests/core/memgate/CLAUDE.md.
+  `MIN_SCOPE_OPENS` stays 3 (half of 7, rounded down; D110, grep in its comment). Sabotage S3643 (close deleted;
+  S3613 re-anchored one line up because both closes read alike), S3644 (body routed back to the parent).
 
 ## r102 disposition
 

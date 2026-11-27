@@ -1140,13 +1140,12 @@ void pcrec_clskit_emit_kit(StrBuf *c, Arena *parent, const char *fn,
     pcrec_scope_close(&sc);
 }
 
-/* A WHOLE-SET MATCHER (`P3`, `P2` or `B1`): its tables, then `FN`'s bound
- * and one branch-free lookup. */
-void pcrec_clskit_emit_whole(StrBuf *c, Arena *a, const char *fn, ClsForm f,
-                             const PcrecCpRange *iv, int n)
+/* The whole-set body: every scratch block (the bitmap, the page tables, the
+ * name fragments) comes from `a`, a scope's child arena. */
+static void emit_whole_body(StrBuf *c, Arena *a, const char *fn, ClsForm f,
+                            const PcrecCpRange *iv, int n)
 {
     WholePages w;
-    if (n <= 0) { emit_empty(c, fn); return; }
     unsigned lo = iv[0].lo, hi = iv[n - 1].hi;
     const char *lt = NULL;
 
@@ -1192,6 +1191,23 @@ void pcrec_clskit_emit_whole(StrBuf *c, Arena *a, const char *fn, ClsForm f,
     case CLSF_NFORM:
         return;
     }
+}
+
+/* A WHOLE-SET MATCHER (`P3`, `P2` or `B1`): its tables, then `FN`'s bound
+ * and one branch-free lookup. Its scratch text lives in a child arena of
+ * `parent` (a scope's ARENA entry: released at the close below, or by
+ * compile_driver's handler-top unwind if a refusal leaves inside the body:
+ * the compile attempt's engine emitters, compile.c's
+ * pcrec_emit_vm/pcrec_emit_dfa, are its only compile routes, and the
+ * tests/clskit driver owns its arena); the empty set's path opens no scope
+ * and takes nothing. */
+void pcrec_clskit_emit_whole(StrBuf *c, Arena *parent, const char *fn, ClsForm f,
+                             const PcrecCpRange *iv, int n)
+{
+    if (n <= 0) { emit_empty(c, fn); return; }
+    Scope sc = pcrec_scope_open(parent);
+    emit_whole_body(c, pcrec_scope_arena(&sc), fn, f, iv, n);
+    pcrec_scope_close(&sc);
 }
 
 /* The artifact's ONE shared byte->atom table, named `tab`. */

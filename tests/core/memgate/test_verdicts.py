@@ -59,6 +59,7 @@ def run_peak(delta, bound):
             rc = mg.mode_peak(ns(out=d, bound=bound), [("k", 0, "all", 0, "/fake/pat")])
     finally:
         mg.drv_one = saves
+    run_peak.out = buf.getvalue()
     return rc
 
 
@@ -108,6 +109,34 @@ check("instr over band exits nonzero (MEMGATE-2)", run_instr(1.5), bad)
 ia, pa = mg.drv_argv("/s", "mg_instr"), mg.drv_argv("/s", "mg_peak")
 check("instr driver runs with ASLR off (setarch -R)", ia, lambda c: c[0] == "setarch" and "-R" in c and c[-1] == "/s/mg_instr")
 check("peak driver is run directly", pa, lambda c: c == ["/s/mg_peak"])
+
+# SCOPE-4 population levers: MG_ENG sets the corpus engine, MG_ENC is validated (mg_drv.c reads it), both read as ints
+def with_env(**kw):
+    saved = {k: os.environ.get(k) for k in ("MG_ENC", "MG_ENG")}
+    for k in saved:
+        os.environ.pop(k, None)
+    os.environ.update(kw)
+    try:
+        return mg.levers()
+    finally:
+        for k, v in saved.items():
+            os.environ.pop(k, None)
+            if v is not None:
+                os.environ[k] = v
+
+check("levers unset read 0,0 (the default population)", with_env(), lambda g: g == (0, 0))
+check("levers MG_ENC=1 MG_ENG=2", with_env(MG_ENC="1", MG_ENG="2"), lambda g: g == (1, 2))
+try:
+    with_env(MG_ENG="vm")
+    refused = False
+except SystemExit:
+    refused = True
+check("a non-integer lever is refused, not read as 0", refused, lambda g: g is True)
+check("mg_drv.c reads MG_ENC into pcrec_options.encoding",
+      'getenv("MG_ENC")' in open(os.path.join(HERE, "mg_drv.c")).read()
+      and "o.encoding = atoi(enc)" in open(os.path.join(HERE, "mg_drv.c")).read(), lambda g: g is True)
+run_peak(0, 0)
+check("peak prints the levers it ran under", run_peak.out, lambda g: "peak: levers MG_ENC=" in g)
 
 if fails:
     print("test_verdicts: %d of %d FAILED" % (len(fails), n))
