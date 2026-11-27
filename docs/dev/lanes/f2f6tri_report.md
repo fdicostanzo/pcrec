@@ -42,3 +42,4 @@ into f2f6 and let the already-queued gates (200-f2f6-*) proceed; a plain
 ## STATE AT HANDOFF
 Rulings file f2f6tri_rulings.md: empty, none applied. Owed runs: none. Fix
 commit on lane/f2f6tri; worktrees/f2f6 untouched.
+OWED: none
