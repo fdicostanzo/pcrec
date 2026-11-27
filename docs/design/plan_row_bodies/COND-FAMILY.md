@@ -11599,3 +11599,51 @@ The manager's answer (told to him; the manager's reading; nothing applied):
   would be two spellings of the positive form; `peek` passes A's labels on (wrapper-export), which an entry's set
   does not today: a reason to keep `peek` as the labelled form.
 DFA category (his standing question): YES, unchanged: the same regex as today's `when`.
+
+### 2026-11-27 OWNER, two ALTERNATIVES for the `when` guard: "peeknot(A) := /(?!${A})/ is an ugly little function but in the case of when is hidden"; and "does this work for when := A seq B | C &! A"
+tags: lib/control/when lib/control/when-test lib/control/peek core/filters/negation core/filters/complement core/patterns/lookaround core/conditions/form core/principles/explicit-exceptions
+
+Said on the manager's four-line sketch (the entry operators, `&!` as a shorthand, `ahead` as the one
+forward-looking name, no `!B` object). HIS WORDS, whole ("feek" is "feel"):
+
+"i feek we're close but not quite. alternatives: 1. what comes around goes around. peeknot(A) := /(?!${A})/ is an
+ugly little function but in the case of when is hidden and lets us clean up ! and not add semantics to
+conditions. 2. does this work for when := A seq B | C &! A"
+
+Class: DISCUSSION: an assessment ("close but not quite") and two ALTERNATIVES, the second a QUESTION. NOT a
+ruling. His stated ground for (1): it "lets us clean up ! and not add semantics to conditions" (against the
+manager's `ahead`). CHECKED AGAINST THE RECORD: (1) is line 2 of drop-not as first ASKED on 2026-11-25 ("The
+negative peek is the provided macro `peeknot(A)`, the body `/(?!${A})/`"), replaced in his ruling by `peek(!A)`.
+RUN for (2) (python `re`, scratch `when_diff.py`; `C &! A` modelled as C's paths longest first, the stretch not
+an A whole; output pasted):
+A := \d   B := \d\d   C := \w
+   today AB|(?!A)C | WHOLE 123 HOLDS x HOLDS 1 FAILS | SEARCHED 12 x 123 1x 7 ('x', 3) | FIND-ALL [('x', 3), ('123', 5), ('x', 10)]
+   (A SEQ B) | (C &! A) | WHOLE 123 HOLDS x HOLDS 1 FAILS | SEARCHED 12 x 123 1x 7 ('x', 3) | FIND-ALL [('x', 3), ('123', 5), ('x', 10)]
+   today  against  (A SEQ B) | (C &! A): 0 of 1093 differ
+   today  against  (A SEQ B) | (C &! (A SEQ anything)): 0 of 1093 differ
+A := \d   B := \d\d   C := \w+
+   today AB|(?!A)C | WHOLE 123 HOLDS 1ab FAILS ab HOLDS | SEARCHED 12 x 123 1x 7 ('x', 3) | FIND-ALL [('x', 3), ('123', 5), ('x', 10)]
+   (A SEQ B) | (C &! A) | WHOLE 123 HOLDS 1ab HOLDS ab HOLDS | SEARCHED 12 x 123 1x 7 ('12', 0) | FIND-ALL [('12', 0), ('x', 3), ('123', 5), ('1x', 9)]
+   (A SEQ B) | (C &! (A SEQ anything)) | WHOLE 123 HOLDS 1ab FAILS ab HOLDS | SEARCHED 12 x 123 1x 7 ('x', 3) | FIND-ALL [('x', 3), ('123', 5), ('x', 10)]
+   today  against  (A SEQ B) | (C &! A): 442 of 1093 differ
+   today  against  (A SEQ B) | (C &! (A SEQ anything)): 0 of 1093 differ
+A := \d\d   B := x   C := \w
+   today AB|(?!A)C | WHOLE 12x HOLDS 1 HOLDS x HOLDS | SEARCHED 12 1 12x x ('2', 1) | FIND-ALL [('2', 1), ('1', 3), ('12x', 5), ('x', 9)]
+   (A SEQ B) | (C &! A) | WHOLE 12x HOLDS 1 HOLDS x HOLDS | SEARCHED 12 1 12x x ('1', 0) | FIND-ALL [('1', 0), ('2', 1), ('1', 3), ('12x', 5), ('x', 9)]
+   today  against  (A SEQ B) | (C &! A): 288 of 1093 differ
+   today  against  (A SEQ B) | (C &! (A SEQ anything)): 288 of 1093 differ
+The manager's answer (told to him; the manager's reading; nothing applied):
+- (2) does not hold in general. It agrees where C and A are the same width (the first block), and parts two
+  ways: C longer than A (`1ab`: the stretch is not an A whole, though an A starts it; the repair
+  `C &! (A SEQ anything)` mends this one), and A longer than C (third block: the guard has to see text BEYOND
+  what C takes; no filter on C's stretch can, repaired or not). Hand-worked, not run: with the default else `//`
+  the stretch is empty, so `// &! A` holds wherever A is not nullable and the guard is gone.
+  The ground is his own sentence of the entry above: the guard looks forward past the match; `&!` judges a
+  stretch already taken.
+- (1) works, with no run needed: `/(?!${A})/` is the guard's own text in the documents' lowering today. It adds
+  nothing to conditions (no `ahead`, no forward-looking entry), and the body is plain PCRE in a literal, his
+  method's default. Cost: a user who wants the negative peek writes the same "ugly little function" (or the
+  literal); `when(!x, z)` on a bare pattern is not writable at all (no `!x` object), else-only is
+  `when(peeknot(x), z)` or a negative entry, `when((h ?! <5), z)`.
+- The manager's leaning: (1). `ahead` can be added later without changing an answer; the reverse is not true.
+DFA category (his standing question): YES for (1), the same regex as today.
