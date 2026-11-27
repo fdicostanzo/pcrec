@@ -62,6 +62,10 @@ Ranked; a higher goal wins a conflict. Each has who benefits and a checkable for
    Check: memgate `instr` (user-mode instruction count around each `pcrec_compile`, in-process) before vs after: p95
    per-compile ratio <= 1.01 and max <= 1.02. Both bands are UNMEASURED defaults until T1 measures the instrument's
    noise (two identical runs); any compile over 1.02 is named and is a STOP for its unit.
+   MEASURED A/A noise (lane mgfix, 2026-11-26, 4,500 corpus compiles, base against a copy of base): with ASLR ON the
+   ratio spans 0.979..1.022 (max |delta| 20,770 instructions; 3 compiles over 1.02), so `instr` runs under ASLR off
+   (`setarch -R`), where the same read is max ratio 1.00001 (max |delta| 246, on the multi-million-instruction
+   compiles; the 91k refusal compiles agree within 1). The bands are unchanged.
 
 NON-GOALS. COST-1's grow-by-copy retention class (D-5; [ARENA-REGROW]); converting `job_cleanup`'s named list (D-3; P4
 keeps its trigger); the memo's compile lifetime (S7; U3/U9 keep RM-2's trigger); non-memory entries (FILE*, end

@@ -8,8 +8,8 @@ scratch tool.
 ## Files
 
 - `memgate.py` — `prep SIDE (--ref REF | --tree TREE)` builds a side outside any tree (`git archive` for a ref); `peak
-  A B OUT [--bound N]`, `rungs A B OUT`, `instr A B OUT [--band --p95]` compare. A side against itself is the noise
-  read. Its docstring is the usage.
+  A B OUT [--bound N]`, `rungs A B OUT`, `instr A B OUT [--band --p95]` compare. The noise read is a side against a
+  SECOND directory of the same binaries (the same directory twice is refused). Its docstring is the usage.
 - `test_verdicts.py` — the control for the verdict lines and exit status (fake sides, <1 s; run first by `make memgate`).
 - `mg_drv.c` — the per-compile driver: `-DMG_PEAK` (alloc_inject.h library; peak live heap in REQUESTED bytes, kept
   per pointer, with the `malloc_usable_size` peak as an informational column (lane arenabuild2, R-2); arena BLOCK
@@ -21,6 +21,10 @@ scratch tool.
 - THE RUNG RULE (the owner, 2026-11-25, "rung-edge: agree with lean"; design D-9): `rungs` judges a rung on REQUESTED
   bytes. A compile/refuse move on a cell whose uncapped requested peak is unchanged prints `LAYOUT` (both thresholds,
   the heap-extent delta) and passes as `VERDICT LAYOUT`; any other move prints `MOVE-FAILS` and reads `VERDICT MOVED`.
+- `instr` runs `mg_instr` under `setarch $(uname -m) -R` (ASLR off; `drv_argv`), and `mg_drv.c -DMG_INSTR` exits 3 if
+  ADDR_NO_RANDOMIZE is not set: the instruction count is layout-dependent (a ~2,000-instruction spread on a 91k compile
+  with ASLR on; A/A max ratio 1.022 on, 1.00001 off over 4,500). `test_verdicts.py` asserts the wrapper. `peak` counts
+  requested bytes, so it needs none. Not `perf_event_open`'s fault: do not "fix" by taking a min of N runs.
 - Deterministic by construction: no wall clock is read. Nonzero noise (a side against itself) is a STOP for the gate
   that relies on it (design T1).
 - The arena split sees only calls that cross an object boundary (GNU ld wraps undefined references): a child arena
