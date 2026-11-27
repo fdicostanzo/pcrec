@@ -414,7 +414,7 @@ UNLOCKS, each with its trigger:
   measured super-linear, or a retained-garbage share of peak above noise.
 - U8: the nested part compile's teardown registered with the enclosing attempt (S21), so a longjmp to the outer
   recovery point also frees the inner compile. Trigger: the first scope design (D-2/D-4 decide it), or K163's
-  witness.
+  witness. An ALLOW row in the scanner's seam rule ("seam types carry no outer channel", r110 C) IS this trigger firing.
 - U9: one exit for `compile_driver` (the memo frees and the teardown in one place). Trigger: RM-2.
 - (Rev 1's U2 is proposed row P3.)
 

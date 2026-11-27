@@ -72,6 +72,17 @@ checks"), on the same noise-stripped text, each with fixtures that must FAIL:
              accessors) are called by no file under src/, cli/ or lib/ (their
              reader is tests/core/alloc_check.c), and the lent pair
              `pcrec_ctx_lend`/`_unlend` only by compound.c `walk_part` (D-7, K163).
+  counted    ([K163], r110 B1/B3) each of the five COUNTED entries (COUNTED below) calls `(void)pcrec_err_chan(`
+             before its first allocation; any OTHER arena.c/sb.c function that calls malloc/calloc/realloc/strdup
+             calls a counted entry first or is a named helper of one (COUNTED_HELPERS); `walk_part` contains both
+             `pcrec_ctx_lend(` and `pcrec_ctx_unlend(`. A deleted count line is otherwise invisible (the lent
+             population is 0 after F4);
+  seam       ([K163], r110 C) SEAM types carry no outer channel: no `Arena *`, `StrBuf`, `Scope`, `Ctx *`, `Job *`
+             or `mf_arena` field. SEAM types = PcrecEmitIn plus every Pcrec* struct type reachable from its fields
+             in src/core/internal.h (derived by the scan, never listed; the five the review named must be in the
+             derived set, a floor). An ALLOW row in this rule (SEAM_ALLOW) IS U8's trigger firing (docs/design/
+             arena_scopes_arch.md U8): a nested compile that must allocate into the outer. It covers the
+             refusal-only half of the K163 class, which the lent count cannot read (the refusal longjmps first).
 What they do NOT see: a scope handle passed to a callee that stores it; an
 open and close paired in one function but on different paths (the runtime's
 `pcrec_scope_check_closed` and the L1 stamp check are that control).
@@ -437,7 +448,114 @@ def scope_rule_findings(rel, clean, fnames):
         if fn not in closes:
             out.append((ln, "L2-static", f"pcrec_scope_open in {fn or '<file scope>'} with no pcrec_scope_close in the same function"))
     out += d11_findings(rel, clean, fnames)[0]
+    out += counted_findings(rel, clean, fnames)[0]
     return out
+
+
+# [K163] r110 B1/B3: the COUNTED entries. (file, function, the first-allocation pattern). Each calls
+# `(void)pcrec_err_chan(` before that pattern's first match in its body.
+ALLOC_ANY = re.compile(r"(?<![\w.>])(malloc|calloc|realloc|strdup|strndup)\s*\(|\bsb_store\s*\(|\bpcrec_arena_alloc\s*\(")
+COUNT_LINE = re.compile(r"\(\s*void\s*\)\s*pcrec_err_chan\s*\(")
+COUNTED = [
+    ("src/core/arena.c", "pcrec_arena_alloc"),
+    ("src/core/arena.c", "rec_take"),
+    ("src/core/sb.c", "sb_grow"),
+    ("src/core/sb.c", "pcrec_sb_take"),
+    ("src/core/sb.c", "pcrec_sb_render_prefix"),
+]
+# helpers that allocate on a counted entry's behalf: (file, helper, the counted entry that must call it)
+COUNTED_HELPERS = [("src/core/sb.c", "sb_store", "pcrec_sb_render_prefix")]
+COUNTED_NAMES = {fn for _, fn in COUNTED}
+WALK_PART_NEEDS = (r"\bpcrec_ctx_lend\s*\(", r"\bpcrec_ctx_unlend\s*\(")
+HEAP_CALL = re.compile(r"(?<![\w.>])(malloc|calloc|realloc|strdup|strndup)\s*\(")
+
+def body_lines(clean, fnames, fn):
+    return [(i, l) for i, l in enumerate(clean) if fnames[i] == fn]
+
+def counted_findings(rel, clean, fnames):
+    """-> (findings, counted entries / walk_part seen) for one file. Findings are (line, rule, message)."""
+    out, seen = [], 0
+    for crel, fn in COUNTED:
+        if crel != rel:
+            continue
+        body = body_lines(clean, fnames, fn)
+        if not body:
+            continue
+        seen += 1
+        first_alloc = next((i for i, l in body if ALLOC_ANY.search(l)), None)
+        first_count = next((i for i, l in body if COUNT_LINE.search(l)), None)
+        if first_count is None or (first_alloc is not None and first_count > first_alloc):
+            out.append(((first_alloc if first_alloc is not None else body[0][0]) + 1, "counted",
+                        f"{fn} must call (void)pcrec_err_chan( before its first allocation (r110 B1: an uncounted entry hides a lent use)"))
+    if rel in ("src/core/arena.c", "src/core/sb.c"):
+        helpers = {h: e for hrel, h, e in COUNTED_HELPERS if hrel == rel}
+        for i, l in enumerate(clean):
+            fn = fnames[i]
+            if not fn or not HEAP_CALL.search(l) or fn in COUNTED_NAMES or fn == "pcrec_err_chan":
+                continue
+            body = body_lines(clean, fnames, fn)
+            calls_counted = any(re.search(r"\b(%s)\s*\(" % "|".join(sorted(COUNTED_NAMES)), bl) for _, bl in body)
+            if fn in helpers:
+                ok = any(re.search(r"\b%s\s*\(" % fn, cl) and fnames[k] == helpers[fn] for k, cl in enumerate(clean))
+                if ok:
+                    continue
+            elif calls_counted:
+                continue
+            out.append((i + 1, "counted", f"{fn} calls the heap without going through a counted entry (r110 B1)"))
+    if rel == LEND_FILE:
+        body = body_lines(clean, fnames, LEND_FN)
+        if body:
+            seen += 1
+            text = "\n".join(l for _, l in body)
+            for pat in WALK_PART_NEEDS:
+                if not re.search(pat, text):
+                    out.append((body[0][0] + 1, "counted", f"{LEND_FN} must contain {pat[2:-5]}( (r110 B3: no lend, no count)"))
+    return out, seen
+
+# [K163] r110 C: SEAM types carry no outer channel.
+SEAM_ROOT = "PcrecEmitIn"
+SEAM_NAMED = ("PcrecEmitIn", "PcrecPartFacts", "PcrecMeasInherit", "PcrecDeriveReport", "PcrecHarnessOptions")
+SEAM_ALLOW = []   # (type, field, reason). A row here IS U8's trigger firing (arena_scopes_arch.md U8).
+CHANNEL_FIELD = re.compile(r"(?<![\w*])(Arena\s*\*|StrBuf\b|Scope\b|Ctx\s*\*|Job\s*\*|mf_arena\b)")
+
+def struct_bodies(clean_text):
+    """-> {type name: body text} for `typedef struct [Tag] {..} Name;` and `struct Tag {..};` in the text."""
+    out = {}
+    for m in re.finditer(r"(typedef\s+)?struct\s*(\w*)\s*\{", clean_text):
+        i, depth = m.end(), 1
+        while i < len(clean_text) and depth:
+            depth += {"{": 1, "}": -1}.get(clean_text[i], 0)
+            i += 1
+        body = clean_text[m.end():i - 1]
+        name = m.group(2)
+        if m.group(1):
+            t = re.match(r"\s*(\w+)\s*;", clean_text[i:])
+            name = t.group(1) if t else name
+        if name:
+            out[name] = body
+    return out
+
+def seam_types(bodies):
+    """-> the SEAM types: SEAM_ROOT and every Pcrec* struct type named in a field of a seam type, transitively."""
+    seen, todo = set(), [SEAM_ROOT]
+    while todo:
+        t = todo.pop()
+        if t in seen or t not in bodies:
+            continue
+        seen.add(t)
+        todo += [n for n in re.findall(r"\b(Pcrec\w+)\b", bodies[t]) if n in bodies]
+    return seen
+
+def seam_findings(clean_text):
+    """-> (findings (type, field line), seam types derived)."""
+    bodies = struct_bodies(clean_text)
+    types = seam_types(bodies)
+    out = []
+    for t in sorted(types):
+        for l in bodies[t].split("\n"):
+            if CHANNEL_FIELD.search(l) and not any(a[0] == t and a[1] in l for a in SEAM_ALLOW):
+                out.append((t, l.strip()))
+    return out, types
 
 # fixtures: (rel, text) that MUST produce the named rule, and one that must not
 SCOPE_MUST_FAIL = [
@@ -483,6 +601,27 @@ SCOPE_MUST_PASS = [
     ("src/core/compound.c", "static int walk_part(CompWalk *w, int i)\n{\n    pcrec_ctx_lend(w->cx);\n    return (int)pcrec_ctx_unlend(w->cx);\n}\n"),
 ]
 
+SCOPE_MUST_FAIL += [
+    # r110 B1: each COUNTED entry without its `(void)pcrec_err_chan(` line (the count deleted, the allocation kept)
+    ("src/core/arena.c", "void *pcrec_arena_alloc(Arena *a, size_t n)\n{\n    b = malloc(n);\n    return b;\n}\n", "counted"),
+    ("src/core/arena.c", "static LEnt *rec_take(Arena *a, const Kind *kind)\n{\n    LEnt *e = calloc(1, 8);\n    return e;\n}\n", "counted"),
+    ("src/core/sb.c", "static void sb_grow(StrBuf *sb, size_t n)\n{\n    if (n <= sb->cap) return;\n    np = realloc(sb->p, n);\n}\n", "counted"),
+    ("src/core/sb.c", "char *pcrec_sb_take(StrBuf *sb)\n{\n    char *p = strdup(sb->p);\n    return p;\n}\n", "counted"),
+    ("src/core/sb.c", "char *pcrec_sb_render_prefix(StrBuf *sb, size_t n)\n{\n    char *np = sb_store(sb, n + 1);\n    return np;\n}\n", "counted"),
+    # ... and the count placed AFTER the allocation is not before it
+    ("src/core/arena.c", "void *pcrec_arena_alloc(Arena *a, size_t n)\n{\n    b = malloc(n);\n    (void)pcrec_err_chan(a->cx);\n}\n", "counted"),
+    # r110 B1: another function's own heap call, with no counted entry behind it
+    ("src/core/arena.c", "void *pcrec_scope_malloc(Scope *s, size_t n)\n{\n    void *p = malloc(n);\n    return p;\n}\n", "counted"),
+    ("src/core/sb.c", "static char *sb_store(StrBuf *sb, size_t n)\n{\n    return malloc(n);\n}\n", "counted"),
+    # r110 B3: walk_part with neither lend nor unlend, and with only one
+    ("src/core/compound.c", "static int walk_part(CompWalk *w, int i)\n{\n    return part_compile(w, i);\n}\n", "counted"),
+    ("src/core/compound.c", "static int walk_part(CompWalk *w, int i)\n{\n    pcrec_ctx_lend(w->cx);\n    return part_compile(w, i);\n}\n", "counted"),
+]
+SCOPE_MUST_PASS += [
+    ("src/core/arena.c", "void *pcrec_arena_alloc(Arena *a, size_t n)\n{\n    (void)pcrec_err_chan(a->cx);\n    b = malloc(n);\n    return b;\n}\n"),
+    ("src/core/arena.c", "void *pcrec_scope_malloc(Scope *s, size_t n)\n{\n    LEnt *e = rec_take(a, k);\n    void *p = malloc(n);\n    return p;\n}\n"),
+]
+
 def scope_self_test():
     """-> a message per scope-rule fixture the rules got wrong."""
     out = []
@@ -495,6 +634,22 @@ def scope_self_test():
         out.append("the scope-open floor did not trip on a single site (floor is half of 8, rounded down)")
     if not scope_floor_failures(MIN_SCOPE_OPENS, 0):
         out.append("the D-11 binder floor did not trip on an empty population")
+    # seam rule fixtures (r110 C): S3653's first edit (`Arena *into;` back in a seam type), the other channel
+    # spellings reachable from the root, and a clean struct; a type NOT reachable from the root is not a seam type
+    base = "typedef struct {\n    int a;\n%s} PcrecPartFacts;\ntypedef struct {\n    PcrecPartFacts *facts;\n} PcrecEmitIn;\n"
+    for field in ("    Arena *into;\n", "    StrBuf sb;\n", "    Scope sc;\n", "    Ctx *cx;\n", "    Job *job;\n", "    mf_arena *ma;\n"):
+        if not seam_findings(strip_noise(base % field))[0]:
+            out.append(f"the seam rule missed the field {field.strip()}")
+    if seam_findings(strip_noise(base % "    void **hold;\n"))[0]:
+        out.append("the seam rule flagged a clean seam type")
+    if seam_findings(strip_noise(base % "" + "typedef struct {\n    Arena *a;\n} Unrelated;\n"))[0]:
+        out.append("the seam rule flagged a type not reachable from PcrecEmitIn")
+    if "PcrecPartFacts" not in seam_findings(strip_noise(base % ""))[1]:
+        out.append("the seam derivation missed a type reachable from PcrecEmitIn")
+    if not seam_floor_failures(set()):
+        out.append("the seam floor did not trip on an empty derived set")
+    if not scope_floor_failures(MIN_SCOPE_OPENS, D11_MIN_SEEN, 0):
+        out.append("the counted-entry floor did not trip on an empty population")
     for rel, text in SCOPE_MUST_PASS:
         clean = strip_noise(text).split("\n")
         got = scope_rule_findings(rel, clean, functions(clean))
@@ -505,8 +660,9 @@ def scope_self_test():
 def scope_scan(root):
     """-> (findings, files scanned, pcrec_scope_open sites) over src/ cli/ lib/ .c files."""
     findings, nfiles, nopen = [], 0, 0
-    global D11_SEEN
+    global D11_SEEN, COUNTED_SEEN
     D11_SEEN = 0
+    COUNTED_SEEN = 0
     for top in ("src", "cli", "lib"):
         for dp, dn, fn in os.walk(os.path.join(root, top)):
             for f in sorted(fn):
@@ -520,6 +676,7 @@ def scope_scan(root):
                 nopen += sum(len(re.findall(r"\bpcrec_scope_open\s*\(", l)) for k, l in enumerate(clean)
                              if fns[k] and rel != "src/core/arena.c")
                 D11_SEEN += d11_findings(rel, clean, fns)[1]
+                COUNTED_SEEN += counted_findings(rel, clean, fns)[1]
                 for ln, rule, msg in scope_rule_findings(rel, clean, functions(clean)):
                     findings.append((rel, ln, rule, msg))
     return findings, nfiles, nopen
@@ -531,13 +688,21 @@ def scope_scan(root):
 MIN_SCOPE_OPENS = 4
 D11_MIN_SEEN = 1      # the one allowed binder, pcrec_memfn_art's `ma->u = &cx->arena`
 
-def scope_floor_failures(nopen, nseen):
+MIN_COUNTED = len(COUNTED) + 1   # the five counted entries and walk_part: every one must be SEEN (K35)
+
+def seam_floor_failures(types):
+    miss = [t for t in SEAM_NAMED if t not in types]
+    return [f"the seam derivation from {SEAM_ROOT} missed {', '.join(miss)} (the review's named seam types): the rule is not reaching its types"] if miss else []
+
+def scope_floor_failures(nopen, nseen, ncounted=None):
     """-> one message per scope-scan population below its floor (K35); plants in scope_self_test."""
     out = []
     if nopen < MIN_SCOPE_OPENS:
         out.append(f"saw only {nopen} pcrec_scope_open sites (floor {MIN_SCOPE_OPENS}): the scope scan is not reaching the tree")
     if nseen < D11_MIN_SEEN:
         out.append("saw no allowed mf_arena binder (pcrec_memfn_art's `ma->u = &cx->arena`): the D-11 rule is not reaching its site")
+    if ncounted is not None and ncounted < MIN_COUNTED:
+        out.append(f"saw only {ncounted} of {MIN_COUNTED} counted entries / walk_part: the counted rule is not reaching its sites")
     return out
 
 def main():
@@ -577,9 +742,18 @@ def main():
     for rel, ln, rule, msg in sfind:
         print(f"FAIL: scope rule {rule}: {rel}:{ln}: {msg}")
         rc = 1
-    for m in scope_floor_failures(nopen, D11_SEEN):
+    for m in scope_floor_failures(nopen, D11_SEEN, COUNTED_SEEN):
         print(f"FAIL: {m}")
         return 2
+    ihdr = os.path.join(root, "src/core/internal.h")
+    sfinds, stypes = seam_findings(strip_noise(open(ihdr, encoding="utf-8", errors="replace").read()))
+    for m in seam_floor_failures(stypes):
+        print(f"FAIL: {m}")
+        return 2
+    for t, l in sfinds:
+        print(f"FAIL: scope rule seam: seam type {t} carries an outer channel: `{l}` "
+              f"(an ALLOW row here is U8's trigger firing: arena_scopes_arch.md U8)")
+        rc = 1
     fields, freed = job_fields(root)
     if fields is None or freed is None:
         print("FAIL: could not find struct Job in src/core/internal.h or job_cleanup in src/core/compile.c")
@@ -595,7 +769,8 @@ def main():
     if rc == 0:
         print(f"PASS: scratch_builder_check: {nfiles} compile-path files, {nscratch} scratch builders, "
               f"{len(reached)} allowlisted sites, {len(fields)} Job buffers all freed by job_cleanup, 0 heap builders, "
-              f"{nopen} scope sites under the scope rules")
+              f"{nopen} scope sites under the scope rules, {COUNTED_SEEN} counted entries seen, "
+              f"{len(stypes)} seam types with no outer channel")
     return rc
 
 sys.exit(main())

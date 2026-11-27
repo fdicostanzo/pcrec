@@ -296,7 +296,8 @@ KEPT AS IS in this build. Reasons, each a site fact:
   is not taken: it keeps the cross-channel allocation and only makes its failure survivable, where the holder removes
   it; and the inner Job, arena and memo live in `compile_driver`'s own frame, which the longjmp destroys, so the outer
   could free them only after a remodel moving that state into storage the outer owns. U8 keeps its trigger (a second
-  cross-compile member, or a nested compile that must allocate into the outer).
+  cross-compile member, or a nested compile that must allocate into the outer). An ALLOW row in the scanner's seam rule
+  ("seam types carry no outer channel", r110 C) IS this trigger firing.
 - D109's Revisit: its premise ("four handlers read no per-attempt Ctx field") holds in its own terms: the registry is
   inside `cx.arena`, which those handlers already read through `pcrec_arena_free`, and the lent pair is read by arena.c
   only. The design asks for a one-line D109 addendum saying so (manager's file; Open questions).
@@ -546,7 +547,7 @@ Every rule has a check that runs in `make test`; none is a comment.
 | D-11 pin | a second `mf_arena` binder, or one not binding `&cx->arena` | scanner rule keyed on the TYPE `mf_arena` and on `mf_art_begin(` callers, not on the spelling `ma->u =` (the kit's own idiom is an initializer, `mf_arena ar = { &fa, fh_alloc };` in memfn/src/formhash.c; C12) | scratch_builder_check.py | fixtures in BOTH spellings (an assignment binder and an initializer binder) (sabotage (7) is now a fixture) |
 | D-6 adoption | arena storage handed to `free` | `.ar` set on either side, internal error | `pcrec_sb_adopt` | sabotage (8) |
 | D-7 channel | a refusal through `.cx` that bypasses the accessor; an allocating entry with a channel that does not count | scanner: every `pcrec_ctx_nomem(`/`pcrec_ctx_fail(` in arena.c and sb.c takes `pcrec_err_chan(`; and no arena.c function calls `pcrec_arena_alloc` (it would bypass W7's wrap, C16) | scratch_builder_check.py | fixtures |
-| K163 class | an allocation or refusal through a lent Ctx's channel | `pcrec_ctx_unlend` count nonzero, internal error at the outer point after both stores | arena.c, sb.c, compound.c | sabotage (9) restores the outer-arena copy: the compound corpus refuses; C0(d) is the pre-fix control |
+| K163 class | an ALLOCATION through a lent Ctx's channel (a refusal-only use is not counted: the static seam rule, r110 C, covers it) | `pcrec_ctx_unlend` count nonzero, internal error at the outer point after both stores | arena.c, sb.c, compound.c | sabotage (9) restores the outer-arena copy: the compound corpus refuses; C0(d) is the pre-fix control |
 
 THE FIVE `setjmp` HANDLERS (S6) meet a scope like this:
 
@@ -597,9 +598,10 @@ F4 AS A D203 FIX (B18), the four items:
   the inner compile outer Job pointers), so the RUNTIME count is the sibling census: C0(d) over the compound corpus,
   and F4's gate over the whole corpus.
 - FIX SHAPE at the class: every error-channel read goes through one accessor that counts uses on a lent Ctx, and a
-  nested compile runs lent, so the class is a counted population refused at the outer point (this catches any future member that allocates
-  or refuses through an Arena or a StrBuf carrying a `.cx`: D-7's four counted entries, C11; a bare `malloc` is outside
-  it); the one member found today is removed by the holder. K163 is SUSPECTED: if C0(d) does not strand at the copy,
+  nested compile runs lent, so the class is a counted population refused at the outer point (this catches any future member that ALLOCATES
+  through an Arena or a StrBuf carrying a `.cx`: D-7's counted entries, C11; a bare `malloc` is outside it. A
+  refusal-only use longjmps to the outer point before `pcrec_ctx_unlend` reads the count, so it is NOT counted: that half
+  is covered by the static seam rule "seam types carry no outer channel", r110 C); the one member found today is removed by the holder. K163 is SUSPECTED: if C0(d) does not strand at the copy,
   that is a STOP, not a pass. F4 is not sized as a plan unit (D203: no 90%, no one-pass); its place in the order is only
   "one mechanism per lane".
 
@@ -854,7 +856,7 @@ Listed for the pre-go briefing; under D191 addendum 2 they need no go of their o
   `walk_part` only), with fixtures. W7's lent window is its own row over W6 (`lent_window`: only lent points are trials,
   each one a trial); population 0 prints an INFO line, never a PASS. Sabotage (9) is S3653 (two edits: `walk_part`
   hands the outer arena where the hold was, the part's compile_driver copies into it with `pcrec_sb_fragf`). Measured:
-  lent uses 0 over tests/compound/split.rxt; emitted C byte-identical (105 patterns, no abi move); W6 1016 of 1061.
+  lent uses 0 over tests/compound/split.rxt; emitted C byte-identical (102 compiled + 3 refused identically, no abi move); W6 1016 of 1061.
 
 ## r102 disposition
 

@@ -563,8 +563,11 @@ void  **pcrec_arena_hold(Arena *a);
  * (`pcrec_arena_alloc`, `rec_take`, `sb_grow` past its capacity return,
  * `pcrec_sb_take`, `pcrec_sb_render_prefix`), so a use through a LENT Ctx is
  * counted whether or not it fails (D-7; the scanner's scope). NULL (a
- * detached arena) is legal and counts nothing. The `sb->cx` refusals in
- * vm_stmt.c and enc.c read the Ctx directly: outside the count. */
+ * detached arena) is legal and counts nothing. The count covers ALLOCATING
+ * uses only (it is read after the part returns; a refusal longjmps first):
+ * the refusal-only half is covered by the scanner's seam rule "seam types
+ * carry no outer channel". The `sb->cx` refusals in vm_stmt.c and enc.c read
+ * the Ctx directly: outside the count. */
 Ctx    *pcrec_err_chan(Ctx *cx);
 /* [K163] THE LENT PAIR (D-7), called by compound.c `walk_part` only, around
  * a nested part compile: while lent, `pcrec_err_chan` counts each use of
@@ -4539,9 +4542,10 @@ struct Ctx {
     /* [ARENA-SCOPES] D-7 THE LENT CHANNEL ([K163]): true while a nested part
      * compile runs under this Ctx (`pcrec_ctx_lend`/`pcrec_ctx_unlend`,
      * compound.c `walk_part` only), and the uses of this Ctx's error channel
-     * counted meanwhile by `pcrec_err_chan` (an allocation or a refusal
-     * through an Arena or a StrBuf whose `.cx` is this Ctx, made from inside
-     * the inner compile's recovery point). WRITTEN and READ by arena.c only;
+     * counted meanwhile by `pcrec_err_chan` (an ALLOCATION through an Arena
+     * or a StrBuf whose `.cx` is this Ctx, made from inside the inner
+     * compile's recovery point; a refusal-only use longjmps before the
+     * count is read and is covered by the scanner's seam rule instead). WRITTEN and READ by arena.c only;
      * per attempt by the same memset as `failed_nomem`. */
     bool                 lent;
     unsigned             lent_uses;
