@@ -12176,3 +12176,24 @@ X := [_g = /(?<d>\d)/] SEQ /x/ || X & (X.d: <5) | refused: `X.d`: the path cross
 Read (the manager's): today an underscore GROUP walls nothing (`X.d`, `n.d` legal, lines 2 and 3) while an
 underscore PART LABEL walls the path (lines 6 and 7, rule 2). Under "a group is a step" lines 2 and 3 become
 compile errors like 6 and 7; the bare read inside (line 1) stays legal, as line 4 is.
+
+### 2026-11-27 OWNER RULING — group-node: "agree group as a step"; "Group names should be labels almost exactly excepting the explicit capture semantics"
+tags: core/labels/rule/group-node core/labels/rule/paths core/labels/labels-vs-captures core/labels/export lib/structural/capture
+His words, verbatim: "group-node: agree group as a step. Group names should be labels almost exactly excepting
+the explicit capture semantics"
+RULED (answered by slug), the statement AS LAST PUT, quoted: "a named group in rx text is a step in a path like a
+part label. `g.d` is legal, the flat read still works by skipping, and an underscore group walls what is inside
+it." The runs told with it: `predbang_evidence/groupnode.py`, `groupwall.py` (the entry before).
+His second sentence is a STATEMENT of the direction behind it (his words; not asked as a question): a group's
+name is a label "almost exactly", the exception being "the explicit capture semantics".
+NOT FOLDED: it was ruled after lane predfold1125 delivered and after review r111 froze its subject; it goes to
+the fix lane that follows r111.
+The manager's readings, for that lane to test: (a) the two printed lines of core/labels/rule/group-node flip:
+`/(?<g>(?<d>\d))x/ & (g.d: <5)` legal with the second line's answers; (b) a read from outside or from above
+through an underscore group becomes a compile error by rule 2 (`X.d`, `n.d` in groupwall.out, lines 2 and 3):
+every printed program that reads through an underscore-named group is found and listed; (c) a group around a hole
+(`/(?<g>${A})x/`) is `[g = A]` for paths: `g.h` legal, and by alone-as-middle A under it is named, not skipped
+(`g.A.h`; whether `g.h` then skips a gate is to be RUN and reported, not assumed); (d) "excepting the explicit
+capture semantics": what a group contributes to the caller's captures is unchanged (capture by request,
+lib/structural/capture; core/labels/labels-vs-captures); (e) the same-name rules for a group mentioned twice are
+the label rules already printed.
