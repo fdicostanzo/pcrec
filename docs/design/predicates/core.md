@@ -319,7 +319,7 @@ needs: core/model/match core/patterns/sequence
 - Between conditions `c | d` is this same `|`: an alternation of two zero-width tests at one place.
 - Entering an alternation resets the labels inside it (core/labels/one-rule).
 see: core/filters/and core/labels/one-rule core/arrays/lift
-WHOLE `25` HOLDS (l = `2`), `7` FAILS / SEARCHED `25` `25`@0 / FIND-ALL `25 13` [`25`@0, `13`@3] (`[ab = (B | A)] & (ab.l: <20)`, A := `/(?<l>\d)\d/`, B := `/(?<l>\d\d)/`)
+WHOLE `25` HOLDS (l = `2`), `7` FAILS / SEARCHED `25` `25`@0 / FIND-ALL `25 13` [`25`@0, `13`@3] (`[ab = ([b = B] | [a = A])] & (ab.l: <20)`, A := `/(?<l>\d)\d/`, B := `/(?<l>\d\d)/`)
 
 ### Postfix quantifier operators   [core/patterns/quantifiers]   ruled 2026-11-25
 Nine postfix operators `+ +? ++ * *? *+ ? ?? ?+` and the brace counts are regex's quantifiers on the operand before them; binary `+` is addition.
@@ -374,7 +374,7 @@ needs: core/model/match core/model/table
   then `ab.l`) is the caller's own (core/labels/export/arguments; the line "A part label over an expression").
 see: lib/control/atomic parked/ideas/atomic
 WHOLE `25` FAILS, `13` HOLDS / SEARCHED `25` FAILS / FIND-ALL `25 13` [`13`@3] (`atomic(/(?<l>\d\d)/ | /(?<l>\d)\d/) & (atomic.l: <20)`)
-A part label over an expression in an argument: WHOLE `25` FAILS, `13` HOLDS / SEARCHED `25` FAILS / FIND-ALL `25 13` [`13`@3] (`atomic([ab = (B | A)]) & (ab.l: <20)`, A := `/(?<l>\d)\d/`, B := `/(?<l>\d\d)/`)
+A part label over an expression in an argument: WHOLE `25` FAILS, `13` HOLDS / SEARCHED `25` FAILS / FIND-ALL `25 13` [`13`@3] (`atomic([ab = ([b = B] | [a = A])]) & (ab.l: <20)`, A := `/(?<l>\d)\d/`, B := `/(?<l>\d\d)/`)
 
 ### Lookaround   [core/patterns/lookaround]   ruled 2026-11-18
 Labels set inside a lookahead are visible after it, read by the usual label rules, as in PCRE.
@@ -470,8 +470,9 @@ see: core/labels/rule/stacked-chain core/labels/ownership core/labels/export cor
   (his ruling, core/labels/rule/equivalence-inside).
 - Readings (the manager's): the blank label is never a start, having no name; rule 4 applies repeatedly, two or
   more middle labels skipped at once (its ground: `X.h`, `X.m.h` "all legal" for `[n = [m = A]]`, as asked). His
-  ruling: rule 4's candidates count only the targets a legal path reaches (core/labels/rule/skip-past-wall); an implicit label
-  is never a middle (core/labels/rule/alone-as-middle); a label the caller writes in an argument, a sent label and
+  ruling: rule 4's candidates count only the targets a legal path reaches (core/labels/rule/skip-past-wall); his
+  ruling: a part used alone is a middle step inside its binding and never skipped (core/labels/rule/alone-as-middle);
+  a label the caller writes in an argument, a sent label and
   the caller's shorthand label are starts in the CALLER's binding, a start under the body's wall but never a
   licence to cross a wall below it; Rule 5's start by a binding's or macro's name is line 3's shorthand under its
   four conditions; from outside, through a call, the body's labels are the tree: `B.p.d`, and `B.d` by rule 4 where unambiguous.
@@ -535,17 +536,20 @@ needs: core/labels/rule/paths
 Inside, the blank above `t`: WHOLE `3!` HOLDS, `7!` FAILS / SEARCHED `7! 3!` `3!`@3 / FIND-ALL `3! 7! 4!` [`3!`@0, `4!`@6] (`[_ = [t = A]] SEQ "!" & (t.h: <5)`, A := `/(?<h>\d)/`): rule 3
 Inside, his `[_t = A]`: modes: a compile error (`[_t = A] SEQ "!" & (t.h: <5)`, A := `/(?<h>\d)/`: no label `t` is made; `_t.h` is the read).
 From outside, both: modes: a compile error (`X & (X.t.h: <5)`, A := `/(?<h>\d)/`, X := `[_ = [t = A]] SEQ "!"`: the path crosses the blank (rule 2); X := `[_t = A] SEQ "!"` with `X.h` alike, crossing `_t`).
-### A part used alone as a middle label   [core/labels/rule/alone-as-middle]   open alone-as-middle 2026-11-25
-Inside a binding, may a path name a part used alone as a MIDDLE step (`n.Q.d` for `[n = (P SEQ Q)]`)?
+### A part used alone as a middle label   [core/labels/rule/alone-as-middle]   ruled 2026-11-27
+Inside its binding a part used alone is a label of its own name that may start a path or be a middle step (`n.Q.d`), never skipped: `n.d` through it is a compile error naming `n.Q.d`.
 needs: core/labels/rule/paths
 see: core/labels/export
-The reading today: a compile error (the manager's reading): the read is `Q.d`; an implicit label is a start, never
-a middle (core/labels/export statement 2). Candidates: (a) the compile error; (b) legal, `n.Q.d` read as `Q.d`
-(the third line's answers). `n.d`, skipping through the part used alone, is legal either way (the second line).
-A part used alone as a middle, inside: modes: a compile error (`[n = (P SEQ Q)] & (n.Q.d: <5)`, P := `/(?<d>\d)/`, Q := `/,(?<d>\d)/`: the read is `Q.d`; an implicit label is a start, never a middle (the manager's reading)).
-Through the part used alone, skipped: WHOLE `7,3` HOLDS, `3,7` FAILS / SEARCHED `3,7 7,3` `7,3`@4 / FIND-ALL `7,3 3,7 4,1` [`7,3`@0, `4,1`@8] (`[n = (P SEQ Q)] & (n.d: <5)`, P := `/(?<d>\d)/`, Q := `/,(?<d>\d)/`): Q's `d`, the last mention
-Candidate (b)'s answers: the read as `Q.d`: WHOLE `7,3` HOLDS, `3,7` FAILS / SEARCHED `3,7 7,3` `7,3`@4 / FIND-ALL `7,3 3,7 4,1` [`7,3`@0, `4,1`@8] (`[n = (P SEQ Q)] & (Q.d: <5)`, P := `/(?<d>\d)/`, Q := `/,(?<d>\d)/`)
-
+- His words: "alone-as-middle: yes to the gate"; the statement as re-asked: "inside the definition that uses it, a
+  part used alone is a label of its own name that may start a path or be a middle step (`n.Q.d`), and is never
+  skipped (`n.d` through it is a compile error naming `n.Q.d`). From outside it exports nothing, as today."
+- A label someone WROTE (`[a = P]`) is still skipped by rule 4. A part used more than once is refused as a step,
+  as it is as a start. From outside, `X.Q.d` crosses Q as a wall (rule 6), and `X.n.Q.d` alike.
+A part used alone as a middle, inside: WHOLE `7,3` HOLDS, `3,7` FAILS / SEARCHED `3,7 7,3` `7,3`@4 / FIND-ALL `7,3 3,7 4,1` [`7,3`@0, `4,1`@8] (`[n = (P SEQ Q)] & (n.Q.d: <5)`, P := `/(?<d>\d)/`, Q := `/,(?<d>\d)/`)
+Through the part used alone, skipped: modes: a compile error (`[n = (P SEQ Q)] & (n.d: <5)`, P := `/(?<d>\d)/`, Q := `/,(?<d>\d)/`: the path skips a part used alone, which is never skipped inside its binding: write `n.P.d` or `n.Q.d`).
+Its own start, alike: WHOLE `7,3` HOLDS, `3,7` FAILS / SEARCHED `3,7 7,3` `7,3`@4 / FIND-ALL `7,3 3,7 4,1` [`7,3`@0, `4,1`@8] (`[n = (P SEQ Q)] & (Q.d: <5)`, P := `/(?<d>\d)/`, Q := `/,(?<d>\d)/`)
+Used twice, not a step: modes: a compile error (`[n = (Q SEQ Q)] & (n.Q.d: <5)`, Q := `/,(?<d>\d)/`: `Q` is used more than once here, so it is not a step).
+From outside, the part used alone: modes: a compile error (`X & (X.Q.d: <5)`, P := `/(?<d>\d)/`, Q := `/,(?<d>\d)/`, X := `[n = (P SEQ Q)]`: the path crosses `Q`, a part used alone in it (rule 6)).
 ### A group of rx text as a node of a path   [core/labels/rule/group-node]   open group-as-node 2026-11-25
 Is a named group of rx text a node of the label DAG, so that `g.d` reads `d` through the outer group `g` of `/(?<g>(?<d>\d))x/`?
 needs: core/labels/rule/paths
@@ -736,7 +740,7 @@ see: core/labels/backreferences core/labels/export/flat-read-outside core/labels
    (statement 6); the bare `_` of `[_ = A]` is a leave-out's unusable name (core/modules/leave-out; statement 7).
 2. Inside a binding the public labels of everything written or used there are visible, read as labels are (last
    mention; an ambiguous reference is the error). An UNLABELLED use carries the implicit label of the binding's name,
-   protected: reached as `A.h` there, exported nowhere (core/labels/rule line 3; the line "Used alone, inside").
+   protected, exported nowhere: `A.h`, a step `n.A.h`, never skipped (rule/alone-as-middle; rule line 3).
 3. Outside a binding, what passes out is what it EXPORTS: its OWN names (a group in its literals, a part label it
    writes, a label an export list it writes takes; none beginning with `_`) and, through a public part label, the
    labels that part exports, by path (`pub.a.h`, core/labels/rule/paths rules 1 and 5, a member's metadata alike)
@@ -2266,7 +2270,7 @@ needs: core/patterns/sequence core/patterns/quantifiers core/filters/and core/va
 - A string runs from its quote to the same quote on its line (core/patterns/strings); nothing inside it is an operator.
 - Inside `/.../` none of this applies: rx text has PCRE's meaning, a hole `${...}` excepted.
 WHOLE `2` HOLDS, `x2` FAILS / SEARCHED `x2` `2`@1 / FIND-ALL `x1 2 x2` [`x1`@0, `2`@3, `2`@6] (`"x" SEQ "1" | "2"` is `(?:x1)|2`)
-The label set beside `|`: WHOLE `25` FAILS, `13` HOLDS / SEARCHED `25` FAILS / FIND-ALL `25 13` [`13`@3] (`[ab = B | A] & (ab.l: <20)`, A := `/(?<l>\d)\d/`, B := `/(?<l>\d\d)/`)
+The label set beside `|`: WHOLE `25` FAILS, `13` HOLDS / SEARCHED `25` FAILS / FIND-ALL `25 13` [`13`@3] (`[ab = [b = B] | [a = A]] & (ab.l: <20)`, A := `/(?<l>\d)\d/`, B := `/(?<l>\d\d)/`)
 
 ### Bindings and macros   [core/operators/bindings]   ruled 2026-11-22
 `name := expression` binds a name to whatever the expression is, an rx or a macro; `m(p1, p2) := body` makes a macro, and a call is the macro applied to one record.

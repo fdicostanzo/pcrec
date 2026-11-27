@@ -897,6 +897,8 @@ SPEC11 = [  # (id, tag, label, program, bindings joined by " || ", WHOLE texts j
     ('ev4', 'lib/counting/every', 'No pass, set at least once', '/(?:(?<d>\\d),)*x/ & some(@d, "7") & every(@d, "7")', '', 'x|7,x', '-x', 'x 7,x 1,x'),
     ('ev3', 'lib/counting/every', 'No pass', '/(?:(?<d>\\d),)*x/ & every(@d, "7")', '', 'x|7,x|1,x', '-x', 'x 7,x 1,x'),
     ('ct1', 'lib/counting/count', 'Every setting counted', '/(?:(?<d>\\d)?,)+/ & (count(@d): ==2)', '', '1,2,|1,,2,|1,', '1, 1,2,', '1,2, 3, 4,,5,'),
+    ('ALONE1', 'core/labels/rule/alone-as-middle', 'A part used alone as a middle, inside', '[n = (P SEQ Q)] & (n.Q.d: <5)', 'P := /(?<d>\\d)/ || Q := /,(?<d>\\d)/', '7,3|3,7', '3,7 7,3', '7,3 3,7 4,1'),
+    ('ALONE3', 'core/labels/rule/alone-as-middle', 'Its own start, alike', '[n = (P SEQ Q)] & (Q.d: <5)', 'P := /(?<d>\\d)/ || Q := /,(?<d>\\d)/', '7,3|3,7', '3,7 7,3', '7,3 3,7 4,1'),
 ]
 QQ11 = [  # (his sentence, the piece that quotes it)
     ("goal is all dfa unless specified by user. I don't want \"when\" to force vm", "core/principles/all-dfa"),
@@ -925,6 +927,7 @@ QQ11 = [  # (his sentence, the piece that quotes it)
     ("capture-negated: broaden to any effect macro cannot be under negation.", "core/filters/negation/effects"),
 ]
 GONE11 = {  # old program -> why: a printed line a ruling removed (its text kept in the details entry's `rejected:`)
+    "[n = (P SEQ Q)] & (n.d: <5)": "R-5, alone-as-middle: now a compile error naming `n.Q.d` (ERRSWEEP11)",
     "[n = ([m = P] SEQ [k = Q])] & (n.d: <5)": "R-3, skip-past-wall: candidate (b)'s line, not taken",
     "[n = ([m = P] | [k = Q])] & (n.d: <5)": "R-3, skip-past-wall: candidate (b)'s line, not taken",
 }
@@ -943,6 +946,9 @@ RESPELL11 = {  # old program -> (new program, why): a printed line whose key mov
     'when(peek(/\\d/), /\\d\\d/, else = /\\w/)': ('when(^/\\d/, /\\d\\d/, else = /\\w/)', "bang-split line 5"),
     '/(?:(?<d>\\d)?,)+/ & some((d: "7")) & occurs.none(NOT (d: "7"))':
         ('/(?:(?<d>\\d)?,)+/ & some(@d, "7") & every(@d, "7")', "array-argument, `every` as told"),
+    "[ab = (B | A)] & (ab.l: <20)": ("[ab = ([b = B] | [a = A])] & (ab.l: <20)", "R-5: written labels, still skipped"),
+    "atomic([ab = (B | A)]) & (ab.l: <20)": ("atomic([ab = ([b = B] | [a = A])]) & (ab.l: <20)", "R-5, as above"),
+    "[ab = B | A] & (ab.l: <20)": ("[ab = [b = B] | [a = A]] & (ab.l: <20)", "R-5, as above"),
     '/(?:(?<d>\\d),)*x/ & some((d: "7")) & occurs.none(NOT (d: "7"))':
         ('/(?:(?<d>\\d),)*x/ & some(@d, "7") & every(@d, "7")', "array-argument, `every` as told"),
 }
@@ -956,6 +962,74 @@ RX11 = types.ModuleType("rx11")
 exec(compile(RX11_SRC, MY11 + ":RX11", "exec"), RX11.__dict__)          # noqa: S102  the inlined lowering
 X11 = [True]
 FALLBACK11 = []
+
+# ---- R-5 (alone-as-middle RULED): predfix90's path walker, its message and the grid evaluator, patched as DECLARED
+#      text replacements on their verbatim source (each applied exactly once, each printed). Inside its binding a part
+#      used alone is a label of its own name: a middle step (`n.Q.d`), never skipped (`n.d` through it a compile error
+#      naming `n.Q.d`); used more than once it is refused as a step; from outside it exports nothing (rule 6), so
+#      `X.Q.d` from outside is the rule-6 wall (predfix90 handed that read to the loaded engine, which answered it).
+R5PATCH11 = [
+    ("walk10", """            if rest and rest[0] == nm:
+                raise Und("an implicit label as a middle")
+            sub = walk10(bd[nm], 0, len(bd[nm]), rest, target, True, {}, bd, heads, route + pub, depth + 1)""",
+     """            if rest and rest[0] == nm and not labelled:
+                if outside:
+                    out.append(("wall", "rule 6", nm))       # R-5: from outside a part used alone exports nothing
+                    continue
+                if sum(1 for x_ in _leaves(t, lo, hi, params, bd, heads) if x_[3] == nm) > 1:
+                    out.append(("wall", "twice", nm))        # R-5: used more than once, refused as a step
+                    continue
+                sub = walk10(bd[nm], 0, len(bd[nm]), rest[1:], target, True, {}, bd, heads, [nm],
+                             depth + 1)                      # the read is the part's own: `Q.d`
+                out += [x_ for x_ in sub if x_[0] == "ok"] or sub
+                continue
+            if rest and rest[0] == nm:
+                raise Und("an implicit label as a middle")   # labelled: predfix90's own hand-off, unchanged
+            sub = walk10(bd[nm], 0, len(bd[nm]), rest, target, True, {}, bd, heads, route + pub, depth + 1)
+            if not outside and not labelled and any(x_[0] == "ok" for x_ in sub) and not s11("q15"):
+                out.append(("wall", "alone", nm, route + pub + [nm]))   # R-5: never skipped
+                continue"""),
+    ("path10", """                raise CompileError("`%s`: `%s` is not visible through `%s`: the path crosses `%s`, %s (a compile "
+                                   "error, path-rules rule 6)" % (rd, ".".join(steps[1:]), steps[0], w[2], RULE6_10))""",
+     """                if w[1] == "alone":
+                    ws_ = sorted(set(".".join(x_[3] + [steps[-1]]) for x_ in walls if x_[1] == "alone"))
+                    raise CompileError("`%s`: the path skips a part used alone, which is never skipped inside its "
+                                       "binding: write %s (a compile error, alone-as-middle)" % (
+                                           rd, " or ".join("`%s`" % x_ for x_ in ws_)))
+                if w[1] == "twice":
+                    raise CompileError("`%s`: `%s` is used more than once here, so it is not a step (a compile error, "
+                                       "alone-as-middle)" % (rd, w[2]))
+                raise CompileError("`%s`: `%s` is not visible through `%s`: the path crosses `%s`, %s (a compile "
+                                   "error, path-rules rule 6)" % (rd, ".".join(steps[1:]), steps[0], w[2], RULE6_10))"""),
+    ("g_eval", """        if not outside and not labelled and j + 1 < len(segs):
+            und = True""",
+     """        if not outside and not labelled and (j + 1 < len(segs) or kind in ("in", "in_", "inwx", "inwb")) and \
+                not s11("q15"):
+            return "refused", ["alone"]                      # R-5: a part used alone (a binding's use, or the leaf
+            #                                                  A) is never skipped inside its binding"""),
+]
+R5ORIG11, R5NEW11 = {}, {}
+
+
+def _r5(fn_):
+    """the R-5 form under X11 on, predfix90's own under X11 off (the control runs the starting rules)."""
+    return lambda *a, **k: (R5NEW11 if X11[0] else R5ORIG11)[fn_](*a, **k)
+
+
+for fn_, old_, new_ in R5PATCH11:
+    a_ = _src10.index("def %s(" % fn_)
+    b_ = _src10.index("\ndef ", a_ + 4)
+    body_ = _src10[a_:b_]
+    assert body_.count(old_) == 1, (fn_, "R-5 patch site not found exactly once")
+    R5ORIG11[fn_] = globals()[fn_]
+    _ns = {}
+    exec(compile(body_.replace(old_, new_), P90 + ":" + fn_ + "+R-5", "exec"), globals(), _ns)   # noqa: S102
+    R5NEW11[fn_] = types.FunctionType(_ns[fn_].__code__, globals(), fn_, _ns[fn_].__defaults__)
+    globals()[fn_] = _r5(fn_)
+    print("PATCH R-5 %s: %d lines replaced by %d" % (fn_, old_.count("\n") + 1, new_.count("\n") + 1))
+GRULE["alone"] = ("core/labels/rule/alone-as-middle", "a part used alone is a label of its own name that may start "   # noqa: F821
+                  "a path or be a middle step")
+
 
 # ---- the plants that alter a RULE of the front end (each its own check's)
 if s11("q2"):                                                # TR11: a condition read as a set (`!(h: <5)` an error)
@@ -1344,6 +1418,9 @@ MSG11 = {  # a compile-error line's program -> a fragment its refusal must carry
     "m": "no label",
     "m.z": "no member",
     "R(x, A)": "marked `l:`",
+    "[n = (P SEQ Q)] & (n.d: <5)": "`n.Q.d`",
+    "[n = (Q SEQ Q)] & (n.Q.d: <5)": "more than once",
+    "X & (X.Q.d: <5)": "rule 6",
     "A(x)": "marked `l:`",
 }
 es_bad, es_msg = [], []
@@ -1582,6 +1659,19 @@ Ps3 = Ps3 or NULL11
 rd("string-literals (g): `\"ab\" SEQ \"cd\"` the one string", diff11(Ps3, Re("abcd"), texts11("abcd", 4)) == (0, 0, 0), "")   # noqa: F821
 for k_ in ("brace-counts (a)", "brace-counts (b)", "brace-counts (e)"):
     rd(k_, all(r_[2] == (0, 0, 0) for r_ in b_rows), "BRACES")
+R5B11 = ["P := /(?<d>\\d)/", "Q := /,(?<d>\\d)/", "X := [n = (P SEQ Q)]"]
+X11[0] = False
+Pz0, ez0 = run11("X & (X.Q.d: <5)", R5B11)
+X11[0] = True
+Pz1, ez1 = run11("X & (X.Q.d: <5)", R5B11)
+rd("R-5 check: predfix90 answers `X.Q.d` from OUTSIDE legal (a model defect against export statement 3), the "
+   "patched walker refuses it by rule 6", Pz0 is not None and Pz1 is None, "starting rules: %s; now: %s" % (
+       "legal" if Pz0 is not None else ez0, ez1))
+Pz2, _ = run11("[n = (P SEQ Q)] & (n.Q.d: <5)", R5B11[:2])
+Pz3, _ = run11("[n = (P SEQ Q)] & (Q.d: <5)", R5B11[:2])
+Pz2 = Pz2 or NULL11
+Pz3 = Pz3 or NULL11
+rd("R-5: `n.Q.d` inside has `Q.d`'s answers", diff11(Pz2, Pz3, texts11("37,", 4)) == (0, 0, 0), "")
 rd("drop-not (b) of 2026-11-25: a complement filling a lookaround hole flips it", None,
    "retired by bang-split: `!^A` is written; no complement in a hole")
 check("READINGS11", all(ok_ is not False for _, ok_, _ in RD11),
@@ -1614,6 +1704,9 @@ for k_, v_ in GPATCH11.items():
     print("   PATCH GRULE[%s]: %r -> %r (R-1, sent-label-wall ruled)" % (k_, GRULE[k_], v_))   # noqa: F821
     GRULE[k_] = v_                                           # noqa: F821
 _gsrc = _src10[_src10.index('unit10("GRID", '):_src10.index('unit10("READINGS10", ')]
+assert _gsrc.count("G_UND10 = 16") == 1
+_gsrc = _gsrc.replace("G_UND10 = 16", "G_UND10 = 0")         # DECLARED: R-5 decides the 16 alone-as-middle cells
+print("   PATCH GRID: G_UND10 16 -> 0 (R-5: the alone-as-middle cells decided, refused)")
 exec(compile(_gsrc, P90, "exec"), globals())                 # noqa: S102  predfix90's GRID, verbatim
 
 unit11("SUCCESSOR11", "every in-force model re-run: predfix90 (LIGHT: its SUCCESSOR re-runs the same list), "
@@ -1732,7 +1825,7 @@ check("DOC11", DLN11 and not d_miss, "%d lines, each in its own piece; missing: 
 # ---- the plants, each its own subprocess (LIGHT; SUCCESSOR11's reads the dumped runs)
 PLANTS11 = {"q1": "CANARY", "q2": "TR11", "q3": "CENSUS11", "q4": "SWEEP11", "q5": "ERRSWEEP11", "q6": "GROUP11",
             "q7": "BRACES", "q8": "STRINGS", "q9": "MAP11", "q10": "READINGS11", "q11": "GRID", "q12": "SUCCESSOR11",
-            "q13": "QUOTES11", "q14": "DOC11"}
+            "q13": "QUOTES11", "q14": "DOC11", "q15": "GRID"}
 if SAB11 == "all":
     caught = []
     for q_, tgt in sorted(PLANTS11.items(), key=lambda kv: int(kv[0][1:])):
