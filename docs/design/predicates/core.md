@@ -2295,7 +2295,7 @@ see: core/modules/call-shorthand core/holes/bare-condition core/filters/negation
   (core/holes/bare-condition).
 WHOLE `1,2` HOLDS / SEARCHED `x1,2` `1,2`@1 / FIND-ALL `1,2 3,3` [`1,2`@0, `3,3`@4] (`pair(p) := /${p},${p}/`, `pair(/\d/)` is `(?:\d),(?:\d)`)
 
-### Macro variables: a parameter that is a label   [core/operators/bindings/label-variables]   under-construction 2026-11-23
+### Macro variables: a parameter that is a label   [core/operators/bindings/label-variables]   under-construction 2026-11-27
 A macro parameter marked as a label, `A(l:)`, takes a new label name from the caller (`A(x:)`), placed where the body places it: his tentative direction; the ruled parts are the pieces below.
 needs: core/operators/bindings core/holes/bare-condition/bound-condition
 see: parked/ideas/label-parameter core/holes/bare-condition/nested-scope core/labels/one-rule lib/json/members

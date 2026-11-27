@@ -1587,7 +1587,7 @@ exec(compile(_gsrc, P90, "exec"), globals())                 # noqa: S102  predf
 unit11("SUCCESSOR11", "every in-force model re-run: predfix90 (LIGHT: its SUCCESSOR re-runs the same list), "
        "predfold1124, and through predfix88's runner predfix88 and the fourteen before it; each red DECLARED by a key "
        "with no document line numbers (predfix90's classes: CRASH, MISSING, LINE); a traceback never")
-exec(compile(_src10[_src10.index("def norm10(t):"):_src10.index("succ_bad, succ_n, succ_t, succ_seen = ")], P90,
+exec(compile(_src10[_src10.index("CRASH10 = re.compile("):_src10.index("succ_bad, succ_n, succ_t, succ_seen = ")], P90,
              "exec"), globals())                             # noqa: S102  predfix90's red key, verbatim
 PINS11 = dict(PINS8)                                         # noqa: F821  predfix90's pins, as its SUCCESSOR10 sets them
 PINS11["predfix88"] = "50a39f8e4"
@@ -1609,7 +1609,8 @@ succ_bad, succ_n, succ_t, succ_seen = [], 0, {}, []
 if not LIGHT11 or READDUMP11:
     for mname in ORDER11:
         t0 = time.time()
-        if READDUMP11:
+        if READDUMP11 or (os.environ.get("PREDFOLD1125_REUSE") == "1" and DUMP11 and
+                          os.path.exists(os.path.join(DUMP11, mname + ".out"))):
             out = builtins.open(os.path.join(DUMP11, mname + ".out"), encoding="utf-8").read()
         else:
             env = {k: v for k, v in os.environ.items() if not k.endswith(("_SABOTAGE", "_ENGINE", "_PROBE", "_LIGHT",
