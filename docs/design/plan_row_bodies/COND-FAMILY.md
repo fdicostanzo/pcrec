@@ -12210,3 +12210,17 @@ holds: a group's name can be the target of `\k<name>` inside its own rx text and
 part label cannot be a backreference's target. The manager's reading, for the fix lane after r111: group-node's
 text states the two exceptions together (capture by request; `\k<name>` reads the group's PCRE capture), and
 nothing in the group-node ruling changes either.
+
+### 2026-11-27 OWNER RULING — peek-name: keep ("We can review choice later"); an IDEA set aside, `map(fn, A)`
+tags: lib/control/peek core/patterns/lookaround/ahead
+His words, verbatim: "Peek name: keep.
+We can review choice later. I'm not sure either. I had this idea we could create a map(fn, A) but really for peek
+that's no different than peek(A)"
+RULED (answered by slug; the manager's lean was to drop, mildly): the question as asked, "does the library still
+provide `peek(A)` as a named form of it, or is `^A` the only spelling?": KEEP, candidate (a) of lib/control/peek:
+`peek(A) := ^[(=) = A]`, in the default set, the piece closing as the library prints it. He marks it REVIEWABLE
+("We can review choice later. I'm not sure either"): the piece carries that sentence.
+The IDEA (`map(fn, A)`, applying a function to a pattern) he sets aside himself for peek ("no different than
+peek(A)"): recorded, not parked as a piece; nothing to fold. (`map` is also the map creator's word, 2026-11-25.)
+For the fix lane after r111: lib/control/peek closes RULED keep, with his reviewable sentence; "which peek forms
+the library provides" is answered for the lookahead only (the negative is `!^A` or `!peek(A)`; no lookbehind form).
