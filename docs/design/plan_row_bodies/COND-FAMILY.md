@@ -11521,3 +11521,51 @@ The manager's answer (told to him; the manager's reading; nothing applied):
   now" for `?:` (the open optional-entry-edges), so the negative operators inherit that open edge.
 - So with the two operators the prefix `!` on a condition is never NEEDED; what it would save is the hand
   rewriting of a long record or a nested compound.
+
+### 2026-11-27 OWNER, an IDEA on `when`: "what if when only took conditions. consuming might be ..."; corrected twice to "when((0: A), A seq B, C)"
+tags: lib/control/when lib/control/when-test lib/control/when-test/not lib/control/peek core/conditions/match-so-far core/conditions/form core/filters/negation core/patterns/lookaround core/patterns/atomic
+
+Said on the manager's "That leaves your line 3, the negative peek and `when(!x, z)` ... Shall we take that next?".
+HIS WORDS, three messages in order, each whole:
+
+"yes. what if when only took conditions. consuming might be A & when((0: A), B, C). validate"
+
+"no. its  when((0: A), A seq B, A seq C)"
+
+"no. its  when((0: A), A seq B, C)"
+
+Class: an IDEA with a request to check it ("validate"); the second and third messages CORRECT the example (the
+last one stands; `seq` is his word for the sequence operator). NOT a ruling.
+RUN (python `re`; A := `\d`, B := `\d\d`, C := `\w`; scratch `when_zero2.py`, `when_cond.py`, `when_peek.py`;
+output pasted). The target is the documents' line for a bare test (lib/control/when-test: `when(/\d/, /\d\d/,
+else = /\w/)` "is `\d\d\d|(?!\d)\w`"):
+today, bare test: when(A, B, C) is AB|(?!A)C
+    WHOLE 123 HOLDS x HOLDS 1 FAILS | SEARCHED 123 ('123', 0) | FIND-ALL 12 x 123 1x 7 [('x', 3), ('123', 5), ('x', 10)]
+when((0: A), A SEQ B, C), 0 the match so far (empty where the call stands first; never an A)
+    WHOLE 123 FAILS x HOLDS 1 HOLDS | SEARCHED 123 ('1', 0) | FIND-ALL 12 x 123 1x 7 [('1', 0), ('2', 1), ('x', 3), ('1', 5), ('2', 6), ('3', 7), ('1', 9), ('x', 10), ('7', 12)]
+when((0: A), A SEQ B, C), the test read as 'A matches from here': (?=A)AB|(?!A)C
+    WHOLE 123 HOLDS x HOLDS 1 FAILS | SEARCHED 123 ('123', 0) | FIND-ALL 12 x 123 1x 7 [('x', 3), ('123', 5), ('x', 10)]
+today against the first reading: 966 of 1093 differ; against the second: 0 of 1093 differ.
+Also run, a conditions-only `when` over a LABEL (from `when_cond.py` and `when_peek.py`):
+(?<t>A)?(?(t)B|C), the label on an optional A, the test "t is set": 916 of 1093 differ from today's bare test
+(?<t>A)?+(?(t)B|C), the same with a possessive optional: 0 of 1093 differ
+(?P<t>(?=\d))?+(?(t)\d\d|\w) against today's `when(peek(A), B, C)`, `(?=\d)\d\d|(?!\d)\w`: 0 of 1093 differ
+The manager's answer (told to him; the manager's reading; nothing applied):
+- His final form gives today's answers exactly when its test means "A matches from here". By the ruled piece `0`
+  is "the match so far ... the text its definition has matched from its start to the condition's point"
+  (core/conditions/match-so-far; zero-in-sequence, zero-open): text BEHIND the point. Read so, the form does not
+  validate (the second block).
+- So the shape works and the name does not: what it needs is an entry whose left part is the text AHEAD of the
+  point. THE MANAGER'S IDEA, put to him, not his: one more open name beside `0` for "what follows from here"
+  (placeholder `ahead`), `(ahead: A)` holding when A matches from the point: the peek written as a condition. The
+  entry operators then give the negative peek with no `!` anywhere: `(ahead ! A)`. `when` takes conditions only,
+  its body negates its test, and the bare test, the consuming-test warning, not-test and `peek(!A)` all leave.
+- A difference to state if it is taken: an entry is whole-text membership (`x: S`, x's text in S); `ahead` would
+  be "some start of what follows is in S".
+- `when`'s body must negate a condition it receives, and a body cannot swap the operator of an entry it did not
+  write: so the prefix `!` on a condition is NEEDED after all (or `when` is native). The manager's leaning of the
+  entry above ("drop the prefix `!`") is WITHDRAWN on this ground.
+- The label route (a possessive optional and a test on the label) also reproduces today's answers without a
+  lookahead, but only with the possessive mark: an idiom, not a definition.
+DFA category (his standing question): YES for the `ahead` entry and its negative (they are the lookaheads already
+classed YES on 2026-11-25); the possessive idiom: not classed, nothing checked.
