@@ -12144,3 +12144,10 @@ The side note (his message ends mid-word): the manager's programs of the last tw
 `some((n.d: <5))`, the form array-argument (2026-11-25) replaced; by that ruling the question is written with the
 array form and a set, `some(@d, "7")`; on a path the mark's place is a placeholder (its reading (b): `@n.d` or his
 `x.@a`). The manager's error, corrected here; the runs used the model's old spelling and their answers stand.
+
+### 2026-11-27 OWNER RULING — shorthand-outside: "error. Agree."
+tags: core/labels/paths/shorthand-outside core/labels/paths/argument-default core/labels/export
+His words, verbatim: "shorthand-outside: error. Agree."
+RULED (answered by slug): candidate (a) as asked: "compile error: the shorthand label is protected and adds no
+export"; the lean as put: "An implicit name, whether from a part used alone or from an argument passed by name,
+behaves one way: named inside, invisible outside." The piece closes as it reads; candidate (b) to details.
