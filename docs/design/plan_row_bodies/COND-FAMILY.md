@@ -11496,3 +11496,28 @@ The manager's thoughts (told to him; the manager's reading; nothing applied):
   no `!=` comparison is in the documents today (grep of core.md: none), so `x! =5` has no rival reading now.
 DFA category (his standing question): YES where the entry itself is (one label against a fixed set, with the
 MAYBE of DFA captures for a label set in a loop or an optional, as told 2026-11-25); the operator adds nothing.
+
+### 2026-11-27 OWNER, on the `!` idea: "can !(a: S, b: T) be rewritten?"
+tags: core/conditions/form core/conditions/form/optional-entry core/conditions/form/optional-edges core/conditions/two-valued core/filters/negation core/patterns/alternation core/values/tuples
+
+Said on the manager's question whether a prefix `!` is kept for compound conditions. HIS WORDS, whole:
+
+"can !(a: S, b: T) be rewritten?"
+
+Class: a QUESTION. NOT a ruling.
+RUN before answering (python, scratch `bang_record.py`; a and b each absent or a digit, 121 cases; S := `<5`,
+T := `>=3`; output pasted):
+!(a: S, b: T)  against  (a ?! S) | (b ?! T): 0 of 121 differ
+!((a, b): >= (5, 3))  against  (a ?! >=5) | (b ?! >=3): 12 of 121 differ
+!((a, b): >= (5, 3))  against  (a ?! >5) & ((a ?! 5) | (b ?! >=3)): 4 of 121 differ
+The manager's answer (told to him; the manager's reading; nothing applied):
+- A record: yes. By core/conditions/form a record "holds when every entry's left part ... is in its set", so its
+  negation is "some entry fails": `(a ?! S) | (b ?! T)`, `|` between conditions being "an alternation of two
+  zero-width tests at one place" (core/patterns/alternation). Line 1 of the run.
+- A joint entry over a set that is not a product (`((a, b): >= (5, 3))`, dictionary order): not entry by entry
+  (line 2), and the documents' own split `(h: >5) | (h: 5, m: >=3)`, negated by hand, still parts on 4 cases, each
+  a set first label with the second absent (the split is stated "where both are set"; line 3). Its exact negation
+  is the operator on the joint left part, `((a, b) ?! >= (5, 3))`: that position is today "a compile error for
+  now" for `?:` (the open optional-entry-edges), so the negative operators inherit that open edge.
+- So with the two operators the prefix `!` on a condition is never NEEDED; what it would save is the hand
+  rewriting of a long record or a nested compound.
