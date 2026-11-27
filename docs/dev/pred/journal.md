@@ -1319,3 +1319,5 @@ wake.md says (read the draft WHOLE first; A4 is a ruled-words finding: read his 
   declared), merged at aa3f2c296, stopped. Review r111 filed by it. P-34 done line written; main told. Open with the
   owner: gate-beside-label (asked; the lane printed (ii) as a marked reading; `g.h` over `/(?<g>${A})x/` is the
   same cell), gate-twice-scope (next). Marked readings told to him at the r111 report.
+- Main merged lane/pred-rev28 at dd873d4b4 into main and pushed (17468e317); it prunes predfold1125 and
+  predfix111. Waiting on the owner: gate-beside-label, then gate-twice-scope.
