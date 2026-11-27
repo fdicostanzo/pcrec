@@ -453,7 +453,7 @@ The caller's own shorthand, under a closing body: WHOLE `3xx` HOLDS, `7xx` FAILS
 ### The paths of labels, start to target   [core/labels/rule/paths]   ruled 2026-11-23
 A path runs from a start label to its target and contains no underscore label unless that label is its start; inside a binding any label it writes may start a path; a middle label may be skipped.
 needs: core/labels/rule
-see: core/labels/rule/stacked-chain core/labels/ownership core/labels/export core/labels/export/flat-read-outside core/labels/paths/label-reference core/labels/paths/closed-argument core/labels/rule/sent-label-wall core/labels/rule/skip-past-wall core/labels/rule/equivalence-inside core/labels/rule/alone-as-middle core/labels/rule/group-node
+see: core/labels/rule/stacked-chain core/labels/ownership core/labels/export core/labels/export/flat-read-outside core/labels/paths/label-reference core/labels/paths/closed-argument core/labels/rule/sent-label-wall core/labels/rule/skip-past-wall core/labels/rule/equivalence-inside core/labels/rule/alone-as-middle core/labels/rule/group-node core/labels/rule/kinds
 - His words: "path-rules: yes", on his four rules for paths within a binding, as he wrote them:
   1. in the label DAG there is a target label and a starting label. The starting label has at least one path to
      the target label
@@ -513,7 +513,7 @@ Two binding levels, the middles skipped: WHOLE `3xx!;` HOLDS, `7xx!;` FAILS / SE
 ### A sent label above the body's blank   [core/labels/rule/sent-label-wall]   ruled 2026-11-27
 When a body places a sent label ABOVE its own blank (`R(l:, v) := /${[l = [_ = v]]}xx/`), a caller's read through the sent label past the blank is a compile error.
 needs: core/labels/rule/paths
-see: core/operators/bindings/label-in-argument
+see: core/operators/bindings/label-in-argument core/labels/rule/kinds
 - His words: "sent-label-wall: error. The path would be x._.h which is not an allowed path."; and the two ways he
   names, in the details entry.
 - The path x, `_`, h contains the blank, not its start (rule 2); the sent label is a start, never a licence to cross
@@ -524,7 +524,7 @@ The wall above the sent label: WHOLE `3xx` HOLDS, `7xx` FAILS / SEARCHED `7xx 3x
 ### Skipping past a private part   [core/labels/rule/skip-past-wall]   ruled 2026-11-27
 Rule 4's candidates count only the targets a legal path reaches: a private part behaves as if its labels were not there, so `n.d` reads m's `d` past `[_x = Q]`, per operator.
 needs: core/labels/rule/paths
-see: core/labels/export/flat-read-outside
+see: core/labels/export/flat-read-outside core/labels/rule/kinds
 - His words: "skip-past-wall: agree with lean"; the lean as put: "(a). A private part should behave as if its
   labels were not there."
 - The inside twin of flat-read-outside's "a source it keeps protected does not exist for that read". Written
@@ -535,6 +535,7 @@ Across `|`: WHOLE `3` HOLDS, `a3` FAILS, `a7` FAILS / SEARCHED `a7 a3` `3`@4 / F
 ### His equivalence inside the binding   [core/labels/rule/equivalence-inside]   ruled 2026-11-27
 Inside the binding that writes it, `[_t = A]` makes no label `t`: inside, `t.h` is a compile error and `_t.h` the read.
 needs: core/labels/rule/paths
+see: core/labels/rule/kinds
 - His words: "equivalence-inside: agree with lean. As you said, the line was only about accessibility"; the lean
   as put: "no `t`; the read is `_t.h`."
 - His sentence "[_t = A ] is equivalent to [_ = [t = A ]]" is the picture of how a private label looks from
@@ -545,26 +546,82 @@ From outside, both: modes: a compile error (`X & (X.t.h: <5)`, A := `/(?<h>\d)/`
 ### A part used alone as a middle label   [core/labels/rule/alone-as-middle]   ruled 2026-11-27
 Inside its binding a part used alone is a label of its own name that may start a path or be a middle step (`n.Q.d`), never skipped: `n.d` through it is a compile error naming `n.Q.d`.
 needs: core/labels/rule/paths
-see: core/labels/export
+see: core/labels/export core/labels/rule/kinds
 - His words: "alone-as-middle: yes to the gate"; the statement as re-asked: "inside the definition that uses it, a
   part used alone is a label of its own name that may start a path or be a middle step (`n.Q.d`), and is never
   skipped (`n.d` through it is a compile error naming `n.Q.d`). From outside it exports nothing, as today."
 - A label someone WROTE (`[a = P]`) is still skipped by rule 4. A part used more than once is refused as a step,
   as it is as a start. From outside, `X.Q.d` crosses Q as a wall (rule 6), and `X.n.Q.d` alike.
+- A binding's or a macro's use alike (a reading: "a binding's or a macro's name on its part", the paths' terms): a
+  macro call used alone, `B(Q)`, is the step `B`; `n.B.p.d` and `n.B.d` are legal, `n.d` through it refused.
+- "More than once" counts the uses under the read's prefix, as rule 4 measures from the start (a marked reading;
+  owner question gate-twice-scope): `n.Q.d` is legal where a second `Q` is under `m` only. Counted over the whole
+  definition, it is a compile error; both are RUN in the details entry.
+- Beside a written label (`[n = ([a = P] SEQ Q)]`, `n.d`), the gated part's targets are not counted, so `n.d` is a's
+  `d` (a marked reading; owner question gate-beside-label). The other readings, a compile error or Q's `d` as the
+  last mention, are RUN in the details entry.
+- Its rows: core/labels/rule/kinds, "a part used alone" and "a macro call used alone".
 A part used alone as a middle, inside: WHOLE `7,3` HOLDS, `3,7` FAILS / SEARCHED `3,7 7,3` `7,3`@4 / FIND-ALL `7,3 3,7 4,1` [`7,3`@0, `4,1`@8] (`[n = (P SEQ Q)] & (n.Q.d: <5)`, P := `/(?<d>\d)/`, Q := `/,(?<d>\d)/`)
 Through the part used alone, skipped: modes: a compile error (`[n = (P SEQ Q)] & (n.d: <5)`, P := `/(?<d>\d)/`, Q := `/,(?<d>\d)/`: the path skips a part used alone, which is never skipped inside its binding: write `n.P.d` or `n.Q.d`).
 Its own start, alike: WHOLE `7,3` HOLDS, `3,7` FAILS / SEARCHED `3,7 7,3` `7,3`@4 / FIND-ALL `7,3 3,7 4,1` [`7,3`@0, `4,1`@8] (`[n = (P SEQ Q)] & (Q.d: <5)`, P := `/(?<d>\d)/`, Q := `/,(?<d>\d)/`)
 Used twice, not a step: modes: a compile error (`[n = (Q SEQ Q)] & (n.Q.d: <5)`, Q := `/,(?<d>\d)/`: `Q` is used more than once here, so it is not a step).
 From outside, the part used alone: modes: a compile error (`X & (X.Q.d: <5)`, P := `/(?<d>\d)/`, Q := `/,(?<d>\d)/`, X := `[n = (P SEQ Q)]`: the path crosses `Q`, a part used alone in it (rule 6)).
-### A group of rx text as a node of a path   [core/labels/rule/group-node]   open group-as-node 2026-11-25
-Is a named group of rx text a node of the label DAG, so that `g.d` reads `d` through the outer group `g` of `/(?<g>(?<d>\d))x/`?
+A macro call used alone, a step: WHOLE `7,3xx` HOLDS, `3,7xx` FAILS / SEARCHED `3,7xx 7,3xx` `7,3xx`@6 / FIND-ALL `7,3xx 3,7xx 4,1xx` [`7,3xx`@0, `4,1xx`@12] (`[n = (P SEQ B(Q))] & (n.B.p.d: <5)`, P := `/(?<d>\d)/`, Q := `/,(?<d>\d)/`, B(rx) := `/${[p = rx]}xx/`)
+A macro call used alone, skipped: modes: a compile error (`[n = (P SEQ B(Q))] & (n.d: <5)`, P := `/(?<d>\d)/`, Q := `/,(?<d>\d)/`, B(rx) := `/${[p = rx]}xx/`: the path skips a part used alone: write `n.B.d` or `n.P.d`).
+Two uses, one under the read's prefix: WHOLE `7,3;7,7` HOLDS, `7,7;7,3` FAILS / SEARCHED `7,7;7,3 7,3;7,7` `7,3;7,7`@8 / FIND-ALL `7,3;7,7 7,7;7,3 1,2;3,4` [`7,3;7,7`@0, `1,2;3,4`@16] (`[n = (P SEQ Q)] SEQ ";" SEQ [m = (P SEQ Q)] & (n.Q.d: <5)`, P := `/(?<d>\d)/`, Q := `/,(?<d>\d)/`): a marked reading
+Parentheses aside, a labelled use (core/labels/export statement 2): WHOLE `,3` HOLDS, `,7` FAILS / SEARCHED `,7 ,3` `,3`@3 / FIND-ALL `,3 ,7 ,4` [`,3`@0, `,4`@6] (`[n = (Q)] & (n.d: <5)`, Q := `/,(?<d>\d)/`)
+Beside a written label: WHOLE `3,7` HOLDS, `7,3` FAILS / SEARCHED `7,3 3,7` `3,7`@4 / FIND-ALL `3,7 7,3 4,1` [`3,7`@0, `4,1`@8] (`[n = ([a = P] SEQ Q)] & (n.d: <5)`, P := `/(?<d>\d)/`, Q := `/,(?<d>\d)/`): a's `d`, a marked reading
+### A group of rx text as a node of a path   [core/labels/rule/group-node]   ruled 2026-11-27
+A named group of rx text is a step in a path like a part label (`g.d` legal, the flat read by skipping, an underscore group a wall); capture and `\k<name>` stay a group's own.
 needs: core/labels/rule/paths
-see: core/labels/labels-vs-captures
-The reading today: no sentence decides it; the evidence engine refuses the read (the first line). Candidates: (a)
-a group is a label but no middle of a path; (b) a group is a node like a part label (the second line's answers,
-the outer group written as a part label). Kept to be asked when the manager can frame it.
-A group inside a group: modes: a compile error (`/(?<g>(?<d>\d))x/ & (g.d: <5)`: the evidence engine reads no group as a middle; no sentence decides it).
-Candidate (b)'s answers: the outer group written as a part label: WHOLE `3x` HOLDS, `7x` FAILS / SEARCHED `7x 3x` `3x`@3 / FIND-ALL `3x 7x 4x` [`3x`@0, `4x`@6] (`[g = /(?<d>\d)/] SEQ /x/ & (g.d: <5)`)
+see: core/labels/labels-vs-captures core/labels/backreferences core/labels/rule/kinds
+- His words: "group-node: agree group as a step. Group names should be labels almost exactly excepting the explicit
+  capture semantics"; the statement as last put: "a named group in rx text is a step in a path like a part label.
+  `g.d` is legal, the flat read still works by skipping, and an underscore group walls what is inside it."
+- The two exceptions, together: a group's name is a capture only by request (lib/structural/capture,
+  core/labels/labels-vs-captures); `\k<name>` inside its rx text reads the group's PCRE capture, which a part label
+  never is (core/labels/backreferences; his recollection, in the details entry).
+- A group in a literal reads as its part label: `/(?<g>(?<d>\d))x/` as `[g = /(?<d>\d)/] SEQ /x/`; a group around a
+  hole, `/(?<g>${A})x/`, as `[g = A]`, so A under it is a part used alone: named, never skipped
+  (core/labels/rule/alone-as-middle), and its own start.
+- An underscore group is an underscore label: a start, never crossed (rule 2), inside and from outside alike. No
+  printed program reads through one; the two that name one (`year`) read the group itself.
+- A group named twice follows the label rules already printed (core/labels/flow; a reading).
+- Its row: core/labels/rule/kinds, "a named group of rx text" and "an underscore group".
+A group inside a group: WHOLE `3x` HOLDS, `7x` FAILS / SEARCHED `7x 3x` `3x`@3 / FIND-ALL `3x 7x 4x` [`3x`@0, `4x`@6] (`/(?<g>(?<d>\d))x/ & (g.d: <5)`)
+The flat read, by skipping: WHOLE `3x` HOLDS, `7x` FAILS / SEARCHED `7x 3x` `3x`@3 / FIND-ALL `3x 7x 4x` [`3x`@0, `4x`@6] (`/(?<g>(?<d>\d))x/ & (d: <5)`)
+From outside, the group's name: WHOLE `3x` HOLDS, `7x` FAILS / SEARCHED `7x 3x` `3x`@3 / FIND-ALL `3x 7x 4x` [`3x`@0, `4x`@6] (`X & (X.g.d: <5)`, X := `/(?<g>(?<d>\d))x/`)
+An underscore group walls, from outside: modes: a compile error (`X & (X.d: <5)`, X := `/(?<_g>(?<d>\d))x/`: the path crosses the underscore group `_g`, not its start (rule 2)).
+An underscore group walls, from above: modes: a compile error (`[n = /(?<_g>(?<d>\d))x/] & (n.d: <5)`: the path crosses the underscore group `_g` (rule 2)).
+The underscore group as the start: WHOLE `3x` HOLDS, `7x` FAILS / SEARCHED `7x 3x` `3x`@3 / FIND-ALL `3x 7x 4x` [`3x`@0, `4x`@6] (`/(?<_g>(?<d>\d))x/ & (_g.d: <5)`)
+A group around a hole, A named: WHOLE `3x` HOLDS, `7x` FAILS / SEARCHED `7x 3x` `3x`@3 / FIND-ALL `3x 7x 4x` [`3x`@0, `4x`@6] (`/(?<g>${A})x/ & (g.A.h: <5)`, A := `/(?<h>\d)/`)
+A group around a hole, A skipped: modes: a compile error (`/(?<g>${A})x/ & (g.h: <5)`, A := `/(?<h>\d)/`: the path skips A, a part used alone, which is never skipped: write `g.A.h`).
+A group around a hole, A's own start: WHOLE `3x` HOLDS, `7x` FAILS / SEARCHED `7x 3x` `3x`@3 / FIND-ALL `3x 7x 4x` [`3x`@0, `4x`@6] (`/(?<g>${A})x/ & (A.h: <5)`, A := `/(?<h>\d)/`)
+
+### The kinds of labels, door by door   [core/labels/rule/kinds]   reading 2026-11-27
+Each kind of label has one row of doors: whether it starts a path inside, is a middle step inside, may be skipped inside, is crossed from outside, and is exported.
+needs: core/labels/rule/paths core/labels/rule/group-node
+see: core/labels/rule/alone-as-middle core/labels/export core/labels/export/arguments core/labels/paths/shorthand-outside core/operators/bindings/label-in-argument
+- The table is the manager's assembly; each cell names its ground, a ruling by its slug or "a reading". "Inside" is
+  the text of one definition; "outside" the bindings that use it (path-rules rule 5).
+  | the kind | start inside | middle step inside | skippable inside | crossed from outside | exported |
+  |---|---|---|---|---|---|
+  | a written part label `[x = A]` | yes (path-rules 3) | yes (path-rules 1) | yes (path-rules 4) | yes (path-rules 5) | yes (export 3) |
+  | an underscore part label `[_x = A]` | yes, as `_x` (equivalence-inside) | no (path-rules 2) | no: its labels count as absent (skip-past-wall) | no (path-rules 2) | no (export 6) |
+  | the blank label `[_ = A]` | no, it has no name (a reading) | no (path-rules 2) | no (skip-past-wall) | no (path-rules 2) | no (label-doors, export 7) |
+  | a part used alone `Q` | yes (path-rules 6) | yes (alone-as-middle) | no, a gate (alone-as-middle) | no, a wall (path-rules 6) | no (export 3) |
+  | a macro call used alone `B(Q)` | yes, as `B` (a reading) | yes (a reading) | no, a gate (a reading) | no, a wall (a reading) | no (a reading) |
+  | an argument's shorthand label (`A` in `B(A)`) | yes, the caller's (shorthand-is-callers) | no, a start only (a reading) | yes, past the body's label: `B.h` (a reading) | no (shorthand-outside) | no (shorthand-outside) |
+  | a sent label (`x` of `R(x:, A)`) | yes, read bare (label-in-argument) | no, a start only (sent-label-wall) | no wall below it is crossed (sent-label-wall) | as a written label (a reading) | as a written label (a reading) |
+  | a label the caller writes in an argument | yes, the caller's own (closing-own-label) | as a written label (a reading) | as a written label (a reading) | as a written label (a reading) | as a written label (a reading) |
+  | a named group of rx text `(?<g>X)` | yes (path-rules 3) | yes (group-node) | yes (group-node) | yes (group-node) | yes (export 3) |
+  | an underscore group `(?<_g>X)` | yes, as `_g` (group-node) | no (group-node) | no (group-node) | no (group-node) | no (export 3) |
+- A path is inside while it crosses no call boundary: past a call, the body's labels are reached from outside, and
+  an argument's own uses below the call are crossed as from outside (a marked reading; so `pub.A.h` for
+  `[pub = B(A)]` is refused while `n.Q.d` is legal in one definition).
+- A label set only inside `!^A` is not visible after it (core/patterns/lookaround/ahead, a marked reading), whatever
+  its row.
+modes: n/a (each row's lines are in the piece it points at)
 
 ### Who reads a label, and how   [core/labels/ownership]   ruled 2026-11-23
 One table, by who writes a label's name and what is done with the spot that holds it: the legal read and its spelling, or the compile error, each cell with its ground.
@@ -741,12 +798,12 @@ Composed: modes: a compile error (`D1 & (D1.c: "3")`, D1 := `CA SEQ CB`, CA := `
 A label is public unless its name begins with `_`; a binding exports the labels its own text writes and those a public part label passes; a part used alone is seen inside it and not exported.
 needs: core/labels/flow
 by: core/principles/namespace-at-reference
-see: core/labels/backreferences core/labels/export/flat-read-outside core/labels/export/capture-export core/labels/export/export-list core/modules/names
+see: core/labels/rule/kinds core/labels/backreferences core/labels/export/flat-read-outside core/labels/export/capture-export core/labels/export/export-list core/modules/names
 1. A private label (a `_` LABEL) is visible only inside the binding it is written in; a `_` PART LABEL is protected
    (statement 6); the bare `_` of `[_ = A]` is a leave-out's unusable name (core/modules/leave-out; statement 7).
 2. Inside a binding the public labels of everything written or used there are visible, read as labels are (last
    mention; an ambiguous reference is the error). An UNLABELLED use carries the implicit label of the binding's name,
-   protected, exported nowhere: `A.h`, a step `n.A.h`, never skipped (rule/alone-as-middle; rule line 3).
+   protected, exported nowhere: `A.h`, a step `n.A.h`, never skipped (rule/alone-as-middle; rule line 3). Parentheses aside: `[n = (Q)]` is `[n = Q]`, a labelled use (bare parentheses are no spot; a NAMED group of rx text is one, rule/group-node).
 3. Outside a binding, what passes out is what it EXPORTS: its OWN names (a group in its literals, a part label it
    writes, a label an export list it writes takes; none beginning with `_`) and, through a public part label, the
    labels that part exports, by path (`pub.a.h`, core/labels/rule/paths rules 1 and 5, a member's metadata alike)
@@ -868,7 +925,7 @@ Through a call that passes its argument's labels on: WHOLE `3` HOLDS, `7` FAILS 
 ### What the caller writes inside an argument   [core/labels/export/arguments]   ruled 2026-11-23
 A label the caller writes in its own text inside an argument (a part label, a group of an in-place literal, a sent label) is the caller's own, set where the body places the template.
 needs: core/labels/export core/labels/export/export-list
-see: core/labels/paths/argument-default core/labels/paths/two-sources core/labels/paths/label-reference core/operators/bindings/label-in-argument lib/convention/argument-labels
+see: core/labels/paths/argument-default core/labels/paths/two-sources core/labels/paths/label-reference core/operators/bindings/label-in-argument lib/convention/argument-labels core/labels/rule/kinds
 - His words: "argument label: yes. these mechanisms, a: and B(x=A), alleviates some of my concerns about the default
   hiding the internal labels." (his `B(x=A)` is `B([x = A])`, core/spellings/placeholders).
 - Placed once by the body it is set once; twice, the same-label-twice rules; never, the never-pass warning.
@@ -1077,7 +1134,7 @@ The caller's own label, under a closing body: WHOLE `3xx` HOLDS, `7xx` FAILS / S
 ### The caller's read of an argument's labels by its name   [core/labels/paths/argument-default]   ruled 2026-11-23
 The caller reads the labels of an argument's binding through its name (`A.d` in `B(A)`): the caller's own shorthand label on the spot, whatever the body does with it.
 needs: core/labels/paths/closed-argument core/labels/export core/principles/label-names-spot
-see: core/labels/paths/call-prefix core/labels/paths/two-sources core/holes/bare-condition/nested-scope lib/convention/argument-labels
+see: core/labels/paths/call-prefix core/labels/paths/two-sources core/holes/bare-condition/nested-scope lib/convention/argument-labels core/labels/rule/kinds
 - His words: "shorthand-is-callers: yes thats it exactly. Setting a label closes a path (through the shorthand in
   that binding) but doesn't block out the target.", on: "The shorthand label is the caller's own: `B(A)` read
   through `A.d` means `B([A = A])`, whatever B's body does with the spot. Condition 4 counts only labels made in
@@ -1117,6 +1174,7 @@ Through a part label in the body: WHOLE `42xx` HOLDS, `100xx` FAILS, `042xx` FAI
 ### The shorthand read from outside   [core/labels/paths/shorthand-outside]   ruled 2026-11-27
 The shorthand label is protected and adds no export: a read from outside the caller through a label on the call (`pub.A.h` for `[pub = B(A)]`) is a compile error.
 needs: core/labels/paths/argument-default
+see: core/labels/rule/kinds
 - His words: "shorthand-outside: error. Agree."; the lean as put: "An implicit name, whether from a part used
   alone or from an argument passed by name, behaves one way: named inside, invisible outside."
 - The written-out `[pub = B([A = A])]` reads A's `h` (the second line); the not-taken candidate is in the details
@@ -2421,7 +2479,7 @@ A body reading its own label after placing it: WHOLE `3` HOLDS, `7` FAILS / SEAR
 ### A label sent inside an argument   [core/operators/bindings/label-in-argument]   ruled 2026-11-23
 A caller may send a label parameter inside an in-place argument (`W(_:, S(body:))`): the name is the caller's own, read bare; nothing on the outer spot closes it (core/labels/rule line 4).
 needs: core/operators/bindings/label-variables core/operators/bindings/label-omitted
-see: core/labels/export/arguments core/labels/paths/argument-default lib/json/members
+see: core/labels/export/arguments core/labels/paths/argument-default lib/json/members core/labels/rule/kinds
 - His words: "for this issue, sending the unbound label is ok and! i would say it wouldn't be affected by the _ as it
   becomes an accepted backdoor into the inner pattern- which is almost the whole point."
 - Placed once, twice or never by the receiving body: set once, the same-label-twice rules, the never-pass warning

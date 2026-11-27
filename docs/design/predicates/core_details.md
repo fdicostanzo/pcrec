@@ -730,23 +730,57 @@ readings:
 - the ruled statement, its three parts: `n.Q.d` legal with `Q.d`'s answers; `n.d` through it a compile error naming `n.Q.d`; used twice, refused as a step — RUN with the path walker patched as declared (docs/dev/lanes/predfold1125_evidence/ predfold1125_model.py R5PATCH11, SPECLINES, ERRSWEEP11, GRID: its 16 undecided cells now decided refused, each agreeing with the evaluator; sabotage q15 caught).
 - from outside, `X.Q.d` for X := `[n = (P SEQ Q)]` is rule 6's wall — RUN (predfold1125_model.py READINGS11). predfix90's walker raised "undecided" on a step naming a part used alone and handed the read to the loaded engine, which answered it legal against core/labels/export statement 3: a model defect, fixed by R5PATCH11.
 - core/labels/export statement 2 and path rule 6 checked against the ruling: rule 6 (his words) stands as worded; statement 2 gains the middle step and "never skipped".
-evidence: docs/dev/lanes/predfix90_evidence/ predfix90_model.py PATHS10, GRID, READINGS10; docs/dev/lanes/predfold1125_evidence/ predfold1125_model.py R5PATCH11, GRID, SWEEP11, READINGS11.
+- gate-twice-scope (review r111 F2), a MARKED reading, owner question: (a) "more than once" counted over the definition: `[n = (P SEQ Q)] SEQ ";" SEQ [m = (P SEQ Q)] & (n.Q.d: <5)` a compile error; (b) under the read's prefix: legal, n's Q's `d` (the printed line) — both RUN by WALK111's switch (docs/dev/lanes/predfix111_evidence/ predfix111_model.py READ2); predfold1125 answered it by rewriting the read to `Q.d`, the message naming a read nobody wrote.
+- gate-beside-label (review r111 F3), a MARKED reading, owner question: `[n = ([a = P] SEQ Q)] & (n.d: <5)`: (i) a compile error, naming `n.Q.d`; (ii) a's `d`, the gated targets not counted (the printed line); (iii) Q's `d`, the last mention — all three RUN (predfix111_model.py READ3); the critic's lean is (i), the model's printed answer (ii).
+- a macro call used alone is the same node (review r111 F6): `n.B.p.d`, `n.B.d` legal, `n.d` refused naming `n.B.d` or `n.P.d` — RUN (predfix111_model.py SPECLINES111).
+- parentheses aside (review r111 F7): `[n = (Q)]` reads as `[n = Q]` — RUN (predfix111_model.py SPECLINES111).
+- the wall's message names the gate first (review r111 F25): `[n = ([_ = P] SEQ Q)] & (n.d: <5)` refused naming `n.Q.d` — RUN (predfix111_model.py ERRSWEEP111).
+evidence: docs/dev/lanes/predfix90_evidence/ predfix90_model.py PATHS10, GRID, READINGS10; docs/dev/lanes/predfix111_evidence/ predfix111_model.py WALK111, READ2, READ3, SPECLINES111; docs/dev/lanes/predfold1125_evidence/ predfold1125_model.py R5PATCH11, GRID, SWEEP11, READINGS11.
 history:
 - 2026-11-25 (lane predfix90, review r90 A4; record "2026-11-25 MANAGER — review r90 (predfold1124): the dispositions; no owner words"): a new open piece, slug alone-as-middle: `n.Q.d` inside the binding, through a label then a part used alone, was decided by no sentence (review r90 A4).
 - 2026-11-27 (lane predfold1125, R-5 of its rulings file): CLOSED as RULED; his words, from R-5: "alone-as-middle: yes to the gate"; the statement as re-asked: "inside the definition that uses it, a part used alone is a label of its own name that may start a path or be a middle step (`n.Q.d`), and is never skipped (`n.d` through it is a compile error naming `n.Q.d`). From outside it exports nothing, as today." The line "A part used alone as a middle, inside" became legal with `Q.d`'s answers, the line "Through the part used alone, skipped" a compile error; two lines added (used twice; from outside). Three printed programs elsewhere skipped through a part used alone (core/patterns/alternation, core/patterns/atomic, core/operators/precedence: `[ab = (B | A)] & (ab.l: <20)` and kin); each re-spelled with written labels, `[ab = ([b = B] | [a = A])]`, its answers unchanged (SWEEP11's RESPELL11).
 - 2026-11-27 (lane predfix111, review r111 F11 (RULING-1), the manager's dispositions): the rulings item added, citing the record entry (until then lane predfold1125's rulings file R-5).
+- 2026-11-27 (lane predfix111, review r111 F2, F3, F6, F7, F24, the manager's dispositions): bullets for a macro's use (a reading), the scope of "more than once" (a marked reading, owner question gate-twice-scope), a part used alone beside a written label (a marked reading, owner question gate-beside-label); four lines, RUN by a path walker written from core/labels/rule/kinds, not by patching the loaded one (F24).
 
 ## core/labels/rule/group-node — A group of rx text as a node of a path
-slugs: group-as-node
+slugs: group-as-node group-node
 rulings:
 - 2026-11-23 "path-rules: yes" (record: "2026-11-23 OWNER RULING — path-rules: yes (his four rules for paths within a binding, the manager's two readings of them, and rules 5 and 6 across bindings)"); the rules the question is asked under.
+- 2026-11-27 "group-node: agree group as a step. Group names should be labels almost exactly excepting the explicit capture semantics" (record: "2026-11-27 OWNER RULING — group-node: "agree group as a step"; "Group names should be labels almost exactly excepting the explicit capture semantics""); RULED on the statement as last put: "a named group in rx text is a step in a path like a part label. `g.d` is legal, the flat read still works by skipping, and an underscore group walls what is inside it."; his second sentence a STATEMENT of the direction behind it.
+- 2026-11-27 (class: RECOLLECTION) "I think there was also difference in explicit back reference" (record: "2026-11-27 OWNER, a RECOLLECTION on group-node: "there was also difference in explicit back reference""); checked against core/labels/backreferences, where `\k<y>` reads PCRE's capture: it holds; the second exception, stated with the first.
 rejected:
+- (a) of group-as-node, a group a label but no middle of a path — by owner ruling — "group-node: agree group as a step" (record: "2026-11-27 OWNER RULING — group-node: "agree group as a step"; "Group names should be labels almost exactly excepting the explicit capture semantics"").
 readings:
-- (a) of group-as-node, a group is no middle of a path — RUN as the evidence engine's refusal (docs/dev/lanes/predfix90_evidence/ predfix90_model.py PATHS10); no sentence decides it.
-- (b) of group-as-node, a group a node like a part label — its answers RUN as the outer group written as a part label (docs/dev/lanes/predfix90_evidence/ predfix90_model.py PATHS10).
-evidence: docs/dev/lanes/predfix90_evidence/ predfix90_model.py PATHS10.
+- [REJECTED 2026-11-27 by group-node (record "2026-11-27 OWNER RULING — group-node")] (a) of group-as-node, a group is no middle of a path — RUN as the evidence engine's refusal (docs/dev/lanes/predfix90_evidence/ predfix90_model.py PATHS10); no sentence decides it.
+- [RULED 2026-11-27 by group-node (record "2026-11-27 OWNER RULING — group-node")] (b) of group-as-node, a group a node like a part label — its answers RUN as the outer group written as a part label (docs/dev/lanes/predfix90_evidence/ predfix90_model.py PATHS10).
+- the manager's reading (a) of the ruling entry: the two printed lines flip, `g.d` legal with the second line's answers — SUPPORTED as run (docs/dev/lanes/predfix111_evidence/ predfix111_model.py GROUPNODE, SPECLINES111; MECH111 agrees).
+- (b): a read from outside or above through an underscore group a compile error by rule 2 (`X.d`, `n.d`, groupwall.out lines 2 and 3) — SUPPORTED as run (predfix111_model.py GROUPNODE); the printed programs naming an underscore group, found by grep (`(?<_`, three base files): two, core/labels/export's and core/values/reads's `year`, both read `_v` itself, none through it (predfix111_model.py GROUPNODE, UGROUPS).
+- (c): a group around a hole is `[g = A]` for paths: `g.A.h` legal, `A.h` legal (A's own start), `g.h` a compile error, the path skipping A, a part used alone (a gate) — RUN, not assumed (predfix111_model.py GROUPNODE); `g.h` refused is the gate rule's answer, printed.
+- (d): what a group gives the caller's captures is unchanged (capture by request) — SUPPORTED: no capture line moved (predfix111_model.py SWEEP111); stated in the piece.
+- (e): a group named twice follows the label rules already printed (core/labels/flow) — SUPPORTED as run for a sequence (last mention) and `&` (ambiguous) (predfix111_model.py GROUPNODE).
+evidence: docs/dev/lanes/predfix90_evidence/ predfix90_model.py PATHS10; docs/dev/lanes/predfix111_evidence/ predfix111_model.py GROUPNODE, SPECLINES111, WALK111.
 history:
 - 2026-11-25 (lane predfix90, review r90 A11; record "2026-11-25 MANAGER — review r90 (predfold1124): the dispositions; no owner words"): a new open piece, slug group-as-node, PLAN: the question waits until the manager can frame it (review r90 A11).
+- 2026-11-27 (lane predfix111, review r111 the group-node fold, the manager's dispositions): CLOSED as RULED (record "2026-11-27 OWNER RULING — group-node: "agree group as a step"; "Group names should be labels almost exactly excepting the explicit capture semantics""); the two printed lines flipped (`g.d` legal); the two exceptions stated together (capture by request; `\k<name>` reads the group's PCRE capture); lines for an underscore group's wall, its start, and a group around a hole added, each RUN.
+
+## core/labels/rule/kinds — The kinds of labels, door by door
+slugs: label-door-table
+rulings:
+- 2026-11-23 "path-rules: yes" (record: "2026-11-23 OWNER RULING — path-rules: yes (his four rules for paths within a binding, the manager's two readings of them, and rules 5 and 6 across bindings)"); rules 1 to 6, the cells that name them.
+- 2026-11-27 "skip-past-wall: agree with lean" (record: "2026-11-27 OWNER RULING — skip-past-wall: "agree with lean" (legal paths only)"); the underscore and blank rows' skippable cells.
+- 2026-11-27 "equivalence-inside: agree with lean" (record: "2026-11-27 OWNER RULING — equivalence-inside: "agree with lean" (no label `t`; the read is `_t.h`)"); the underscore part label's start cell.
+- 2026-11-27 "alone-as-middle: yes to the gate" (record: "2026-11-27 OWNER RULING — alone-as-middle: "yes to the gate"; a side note on `some` and the array form"); the part used alone row.
+- 2026-11-27 "shorthand-outside: error. Agree." (record: "2026-11-27 OWNER RULING — shorthand-outside: "error. Agree.""); the shorthand row's outside cells.
+- 2026-11-27 "group-node: agree group as a step" (record: "2026-11-27 OWNER RULING — group-node: "agree group as a step"; "Group names should be labels almost exactly excepting the explicit capture semantics""); the two group rows.
+rejected:
+readings:
+- the table itself, the manager's assembly of the rulings it cites (review r111 F26, built with the group-node fold) — RUN: every row is a row of WALK111's table KINDS111 and TABLE111 compares the two (docs/dev/lanes/predfix111_evidence/ predfix111_model.py TABLE111).
+- "a path is inside while it crosses no call boundary" (review r111 F26's sentence) — a marked reading, RUN (predfix111_model.py WALK111, SPECLINES111: `pub.A.h` refused, `n.Q.d` legal).
+- the macro call row, as the part used alone row (review r111 F6) — RUN (predfix111_model.py SPECLINES111).
+- the three open sub-cases of review r111 F26, listed for the manager: (1) whether "inside" is one definition's text or one call level (the sentence above takes the call level); (2) "protected" names an underscore part label (refused as a middle step) and a part used alone (a gate, legal as a step): the table keeps both rows apart; (3) a sent label and a caller's label in an argument outside the caller: taken as written labels, readings — UNTESTED (none) beyond the rows' lines.
+evidence: docs/dev/lanes/predfix111_evidence/ predfix111_model.py TABLE111, WALK111, SPECLINES111.
+history:
+- 2026-11-27 (lane predfix111, review r111 F26, the manager's dispositions): a new reading piece, the label-kind table, built with the group-node fold (its trigger fired); each label piece points at its row.
 
 ## core/labels/ownership — Who reads a label, and how
 slugs: label-doors shorthand-is-callers path-rules
@@ -1007,6 +1041,7 @@ history:
 - 2026-11-23 (lane predfold1123b, the fold of the 2026-11-23 rulings after zero-open): the closing-own-label ruling, cited until now only in history lines (lane predfix86), is a `rulings:` item.
 - 2026-11-23 (lane predfix88, review r88 A7, A14; record "2026-11-23 MANAGER — review r88 (predfold1123b): the dispositions; no owner words"): statement 2's "a reading, the one statement of it" replaced by its ground (core/labels/rule line 3); statement 3 gains "labels stacked on one spot one step (core/labels/rule line 5)".
 - 2026-11-25 (lane predfix90, review r90 A3; record "2026-11-25 MANAGER — review r90 (predfold1124): the dispositions; no owner words"): statement 3 names rule 2: a label under an underscore label is not exported (a reading).
+- 2026-11-27 (lane predfix111, review r111 F7, the manager's dispositions): statement 2 gains "parentheses aside": `[n = (Q)]` is a labelled use; a named group of rx text is a spot (group-node); its line is in core/labels/rule/alone-as-middle.
 
 ## core/labels/export/flat-read-outside — A flat read of a part's label from outside
 slugs: flat-read-outside
