@@ -7,7 +7,7 @@ rulings); the frozen source of every skeleton piece is `docs/design/predicates_d
 draft", by its section). Evidence directories are under `docs/dev/lanes/`; "PART X of predspecNN" is a block of
 that lane's committed `predspecNN_model.out`. The pilot's own runs are `preddoc1_evidence/` (PART EX, R1-R12, LT).
 
-shared: when-peek other-holes binding-as-label count-unspecified label-doors spot-read-name call-forms repeat-head shorthand-is-callers list-is-label path-rules
+shared: when-peek other-holes binding-as-label count-unspecified label-doors spot-read-name call-forms repeat-head shorthand-is-callers list-is-label path-rules bang-split
 
 ## core/principles/regex-default — Regex behaviour wins
 slugs: branch-scope branch-order sql-picture regex-settles
@@ -16,6 +16,7 @@ rulings:
 - 2026-11-17 "regex-settles: yes settled" (record: "2026-11-17 OWNER RULINGS — regex-settles; absent-under-not")
 - 2026-11-17 (class: DIRECTION) "Predicates: rather than I make arbitrary decisions on various choices that have difficult to predict ramification, can we come up with a regex model for each and use that to explain it. At least, where it is able to" (record: "2026-11-17 OWNER DIRECTION — decide the open choices by a REGEX MODEL where one exists")
 - 2026-11-17 (class: OWNER, a qualification of the DIRECTION: the record's "access to ALL the hits of a search STAYS", a NOTED EXCEPTION) "That said, we are also attempting to make a useful language. In that way, being able to access all the hits of a search is helpful. It's an exception that should be noted but no excluded for purity" (record: "2026-11-17 OWNER — the regex model explains; it does not exclude useful features"); refines the direction above within the half hour: the model explains, it never drops a useful feature
+- 2026-11-25 (class: OBSERVATION) "this is pcre so I should try to stay familiar" (record: "2026-11-25 OWNER RULING — brace-counts: "I rule we should do this"; an OBSERVATION on its origin"); a use of the principle, his words
 rejected:
 - the SQL picture (an enclosing condition does not make the inner pattern reconsider) — by owner ruling — "it is in line with regex behavior" (record above).
 readings:
@@ -24,6 +25,7 @@ evidence: lanes pathimpact, rxmodel (the regex models of the open choices, 2026-
 history:
 - 2026-11-17: stated in the branch-scope discussion; the draft's §R heading "under regex behaviour" carries it since revision 24.
 - 2026-11-19 (lane preddoc6, review r60 RULING-6): the `(class: OWNER)` item names the record's own words for what it is (OWNER is the heading's speaker, not a class word).
+- 2026-11-27 (lane predfold1125, the fold of drop-not, array-argument, brace-counts, map-creator, string-literals, bang-split and and-not): the brace-counts OBSERVATION added, as its record entry asks ("recorded for that principle's details").
 
 ## core/principles/explicit-exceptions — Exceptions are asked for by name
 slugs: exception-rule
@@ -184,6 +186,19 @@ readings:
 evidence:
 history:
 - 2026-11-17: the record classes these "reflections, recorded as principles for the draft's framing, not rulings on any answer". The pilot gave it `ruled` for want of a status (its FORMAT PROBLEMS); status `principle` since 2026-11-19.
+
+## core/principles/all-dfa — All DFA unless the user says otherwise
+slugs:
+rulings:
+- 2026-11-25 (class: GOAL) "Amended: goal is all dfa unless specified by user. I don't want "when" to force vm" (record: "2026-11-25 OWNER, a GOAL amended: "goal is all dfa unless specified by user. I don't want "when" to force vm""); stated, not asked as a ruling: a candidate principle in his words
+- 2026-11-25 (class: STANDING REQUEST) "So the three categories are yes dfa, no not dfa under any circumstances, and maybe under certain circumstances with a weight between the two ends for the maybe." (record: "2026-11-25 OWNER, on the DFA goal: its scope")
+rejected:
+readings:
+- the mechanism is lib/builtin/import's capability level (an element needing more is a compile error, never a silent lift), so the goal is a requirement on the build — UNTESTED (the manager's reading in the GOAL entry; a build question for main).
+- the categories of core/filters/family are the ones told to him with bang-split — UNTESTED (estimates, not runs).
+evidence: none (a stated goal).
+history:
+- 2026-11-27 (lane predfold1125, the fold of drop-not, array-argument, brace-counts, map-creator, string-literals, bang-split and and-not): a new piece, the GOAL folded as a candidate principle in his words, marked stated-not-ruled, as the GOAL entry asks ("a candidate principle for core/principles at the next fold").
 
 ## core/principles/left-decides — The left side decides
 slugs: join-order
@@ -346,12 +361,14 @@ history:
 ## core/model/table/group-truth — Group questions over the array
 slugs: group-truth
 rulings:
+- 2026-11-25 "array-argument: yes including every" (record: "2026-11-25 OWNER RULING — array-argument: "yes including every""); line 4 of the statement: "Group-truth closes inside it"; CLOSED
 rejected:
 readings:
 - (a) `NOT some(c)` = `occurs.none(c)` — SUPPORTED by the draft's E12 (0 / 0 / 0), not re-run here.
 - (b) `occurs.none(NOT c)` differs from both (21 / 201 / 301 of 364, E12) — not re-run here.
 - on the array (array-vs-passes (a)), c the condition `(d: "7")` written in place, on `/(?:(?<d>\d)?,)+/`, 364 texts over `17,`: `NOT some(c)` against `occurs.none(c)` 0 / 0 / 0 (one question by definition); against `occurs.none(NOT c)` 28 / 216 / 244; `occurs.none(NOT c)` on the array against on the passes 17 / 237 / 245; `NOT some(c)` on the array against on the passes 0 / 0 / 0 — SUPPORTED (predarr TRUTH; sabotage s10 caught). The manager's reading (d) "now part on settings, not passes" is NOT SUPPORTED as worded: `NOT some(c)` and `occurs.none(NOT c)` part under both readings; what moves is `occurs.none(NOT c)` itself.
 - the proposal (the lane's): close the question as answered by array-vs-passes for a condition of one entry, the several-entry case asked as record-in-some and count-several — UNTESTED (a proposal; the choice is the owner's).
+- `!some(@d, "7")` = `occurs.none(@d, "7")`, against `occurs.none(@d, ~"7")` = `every(@d, "7")` — SUPPORTED (docs/dev/lanes/predfold1125_evidence/ predfold1125_model.py GROUP11, re-run over the array on 364 texts; SPECLINES).
 evidence: the draft §R.8 row group-truth / pass-table (E12); docs/dev/lanes/predarr_evidence/ TRUTH.
 history:
 - new piece (lane preddoc3a): the slug was on core/model/table, whose statement does not answer it; the draft keeps it asked ("the 11-18 rulings do not entail an answer").
@@ -359,6 +376,8 @@ history:
 - 2026-11-21 (lane predarr, array-vs-passes ruled): re-put over the array; the statement until then, verbatim: "After a loop, is the reading the definition: each group question counts the passes on which its condition is TRUE, each pass judged with its own labels, two-valued?"; the body's bullets "The reading: each pass judged with its own labels, two-valued; a condition before its group inside a pass reads the previous pass (core/conditions/pass-start-read), which does not reach the group questions: they judge the finished passes.", "Under the reading `NOT some(c)` and `occurs.none(c)` are one question (they agree on every text run), and `occurs.none(NOT c)`, "no pass on which c fails", is another (it holds with no pass; on a pass lacking c's label c fails and `NOT c` holds)." and "Candidates: (a) yes, the reading; (b) no: he names which of the three forms he meant to be one question." The heading "Group questions over the pass table" renamed. Status date 2026-11-19 to 2026-11-21, still open.
 - 2026-11-22 (lane predfix77, review r77 D6 (RULING-5); record "2026-11-22 MANAGER — review r77 (predfold1121): dispositions ruled (no owner words)"): "The choice is the owner's or the manager's." became "The choice is the owner's.": nothing in force gives the manager the choice.
 2026-11-22 (lane predbound, bound-condition ruled): in the readings item on the array, "c := `(d: \"7\")`" (notation for the condition) became "c the condition `(d: \"7\")` written in place": a condition bound alone is a compile error now; nothing re-run.
+- 2026-11-27 (lane predfold1125, the fold of drop-not, array-argument, brace-counts, map-creator, string-literals, bang-split and and-not): restated by the rulings named in its rulings field. The statement until then, verbatim: "With the group questions reading a name's array of settings, does this question close: `NOT some(c)` and `occurs.none(c)` one question, `occurs.none(NOT c)` another?".
+- 2026-11-27 (lane predfold1125, the fold of drop-not, array-argument, brace-counts, map-creator, string-literals, bang-split and and-not): CLOSED by array-argument line 4; the open body's candidates (a) close and (b) keep open went with it.
 
 ## core/model/places — The place table
 slugs:
@@ -373,6 +392,7 @@ history:
 - the outermost view split off as core/model/places/outermost-view (lane preddoc3a): it is ruled, the table is not.
 - 2026-11-22 (lane predfix77, review r77 D3; record "2026-11-22 MANAGER — review r77 (predfold1121): dispositions ruled (no owner words)"): the binding row's text column read "none of its own (X where `name` is used)"; it is now scoped to flags and matching, its reads its own (bare-nested-scope case 2). No answer moved.
 - 2026-11-23 (lane predfix84, review r84 A2; record "2026-11-23 MANAGER — review r84 (predspot1122): the dispositions, ruled with the 2026-11-23 rulings in hand; no owner words"): the binding row's column until then: "for flags and matching, X where `name` is used; its reads are its own (core/holes/bare-condition/nested-scope)". Now for matching where used, for flags where WRITTEN plus an explicit `i` from the hole: under program options the two part (core/holes/flags/in-filter, the lines "Bound in a library" and "Written in the hole"; docs/dev/lanes/predfix84_evidence/ predfix84_model.py FILTER).
+- 2026-11-27 (lane predfold1125, the fold of drop-not, array-argument, brace-counts, map-creator, string-literals, bang-split and and-not): restated by the rulings named in its rulings field (status and date only).
 
 ## core/model/places/outermost-view — The outermost view
 slugs: nested-pass outer-pass-forms
@@ -406,6 +426,26 @@ history:
 - 2026-11-15: `&` in rx text all or nothing; which `&` under ON.
 - 2026-11-22 (lane predfix82, review r82 DES-2; record "2026-11-22 MANAGER — review r82 (predfold1122): dispositions ruled; two corrections of record entries (no owner words)"): a bullet: a provided body also writes the label-only group (a reading). Status date 2026-11-14 to 2026-11-22.
 - 2026-11-23 (lane predfix84, review r84 A3; record "2026-11-23 MANAGER — review r84 (predspot1122): the dispositions, ruled with the 2026-11-23 rulings in hand; no owner words"): statement until then: "An rx literal `/.../` is full PCRE and means exactly what PCRE means; the predicate language adds only two marks inside it, the hole `${` and, under its switch, the operator `&`." Now conditioned on the file's program options ("the language" for "the predicate language", the 200-character cap). The consequence, for the owner (review r84 A3): a library literal's meaning is no longer readable off the literal alone; its file's `@options` statement above it is part of it.
+
+## core/patterns/strings — String literals
+slugs: string-literals
+rulings:
+- 2026-11-25 "Yes all five. Then let's close the session" (record: "2026-11-25 OWNER RULING — string-literals: "Yes all five""); the five lines as put
+- 2026-11-25 "a string has no pattern operators. Everything is a character literal. Obvious but should be said" (record: "2026-11-25 OWNER, on strings: "a string has no pattern operators. Everything is a character literal"; "either " or ' delimits"; QUESTIONS: "allowed escapes? Auto Literal concatenation ?""); lines 1 and 2 are his own
+rejected:
+- adjacent strings joining (his question "Auto Literal concatenation ?") — by owner ruling — line 4.
+readings:
+- (a) a string is the rx text `\Qs\E` after its escapes; `${` plain — SUPPORTED (SPECLINES "A hole mark is plain text"; STRINGS: each string against `re.escape` of its characters).
+- (b) a raw line end a compile error; (c) `\x{..}` the only code form, `\x41` an error — SUPPORTED as refusals (ERRSWEEP11, STRINGS).
+- (c, second half) a code a character or a byte: follows the encoding question — UNTESTED.
+- (d) `""` the empty text — SUPPORTED (STRINGS).
+- (e) the weak `i` reaches a string, `x` never — UNTESTED here (lib/builtin/options' own runs).
+- (f) a string as a name has the same syntax — UNTESTED.
+- (g) `"ab" SEQ "cd"` is the one string `abcd` — SUPPORTED (STRINGS: answers equal to `"abcd"`).
+- (h) the triple quote parked with the minimal definition told to him — done: parked/ideas/triple-quote.
+evidence: docs/dev/lanes/predfold1125_evidence/ predfold1125_model.py STRINGS, SPECLINES, ERRSWEEP11.
+history:
+- 2026-11-27 (lane predfold1125, the fold of drop-not, array-argument, brace-counts, map-creator, string-literals, bang-split and and-not): a new piece (string-literals).
 
 ## core/patterns/flags — Flags in a literal
 slugs: option-hole-explicit
@@ -477,6 +517,7 @@ rulings:
 - 2026-11-17 "so the two argument form of + is addition, and the single postfix version is 1 or more. if we're going there, lets just do it. + +? * *? ? ??" (record: "2026-11-17 OWNER RULING — quantifier operators")
 - 2026-11-17 "lets include the possessive forms but the brace counts are repeat. "did you mean A+ followed by B" A B isn't legal so its the addition form." (record: "2026-11-17 OWNER RULING — quantifier operators")
 - 2026-11-17 "also, operator precedence. i'm thinking fairly tight with parenthesis otherwise. right?" (record: "2026-11-17 OWNER RULING — quantifier operators")
+- 2026-11-25 "I rule we should do this." (record: "2026-11-25 OWNER RULING — brace-counts: "I rule we should do this"; an OBSERVATION on its origin"); it REVERSES "counts in braces are `repeat`" for the spelling
 rejected:
 - a "did you mean" message for `A+ B` — by owner ruling — "A B isn't legal so its the addition form".
 - brace counts as postfix operators — by owner ruling — "the brace counts are repeat".
@@ -485,6 +526,23 @@ readings:
 evidence: preddoc3a_model.py QUANT (the draft's PART RX8 line; printed answers reproduced; `(?:ab)+` agrees); sabotage s8 (a text paste) caught. PARTS RX7-RX9 of predspec25.
 history:
 - the draft R.1.14 (THE POSTFIX QUANTIFIER OPERATORS).
+- 2026-11-27 (lane predfold1125, the fold of drop-not, array-argument, brace-counts, map-creator, string-literals, bang-split and and-not): restated by the rulings named in its rulings field. The statement until then, verbatim: "Nine postfix operators `+ +? ++ * *? *+ ? ?? ?+` are regex's quantifiers on the operand before them; counts in braces are `repeat`; binary `+` is addition.".
+
+## core/patterns/quantifiers/braces — Counts in braces
+slugs: brace-counts
+rulings:
+- 2026-11-25 "I rule we should do this." (record: "2026-11-25 OWNER RULING — brace-counts: "I rule we should do this"; an OBSERVATION on its origin"); the five lines as put; the lazy and possessive forms named by him: "I like your lazy, etc idea"
+rejected:
+- `a{}` as an accessor for maps (his first idea) — by owner ruling — "this is pcre so I should try to stay familiar" (the brace-counts entry).
+readings:
+- (a) the braces bind as the nine on the one operand before them; a `{` directly after an operand is a count — SUPPORTED (docs/dev/lanes/predfold1125_evidence/ predfold1125_model.py BRACES: `rx.digit{2,4}` against `\d{2,4}`, and `A SEQ rx.digit{2}` binding the one operand).
+- (b) `x{a,b}?` and `x{a,b}+` one token each, read longest first; `rx.repeat` gains no lazy parameter — SUPPORTED (BRACES: `{2,4}?` against `\d{2,4}?`).
+- (c) an unspecified bound is left out; `_` inside the braces a compile error for now — SUPPORTED as a refusal (ERRSWEEP11).
+- (d) the counts follow core/holes/count; `x{$n}` under construction — UNTESTED (the front end reads constant counts only).
+- (e) white space inside the braces is layout — SUPPORTED (BRACES: `rx.digit{ 2 , 4 }` against `{2,4}`).
+evidence: docs/dev/lanes/predfold1125_evidence/ predfold1125_model.py BRACES, SPECLINES.
+history:
+- 2026-11-27 (lane predfold1125, the fold of drop-not, array-argument, brace-counts, map-creator, string-literals, bang-split and and-not): a new piece (brace-counts).
 
 ## core/patterns/atomic — Atomic parts
 slugs: atomic-search
@@ -516,6 +574,23 @@ readings:
 evidence: preddoc3a_model.py LOOK (the draft's PART LA line; printed answers reproduced; no plain-`re` lowering: the condition compares two labels); sabotage s6 caught. PART LA of predspec26.
 history:
 - the draft R.1.0 lookaround row.
+
+## core/patterns/lookaround/ahead — The lookahead operator
+slugs: bang-split
+rulings:
+- 2026-11-27 "bang-split: yes. This is clean and what I was looking for." (record: "2026-11-27 OWNER RULING — bang-split: yes"); lines 5 and 6
+rejected:
+- `peek(!A)` as the negative lookahead (drop-not's line 2, 2026-11-25) — by owner ruling — bang-split line 5 writes it `!^A`; the spelling only, the answers unchanged (docs/dev/lanes/predfold1125_evidence/ predfold1125_model.py SWEEP11).
+- `^!A` (his spelling of the PROPOSAL "a peek operator and a peeknot operator") — by owner ruling — bang-split line 5's `!^A`; the run of that entry ("0 of 1093 differ" for the guard) is the same lowering.
+- `^~A` for the negative lookahead — by run — a lookahead for a complement is nearly always true: "differ at 1094 of 2005 positions of x" (the PROPOSAL entry's run 4, `tilde.py`).
+- `~` as the lookbehind operator ("steal our lookback operator") — by owner ruling — bang-split line 6: no lookbehind operator for now; `~` is the complement.
+readings:
+- `!^A` cannot be written `^~A`: a compile error naming `!^A` — SUPPORTED (READINGS11 r-caret-tilde: the refusal; the run 4 difference re-run).
+- `^A` passes A's labels on, `!^A` none — SUPPORTED (SPECLINES "Its labels").
+- `^A` is atomic, as PCRE's lookahead — a reading (python `re` has no non-atomic lookahead; parked/ideas/non-atomic-ahead).
+evidence: docs/dev/lanes/predfold1125_evidence/ predfold1125_model.py READINGS11, SPECLINES; docs/dev/lanes/predbang_evidence/tilde.py.
+history:
+- 2026-11-27 (lane predfold1125, the fold of drop-not, array-argument, brace-counts, map-creator, string-literals, bang-split and and-not): a new piece (bang-split lines 5 and 6).
 
 ## core/labels/rule — The general rule of labels
 slugs: label-doors binding-as-label spot-read-name shorthand-is-callers list-is-label
@@ -715,6 +790,7 @@ history:
 - 2026-11-22 (lane predref, label-reference sweep and helper-captures fold): helper-captures: the second bullet names the label-only group beside `[x = A]` (no capture). No line moves.
 - 2026-11-22 (lane predfix82, review r82 FIXIND-7; record "2026-11-22 MANAGER — review r82 (predfold1122): dispositions ruled; two corrections of record entries (no owner words)"): the array-scope bullet: "the entire rx as composed, not one literal or one definition" became "the entire rx as composed in the definition the question is written in, not one literal".
 - 2026-11-23 (lane predfix86, review r86 A6, C4; record "2026-11-23 MANAGER — review r86 (predfold1123): the dispositions; three errors of the manager's own brief named; no owner words"): two sentences until then: "A group written in rx text is a label and a capture; ..." (capture-export (1 no) revises pure-label for a composed program: now a capture in a one-literal program, a reading, and in a composed program only where asked) and "What the caller receives for a captured label that a loop sets, PCRE's carried value or the label's last-pass value, is not stated (a reading); ..." (array-capture closed capture-loop-value as the label: now stated).
+- 2026-11-27 (lane predfold1125, the fold of drop-not, array-argument, brace-counts, map-creator, string-literals, bang-split and and-not): printed `NOT` re-spelled `!`, a complement's `!` re-spelled `~`, a group question's condition re-spelled to the array form, as the rulings carry; no answer changed (model SWEEP11).
 
 ## core/labels/labels-vs-captures/array-vs-passes — The array of settings, not the loop's passes
 slugs: array-vs-passes joint-in-some
@@ -722,6 +798,7 @@ rulings:
 - 2026-11-21 "array-vs-passes: in your example, the user chose to set the labels the same. if they wanted the out-the-loop setting to be separately labeled they could have done so. also, if they wanted the h5,m3 condition to be held at the same time they could have specified (h,m): (5,3) but they did not. they chose to use the same labels and therefore that has to have a meaning. for simplicity, and due to the fact that the other interpretations can be otherwise spelled, i think option "a"" (record: "2026-11-21 OWNER RULING — array-vs-passes: a"); answer (a): `some`, `count`, `occurs` and `h[k]` read the ARRAY OF SETTINGS of a name, every setting in order, the one outside the loop included. His reasons: the user chose one name, "and therefore that has to have a meaning"; a setting outside the loop wanted apart is given its own label, in his words "if they wanted the out-the-loop setting to be separately labeled they could have done so"; "simplicity"; "the other interpretations can be otherwise spelled"; the record says the ruling REVISES lib/counting's statements on passes and the reading under core/model/places/outermost-view
 - 2026-11-21 "join-in-some: agree and elegant. that said, no one would know to write it." (record: "2026-11-21 OWNER RULING — joint-in-some: agree"); the reading of "agree" taken and told to him, the manager's leaning (c): a joint entry `(h, m): ...` inside a group question is refused for now (a compile error; pairing by index or by item can be allowed later without changing an answer); "same item" is written on the item, the item labelled only where it meets the condition, then a group question on that label (the base's line "Same item, on the item" runs it). "no one would know to write it" is an OBSERVATION (discoverability), not a ruling: the idiom is on the user-documentation list (parked/ideas/user-doc-traps)
 - 2026-11-22 "array-in-piece: if it was written A & /B-defintion/ then the some(h) would see the h from A. but because B is bound first, its internal references refer only to what can be seen at that point." (record: "2026-11-22 OWNER RULING — array-in-piece: b (a group question inside a bound piece reads only what that piece can see)")
+- 2026-11-25 "array-argument: yes including every" (record: "2026-11-25 OWNER RULING — array-argument: "yes including every""); lines 1 to 3: the array form and a set; one array per call
 rejected:
 - (b) the passes of the outermost loop holding the group, each pass judged with its own labels, false where the loop made no pass (lib/counting's wording of 2026-11-15) — by owner ruling — array-vs-passes (a). Its lines, verbatim as run (predarr_model.py AVP, RECORD, EMPTY):
   Two depths: Passes: WHOLE `3;4;,5;,` HOLDS, `3;,5;,` HOLDS / SEARCHED `x3;4;,5;,` `3;4;,5;,`@1 / FIND-ALL `3;4;,5;, 3;,5;,` [`3;4;,5;,`@0, `3;,5;,`@9] (`/(?:(?:(?<h>\d);)+,)+/ & (h[2]: "5")`)
@@ -751,6 +828,8 @@ readings:
 - the record inside a group question parting from its joint form: now the open core/conditions/form/record-in-some (review r77 A9).
 - (c) of array-in-piece: the ruling covers `some`, `count`, `occurs` and the index `h[k]` alike — SUPPORTED as a run of the reading for `some` and `h[k]` (predfix77 ARRREAD: `(h[1]: "7")` bound first against `\d;7(?:;\d)*`, in place against `7(?:;\d)*`, 0 / 0 / 0); `count` and `occurs` follow by the same array (not run).
 - (d) of array-in-piece (review r77 A2): a group question written in an `&` operand inside ONE definition reads the settings visible in that definition at that point; with his "or A SEQ /B definition/", in place in an `&` operand the array holds both sides' settings — SUPPORTED as a run of the reading (predfix77 ARRREAD: the line "In an `&` operand, one definition" against `(?:7|\d(?:;\d)*;7)(?:;\d)*`; the rival, the operand's own stretch only, against `\d(?:;\d)*;7(?:;\d)*`, both 0 / 0 / 0; sabotage s3 caught); not separately ruled. A plain read of a name both sides surface stays the ambiguous reference (core/labels/flow), untouched by his words.
+- (a) a condition as the argument is a compile error naming the array form — SUPPORTED as a refusal (ERRSWEEP11).
+- (c) the set may read a label as it stands (`some(@h, $m)`) — SUPPORTED (SWEEP11: the line "A read inside").
 evidence: docs/dev/lanes/predarr_evidence/ predarr_model.py ARRAYS, OUTSIDE, AVP, RECORD, JOINT, REFUSE, IDIOM, EMPTY; sabotages s2-s9 caught. Earlier: predfix61_model.py FF, FF2 (the six lines, then candidates (a) and (b)). predfix77_model.py ARRORDER, RECORD; sabotages s13, s19 caught. predfix77_model.py ARRREAD.
 history:
 - 2026-11-19 (lane predfix61, review r61 F-F: REACH-3, the tension older than the session, sharpened by array-scope's "two groups of one name in a sequence give it both settings"): a new open sub-piece at the manager's ruling of review r61, with the review's three witnesses.
@@ -760,6 +839,7 @@ history:
 - 2026-11-22 (lane predfix77, R-1 and R-2): array-in-piece folded (the array is read in the definition the question is written in; readings (c), (d)) with the line "In an `&` operand, one definition (a reading)"; status date 2026-11-21 to 2026-11-22.
 2026-11-22 (lane predbound, bound-condition and count-in-set ruled): the line "A count of zero" written in place, `(count(NOT (d: "7")): ==0)`, its binding `n := `count(NOT (d: "7"))`` being a compile error now; the line until then ended "(`/(?:(?<d>\d)?,)+/ & (n: ==0)`, n := `count(NOT (d: "7"))`; `n` (depends on the open bound-condition: core/holes/bare-condition/bound-condition))"; the answers do not move (predbound FIVE).
 - 2026-11-23 (lane predfold1123, the fold of 2026-11-22 late and 2026-11-23; R1 of the rulings file): `see:` gains core/conditions/match-so-far, where zero-open's "no settings: no array, so a group question or an index on `0` is a compile error" is stated with its lines (this piece is at the 40-line cap). the zero-open entries are recorded on lane/pred-rev28 after this lane's cut, so they are cited here in history only (record "2026-11-23 OWNER RULING — zero-open: yes, all four (`0` is the one name read open; never absent; no settings; `$0` legal; a capture request only where `0` is complete)"), not as a `rulings:` item (lint L4 would fail on this worktree's record; to add at the merge).
+- 2026-11-27 (lane predfold1125, the fold of drop-not, array-argument, brace-counts, map-creator, string-literals, bang-split and and-not): restated by the rulings named in its rulings field. The statement until then, verbatim: "The group questions (`some`, `count`, `occurs`) and the index `h[k]` read the array of a name's settings: every setting, in order, the one outside the loop included.".
 
 ## core/labels/label-only-group — The label-only group in rx text
 was: parked/ideas/label-only-group (2026-11-22, moved: his helper-captures ruling needs the thing, so it leaves the parked list; under construction, his form the placeholder)
@@ -845,6 +925,7 @@ history:
 - 2026-11-23 (lane predfold1123, the fold of 2026-11-22 late and 2026-11-23; record "2026-11-23 OWNER, on two-sources (second shape): "isn't the A.h not visible bare?""): the sequence bullet narrowed, as the record says the fold does: "stated for names read at ONE level (the definition's own groups read bare; a part's labels read through one prefix or one label over the composition), never across the bare / sourced line". The reading bullet on a label over the composition re-spells `[ab = B | A]` as `[ab = (B | A)]` (the label set binds tighter than `|`: core/operators/precedence).
 - 2026-11-23 (lane predfix86, review r86 C7; record "2026-11-23 MANAGER — review r86 (predfold1123): the dispositions; three errors of the manager's own brief named; no owner words"): "never across the bare / sourced line" marked the manager's restatement (two-sources' second shape closed by the manager on label-reference, no new owner ruling).
 - 2026-11-23 (lane predfix86, review r86 A10; record "2026-11-23 MANAGER — review r86 (predfold1123): the dispositions; three errors of the manager's own brief named; no owner words"): statement until then: "A label from a pattern is whatever label it shows where it is read; within a definition a composed pattern and a literal behave alike (the last mention wins); a user reads what a piece exports." (false where a used binding contributes the name: two-sources' second shape, composed `1,7` HOLDS, one literal FAILS); now qualified "for names written in the definition"; the clause "a user reads what a piece exports" stays in the first bullet (the 200-character cap).
+- 2026-11-27 (lane predfold1125, the fold of drop-not, array-argument, brace-counts, map-creator, string-literals, bang-split and and-not): printed `NOT` re-spelled `!`, a complement's `!` re-spelled `~`, a group question's condition re-spelled to the array form, as the rulings carry; no answer changed (model SWEEP11).
 
 ## core/labels/export — Export and private labels
 slugs: export-rule export-scope free-name filter-captures hole-export
@@ -927,6 +1008,7 @@ history:
 - 2026-11-22 (lane preddef, default-export folded; record "2026-11-22 OWNER RULING — default-export: protected"): statement until then: "Outside a binding a part's public label is read through the binding's name (`pair.x`), by name, under the inside rules: what a flat read `x` meant." New bullet and lines: his example of the day (record "2026-11-22 OWNER, discussing the analogy: `B := A & A`, `C := B & (B.a: 9)`: "here B.a is always an error""): B exports no `a`, so `B.a` is no label, plain read and group question alike (the manager's check in the record entry "2026-11-22 OWNER, discussing the analogy: `B := A & A`, `C := B & (B.a: 9)`: "here B.a is always an error"", no letter; cited as "reading (g)" until review r83 D6; SUPPORTED as run, preddef_model.py EXAMPLE, and by its reason, predfix83 EXAMPLE); before the ruling the plain read was an error as an ambiguous reference across `&` and the group question was legal (that entry's check); now both are errors for one reason. `B := [x = A] & [y = A]`: `B.x.a`, `B.y.a` printed in three modes.
 - 2026-11-22 (lane predfix83, review r83 A4, D6; record "2026-11-22 MANAGER — review r83 (preddef1122): dispositions ruled; one correction; idiom-confirm closed on default-export (no owner words)"): a bullet and the line "The exported setting only" (A4); the bullet on a label only a part used alone holds marked the manager's reading (c) (D6); the history's "reading (g)" corrected to the record's check, which has no letter (D6). predfix82's engine answered `pub.h` by the last mention, the protected use's; preddef's by the exported use, with no sentence deciding it and no printed line (review r83 A4).
 - 2026-11-23 (lane predfix88, review r88 A7; record "2026-11-23 MANAGER — review r88 (predfold1123b): the dispositions; no owner words"): the stacked-is-one-step clause added.
+- 2026-11-27 (lane predfold1125, the fold of drop-not, array-argument, brace-counts, map-creator, string-literals, bang-split and and-not): printed `NOT` re-spelled `!`, a complement's `!` re-spelled `~`, a group question's condition re-spelled to the array form, as the rulings carry; no answer changed (model SWEEP11).
 
 ## core/labels/export/caller-ambiguous — What the caller gets for an unreferenced shared capture
 slugs: caller-ambiguous read-out capture-twice
@@ -1108,6 +1190,7 @@ history:
 - 2026-11-23 (lane predfix88, review r88 A14; record "2026-11-23 MANAGER — review r88 (predfold1123b): the dispositions; no owner words"): the statement-4 pointer now names statements 4 and 7 and core/labels/rule line 4.
 - 2026-11-23 (lane predfold1124, the fold of the 2026-11-23 rulings after review r88; record "2026-11-23 OWNER RULING — shorthand-is-callers: "yes thats it exactly. Setting a label closes a path (through the shorthand in that binding) but doesn't block out the target.""): the through-a-call bullet until then: "a binding passed whole is read by its name where the body makes no label on its spot"; the unlabelled-use reading now names the shorthand's "through the shorthand in that binding" (shorthand-is-callers reading (d)).
 - 2026-11-25 (lane predfix90, review r90 B2; record "2026-11-25 MANAGER — review r90 (predfold1124): the dispositions; no owner words"): the binding-as-label `rulings:` item marked revised in part by shorthand-is-callers; the text until then, verbatim: "- 2026-11-23 \"binding-as-label: yes\" (record: \"2026-11-23 OWNER RULING — binding-as-label: yes (a path is canonically a chain of labels; a binding's name is a shorthand for a skipped label, under four conditions)\"); RULED on the statement as put: ...".
+- 2026-11-27 (lane predfold1125, the fold of drop-not, array-argument, brace-counts, map-creator, string-literals, bang-split and and-not): printed `NOT` re-spelled `!`, a complement's `!` re-spelled `~`, a group question's condition re-spelled to the array form, as the rulings carry; no answer changed (model SWEEP11).
 
 ## core/labels/paths/label-reference — A label is referenced with its source
 slugs: label-reference
@@ -1141,6 +1224,7 @@ history:
 - 2026-11-23 (lane predfold1123, the fold of 2026-11-22 late and 2026-11-23; record "2026-11-23 MANAGER — review r84 (predspot1122): the dispositions, ruled with the 2026-11-23 rulings in hand; no owner words"): predfix84 named the sentence for this lane (review r84 C8): the bullet until then began "It revises core/labels/export/flat-read-outside and hole-export (core/labels/export statement 3, which default-export since limits to what a binding exports), and his example 1 ..."; now "It applies to ..." (the base carries no revision words): label-reference REVISES flat-read-outside, hole-export and his example 1 (2026-11-22).
 - 2026-11-23 (lane predfix88, review r88 A1; record "2026-11-23 MANAGER — review r88 (predfold1123b): the dispositions; no owner words"): an argument that is a binding: the shorthand where no label is made on the spot, otherwise the call's path; pointer to core/labels/ownership.
 - 2026-11-23 (lane predfold1124, the fold of the 2026-11-23 rulings after review r88; record "2026-11-23 OWNER RULING — shorthand-is-callers: "yes thats it exactly. Setting a label closes a path (through the shorthand in that binding) but doesn't block out the target.""): the argument clause until then: "through the binding's name where no label is made on its spot (the shorthand, ...), else through the call's path".
+- 2026-11-27 (lane predfold1125, the fold of drop-not, array-argument, brace-counts, map-creator, string-literals, bang-split and and-not): printed `NOT` re-spelled `!`, a complement's `!` re-spelled `~`, a group question's condition re-spelled to the array form, as the rulings carry; no answer changed (model SWEEP11).
 
 ## core/labels/paths/call-prefix — The source of a label from a call or an argument
 slugs: call-prefix
@@ -1181,6 +1265,7 @@ history:
 - 2026-11-23 (lane predfix88, review r88 A14; record "2026-11-23 MANAGER — review r88 (predfold1123b): the dispositions; no owner words"): case 1 tied to core/labels/rule line 3; the labelled call's macro name printed as a compile error (condition 4, a reading; the line "A labelled call, through the macro's name"); case 2 cut to a pointer to core/labels/ownership.
 - 2026-11-23 (lane predfold1124, the fold of the 2026-11-23 rulings after review r88; record "2026-11-23 OWNER RULING — shorthand-is-callers: "yes thats it exactly. Setting a label closes a path (through the shorthand in that binding) but doesn't block out the target.""): the case-2 clause until then: "`A.d` reads A's `d` only where the body makes no label on the spot (case 2, `A.d` in `B(A)`: the shorthand; core/labels/ownership)"; the two-spot clause cited "reading (c) of binding-as-label", now the caller's label at each spot (shorthand-is-callers reading (a)); the line "A's own d, the body labelling the spot (case 2)" (a compile error until then) is legal: WHOLE `7-3` FAILS, `3-7` HOLDS, `3-3` HOLDS.
 - 2026-11-25 (lane predfix90, review r90 B2; record "2026-11-25 MANAGER — review r90 (predfold1124): the dispositions; no owner words"): the binding-as-label `rulings:` item marked revised in part by shorthand-is-callers; the text until then, verbatim: "- 2026-11-23 \"binding-as-label: yes\" (record: \"2026-11-23 OWNER RULING — binding-as-label: yes (a path is canonically a chain of labels; a binding's name is a shorthand for a skipped label, under four conditions)\"); RULED on the statement as put: ...".
+- 2026-11-27 (lane predfold1125, the fold of drop-not, array-argument, brace-counts, map-creator, string-literals, bang-split and and-not): printed `NOT` re-spelled `!`, a complement's `!` re-spelled `~`, a group question's condition re-spelled to the array form, as the rulings carry; no answer changed (model SWEEP11).
 
 ## core/labels/paths/closed-argument — When a macro makes a label on its argument's spot
 slugs: closed-argument spot-read-name binding-as-label shorthand-is-callers list-is-label
@@ -1410,6 +1495,7 @@ history:
 - 2026-11-22 (lane predfix82, review r82 DES-3, RULING-5; record "2026-11-22 MANAGER — review r82 (predfold1122): dispositions ruled; two corrections of record entries (no owner words)"): "a bare name or a label path" became "a bare name, a number or a label path"; the three parse gaps compile errors for now (readings, predfix82 GAPS); "it may be bound, passed or put in an array" restated with bound-condition (record CORRECTION 2).
 - 2026-11-22 (lane preddef, export-list folded; record "2026-11-22 OWNER RULING — export-list: yes"): the left-of-`:` bullet gains his caveat (a path's last step is the label), a reading.
 - 2026-11-22 (lane predfix83, review r83 D14; record "2026-11-22 MANAGER — review r83 (preddef1122): dispositions ruled; one correction; idiom-confirm closed on default-export (no owner words)"): the caveat's sentence until then: "A path's last step is the label; its earlier steps are sources, a binding's, a macro's name or a part label (a reading, his caveat: core/modules/binding-list)." (a noun lost, pointing away). Now its home is here, the full wording (a metadata field as a last step, `w.index`, included); core/modules/binding-list points here.
+- 2026-11-27 (lane predfold1125, the fold of drop-not, array-argument, brace-counts, map-creator, string-literals, bang-split and and-not): printed `NOT` re-spelled `!`, a complement's `!` re-spelled `~`, a group question's condition re-spelled to the array form, as the rulings carry; no answer changed (model SWEEP11).
 
 ## core/conditions/form/value-left — A value left of `:`
 slugs: count-in-set
@@ -1435,6 +1521,7 @@ history:
 2026-11-22 (lane predbound, R-2): the reading "A default (`h = v`) and a joint entry stay label forms" became "each component of a joint entry's left part may be a value"; the line "A joint entry with a value" added.
 - 2026-11-22 (lane predfix82, review r82 ANS-3, RULING-8 (d); record "2026-11-22 MANAGER — review r82 (predfold1122): dispositions ruled; two corrections of record entries (no owner words)"): "answer alike in every mode" restricted to outside a group question; a value entry inside one a compile error for now (a reading; the line "Inside a group question", predfix82 VALUEGQ); the default clause marked a reading.
 - 2026-11-23 (lane predfold1123, the fold of 2026-11-22 late and 2026-11-23; record "2026-11-23 OWNER, on optional-label-general: the `?` in conditions "is a special case"; where it sits; `?` for optional macro arguments; a value left of `:` with no label"): a bullet and the line "A value with no label" (his `("Frank": ...)`, "silly but useful for generated code"; a reading, not ruled).
+- 2026-11-27 (lane predfold1125, the fold of drop-not, array-argument, brace-counts, map-creator, string-literals, bang-split and and-not): restated by the rulings named in its rulings field. The statement until then, verbatim: "A value may stand in the left part of a condition entry, written in place: `P & (count((d: "7")): ==2)`, `(($a + $b): <10)`; the entry holds when the value is in its set.".
 
 ## core/conditions/form/optional-entry — The optional entry operator
 slugs: optional-label optional-place
@@ -1455,6 +1542,7 @@ evidence: docs/dev/lanes/predfold1123_evidence/ predfold1123_model.py OPTENTRY, 
 history:
 - 2026-11-23 (lane predfold1123, the fold of 2026-11-22 late and 2026-11-23; records "2026-11-23 OWNER, on capture-optional: he likes the defaults way; proposes the mark on the label, `(h?: capture("h"))`", "2026-11-23 OWNER RULING — optional-label: yes (`(h?: S)` holds when h is absent or in S); and a FLAG: is it a special form or the general case of an expression left of `:`", "2026-11-23 OWNER, on optional-label-general: the `?` in conditions "is a special case"; where it sits; `?` for optional macro arguments; a value left of `:` with no label", "2026-11-23 OWNER, on optional-place: "Before the colon"; and a proposal: an alternative operator to the colon, `:` and `?:`", "2026-11-23 MANAGER — two notes after capture-negated (the guard edge taken literally; the array request's placeholder); no owner words"): a new piece. The ruled form was put as the mark on the label, `(h?: S)` ("optional-label: yes" answered that statement); his lean of the same day moves it before the colon as a second entry operator, `(h ?: S)`; the documents write his lean, a placeholder. "Drop-mark: yes" (2026-11-16, core/conditions/defaults) dropped a different mark, per part, `((h, m?): R)`, meaning "some value the label could hold"; this operator is a one-row test.
 - 2026-11-23 (lane predfix86, review r86 A1, A7, C7, C10; record "2026-11-23 MANAGER — review r86 (predfold1123): the dispositions; three errors of the manager's own brief named; no owner words"): the conservative edges of the statement he answered restored as compile errors for now (the joint and value lines were printed legal from the manager's reading (a), which the dispositions withdraw: those lines are now the candidate (b) lines of core/conditions/form/optional-edges); optional-label-general re-opened (it had been closed on the manager's thought (b): core/conditions/form/optional-general); the qualifier on the place restored; the statement narrowed from "its left part" to the label; the empty-pass sentence and line added. Moved here from `rejected:` (a lean decides nothing: grounds are owner ruling, run or review): the mark on the label, `(h?: S)` (the shape ruled as optional-label) — by his lean on optional-place ("then we aren't using ? For two different meanings") — the earlier spelling goes to history; the meaning is the same. Moved here from `readings:`: (a) nothing about the left part changes; a joint holds when a part is absent, a value when it is nothing — SUPPORTED as run (docs/dev/lanes/predfold1123_evidence/ predfold1123_model.py OPTENTRY: `((a, b) ?: >= (5, 3))` and `(($a + $b) ?: <10)`, the record's run of the joint reproduced in every mode); marked readings, his words do not rule the joint and value cases. (b) `h+`, `h*`, `(a?, b)` are not forms — UNTESTABLE (no form to run; the parse refuses them). The third rulings item moved to core/conditions/form/optional-general.
+- 2026-11-27 (lane predfold1125, the fold of drop-not, array-argument, brace-counts, map-creator, string-literals, bang-split and and-not): printed `NOT` re-spelled `!`, a complement's `!` re-spelled `~`, a group question's condition re-spelled to the array form, as the rulings carry; no answer changed (model SWEEP11).
 
 ## core/conditions/form/optional-edges — The edges of the optional entry
 slugs: optional-entry-edges
@@ -1482,12 +1570,16 @@ slugs: record-in-some
 rulings:
 - 2026-11-16 "record-is-product: absolutely. This is precisely the sort of simplifying semantics I'm looking for." (record: "2026-11-16 OWNER RULING — record-is-product: yes"); the rule the reading parts from inside a group question
 - 2026-11-21 "join-in-some: agree and elegant. that said, no one would know to write it." (record: "2026-11-21 OWNER RULING — joint-in-some: agree (a joint entry inside a group question is refused for now; "same item" is written on the item)"); the joint spelling refused
+- 2026-11-25 "array-argument: yes including every" (record: "2026-11-25 OWNER RULING — array-argument: "yes including every""); DISSOLVED: one array per call (line 3)
 rejected:
 readings:
 - (a) of array-vs-passes, each plain entry over its own array — SUPPORTED as a run (predfix77 RECORD: `some((h: "5", m: "3"))` WHOLE against the direct product, "some h is 5 and some m is 3", 0 of 341 texts over `53:,`; the joint spelling refused; sabotage s19 caught); that this is meant is the owner question.
+- the question dissolves: no record stands inside a group question — SUPPORTED as a refusal (ERRSWEEP11: `some((h: "5", m: "3"))` names the array form) and a line (SPECLINES "Two calls", answers equal to the old reading's line).
 evidence: docs/dev/lanes/predfix77_evidence/ predfix77_model.py RECORD; earlier predarr_model.py RECORD, JOINT.
 history:
 - 2026-11-22 (lane predfix77, review r77 A9; record "2026-11-22 MANAGER — review r77 (predfold1121): dispositions ruled (no owner words)"): a new open sub-piece; the slug was proposed by lane predarr ("2026-11-21 MANAGER — after lane predarr: array-vs-passes and joint-in-some folded; readings tested (no owner words)").
+- 2026-11-27 (lane predfold1125, the fold of drop-not, array-argument, brace-counts, map-creator, string-literals, bang-split and and-not): restated by the rulings named in its rulings field. The statement until then, verbatim: "Inside a group question, is a record of several plain entries still the product of its entries, `some((h: "5", m: "3"))` = `some(((h, m): ("5", "3")))`?".
+- 2026-11-27 (lane predfold1125, the fold of drop-not, array-argument, brace-counts, map-creator, string-literals, bang-split and and-not): the open question became the manager's reading of array-argument (it dissolves); candidates (a) to (c) went with it.
 
 ## core/conditions/two-valued — Conditions are two-valued
 slugs: three-valued polarity-rule record-under-not zero-pass-record
@@ -1497,6 +1589,7 @@ rulings:
 - 2026-11-17 "polarity-rule: warning for both. Warnings are errors given some strictness setting eg @config.strict()" (record: "2026-11-17 OWNER RULING — polarity-rule")
 - 2026-11-16 "not-is-complement: yes agree" (record: "2026-11-16 OWNER RULINGS — not-is-complement and mark-in-none")
 - 2026-11-16 "zero-pass-record: I agree but save the notes in the future file. The issue falls into the 'saving people from themselves' category that tools need to realistically consider" (record: "2026-11-16 OWNER RULING — zero-pass-record: the outside label is tested"); a label outside the pairing loop is tested once when the loop runs zero passes, and a record is the `&` of its entries at every depth; the manager's 12:45 WORDING, empty satisfies any set, was reversed the same day by absent-rule 14:31, which keeps this ANSWER (`9` FAILS) and record = `&` (cited as "2026-11-16 OWNER RULING — absent-rule: LOCKED" on core/principles/no-absence)
+- 2026-11-27 "bang-split: yes. This is clean and what I was looking for." (record: "2026-11-27 OWNER RULING — bang-split: yes"); line 1, the spelling `!`
 rejected:
 - "absence never matches, negated or not" (condition-not's absence clause) — by owner ruling — absent-under-not.
 - three-valued logic (three-valued) — retired: the regex model entails it (the manager's reading, closed by regex-settles).
@@ -1507,6 +1600,7 @@ evidence: preddoc3a_model.py TV (the draft's PART A U1 line; printed answers rep
 history:
 - 2026-11-16: condition-not with "absence never matches"; 2026-11-17: regex-settles and absent-under-not reversed the absence clause; polarity-rule.
 - 2026-11-19 (lane preddoc6, review r60 COLD-12): a column added to the three-meanings table on P = `/(?<h>\d)?\d?x/`, `3x` WHOLE: HOLDS / FAILS / FAILS. On the old column rows 1 and 3 were identical, so the table showed two meanings; the new column parts NOT from the complement form (P has two paths over `3x`, h = `3` and h unset). Run: docs/dev/lanes/preddoc6_evidence/ PART TV.
+- 2026-11-27 (lane predfold1125, the fold of drop-not, array-argument, brace-counts, map-creator, string-literals, bang-split and and-not): restated by the rulings named in its rulings field. The statement until then, verbatim: "A test on an absent label fails and the pattern tries its next path; `NOT c` holds exactly when c fails, an absent label included.".
 
 ## core/conditions/in-sequence — A condition as a sequence operand
 slugs: condition-in-sequence
@@ -1576,6 +1670,7 @@ history:
 - 2026-11-22 (lane predfix77, review r77 D5, A5, A4; record "2026-11-22 MANAGER — review r77 (predfold1121): dispositions ruled (no owner words)"): statement until then, verbatim: "`0` in a condition names the match so far: the text the definition the condition is written in (a binding or a macro body) has matched from its start to the condition's point." The gloss became a marked reading; the `&` operand bullet and the line "As a sequence operand" added. No answer moved.
 - 2026-11-23 (lane predfold1123, the fold of 2026-11-22 late and 2026-11-23; R1 of the rulings file): statement until then: "`0` in a condition names the match so far: the text the definition the condition is written in has matched from its start to the condition's point."; status ruled 2026-11-21 to ruled 2026-11-23; `by:` gains binding-fixed; zero-open folded: his words, the open read, the two cases, the four consequences and the lines "Two reads on one path", "A group question on `0`", "An index on `0`"; the bullet "Inside a loop body: core/conditions/match-so-far/in-loop (open)." loses "(open)". His observation is record "2026-11-23 OWNER, on `0`: "All other labels are completed at the condition. 0 is not. $0 is provisional. Later labels or captures can replace entirely but 0 grows."" and the ruling "zero-open: yes all 4"; the zero-open entries are recorded on lane/pred-rev28 after this lane's cut, so they are cited here in history only (record "2026-11-23 OWNER RULING — zero-open: yes, all four (`0` is the one name read open; never absent; no settings; `$0` legal; a capture request only where `0` is complete)"), not as a `rulings:` item (lint L4 would fail on this worktree's record; to add at the merge).
 - 2026-11-23 (lane predfix86, review r86 A5, C1; record "2026-11-23 MANAGER — review r86 (predfold1123): the dispositions; three errors of the manager's own brief named; no owner words"): the zero-open ruling and his observation on `0` added as `rulings:` items and the slug zero-open filed here (lane predfold1123 had cited them in history only, the entries then being on the manager's branch; they are in this lane's record); the sentence on a condition passed as an argument beside `&` and its two lines added.
+- 2026-11-27 (lane predfold1125, the fold of drop-not, array-argument, brace-counts, map-creator, string-literals, bang-split and and-not): printed `NOT` re-spelled `!`, a complement's `!` re-spelled `~`, a group question's condition re-spelled to the array form, as the rulings carry; no answer changed (model SWEEP11).
 
 ## core/conditions/match-so-far/in-loop — The match so far inside a loop
 slugs: zero-in-loop
@@ -1596,6 +1691,7 @@ history:
 - 2026-11-22 (lane predfix77, review r77 D12 (FIXIND-6); record "2026-11-22 MANAGER — review r77 (predfold1121): dispositions ruled (no owner words)"): "the rx" became "the definition it is written in" in the statement, the reading and candidate (b) (zero-in-definition's unit). The printed program is one definition; its lines do not move.
 - 2026-11-23 (lane predfold1123, the fold of 2026-11-22 late and 2026-11-23; record "2026-11-23 OWNER RULING — zero-in-loop: (b) (from the definition's start); and a stated position, "not a ruling": the behaviour defined in a binding should not change due to how it is used"): open zero-in-loop 2026-11-19 to ruled 2026-11-23. Statement until then: "Inside a loop body, does `0` read the match so far from the start of the definition it is written in or from the start of the current pass?"; the bullet "The reading today: from the definition's start (the earlier passes included). The candidates part on `3;4;`: (a) the pass's own match so far; (b) the match so far from the definition's start." replaced; the line (a) to `rejected:`; the line (b) kept as printed; the lines "`0` first in the pass" and "The per-item test, a label on the part" added.
 - 2026-11-23 (lane predfix86, review r86 C7; record "2026-11-23 MANAGER — review r86 (predfold1123): the dispositions; three errors of the manager's own brief named; no owner words"): "a per-pass test is a label on the part" in the statement marked (a reading): the record gives it as the manager's answer; his words rule only (b).
+- 2026-11-27 (lane predfold1125, the fold of drop-not, array-argument, brace-counts, map-creator, string-literals, bang-split and and-not): printed `NOT` re-spelled `!`, a complement's `!` re-spelled `~`, a group question's condition re-spelled to the array form, as the rulings carry; no answer changed (model SWEEP11).
 
 ## core/conditions/pass-start-read — Labels as they stand
 slugs: pass-start-read
@@ -1616,6 +1712,7 @@ history:
 - 2026-11-19 (lane predfix61, review r61 F-I, RULING-2, STALE-2): the rejected item until then: "a warning on a bare condition over a looped label (the manager's own proposal, looped-warning) — withdrawn by the manager (the draft §R.2); the question is open (core/diagnostics/looped-compare/still-wanted)." The question was answered (looped-warning) and the tag merged.
 - 2026-11-22 (lane predfix77, review r77 A3; record "2026-11-22 MANAGER — review r77 (predfold1121): dispositions ruled (no owner words)"): a pointer to the open core/holes/bare-condition/bound-condition: this piece's bound definition is read where it is used (a reading).
 2026-11-22 (lane predbound, bound-condition ruled; record "2026-11-22 OWNER RULING — bound-condition: "mostly confirmed"; `c := (0: 5)` left open"): the line's program until then, verbatim: "(`/(?:(?=(?<n>\d))${c}(?<h>\d);)*/`, c := `NOT (h: /\d/) | (n: >= $h)`)", and the bullet "The line's `c` (depends on the open bound-condition: core/holes/bare-condition/bound-condition)."; `c` names `h` and `n`, which no pattern in its binding holds: a compile error now. Status date 2026-11-17 to 2026-11-22. The answers do not move.
+- 2026-11-27 (lane predfold1125, the fold of drop-not, array-argument, brace-counts, map-creator, string-literals, bang-split and and-not): printed `NOT` re-spelled `!`, a complement's `!` re-spelled `~`, a group question's condition re-spelled to the array form, as the rulings carry; no answer changed (model SWEEP11).
 
 ## core/conditions/defaults — Defaults and absent labels
 slugs: default-set unset-component drop-mark default-value match-context zero-pass-empty domain-scope mark-narrows mark-in-none mark-range mark-under-not one-witness default-reaches-dollar default-scope mark-design
@@ -1642,6 +1739,7 @@ history:
 - 2026-11-16, the optional mark's rulings, each RETIRED by drop-mark (cited above), none reversed: "match-context: anywhere. This does need some sort of debugger for writing these." (record: "2026-11-16 OWNER RULING — match-context"); "zero-pass-empty: agree. If nothing could pass then some absent value of present couldn't either. I agree with your reading." (record: "2026-11-16 OWNER RULING — zero-pass-empty"); "P & (k: \"b\") In my mind this is a different regex than P. It only includes the \"b\" track" (record: "2026-11-16 OWNER RULING — domain-scope"); "I agree with your variant. I'm assuming such logic is possible" (record: "2026-11-16 OWNER RULING — mark-narrows"); "mark-in-none: I'd leave it. It's obscure and there are ways to get the intended question." (record: "2026-11-16 OWNER RULING — mark-in-none: LEFT AS IS"; his 17:29 "yes agree" on it was withdrawn by him minutes later, record "2026-11-16 CORRECTION — mark-in-none is NOT ruled"). With the mark went mark-range (withdrawn in the drop-mark entry), the manager's one-witness and not-of-marked readings, and the draft's question mark-under-not (closed with the mark).
 - 2026-11-16: default-set (one string, for now), unset-component, drop-mark and default-value (homed here by lane preddoc5: review r59 COMPA-2, COMPA-3, COMPB-6).
 - 2026-11-23 (lane predfold1123, the fold of 2026-11-22 late and 2026-11-23; records "2026-11-23 OWNER RULING — optional-label: yes (`(h?: S)` holds when h is absent or in S); and a FLAG: is it a special form or the general case of an expression left of `:`", "2026-11-23 OWNER, on optional-place: "Before the colon"; and a proposal: an alternative operator to the colon, `:` and `?:`"): a bullet: `?:` is the entry's way to hold on an absent label (core/conditions/form/optional-entry), and a default with it or on `0` is never used. "Drop-mark: yes" (2026-11-16) dropped the per-part mark `((h, m?): R)` ("some value the label could hold"); the operator of 2026-11-23 is a different, one-row test. The line's answers were refused by predfix84's engine (no defaults) and run by this lane's model: the same answers as printed. the zero-open entries are recorded on lane/pred-rev28 after this lane's cut, so they are cited here in history only (record "2026-11-23 OWNER RULING — zero-open: yes, all four (`0` is the one name read open; never absent; no settings; `$0` legal; a capture request only where `0` is complete)"), not as a `rulings:` item (lint L4 would fail on this worktree's record; to add at the merge).
+- 2026-11-27 (lane predfold1125, the fold of drop-not, array-argument, brace-counts, map-creator, string-literals, bang-split and and-not): printed `NOT` re-spelled `!`, a complement's `!` re-spelled `~`, a group question's condition re-spelled to the array form, as the rulings carry; no answer changed (model SWEEP11).
 
 ## core/filters/and — The `&` operator
 slugs:
@@ -1677,17 +1775,25 @@ rulings:
 - 2026-11-16 "not-is-complement: yes agree" (record: "2026-11-16 OWNER RULINGS — not-is-complement and mark-in-none")
 - 2026-11-18 "complement-place: is this legal? not_seven := not seven It stands alone. I think it's the use that is the problem" (record: "2026-11-18 OWNER RULING — complement-place: the error is at the USE; two kinds of rx")
 - 2026-11-16 "row-is-match: yes I agree." (record: "2026-11-16 OWNER RULING — row-is-match"); a complement after `&` filters potential matches, one row each: `t2 & !q` searched on `9:30` HOLDS reporting `9`; it SUPERSEDES the 21:49 source-row wording (history)
+- 2026-11-27 "bang-split: yes. This is clean and what I was looking for." (record: "2026-11-27 OWNER RULING — bang-split: yes"); line 2
+- 2026-11-27 "and-not: agree drop &!" (record: "2026-11-27 OWNER RULING — and-not: no `&!`; "and not in" is written `A & ~B`")
 rejected:
 - `!` on a condition as a compile error (the second half of not-is-complement, "no meaning on a condition") — by owner ruling — REVERSED the same evening by condition-not (record: "2026-11-16 OWNER RULING — condition-not: allowed"); the spelling on a condition is `NOT` (core/filters/negation, a reading). The not-is-complement item above stands for its first half only (`!` on a pattern is a complement).
 - a complement per SUBJECT (source-row's wording, "a row of the source is the whole subject; the complement is per subject") — by owner ruling — row-is-match: a row is one potential match, the subject is the search text.
 readings:
 - a complement inside an `occurrences` argument rejects a path (nested-complement, entailed by hit-carry's premise) — SUPPORTED by the draft's PART RS RS1 (81 of 364 differ from the committed reading), not re-run here.
 - `!` in rx text keeps PCRE's meaning (the 2026-11-15 correction: `!` inside a normal rx is parked) — UNTESTED.
+- the piece's printed line reproduces under `~` — SUPPORTED (SWEEP11: old `/\d+/ & !/7\d*/` against new `/\d+/ & ~/7\d*/`, the same three answers).
+- `(h: ~S)` present and outside; `(h ?: ~S)` absent or outside; `!(h: S)` = `(h ?: ~S)` — SUPPORTED (READINGS11 r-entries over 11 states; SPECLINES).
+- a record stays a product of sets: `!(a: S, b: T)` = `(a ?: ~S) | (b ?: ~T)` — SUPPORTED (READINGS11 r-record, 121 states).
+- complement-place carries over under `~` (`not_seven := ~seven`) — SUPPORTED (SPECLINES "Kinds": a bound complement chain).
 evidence: preddoc3a_model.py COMP (`(?!7)\d+` agrees; the draft's `712` FAILS reproduced); sabotage s14 caught.
 history:
 - 2026-11-16 not-is-complement; 2026-11-17 regex-settles (2); 2026-11-18 complement-place.
 - 2026-11-19 (lane preddoc6, review r60 SOURCE-ROW / RULING-2 / RECOUNT-4): the `rulings:` item "2026-11-16 "Source-row: yes" (record: "2026-11-16 OWNER RULINGS — drop-mark, default-value, source-row; default-scope to a lane"); a row of the source is the whole subject; a searched pattern gives several result rows per subject; the complement is per subject" REMOVED: that wording was "the MANAGER's framing of the question" (record "2026-11-16 OWNER REMARKS — what a row is; negating a condition; the value of a complemented pattern") and row-is-match "SUPERSEDES the 21:49 source-row wording" the same night (cited above). The slugs source-row and searched-complement moved to core/model/match, the piece row-is-match decides.
 - 2026-11-19 (lane preddoc6, review r60 RULING-4): the `rejected:` line "`!` on a condition — by owner ruling — not-is-complement (a compile error naming the two rewrites)" stated the half of not-is-complement that condition-not reversed the same evening; rewritten.
+- 2026-11-27 (lane predfold1125, the fold of drop-not, array-argument, brace-counts, map-creator, string-literals, bang-split and and-not): restated by the rulings named in its rulings field. The statement until then, verbatim: "`!B` holds on a stretch where no path of B matches it whole; it takes a pattern or a set and is filter-only, its labels never visible outside it.".
+- 2026-11-27 (lane predfold1125, the fold of drop-not, array-argument, brace-counts, map-creator, string-literals, bang-split and and-not): the complement re-spelled `~` (bang-split line 2).
 
 ## core/filters/kinds — Can match, can filter
 slugs: complement-place lone-complement-match
@@ -1703,6 +1809,7 @@ evidence: preddoc3a_model.py KINDS (`(?![78])\d+` agrees); sabotage s14 caught. 
 history:
 - the draft R.1.0 head (THE TWO KINDS OF RX); 2026-11-19 anything-text ruled `anything` (lib/sets/anything).
 - 2026-11-19 (lane preddoc4): the example's `not /7\d*/ & not /8\d*/` (lower-case `not`, no spelling) rewritten `!/7\d*/ & !/8\d*/`; answers unchanged (preddoc4 PART KI; sabotage s3 caught) (review r59 NEGATION).
+- 2026-11-27 (lane predfold1125, the fold of drop-not, array-argument, brace-counts, map-creator, string-literals, bang-split and and-not): printed `NOT` re-spelled `!`, a complement's `!` re-spelled `~`, a group question's condition re-spelled to the array form, as the rulings carry; no answer changed (model SWEEP11).
 
 ## core/filters/negation — Negation
 slugs: not-is-complement
@@ -1712,22 +1819,33 @@ rulings:
 - 2026-11-17 "Absent under not: use regex rules." (record: "2026-11-17 OWNER RULINGS — regex-settles; absent-under-not")
 - 2026-11-17 "when-meaning: agree" (record: "2026-11-17 OWNER RULING — when-meaning")
 - 2026-11-18 "When: start with required then. Use NOT to get else behavior" (record: "2026-11-18 OWNER RULING — `then` is required; NOT gives the else-only behaviour")
+- 2026-11-25 "Drop not: I agree with our conclusions: peek(!A)" (record: "2026-11-25 OWNER RULING — drop-not: "I agree with our conclusions: peek(!A)""); `NOT` leaves the language; amended two days later by bang-split
+- 2026-11-27 "bang-split: yes. This is clean and what I was looking for." (record: "2026-11-27 OWNER RULING — bang-split: yes"); lines 1, 3 and 4
+- 2026-11-27 "and-not: agree drop &!" (record: "2026-11-27 OWNER RULING — and-not: no `&!`; "and not in" is written `A & ~B`")
 rejected:
 - lower-case `not` (the kinds example's `not /7\d*/`) — by the record — no-alpha-operators (the 2026-11-14 Q6 + Q9 entry: "a word is always a NAME"); the example now writes `!`.
 - `NOT` on a condition as three-valued (the where-clause NOT of condition-not) — by owner ruling — absent-under-not ("use regex rules"): two-valued, a negative lookahead (core/conditions/two-valued).
+- `peeknot(A)` (record: "2026-11-27 OWNER, two ALTERNATIVES for the `when` guard: "peeknot(A) := /(?!${A})/ is an ugly little function but in the case of when is hidden"; and "does this work for when := A seq B | C &! A"") — by owner ruling — drop-not ("No `peeknot`") and then bang-split's `!^A`.
+- `!` with two meanings by operand (drop-not's complement on a pattern) — by owner ruling — bang-split line 4: `!` on a set or pattern is an error naming `~`.
 readings:
 - "NOT is a negative lookahead" is the manager's wording when-meaning agreed to; that it covers a zero-width PATTERN (`peek(A)`) and not only a condition is the reading the ruled `when` body needs (`NOT peek(test)`) — SUPPORTED as a lowering (preddoc4 PART NE: `\d(?!x)`; sabotage s6 caught).
 - `NOT` as an exception to the no-alphabetic-operators rule: the record uses `NOT` in the owner's own ruled words ("Use NOT to get else behavior") — a reading that the rule's exception list holds it; spellings are placeholders (D193 addendum 4).
+- `!!X` is X — SUPPORTED (SPECLINES "Twice", answers equal to `(h: <5)`).
+- the error before a compound set names the parenthesised form (review r109 F5) — SUPPORTED as a refusal's text (ERRSWEEP11 reads the message).
+- whether `!A` on a consuming pattern may later mean `(?!A)` — not ruled; an owner question left.
 evidence: docs/dev/lanes/preddoc4_evidence/ PARTS NE, KI.
 history:
 - 2026-11-19 (lane preddoc4): a new piece: the one home of the negation spellings (review r59 NEGATION); the kinds example's undefined `not` replaced by `!`; the `when` body's `NOT peek(...)` stated legal here.
 - 2026-11-19 (lane preddoc6, review r60 DAMAGE-3): the ruled statement narrowed to what the rulings carry; before: "`!X` is the complement of a pattern or set; `NOT T` on a condition or a zero-width pattern is the negative lookahead `(?!T)`; no other spelling of negation exists." Its two readings (NOT on a zero-width pattern; no other spelling) are bullets marked "(a reading)"; the record writes `!` on a condition (condition-not: "`!` on a condition is LEGAL").
 - 2026-11-23 (lane predfold1123, the fold of 2026-11-22 late and 2026-11-23; record "2026-11-23 OWNER RULING — capture-negated: broadened: "any effect macro cannot be under negation""): `see:` gains core/filters/negation/effects.
+- 2026-11-27 (lane predfold1125, the fold of drop-not, array-argument, brace-counts, map-creator, string-literals, bang-split and and-not): restated by the rulings named in its rulings field. The statement until then, verbatim: "`!X` is the complement of a pattern or set; `NOT c` on a condition holds exactly when c fails, a negative lookahead at its point.".
+- 2026-11-27 (lane predfold1125, the fold of drop-not, array-argument, brace-counts, map-creator, string-literals, bang-split and and-not): the readings on `NOT T`, a zero-width pattern, and on `NOT` as the one alphabetic operator retired with `NOT` (drop-not); the piece now carries bang-split lines 1, 3 and 4.
 
 ## core/filters/negation/effects — An effect under negation
 slugs: capture-negated effect-in-guard
 rulings:
 - 2026-11-23 "capture-negated: broaden to any effect macro cannot be under negation." (record: "2026-11-23 OWNER RULING — capture-negated: broadened: "any effect macro cannot be under negation""); broader than the question; "cannot" read as candidate (a)'s refusal, generalised.
+- 2026-11-27 "bang-split: yes. This is clean and what I was looking for." (record: "2026-11-27 OWNER RULING — bang-split: yes"); its `!` and `~`
 rejected:
 - (b) legal with the request ignored and a warning — by owner ruling — "any effect macro cannot be under negation".
 readings:
@@ -1735,10 +1853,30 @@ readings:
 - (b) "under negation" is inside `NOT` or `!` at any depth — SUPPORTED as run (docs/dev/lanes/predfold1123_evidence/ predfold1123_model.py NEGATION: under `NOT` and under `!` refused; beside a negation legal).
 - (effect-in-guard, the manager's reading; not asked: "his words cover it as written") a request in `when`'s test reaches the guard's `NOT peek(test)`: a compile error — SUPPORTED as run (docs/dev/lanes/predfold1123_evidence/ predfold1123_model.py NEGATION: the `when` body read from library.md, laid out with the call's test, refused); the suggested spelling `when(..) & (when.d ?: capture("d"))` UNTESTED (the model has no `when` call).
 - (c of capture-negated, a group question) `some((h: capture("h")))` a compile error for now — the manager's proposal, NOT ruled; the model accepts it (no rule applied).
+- (b) under `!` or `~` at any depth (review r109 F7: capture-negated applies to `!`; `~` stands with it) — SUPPORTED as refusals (ERRSWEEP11: both lines).
 evidence: docs/dev/lanes/predfold1123_evidence/ predfold1123_model.py NEGATION.
 history:
 - 2026-11-23 (lane predfold1123, the fold of 2026-11-22 late and 2026-11-23; records "2026-11-23 OWNER RULING — capture-negated: broadened: "any effect macro cannot be under negation"", "2026-11-23 MANAGER — two notes after capture-negated (the guard edge taken literally; the array request's placeholder); no owner words"): a new piece (the ruling is general, so it sits under core/filters/negation; lib/structural/capture points here).
 - 2026-11-23 (lane predfix86, review r86 C7, A12; record "2026-11-23 MANAGER — review r86 (predfold1123): the dispositions; three errors of the manager's own brief named; no owner words"): statement until then: "An effect (a form whose meaning is more than which texts it accepts; today the capture request) cannot stand under a negation, `NOT` or `!`, at any depth: a compile error."; the definition (the manager's reading (a)) and "`NOT` or `!` ... at any depth" (reading (b)) moved to the marked bullets, the statement keeping what his words carry. core/operators/statements' "effects cannot drop it" narrowed to `@` statements (compile-time effects), and lib/builtin's "An effect: written after `@` only" to a compile-time effect (review r86 A12).
+- 2026-11-27 (lane predfold1125, the fold of drop-not, array-argument, brace-counts, map-creator, string-literals, bang-split and and-not): restated by the rulings named in its rulings field. The statement until then, verbatim: "An effect cannot stand under a negation: a compile error. What an effect is, and `NOT` or `!` at any depth: the manager's readings (a), (b) below.".
+- 2026-11-27 (lane predfold1125, the fold of drop-not, array-argument, brace-counts, map-creator, string-literals, bang-split and and-not): "Under `NOT`" and "Under `!`" became "Under `!`" and "Under `~`" (review r109 F7).
+
+## core/filters/family — The not, complement and lookahead family
+slugs: bang-split and-not
+rulings:
+- 2026-11-27 "bang-split: yes. This is clean and what I was looking for." (record: "2026-11-27 OWNER RULING — bang-split: yes"); the six lines
+- 2026-11-27 "and-not: agree drop &!" (record: "2026-11-27 OWNER RULING — and-not: no `&!`; "and not in" is written `A & ~B`"); it confirms line 3
+rejected:
+- `:!` and `?:!` as entry operators (his spelling proposal "for consistency it could be :!") — by owner ruling — bang-split line 3; the complement after `:` writes them (`(h: ~S)` present and outside, `(h ?: ~S)` absent or outside: "0 of 11 differ", the PROPOSAL entry's run 1).
+- `&!` as a difference token — by owner ruling — and-not ("agree drop &!"); `A & ~B` (the PROPOSAL entry's run 3).
+- `^ ^! ~ ~!` with `!` kept out of the language (record: "2026-11-27 OWNER, "agree" on the one-token reading; and a PROPOSAL: "we keep ! out of the language and use ^ ^! ~ ~! ... the alternative is ^^ and ^^!"") — by owner ruling — bang-split: `!` is the logical not, `~` the complement.
+- "the complement object leaves" (review r109's re-asked line 6) — by owner ruling — bang-split line 2 keeps it, spelled `~`.
+readings:
+- the DFA column: the categories told to him with bang-split; `!c` "as c", `^A` "yes, as `!^A`" and the group questions' "maybe, about 0.8" (array-argument's told category) — UNTESTED (estimates, not runs).
+- `~~B` is B and `~B & ~C` is `~(B | C)` as filters — SUPPORTED (READINGS11 r-tilde-algebra; the PROPOSAL entry's run 3 re-run).
+evidence: docs/dev/lanes/predfold1125_evidence/ predfold1125_model.py READINGS11, CENSUS11.
+history:
+- 2026-11-27 (lane predfold1125, the fold of drop-not, array-argument, brace-counts, map-creator, string-literals, bang-split and and-not): a new piece: review r109's F13 table (the family with a DFA column), folded with bang-split.
 
 ## core/values/reads — Reading a label
 slugs: value-filter pass-list-read
@@ -1863,6 +2001,7 @@ history:
 - 2026-11-21 (lane predarr): a bullet added, a joint entry inside a group question is refused for now (joint-in-some). Status date 2026-11-16 to 2026-11-21.
 - 2026-11-22 (lane predfix77, review r77 A9; record "2026-11-22 MANAGER — review r77 (predfold1121): dispositions ruled (no owner words)"): "one mechanism" qualified "outside a group question (open record-in-some)".
 - 2026-11-22 (lane predref, label-reference sweep and helper-captures fold): the line's program `time & ((h, m): >= (9, 30))` re-spelled `time & ((time.h, time.m): >= (9, 30))`; answers unchanged (docs/dev/lanes/predref_evidence/ predref_model.py RESPELL, the tuple comparison lowered as the dictionary order). Status date 2026-11-21 to 2026-11-22.
+- 2026-11-27 (lane predfold1125, the fold of drop-not, array-argument, brace-counts, map-creator, string-literals, bang-split and and-not): printed `NOT` re-spelled `!`, a complement's `!` re-spelled `~`, a group question's condition re-spelled to the array form, as the rulings carry; no answer changed (model SWEEP11).
 
 ## core/values/computed-labels — A computed value in an entry
 slugs:
@@ -1889,6 +2028,7 @@ history:
 slugs:
 rulings:
 - 2026-11-14 "I agree with your leans excepting explain 6, and show 9 examples" (record: "2026-11-14 RULINGS on docs/dev/lanes/predx_report.md §11")
+- 2026-11-25 "Yes to all seven" (record: "2026-11-25 OWNER RULING — map-creator: "Yes to all seven""); line 7 rules `.index`
 rejected:
 - `/a|b|c/[1]` = `/b/` and an ordinal from 0 — by owner ruling — the leans agreed (Q7, 1-based).
 readings:
@@ -1900,6 +2040,7 @@ history:
 - 2026-11-19 (lane preddoc4): a new piece: `.index` and `.label` were used with no definition (review r59 PRIMITIVES-MISSING, READ-5).
 - 2026-11-22 (lane predref, label-reference sweep and helper-captures fold): the line's program `/${days}/ & (w.index: >= 2)` re-spelled `/${days}/ & (days.w.index: >= 2)` (label-reference; predbound META had run it); the bullet "Read like labels" says where the bare form stands. Answers unchanged (docs/dev/lanes/predref_evidence/ predref_model.py RESPELL). Status date 2026-11-19 to 2026-11-22.
 - 2026-11-22 (lane predfix82, review r82 GENERAL-8; record "2026-11-22 MANAGER — review r82 (predfold1122): dispositions ruled; two corrections of record entries (no owner words)"): `needs:` core/values/computed-labels retargeted to core/conditions/form/value-left.
+- 2026-11-27 (lane predfold1125, the fold of drop-not, array-argument, brace-counts, map-creator, string-literals, bang-split and and-not): restated by the rulings named in its rulings field (status and date only).
 
 ## core/values/arithmetic — Arithmetic
 slugs: plus-operands number-edges
@@ -2364,6 +2505,7 @@ history:
 - 2026-11-22 (lane predfix77, review r77 D3, D7 (RULING-8), D11; record "2026-11-22 MANAGER — review r77 (predfold1121): dispositions ruled (no owner words)"): the binding bullet's "a binding is its expression where it is used" scoped to flags and matching (its label reads are its own: bare-nested-scope case 2); the warning bullet marks readings (a) and (d) and is the one owner of the trigger (the warnings row cites it; the row's own trigger text until then, verbatim: "an `&` or a complement in a hole that inherits a flag, where the result differs from the expression alone with the flag on its result; not where the expression reads a label (`$x`) or the comparison cannot be made"); status date 2026-11-19 to 2026-11-21. The 2026-11-19 history line "A warning for the case is asked of him (flags-warning), not in the language" is superseded by the flags-warning ruling (folded).
 - 2026-11-22 (lane predspot, hole-flags folded; record "2026-11-22 OWNER RULING — hole-flags: yes to all (weak values do not propagate; only an explicit `i` is inherited at a hole; `m` and `s` are no longer inherited)"): ruled 2026-11-21 re-dated 2026-11-22. Statement until then: "The two sides of an `&` written inside a hole each start with the flags in force at the hole, a flag a side writes for itself winning."; the bullet until then: "The inherited flags are the hole's own list (`i`, `m`, `s`: core/holes/flags)."; the trigger's sentence until then: "The trigger is stated for `i`; `m` and `s` follow the same comparison (a reading)." Both lines stand (an explicit `(?i)`, docs/dev/lanes/predspot_evidence/ predspot_model.py FSWEEP).
 - 2026-11-23 (lane predfix84, review r84 A2, A8, C1, C6; record "2026-11-23 MANAGER — review r84 (predspot1122): the dispositions, ruled with the 2026-11-23 rulings in hand; no owner words"): the binding bullet until then: "A binding of an `&` put in a hole behaves the same: for flags and matching a binding is its expression where it is used (its label reads are its own: core/holes/bare-condition/nested-scope), so `C := /[a-z]+/ & /b.*/` at `/(?i)id-${C}/` is the `&` written in the hole (a reading)." Now for matching where used, for flags where WRITTEN plus an explicit `i` from the hole (A2), with two lines ("Bound in a library", "Written in the hole"); the trigger bullet gains the `-i` clause (A8, a reading), and core/diagnostics/warnings' row "an explicit `i`" to "an explicit `i` or `-i`"; "of hole-flags" cited as hole-flags' "yes to all" (C6); "`m` and `s` no longer reach a side" to "do not reach a side"; three readings marked (C1, A2).
+- 2026-11-27 (lane predfold1125, the fold of drop-not, array-argument, brace-counts, map-creator, string-literals, bang-split and and-not): printed `NOT` re-spelled `!`, a complement's `!` re-spelled `~`, a group question's condition re-spelled to the array form, as the rulings carry; no answer changed (model SWEEP11).
 
 ## core/holes/labels — Labels through a hole
 slugs: inner-label-read
@@ -2461,6 +2603,7 @@ history:
 - 2026-11-19 (lane predfix61, review r61 F-C, F-D, F-E, F-G, F-J (RULING-4)): the statement until then: "A bare condition in a hole sees the labels of the whole surrounding rx and reads each as it stands where the hole is; a label no group of that rx carries is a compile error." ("the whole surrounding rx" reached private labels the export rule hides.) Its bullets until then, verbatim: "Written last in the rx, the bare condition equals the condition after the literal: `/(?<c>\d)${(c: >= 5)}/` is `/(?<c>\d)/ & (c: >= 5)`." (true at top level only: inside an optional it parts, 1 / 58 / 90 of 121, predfix61 FG); "Outside a loop, a hole before its label's group reads it unset: the test can never pass (the warning `pcrec.test.never`, not the error; a reading)." (true only for a test that fails on unset; the partition "outside a loop" judged on the written literal). The loop bullet gains the first-pass condition (a positive first-pass test: 0 matches of 1,093 texts, predfix61 FD).
 - 2026-11-21 (lane predscope): the pointer to nested-scope restated (a definition used inside another, not "the literal holding the hole"); the Composed line's sentence notes that B writes a c of its own (legal by name) and that A's value is the composed reading: closed to its user, `A SEQ B` never matches (predscope_model.py CLOSEDB; sabotage s8 caught; that check needs the removed "Composed:" line and can never pass again, review r77 D9: re-pointed to predfix77 SEALED). Answers unchanged.
 - 2026-11-22 (lane predfix77, review r77 D1, D2 (FIXIND-14), A4, D12 (RULING-11); record "2026-11-22 MANAGER — review r77 (predfold1121): dispositions ruled (no owner words)"): statement until then, verbatim: "A bare condition in a hole sees every label visible in the surrounding rx and reads each as it stands where the hole is; a label not visible there is a compile error."; status date 2026-11-19 to 2026-11-21. The bullet "The surrounding rx is the DEFINITION the hole is written in" became "the one the CONDITION is written in (an argument is its caller's: a reading)"; "the rx as composed" became "the definition"; "(nested-scope; the last line below)" pointed at the wrong line: now "the line Two definitions below". Two stale readings moved to `rejected:`. No answer moved.
+- 2026-11-27 (lane predfold1125, the fold of drop-not, array-argument, brace-counts, map-creator, string-literals, bang-split and and-not): printed `NOT` re-spelled `!`, a complement's `!` re-spelled `~`, a group question's condition re-spelled to the array form, as the rulings carry; no answer changed (model SWEEP11).
 
 ## core/holes/bare-condition/nested-scope — What a hole in a used definition may name
 slugs: bare-nested-scope
@@ -2515,6 +2658,7 @@ history:
 - 2026-11-23 (lane predfold1123, the fold of 2026-11-22 late and 2026-11-23; records "2026-11-22 OWNER RULING — zero-condition-binding: an error, to be reconsidered later (`c := (0: 5)` bound alone)", "2026-11-23 OWNER RULING — binding-fixed: yes (what a binding's conditions read never depends on where it is used)"): "two uses of one piece are two pieces (to be confirmed)" now points at core/principles/binding-fixed (ruled 2026-11-23).
 - 2026-11-23 (lane predfold1123b, the fold of the 2026-11-23 rulings after zero-open): ANSWER CHANGED by binding-as-label: his example 1. Until then: "under argument-default (\"for me this is an error\"): a compile error (core/labels/paths/argument-default; the line \"Example 1, the spot labelled\")." and the line "Example 1: modes: a compile error (`C := B(A) & (A.d: <100)`, A := `[d = rx.digits]`, B(rx) := `/${rx}xx/`: argument-default)." Now LEGAL (WHOLE `42xx` HOLDS, `100xx` FAILS, `042xx` FAILS), as his own words had it: "is legal. C can see d as a flat look into A."
 - 2026-11-25 (lane predfix90, review r90 B2; record "2026-11-25 MANAGER — review r90 (predfold1124): the dispositions; no owner words"): the binding-as-label `rulings:` item marked revised in part by shorthand-is-callers; the shorthand-is-callers `rulings:` item added after it; the text until then, verbatim: "- 2026-11-23 \"binding-as-label: yes\" (record: \"2026-11-23 OWNER RULING — binding-as-label: yes (a path is canonically a chain of labels; a binding's name is a shorthand for a skipped label, under four conditions)\"); RULED on the statement as put: ...".
+- 2026-11-27 (lane predfold1125, the fold of drop-not, array-argument, brace-counts, map-creator, string-literals, bang-split and and-not): printed `NOT` re-spelled `!`, a complement's `!` re-spelled `~`, a group question's condition re-spelled to the array form, as the rulings carry; no answer changed (model SWEEP11).
 
 ## core/holes/bare-condition/bound-condition — A condition bound to a name of its own
 slugs: bound-condition
@@ -2544,6 +2688,7 @@ history:
 - 2026-11-22 (lane predbound, bound-condition RULED (b)): open to ruled; the piece until then, verbatim: statement "Does a condition bound or passed on its own, no pattern in it, read its labels and its `0` where it is used, (a), or is it sealed like a piece, (b)?"; its candidate lines (a)/(b) on `c := (0: rx.digit)` and his two examples moved to core/holes/bare-condition/zero-binding (the `0` case he left open); the line "A macro returning a condition, (a)" moved to `rejected:`; the five printed definitions rewritten in place in their own pieces; the lines "Written in place", "A set bound alone", "A binding that holds its label" added.
 - 2026-11-22 (lane predfix82, review r82 DES-1; record "2026-11-22 MANAGER — review r82 (predfold1122): dispositions ruled; two corrections of record entries (no owner words)"): the general form (the manager's reading): every label a binding's body names has its target in it; the line "A set that reads a label, bound alone" (predfix82 BOUNDSET).
 - 2026-11-23 (lane predfold1123, the fold of 2026-11-22 late and 2026-11-23; records "2026-11-22 OWNER RULING — zero-condition-binding: an error, to be reconsidered later (`c := (0: 5)` bound alone)", "2026-11-23 OWNER RULING — binding-fixed: yes (what a binding's conditions read never depends on where it is used)"): the sentence "one naming only `0` is open" now "is a compile error for now" (zero-condition-binding).
+- 2026-11-27 (lane predfold1125, the fold of drop-not, array-argument, brace-counts, map-creator, string-literals, bang-split and and-not): printed `NOT` re-spelled `!`, a complement's `!` re-spelled `~`, a group question's condition re-spelled to the array form, as the rulings carry; no answer changed (model SWEEP11).
 
 ## core/holes/bare-condition/zero-binding — A condition on `0` bound to a name of its own
 slugs: zero-condition-binding
@@ -2566,6 +2711,7 @@ history:
 - 2026-11-23 (lane predfold1123, the fold of 2026-11-22 late and 2026-11-23; record "2026-11-22 OWNER RULING — zero-condition-binding: an error, to be reconsidered later (`c := (0: 5)` bound alone)"): open zero-condition-binding 2026-11-22 to ruled 2026-11-22 (the ruling's date). Statement until then: "A condition naming only `0`, bound alone (`c := (0: 5)`): is it read where it is used (a), a compile error at its binding like a condition naming a label (b), or sealed and legal, its own `0` (c)?"; the bullet "His words: \"i leave the c := (0: 5) open\". Neither answer is applied; the manager's list had put it with the refused forms (\"likewise\")." replaced; the lines (a) and (c) to `rejected:`; the lines "Bound alone" and "Written in place" added; `by:` conservative-first.
 - 2026-11-23 (lane predfix86, review r86 C7, B5; record "2026-11-23 MANAGER — review r86 (predfold1123): the dispositions; three errors of the manager's own brief named; no owner words"): "at its binding" (the manager's reading (a)) and "written in place, or passed as an argument, it is legal" (reading (b)) marked in the statement.
 - 2026-11-23 (lane predfix86, review r86 B5; record "2026-11-23 MANAGER — review r86 (predfold1123): the dispositions; three errors of the manager's own brief named; no owner words"): the line "Bound alone" names the two spellings predfold1123's engine let through (`NOT (0: 5)` legal, `((0: 5))` a crash): both refused alike, a reading.
+- 2026-11-27 (lane predfold1125, the fold of drop-not, array-argument, brace-counts, map-creator, string-literals, bang-split and and-not): printed `NOT` re-spelled `!`, a complement's `!` re-spelled `~`, a group question's condition re-spelled to the array form, as the rulings carry; no answer changed (model SWEEP11).
 
 ## core/holes/in-filter — A hole inside a filter operand
 slugs: hole-in-filter
@@ -2615,12 +2761,14 @@ readings:
 - levels 1, 3, 4, 5, 9, the statement end and the call/index rule (the draft's readings, rev 25.1, review r43 F) — UNTESTED (they decide parses; spellings review item 19).
 - the parse rule for `+`/`*` binary or postfix (the manager's, "MINE" in the quantifier-operators entry) — UNTESTED.
 - (the manager's syntax reading on his "the precedence needs clarifying hence []") the label set binds looser than `&`, tighter than `|`: `[a = A | b = B]` two labelled entries — SUPPORTED as modelled (docs/dev/lanes/predfold1123_evidence/ predfold1123_model.py ARGSHAPES: `[ab = B | A]` and `[ab = (B | A)]` give different answers, the line printed). NOT ruled; an owner question.
+- the prefix forms on ONE atom (`!^A SEQ C` is `(!^A) SEQ C`) — SUPPORTED (READINGS11 r-prefix).
 evidence: preddoc3b EXprec.
 history:
 - 2026-11-14: OWN-1 replaced the right-associative lean. 2026-11-17: sequence-precedence, quantifier operators; the draft §5.4 THE ONE OPERATOR TABLE (rev 25.1) replaced the fragmentary statements (§2.2, R.1.14, §5.1, the entry extent).
 - 2026-11-19 (lane preddoc3b): converted from `?`; a `reading` piece because the table as a whole is the draft's, its ruled rows pointing at their pieces.
 - 2026-11-23 (lane predfold1123, the fold of 2026-11-22 late and 2026-11-23; records "2026-11-22 OWNER, on the spelling `[a = A]`: his interpretation: `[ ]` is an array of one rx, acting as `( )`; `a = A` is the label set, usable in an expression; `[a = A | b = B]`", "2026-11-22 OWNER, on arrays: `a | b | c` is an array and an rx; `A[]` is array access; the comma form in brackets stays for now, seen as a macro that makes an array"): statement until then: "Tightest first: field, call and index; postfix quantifiers; prefix `!`, `NOT` and comparisons; `* %`; `+ -`; the sequence operator; `&`; `|`; then the entry marks and `:=`."; a table row 8, the label set, between `&` and `|` (rows 8, 9 renumbered 9, 10); the entry bullet until then began "Inside an entry (`[ ... ]`, a call, a condition) `&` and `|` bind tighter than `=` and `:`"; the line "The label set beside `|`" added.
 - 2026-11-23 (lane predfix86, review r86 D2; record "2026-11-23 MANAGER — review r86 (predfold1123): the dispositions; three errors of the manager's own brief named; no owner words"): row 10 gains `?:` (one token at `:`'s level), and a row for the label mark in a head or an argument (`l = x:` is `l = (x:)`, not `(l = x):` as row 10 alone would read it); both readings.
+- 2026-11-27 (lane predfold1125, the fold of drop-not, array-argument, brace-counts, map-creator, string-literals, bang-split and and-not): restated by the rulings named in its rulings field. The statement until then, verbatim: "Tightest first: field, call and index; postfix quantifiers; prefix `!`, `NOT` and comparisons; `* %`; `+ -`; the sequence operator; `&`; the label set; `|`; the entry marks; `:=`.".
 
 ## core/operators/bindings — Bindings and macros
 slugs:
@@ -2658,6 +2806,7 @@ history:
 - 2026-11-23 (lane predfix84, review r84 D7; record "2026-11-23 MANAGER — review r84 (predspot1122): the dispositions, ruled with the 2026-11-23 rulings in hand; no owner words"): the condition-argument reading's premise "`when`'s body names no label" restated: the body writes export lists, which pass labels outward and give a condition written in the caller nothing to resolve against inside the body.
 - 2026-11-23 (lane predfold1123, the fold of 2026-11-22 late and 2026-11-23; record "2026-11-23 OWNER, on approach 1 (a macro takes a label): "lets tentatively work with it"; label-parameter-twice "seems" answered by the same-label-twice rules"): "a `:` in a head is a compile error (a reading)" now "marks a label parameter ..., any other `:` there is a compile error".
 - 2026-11-23 (lane predfold1123b, the fold of the 2026-11-23 rulings after zero-open): call-forms line 2 restates the first bullet. Until then: "positional arguments are the required parameters in declared order (`between(1, 12)`); keyword arguments are optional settings with defaults (`join(a, sep = \".\")`); any parameter may be passed by name (`between(low = 1, high = 12)`)." and "as `name = default`, the defaults of optional settings (the `=` form a reading)".
+- 2026-11-27 (lane predfold1125, the fold of drop-not, array-argument, brace-counts, map-creator, string-literals, bang-split and and-not): printed `NOT` re-spelled `!`, a complement's `!` re-spelled `~`, a group question's condition re-spelled to the array form, as the rulings carry; no answer changed (model SWEEP11).
 
 ## core/operators/bindings/label-variables — Macro variables: a parameter that is a label
 slugs: label-parameter-twice
@@ -2676,6 +2825,7 @@ history:
 - 2026-11-22 (lane predbound, bound-condition ruled): a new under-construction piece; the older idea stays parked (parked/ideas/label-parameter), pointing here.
 - 2026-11-23 (lane predfold1123, the fold of 2026-11-22 late and 2026-11-23; records "2026-11-23 OWNER, on approach 1 (a macro takes a label): "lets tentatively work with it"; label-parameter-twice "seems" answered by the same-label-twice rules", "2026-11-23 OWNER, two other approaches to a label named by a macro's caller: (1) label binding in macros; (2) conditions allow expressions for the reference"): statement until then: "His first alternative to a condition bound alone: a macro parameter marked as a label, `A(x:) := (x: < 2100)` (his spelling, \"spellings tbd\"); the direction is acknowledged, nothing is defined."; status date 2026-11-22 to 2026-11-23, still under construction (his "tentatively"); the ruled parts split into the sibling pieces label-omitted, label-default, label-kinds, label-in-argument, label-forward; `A(x:) := (x: < 2100)` (a body reading a label it never places) is the reference kind (label-kinds). The lines "Placed once" .. are this lane's runs.
 - 2026-11-23 (lane predfix86, review r86 C9; record "2026-11-23 MANAGER — review r86 (predfold1123): the dispositions; three errors of the manager's own brief named; no owner words"): the PROPOSAL item's quotation had `\d` for his `\d+`; re-quoted word for word.
+- 2026-11-27 (lane predfold1125, the fold of drop-not, array-argument, brace-counts, map-creator, string-literals, bang-split and and-not): printed `NOT` re-spelled `!`, a complement's `!` re-spelled `~`, a group question's condition re-spelled to the array form, as the rulings carry; no answer changed (model SWEEP11).
 
 ## core/operators/bindings/label-omitted — The unspecified label
 slugs: label-parameter-omitted
@@ -2843,17 +2993,39 @@ history:
 slugs:
 rulings:
 - 2026-11-15 "3. this leans into the idea of an interface to a type over the type. Array and map are interfaces that can be applied to regex but interfaces aren't themselves values that can be created. So what import is is less important than that its interface is a map. 4. agree." (record: "2026-11-14 RULINGS on rev 3's contradictions"); under its bold line "2026-11-15 RULINGS — answers to the four questions of review r8"
+- 2026-11-25 "Yes to all seven" (record: "2026-11-25 OWNER RULING — map-creator: "Yes to all seven""); lines 1, 2, 5 and 6; it AMENDS "A map interface is not a created value"
+- 2026-11-25 "m["a"|1]: I would not deduplicate. This is two results" (record: "2026-11-25 OWNER, on map-creator: "m["a"|1]: I would not deduplicate. This is two results ... it's a search which might be empty"; and a QUESTION with an example: "how do I get an index from a label in a map? .index? And is that the index of the alternation?"")
 rejected:
 - a module as a third value kind, a namespace (the manager's 2026-11-14 lean (1)) — by owner ruling — the follow-up (MODULE = MAP) and "what import is is less important than that its interface is a map".
 - DECLARED TYPES (`type(...)`, `isodate: date`), TYPE MEMBERS declared with a type, SCOPE-LIMITED UFCS (`d.weekday` resolving to a scoped macro), `types()` (and the record's `kind()`) in the first spec — by owner ruling — the §9 cut (predx Q8, the draft §9 STATUS "RULED (CF:583, predx Q8)"); declared types may return as library packaging after a build.
 readings:
 - members travel WITH THE TYPE (record "2026-11-14 — namespaces for type members", a LEAN) — UNTESTED; not contradicted by the 2026-11-19 rulings (they bind names into the bare space; dot lookup into a type is untouched).
 - a module is never passed, stored, returned or used whole as a pattern (the draft §7's phase-1 lean) — UNTESTED.
+- (a) the literal's spelling a placeholder, `[a = A | b = B]` legal and unenforced — UNTESTED.
+- as a pattern the alternation in written order, no deduplication — SUPPORTED (MAP11; SPECLINES).
 evidence:
 history:
 - 2026-11-14: import/export as functions, its follow-up (module = map); 2026-11-15: the interface ruled; the draft §7 MODULES.
 - 2026-11-19 (lane preddoc4): the base bullet "Members of a TYPE travel with the type" removed (a lean inside a ruled piece, and "type" against the one-type ruling; types, interfaces and members were cut from the first spec, Q8 of the 2026-11-14 predx entry); it stays a reading above (review r59 READ-12).
 - 2026-11-22 (lane predfix83, review r83 D9; record "2026-11-22 MANAGER — review r83 (preddef1122): dispositions ruled; one correction; idiom-confirm closed on default-export (no owner words)"): the bullet until then: "Only what `.` reaches is reachable from outside: the public names, decided by the `_` rule (core/labels/export);" ("public" read as "reachable from outside", the old sense). Now: the names the thing exports, by the `_` rule and default-export.
+- 2026-11-27 (lane predfold1125, the fold of drop-not, array-argument, brace-counts, map-creator, string-literals, bang-split and and-not): restated by the rulings named in its rulings field. The statement until then, verbatim: "A module is described by its map interface: its members are its fields, reached by the one `.`; what kind of thing a module is is not ruled.".
+- 2026-11-27 (lane predfold1125, the fold of drop-not, array-argument, brace-counts, map-creator, string-literals, bang-split and and-not): the bullet "A map interface is not a created value: no map value is passed around." removed (amended by map-creator); the open map questions (a key read at match time, brackets on a module, labels under a join, the two `.index` edges) listed in the body.
+
+## core/modules/map/access — Members and selection
+slugs: map-creator key-order
+rulings:
+- 2026-11-25 "Yes to all seven" (record: "2026-11-25 OWNER RULING — map-creator: "Yes to all seven""); lines 3 to 5
+- 2026-11-25 "Specifically F["z"] is a search and F.z must exist or error" (record: "2026-11-25 OWNER, on map-creator: "Specifically F["z"] is a search and F.z must exist or error"")
+- 2026-11-25 "I'd see it as the keys order. Why otherwise and how would you order results in a particular way?" (record: "2026-11-25 OWNER, on key-order: "I'd see it as the keys order. Why otherwise and how would you order results in a particular way?"")
+rejected:
+readings:
+- (b) the accessor on any pattern with labels; (c) a bare name in the brackets a binding's value; (d) a one-name result not renumbered; (f) `m[0]` the whole rx; (g) a name on an unlabelled array finds nothing — UNTESTED (the front end selects on map literals only).
+- (e) an empty result is the never-matching pattern — SUPPORTED (SPECLINES "Nothing found"; MAP11); its warning — UNTESTED.
+- (i) the same result twice matches as once — SUPPORTED (MAP11: `m["a" | "a"]` against `m.a`).
+- the key's order — SUPPORTED (MAP11: `m["b" | 1]`'s `.index` on a text both match, against the written order).
+evidence: docs/dev/lanes/predfold1125_evidence/ predfold1125_model.py MAP11, SPECLINES.
+history:
+- 2026-11-27 (lane predfold1125, the fold of drop-not, array-argument, brace-counts, map-creator, string-literals, bang-split and and-not): a new piece, lines 3, 4 and 7 of map-creator.
 
 ## core/modules/binding-list — The named binding list
 slugs: import-symbols
@@ -3063,6 +3235,7 @@ history:
 - 2026-11-22 (lane predspot, argument-default folded; record "2026-11-22 OWNER RULING — argument-default: an error; and his reason: a label is to the SPOT in the pattern, a parameter is a template, not a piece of the pattern"): a row added: the caller's read of an argument's label where the body uses the argument alone; a part label written on an argument.
 - 2026-11-23 (lane predfold1123, the fold of 2026-11-22 late and 2026-11-23; records "2026-11-23 OWNER RULING — argument-label: yes (a label the caller writes inside an argument is the caller's own); and: these mechanisms ease his concern about the default hiding", "2026-11-22 OWNER RULING — zero-condition-binding: an error, to be reconsidered later (`c := (0: 5)` bound alone)", "2026-11-23 OWNER RULING — capture-negated: broadened: "any effect macro cannot be under negation"", "2026-11-23 OWNER RULING — label-kinds: yes, one mark, one meaning; the reference kind is for natives, off limits for users for now"): the argument-default row until then: "a read of an argument's label by the caller where the body uses the argument alone (`A.d`, a group written in place); a part label written on an argument at a call (`B([a = A])`, then `a.d`)" (both withdrawn by argument-label); the bound-condition row gains zero-condition-binding; a row for `0`'s settings, the request on an open `0` and an effect under negation; the PARTIAL list's "a `:` in a definition head" narrowed by the label parameter, with label-kinds' two errors.
 - 2026-11-25 (lane predfix90, review r90 A9; record "2026-11-25 MANAGER — review r90 (predfold1124): the dispositions; no owner words"): the row naming four legal programs as compile errors replaced by rule 2's and rule 6's errors and conditions 1 and 4.
+- 2026-11-27 (lane predfold1125, the fold of drop-not, array-argument, brace-counts, map-creator, string-literals, bang-split and and-not): printed `NOT` re-spelled `!`, a complement's `!` re-spelled `~`, a group question's condition re-spelled to the array form, as the rulings carry; no answer changed (model SWEEP11).
 
 ## core/diagnostics/under-construction — The under-construction error
 slugs: under-construction-class
@@ -3155,6 +3328,7 @@ readings:
 evidence: the draft R.1.10 (4); preddoc2 PART WT (the consumed form itself).
 history:
 - 2026-11-19 (lane preddoc2): split from the old core/conditional/test when `when`, its test and `peek` moved to the library: the warning is the one part of when-peek a body does not produce, so it stays a core diagnostic, beside core/diagnostics/nullable-hit (a warning on a library name's argument, kept in the core the same way).
+- 2026-11-27 (lane predfold1125, the fold of drop-not, array-argument, brace-counts, map-creator, string-literals, bang-split and and-not): restated by the rulings named in its rulings field. The statement until then, verbatim: "A bare pattern given as the test of the conditional `when` draws a warning that it consumes; a condition or a `peek(A)` as the test draws none.".
 
 ## core/diagnostics/looped-compare — Labels that can repeat draw no warning
 slugs: looped-compare looped-warning
@@ -3208,6 +3382,7 @@ history:
 - 2026-11-23 (lane predfold1123, the fold of 2026-11-22 late and 2026-11-23; records "2026-11-22 OWNER, on the spelling `[a = A]`: his interpretation: `[ ]` is an array of one rx, acting as `( )`; `a = A` is the label set, usable in an expression; `[a = A | b = B]`", "2026-11-22 OWNER, on arrays: `a | b | c` is an array and an rx; `A[]` is array access; the comma form in brackets stays for now, seen as a macro that makes an array", "2026-11-23 OWNER, on approach 1 (a macro takes a label): "lets tentatively work with it"; label-parameter-twice "seems" answered by the same-label-twice rules", "2026-11-23 OWNER RULING — array-capture: yes (`capture(x)` the label, `capture(@x)` the array, unbuilt); capture-as-pcre dropped; capture-loop-value closed as the label", "2026-11-23 OWNER, on optional-place: "Before the colon"; and a proposal: an alternative operator to the colon, `:` and `?:`"): four rows: the label set and its precedence, `[a, b, c]`, `A[k]`; the label parameter forms; the capture request and its array form; the optional entry operator.
 - 2026-11-23 (lane predfix86, review r86 D1; record "2026-11-23 MANAGER — review r86 (predfold1123): the dispositions; three errors of the manager's own brief named; no owner words"): the row "| the CAPTURE forms: a wrapper (his `[ d = capture(digits) ]`), after the fact (his `[ d = digits ] & capture(d)`); `capture(name, x)` | lib/structural/capture, lib/structural/capture/add-on |" removed (the forms are retired: optional-label replaced them by the request); the request's array placeholder `capture(@x)` until then (add-on: under the request's shape the array's spelling is not stated); "the label mark `[x = R]`" dropped from the LABEL PATH row (it was listed twice; it is the LABEL SET row).
 - 2026-11-23 (lane predfix88, review r88 A13; record "2026-11-23 MANAGER — review r88 (predfold1123b): the dispositions; no owner words"): the padded row: `padded_to` (the name, the manager's) and its width.
+- 2026-11-27 (lane predfold1125, the fold of drop-not, array-argument, brace-counts, map-creator, string-literals, bang-split and and-not): printed `NOT` re-spelled `!`, a complement's `!` re-spelled `~`, a group question's condition re-spelled to the array form, as the rulings carry; no answer changed (model SWEEP11).
 
 ## core/spellings/condition-parentheses — A condition keeps its parentheses
 slugs:

@@ -318,6 +318,7 @@ history:
     (a span-level count); (3) **condition-not** re-asked (NOT on a condition, recorded as told-not-ruled in COND-FAMILY).
 - 2026-11-19 (lane preddoc3c): its trigger and source written into the base piece; the item's text copied here.
 - 2026-11-19 (lane preddoc5, review r59 COMPA-1): no record entry is its source: it came from review r31 (A6), parked by the manager; nothing for rulings:.
+- 2026-11-27 (lane predfold1125, the fold of drop-not, array-argument, brace-counts, map-creator, string-literals, bang-split and and-not): printed `NOT` re-spelled `!`, a complement's `!` re-spelled `~`, a group question's condition re-spelled to the array form, as the rulings carry; no answer changed (model SWEEP11).
 
 ## parked/ideas/match-then-judge — Another reading of a searched condition
 slugs: 
@@ -409,6 +410,7 @@ history:
     lookahead's labels, a `records` item with NOT); the per-place prose drifts again.
 - 2026-11-19 (lane preddoc3c): a new parked piece (the ideas-file item had none); its trigger and source in the base piece.
 - 2026-11-19 (lane preddoc5, review r59 COMPA-1): no record entry is its source: it came from review r33 (MODECLOSURE-9), a PLAN item by the manager; nothing for rulings:.
+- 2026-11-27 (lane predfold1125, the fold of drop-not, array-argument, brace-counts, map-creator, string-literals, bang-split and and-not): printed `NOT` re-spelled `!`, a complement's `!` re-spelled `~`, a group question's condition re-spelled to the array form, as the rulings carry; no answer changed (model SWEEP11).
 
 ## parked/ideas/ordered-table — An ordered table
 slugs: 
@@ -459,6 +461,7 @@ history:
     equal the AND of its entries under NOT.
 - 2026-11-19 (lane preddoc3c): its trigger and source written into the base piece; the item's text copied here.
 - 2026-11-19 (lane preddoc5, review r59 COMPA-1): no record entry is its source: it came from review r34 (A4), a PLAN item by the manager; nothing for rulings:.
+- 2026-11-27 (lane predfold1125, the fold of drop-not, array-argument, brace-counts, map-creator, string-literals, bang-split and and-not): printed `NOT` re-spelled `!`, a complement's `!` re-spelled `~`, a group question's condition re-spelled to the array form, as the rulings carry; no answer changed (model SWEEP11).
 
 ## parked/ideas/atomic — Atomic: not backtracked into once matched, and its spelling
 slugs: 
@@ -1283,3 +1286,58 @@ readings:
 evidence: none (parked).
 history:
 - 2026-11-22 (lane predbound, R-3): a new parked piece.
+## parked/ideas/export-two-labels — An export list giving two labels one name
+slugs:
+rulings:
+- 2026-11-25 (class: IDEA) "you might be using a library and want to adapt it from the user perspective" (record: "2026-11-25 OWNER, on arrays: "Would it now be valuable to bring back every()"; and an IDEA: one group under several labels, conditions on different sets of groups, "you might be using a library and want to adapt it from the user perspective"")
+rejected:
+readings:
+- the trigger is the manager's, from array-argument's PARKED note — a reading.
+evidence: none (parked).
+history:
+- 2026-11-27 (lane predfold1125, the fold of drop-not, array-argument, brace-counts, map-creator, string-literals, bang-split and and-not): a new parked piece.
+
+## parked/ideas/select-by-position — A selection of an array's settings by position
+slugs:
+rulings:
+- 2026-11-25 (class: IDEA) "you might be using a library and want to adapt it from the user perspective" (record: "2026-11-25 OWNER, on arrays: "Would it now be valuable to bring back every()"; and an IDEA: one group under several labels, conditions on different sets of groups, "you might be using a library and want to adapt it from the user perspective"")
+rejected:
+readings:
+- the trigger is the manager's, from array-argument's PARKED note — a reading.
+evidence: none (parked).
+history:
+- 2026-11-27 (lane predfold1125, the fold of drop-not, array-argument, brace-counts, map-creator, string-literals, bang-split and and-not): a new parked piece.
+
+## parked/ideas/triple-quote — The triple-quote string
+slugs:
+rulings:
+- 2026-11-25 (class: QUESTION) "Value to """ delimiter for multi line strings?" (record: "2026-11-25 OWNER, on string-literals: "Value to """ delimiter for multi line strings? Thereby "..." strings are a single line?"")
+rejected:
+readings:
+- the minimal definition is the manager's, told to him (string-literals reading (h)) — a reading.
+evidence: none (parked).
+history:
+- 2026-11-27 (lane predfold1125, the fold of drop-not, array-argument, brace-counts, map-creator, string-literals, bang-split and and-not): a new parked piece.
+
+## parked/ideas/non-atomic-ahead — A non-atomic lookahead
+slugs:
+rulings:
+- 2026-11-27 (class: IDEA) "future note: ! with nonatomic lookaround?" (record: "2026-11-27 OWNER, on the fold's budget; QUESTION on `&!`; a future note on `!` and a non-atomic lookaround")
+rejected:
+readings:
+- only `^A` is concerned is the manager's, hand-reasoned, not run — a reading.
+evidence: none (parked).
+history:
+- 2026-11-27 (lane predfold1125, the fold of drop-not, array-argument, brace-counts, map-creator, string-literals, bang-split and and-not): a new parked piece.
+
+## parked/ideas/in-place-complement — A complement written in place means "cannot match here"
+slugs:
+rulings:
+- 2026-11-25 (class: RULING, its line 4 NOT taken) "Drop not: I agree with our conclusions: peek(!A)" (record: "2026-11-25 OWNER RULING — drop-not: "I agree with our conclusions: peek(!A)"")
+rejected:
+readings:
+- not asked; the trigger is the manager's — a reading.
+evidence: none (parked).
+history:
+- 2026-11-27 (lane predfold1125, the fold of drop-not, array-argument, brace-counts, map-creator, string-literals, bang-split and and-not): a new parked piece.
+

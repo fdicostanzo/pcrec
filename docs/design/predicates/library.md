@@ -271,7 +271,7 @@ module: ?
 defined: native (for now, by the owner's ruling; whether the body defines it is the open question)
 - Today (ruled): `any_case` is native for now; a more fundamental basis is a follow-up.
 - The standing reading: the body equals the native definition in every mode except for an argument writing its
-  own `(?-i)`, for a NEGATED filter operand in the argument (`any_case(/[abAB]{2}/ & !/ab/)`), and for an `&` whose
+  own `(?-i)`, for a NEGATED filter operand in the argument (`any_case(/[abAB]{2}/ & ~/ab/)`), and for an `&` whose
   sides differ only in case (`any_case(/[a-z]x/ & /[A-Z]x/)`: the sides take the flag first, core/holes/flags/in-filter,
   so the body matches 16 of 820 texts over `aAbBxXzZ7` to length 3, the native none; the lines below).
 - The candidate body carries the export list on its spot (lib/convention/argument-labels); the list moves no match.
@@ -293,7 +293,7 @@ defined: ?
 - Whether the limit is "at most n" or "exactly n" is not settled by his words.
 
 ### length   [lib/modifiers/length]   reading 2026-11-22
-`length(S)` reads the stretch's length: `length(S) := chars & (count((chars.ch: /(?s:.)/)): S)`, one setting of `ch` per character, their count tested by S.
+`length(S)` reads the stretch's length: `length(S) := chars & (count(@chars.ch, /(?s:.)/): S)`, one setting of `ch` per character, their count tested by S.
 needs: core/filters/and core/values/reads core/conditions/form/value-left
 see: lib/counting/count core/labels/paths/label-reference
 module: ?
@@ -307,7 +307,7 @@ defined: language
   exports `ch`, a part label its text writes (`chars.ch`). A part label makes no capture (pure-label). S is a set
   the count is tested against, not placed in the match: its labels do not pass on (lib/convention/argument-labels).
 - His `length($y)`, the length of a read's one string (an image), is the different function `strlen`.
-WHOLE `abc` HOLDS, `ab` FAILS / SEARCHED `abcd` `abc`@0 / FIND-ALL `abcdefg` [`abc`@0, `def`@3] (`length(==3)` as a program: `chars & (count((chars.ch: /(?s:.)/)): ==3)`)
+WHOLE `abc` HOLDS, `ab` FAILS / SEARCHED `abcd` `abc`@0 / FIND-ALL `abcdefg` [`abc`@0, `def`@3] (`length(==3)` as a program: `chars & (count(@chars.ch, /(?s:.)/): ==3)`)
 
 ### month_numbered   [lib/modifiers/month-numbered]   reading 2026-11-22
 `month_numbered(S)` reads a month name as its number: `month_numbered(S) := months & (months.mname.index: S)`, the 1-based index of the name matched.
@@ -329,42 +329,44 @@ WHOLE `Jun` HOLDS, `Jul` FAILS / SEARCHED `Dec Feb` `Feb`@4 / FIND-ALL `Mar Oct 
 
 The conditional, the transform that makes its test a peek, and the name of the atomic part. Each is a body over the core's lookahead, atomic group, pattern hole, sequence and alternation.
 
-### peek   [lib/control/peek]   ruled 2026-11-22
-`peek(A)` tests A where it stands without consuming it: the macro `/(?=${[(=) = A]})/`, a lookahead around a pattern hole that passes A's labels on.
-needs: core/patterns/lookaround core/holes/pattern core/holes/labels lib/convention/argument-labels
+### peek   [lib/control/peek]   open peek-name 2026-11-27
+Does the library keep `peek(A)` as a name for the lookahead `^A`, `peek(A) := ^[(=) = A]`, or is `^A` the one spelling?
+needs: core/patterns/lookaround/ahead core/holes/labels lib/convention/argument-labels
 module: ?
 default: yes
 defined: language
-- The body: `peek(A) := /(?=${[(=) = A]})/`. Nothing in it is particular to `peek`: it is a useful transform.
-- Labels A sets are readable after it, as after any lookahead, through the call: `peek.d` (wrapper-export, "agree
-  (a)"; lib/convention/argument-labels); a group written in A in place is the caller's own, read bare too
-  (core/labels/export/arguments).
-- A binding passed whole is read through the call, `peek.d`, or by its own name, the caller's shorthand label
-  (core/labels/paths/argument-default; the line "Through the argument's name").
-- `NOT peek(A)` is the negative peek, `(?!A)`: "A cannot match here" (core/filters/negation).
-- A condition given as A is zero width already: `peek(c)` tests c where it stands, as c does (a reading).
-- `default: yes`: in the default-imported set, so written bare, not `module.peek` (the owner's lean).
-WHOLE `37` HOLDS (peek.d = `3`), `3` FAILS / SEARCHED `x37` `37`@1 / FIND-ALL `37 4 56` [`37`@0, `56`@5] (`peek(/(?<d>\d)/) SEQ /\d\d/` is `(?=(?:(?<d>\d)))\d\d`)
+- No ruled text needs the name: the `when` body is written with `^` (bang-split line 5); its earlier body
+  `/(?=${[(=) = A]})/` is `^A` with the argument list's labels passed through the call (`peek.d`).
+- Candidates: (a) keep `peek` as the named form, as `rx.repeat` stays beside the braces (the manager's lean, by
+  that parallel); (b) drop it, `^A` alone. The default-imported set's lean "holding `peek`" goes with (a).
+- The negative is `!^A` either way. Under (a) `!peek(A)` is `!` on a lookaround, a test (bang-split line 1), so it
+  is `!^A` and no longer an error (the manager's reading; the line "Its not").
+Its not: WHOLE `a` HOLDS, `7` FAILS / SEARCHED `7a` `a`@1 / FIND-ALL `7a b` [`a`@1, `b`@3] (`!peek(/\d/) SEQ /\w/`)
+WHOLE `37` HOLDS (peek.d = `3`), `3` FAILS / SEARCHED `x37` `37`@1 / FIND-ALL `37 4 56` [`37`@0, `56`@5] (`peek(/(?<d>\d)/) SEQ /\d\d/` is `(?=(?:(?<d>\d)))\d\d`, as `^/(?<d>\d)/ SEQ /\d\d/`)
 Through the argument's name: WHOLE `3` HOLDS, `7` FAILS / SEARCHED `7 3` `3`@2 / FIND-ALL `3 7 4` [`3`@0, `4`@4] (`peek(A) SEQ /\d/ & (A.d: <5)`, A := `/(?<d>\d)/`)
 Read through the call: WHOLE `37` HOLDS, `73` FAILS / SEARCHED `x73 37` `37`@4 / FIND-ALL `37 73 56` [`37`@0] (`peek(/(?<d>\d)/) SEQ /\d\d/ & (peek.d: <5)`)
 
-### when   [lib/control/when]   ruled 2026-11-22
-The conditional is the guarded form, `when(test, then, else = //) := ([(=) = test] SEQ [(=) = then]) | (NOT peek(test) SEQ [(=) = else])`: else is never tried where the test holds.
-needs: lib/control/peek core/patterns/sequence core/conditions/in-sequence core/filters/negation lib/convention/argument-labels
-see: lib/control/when-test core/filters/negation/effects
+### when   [lib/control/when]   ruled 2026-11-27
+The conditional is the guarded form, `when(test, then, else = //) := ([(=) = test] SEQ [(=) = then]) | (!^test SEQ [(=) = else])`: else is never tried where the test holds.
+needs: core/patterns/lookaround/ahead core/patterns/sequence core/conditions/in-sequence core/filters/negation lib/convention/argument-labels
+see: lib/control/when-test core/filters/negation/effects core/principles/all-dfa
 module: ?
 defined: language
-- A capture request in the test reaches the guard's `NOT peek(test)`: a compile error (a reading;
+- His words: "bang-split: yes"; its line 5: "`when(T, B, C) := T seq B | !^T seq C`": the guard is `!^test` for
+  every kind of test, one body serving a condition and a pattern alike (lib/control/when-test).
+- The goal stated with it (core/principles/all-dfa): "I don't want "when" to force vm"; the guard is a negative
+  lookahead, a DFA form in the told category.
+- A capture request in the test reaches the guard's `!^test`: a compile error (a reading;
   core/filters/negation/effects).
 - `then` has no default, so by call-forms (one head; positional entries, then named) `when(x)` and
   `when(x, else = z)` are compile errors; `when(x, y)`, `when(x, y, z)`, `when(x, y, else = z)` and
   `when(x, then = y, else = z)` are legal, among the calls those rules allow.
 - The missing else is `//`, the empty pattern: where the test does not hold, `when` holds and matches nothing.
-- The else-only behaviour is NOT on the test: `when(NOT (h: <5), z)`, `when(NOT peek(x), z)`.
+- The else-only behaviour is not on the test: `when(!(h: <5), z)`, `when(!^x, z)`.
 - What the test may be, and what each kind consumes: lib/control/when-test.
 - Labels the test sets are visible after the call through it (`when.h`), set on the then branch and unset on the
   else branch, a failed test setting nothing (a reading); each spot carries the list (lib/convention/argument-labels),
-  the guard's `NOT peek(test)` none (a negation's labels are never visible). A read written in then of a label the
+  the guard's `!^test` none (a negation's labels are never visible). A read written in then of a label the
   caller writes in the test is legal: the label is the caller's own (core/labels/export/arguments; the line "A read
   in then", on a user macro of the same shape). `when(A, (A.h: ..))` reads A's `h` by the caller's shorthand label,
   whatever the body does with the spot (core/labels/paths/argument-default; the line "Through the argument's
@@ -372,35 +374,38 @@ defined: language
   A name test and then both hold is one label, the last mention (the manager's answer on wrapper-export; run on a user macro of
   the same shape: lib/convention/argument-labels' line "Two arguments").
 - `//` stands for the owner's `null`, "nothing required"; `when`, `then`, `else` are placeholder spellings.
-WHOLE `12` HOLDS, `1` FAILS / SEARCHED `x123` `x`@0 / FIND-ALL `12 x 123 1x 7` [`12`@0, `x`@3, `12`@5, `x`@10] (`when(peek(/\d/), /\d\d/, else = /\w/)` is `(?=\d)\d\d|(?!\d)\w`)
+WHOLE `12` HOLDS, `1` FAILS / SEARCHED `x123` `x`@0 / FIND-ALL `12 x 123 1x 7` [`12`@0, `x`@3, `12`@5, `x`@10] (`when(^/\d/, /\d\d/, else = /\w/)` is `(?=\d)\d\d|(?!\d)\w`)
 A read in then: WHOLE `3` HOLDS, `7` FAILS / SEARCHED `7 3` `3`@2 / FIND-ALL `3 7 4` [`3`@0, `4`@4] (`W(/(?<h>\d)/, (h: <5))`, W(a, b) := `[(=) = a] SEQ [(=) = b]`)
 Through the argument's name: WHOLE `3` HOLDS, `7` FAILS / SEARCHED `7 3` `3`@2 / FIND-ALL `3 7 4` [`3`@0, `4`@4] (`W(A, (A.h: <5))`, W(a, b) := `[(=) = a] SEQ [(=) = b]`, A := `/(?<h>\d)/`)
 The caller's own label: WHOLE `3` HOLDS, `7` FAILS / SEARCHED `7 3` `3`@2 / FIND-ALL `3 7 4` [`3`@0, `4`@4] (`W([a = A], (a.h: <5))`, W(a, b) := `[(=) = a] SEQ [(=) = b]`, A := `/(?<h>\d)/`)
 
-### The test of `when`   [lib/control/when-test]   ruled 2026-11-18
-A condition or a `peek(A)` as the test consumes nothing and then starts where the test stands; a bare pattern as the test is consumed and then continues after it.
+### The test of `when`   [lib/control/when-test]   ruled 2026-11-27
+A condition or a lookahead `^A` as the test consumes nothing and then starts where the test stands; a bare pattern as the test is consumed and then continues after it.
 needs: lib/control/when
 module: ?
 defined: language
 - These are when's body read per kind of test: `[(=) = test] SEQ [(=) = then]` consumes what the test consumes (the
   list moves no match). The else guard,
-  `NOT peek(test)`, is "the test cannot match here" for every kind.
+  `!^test`, is "the test cannot match here" for every kind.
 - A bare pattern A: `when(A, B, else = C)` is `AB|(?!A)C`, a sequence, not an `&` over a stretch.
 - The compiler warns that a bare pattern test consumes (core/diagnostics/consuming-test): the body cannot see that
   an argument is bare, so the warning is not the body's.
 - A read is an rx like any other: `$y` as the test is a bare pattern and consumes; `(y: 1492)` is a condition.
 - A filter-only rx (a complement) as the test: not stated by any ruling.
+- `!x` on a bare pattern x is the compile error naming `!^x` (lib/control/when-test/not).
 WHOLE `12` FAILS, `123` HOLDS / SEARCHED `x123` `x`@0 / FIND-ALL `12 x 123 1x 7` [`x`@3, `123`@5, `x`@10] (`when(/\d/, /\d\d/, else = /\w/)`, a bare test, is `\d\d\d|(?!\d)\w`)
 
-### NOT on a bare pattern test   [lib/control/when-test/not]   open not-test 2026-11-19
-In `when(NOT x, z)` with x a bare pattern, is `NOT x` a complement, so a compile error, or a negative peek, as `when(NOT peek(x), z)`?
-needs: lib/control/when-test
+### `!` on a bare pattern test   [lib/control/when-test/not]   ruled 2026-11-27
+In `when(!x, z)` with x a bare pattern, `!x` is `!` on a pattern: a compile error whose message names `!^x`, the negative lookahead.
+needs: lib/control/when-test core/filters/negation
 module: ?
-defined: ?
-Candidates: (a) a compile error (a complement in a test position, complement-place kept uniform; the user writes
-`when(NOT peek(x), z)`); (b) a negative peek (the user's evident meaning; `NOT x` then means two things by place).
-The two clear forms, `when(NOT peek(x), z)` and a condition under NOT, are not in question.
-modes: n/a (a question; the runs are cited in the details entry)
+defined: language
+- His words: "bang-split: yes"; its line 4: "`!` on a set or pattern is an error naming `~`"; the message names
+  `!^x` too, the form a test wants (the manager's reading of the message).
+- The clear forms stand: `when(!^x, z)`, and `when(!c, z)` for a condition c.
+- Whether `!A` on a consuming pattern may later mean `(?!A)` is not ruled (core/filters/negation).
+The negative lookahead as the test: WHOLE `a` HOLDS, `x` FAILS, `` FAILS / SEARCHED `xa` ``@0 / FIND-ALL `xa b` [``@0, `a`@1, `b`@3] (`when(!^/x/, /\w/)`)
+On a bare pattern: modes: a compile error (`when(!/x/, /\w/)`: `!` on a pattern; "cannot match here" is `!^/x/`).
 
 ### atomic   [lib/control/atomic]   reading 2026-11-22
 `atomic(X) := /(?>${[(=) = X]})/`: PCRE's atomic group around a pattern hole, so X keeps PCRE's atomic meaning and passes its labels on.
@@ -480,16 +485,16 @@ defined: language
   names the levels). The spelling is a placeholder (his: `all_matches`).
 - One call may be read by the macro's name: `hits(/\d+/) & (hits.hit: <5)` gives the answers of the line
   "Plain read" (a reading, run; core/labels/paths/call-prefix).
-- His second example, `[h = hits(/\d+/ & (0: <5))] & (h.hit: 3) & some((h.hit: 4))` (his gloss: "<5 and last hit
+- His second example, `[h = hits(/\d+/ & (0: <5))] & (h.hit: 3) & some(@h.hit, 4)` (his gloss: "<5 and last hit
   is 3 and some hit is 4"): a test inside the argument chooses the hits; a test after the atomic `hits` judges
   them (a reading, run: `4 9 3` and `43` HOLD with the test inside, FAIL with every number tested after).
 WHOLE `aax` HOLDS (hits [`a`, `ax`]), `axa` FAILS (hits [`ax`, `a`]: the last hit's g unset) / SEARCHED `axa` FAILS / FIND-ALL `aax axa` [] (`hits(/a(?<g>x)?/) & (hits.hit.g: "x")`: the hit list is the whole subject's)
 Through the argument's name: WHOLE `a1b3` HOLDS, `a3b9` FAILS, `ab` FAILS / SEARCHED `x9 3` `x9 3`@0 / FIND-ALL `a9b3 c7` [] (`hits(A) & (A.d: <5)`, A := `/(?<d>\d)/`)
 Bare, the caller's own: WHOLE `ax` HOLDS, `a` FAILS, `axa` FAILS / SEARCHED `a ax` `a ax`@0 / FIND-ALL `a ax ax` [`a ax ax`@0] (`hits(/a(?<g>x)?/) & (g: "x")`)
 Plain read, the last hit: WHOLE `a1b3` HOLDS (hits [`1`, `3`]), `a9b3` HOLDS (hits [`9`, `3`]), `a3b9` FAILS (hits [`3`, `9`]), `a1b22` FAILS (hits [`1`, `22`]), `ab` FAILS (hits []) / SEARCHED `x9 3` `x9 3`@0 / FIND-ALL `a9b3 c7` [] (`[h = hits(/\d+/)] & (h.hit: <5)`)
-Every hit, a group question: WHOLE `a1b3` HOLDS (hits [`1`, `3`]), `a9b3` FAILS (hits [`9`, `3`]), `a3b9` FAILS (hits [`3`, `9`]), `a1b22` FAILS (hits [`1`, `22`]), `ab` HOLDS (hits []) / SEARCHED `x9 3` FAILS / FIND-ALL `a9b3 c7` [] (`[h = hits(/\d+/)] & occurs.none((h.hit: >= 5))`)
-His second example, a test inside the argument: WHOLE `4 3` HOLDS (hits [`4`, `3`]), `3 4` FAILS (hits [`3`, `4`]), `4 9 3` HOLDS (hits [`4`, `3`]), `43` HOLDS (hits [`4`, `3`]), `4 13` HOLDS (hits [`4`, `1`, `3`]), `4 3 9` HOLDS (hits [`4`, `3`]) / SEARCHED `x4 3` `x4 3`@0 / FIND-ALL `4 3 x 4 3` [`4 3 x 4 3`@0] (`[h = hits(/\d+/ & (0: <5))] & (h.hit: 3) & some((h.hit: 4))`)
-Every number tested after the call: WHOLE `4 3` HOLDS (hits [`4`, `3`]), `3 4` FAILS (hits [`3`, `4`]), `4 9 3` FAILS (hits [`4`, `9`, `3`]), `43` FAILS (hits [`43`]), `4 13` FAILS (hits [`4`, `13`]), `4 3 9` FAILS (hits [`4`, `3`, `9`]) / SEARCHED `x4 3` `x4 3`@0 / FIND-ALL `4 3 x 4 3` [`4 3 x 4 3`@0] (`[h = hits(/\d+/)] & occurs.none((h.hit: >= 5)) & (h.hit: 3) & some((h.hit: 4))`)
+Every hit, a group question: WHOLE `a1b3` HOLDS (hits [`1`, `3`]), `a9b3` FAILS (hits [`9`, `3`]), `a3b9` FAILS (hits [`3`, `9`]), `a1b22` FAILS (hits [`1`, `22`]), `ab` HOLDS (hits []) / SEARCHED `x9 3` FAILS / FIND-ALL `a9b3 c7` [] (`[h = hits(/\d+/)] & occurs.none(@h.hit, >= 5)`)
+His second example, a test inside the argument: WHOLE `4 3` HOLDS (hits [`4`, `3`]), `3 4` FAILS (hits [`3`, `4`]), `4 9 3` HOLDS (hits [`4`, `3`]), `43` HOLDS (hits [`4`, `3`]), `4 13` HOLDS (hits [`4`, `1`, `3`]), `4 3 9` HOLDS (hits [`4`, `3`]) / SEARCHED `x4 3` `x4 3`@0 / FIND-ALL `4 3 x 4 3` [`4 3 x 4 3`@0] (`[h = hits(/\d+/ & (0: <5))] & (h.hit: 3) & some(@h.hit, 4)`)
+Every number tested after the call: WHOLE `4 3` HOLDS (hits [`4`, `3`]), `3 4` FAILS (hits [`3`, `4`]), `4 9 3` FAILS (hits [`4`, `9`, `3`]), `43` FAILS (hits [`43`]), `4 13` FAILS (hits [`4`, `13`]), `4 3 9` FAILS (hits [`4`, `3`, `9`]) / SEARCHED `x4 3` `x4 3`@0 / FIND-ALL `4 3 x 4 3` [`4 3 x 4 3`@0] (`[h = hits(/\d+/)] & occurs.none(@h.hit, >= 5) & (h.hit: 3) & some(@h.hit, 4)`)
 
 ### contains   [lib/search/contains]   ruled 2026-11-22
 `contains(s)` is the plain gap body `/(?s:.*)(?:${[(=) = s]})(?s:.*)/`: no anchors of its own; in a filter role it accepts a value holding s.
@@ -498,9 +503,9 @@ module: ?
 defined: language
 - The gaps cross line breaks. Inside the argument `^` and `$` are the ends of the value filtered:
   `contains(/^err/)` is "starts with `err`" (WHOLE, 0 of 1,365 texts differ from `startsWith("err")`).
-- The negated test is `!contains(x)`.
+- The negated test is `~contains(x)`.
 - s's labels pass on (lib/convention/argument-labels): `contains.n`, the LAST occurrence (the leading gap is
-  greedy, as endsWith's; the line "The last occurrence"); under `!contains(x)` none is visible.
+  greedy, as endsWith's; the line "The last occurrence"); under `~contains(x)` none is visible.
 WHOLE `xerrx` HOLDS, `er` FAILS / SEARCHED `a err b` `a err b`@0 / FIND-ALL `err err` [`err err`@0] (`contains("err")` is `(?s:.*)(?:err)(?s:.*)`)
 The last occurrence: WHOLE `a1b2` HOLDS (contains.n = `2`), `ab` FAILS / SEARCHED `x a1b2` `x a1b2`@0 / FIND-ALL `a1b2 ab` [`a1b2 ab`@0] (`contains(/(?<n>\d)/)`)
 
@@ -553,7 +558,7 @@ needs: core/patterns/literals core/patterns/flags
 module: ?
 defined: language
 - It holds WHOLE on the empty text, `12` and a multi-line text, alone and under `(?s)`, `(?i)`, `(?m)`, `(?x)`.
-- It is nullable: `anything & !X` SEARCHED or FIND-ALL holds on an empty stretch; it is a whole-value tool.
+- It is nullable: `anything & ~X` SEARCHED or FIND-ALL holds on an empty stretch; it is a whole-value tool.
 WHOLE `` HOLDS, `a b` HOLDS / SEARCHED `ab` `ab`@0 / FIND-ALL `ab` [`ab`@0, ``@2] (`anything` is `[\s\S]*`)
 
 ### between   [lib/sets/between]   reading 2026-11-19
@@ -584,70 +589,74 @@ S's labels, through the call: WHOLE `abcz` HOLDS, `abz` FAILS, `xyzz` FAILS / SE
 
 ## Counting   [lib/counting]
 
-### some   [lib/counting/some]   ruled 2026-11-22
-`some(c)` holds when at least one setting in the array of c's label meets c; on an empty array it is false (a reading).
+### some   [lib/counting/some]   ruled 2026-11-25
+`some(@d, S)` holds when at least one setting in the array of d is in S; on an empty array it is false.
 needs: core/model/table core/conditions/form core/labels/labels-vs-captures/array-vs-passes
-see: core/model/table/group-truth lib/assert/assert
+see: core/model/table/group-truth lib/counting/every lib/assert/assert
 module: ?
 defined: native (a question over a name's array of settings; no expression of the language walks the array)
+- His words: "array-argument: yes including every". A group question takes the array `@d` and a set, never a
+  condition: a condition reads the label the same everywhere (`(d: S)` is the label, `@d` the array); a condition
+  as the argument is a compile error naming the array form (the manager's reading (a)).
+- One array per call; `@` marks a label path too (`some(@r.a, "7")`); the set is any set, a complement `~S` included.
 - The array is every setting of the name, in order, the one outside the loop included
   (core/labels/labels-vs-captures/array-vs-passes), those visible in the definition the question is written in, a
   bound piece's own (array-in-piece); "false on an empty array" is a reading of that ruling.
-- `0` has no settings, so `some((0: ..))` is a compile error (core/conditions/match-so-far).
+- `0` has no settings, so `some(@0, ..)` is a compile error (core/conditions/match-so-far).
 - `some` is the one spelling of "at least one"; `all` is retired: every pass is written with the condition
   inside the loop, on the item (core/conditions/in-sequence).
-- A record of several entries in it, and a joint entry, which is a compile error for now: the array piece. "Same
-  item" is the on-item label, then `some((ok: anything))`.
-- `NOT some(c)` and `occurs.none(c)` are the same question over the array for a condition of one entry (a reading;
-  core/model/table/group-truth owns it).
+- Two arrays are two calls (core/conditions/form/record-in-some). "Same item" is the on-item label, then
+  `some(@ok, anything)`.
+- `!some(@d, S)` and `occurs.none(@d, S)` are one question (core/model/table/group-truth).
 - It is not `assert.some`: an assertion asks whether a SET has a string, at compile time (lib/assert/assert).
-WHOLE `1,7,` HOLDS, `1,2,` FAILS / SEARCHED `1,2, 7,` `7,`@5 / FIND-ALL `7,1, 2, 3,7,` [`7,1,`@0, `3,7,`@8] (`/(?:(?<d>\d),)+/ & some((d: "7"))`)
+WHOLE `1,7,` HOLDS, `1,2,` FAILS / SEARCHED `1,2, 7,` `7,`@5 / FIND-ALL `7,1, 2, 3,7,` [`7,1,`@0, `3,7,`@8] (`/(?:(?<d>\d),)+/ & some(@d, "7")`)
 
-### count   [lib/counting/count]   ruled 2026-11-22
-`count(c)` is the number of settings in the array of c's label that meet c, a canonical numeral for the comparisons; it is refused only over the budget, naming `occurs`.
+### count   [lib/counting/count]   ruled 2026-11-25
+`count(@d, S)` is the number of settings of d in S, `count(@d)` of all settings: a canonical numeral for the comparisons; refused only over the budget, naming `occurs`.
 needs: lib/counting/some core/values/comparisons
 module: ?
 defined: native (a count over a name's array of settings; no expression of the language counts them)
 - It counts SETTINGS (core/labels/labels-vs-captures/array-vs-passes), those visible where it is written, a bound
-  piece's own (array-in-piece): zero on an empty array; on a condition of
-  several entries what is counted is not stated (readings).
+  piece's own (array-in-piece): zero on an empty array (readings). `count(@d)` counts every setting (his
+  ruling, array-argument), `count(@d, anything)` alike (the manager's reading).
 - A count is a numeral string, so every filter applies to it (an even count: `/\d*[02468]/` on it); it is a value
-  written in place, left of `:` (core/conditions/form/value-left): `(count((d: "7")): ==2)`. Bound alone
-  (`n := count((d: "7"))`) it is a compile error at the binding (core/holes/bare-condition/bound-condition).
+  written in place, left of `:` (core/conditions/form/value-left): `(count(@d, "7"): ==2)`. Bound alone
+  (`n := count(@d, "7")`) it is a compile error at the binding (core/holes/bare-condition/bound-condition).
 - No positional rule forbids it; where it would cost more states than the budget allows, the compiler refuses it
   and names the `occurs` form; below the budget `occurs` may be recommended as the way to reduce states.
-- A later optimisation may turn `count()` into `occurs` where the answers provably do not change.
-WHOLE `7,1,7,` HOLDS, `7,1,` FAILS / SEARCHED `7,7,7,` `7,7,`@0 / FIND-ALL `7,7,7, 1,7,7,` [`7,7,`@0, `1,7,7,`@7] (`/(?:(?<d>\d),)+/ & (count((d: "7")): ==2)`)
+- A later optimisation may turn `count` into `occurs` where the answers provably do not change.
+Every setting counted: WHOLE `1,2,` HOLDS, `1,,2,` HOLDS, `1,` FAILS / SEARCHED `1, 1,2,` `1,2,`@3 / FIND-ALL `1,2, 3, 4,,5,` [`1,2,`@0, `4,,5,`@8] (`/(?:(?<d>\d)?,)+/ & (count(@d): ==2)`)
+WHOLE `7,1,7,` HOLDS, `7,1,` FAILS / SEARCHED `7,7,7,` `7,7,`@0 / FIND-ALL `7,7,7, 1,7,7,` [`7,7,`@0, `1,7,7,`@7] (`/(?:(?<d>\d),)+/ & (count(@d, "7"): ==2)`)
 
-### occurs.exactly, .at_least, .at_most, .none   [lib/counting/occurs]   ruled 2026-11-22
-The `occurs` module counts the settings of a label meeting a condition: `exactly(n, c)`, `at_least(n, c)`, `at_most(n, c)`, `none(c)`.
+### occurs.exactly, .at_least, .at_most, .none   [lib/counting/occurs]   ruled 2026-11-25
+The `occurs` module counts the settings of a label in a set: `exactly(n, @d, S)`, `at_least(n, @d, S)`, `at_most(n, @d, S)`, `none(@d, S)`.
 needs: core/labels/labels-vs-captures/array-vs-passes
 module: occurs
 defined: native (a count over a name's array of settings, a capped counter; no expression of the language counts them)
 - Its states: a capped counter (n + 2 states) multiplied in.
-- `c` is the usual condition, passed as a parenthesised literal (`occurs.exactly(1, (name: set))`), judged on each
-  setting of its label visible where it is written, a bound piece's own (core/labels/labels-vs-captures/array-vs-passes,
-  array-in-piece; several entries: not stated, a reading); n
-  is a constant or a caller parameter.
-- These are FILTERS (counts of matches), not count values; `count(c)`, a canonical numeral, is the other form
+- `@d, S` is the array and a set (`occurs.exactly(2, @d, "7")`, his ruling), judged on each setting visible where
+  it is written, a bound piece's own (core/labels/labels-vs-captures/array-vs-passes, array-in-piece); n is a
+  constant or a caller parameter; the members' parameter order is a placeholder (a reading).
+- These are FILTERS (counts of matches), not count values; `count(@d, S)`, a canonical numeral, is the other form
   (lib/counting/count).
 - The module is reached by `occurs := import("occurs")`.
-modes: n/a (a count over a name's array of settings; the runs are in core/labels/labels-vs-captures/array-vs-passes and lib/counting/every-pass)
+Exactly two: WHOLE `7,1,7,` HOLDS, `7,1,` FAILS, `7,7,7,` FAILS / SEARCHED `7,7,7,` `7,7,`@0 / FIND-ALL `7,7,7, 1,7,7,` [`7,7,`@0, `1,7,7,`@7] (`/(?:(?<d>\d),)+/ & occurs.exactly(2, @d, "7")`)
+None: WHOLE `1,2,` HOLDS, `7,1,` FAILS / SEARCHED `7, 1,2,` `1,2,`@3 / FIND-ALL `7,1, 2, 3,` [`1,`@2, `2,`@5, `3,`@8] (`/(?:(?<d>\d),)+/ & occurs.none(@d, "7")`)
 
-### Every pass, named   [lib/counting/every-pass]   open every-pass-spelling 2026-11-21
-Is there a named question for "every pass meets c", or is every pass written only with the condition on the item?
+### every   [lib/counting/every]   ruled 2026-11-25
+`every(@d, S)` holds when every setting of d is in S: `occurs.none(@d, ~S)`, true on an empty array.
 needs: lib/counting/some lib/counting/occurs
+see: core/model/table/group-truth core/conditions/in-sequence
 module: ?
-defined: ?
-- Today: the condition is written inside the loop, on the item (core/conditions/in-sequence).
-- Over the array, `some(c) & occurs.none(NOT c)` says "c's label is set and every SETTING meets c": a pass that
-  sets nothing is not judged, so where the label is optional, or the loop can make no pass, it is not the item
-  form (a reading; the lines below).
-- Candidates: (a) no name, the item form; (b) a named group question (the settings form above, or a new one over
-  the passes, which no group question reads); (c) a loop construct over a conditioned item.
-Every setting: WHOLE `7,7,` HOLDS, `7,,` HOLDS, `7,1,` FAILS / SEARCHED `7,, 7,7,` `7,,`@0 / FIND-ALL `7,, 7,1, 7,7,` [`7,,`@0, `7,`@4, `7,7,`@9] (`/(?:(?<d>\d)?,)+/ & some((d: "7")) & occurs.none(NOT (d: "7"))`)
+defined: language (`every(@d, S) := occurs.none(@d, ~S)`)
+- His words: "array-argument: yes including every".
+- It reads SETTINGS: a pass that sets nothing is not judged, so where the label is optional, or the loop can make
+  no pass, it is not the item form, the condition written inside the loop (the lines below).
+- "Set at least once and every setting in S" is `some(@d, S) & every(@d, S)`.
+Every setting: WHOLE `7,7,` HOLDS, `7,,` HOLDS, `7,1,` FAILS, `,` HOLDS / SEARCHED `1, 7,,` `,`@1 / FIND-ALL `7,, 7,1, 7,7,` [`7,,`@0, `7,`@4, `,`@7, `7,7,`@9] (`/(?:(?<d>\d)?,)+/ & every(@d, "7")`)
+Set at least once: WHOLE `7,7,` HOLDS, `7,,` HOLDS, `7,1,` FAILS, `,` FAILS / SEARCHED `1, 7,,` `7,,`@3 / FIND-ALL `7,, 7,1, 7,7,` [`7,,`@0, `7,`@4, `7,7,`@9] (`/(?:(?<d>\d)?,)+/ & some(@d, "7") & every(@d, "7")`)
+No pass: WHOLE `x` HOLDS, `7,x` HOLDS, `1,x` FAILS / SEARCHED `-x` `x`@1 / FIND-ALL `x 7,x 1,x` [`x`@0, `7,x`@2, `x`@8] (`/(?:(?<d>\d),)*x/ & every(@d, "7")`)
 The item form: WHOLE `7,7,` HOLDS, `7,,` FAILS, `7,1,` FAILS / SEARCHED `7,, 7,7,` `7,`@0 / FIND-ALL `7,, 7,1, 7,7,` [`7,`@0, `7,`@4, `7,7,`@9] (`/(?:(?<d>\d)?${(d: "7")},)+/`)
-No pass, every setting: WHOLE `x` FAILS, `7,x` HOLDS / SEARCHED `-x` FAILS / FIND-ALL `x 7,x 1,x` [`7,x`@2] (`/(?:(?<d>\d),)*x/ & some((d: "7")) & occurs.none(NOT (d: "7"))`)
 No pass, the item form: WHOLE `x` HOLDS, `7,x` HOLDS / SEARCHED `-x` `x`@1 / FIND-ALL `x 7,x 1,x` [`x`@0, `7,x`@2, `x`@8] (`/(?:(?<d>\d)${(d: "7")},)*x/`)
 
 ## Strings   [lib/strings]
@@ -701,7 +710,7 @@ The `assert` module checks sets at compile time: `@assert.some(X)` X has a strin
 needs: core/filters/and core/filters/complement core/operators/statements
 module: assert
 defined: native (a compile-time check of a set's emptiness, not a pattern)
-- Membership is `&` (`"2024" & leap` is {`2024`} or empty); inclusion is `A & !B` empty; `same` is both
+- Membership is `&` (`"2024" & leap` is {`2024`} or empty); inclusion is `A & ~B` empty; `same` is both
   differences empty.
 - The argument is a compile-time set position: an edge assertion in it is the edge-assertion error.
 - Reached by `assert := import("assert")`; a failed assertion is a compile error naming it.
@@ -773,7 +782,7 @@ defined: ?
 needs: lib/records/records lib/records/file-text
 module: ?
 defined: ?
-- Its use in the record: `file_literals("w.txt")[!startsWith("#") & length(<=20)]`, an array filtered by indexing.
+- Its use in the record: `file_literals("w.txt")[~startsWith("#") & length(<=20)]`, an array filtered by indexing.
 
 ## The rx parts   [lib/rx]
 
@@ -785,7 +794,7 @@ module: rx
 defined: language
 - `rx.digit := /\d/`; `rx.word_char`, `rx.space`, `rx.any`, `rx.any_but_newline` are `\w`, `\s`, `(?s:.)`, `.`.
 - `rx.letter`: `[[:alpha:]]`, following the program's UCP setting (PCRE's Unicode-property mode for classes) as a literal does.
-- `rx.range(a, b) := /[${a}-${b}]/` (range ends are a typed position); `rx.none_of(S)` is `rx.any & !S`, S under a
+- `rx.range(a, b) := /[${a}-${b}]/` (range ends are a typed position); `rx.none_of(S)` is `rx.any & ~S`, S under a
   complement passing no labels on (lib/convention/argument-labels).
 - `rx.any_of` over an array is the array itself; over a string it needs a split into characters, not in the language.
 - The plurals: `rx.digits := rx.repeat(rx.digit, min = 1, max = _)` is `\d+` (0 / 0 / 0 of 63 texts differ).
@@ -794,7 +803,7 @@ WHOLE `123` HOLDS, `12a` FAILS / SEARCHED `ab12` `12`@2 / FIND-ALL `1 23` [`1`@0
 
 ### rx.repeat   [lib/rx/repeat]   ruled 2026-11-23
 One `repeat` construct does all counting, one head: `repeat(x, min = _, max = min) := /(?:${[(=) = x]}){${min},${max}}/`; one count is exact, `_` leaves a bound out.
-needs: core/patterns/quantifiers core/holes/count core/arrays/lift core/operators/bindings/call-forms core/operators/bindings/unspecified
+needs: core/patterns/quantifiers core/patterns/quantifiers/braces core/holes/count core/arrays/lift core/operators/bindings/call-forms core/operators/bindings/unspecified
 module: rx
 defined: language
 - His words: "repeat-head: agree with your lean" (head (i), as put to him: `repeat(x, min = _, max = min)`).
@@ -822,9 +831,10 @@ A range: WHOLE `` FAILS, `12` HOLDS, `123` HOLDS, `123456` FAILS / SEARCHED `x12
 A written 0, exact: WHOLE `` HOLDS, `12` FAILS, `123` FAILS, `123456` FAILS / SEARCHED `x1234567` ``@0 / FIND-ALL `1234567 12` [``@0, ``@1, ``@2, ``@3, ``@4, ``@5, ``@6, ``@7, ``@8, ``@9, ``@10] (`rx.repeat(rx.digit, 0)`)
 The last item, through a label on the call: WHOLE `73` HOLDS, `37` FAILS / SEARCHED `x37 73` `3`@1 / FIND-ALL `73 37 13` [`73`@0, `3`@3, `13`@6] (`[r = rx.repeat(/(?<a>\d)/, min = 1, max = _)] & (r.a: "3")`)
 A label written on the argument: WHOLE `3` HOLDS (a = `3`), `73` HOLDS (a = `3`), `37` FAILS / SEARCHED `7 3` `3`@2 / FIND-ALL `37 73 4` [`3`@0, `73`@3, `4`@6] (`rx.repeat([a = rx.digit], min = 1, max = _) & (a: <5)`)
-Every item, a group question: WHOLE `73` HOLDS, `33` FAILS / SEARCHED `x33 73` `73`@4 / FIND-ALL `73 33 17` [`73`@0, `17`@6] (`[r = rx.repeat(/(?<a>\d)/, min = 1, max = _)] & some((r.a: "7"))`)
+Every item, a group question: WHOLE `73` HOLDS, `33` FAILS / SEARCHED `x33 73` `73`@4 / FIND-ALL `73 33 17` [`73`@0, `17`@6] (`[r = rx.repeat(/(?<a>\d)/, min = 1, max = _)] & some(@r.a, "7")`)
 - Plurals are one-line definitions over it: `digits := rx.repeat(rx.digit, min = 1, max = _)` is `\d+`.
-- A count in braces is not an operator of the language; inside a regex literal it is regex's own.
+- The brace count `x{a,b}` is the same construct written as a postfix operator (core/patterns/quantifiers/braces);
+  `rx.repeat` stays its named form (his ruling, brace-counts line 5); the lazy and possessive counts are the braces'.
 WHOLE `123` HOLDS, `1` FAILS / SEARCHED `12345` `12`@0 / FIND-ALL `12345 6` [`12`@0, `34`@2] (`rx.repeat(rx.digit, min = n, max = n)`, n := [2, 4], is `(?|\d{2,2}|\d{2,4}|\d{4,4})`: the copy (4,2) removed)
 
 ## Structural   [lib/structural]
@@ -854,7 +864,7 @@ defined: ?
 - After a loop the caller gets the label (array-capture), as a plain read gives it: the last pass's own value,
   unset where that pass set nothing (the manager's answer); every pass is the array request (lib/structural/capture/add-on).
 - On `0` only where `0` is complete, `rx & capture("name")` or a hole written last (the manager's reading (a) of
-  zero-open); on an open `0` a compile error for now (core/conditions/match-so-far). Under `NOT` or `!`:
+  zero-open); on an open `0` a compile error for now (core/conditions/match-so-far). Under `!` or `~`:
   core/filters/negation/effects.
 - A one-literal program (a program that is exactly one literal) returns PCRE's own captures; any request makes the
   requested name follow the label rules, so a request after a loop gives the label (a reading; the line "After a loop").
