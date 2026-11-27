@@ -1,0 +1,11 @@
+model exit code 0
+model last line: predfix90_model: 26 checks, 0 failed
+sent  | R(x:, A) & (x.h: <5) | A := /(?<h>\d)/; R(l:, v) := /${[l = [_ = v]]}xx/
+      rules say: refused ['sent'] | engine: refused `x.h`: the path crosses the underscore label `_`, not the start (a compile error, path-rules rule 2; the sent label is a start, the body's wall below it is crossed: sent-label-wall, the manager's reading) | answers against /(?P<h>[0-4])xx/: None
+arg   | B([a = A]) & (a.h: <5) | A := /(?<h>\d)/; B(rx) := /${[_ = rx]}xx/
+      rules say: legal ['e'] | engine: legal  | answers against /(?P<h>[0-4])xx/: (0, 0, 0)
+arg   | B([a = A]) & (a.h: <5) | A := /(?<h>\d)/; B(rx) := /${[n = [_ = rx]]}xx/
+      rules say: legal ['e'] | engine: legal  | answers against /(?P<h>[0-4])xx/: (0, 0, 0)
+reversed | R(l:, v) := /${[_ = [l = v]]}xx/ | engine: legal | answers [(True, (0, 3), (('3xx', 0),)), (False, None, ()), (False, (4, 7), (('3xx', 4),)), (False, (0, 3), (('3xx', 0), ('4xx', 8)))]
+unmarked | R(l, v) := /${[l = v]}xx/ called R(x, A) | engine: refused: path `x.h`: `x` is neither written nor a binding used in this definition
+unmarked, read as the body wrote it | (R.l.h: <5) | engine: legal, answers [(True, (0, 3), (('3xx', 0),)), (False, None, ()), (False, (4, 7), (('3xx', 4),)), (False, (0, 3), (('3xx', 0), ('4xx', 8)))]

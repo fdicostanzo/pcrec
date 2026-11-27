@@ -12006,3 +12006,35 @@ tags: core/filters/complement core/filters/and
 His words, verbatim: "and-not: agree drop &!"
 RULED (answered by slug), the statement AS ASKED, quoted: "confirm there is no `&!`, and "and not in" is written
 `A & ~B`?" It confirms bang-split line 3. The fold lane (predfold1125, review number r111 from main) may launch.
+
+### 2026-11-27 OWNER RULING — sent-label-wall: error; and a STATEMENT: a body may not use an unmarked parameter as a label
+tags: core/labels/rule/sent-label-wall core/labels/rule/paths core/operators/bindings/label-in-argument core/operators/bindings/label-variables core/operators/bindings/label-kinds
+His words, verbatim: "sent-label-wall: error. The path would be x._.h which is not an allowed path. If the R macro
+reversed the label order it would be ok. If the caller put a label in A it could access A through that. Validate.
+Side note: a binding cannot use an argument as a label. if the macro definition didn't set l as a label argument,
+then the later l = would be an error. This is to catch an unintended miss of not setting the arg as a label arg."
+RULED (answered by slug): candidate (a) of core/labels/rule/sent-label-wall, as asked: "a compile error. The blank
+is in the path and is not its start." The piece closes as it reads; "the manager's reading" on it becomes his
+ruling. His three statements, each run through `predfix90_model`'s engine and its separate path-rule evaluator
+(`docs/dev/lanes/predbang_evidence/sentwall.py`; pasted from `sentwall.out`):
+```
+model exit code 0
+model last line: predfix90_model: 26 checks, 0 failed
+sent  | R(x:, A) & (x.h: <5) | A := /(?<h>\d)/; R(l:, v) := /${[l = [_ = v]]}xx/
+      rules say: refused ['sent'] | engine: refused `x.h`: the path crosses the underscore label `_`, not the start (a compile error, path-rules rule 2; the sent label is a start, the body's wall below it is crossed: sent-label-wall, the manager's reading) | answers against /(?P<h>[0-4])xx/: None
+arg   | B([a = A]) & (a.h: <5) | A := /(?<h>\d)/; B(rx) := /${[_ = rx]}xx/
+      rules say: legal ['e'] | engine: legal  | answers against /(?P<h>[0-4])xx/: (0, 0, 0)
+arg   | B([a = A]) & (a.h: <5) | A := /(?<h>\d)/; B(rx) := /${[n = [_ = rx]]}xx/
+      rules say: legal ['e'] | engine: legal  | answers against /(?P<h>[0-4])xx/: (0, 0, 0)
+reversed | R(l:, v) := /${[_ = [l = v]]}xx/ | engine: legal | answers [(True, (0, 3), (('3xx', 0),)), (False, None, ()), (False, (4, 7), (('3xx', 4),)), (False, (0, 3), (('3xx', 0), ('4xx', 8)))]
+unmarked | R(l, v) := /${[l = v]}xx/ called R(x, A) | engine: refused: path `x.h`: `x` is neither written nor a binding used in this definition
+unmarked, read as the body wrote it | (R.l.h: <5) | engine: legal, answers [(True, (0, 3), (('3xx', 0),)), (False, None, ()), (False, (4, 7), (('3xx', 4),)), (False, (0, 3), (('3xx', 0), ('4xx', 8)))]
+```
+Read (the manager's): "x._.h is not an allowed path": refused by rules and engine alike (line `sent`). "If the R
+macro reversed the label order it would be ok": legal, the document's printed answers (line `reversed`). "If the
+caller put a label in A it could access A through that": legal under a blank, and under a public label and a
+blank (the two `arg` lines; 0 answers differ from the built regex).
+THE SIDE NOTE is a STATEMENT of a rule, not asked as a question, so NOT recorded as a ruling; it is put to him
+next as **label-needs-mark**. Today's documents do not have it: with `l` unmarked the body's `[l = v]` writes a
+label literally named `l` (line "unmarked, read as the body wrote it": `R.l.h` legal), and the caller's `x.h` is
+refused at the READ, not at the definition (line `unmarked`).
