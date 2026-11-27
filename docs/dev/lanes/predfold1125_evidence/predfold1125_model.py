@@ -1013,6 +1013,21 @@ def unit11(name, what):
     return True
 
 
+class _Null11:
+    """A refused program's stand-in inside READINGS11: every answer REFUSED, so a plant reads as NOT SUPPORTED."""
+    def whole(self, t):
+        return "REFUSED"
+
+    def search(self, t, frm=0):
+        return ("REFUSED", -1)
+
+    def findall(self, t):
+        return ["REFUSED"]
+
+
+NULL11 = _Null11()
+
+
 def run11(expr, binds=()):
     try:
         return prog(expr, list(binds)), None
@@ -1437,7 +1452,7 @@ HST11 = [""] + [str(d) for d in range(10)]                   # h absent, or one 
 
 def hold(e_, h_):
     P_, _ = run11("/(?<h>\\d)?x/ & " + e_)
-    return P_.whole(h_ + "x")
+    return P_.whole(h_ + "x") if P_ is not None else "REFUSED"
 
 
 def ref_h(h_, q):
@@ -1458,6 +1473,7 @@ rd("complement: `!(h: S)` equals `(h ?: ~S)`", r3 == 0, "%d of 11 states differ"
 rd("optional-entry (c): `!(h ?: S)` equals `(h: ~S)`", r4 == 0, "%d of 11 states differ" % r4)
 rd("control: `!(h: S)` and `(h: ~S)` part on the absent state", r5 == 1, "%d of 11 states differ" % r5)
 Pr, _ = run11("/(?<a>\\d)?,(?<b>\\d)?/ & !(a: <5, b: >=3)")
+Pr = Pr or NULL11
 r6 = 0
 for a_ in [""] + [str(d) for d in range(10)]:
     for b_ in [""] + [str(d) for d in range(10)]:
@@ -1476,30 +1492,39 @@ Pw1, ew1 = run11("when(!/x/, /\\w/)", [WHEN11])
 rd("`when(!x, z)` on a bare pattern is an error by line 4", Pw1 is None and "`!^/x/`" in (ew1 or ""), ew1)
 TW = texts11("12x", 4)
 Pw2, _ = run11("when(/\\d/, /\\d\\d/, else = /\\w/)", [WHEN11])
+Pw2 = Pw2 or NULL11
 Pw3, _ = run11("when(^/\\d/, /\\d\\d/, else = /\\w/)", [WHEN11])
+Pw3 = Pw3 or NULL11
 d2 = diff11(Pw2, Re(r"\d\d\d|(?!\d)\w"), TW)               # noqa: F821
 d3 = diff11(Pw3, Re(r"(?=\d)\d\d|(?!\d)\w"), TW)           # noqa: F821
 rd("a bare `when` test consumes", d2 == (0, 0, 0), "against `\\d\\d\\d|(?!\\d)\\w`: %s" % (d2,))
 rd("r109: one `when` body serves both kinds of test", d2 == d3 == (0, 0, 0), "lookahead test against "
    "`(?=\\d)\\d\\d|(?!\\d)\\w`: %s; bare test %s" % (d3, d2))
 Pp1, _ = run11("!peek(/\\d/) SEQ /\\w/")
+Pp1 = Pp1 or NULL11
 dp = diff11(Pp1, Re(r"(?!\d)\w"), TW) if Pp1 else "refused"   # noqa: F821
 rd("drop-not's `!peek(A)` error is gone", dp == (0, 0, 0), "`!peek(/\\d/) SEQ /\\w/` against `(?!\\d)\\w`: %s" % (dp,))
 Pn1, _ = run11("/\\d+/ & not_seven", ["not_seven := ~seven", "seven := /7\\d*/"])
+Pn1 = Pn1 or NULL11
 Pn2, _ = run11("/\\d+/ & ~/7\\d*/")
+Pn2 = Pn2 or NULL11
 dn = diff11(Pn1, Pn2, texts11("17x", 4))
 rd("complement-place carries over under `~` (`not_seven := ~seven`)", dn == (0, 0, 0), "%s" % (dn,))
 Pq1, _ = run11("~/7\\d*/ & /\\d+/")
+Pq1 = Pq1 or NULL11
 dq = diff11(Pq1, Pn2, texts11("17x", 4))
 rd("prefix on ONE atom: `~A & B` is `(~A) & B`, the answers of `B & ~A`", dq == (0, 0, 0), "%s" % (dq,))
 Pq2, _ = run11("/\\d+/ & ~(/7\\d*/ | /8\\d*/)")
+Pq2 = Pq2 or NULL11
 Pq3, _ = run11("/\\d+/ & ~/7\\d*/ & ~/8\\d*/")
+Pq3 = Pq3 or NULL11
 dq2 = diff11(Pq2, Pq3, texts11("178", 4))
 rd("`~B & ~C` is `~(B | C)` as filters (the PROPOSAL's run 3)", dq2 == (0, 0, 0), "%s" % (dq2,))
 Pa1, ea1 = run11('/(?:(?<d>\\d),)+/ & some((d: "7"))')
 rd("array-argument (a): a condition as the argument names the array form", Pa1 is None and "`some(@d, S)`" in (ea1 or ""), ea1)
 rd("array-argument (b): the array mark on a path a placeholder", None, "a spelling, for the spellings review")
 Pc2, _ = run11("/(?:(?<h>\\d)(?<m>\\d),)+/ & some(@h, $m)")
+Pc2 = Pc2 or NULL11
 def last_m(t):
     ps = re.findall(r"(\d)(\d),", t)
     return bool(re.fullmatch(r"(?:\d\d,)+", t)) and any(h_ == ps[-1][1] for h_, _ in ps)
@@ -1516,7 +1541,9 @@ rd("array-argument (f): the array's scope unchanged", None, "the scope lines re-
 Pg1, eg1 = run11('/(?<h>\\d)?x/ & some(@h, capture("h"))')
 rd("array-argument (g): a capture request as the set is refused", Pg1 is None, eg1)
 Ph1, _ = run11('/(?:(?<d>\\d),)*x/ & every(@d, "7")')
+Ph1 = Ph1 or NULL11
 Ph2, _ = run11('/(?:(?<d>\\d),)*x/ & some(@d, "7")')
+Ph2 = Ph2 or NULL11
 rd("array-argument (h): on an empty array `every` holds and `some` fails", Ph1.whole("x") and not Ph2.whole("x"),
    "on `x`: every %s, some %s" % (Ph1.whole("x"), Ph2.whole("x")))
 rd("array-argument (i): the occurs parameter order a placeholder", None, "a spelling")
@@ -1532,11 +1559,14 @@ for k_, why_ in (("brace-counts (d): a match-time count `x{$n}` under constructi
                  ("string-literals (f): a string used as a name, the same syntax", "no name position in the engine")):
     rd(k_, None, why_)
 Pm1, _ = run11('m["z"] | "x"', MB11)
+Pm1 = Pm1 or NULL11
 rd("map-creator (e): the empty selection is the never-matching pattern", diff11(Pm1, Re("x"), MT11) == (0, 0, 0),   # noqa: F821
    "against `x`")
 Pm2, _ = run11('m["a" | "a"]', MB11)
+Pm2 = Pm2 or NULL11
 rd("map-creator (i): the same result twice matches as once", diff11(Pm2, Re(r"\d"), MT11) == (0, 0, 0), "against `\\d`")   # noqa: F821
 Ps1, _ = run11('"${x}"')
+Ps1 = Ps1 or NULL11
 rd("string-literals (a): `${` in a string is plain characters", Ps1.whole("${x}") and not Ps1.whole("x"), "")
 for k_, e_ in (("string-literals (b): a raw line end a compile error", '"a\nb"'),
                ("string-literals (c): `\\x41` a compile error", '"\\x41"'),
@@ -1545,8 +1575,10 @@ for k_, e_ in (("string-literals (b): a raw line end a compile error", '"a\nb"')
     P_, e2_ = run11(e_)
     rd(k_, P_ is None, e2_)
 Ps2, _ = run11('""')
+Ps2 = Ps2 or NULL11
 rd("string-literals (d): `\"\"` the empty text", Ps2.whole("") and not Ps2.whole("a"), "")
 Ps3, _ = run11('"ab" SEQ "cd"')
+Ps3 = Ps3 or NULL11
 rd("string-literals (g): `\"ab\" SEQ \"cd\"` the one string", diff11(Ps3, Re("abcd"), texts11("abcd", 4)) == (0, 0, 0), "")   # noqa: F821
 for k_ in ("brace-counts (a)", "brace-counts (b)", "brace-counts (e)"):
     rd(k_, all(r_[2] == (0, 0, 0) for r_ in b_rows), "BRACES")
@@ -1574,7 +1606,7 @@ check("SPECLINES", not spec_bad and len(LINES) == len(SPEC11), "%d lines run; re
 
 unit11("GRID", "predfix90's name grid, its section run verbatim under the new spelling")
 if s11("q11"):
-    _k11 = sorted(GRULE)[0]                                  # noqa: F821
+    _k11 = next(iter(GRULE))                                 # noqa: F821
     GRULE[_k11] = (GRULE[_k11][0], GRULE[_k11][1] + " (planted)")   # noqa: F821
 GPATCH11 = {"sent": ("core/labels/rule/sent-label-wall", "a caller's read through the sent label past the blank is a "
                      "compile error")}               # DECLARED: R-1 ruled the reading; its pinned words moved
