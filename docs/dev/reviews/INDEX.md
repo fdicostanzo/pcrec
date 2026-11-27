@@ -32,3 +32,4 @@ Older entries: NOTES.md "Index entries moved out of CLAUDE.md" sections, and the
 - 2026-11-26 r105 arenaclients (code): [ARENA-SCOPES] F2+F6 on lane/f2f6tri; no answer/speed findings; CHECKS-1/2/5 FIX-NOW, SCOPE-4 PLAN.
 - 2026-11-26 r106 mgfix (code, manager inline): memgate instr under ASLR-off + A==B refusal; MGFIX-1 stale header comment FIX-NOW at landing.
 - 2026-11-27 r107 arenaf3 (code): [ARENA-SCOPES] F3 on lane/f3; no answer/speed/size findings; A/B/C/E FIX-NOW (S3572 re-spelled, comments), D DOC; F/G NOTED.
+- 2026-11-27 r109 predbang (design, sized small): the `!` candidate (docs/dev/pred/bang_candidate.md at cb779ec71; 3 opus critics: ruling, examples, general; F1-F15, all CONFIRMED); answers to the owner's three questions with runs; suggestion V-C (`!` on zero-width tests, `!^A` / `!~A`, `:!` and `&!` kept, `?:!` dropped); nothing ruled by the owner.
