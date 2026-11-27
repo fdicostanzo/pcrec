@@ -12101,3 +12101,29 @@ X & (X.n.d: <5) | X := [n = (P SEQ Q)] | refused: `X.n.d`: `n.d` is not visible 
 Noted for the fix lane (the manager's observation, not his): the engine answers `X.Q.d` from outside "legal" while
 refusing `X.n.Q.d` and `X.d`; core/labels/export statement 3 says "A part used alone exports nothing", so that
 line of the model looks wrong and is to be checked.
+
+### 2026-11-27 OWNER, an IDEA on alone-as-middle: "you have to mention the gate label, Q in this case"
+tags: core/labels/rule/alone-as-middle core/labels/rule/paths core/labels/export
+His words, verbatim (to the re-asked alone-as-middle): "Interesting. It might be the correct reading of the rules
+but I'm concerned that it's confusing. "n.d" where does the d come from? Idea: you have to mention the gate
+label, Q in this case. For: clear paths. Against: an array on d constructed from multiple sources is possible.
+Thoughts?"
+Class: IDEA with a QUESTION ("Thoughts?"); nothing ruled; alone-as-middle stays open.
+The manager's reading of the idea: a part used alone is a GATE: its name may be a middle step (`n.Q.d`) and may
+NOT be skipped (`n.d` through `P SEQ Q` a compile error); a label someone WROTE (`[a = P]`) is still skipped by
+rule 4. The run for his "against" (`docs/dev/lanes/predbang_evidence/gate.py`, predfix90_model's engine, today's
+reading; subjects WHOLE `7,3` `3,7` `1,2` `8,9`, SEARCHED `8,9 3,7 1,2`, FIND-ALL `7,3 3,7 4,1 9,9`; pasted from
+`gate.out`; `all(` is not a name of the model's):
+```
+model last line: predfix90_model: 26 checks, 0 failed
+[n = ([a = P] SEQ [b = Q])] & (n.d: <5) | - | legal [(True, (0, 3), (('7,3', 0),)), (False, None, ()), (True, (0, 3), (('1,2', 0),)), (False, None, ()), (False, (8, 11), (('1,2', 8),)), (False, (0, 3), (('7,3', 0), ('4,1', 8)))]
+[n = ([a = P] SEQ [b = Q])] & some((n.d: <5)) | - | legal [(True, (0, 3), (('7,3', 0),)), (True, (0, 3), (('3,7', 0),)), (True, (0, 3), (('1,2', 0),)), (False, None, ()), (False, (4, 7), (('3,7', 4), ('1,2', 8))), (False, (0, 3), (('7,3', 0), ('3,7', 4), ('4,1', 8)))]
+[n = ([a = P] SEQ [b = Q])] & all((n.d: <5)) | - | refused: an undeclared name: all((n.d: <5))
+[n = (P SEQ Q)] & some((n.d: <5)) | - | legal [(True, (0, 3), (('7,3', 0),)), (True, (0, 3), (('3,7', 0),)), (True, (0, 3), (('1,2', 0),)), (False, None, ()), (False, (4, 7), (('3,7', 4), ('1,2', 8))), (False, (0, 3), (('7,3', 0), ('3,7', 4), ('4,1', 8)))]
+[n = (P SEQ Q)] & all((n.d: <5)) | - | refused: an undeclared name: all((n.d: <5))
+[n = (P SEQ Q)] & (P.d: <5) & (Q.d: <5) | - | legal [(False, None, ()), (False, None, ()), (True, (0, 3), (('1,2', 0),)), (False, None, ()), (False, (8, 11), (('1,2', 8),)), (False, (8, 11), (('4,1', 8),))]
+```
+The manager's readings: the array over several sources stays available under the idea by WRITING labels on the
+parts (lines 1 and 2: `n.d` over `[a = P] SEQ [b = Q]`), so the cost is those labels, not the array; the idea
+moves one printed line from an answer to a compile error (core/labels/rule/alone-as-middle, "Through the part
+used alone, skipped").

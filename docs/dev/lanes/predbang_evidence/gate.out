@@ -1,0 +1,7 @@
+model last line: predfix90_model: 26 checks, 0 failed
+[n = ([a = P] SEQ [b = Q])] & (n.d: <5) | - | legal [(True, (0, 3), (('7,3', 0),)), (False, None, ()), (True, (0, 3), (('1,2', 0),)), (False, None, ()), (False, (8, 11), (('1,2', 8),)), (False, (0, 3), (('7,3', 0), ('4,1', 8)))]
+[n = ([a = P] SEQ [b = Q])] & some((n.d: <5)) | - | legal [(True, (0, 3), (('7,3', 0),)), (True, (0, 3), (('3,7', 0),)), (True, (0, 3), (('1,2', 0),)), (False, None, ()), (False, (4, 7), (('3,7', 4), ('1,2', 8))), (False, (0, 3), (('7,3', 0), ('3,7', 4), ('4,1', 8)))]
+[n = ([a = P] SEQ [b = Q])] & all((n.d: <5)) | - | refused: an undeclared name: all((n.d: <5))
+[n = (P SEQ Q)] & some((n.d: <5)) | - | legal [(True, (0, 3), (('7,3', 0),)), (True, (0, 3), (('3,7', 0),)), (True, (0, 3), (('1,2', 0),)), (False, None, ()), (False, (4, 7), (('3,7', 4), ('1,2', 8))), (False, (0, 3), (('7,3', 0), ('3,7', 4), ('4,1', 8)))]
+[n = (P SEQ Q)] & all((n.d: <5)) | - | refused: an undeclared name: all((n.d: <5))
+[n = (P SEQ Q)] & (P.d: <5) & (Q.d: <5) | - | legal [(False, None, ()), (False, None, ()), (True, (0, 3), (('1,2', 0),)), (False, None, ()), (False, (8, 11), (('1,2', 8),)), (False, (8, 11), (('4,1', 8),))]
