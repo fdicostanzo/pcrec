@@ -1130,15 +1130,17 @@ int main(int argc, char **argv)
          * THE ABSORPTION PIN IS BY DESIGN, not a filed defect: a part that
          * refuses ends the compound row and the compile falls back to the
          * plain artifact (compound.c: "Nothing here refuses the compile"),
-         * so single-shot failures inside a part's compile succeed (1010 of
-         * 1045 at [ARENA-SCOPES] F1, re-pinned UP from 982 of 1008: each part
-         * compile's registry records are new heap calls, absorbed by the same
-         * fallback; lane arenabuild2's R-3 array read 984 of 1011 and was
-         * reverted, lane arenabuild3's R-5); under sustained failure the fallback fails too (0). The
+         * so single-shot failures inside a part's compile succeed (1014 of
+         * 1057 at [ARENA-SCOPES] F3, re-pinned UP from 1010 of 1045 (F1): the
+         * three rewrites' scope records are new heap calls in each part
+         * compile, absorbed by the same fallback; `make alloc`, lane f3;
+         * F1 re-pinned UP from 982 of 1008; lane arenabuild2's R-3 array read
+         * 984 of 1011 and was reverted, lane arenabuild3's R-5); under
+         * sustained failure the fallback fails too (0). The
          * pin is exact (D110); allocation-shape churn on the compound path
          * re-pins it. `min_total` floor: 504 (half of 1008, kept). */
         { "W6 (compound split)",   "^abc|x+$",   PCREC_ENC_BYTE, 0, 0,
-          504, 1010, 0,
+          504, 1014, 0,
           "the compound row's by-design fallback: a refused part compile "
           "leaves the plain artifact (compound.c)", NULL, 0 },
     };

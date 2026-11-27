@@ -805,6 +805,21 @@ Listed for the pre-go briefing; under D191 addendum 2 they need no go of their o
   `free(): invalid pointer` abort no longer reads as a refusal.
 - r104, MEMGATE-7: `pcrec_err_chan` is the channel for arena.c and sb.c refusals only (D-7, the scanner's scope); the
   16 `sb->cx` refusals in vm_stmt.c (11) and enc.c (5) read the Ctx directly: an F4 input.
+- F3 BUILT (lane f3, 2026-11-27; `docs/dev/lanes/f3_report.md`). `target_headers_render`'s `nb`, `splice_mark`'s
+  `tail` and `render_buf`'s `o` are `pcrec_scope_sb` entries of a scope on `&cx->arena` (`splice_mark` now takes the
+  Ctx); `nb` and `o` hand their storage to csb/hsb by `pcrec_sb_adopt` before the close, so the close frees an empty
+  buffer and nothing is copied. `nb`'s scope opens at pass 2 (after `pcrec_memfn_target_headers`, so no kit call runs
+  inside it); `o`'s after `render_buf`'s early return. None of the three is reachable from `pcrec_facts_force_all`
+  (both renders run before the force loop), so REGISTRY-1's trigger has not fired. Bound used: sizeof(StrBuf) 192
+  (measured), so a STRBUF record requests 208 B (16 B header + 192) and a MARK 40 B: +248 B requested per rewrite live
+  at the peak; the gate bound stays 256 B (C13). DELETED: the scanner's 3 `ALLOW` rows and its `shape:NAME` narrowing
+  (`classify` returns shapes only); `alloc_check.c`'s `target_headers_render` row WITH THE WHOLE filed-stranding table
+  (`known_stranded`, its seen counts, exit code 5, the stale-row loop) and the allocation-stack recording and `fn`
+  column. The table is deleted rather than left empty: with no row nothing can reach it (learnings section 3), and a
+  later filed stranding restores it with its first row. S3572 is RE-AIMED at S11 (the plant puts `tail` back on the
+  heap: S11 is SINGLE-CONTROL, the scanner its only net); S3584 is RE-AIMED at a heap second declarator beside
+  `target_headers_render`'s scratch `lines` (per-declarator classification still matters without names).
+  `MIN_SCOPE_OPENS` 2 -> 3 (half of 6 opening sites, D110).
 
 ## r102 disposition
 
