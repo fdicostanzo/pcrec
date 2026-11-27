@@ -28763,3 +28763,18 @@ Next
 - SCOPE-4 measured by f3: emit_whole as a scope client moves 108 of 7,402 VM+UTF-8 compiles, all DOWN (median -131 KB,
   max -328 KB); the trigger r105 recorded has fired. Merged + pushed 7427475af.
 - Next: the emit_whole client (F2's shape) and F4 (K163), one lane at a time.
+
+## 2026-11-27 (session 144, midday): [ARENA-SCOPES] emit_whole + whole_bytes clients landed
+
+- Owner "Scope4 next: go" and "F4 go". Lane scope4 (sonnet): pcrec_clskit_emit_whole (src/gen/clskit.c) in F2's shape;
+  S3643/S3644; memgate MG_ENC/MG_ENG levers (the in-tree byte/auto population never reaches the site).
+- r108 arenaemit: no answer findings; A (S3644 had no red net: scope4's mech job confirmed UNDETECTED), C (lever tests
+  survived 3 mutations), D, E; B = sibling pcrec_clskit_whole_bytes builds the same tables on &cx->arena (~74 KB),
+  folded into the fix lane as client S14c. Lane scope4fix (sonnet) applied all; S3644/S3648 declared UNDETECTED with
+  memgate (levers + --bound 0) as their net, exit codes proven; MIN_SCOPE_OPENS 3 -> 4 (8 sites).
+- Gates on scope4fix: make test, mech, alloc GREEN; memgate default 0 movers, rungs IDENTICAL, instr WITHIN; UTF-8+VM
+  106 of 7,402 compiles DOWN (max -811,176 B), 0 up. scope4's own test/memgate jobs cancelled as superseded.
+- Lesson (mine): the scope4fix lane idled 1h45m "waiting for a completion notice" after its own proof runs had ended
+  (proof.exits ALLDONE at 10:50); a nudge with the file's contents finished it. And I safekilled a PID I took for the
+  lane's watcher that was my own monread; restarted at once, no verdict lost.
+- Next: F4 (K163), the last unit.
