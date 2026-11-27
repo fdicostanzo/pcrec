@@ -11760,3 +11760,32 @@ lane to test on every one):
   compile error (core/filters/operand-context).
 - `|!`: not defined by the sketch; `A | !B` reads by composition as "A, or else a point where B cannot match".
 DFA category (his standing question): YES, unchanged (spellings only).
+
+### 2026-11-27 OWNER, on `:!`: "so is (a: !<v) read as (a:! <v) or is the first just a compiler error. you can't put a lookahead in a condition being the idea"
+tags: core/conditions/form core/conditions/form/optional-entry core/filters/negation core/filters/operand-context core/operators/precedence core/diagnostics/errors core/principles/conservative-first
+
+Said on the manager's answer that `(h: !<5)` as printed is the same characters as `(h :! <5)` with the same
+meaning. HIS WORDS, whole:
+
+"so is (a: !<v) read as (a:! <v) or is the first just a compiler error. you can't put a lookahead in a condition
+being the idea"
+
+Class: a QUESTION between two readings, with the idea behind the second stated ("you can't put a lookahead in a
+condition"). NOT a ruling.
+RUN before answering (python; x over 0..999; output pasted):
+(x: !<200 | >900)  prefix on the first set: 800 values hold; the operator on the whole set: 701 ; they differ on 99
+(x: !<200 & >100)  prefix on the first set: 800 values hold; the operator on the whole set: 901 ; they differ on 101
+LISTED (grep of core.md and library.md, a `!` after `:` or `&` in a code span): `(h: !<5)`, `(h: !S)`,
+`(h = "x": !<5)`, `(x: !B)`, `(0: !contains("7"))`, `A & !B`, `anything & !X`, `rx.any & !S`,
+`P & !(P & (h: <5))`: each negates ONE atom or one parenthesised group.
+The manager's answer (told to him; the manager's reading; nothing applied):
+- A CORRECTION of the entry above: "the same characters ... the same meaning" holds only where the `!` stands
+  before a single atom, which is every printed form (the list). Before a compound set the two readings part (the
+  run): today's prefix `!` takes the first atom (core/operators/precedence, level 3), the entry operator `:!`
+  the whole set (inside an entry `&` and `|` bind tighter than `:`).
+- So the manager's leaning is his second reading: `:!`, `?:!` and `&!` are each ONE token, written together;
+  `(a: !<v)` is a prefix `!` in a set, a lookahead where a set is judged against a label's text, and a compile
+  error whose message names `:!`. Likewise `A & !B` (the message names `&!`). An error now relaxes later without
+  changing an answer; the silent reading could not be taken back.
+- The cost returns: the printed forms of the list are re-spelled at the fold (mechanical: each is a single atom).
+DFA category (his standing question): YES, unchanged (a spelling and an error).
