@@ -11983,3 +11983,20 @@ passed around and combined with other complements. It may be used as an operand 
 least one positive pattern. Any use that needs it to produce a match by itself is a compile error at that use".
 The manager's reading: that ruling carries over under `~` word for word (`not_seven := ~seven`); nothing new to
 rule.
+
+### 2026-11-27 OWNER, on the fold's budget; QUESTION on `&!`; a future note on `!` and a non-atomic lookaround
+tags: core/filters/complement core/filters/negation core/filters/and lib/control/peek
+His words, verbatim: "Budget is fine. Some last questions before fold:
+1. does &! still make sense. It reads well as "and not in" but it's using the logical operators in sets.
+2. future note: ! with nonatomic lookaround?"
+Class: "Budget is fine" answers fold-go (the manager's reading: the fold lane may launch once these two are
+settled); 1 is a QUESTION (bang-split line 3, "There is no `:!`, `?:!` or `&!`", stands until he says otherwise);
+2 is an IDEA for the parked list, nothing ruled.
+The manager's readings, told to him (none his words):
+- On 1: under bang-split `A &!(c)` already reads as `A & !(c)`, a filter by a negated condition; a token `&!`
+  meaning the set difference would give the same characters a second meaning by operand kind, which is the
+  two-meanings problem bang-split removed. "And not in" is written `A & ~B` (may be typed `A &~ B`).
+- On 2 (hand-reasoned, NOT run: python `re` has no non-atomic lookaround): `!X` answers yes or no and passes no
+  labels, so nothing can backtrack into it; atomic or not cannot change its answer. The non-atomic question
+  belongs to the POSITIVE `^A` only (whether a later piece may make `^A` retry another way of matching A). A
+  parked piece is owed at the fold: "a non-atomic `^A`", trigger: a printed program whose answer needs the retry.
