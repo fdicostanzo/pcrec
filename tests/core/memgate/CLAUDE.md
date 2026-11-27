@@ -16,6 +16,14 @@ scratch tool.
   bytes (requested block size) split by ARENA IDENTITY through `--wrap=pcrec_arena_alloc`/`pcrec_arena_free`: attempt arena =
   `&cx->arena`), `-DMG_INSTR` (plain library; user-mode instructions by `perf_event_open`).
 
+## Population levers (env, SCOPE-4)
+
+The default population is byte mode with the auto engine; it cannot reach the VM whole-set class matchers (the
+`pcrec_clskit_emit_whole` site). `MG_ENC=N` sets `pcrec_options.encoding` for every compile (mg_drv.c; 1 = utf8) and
+`MG_ENG=N` the engine of the CORPUS items (cells keep their own; 2 = VM). Unset reads 0. memgate.py `levers()` refuses a
+non-integer, every mode (`peak`, `rungs`, `instr`) prints a `<mode>: levers MG_ENC=.. MG_ENG=..` line, and `test_verdicts.py` covers the reads: `population()` must carry MG_ENG, and the built mg_peak driver must change under MG_ENC (builds the inject library, incrementally). A bound is needed for a verdict: `peak ... --bound 0` (`make memgate` passes MEMGATE_BOUND; the levers pass through its environment). Run with both sides under the
+same values: `MG_ENC=1 MG_ENG=2 python3 -I tests/core/memgate/memgate.py peak A B OUT --bound 0`. Nothing more: no per-cell lever.
+
 ## Rules
 
 - THE RUNG RULE (the owner, 2026-11-25, "rung-edge: agree with lean"; design D-9): `rungs` judges a rung on REQUESTED

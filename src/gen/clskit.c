@@ -438,19 +438,12 @@ static int idx_width(int count)
     return count <= 256 ? 1 : 2;
 }
 
-/* The model bytes (`.rodata` exact + measured `.text`) of a whole-set form
- * over a set. `PAGE3`/`PAGE2` materialize their tables to count them, so
- * the price and the emitted table cannot disagree (the study's §8 lesson:
- * its O(k) PAGE64 price once did). `CLSF_KIT`/`CLSF_ATOM` are not whole-set
- * forms and answer -1. */
-long long pcrec_clskit_whole_bytes(Arena *a, ClsForm f,
-                                   const PcrecCpRange *iv, int n)
+/* The whole-set pricing body: its tables are scratch on `a`, a scope's child arena. */
+static long long whole_bytes_body(Arena *a, ClsForm f,
+                                  const PcrecCpRange *iv, int n)
 {
     WholePages w;
-    if (n <= 0) return 0;
     switch (f) {
-    case CLSF_BITMAP1:
-        return (iv[n - 1].hi - iv[0].lo + 1 + 7) / 8 + PLACE.bitmap1_text;
     case CLSF_PAGE2:
         build_pages(a, iv, n, 0, &w);
         return (long long)w.npages * idx_width(w.nleaf) + 8LL * w.nleaf
@@ -460,6 +453,32 @@ long long pcrec_clskit_whole_bytes(Arena *a, ClsForm f,
         return (long long)w.ntop * idx_width(w.nblk)
                + (long long)w.nblk * w.bs * idx_width(w.nleaf)
                + 8LL * w.nleaf + PLACE.page3_text;
+    default:
+        return -1;
+    }
+}
+
+/* The model bytes (`.rodata` exact + measured `.text`) of a whole-set form
+ * over a set. `PAGE3`/`PAGE2` materialize their tables to count them, so
+ * the price and the emitted table cannot disagree (the study's §8 lesson:
+ * its O(k) PAGE64 price once did). `CLSF_KIT`/`CLSF_ATOM` are not whole-set
+ * forms and answer -1. */
+long long pcrec_clskit_whole_bytes(Arena *parent, ClsForm f,
+                                   const PcrecCpRange *iv, int n)
+{
+    if (n <= 0) return 0;
+    switch (f) {
+    case CLSF_BITMAP1:
+        return (iv[n - 1].hi - iv[0].lo + 1 + 7) / 8 + PLACE.bitmap1_text;
+    case CLSF_PAGE2:
+    case CLSF_PAGE3: {
+        /* The priced tables are scratch (the result is one scalar): they
+         * live in a scope's child arena of `parent`, released here. */
+        Scope sc = pcrec_scope_open(parent);
+        long long r = whole_bytes_body(pcrec_scope_arena(&sc), f, iv, n);
+        pcrec_scope_close(&sc);
+        return r;
+    }
     case CLSF_KIT:
     case CLSF_ATOM:
     case CLSF_NFORM:
@@ -1140,13 +1159,12 @@ void pcrec_clskit_emit_kit(StrBuf *c, Arena *parent, const char *fn,
     pcrec_scope_close(&sc);
 }
 
-/* A WHOLE-SET MATCHER (`P3`, `P2` or `B1`): its tables, then `FN`'s bound
- * and one branch-free lookup. */
-void pcrec_clskit_emit_whole(StrBuf *c, Arena *a, const char *fn, ClsForm f,
-                             const PcrecCpRange *iv, int n)
+/* The whole-set body: every scratch block (the bitmap, the page tables, the
+ * name fragments) comes from `a`, a scope's child arena. */
+static void emit_whole_body(StrBuf *c, Arena *a, const char *fn, ClsForm f,
+                            const PcrecCpRange *iv, int n)
 {
     WholePages w;
-    if (n <= 0) { emit_empty(c, fn); return; }
     unsigned lo = iv[0].lo, hi = iv[n - 1].hi;
     const char *lt = NULL;
 
@@ -1192,6 +1210,23 @@ void pcrec_clskit_emit_whole(StrBuf *c, Arena *a, const char *fn, ClsForm f,
     case CLSF_NFORM:
         return;
     }
+}
+
+/* A WHOLE-SET MATCHER (`P3`, `P2` or `B1`): its tables, then `FN`'s bound
+ * and one branch-free lookup. Its scratch text lives in a child arena of
+ * `parent` (a scope's ARENA entry: released at the close below, or by
+ * compile_driver's handler-top unwind if a refusal leaves inside the body:
+ * the compile attempt's VM emitter, compile.c's
+ * pcrec_emit_vm, is its only compile route, and the
+ * tests/clskit driver owns its arena); the empty set's path opens no scope
+ * and takes nothing. */
+void pcrec_clskit_emit_whole(StrBuf *c, Arena *parent, const char *fn, ClsForm f,
+                             const PcrecCpRange *iv, int n)
+{
+    if (n <= 0) { emit_empty(c, fn); return; }
+    Scope sc = pcrec_scope_open(parent);
+    emit_whole_body(c, pcrec_scope_arena(&sc), fn, f, iv, n);
+    pcrec_scope_close(&sc);
 }
 
 /* The artifact's ONE shared byte->atom table, named `tab`. */

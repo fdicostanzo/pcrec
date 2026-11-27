@@ -234,7 +234,7 @@ typedef enum {
 
 void pcrec_clskit_partition(Arena *a, const PcrecCpRange *iv, int n,
                             unsigned lam, unsigned leaf_allow, ClsKit *out);
-long long pcrec_clskit_whole_bytes(Arena *a, ClsForm f,
+long long pcrec_clskit_whole_bytes(Arena *parent, ClsForm f,
                                    const PcrecCpRange *iv, int n);
 bool pcrec_clskit_atoms(Arena *a, const PcrecCpRange *const *sets,
                         const int *nivs, int nset, ClsAtomTable *out);
@@ -260,7 +260,7 @@ void pcrec_clskit_emit_kit(StrBuf *c, Arena *parent, const char *fn,
 void pcrec_clskit_emit_inline(StrBuf *c, const ClsChoice *ch, const char *byte);
 const char *pcrec_clskit_read(Arena *a, ClsTest t, ClsTabForm f,
                               const char *name, const char *byte);
-void pcrec_clskit_emit_whole(StrBuf *c, Arena *a, const char *fn, ClsForm f,
+void pcrec_clskit_emit_whole(StrBuf *c, Arena *parent, const char *fn, ClsForm f,
                              const PcrecCpRange *iv, int n);
 void pcrec_clskit_emit_atom_table(StrBuf *c, const char *tab,
                                   const ClsAtomTable *t);
