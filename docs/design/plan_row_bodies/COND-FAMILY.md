@@ -11725,3 +11725,38 @@ The manager's answer (told to him; the manager's judgement and reading; nothing 
   The positive peek keeps a form of its own: his `^A`, or today's `peek(A)`; `!!A` has its answers but passes no
   labels on.
 DFA category (his standing question): YES, unchanged.
+
+### 2026-11-27 OWNER, on the entry's negative spelling: "do we have to change condition !. i was thinking for consistency it could be :! which would match &! or |!  we'd get monstrosities like ?:!"
+tags: core/conditions/form core/conditions/form/optional-entry core/filters/negation core/filters/complement core/filters/and core/operators/precedence core/spellings/placeholders core/patterns/alternation
+
+Said on the manager's answer that a prefix `!` as the negative lookahead is no mistake once the complement object
+is gone, and its table of point tests and membership tests. HIS WORDS, whole:
+
+"do we have to change condition !. i was thinking for consistency it could be :! which would match &! or |!  we'd
+get monstrosities like ?:! but if you see that its a good time to think about it and the operator modifiers are
+clear and on different sides of the :"
+
+Class: a QUESTION ("do we have to change condition !") and a SPELLING PROPOSAL: the negative entries are `:!` and
+`?:!` (replacing his `!` and `?!` of this morning), "for consistency" with `&!`; the modifiers on different sides
+of the colon (`?` before, `!` after). Spellings are placeholders (D193 addendum 4); the MEANING is unchanged from
+the entry "would the test cases be solved". He also writes `|!`: no meaning was given to it in today's sketch.
+NOT a ruling.
+COUNTED, not a check (scratch `bang_census.py`, a crude count of `!` in the code spans of core.md and library.md
+by the token before it): after `:` 11 (`(h: !<5)`, `(h: !S)`, `(0: !contains("7"))`), after `&` 11 (`A & !B`,
+`P & !(P & (h: <5))`).
+The manager's answer (told to him; the manager's reading; UNTESTED against the printed examples: for the fold
+lane to test on every one):
+- The prefix `!` on a condition does not change: `!(h: <5)` is "the condition fails here", as ruled
+  (condition-not, absent-under-not).
+- `:!` and `?:!` have a consequence beyond consistency: `(h: !<5)` as printed today is the same characters as
+  `(h :! <5)` and has the same meaning ("h present and outside `<5`"), and `A & !B` the same characters as
+  `A &! B` with the same meaning (the difference). So if `!` straight after `&`, `:` or `?:` is read as that
+  operator's negative mark (spaces allowed), the forms written for weeks keep both their spelling and their
+  answers, and the cost named in the entry above (`A & !B` becoming a compile error) does not arise.
+- What then changes in the language is small: (1) a complement is no longer an object (no `neither := !B & !C`,
+  no `!B & A`, no passing one as an argument); (2) `!A` where a pattern stands in place (a sequence, an argument,
+  a `when` test), a compile error today, becomes the negative lookahead; (3) `?:!` is new.
+- `A & (!B)`, the parentheses making it the prefix form, is then a lookahead as a filter operand: the existing
+  compile error (core/filters/operand-context).
+- `|!`: not defined by the sketch; `A | !B` reads by composition as "A, or else a point where B cannot match".
+DFA category (his standing question): YES, unchanged (spellings only).
