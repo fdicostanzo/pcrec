@@ -25,8 +25,10 @@ This is design only. Nothing under src/, cli/, lib/, memfn/, tests/ or scripts/ 
 - Attribution: the brief's commit trailer named Claude Fable 5.2. The commits carry "Co-Authored-By: Claude Opus
   5.5", the model that ran this lane, following the session's attribution instruction.
 
-OWED:
-- A rulings item for each of R-1..R-6 at the merge. Their record entries ("2026-11-27 OWNER RULING —
+OWED: none.
+
+At the merge (the manager's):
+- A rulings item for each of R-1..R-6. Their record entries ("2026-11-27 OWNER RULING —
   sent-label-wall" and its five siblings) are on lane/pred-rev28 after this lane's start commit. No
   `(record: ...)` item on this branch can cite them, so lint L4 would refuse one. Each details entry cites the
   rulings file's R-n instead and says the item is owed at the merge.
