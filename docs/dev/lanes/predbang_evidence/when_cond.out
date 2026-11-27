@@ -1,0 +1,14 @@
+today, bare test  when(A, B, C)            AB|(?!A)C 
+    WHOLE 12 FAILS 123 HOLDS x HOLDS 1x FAILS | SEARCHED x123 ('x', 0) | FIND-ALL 12 x 123 1x 7 [('x', 3), ('123', 5), ('x', 10)]
+his form, 0 = A's stretch  A & when((0: A), B, C)  = A & B 
+    WHOLE 12 FAILS 123 FAILS x FAILS 1x FAILS | SEARCHED x123 None | FIND-ALL 12 x 123 1x 7 []
+label + condition  [t = A]? SEQ when((t ?: nothing-fails), B, C)   (?<t>A)?(?(t)B|C) 
+    WHOLE 12 FAILS 123 HOLDS x HOLDS 1x FAILS | SEARCHED x123 ('x', 0) | FIND-ALL 12 x 123 1x 7 [('1', 0), ('2', 1), ('x', 3), ('123', 5), ('1', 9), ('x', 10), ('7', 12)]
+the same, possessive optional   (?<t>A)?+(?(t)B|C) 
+    WHOLE 12 FAILS 123 HOLDS x HOLDS 1x FAILS | SEARCHED x123 ('x', 0) | FIND-ALL 12 x 123 1x 7 [('x', 3), ('123', 5), ('x', 10)]
+plain alternation  (A SEQ B) | C 
+    WHOLE 12 FAILS 123 HOLDS x HOLDS 1x FAILS | SEARCHED x123 ('x', 0) | FIND-ALL 12 x 123 1x 7 [('1', 0), ('2', 1), ('x', 3), ('123', 5), ('1', 9), ('x', 10), ('7', 12)]
+today  against  his form, 0 = A's stretch : 998 of 1093 differ (first: 'x')
+today  against  label + condition : 916 of 1093 differ (first: '1')
+today  against  the same, possessive optional : 0 of 1093 differ
+today  against  plain alternation : 916 of 1093 differ (first: '1')

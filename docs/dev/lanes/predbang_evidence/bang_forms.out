@@ -1,0 +1,8 @@
+A & !B & !C | WHOLE 12 HOLDS 7 FAILS 73 FAILS 713 FAILS | SEARCHED ('37', 5) | FIND-ALL [('37', 5), ('12', 11), ('1', 15)]
+A &! (B | C) | WHOLE 12 HOLDS 7 FAILS 73 FAILS 713 FAILS | SEARCHED ('37', 5) | FIND-ALL [('37', 5), ('12', 11), ('1', 15)]
+A & !(0:B) & !(0:C) | WHOLE 12 HOLDS 7 FAILS 73 FAILS 713 FAILS | SEARCHED ('37', 5) | FIND-ALL [('37', 5), ('12', 11), ('1', 15)]
+A & (C | !B) | WHOLE 12 HOLDS 7 FAILS 73 HOLDS 713 HOLDS | SEARCHED ('73', 2) | FIND-ALL [('73', 2), ('37', 5), ('12', 11), ('713', 14)]
+A &! (B &! C) | WHOLE 12 HOLDS 7 FAILS 73 HOLDS 713 HOLDS | SEARCHED ('73', 2) | FIND-ALL [('73', 2), ('37', 5), ('12', 11), ('713', 14)]
+A & !B & !C  against  A &! (B | C): 0 of 5461 differ
+A & (C | !B)  against  A &! (B &! C): 0 of 5461 differ
+A & !B & !C  against  A & (C | !B): 2970 of 5461 differ

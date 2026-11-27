@@ -1,0 +1,3 @@
+today  when(peek(A), B, C)  (?=A)B|(?!A)C | WHOLE 12 HOLDS 1 FAILS x HOLDS | SEARCHED x123 ('x', 0) | FIND-ALL 12 x 123 1x 7 [('12', 0), ('x', 3), ('12', 5), ('x', 10)]
+label on the peek, possessive optional, a condition as the test | WHOLE 12 HOLDS 1 FAILS x HOLDS | SEARCHED x123 ('x', 0) | FIND-ALL 12 x 123 1x 7 [('12', 0), ('x', 3), ('12', 5), ('x', 10)]
+0 of 1093 differ

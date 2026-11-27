@@ -1,0 +1,8 @@
+today, bare test: when(A, B, C) is AB|(?!A)C 
+    WHOLE 123 HOLDS x HOLDS 1 FAILS | SEARCHED 123 ('123', 0) | FIND-ALL 12 x 123 1x 7 [('x', 3), ('123', 5), ('x', 10)]
+when((0: A), A SEQ B, C), 0 the match so far (empty where the call stands first; never an A) 
+    WHOLE 123 FAILS x HOLDS 1 HOLDS | SEARCHED 123 ('1', 0) | FIND-ALL 12 x 123 1x 7 [('1', 0), ('2', 1), ('x', 3), ('1', 5), ('2', 6), ('3', 7), ('1', 9), ('x', 10), ('7', 12)]
+when((0: A), A SEQ B, C), the test read as 'A matches from here': (?=A)AB|(?!A)C 
+    WHOLE 123 HOLDS x HOLDS 1 FAILS | SEARCHED 123 ('123', 0) | FIND-ALL 12 x 123 1x 7 [('x', 3), ('123', 5), ('x', 10)]
+today  against  when((0 : 966 of 1093 differ
+today  against  when((0 : 0 of 1093 differ

@@ -11854,3 +11854,27 @@ The manager's reading (told to him; nothing applied): by his method, what is not
 CONSTRUCTION, "a direction acknowledged", never illegal: the bare `!` would be RESERVED, its compile errors
 saying so, in place of line 1's "goes". The two meanings he names sit on the two sides of the split already:
 "outside the set" in `:!`, `?:!`, `&!`; "does not hold here" in `^!` and `~!`.
+
+### 2026-11-27 OWNER, on line 6 of bang-split: "i don't like ^!(cond) because it looks like abuse. perhaps that is the one form and ! mean logical not"; QUESTIONS; and a REQUEST: "please have a critic lane look over these rules and provide feedback and a suggestion on !"
+tags: core/filters/negation core/filters/complement core/conditions/form core/conditions/form/optional-entry core/conditions/two-valued core/patterns/lookaround lib/control/when core/principles/build-later
+
+Said on the manager's two questions (line 6: is "the condition fails here" written `^!(h: <5)` for now, or does
+`!(cond)` stay as the one bare use; and bang-split itself). HIS WORDS, whole:
+
+"i don't like ^!(cond) because it looks like abuse. perhaps that is the one form and ! mean logical not. what is
+the difference between (a:! 5) and !(a: 5) ? perhaps its in the compound forms. please have a critic lane look
+over these rules and provide feedback and a suggestion on !. if !(cond) is ok, is there another place ! would
+also work? would it make sense to replace :! et al if we went with !(cond) or do they mean different things"
+
+Class: (1) a DISLIKE of line 6's `^!(cond)` ("looks like abuse") and a LEAN ("perhaps"): `!(cond)` the one bare
+form, `!` meaning logical not. (2) three QUESTIONS (the difference between `(a :! 5)` and `!(a: 5)`; another
+place `!` would work; whether `:!` and the others are replaced by `!(cond)` or mean different things). (3) a
+REQUEST: a critic round on the rules, with feedback and a suggestion on `!`. NOT a ruling; bang-split is NOT
+answered (line 6 as written is not what he wants).
+The manager's answer to the first question (told to him; from the run of the entry "would the test cases be
+solved", `bang_entry.py`, the rows `(h ! <5)` and `(h ?! <5)` there, now spelled `:!` and `?:!`): they differ
+exactly where the label is ABSENT: `(a :! 5)` needs a present and not 5 (on `/(?<h>\d)?x/`, `(h :! <5)`: WHOLE
+`x` FAILS); `!(a: 5)` holds there too (the answers of `(h ?:! <5)`: WHOLE `x` HOLDS). Crosswise, `!(a ?: 5)` is
+`(a :! 5)`. The rest is put to the round.
+ACTION: review r109 (predbang), design mode, sized small; the subject `docs/dev/pred/bang_candidate.md` (the
+candidate, four variants, his four questions verbatim), the evidence `docs/dev/lanes/predbang_evidence/`.

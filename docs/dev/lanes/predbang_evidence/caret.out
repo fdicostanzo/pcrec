@@ -1,0 +1,6 @@
+when(^A, B, C): (?=A)B|(?!(?=A))C  against  (?=A)B|(?!A)C
+    WHOLE 12 HOLDS 1 FAILS x HOLDS xy FAILS | SEARCHED 12 x 123 1x xy ('12', 0) | FIND-ALL [('12', 0), ('x', 3), ('12', 5), ('x', 10), ('x', 12), ('y', 13)]
+    0 of 1093 differ
+when(^!A, B, C): (?!A)B|(?!(?!A))C  against  (?!A)B|(?=A)C
+    WHOLE 12 FAILS 1 HOLDS x FAILS xy HOLDS | SEARCHED 12 x 123 1x xy ('1', 0) | FIND-ALL [('1', 0), ('2', 1), ('1', 5), ('2', 6), ('3', 7), ('1', 9), ('xy', 12)]
+    0 of 1093 differ

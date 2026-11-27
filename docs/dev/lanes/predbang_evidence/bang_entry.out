@@ -1,0 +1,4 @@
+(h: <5)   present and in | WHOLE x FAILS 3x HOLDS 7x FAILS | SEARCHED ('3x', 3) | FIND-ALL [('3x', 3)]
+(h ?: <5) absent or in | WHOLE x HOLDS 3x HOLDS 7x FAILS | SEARCHED ('x', 1) | FIND-ALL [('x', 1), ('3x', 3), ('x', 6)]
+(h ! <5)  present and outside | WHOLE x FAILS 3x FAILS 7x HOLDS | SEARCHED ('7x', 0) | FIND-ALL [('7x', 0)]
+(h ?! <5) absent or outside | WHOLE x HOLDS 3x FAILS 7x HOLDS | SEARCHED ('7x', 0) | FIND-ALL [('7x', 0), ('x', 4), ('x', 6)]
