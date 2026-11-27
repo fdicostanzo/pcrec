@@ -1263,8 +1263,9 @@ int main(int argc, char **argv)
 
     /* [K155] every filed stranding must still be reached: one no witness
      * strands any more is fixed (or out of reach), and its exception is
-     * stale -- the allowlist that quietly stops matching. */
-    for (size_t j = 0; j < N_KNOWN_STRANDED; j++) {
+     * stale -- the allowlist that quietly stops matching. A whole-run
+     * assertion: --w7-only runs one witness, so it cannot judge it. */
+    for (size_t j = 0; j < N_KNOWN_STRANDED && !w7_only; j++) {
         if (known_stranded_seen[j])
             ok("known stranding %s (%s%s%s): reached, %lld trial(s)", known_stranded[j].row,
                known_stranded[j].file, known_stranded[j].fn ? " under " : "",
