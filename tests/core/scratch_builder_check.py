@@ -43,9 +43,8 @@ and shares nothing with this scan: tests/core/alloc_check.c fails every
 allocation of its witnesses in turn and fails a refusal that leaves the
 injected tree's live heap above zero (`make test-alloc`) -- but ONLY for the
 sites its witnesses W1-W6 reach. Rows no witness reaches are SINGLE-CONTROL
-(this scan only): today S3570's landmark-move `round` and S3572's second
-object beside `nb` (alloc_check's known_stranded row 2 excuses every sb.c
-block allocated under target_headers_render, so it cannot tell them apart).
+(this scan only): today S3570's landmark-move `round` and S3584's heap
+second declarator beside a scratch one.
 
 CONTROLS (learnings.md section 3): self-test fixtures (lines that MUST be
 flagged and MUST NOT be) run through the same detector first; every
@@ -92,9 +91,7 @@ MIN_JOB_FIELDS = 6       # Job's StrBuf fields at this writing
 MIN_FILES = 45           # half the compile-path .c files at this writing (91), D110 floor
 MIN_SCRATCH = 12         # half the pcrec_sb_scratch constructions at this writing (23), D110 floor
 
-# (file, function, shape, reason). shape: strbuf | arena | heap, or
-# `shape:NAME` to admit only the object of that NAME (a row that must not
-# also admit a second, leaking object of the same shape in its function).
+# (file, function, shape, reason). shape: strbuf | arena | heap.
 ALLOW = [
     # -- the heap mechanisms themselves ---------------------------------
     ("src/core/sb.c", "sb_store", "heap", "the StrBuf storage primitive (heap side; job buffers and outside-a-compile buffers)"),
@@ -111,11 +108,6 @@ ALLOW = [
     ("src/opt/dfamemo.c", "pcrec_build_min_dfa", "heap", "the restored machine's state array, attached to the Job's Dfa before any further allocation (dfa_copy)"),
     # -- hand-freed temporaries never live across a refusal --------------
     ("src/opt/scanedge.c", "pcrec_scanedge_dfa", "heap", "ten temporaries freed on every exit; the only refusals while live are their own allocation failures, which free them first (coding.md 1.6)"),
-    # -- [ARENA-SCOPES] clients: LIVE across a refusal today, stranded on it (K155
-    #    stays open until that row registers scoped arenas on the Ctx) --------
-    ("src/gen/memfn_stamps.c", "target_headers_render", "strbuf:nb", "[ARENA-SCOPES] client: K155's own site, the whole-artifact rewrite of csb"),
-    ("src/gen/memfn_stamps.c", "splice_mark", "strbuf:tail", "[ARENA-SCOPES] client: a whole-artifact tail rewrite"),
-    ("src/gen/part_layout.c", "render_buf", "strbuf:o", "[ARENA-SCOPES] client: the whole-artifact layout-mark rewrite"),
     # -- outside a compile: no Ctx, so no longjmp can strand anything ------
     ("src/core/compile.c", "pcrec_subst_compile", "arena", "the subst compile: a detached arena, freed on return, no Ctx"),
     ("src/gen/emit_subst.c", "support_unit", "strbuf", "the subst support unit: no Ctx"),
@@ -206,32 +198,29 @@ def strbuf_declarators(line):
     return out
 
 def classify(line):
-    """-> list of (shape, object name or '') a (noise-stripped) line holds."""
+    """-> list of the shapes (one per object) a (noise-stripped) line holds."""
     shapes = []
-    for name, init in strbuf_declarators(line):
+    for _, init in strbuf_declarators(line):
         if not init.startswith("pcrec_sb_scratch("):
-            shapes.append(("strbuf", name))
-    for m in ARENA.finditer(line):
-        shapes.append(("arena", m.group(1)))
+            shapes.append("strbuf")
+    for _ in ARENA.finditer(line):
+        shapes.append("arena")
     if HEAP.search(line):
-        shapes.append(("heap", ""))
+        shapes.append("heap")
     return shapes
 
-def admits(row, rel, fname, shape, name):
-    kind, _, want = row[2].partition(":")
-    return (row[0] == rel and kind == shape and row[1] in ("*", fname)
-            and (not want or want == name))
+def admits(row, rel, fname, shape):
+    return row[0] == rel and row[2] == shape and row[1] in ("*", fname)
 
 MUST_FLAG = [
     ("StrBuf nb = { .cx = cx };", "strbuf"),
     ("    StrBuf sb = { 0 };", "strbuf"),
     ("StrBuf lit;", "strbuf"),
     ("StrBuf b[4] = {{0}};", "strbuf"),
-    ("StrBuf u = { 0 }, all = { 0 };", "strbuf:all"),
-    # a heap object in a SECOND declarator (review r96 CHECK-1)
-    ("StrBuf nb = { .cx = cx }, leak = { .cx = cx };", "strbuf:leak"),
-    ("StrBuf a = pcrec_sb_scratch(&cx->arena), b = { 0 };", "strbuf:b"),
-    ("StrBuf b = {", "strbuf:b"),
+    ("StrBuf u = { 0 }, all = { 0 };", "strbuf"),
+    # a heap object in a SECOND declarator beside a scratch one (review r96 CHECK-1)
+    ("StrBuf a = pcrec_sb_scratch(&cx->arena), b = { 0 };", "strbuf"),
+    ("StrBuf b = {", "strbuf"),
     ("Arena a = { NULL, c->cx };", "arena"),
     ("char *np = realloc(sb->p, cap);", "heap"),
     ("int *t = malloc(n * sizeof *t);", "heap"),
@@ -324,9 +313,9 @@ def scan(root, allow):
                 nfiles += 1
                 for i, l in enumerate(clean):
                     nscratch += len(SCRATCH.findall(l))
-                    for shape, name in classify(l):
+                    for shape in classify(l):
                         row = next((k for k, a in enumerate(allow)
-                                    if admits(a, rel, fnames[i], shape, name)), None)
+                                    if admits(a, rel, fnames[i], shape)), None)
                         if row is None:
                             findings.append((rel, i + 1, fnames[i] or "<file scope>", shape, lines[i].strip()))
                         else:
@@ -487,7 +476,7 @@ def scope_self_test():
             out.append(f"the {rule} rule missed its fixture in {rel}")
     # floor plants (r105 CHECKS-1/2): one site seen is below the floor; an empty D-11 population trips its floor
     if not scope_floor_failures(1, D11_MIN_SEEN):
-        out.append("the scope-open floor did not trip on a single site (floor is half of 3)")
+        out.append("the scope-open floor did not trip on a single site (floor is half of 6)")
     if not scope_floor_failures(MIN_SCOPE_OPENS, 0):
         out.append("the D-11 binder floor did not trip on an empty population")
     for rel, text in SCOPE_MUST_PASS:
@@ -519,10 +508,11 @@ def scope_scan(root):
                     findings.append((rel, ln, rule, msg))
     return findings, nfiles, nopen
 
-# D110 floor: half of the 3 scope-opening sites at the F2/F6 subject (round up):
+# D110 floor: half of the 6 scope-opening sites at the F3 subject:
 #   grep -rn --include=*.c 'pcrec_scope_open *(' src cli lib | grep -v '^src/core/arena.c'
-# -> minimize.c:84, mod_uprops.c:295, clskit.c:1130 (arena.c's unwind builds no open)
-MIN_SCOPE_OPENS = 2
+# -> minimize.c, mod_uprops.c, clskit.c, memfn_stamps.c (2: splice_mark,
+#    target_headers_render), part_layout.c (render_buf); arena.c's unwind builds no open
+MIN_SCOPE_OPENS = 3
 D11_MIN_SEEN = 1      # the one allowed binder, pcrec_memfn_art's `ma->u = &cx->arena`
 
 def scope_floor_failures(nopen, nseen):
@@ -537,8 +527,7 @@ def scope_floor_failures(nopen, nseen):
 def main():
     root = sys.argv[1] if len(sys.argv) > 1 else "."
     for l, want in MUST_FLAG:
-        shape, _, name = want.partition(":")
-        if not any(k == shape and (not name or n == name) for k, n in classify(strip_noise(l))):
+        if want not in classify(strip_noise(l)):
             print(f"FAIL: self-test: detector missed a {want} builder: {l}")
             return 2
     for l in MUST_PASS:

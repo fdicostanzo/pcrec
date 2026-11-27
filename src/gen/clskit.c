@@ -1121,7 +1121,9 @@ static void emit_empty(StrBuf *c, const char *fn)
  * byte, `UINT_MAX` for a code point), which only the bound reads. Its
  * scratch text lives in a child arena of `parent` (a scope's ARENA entry:
  * released at the close below, or by compile_driver's handler-top unwind if
- * a refusal leaves here; teardown only on the count_groups/syntax_dump routes); the child takes no block until its first allocation, so the
+ * a refusal leaves here: the compile attempt's engine emitters, compile.c's
+ * pcrec_emit_vm/pcrec_emit_dfa, are its only compile routes, and the
+ * tests/clskit driver owns its arena); the child takes no block until its first allocation, so the
  * empty set's path opens no scope and takes nothing. */
 void pcrec_clskit_emit_kit(StrBuf *c, Arena *parent, const char *fn,
                            const ClsKit *k, unsigned cp_max)

@@ -5160,20 +5160,20 @@ DIAGNOSED refusal is no longer enough: the injector also frees-tracks
 (`free` is redirected too) and keeps the injected tree's live heap, and a
 trial whose refusal leaves any block live after `pcrec_compile` returns
 FAILS ("diagnosed but STRANDED HEAP"; `--sites` names each block's
-allocating `file:line`). The exceptions are the `known_stranded` table,
-filed defects each tied to a plan row and each required to be REACHED
-(stale = FAIL); a row may narrow itself to blocks allocated UNDER one
-function (the allocation stack, symbolized with `addr2line -i` only for
-stranded blocks), because every StrBuf's storage comes from `sb.c`. Today:
-`minimize.c`'s tables and K155's `target_headers_render` rewrite buffer,
-both [ARENA-SCOPES] clients. Its static complement is
+allocating `file:line`). There are no exceptions: the filed-stranding table
+(`known_stranded`, each row tied to a plan row and required REACHED, a row
+narrowable to one function by its symbolized allocation stack) held
+`minimize.c`'s tables and K155's `target_headers_render` rewrite buffer
+until both moved onto [ARENA-SCOPES] scopes (F1, F3), and was deleted with
+its last row (an unreachable table checks nothing). Its static complement is
 `tests/core/scratch_builder_check.py` (in `make test` via test-core): the
 census of compile-path heap builders, which sees the sites no witness
 reaches. Witness W6 (`^abc|x+$`, review r96) runs the compound walk, the one
 fixed shape (a callee's heap result handed to the arena) the scan cannot
-see: BASE strands a part's text on 10 refusals, the fix 0; its 1010
-(982 before [ARENA-SCOPES] F1's registry records; a one-array registry, tried
-and reverted, read 984) single-shot absorptions are the compound row's by-design fallback, pinned
+see: BASE strands a part's text on 10 refusals, the fix 0; its 1014
+of 1057 (1010 of 1045 at [ARENA-SCOPES] F1, 982 of 1008 before F1's registry
+records; a one-array registry, tried and reverted, read 984; F3's S11
+`splice_mark` scope, 2 records in each of 2 part compiles, added 4; S10/S12 do not run in a part compile) single-shot absorptions are the compound row's by-design fallback, pinned
 exactly with that reason (a pinned count prints a NOTE, any other count
 FAILS); sabotage S3580 drops the store into the part text's arena hold
 (`pcrec_arena_hold`, [ARENA-SCOPES] F1) and only W6 sees it. The
