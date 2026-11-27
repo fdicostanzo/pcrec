@@ -12050,3 +12050,12 @@ apply it to the group-name form, so `(?<:${l}>...)` with an unmarked `l` is the 
 rx literal text). Told to him as the reading taken.
 The manager's readings, for the fold to test: the rule is about a label WRITTEN under a plain parameter's name;
 a body's own label that shares no name with a parameter is untouched; a parameter marked `l:` is unchanged.
+
+### 2026-11-27 OWNER RULING — skip-past-wall: "agree with lean" (legal paths only)
+tags: core/labels/rule/skip-past-wall core/labels/rule/paths core/labels/export/flat-read-outside
+His words, verbatim: "skip-past-wall: agree with lean"
+RULED (answered by slug). The lean as put to him, quoted: "(a). A private part should behave as if its labels
+were not there."; candidate (a) as asked: "only a `d` that a legal path reaches counts. The private one does not
+exist for this read, so `n.d` is `m`'s." The piece core/labels/rule/skip-past-wall closes as it reads (its first
+three printed lines are (a)'s); candidate (b) and the middle road (an error where a walled label would have won
+or tied) go to details as not taken.
