@@ -24,10 +24,10 @@
  * reverse); shrinks emitted tables / label counts, which is both a code-size
  * and a cache win (compare case f motivated this).
  *
- * Pure computation: plain malloc/free, and the ONLY two pcrec_ctx_fail paths are the
- * allocation-failure ones added by [M4.7b/K7], which free every live local
- * before they longjmp. Nothing else here leaves the function early, so no other
- * site has to think about ownership. */
+ * Pure computation. Its heap tables are SCOPE entries ([ARENA-SCOPES] F1): a
+ * scope on the compile's arena owns them, so its close frees them on the one
+ * return and the arena's teardown frees them on a refusal's longjmp (an
+ * allocation failure here or in the arena allocations below). */
 
 #include <stdlib.h>
 #include <string.h>
@@ -68,9 +68,10 @@ static void state_sig(const Dfa *d, const int *part, int i, int *sig,
  * views, remapping `d->s0`/`s1`/`s1w`/`s1g` to the merged numbering.
  * Behavior-preserving by construction — priority/leftmost-first semantics
  * are already baked into the transition structure before this runs — and a
- * no-op below two states. Its five local tables are the only allocations
- * on the compile path the Job does not own, so this is the one pass that
- * frees by hand before `pcrec_ctx_nomem` rather than leaving it to job_cleanup. */
+ * no-op below two states. Its local tables are scope-owned: freed at the
+ * close, or by the teardown when a refusal longjmps out mid-pass. The
+ * results (`ns[c].up`, `ns[c].tr`) are attempt-arena allocations made while
+ * the scope is open, which is legal (L3): the scope owns only its entries. */
 void pcrec_minimize_dfa(Ctx *cx, Dfa *d)
 {
     int n = d->n;
@@ -80,22 +81,14 @@ void pcrec_minimize_dfa(Ctx *cx, Dfa *d)
         if (d->st[i].endvar >= 0) { has_end = true; break; }
     int siglen = d->ncls + 2 + (has_end ? 1 : 0);
 
-    int *part = malloc((size_t)n * sizeof(int));
-    int *newpart = malloc((size_t)n * sizeof(int));
-    int *sig = malloc((size_t)siglen * sizeof(int));
+    Scope sc = pcrec_scope_open(&cx->arena);
+    int *part = pcrec_scope_malloc(&sc, (size_t)n * sizeof(int));
+    int *newpart = pcrec_scope_malloc(&sc, (size_t)n * sizeof(int));
+    int *sig = pcrec_scope_malloc(&sc, (size_t)siglen * sizeof(int));
     size_t hcap = 1;
     while (hcap < (size_t)n * 2) hcap *= 2;
-    int *htab = malloc(hcap * sizeof(int));       /* -> state index (class rep) */
-    int *keys = malloc((size_t)n * (size_t)siglen * sizeof(int));
-    /* [M4.7b/K7] These five are the only allocations on the compile path the
-     * Job does NOT own, so this is the only site where failing cleanly means
-     * freeing by hand before the longjmp — everywhere else job_cleanup does it.
-     * (Which is also why the file header's "no pcrec_ctx_fail paths" note no longer
-     * holds: there are exactly two, both here, both after their own cleanup.) */
-    if (!part || !newpart || !sig || !htab || !keys) {
-        free(part); free(newpart); free(sig); free(htab); free(keys);
-        pcrec_ctx_nomem(cx);
-    }
+    int *htab = pcrec_scope_malloc(&sc, hcap * sizeof(int));   /* -> state index (class rep) */
+    int *keys = pcrec_scope_malloc(&sc, (size_t)n * (size_t)siglen * sizeof(int));
 
     int nparts = 0;
     {
@@ -129,11 +122,7 @@ void pcrec_minimize_dfa(Ctx *cx, Dfa *d)
          * machine a value is a distance set and two different sets are two
          * outputs; on every untagged machine a value is 0/1, so the keys and
          * their first-occurrence ids are exactly the bit-vector keys'. */
-        int *keyseen = malloc((size_t)(n ? n : 1) * sizeof(int));
-        if (!keyseen) {
-            free(part); free(newpart); free(sig); free(htab); free(keys);
-            pcrec_ctx_nomem(cx);
-        }
+        int *keyseen = pcrec_scope_malloc(&sc, (size_t)(n ? n : 1) * sizeof(int));
         for (int i = 0; i < n; i++) {
             int k = 0;
             for (; k < nparts; k++) {
@@ -145,7 +134,7 @@ void pcrec_minimize_dfa(Ctx *cx, Dfa *d)
             if (k == nparts) keyseen[nparts++] = i;
             part[i] = k;
         }
-        free(keyseen);
+        pcrec_scope_free(&sc, keyseen);   /* dead before the refinement loop */
     }
 
     for (;;) {
@@ -195,13 +184,8 @@ void pcrec_minimize_dfa(Ctx *cx, Dfa *d)
     if (nparts < n) {
         /* renumber classes by first occurrence, rebuild states compactly */
         int m = nparts;
-        int *seq = malloc((size_t)m * sizeof(int));
-        DState *ns = calloc((size_t)m, sizeof(DState));
-        if (!seq || !ns) {
-            free(seq); free(ns);
-            free(part); free(newpart); free(sig); free(htab); free(keys);
-            pcrec_ctx_nomem(cx);
-        }
+        int *seq = pcrec_scope_malloc(&sc, (size_t)m * sizeof(int));
+        DState *ns = pcrec_scope_calloc(&sc, (size_t)m, sizeof(DState));
         memset(seq, -1, (size_t)m * sizeof(int));
         int next = 0;
         for (int i = 0; i < n; i++)
@@ -250,13 +234,6 @@ void pcrec_minimize_dfa(Ctx *cx, Dfa *d)
             if (d->s1u[u] >= 0) d->s1u[u] = seq[part[d->s1u[u]]];
         for (int u = 0; u < d->natoms; u++)
             if (d->s1g[u] >= 0) d->s1g[u] = seq[part[d->s1g[u]]];
-        free(seq);
-        free(ns);
     }
-
-    free(part);
-    free(newpart);
-    free(sig);
-    free(htab);
-    free(keys);
+    pcrec_scope_close(&sc);
 }

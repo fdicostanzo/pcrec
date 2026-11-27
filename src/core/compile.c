@@ -322,7 +322,8 @@ static void job_cleanup(Ctx *cx)
         free(cx->job->out_h);
         free(cx->job->out_ir);
         /* [COMPOUND] the shell and its part texts are the arena's (the
-         * texts handed to it by pcrec_arena_own, [K155]), freed below. */
+         * texts stored into its holds, pcrec_arena_hold, [K155]), freed
+         * below with any scope a refusal left open. */
         free(cx->job);
         cx->job = NULL;
     }
@@ -2575,6 +2576,11 @@ static int compile_driver(const char *pattern, const pcrec_options *opt,
         }
 
         if (setjmp(cx.jb)) {
+            /* [ARENA-SCOPES] D-4: close every scope the longjmp skipped
+             * before any row runs: FIT_FORCE_NEXT resumes this attempt
+             * rather than tearing it down. No Ctx or Job field points into a
+             * scope (L4), so nothing read below moves. */
+            pcrec_scope_unwind(&cx.arena);
 #ifdef PCREC_CAND_TRACE
             pcrec_cand_eval_reset();   /* [CAND-PATH-READS] a predicate may have longjmped */
 #endif
@@ -3736,6 +3742,9 @@ facts_force:
             pf->find_consulted = find_union | pcrec_find_asked(&cx);
             pf->meas_consulted = meas_union || cx.job->meas_consulted;
         }
+        /* [ARENA-SCOPES] L2: no scope open on a successful attempt, checked
+         * before the first take so a refusal strands no taken string */
+        pcrec_scope_check_closed(&cx.arena);
         cx.job->out_c  = pcrec_sb_take(&cx.job->csb);
         cx.job->out_h  = defo.header_name ? pcrec_sb_take(&cx.job->hsb) : NULL;
         cx.job->out_ir = ir_out ? pcrec_sb_take(&cx.job->irsb) : NULL;

@@ -55,6 +55,32 @@
  *       `w5_run()`; see the [W5] block above `main`
  *   W6  the COMPOUND WALK: nested part compiles whose heap results the
  *       arena owns ("^abc|x+$"; [K155], its row's comment)
+ *   W7  [ARENA-SCOPES] THE ARENA WINDOW, over each of W1-W4 and W6: a second
+ *       counter (`arena_n`) of ARENA allocations made inside a WINDOW, each
+ *       a trial point failed through the arena's real failure path. An
+ *       arena allocation that fits its block takes no malloc, so W1-W6's
+ *       malloc counter cannot fail it where it matters (how K163 and the
+ *       `uprops_produce` strand hid). The windows: a scope is open on the
+ *       allocating arena (`pcrec_arena_open_p`), or a HAND-KEPT arena is
+ *       live (Ctx-bound, not its Ctx's own `&cx->arena`, not a scope's
+ *       child, holding a block). The hook is the test link's alone:
+ *       `-Wl,--wrap=pcrec_arena_alloc,--wrap=pcrec_arena_free` (both links:
+ *       tests/core/run_alloc_tests.sh and tests/resource/run_resource_tests.sh);
+ *       nothing under src/ is edited. Its control (the SEEN gate,
+ *       docs/design/arena_scopes.md "Tests and sabotage") is the planted
+ *       witness `W7 control`, a hand-kept arena stranded on purpose, which
+ *       every trial must read as STRANDED.
+ *       THE STRIDE (lane arenabuild2, ruling R-1): every point in the
+ *       hand-kept window is a trial; a point in the scope window ONLY is a
+ *       trial every W7_SCOPE_STRIDE-th (4) of them, the first included.
+ *       Measured at R-1: W7/W3 runs 535 trials (9 hand-kept + 526 of 2,102
+ *       scope-window points), against 2,111 unstrided at F1.
+ *       THE MEMO EXCLUSION (a recorded design deviation, ruling R-1): the
+ *       DFA memo arena is not hand-kept. Its premise, that compile_driver
+ *       frees it on EVERY arrival, refusals included, is BOUND here: every
+ *       child of every witness (malloc and arena trials, the profiling pass)
+ *       exits 6, a FAIL, if a memo arena still holds a block when the
+ *       compile returns (sabotage S3603 drops one of those frees).
  *
  * [K60FIX] (2026-09-18, lane k60fix, docs/dev/decisions.md D109): W4's own
  * mechanism (the [ART-SIZE] ladder catch absorbing a genuine pcrec_ctx_nomem) is
@@ -128,15 +154,12 @@
  *                  be attributed from.
  */
 
-#define _GNU_SOURCE   /* dladdr */
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <stdarg.h>
 #include <unistd.h>
 #include <malloc.h>
-#include <dlfcn.h>
-#include <execinfo.h>
 #include <sys/wait.h>
 
 /* core/internal.h (not just pcrec.h): pcrec_enabled_set_spec, the W3
@@ -187,35 +210,14 @@ static int inject_should_fail(const char *file, int line)
 }
 
 /* [K155] THE LIVE BLOCKS' OWN ALLOCATION SITES, in a small open-addressed
- * table (pointer -> the `file:line` that allocated it): what tells a FILED
- * stranding (every stranded block from a KNOWN_STRANDED file, below) from a
- * new one, and what --sites prints for each stranded trial. */
+ * table (pointer -> the `file:line` that allocated it): what --sites prints
+ * for each stranded trial. (The filed-stranding table that excused named
+ * places, with its allocation-stack recording, is deleted: its last row,
+ * K155's `target_headers_render`, closed at [ARENA-SCOPES] F3, and a table
+ * no row can reach is a check of nothing, learnings.md section 3.) */
 #define LIVE_CAP 65536
 static int show_sites = 0;   /* --sites */
-
-/* [K155] THE FILED STRANDINGS: a trial whose stranded blocks ALL come from
- * one of these files is the filed defect, counted and named, not a FAIL.
- * Each entry must be REACHED by the run (a fixed defect leaves a stale
- * exception, which FAILS: learnings.md section 3, an allowlist entry that
- * stops matching). Empty the list when its row is fixed. */
-/* `fn`, when set, narrows a row to the blocks allocated UNDER that function
- * (a frame of the block's allocation stack, inlined frames included): a
- * StrBuf's blocks all come from sb.c, so the file alone would excuse every
- * heap builder in the tree. The stack is recorded only for blocks from a
- * `fn` row's file (STACK_FILE) and symbolized only for stranded ones. */
-static const struct { const char *file, *fn, *row; } known_stranded[] = {
-    /* the DFA minimizer's seven heap tables are live across its arena
-     * allocations (an OOM-only stranding); the arena would hold them for the
-     * whole compile: a scoped arena is the row's fix */
-    { "src/opt/minimize.c", NULL, "[ARENA-SCOPES] (minimize.c tables)" },
-    /* K155's own site: the whole-artifact rewrite buffer of csb */
-    { "src/core/sb.c", "target_headers_render", "[ARENA-SCOPES] (K155, target_headers_render nb)" },
-};
-#define STACK_FILE "src/core/sb.c"
-#define STACK_N 12
-#define N_KNOWN_STRANDED (sizeof known_stranded / sizeof known_stranded[0])
-static long long known_stranded_seen[N_KNOWN_STRANDED];
-typedef struct { void *p; const char *file; int line, nbt; void *bt[STACK_N]; } LiveEnt;
+typedef struct { void *p; const char *file; int line; } LiveEnt;
 static LiveEnt live_tab[LIVE_CAP];
 static size_t live_slot(void *p)
 {
@@ -228,32 +230,8 @@ static void live_note(void *p, const char *file, int line)
     if (!p) return;
     size_t h = live_slot(p);
     live_tab[h].p = p; live_tab[h].file = file; live_tab[h].line = line;
-    live_tab[h].nbt = strstr(file, STACK_FILE) ? backtrace(live_tab[h].bt, STACK_N) : 0;
 }
 
-/* [K155] does the recorded allocation stack of `e` pass through function
- * `fn` (addr2line -i: inlined frames count)? */
-static int stack_has(const LiveEnt *e, const char *fn)
-{
-    for (int i = 0; i < e->nbt; i++) {
-        Dl_info di;
-        if (!dladdr(e->bt[i], &di) || !di.dli_fname) continue;
-        char cmd[1024], line[512];
-        snprintf(cmd, sizeof cmd, "addr2line -f -i -e '%s' 0x%lx 2>/dev/null", di.dli_fname,
-                 (unsigned long)((char *)e->bt[i] - (char *)di.dli_fbase - 1));
-        FILE *f = popen(cmd, "r");
-        if (!f) continue;
-        int hit = 0, odd = 1;
-        while (fgets(line, sizeof line, f)) {
-            line[strcspn(line, "\n")] = 0;
-            if (odd && !strcmp(line, fn)) hit = 1;
-            odd = !odd;
-        }
-        pclose(f);
-        if (hit) return 1;
-    }
-    return 0;
-}
 /* [K155] is `p` a block this injector counted (review r96 CHECK-6)? A
  * block libc returned on its own (`realpath(.., NULL)`, a FILE's buffer)
  * was never added, so its free must not lower the balance: subtracting it
@@ -284,6 +262,84 @@ static void *live_add_at(void *p, const char *file, int line)
     return p;
 }
 #define live_add(p) live_add_at((p), file, line)
+
+/* [ARENA-SCOPES] W7 THE ARENA WINDOW (see the header): the arena-trial
+ * counter, the trial to fail, and the live HAND-KEPT arenas. */
+static long long arena_n = 0;
+static long long arena_fail_at = 0;   /* 0 = never fail */
+static int arena_mode = 0;            /* this sweep's trial points are W7's */
+#define HK_CAP 64
+static const Arena *hk[HK_CAP];
+static int hk_n = 0;
+/* R-1: a point in the scope window only is a trial every W7_SCOPE_STRIDE-th
+ * time (the first included). Why 4: F1's unstrided W7 ran 2,112 trials in
+ * 58 s against the design's budget of 2,000; the scope window's points all
+ * fail inside the same few minimize tables, so every 4th still reaches each
+ * table, and the hand-kept window (the strands W7 exists to find) is kept
+ * whole. */
+#define W7_SCOPE_STRIDE 4
+static long long scope_pt_n = 0;
+/* R-1: the live DFA memo arenas (a block taken, not yet freed). */
+static const Arena *mm[HK_CAP];
+static int mm_n = 0;
+
+static void hk_forget(const Arena *a)
+{
+    for (int i = 0; i < hk_n; i++)
+        if (hk[i] == a) { hk[i] = hk[--hk_n]; break; }
+    for (int i = 0; i < mm_n; i++)
+        if (mm[i] == a) { mm[i] = mm[--mm_n]; break; }
+}
+
+/* The Ctx's DFA memo arena (`cx->dfa_memo`, S7). */
+static int is_memo(const Arena *a)
+{
+    return a->cx && a->cx->dfa_memo && a == &a->cx->dfa_memo->arena;
+}
+
+/* A HAND-KEPT arena: Ctx-bound, not its Ctx's own `&cx->arena`, not a
+ * scope's child (the registry frees those), and not the Ctx's DFA memo
+ * (`cx->dfa_memo`, S7: compile_driver frees it by hand on EVERY arrival, the
+ * handler's included, so it cannot strand; its window would span the whole
+ * compile and multiply W7's population for trials that cannot fail). */
+static int hand_kept(const Arena *a)
+{
+    return a->cx && a != &a->cx->arena && !a->child && !is_memo(a);
+}
+
+void *__real_pcrec_arena_alloc(Arena *a, size_t sz);
+void __real_pcrec_arena_free(Arena *a);
+
+/* Every arena allocation from outside arena.c lands here (the test link's
+ * --wrap): inside a window it is a W7 trial point, failed on the chosen
+ * trial through the real failure path; a hand-kept arena's first block
+ * opens the hand-kept window. */
+void *__wrap_pcrec_arena_alloc(Arena *a, size_t sz)
+{
+    if (hk_n > 0 || (pcrec_arena_open_p(a) && scope_pt_n++ % W7_SCOPE_STRIDE == 0)) {
+        arena_n++;
+        if (arena_fail_at && arena_n == arena_fail_at) {
+            if (!fail_site[0])
+                snprintf(fail_site, sizeof fail_site, "arena window trial %lld", arena_n);
+            if (a->cx) pcrec_ctx_nomem(a->cx);
+            abort();
+        }
+    }
+    ABlock *h0 = a->head;
+    void *p = __real_pcrec_arena_alloc(a, sz);
+    if (!h0 && a->head && hand_kept(a) && hk_n < HK_CAP)
+        hk[hk_n++] = a;
+    if (!h0 && a->head && is_memo(a) && mm_n < HK_CAP)
+        mm[mm_n++] = a;
+    return p;
+}
+
+/* A hand-kept arena's release closes its window; a memo's leaves the list. */
+void __wrap_pcrec_arena_free(Arena *a)
+{
+    hk_forget(a);
+    __real_pcrec_arena_free(a);
+}
 
 void *pcrec_inject_malloc_at(size_t sz, const char *file, int line)
 {
@@ -381,6 +437,11 @@ typedef struct {
     long long   expect_absorbed_single;
     long long   expect_absorbed_sustained;
     const char *absorbed_why;   /* NULL iff both expectations are zero */
+    /* [ARENA-SCOPES] a PLANTED witness runs this instead of pcrec_compile
+     * (the W7 control); it returns the compile-shaped rc and fills `err` */
+    int (*run)(pcrec_error *err);
+    /* W7: every trial must read STRANDED (the control that can fail) */
+    int expect_all_stranded;
 } Witness;
 
 /* [K60MEAS] what a child hands back: the profiling total (mode 0 only) and
@@ -389,7 +450,6 @@ typedef struct {
 typedef struct {
     long long total;
     long long leaked;   /* [K155] the live heap's balance after the compile */
-    int       known;    /* [K155] the filed stranding's index, or negative */
     char      site[96];
 } ChildReport;
 
@@ -398,7 +458,12 @@ typedef struct {
  * every allocation after it). */
 static void child_attempt(const Witness *w, long long n, int sust, int fd)
 {
-    fail_at = n;
+    fail_at = arena_mode ? 0 : n;
+    arena_fail_at = arena_mode ? n : 0;
+    arena_n = 0;
+    hk_n = 0;
+    scope_pt_n = 0;
+    mm_n = 0;
     sustained = sust;
     call_n = 0;
     live_bytes = 0;
@@ -418,11 +483,11 @@ static void child_attempt(const Witness *w, long long n, int sust, int fd)
 
     pcrec_output out; memset(&out, 0, sizeof out);
     pcrec_error err; memset(&err, 0, sizeof err);
-    int rc = pcrec_compile(w->pattern, &opt, &out, &err);
-    long long total = call_n;
+    int rc = w->run ? w->run(&err) : pcrec_compile(w->pattern, &opt, &out, &err);
+    long long total = arena_mode ? arena_n : call_n;
     /* [K155] the caller's output goes back before the balance is read: on
      * either answer the compile must leave the live heap where it found it */
-    if (rc == 0) pcrec_output_free(&out);
+    if (rc == 0 && !w->run) pcrec_output_free(&out);
 
     ChildReport rep;
     memset(&rep, 0, sizeof rep);
@@ -430,36 +495,27 @@ static void child_attempt(const Witness *w, long long n, int sust, int fd)
     rep.leaked = live_bytes;
     memcpy(rep.site, fail_site, sizeof rep.site);
 
-    /* [K155] which filed stranding, if every stranded block is one file's */
-    int known = -1;
-    if (live_bytes)
-        for (size_t h = 0; h < LIVE_CAP; h++) {
-            if (!live_tab[h].p) continue;
-            if (show_sites)
+    if (live_bytes && show_sites)
+        for (size_t h = 0; h < LIVE_CAP; h++)
+            if (live_tab[h].p)
                 printf("  LIVE %s N=%lld block %zu bytes from %s:%d\n", w->name, n,
                        malloc_usable_size(live_tab[h].p), live_tab[h].file,
                        live_tab[h].line);
-            int k = -1;
-            for (size_t j = 0; j < N_KNOWN_STRANDED; j++)
-                if (strstr(live_tab[h].file, known_stranded[j].file)
-                    && (!known_stranded[j].fn || stack_has(&live_tab[h], known_stranded[j].fn)))
-                    k = (int)j;
-            known = known == -2 || k < 0 || (known >= 0 && known != k) ? -2 : k;
-        }
-    rep.known = known;
     if (fd >= 0) { ssize_t wr = write(fd, &rep, sizeof rep); (void)wr; }
     fflush(stdout);
     if (n == 0) {
         /* profiling pass: the total is the report; the compile must succeed
-         * and give back every block */
-        _exit(rc == 0 && live_bytes == 0 ? 0 : 1);
+         * and give back every block, the memo's included */
+        _exit(rc == 0 && live_bytes == 0 && !mm_n ? 0 : 1);
     }
+    /* R-1: the memo exclusion's premise, on every arrival */
+    if (mm_n) _exit(6);
 
     if (rc == 0)
         _exit(2);   /* forced failure at N was not on the path taken -- success is fine, but flag it for the caller to note */
     if (!err.msg[0]) _exit(3);
-    /* [K155] diagnosed, but a block was stranded: a filed one (5) or new (4) */
-    _exit(!live_bytes ? 0 : known >= 0 ? 5 : 4);
+    /* [K155] diagnosed, but a block was stranded (4) */
+    _exit(!live_bytes ? 0 : 4);
 }
 
 /* Measure K: the total allocation count over a run where nothing fails.
@@ -494,8 +550,7 @@ static long long profile(const Witness *w)
  *   100+signum = killed by a signal, -1 = wait() anomaly.
  * `site_out` (optional) receives the forced allocation's own file:line. */
 static int trial(const Witness *w, long long n, int sust,
-                 char *site_out, size_t site_cap, long long *leaked_out,
-                 int *known_out)
+                 char *site_out, size_t site_cap, long long *leaked_out)
 {
     int pipefd[2];
     if (pipe(pipefd) != 0) return -1;
@@ -514,7 +569,6 @@ static int trial(const Witness *w, long long n, int sust,
     ssize_t r = read(pipefd[0], &rep, sizeof rep);
     close(pipefd[0]);
     if (leaked_out) *leaked_out = r == (ssize_t)sizeof rep ? rep.leaked : 0;
-    if (known_out) *known_out = r == (ssize_t)sizeof rep ? rep.known : -1;
     if (site_out && site_cap) {
         /* A child killed by a signal never wrote its report — say so rather
          * than leaving the caller a stale or empty string. */
@@ -532,10 +586,11 @@ static int trial(const Witness *w, long long n, int sust,
  * than merely printed one after the other. */
 typedef struct {
     long long total, n_succeeded, n_silent, n_signalled, n_anomaly;
+    long long n_memo, first_memo_n;   /* R-1: a DFA memo arena live at return */
     long long first_succeeded_n, first_silent_n, first_signal_n, first_signal_code;
     /* [K155] diagnosed refusals that stranded heap: how many, the first N,
      * its byte balance and the forced allocation's site */
-    long long n_leaked, first_leaked_n, first_leaked_bytes, n_known_stranded;
+    long long n_leaked, first_leaked_n, first_leaked_bytes;
     char      first_leaked_site[96];
 } Tally;
 
@@ -562,19 +617,12 @@ static int sweep_mode(const Witness *w, int sust, Tally *t)
     for (long long n = 1; n <= total; n++) {
         char site[96];
         long long leaked = 0;
-        int known = -1;
-        int code = trial(w, n, sust, site, sizeof site, &leaked, &known);
+        int code = trial(w, n, sust, site, sizeof site, &leaked);
         if (code != 0 && show_sites)
             printf("  SITE %s mode=%s N=%lld code=%d at %s%s\n",
                    w->name, sust ? "sustained" : "single", n, code, site,
-                   code == 4 ? " (stranded heap)" :
-                   code == 5 ? " (stranded heap, filed)" : "");
+                   code == 4 ? " (stranded heap)" : "");
         if (code == 0) continue;
-        if (code == 5 && known >= 0 && (size_t)known < N_KNOWN_STRANDED) {
-            known_stranded_seen[known]++;
-            t->n_known_stranded++;
-            continue;
-        }
         if (code == 4) {
             if (t->first_leaked_n < 0) {
                 t->first_leaked_n = n;
@@ -586,6 +634,7 @@ static int sweep_mode(const Witness *w, int sust, Tally *t)
         }
         if (code == 2) { t->n_succeeded++; if (t->first_succeeded_n < 0) t->first_succeeded_n = n; }
         else if (code == 3) { t->n_silent++; if (t->first_silent_n < 0) t->first_silent_n = n; }
+        else if (code == 6) { t->n_memo++; if (!t->first_memo_n) t->first_memo_n = n; }
         else if (code >= 100) { t->n_signalled++; if (t->first_signal_n < 0) { t->first_signal_n = n; t->first_signal_code = code - 100; } }
         else t->n_anomaly++;
     }
@@ -606,7 +655,18 @@ static void report(const Witness *w, const Tally *t, int sust)
      * (above the pin: a new absorption; below: the stale-pin line). */
     int pinned = want > 0 && w->absorbed_why && t->n_succeeded == want;
     long long bad_n = (pinned ? 0 : t->n_succeeded) + t->n_silent + t->n_signalled
-                    + t->n_anomaly + t->n_leaked;
+                    + t->n_anomaly + t->n_leaked + t->n_memo;
+    /* [ARENA-SCOPES] the W7 control: a planted strand every trial must SEE */
+    if (w->expect_all_stranded) {
+        if (t->total >= w->min_total && t->n_leaked == t->total)
+            ok("%s%s: all %lld trial(s) read STRANDED (the planted hand-kept arena): the window SEES a stranded arena",
+               w->name, tag, t->total);
+        else
+            bad("%s%s: the planted strand was NOT seen: %lld trial(s), %lld read stranded (floor %lld): "
+                "the hand-kept window or the stranded-heap property is blind",
+                w->name, tag, t->total, t->n_leaked, w->min_total);
+        return;
+    }
     /* [D110] THE POPULATION FLOOR, checked before any verdict: a witness
      * that stopped reaching the compile, or whose allocation shape
      * collapsed, reports "every forced failure was diagnosed" over a
@@ -633,10 +693,6 @@ static void report(const Witness *w, const Tally *t, int sust)
     if (pinned)
         printf("NOTE: %s%s: %lld of %lld forced allocations succeeded through the pinned "
                "fallback (%s)\n", w->name, tag, t->n_succeeded, t->total, w->absorbed_why);
-    if (t->n_known_stranded)
-        printf("NOTE: %s%s: %lld of %lld forced allocations stranded heap in a FILED place only "
-               "(the known_stranded table: every stranded block from its file/function)\n",
-               w->name, tag, t->n_known_stranded, t->total);
     if (bad_n == 0) {
         ok("%s%s: every one of %lld forced allocation failures was diagnosed (rc == -1, non-empty message), never abort/signal/success, no new stranded heap",
            w->name, tag, t->total);
@@ -659,6 +715,10 @@ static void report(const Witness *w, const Tally *t, int sust)
         bad("%s%s: %lld of %lld forced allocations were diagnosed with an EMPTY message -- first at N=%lld (rc == -1, err.msg[0] == 0)",
             w->name, tag, t->n_silent, t->total, t->first_silent_n);
     }
+    if (t->n_memo)
+        bad("%s%s: %lld of %lld forced allocations returned with a DFA memo arena still holding a block (first N=%lld): "
+            "compile_driver did not free cx->dfa_memo on that arrival, the premise of W7's memo exclusion (R-1)",
+            w->name, tag, t->n_memo, t->total, t->first_memo_n);
     if (t->n_anomaly) {
         bad("%s%s: %lld of %lld forced allocations produced a wait() anomaly", w->name, tag, t->n_anomaly, t->total);
     }
@@ -938,19 +998,62 @@ static void w5_run(void)
            nm, post_total, post_diag, post_sig, post_other);
 }
 
+/* [ARENA-SCOPES] THE W7 CONTROL (the SEEN gate's (i)): a hand-kept arena
+ * (Ctx-bound, not the Ctx's own) takes a block, then an arena allocation W7
+ * fails while it is live; the longjmp skips its free, exactly
+ * `uprops_produce`'s shape. Every trial must read STRANDED: a window or a
+ * stranded-heap property that cannot see this cannot see the real one. */
+static Ctx w7_cx;
+static Arena w7_tmp;
+static int w7_plant(pcrec_error *err)
+{
+    memset(&w7_cx, 0, sizeof w7_cx);
+    memset(&w7_tmp, 0, sizeof w7_tmp);
+    w7_cx.err = err;
+    w7_cx.arena.cx = &w7_cx;
+    if (setjmp(w7_cx.jb)) {
+        pcrec_arena_free(&w7_cx.arena);   /* the teardown: w7_tmp is not its */
+        return -1;
+    }
+    w7_tmp.cx = &w7_cx;
+    (void)pcrec_arena_alloc(&w7_tmp, 16);       /* the hand-kept block */
+    (void)pcrec_arena_alloc(&w7_cx.arena, 16);  /* a W7 trial point */
+    pcrec_arena_free(&w7_tmp);
+    pcrec_arena_free(&w7_cx.arena);
+    return 0;
+}
+
+/* W7's compile rows: a malloc witness whose compile has a NONEMPTY window.
+ * Measured at F1: W1, W2, W4 and W6 have none (their minimize merges
+ * nothing and they hold no hand-kept arena), so they have no row (a row of
+ * population 0 is a gate that passes by emptiness, K35); W3 has its
+ * windows in minimize's scope and `uprops_produce`'s (F6: a scope on the attempt
+ * arena, so the class constructor's allocations are scope-window points). `min_total`
+ * is half the population measured after F6 (528, from `ALLOC_ARGS=--w7-only make alloc`, lane f2f6; 535 at R-1,
+ * lane arenabuild2, when the hand-kept `uprops_produce` window was in it; D110). */
+#define W7_ROWS \
+    { "W7/W3 (unicode-props/utf8)", "\\p{L}", PCREC_ENC_UTF8, 1, 0, 264, 0, 0, NULL, NULL, 0 }, \
+
+
 int main(int argc, char **argv)
 {
-    int do_single = 1, do_sustained = 0;
-    { void *warm[2]; (void)backtrace(warm, 2); }   /* loads the unwinder once, before any fork */
+    int do_single = 1, do_sustained = 0, w7_only = 0;
     for (int i = 1; i < argc; i++) {
         if (!strcmp(argv[i], "--sustained")) { do_single = 0; do_sustained = 1; }
         else if (!strcmp(argv[i], "--both")) { do_single = 1; do_sustained = 1; }
         else if (!strcmp(argv[i], "--sites")) { show_sites = 1; }
+        else if (!strcmp(argv[i], "--w7-only")) { w7_only = 1; }   /* measuring W7 alone */
         else {
-            fprintf(stderr, "usage: %s [--sustained|--both] [--sites]\n", argv[0]);
+            fprintf(stderr, "usage: %s [--sustained|--both] [--sites] [--w7-only]\n", argv[0]);
             return 2;
         }
     }
+
+    /* every statement after the witness loops that judges the WHOLE run (the
+     * K60 table, W5) is gated by this one
+     * predicate: --w7-only runs one witness and cannot judge the whole run
+     * (r105 CHECKS-5). */
+    const int whole_run = !w7_only;
 
     static const Witness witnesses[] = {
         /* [D105] W1 and W3 are the LEGEND-CLASS witnesses: every one of
@@ -966,7 +1069,7 @@ int main(int argc, char **argv)
          * [D110] `min_total` IS A FLOOR: 28 (half of 57, measured
          * 2026-09-18). See the struct comment for the ruling. */
         { "W1 (DFA)",              "[a-z]+",     PCREC_ENC_BYTE, 0, 0,
-          28, 0, 0, NULL },
+          28, 0, 0, NULL, NULL, 0 },
         /* W2 forces --engine=vm: [a-z]{2,10} is capture-free and AUTO
          * selection routes it to the DFA by default (measured -- see
          * docs/dev/lanes/waveu_report.md), which never reaches
@@ -976,10 +1079,10 @@ int main(int argc, char **argv)
          *
          * [D110] `min_total` floor: 5 (half of 11). */
         { "W2 (VM cursor rung)",   "[a-z]{2,10}", PCREC_ENC_BYTE, 0, PCREC_ENGINE_VM,
-          5, 0, 0, NULL },
+          5, 0, 0, NULL, NULL, 0 },
         /* [D110] `min_total` floor: 151 (half of 303). */
         { "W3 (unicode-props/utf8)", "\\p{L}",   PCREC_ENC_UTF8, 1, 0,
-          151, 0, 0, NULL },
+          151, 0, 0, NULL, NULL, 0 },
         /* [K60MEAS] W4 — THE SIZE-TERM LADDER, added because K60 names the
          * ladder's blanket "this K is out" catch as a mechanism and NONE of
          * W1-W3 enters the ladder at all (W1/W3 are DFA-engine artifacts,
@@ -1016,32 +1119,38 @@ int main(int argc, char **argv)
         { "W4 (size-term ladder)",
           "((?:(?:(?:[^a]{1,2}|[^a]??|.{0,2}?)+){0,8}(){2,3}){1,2}){2,3}",
           PCREC_ENC_BYTE, 0, 0,
-          81, 0, 0, NULL },
+          81, 0, 0, NULL, NULL, 0 },
         /* [K155] W6 — THE COMPOUND WALK (review r96 GENFORM-1/CHECK-5): a
          * floor arm beside an end-pinned arm admits the `split` compound
          * row, so nested part compiles run and hand their heap `c_src` to
-         * the arena (`pcrec_arena_own`, compound.c). W1-W5 never run the
+         * the arena (an arena hold, `pcrec_arena_hold`, compound.c). W1-W5 never run the
          * walk. Measured 2026-11-24: BASE (before K155's fix) strands a
          * part's c_src on 10 diagnosed refusals; with the fix 0 new.
          *
          * THE ABSORPTION PIN IS BY DESIGN, not a filed defect: a part that
          * refuses ends the compound row and the compile falls back to the
          * plain artifact (compound.c: "Nothing here refuses the compile"),
-         * so single-shot failures inside a part's compile succeed (982 of
-         * 1008); under sustained failure the fallback fails too (0). The
+         * so single-shot failures inside a part's compile succeed (1014 of
+         * 1057 at [ARENA-SCOPES] F3, re-pinned UP from 1010 of 1045 (F1): the
+         * S11 `splice_mark`'s scope records (a MARK and a STRBUF, two heap
+         * calls) are new in each of the two part compiles (S12 is skipped
+         * there and S10 returns before its open), absorbed by the same fallback; `make alloc`, lane f3;
+         * F1 re-pinned UP from 982 of 1008; lane arenabuild2's R-3 array read
+         * 984 of 1011 and was reverted, lane arenabuild3's R-5); under
+         * sustained failure the fallback fails too (0). The
          * pin is exact (D110); allocation-shape churn on the compound path
-         * re-pins it. `min_total` floor: 504 (half of 1008). */
+         * re-pins it. `min_total` floor: 504 (half of 1008, kept). */
         { "W6 (compound split)",   "^abc|x+$",   PCREC_ENC_BYTE, 0, 0,
-          504, 982, 0,
+          504, 1014, 0,
           "the compound row's by-design fallback: a refused part compile "
-          "leaves the plain artifact (compound.c)" },
+          "leaves the plain artifact (compound.c)", NULL, 0 },
     };
     const size_t nw = sizeof witnesses / sizeof witnesses[0];
 
     Tally single[8], sust[8];
     int have_single[8] = { 0 }, have_sust[8] = { 0 };
 
-    for (size_t i = 0; i < nw; i++) {
+    for (size_t i = 0; i < nw && !w7_only; i++) {
         if (do_single) {
             have_single[i] = sweep_mode(&witnesses[i], 0, &single[i]);
             if (have_single[i]) report(&witnesses[i], &single[i], 0);
@@ -1052,7 +1161,23 @@ int main(int argc, char **argv)
         }
     }
 
-    if (do_single && do_sustained) {
+    /* [ARENA-SCOPES] W7, single-shot: the control first, then the arena
+     * window over each compile witness. Each row's own floor and pin. */
+    {
+        static const Witness w7[] = {
+            { "W7 control (planted hand-kept strand)", "", PCREC_ENC_BYTE, 0, 0,
+              1, 0, 0, NULL, w7_plant, 1 },
+            W7_ROWS
+        };
+        arena_mode = 1;
+        for (size_t i = 0; i < sizeof w7 / sizeof w7[0]; i++) {
+            Tally t;
+            if (sweep_mode(&w7[i], 0, &t)) report(&w7[i], &t, 0);
+        }
+        arena_mode = 0;
+    }
+
+    if (whole_run && do_single && do_sustained) {
         /* [K60MEAS] THE DECISIVE COMPARISON, printed as data rather than
          * asserted: an absorption count that SURVIVES sustained failure is a
          * fallback path that genuinely does not need the memory; one that
@@ -1070,22 +1195,8 @@ int main(int argc, char **argv)
         }
     }
 
-    /* [K155] every filed stranding must still be reached: one no witness
-     * strands any more is fixed (or out of reach), and its exception is
-     * stale -- the allowlist that quietly stops matching. */
-    for (size_t j = 0; j < N_KNOWN_STRANDED; j++) {
-        if (known_stranded_seen[j])
-            ok("known stranding %s (%s%s%s): reached, %lld trial(s)", known_stranded[j].row,
-               known_stranded[j].file, known_stranded[j].fn ? " under " : "",
-               known_stranded[j].fn ? known_stranded[j].fn : "", known_stranded_seen[j]);
-        else
-            bad("known stranding %s (%s) was NOT REACHED by any witness: fixed, or out of "
-                "reach -- remove its known_stranded entry (and close the row) or re-aim a witness",
-                known_stranded[j].row, known_stranded[j].file);
-    }
-
     /* [W5] single-shot only, see its comment block. */
-    if (do_single) w5_run();
+    if (whole_run && do_single) w5_run();
 
     printf("\nchecks passed: %d\n", pass_n);
     printf("checks failed: %d\n", fail_n);

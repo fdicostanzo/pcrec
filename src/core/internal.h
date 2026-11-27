@@ -341,25 +341,31 @@ typedef struct ABlock {
     char mem[];
 } ABlock;
 
-/* [K155] A heap block the arena OWNS: freed with it (pcrec_arena_free). */
-typedef struct AOwn { struct AOwn *next; void *p; } AOwn;
+/* [ARENA-SCOPES] an entry record of an arena's REGISTRY (arena.c). */
+typedef struct LEnt LEnt;
 
-/* `cx` is the owning compile, or NULL for an arena with no error channel to
- * report through (there are none today; every Arena is a Ctx's own).
- * `owned` lists the heap blocks handed to it (pcrec_arena_own). */
-typedef struct { ABlock *head; Ctx *cx; AOwn *owned; } Arena;
+/* Two kinds and a scope's child ([ARENA-SCOPES] D-10). A Ctx's own (`cx` set,
+ * freed by its teardown). Ctx-bound and freed by hand (`DfaMemo.arena`: `.cx`
+ * re-pointed per attempt, freed by `compile_driver`'s hand calls). Detached
+ * (`cx` NULL, freed by its owner; a failure aborts). A scope's child (`child`
+ * set, an ARENA entry: freed at its scope's close, or by its parent's
+ * teardown; no scope opens on it): clskit's and `uprops_produce`'s scratch.
+ * `top`/`open`/`gen` are the registry (`pcrec_scope_open`), written and read
+ * by arena.c only; `child` is set only by `pcrec_scope_arena`. Every field's
+ * zero is valid, so a zeroed or `{ .cx = cx }` Arena is an empty one. */
+typedef struct {
+    ABlock  *head; Ctx *cx;
+    LEnt    *top;   /* the registry, newest first; the holds at the bottom */
+    LEnt    *open;  /* the innermost open scope's MARK; NULL when none is open */
+    uint64_t gen;   /* the last scope stamp issued on this arena (L1) */
+    bool     child; /* a scope's child arena: no scope opens on it (L5) */
+} Arena;
 
 void *pcrec_arena_alloc(Arena *a, size_t sz);   /* zeroed, 16-aligned */
+/* Releases the registry (open scopes, their entries, the holds), then the
+ * blocks: the arena's one teardown. */
 void  pcrec_arena_free(Arena *a);
-/* [K155] HANDING A HEAP RESULT TO THE ARENA, in two steps so nothing can
- * strand it: `pcrec_arena_own_slot` takes the record from the arena BEFORE
- * the heap block exists (the one step that can fail, while there is nothing
- * to lose), and `pcrec_arena_own` links the block into it and allocates
- * nothing, so no refusal can fall between the block's birth and its owner.
- * For a result a callee returns on the heap (a part compile's text) that
- * must live, and die, with the compile's arena. */
-AOwn *pcrec_arena_own_slot(Arena *a);
-void  pcrec_arena_own(Arena *a, AOwn *slot, void *heap);
+
 
 /* ---- the C-stack rule for a recursive walk ([DD-10]) ----
  *
@@ -516,6 +522,47 @@ static inline StrBuf pcrec_sb_scratch(Arena *a)
     return (StrBuf){ .cx = a->cx, .ar = a };
 }
 
+/* [ARENA-SCOPES] SCOPED LIFETIMES (docs/design/arena_scopes.md). A SCOPE is
+ * a mark in an arena's registry; what a scope owns (a heap block, a heap
+ * StrBuf, a child arena) is released at its close, newest first, or by the
+ * arena's teardown when a refusal longjmps past it, so nothing strands. The
+ * handle is the client's, by value, and never escapes its function (L4).
+ * Rules, each checked: scopes on one arena close innermost first and once
+ * (every handle-taking call checks the handle against the innermost open
+ * mark and its generation stamp, L1); every scope a function opens it closes
+ * on every RETURN (L2; a successful attempt ends with none open); allocating
+ * into an outer level, the attempt arena's blocks included, is legal (L3);
+ * no scope opens on a child arena (L5). A violation is an internal-error
+ * refusal (an abort on a detached arena). */
+typedef struct { Arena *a; LEnt *mark; uint64_t gen; } Scope;
+Scope   pcrec_scope_open(Arena *a);
+void    pcrec_scope_close(Scope *s);
+void   *pcrec_scope_malloc(Scope *s, size_t n);          /* a HEAP entry */
+void   *pcrec_scope_calloc(Scope *s, size_t n, size_t sz);
+/* Releases one HEAP entry of the INNERMOST scope early (L6). */
+void    pcrec_scope_free(Scope *s, void *p);
+/* A zeroed heap StrBuf (`.cx` = the arena's) freed at the close. */
+StrBuf *pcrec_scope_sb(Scope *s);
+/* A zeroed child arena (`.cx` = the arena's; no block until first use)
+ * freed at the close. */
+Arena  *pcrec_scope_arena(Scope *s);
+/* Closes every open scope of `a` (compile_driver's handler top). */
+void    pcrec_scope_unwind(Arena *a);
+/* L2 at a successful attempt's end: an open scope is an internal error. */
+void    pcrec_scope_check_closed(Arena *a);
+/* READ-ONLY, for tests/core/alloc_check.c's W7 only: is a scope open on `a`. */
+bool    pcrec_arena_open_p(const Arena *a);
+/* A HEAP slot (holding NULL) that lives, and is freed, with the arena: a
+ * heap result a callee returns is stored into it the moment it exists, so no
+ * refusal can fall between its birth and its owner. Taken before the result
+ * exists (the one step that can fail); refused while a scope is open (L7). */
+void  **pcrec_arena_hold(Arena *a);
+/* The one error-channel read: every refusal or nomem made through an
+ * Arena's or a StrBuf's `.cx` in arena.c and sb.c takes its Ctx from it
+ * (D-7; the scanner's scope). The `sb->cx` refusals in vm_stmt.c and enc.c
+ * still read the Ctx directly (an F4 input). */
+Ctx    *pcrec_err_chan(Ctx *cx);
+
 /* The two comment CLASSES, decided at the emission site (D112 item 2).
  * ESSENTIAL is provenance and the embedder's contract — what the file IS and
  * what it MATCHES — and is emitted under every setting. NON-ESSENTIAL is
@@ -637,6 +684,14 @@ void  pcrec_sb_vprintf(StrBuf *sb, const char *fmt, va_list ap)
       __attribute__((format(printf, 2, 0)));
 char *pcrec_sb_take(StrBuf *sb);                /* transfer ownership, resets sb */
 void  pcrec_sb_free(StrBuf *sb);
+/* [ARENA-SCOPES] R1 (D-6) Moves `src`'s text storage into `dst`, frees
+ * `dst`'s old storage and leaves `src` empty: a whole-artifact rewrite built
+ * in a fresh heap buffer replaces the one it rewrote with no copy. `dst` and
+ * `src` must be DISTINCT buffers (adopting a buffer into itself empties it).
+ * Heap to heap only; a scratch (`.ar`) buffer on either side is an internal-error
+ * refusal (an abort on a detached buffer). The other StrBuf records
+ * (`layout_bytes`, the brackets) stay the caller's (RM-1). */
+void  pcrec_sb_adopt(StrBuf *dst, StrBuf *src);
 
 /* ---- THE TEXT LAYER ([REVW.1] wave 1; D108) -----------------------------
  *
@@ -9115,8 +9170,8 @@ void pcrec_compound_walk(Ctx *cx, const struct Ast *root);
  * residuals, `rx_info` and `main` -- the compound's ONE artifact -- and in
  * place of P's engine and entries the parts' texts and the controller
  * (src/gen/emit_compound.c). Owned by `Job.comp_shell`; the shell is
- * arena, and so are the texts: each part's heap output is handed to the
- * arena as its compile returns (`pcrec_arena_own`, [K155]). */
+ * arena, and so are the texts: each part's heap output is stored into an
+ * arena hold as its compile returns (`pcrec_arena_hold`, [K155]). */
 #define PCREC_COMP_MAXPARTS 2
 typedef struct PcrecCompShell {
     const char *row;                          /* the admitted row's name */

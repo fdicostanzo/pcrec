@@ -194,7 +194,7 @@ static void emit_group(int ch)
             pcrec_clskit_partition(&a, s->iv, s->n, LAMS[l], 0, &k);
             snprintf(fn, sizeof fn, "s%d_k%u", s->idx, LAMS[l]);
             snprintf(var, sizeof var, "K%u", LAMS[l]);
-            pcrec_clskit_emit_kit(&add_item(i, fn, var)->text, fn, &k, UINT_MAX);
+            pcrec_clskit_emit_kit(&add_item(i, fn, var)->text, &a, fn, &k, UINT_MAX);
             census_kit(&k);
         }
         for (size_t o = 0; o < sizeof ONLY / sizeof ONLY[0]; o++) {
@@ -203,7 +203,7 @@ static void emit_group(int ch)
             pcrec_clskit_partition(&a, s->iv, s->n, 4, 1u << ONLY[o], &k);
             snprintf(fn, sizeof fn, "s%d_only%zu", s->idx, o);
             snprintf(var, sizeof var, "only-%s", pcrec_clskit_leaf_name(ONLY[o]));
-            pcrec_clskit_emit_kit(&add_item(i, fn, var)->text, fn, &k, UINT_MAX);
+            pcrec_clskit_emit_kit(&add_item(i, fn, var)->text, &a, fn, &k, UINT_MAX);
             census_kit(&k);
         }
         for (ClsForm f = CLSF_PAGE3; f <= CLSF_BITMAP1; f++) {

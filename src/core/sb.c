@@ -26,7 +26,7 @@ static void sb_unstore(const StrBuf *sb, char *p)
  * else the abort a detached buffer (syntax_dump.c) keeps. */
 __attribute__((noreturn)) static void sb_nomem(const StrBuf *sb)
 {
-    if (sb->cx) pcrec_ctx_nomem(sb->cx);
+    if (sb->cx) pcrec_ctx_nomem(pcrec_err_chan(sb->cx));
     abort();
 }
 
@@ -48,7 +48,7 @@ static void sb_grow(StrBuf *sb, size_t need)
      * (the cap it stands in for excludes it, D155 item 9). */
     if (sb->abort_over && !sb->simd_open && !sb->scaf_open &&
         pcrec_sb_len_decide(sb) + need > sb->abort_over && sb->cx)
-        pcrec_ctx_fail(sb->cx, 0, "size-term ladder trial over its scratch bound");
+        pcrec_ctx_fail(pcrec_err_chan(sb->cx), 0, "size-term ladder trial over its scratch bound");
     if (sb->len + need + 1 <= sb->cap) return;
     size_t cap = sb->cap ? sb->cap : 256;
     while (cap < sb->len + need + 1) cap *= 2;
@@ -225,7 +225,7 @@ size_t pcrec_sb_len_uncut(const StrBuf *sb) { return sb->len + sb->cmt_dropped; 
  * sb_grow's own rule). */
 static void sb_simd_fail(StrBuf *sb, const char *why)
 {
-    if (sb->cx) pcrec_ctx_fail(sb->cx, 0, "internal error: SIMD bracket: %s", why);
+    if (sb->cx) pcrec_ctx_fail(pcrec_err_chan(sb->cx), 0, "internal error: SIMD bracket: %s", why);
     abort();
 }
 
@@ -483,6 +483,24 @@ void pcrec_sb_free(StrBuf *sb)
     sb_unstore(sb, sb->p);
     sb->p = NULL;
     sb->len = sb->cap = 0;
+}
+
+/* Moves heap text storage from `src` into `dst` (see internal.h): the one
+ * guard refuses arena storage on either side before anything moves, so a
+ * refusal leaves both buffers as they were for the error path. */
+void pcrec_sb_adopt(StrBuf *dst, StrBuf *src)
+{
+    if (dst->ar || src->ar) {
+        Ctx *cx = dst->cx ? dst->cx : src->cx;
+        if (cx) pcrec_ctx_fail(pcrec_err_chan(cx), 0, "internal error: pcrec_sb_adopt: arena storage");
+        abort();
+    }
+    free(dst->p);
+    dst->p = src->p;
+    dst->len = src->len;
+    dst->cap = src->cap;
+    src->p = NULL;
+    src->len = src->cap = 0;
 }
 
 /* ---- THE TEXT LAYER ([REVW.1] wave 1) -----------------------------------

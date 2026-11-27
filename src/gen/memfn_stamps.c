@@ -243,18 +243,23 @@ static size_t mark_count(const StrBuf *sb, const char *mark)
 
 /* Replaces the one `mark` in `sb` with `text`; false if `sb` holds no such
  * mark or more than one. */
-static bool splice_mark(StrBuf *sb, const char *mark, const char *text)
+static bool splice_mark(Ctx *cx, StrBuf *sb, const char *mark, const char *text)
 {
     const char *m = sb->p ? strstr(sb->p, mark) : NULL;
     if (!m || strstr(m + 1, mark)) return false;
     size_t at = (size_t)(m - sb->p), cut = strlen(mark);
-    StrBuf tail = { .cx = sb->cx };   /* [ARENA-SCOPES] client (K155) */
-    pcrec_sb_puts(&tail, sb->p + at + cut);
+    /* the tail is a scope's STRBUF entry ([ARENA-SCOPES] S11): released at
+     * the close below, or by compile_driver's handler-top unwind if a refusal
+     * (a nomem in the puts) leaves here (the compile attempt, compile.c's
+     * pcrec_memfn_stamps_render call, is this function's only route) */
+    Scope sc = pcrec_scope_open(&cx->arena);
+    StrBuf *tail = pcrec_scope_sb(&sc);
+    pcrec_sb_puts(tail, sb->p + at + cut);
     sb->len = at;
     sb->p[at] = 0;
     pcrec_sb_puts(sb, text);
-    pcrec_sb_puts(sb, tail.p ? tail.p : "");
-    pcrec_sb_free(&tail);
+    pcrec_sb_puts(sb, tail->p ? tail->p : "");
+    pcrec_scope_close(&sc);
     return true;
 }
 
@@ -313,7 +318,7 @@ static void ks_stamps_render(Ctx *cx)
         StrBuf line = pcrec_sb_scratch(&cx->arena);
         pcrec_emit_findings_line(cx, &line, (PcrecKsMark)m, value);
         pcrec_emit_measures_line(cx, &line, (PcrecKsMark)m, meas);
-        (void)splice_mark(c, ks_marks[m], line.p ? line.p : "");
+        (void)splice_mark(cx, c, ks_marks[m], line.p ? line.p : "");
         pcrec_sb_free(&line);
     }
 }
@@ -358,19 +363,23 @@ static void target_headers_render(Ctx *cx)
     PcrecEmitSize hm = pcrec_emit_size_measure(held, strlen(held), NULL);
     /* pass 2, rebuilt in a fresh buffer, never truncated and re-appended in
      * place: the mark sits near the top, and a truncated csb under a ladder
-     * trial's scratch bound would read a length below its own guarded record */
-    StrBuf nb = { .cx = cx };   /* [ARENA-SCOPES] client: K155's own site */
-    pcrec_sb_printf(&nb, "%.*s%s", (int)at, c->p, text);
+     * trial's scratch bound would read a length below its own guarded record.
+     * The fresh buffer is a scope's STRBUF entry ([ARENA-SCOPES] S10, K155's
+     * own site): csb adopts its storage (no copy), so the close below frees
+     * nothing; compile_driver's handler-top unwind releases it if a refusal
+     * leaves here first (the compile attempt, compile.c's
+     * pcrec_memfn_stamps_render call, is this function's only route) */
+    Scope sc = pcrec_scope_open(&cx->arena);
+    StrBuf *nb = pcrec_scope_sb(&sc);
+    pcrec_sb_printf(nb, "%.*s%s", (int)at, c->p, text);
     const char *rest = after;
     for (const char *h; (h = strstr(rest, held)); ) {
-        pcrec_sb_printf(&nb, "%.*s", (int)(h - rest), rest);
+        pcrec_sb_printf(nb, "%.*s", (int)(h - rest), rest);
         rest = strchr(h + strlen(held), '\n') + 1;
     }
-    pcrec_sb_puts(&nb, rest);
-    free(c->p);
-    c->p = nb.p;
-    c->len = nb.len;
-    c->cap = nb.cap;
+    pcrec_sb_puts(nb, rest);
+    pcrec_sb_adopt(c, nb);
+    pcrec_scope_close(&sc);
     c->simd_guarded += strlen(text) - strlen(PCREC_TARGET_HEADERS_MARK)
                      - nheld * strlen(held);
     c->simd_size.total += now.total - was.total - nheld * hm.total;
@@ -432,7 +441,7 @@ void pcrec_memfn_stamps_render(Ctx *cx)
         pcrec_sb_stampf(&lines, ss.upper, "SIMD_GUARDED_BYTES", "0x%016llxULL",
                         (unsigned long long)(job->csb.simd_guarded +
                                              job->hsb.simd_guarded - held));
-    bool ok = !rc && splice_mark(&job->csb, MEMFN_MARK, lines.p ? lines.p : "");
+    bool ok = !rc && splice_mark(cx, &job->csb, MEMFN_MARK, lines.p ? lines.p : "");
     pcrec_sb_free(&lines);
     if (rc)
         pcrec_ctx_fail(cx, 0, "internal error: the memfn kit refused the "

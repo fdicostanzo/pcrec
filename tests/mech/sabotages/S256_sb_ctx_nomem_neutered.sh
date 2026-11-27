@@ -4,7 +4,7 @@
 # lens 8's F6 finding, same shape as S255 one file over — arena.c and
 # sb.c are the two allocators every compile touches).
 #
-# `if (sb->cx) pcrec_ctx_nomem(sb->cx);` (now in the one `sb_nomem` helper every heap
+# `if (sb->cx) pcrec_ctx_nomem(pcrec_err_chan(sb->cx));` (now in the one `sb_nomem` helper every heap
 # StrBuf failure funnels through, [K155]) becomes `if (0) pcrec_ctx_nomem(sb->cx);` —
 # the StrBuf's own error channel is never consulted, so EVERY realloc
 # failure inside `sb_grow` falls to the unconditional `abort()`, on
@@ -18,10 +18,10 @@ SAB_DESC="sb_nomem's pcrec_ctx_nomem route is neutered (if (0) instead of if (sb
 SAB_DOC_FIGURE="tests/resource/run_resource_tests.sh Section 2 (ulimit -v, Linux) and Section 2b ([REVW.U L8-F6(b)] the allocation-failure injector, darwin-viable) are the two detectors; every witness writes emitted C through a StrBuf, so this plant is reachable from either. Exact re-run command: bash tests/mech/run_sabotage_matrix.sh S256."
 SAB_COUNT=1
 SAB_BEFORE='{
-    if (sb->cx) pcrec_ctx_nomem(sb->cx);
+    if (sb->cx) pcrec_ctx_nomem(pcrec_err_chan(sb->cx));
     abort();
 }'
 SAB_AFTER='{
-    if (0) pcrec_ctx_nomem(sb->cx);   /* SABOTAGE S256: the error channel is never consulted */
+    if (0) pcrec_ctx_nomem(pcrec_err_chan(sb->cx));   /* SABOTAGE S256: the error channel is never consulted */
     abort();
 }'

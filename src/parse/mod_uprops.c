@@ -285,20 +285,21 @@ static ExtResult uprops_produce(Ctx *cx, ExtWant want, bool in_class,
     ExtResult res = { .what = in_class ? EXT_MEMBERS : EXT_NODE,
                       .at = at, .msg = "", .answered_at = want };
     /* The decoded interval list is TRANSIENT (the class constructor copies it
-     * into its own set), so it lives in a scratch arena freed here rather than
-     * in the compile arena: a 4,000-item class keeps no 4,000 copies.
-     * NOT SAFE ACROSS A REFUSAL: an out-of-memory or a refusal inside
-     * `pcrec_ast_class_from_iv` longjmps with tmp's block live and strands
-     * it. A KNOWN strand (K155's class), an [ARENA-SCOPES] client allowed by
-     * name in tests/core/scratch_builder_check.py; the class fix is the
-     * scoped arena. Decoding into `cx->arena` instead was measured at +29%
-     * peak RSS for 4,000 `\p{L}` and refused (upropfix report). */
-    Arena tmp = { .cx = cx };
+     * into its own set), so it lives in a scope's child arena closed here
+     * rather than in the compile arena: a 4,000-item class keeps no 4,000
+     * copies (decoding into `cx->arena` was measured at +29% peak RSS for
+     * 4,000 `\p{L}` and refused, upropfix report). A refusal inside
+     * `pcrec_ast_class_from_iv` longjmps with the scope open; compile_driver's
+     * handler-top unwind releases the child (teardown only on the
+     * count_groups/syntax_dump routes) ([ARENA-SCOPES] S29, the one
+     * src/parse/ scope client: scratch_builder_check.py's L4 row). */
+    Scope sc = pcrec_scope_open(&cx->arena);
+    Arena *tmp = pcrec_scope_arena(&sc);
     int n = 0;
     const PcrecCpRange *iv =
-        pcrec_ucd_find(&tmp, name, len, ns, cx->mods->caseless, &n);
+        pcrec_ucd_find(tmp, name, len, ns, cx->mods->caseless, &n);
     res.node = pcrec_ast_class_from_iv(cx, iv, n, negate);
-    pcrec_arena_free(&tmp);
+    pcrec_scope_close(&sc);
     res.end  = end;
     return res;
 }

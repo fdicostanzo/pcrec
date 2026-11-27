@@ -56,14 +56,16 @@ a function is a re-entrancy bug in a library, not an optimization.
 
 **1.6 Never `free()` an arena-backed pointer.** All 76 free sites were classified
 and all are correct (L8-H3); arena storage dies with the compile's arena. The
-hand-freed heap tables in `minimize.c` (five) and `scanedge.c` (nine/ten) are the
-named exceptions and are correct on every exit (L8-H5/H6) — match their shape if
-you add one, and say why the arena was wrong for it. CORRECTION (K155, lane
-k155fix): "every exit" is every RETURN; a refusal's longjmp is not one, and
-`minimize.c`'s tables strand on an allocation failure inside it (filed with
-[ARENA-SCOPES]). A builder live across a refusal is arena-backed:
-`pcrec_sb_scratch(&cx->arena)` for a StrBuf, `pcrec_arena_own` for a heap
-result; `tests/core/scratch_builder_check.py` holds the allowlist of the rest.
+hand-freed heap tables in `scanedge.c` (nine/ten) are the named exception and
+are correct on every RETURN (L8-H6); a refusal's longjmp is not a return (K155).
+A temporary heap table is a SCOPE entry ([ARENA-SCOPES]): `Scope s =
+pcrec_scope_open(&cx->arena)`, `pcrec_scope_malloc`/`_calloc` (early release:
+`pcrec_scope_free`), `pcrec_scope_close` on every return; the arena's teardown
+releases it on a refusal (`minimize.c` is the worked example). A builder live
+across a refusal is arena-backed (`pcrec_sb_scratch(&cx->arena)`) or
+scope-owned (`pcrec_scope_sb`); a heap result that lives with the attempt goes
+in `pcrec_arena_hold`; `tests/core/scratch_builder_check.py` holds the
+allowlist of the rest and the scope rules.
 Nor is any other unowned resource live across a refusal: `ks_measures.c`
 allocates its buffer before it opens the FILE (review r96 GENFORM-2). The
 CALLER-OWNS rule (review r96 GENFORM-4): a hook compile_driver calls

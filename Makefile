@@ -2252,6 +2252,28 @@ alloc-locked:
 	LIBPCREC=$(CURDIR)/$(ALLOC_DIR)/libpcrec.a bash tests/core/run_alloc_tests.sh
 	@echo "alloc: every forced allocation failure was diagnosed, not aborted"
 
+# [ARENA-SCOPES] T1 `memgate`: the per-compile memory and cost gate (tests/core/memgate/CLAUDE.md). OPT-IN, never in
+# `make test`: builds MEMGATE_BASE (a git ref, default main) and this tree as two sides under MEMGATE_OUT, then compares
+# them compile by compile: peak live heap and attempt-arena block high-water (`peak`), the growth ladder's refusals
+# (`rungs`, must read IDENTICAL), user-mode instruction counts (`instr`). Holds the box lock (a sweep of ~7,400 compiles
+# per side). MEMGATE_BOUND = the unit's predicted per-compile peak delta in bytes.
+MEMGATE_BASE ?= main
+MEMGATE_OUT ?= $(PCREC_TMPDIR)/memgate
+MEMGATE_BOUND ?= 0
+.PHONY: memgate memgate-locked
+memgate:
+	bash scripts/boxlock run --label memgate -- $(MAKE) --no-print-directory memgate-locked
+
+memgate-locked:
+	python3 -I tests/core/memgate/test_verdicts.py
+	python3 -I tests/core/memgate/memgate.py prep $(MEMGATE_OUT)/base --ref $(MEMGATE_BASE) --repo $(CURDIR)
+	python3 -I tests/core/memgate/memgate.py prep $(MEMGATE_OUT)/tree --tree $(CURDIR)
+	rc=0; \
+	python3 -I tests/core/memgate/memgate.py peak $(MEMGATE_OUT)/base $(MEMGATE_OUT)/tree $(MEMGATE_OUT)/peak --bound $(MEMGATE_BOUND) || rc=1; \
+	python3 -I tests/core/memgate/memgate.py rungs $(MEMGATE_OUT)/base $(MEMGATE_OUT)/tree $(MEMGATE_OUT)/rungs || rc=1; \
+	python3 -I tests/core/memgate/memgate.py instr $(MEMGATE_OUT)/base $(MEMGATE_OUT)/tree $(MEMGATE_OUT)/instr || rc=1; \
+	exit $$rc
+
 # [CLOUD-SUITE] `test-alloc`: the allocation-failure injector as a `make test` section. It was opt-in (`make alloc`, a
 # battery stage) only because nothing ran it by default; what it checks is COMPILER-INDEPENDENT -- every forced
 # malloc/calloc/realloc/strdup failure inside pcrec_compile is diagnosed (rc -1 + a message), never an abort -- so a
