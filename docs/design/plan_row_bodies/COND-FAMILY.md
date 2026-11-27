@@ -11569,3 +11569,33 @@ The manager's answer (told to him; the manager's reading; nothing applied):
   lookahead, but only with the possessive mark: an idiom, not a definition.
 DFA category (his standing question): YES for the `ahead` entry and its negative (they are the lookaheads already
 classed YES on 2026-11-25); the possessive idiom: not classed, nothing checked.
+
+### 2026-11-27 OWNER, on `when` and `ahead`: "if i provided when(A, B, C) could we do something like := A seq B | (ahead ! A) seq C. the problem is A looks forward and (blah: A) looks back. they are different"
+tags: lib/control/when lib/control/when-test lib/control/peek core/conditions/match-so-far core/conditions/form core/filters/negation core/patterns/lookaround core/principles/matching-language
+
+Said on the manager's idea of an open name for the text ahead (`ahead`, a placeholder) and a conditions-only
+`when`; before it, on the manager's runs, he wrote "i'm still learning this". HIS WORDS, whole:
+
+"if i provided when(A, B, C) could we do something like := A seq B | (ahead ! A) seq C. the problem is A looks
+forward and (blah: A) looks back. they are different"
+
+Class: a QUESTION with a PROPOSED body and an OBSERVATION (a pattern in a sequence looks forward; an entry on a
+label looks back). NOT a ruling. It sets aside his own "what if when only took conditions" of the entry above
+(`when` takes a pattern again).
+NOTHING NEW RUN: his body lowers, for a bare pattern A, to `AB|(?!A)C`, the text of the documents' line for
+today's bare test (lib/control/when-test: "`when(A, B, else = C)` is `AB|(?!A)C`"), so today's printed answers are
+its answers; for a peek as A the guard is `(?!(?=A))`, run on 2026-11-25 against `(?!A)`: "0 of 1456 differ".
+For a condition as A: hand-worked, not run (the guard is "the condition cannot hold here", today's `NOT c`).
+The manager's answer (told to him; the manager's reading; nothing applied):
+- Yes. It is today's ruled body with the guard re-spelled: `NOT peek(test)` (documents), `peek(!test)`
+  (drop-not), `(ahead ! test)` (this). No answer of `when` moves; a bare test still consumes, with its warning.
+- His observation is the reason it reads right: the test of `when` is a pattern standing in the sequence, so it
+  looks forward; the one thing the body needs that looks forward WITHOUT consuming is the guard, and `ahead` is
+  the one entry that does.
+- RE-DERIVED on the changed premise: with this body `when` does not negate a condition it receives (the guard
+  covers every kind of test), so the ground on which the manager said the prefix `!` on a condition is NEEDED
+  (the conditions-only `when`) is gone; it is again a convenience, never needed.
+- What `ahead` would then replace: `peek(!A)` and its hole row (drop-not line 2). `peek(A)` and `(ahead: A)`
+  would be two spellings of the positive form; `peek` passes A's labels on (wrapper-export), which an entry's set
+  does not today: a reason to keep `peek` as the labelled form.
+DFA category (his standing question): YES, unchanged: the same regex as today's `when`.
