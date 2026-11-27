@@ -11404,3 +11404,60 @@ that needs a block of literal text, with the minimal definition told to him (the
 newline dropped, every line end read as `\n`, no indentation removed).
 DFA category (his standing question): YES (literal text).
 For the next fold, with drop-not, array-argument, brace-counts and map-creator.
+
+### 2026-11-27 OWNER, an IDEA ("half baked") on `!`: "what is !B as an object? ... formally: 1. you can use ! on conditions. 2. there is a &! operator. 3. maybe something for when case"
+tags: core/filters/complement core/filters/kinds core/filters/negation core/conditions/two-valued core/operators/bindings core/model/places lib/control/peek lib/control/when lib/control/when-test lib/control/when-test/not lib/sets/anything
+
+Said at the start of the tenth session ("i wanted to discuss ! again"), on the manager's summary of where `!`
+stands after drop-not (three places: the complement on a pattern or set as a filter, on a condition, as the
+argument of a peek). HIS WORDS, whole:
+
+"i was thinking about ! which we seem to imply is a general mechanism but really, there is only a few places it
+can be used. specifically your first three bullet items. i'm wondering if we formalize it and revert to a system
+you had originally proposed with some modifications. this idea is half baked. A:= !B is not disallowed. but what
+is !B as an object? you can't seq it or use it where you can B. does !B & !C have meaning? formally:  1. you can
+use ! on conditions. 2. there is a &! operator. 3. maybe something for when case"
+
+Class: an IDEA in DISCUSSION (his words: "this idea is half baked"), with two QUESTIONS ("what is !B as an
+object?"; "does !B & !C have meaning?") and a three-line sketch. NOT a ruling; drop-not stands as ruled.
+CHECKED AGAINST THE RECORD: (1) "a system you had originally proposed": the entries of 2026-11-13 have the shared
+operators "`&`, `&!`, `|`" ("& = intersection (D196), &! = difference"; "consistent with Frank's preference for &!
+over a bare !"; his "I can't think of better syntax than & &! | and related"); the 2026-11-14 entry SUPERSEDED it
+on his remark that `&!` "could be `&` and `!` as two items" ("`&!` dissolves into `&` + filter"). (2) "A:= !B is
+not disallowed": so, by his ruling complement-place (2026-11-18: "It stands alone. I think it's the use that is
+the problem") and his "There is rx that can match. There is rx that can filter. Neither is wholly a subset of the
+other". (3) "does !B & !C have meaning": today yes, core/filters/kinds: a complement "may be bound, named, passed
+around and combined with other complements, and used as an operand of `&` in a chain that has at least one
+positive pattern" (its printed example `neither := !/7\d*/ & !/8\d*/`).
+RUN before answering (python `re`, scratch `bang_forms.py`; A := `\d+`, its paths at a start longest first, a
+filter judging the stretch whole; B := `7\d*`, C := `\d*3`; subject `7 73 37 77 12 713`; output pasted):
+A & !B & !C | WHOLE 12 HOLDS 7 FAILS 73 FAILS 713 FAILS | SEARCHED ('37', 5) | FIND-ALL [('37', 5), ('12', 11), ('1', 15)]
+A &! (B | C) | WHOLE 12 HOLDS 7 FAILS 73 FAILS 713 FAILS | SEARCHED ('37', 5) | FIND-ALL [('37', 5), ('12', 11), ('1', 15)]
+A & !(0:B) & !(0:C) | WHOLE 12 HOLDS 7 FAILS 73 FAILS 713 FAILS | SEARCHED ('37', 5) | FIND-ALL [('37', 5), ('12', 11), ('1', 15)]
+A & (C | !B) | WHOLE 12 HOLDS 7 FAILS 73 HOLDS 713 HOLDS | SEARCHED ('73', 2) | FIND-ALL [('73', 2), ('37', 5), ('12', 11), ('713', 14)]
+A &! (B &! C) | WHOLE 12 HOLDS 7 FAILS 73 HOLDS 713 HOLDS | SEARCHED ('73', 2) | FIND-ALL [('73', 2), ('37', 5), ('12', 11), ('713', 14)]
+A & !B & !C  against  A &! (B | C): 0 of 5461 differ
+A & (C | !B)  against  A &! (B &! C): 0 of 5461 differ
+A & !B & !C  against  A & (C | !B): 2970 of 5461 differ
+(The third row is the model's own restatement of the first, not an independent check; the last line is the
+control: the comparison can see a difference.)
+The manager's thoughts (told to him; every line the manager's reading; nothing applied):
+- What `!B` is today: an rx of the kind "can filter, cannot match", his two-kinds ruling. That kind exists almost
+  only to give `!B` a home (the other member is an rx with an outward-looking edge assertion, which can match and
+  not filter). Its cost in the documents: the error rows for a lone complement, a complement in a sequence, in a
+  pattern hole, in an `occurrences` argument, in a test; the hole row drop-not added for `peek(!A)`.
+- His sketch as one system: `!` negates a TEST (a zero-width yes or no at a point: a condition); `A &! B` is the
+  difference of stretches, and is the shorthand of `A & !(0: B)` (hand-derived from the ruled "`A & B` holds
+  exactly when `A & (0: B)` holds"). `!B` is then no object: `A := !B`, `!B & !C`, a complement in a hole are not
+  grammatical, so their error rows leave.
+- Nothing is lost in what can be written under an `&`: `A & !B & !C` is `A &! (B | C)`, and the mixed case
+  `A & (C | !B)` is `A &! (B &! C)` (the runs above). Lost: a NAMED complement (`not_seven := !seven`, his own
+  example of 2026-11-18), until a condition can be bound alone (bound-condition: an error for now); the user names
+  the positive pattern and writes `&!` at the use.
+- Line 3, the peek and `when`: if `!` negates a test and a peek is a test, the negative peek is `!peek(A)` and
+  `peek(!A)` is not writable: the REVERSE of the two forms as drop-not ruled them. `when(!x, z)` on a bare pattern
+  needs the test position of `when` to make its argument a test; today a bare pattern there is consumed
+  (lib/control/when-test).
+- Not covered by his three lines: the complement of a SET after a label, `(h: !<5)` ("h present and outside
+  `<5`"; `!(h: <5)` also holds where h is absent), and `!<200` among the comparison sets.
+DFA category (his standing question): YES for every form, unchanged: each spelling lowers to the same regex.
