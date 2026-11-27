@@ -94,7 +94,7 @@ modes: n/a (parked: not in the language)
 ### One nested-relation statement for spans, passes and occurrence hits   [parked/ideas/nested-relation]   parked 2026-11-19
 One statement of the nested relation between spans, passes and occurrence hits.
 Trigger: (1) a LIST INSIDE A LIST ITEM wanted (a nested loop); (2) a request to COUNT REPORTED MATCHES (a span-level
-  count); (3) **condition-not** re-asked (NOT on a condition, recorded as told-not-ruled in COND-FAMILY).
+  count); (3) **condition-not** re-asked (`!` on a condition, recorded as told-not-ruled in COND-FAMILY).
 Source: the ideas file item 13 (its whole text in the details entry).
 modes: n/a (parked: not in the language)
 
@@ -115,7 +115,7 @@ modes: n/a (parked: not in the language)
 Every place a program stands as a (text, mode) row with a column for what crosses its boundary; taken up as core/model/places.
 see: core/model/places
 Trigger: the owner unparks **whole-text**; a second nested place gains conditions (a positive lookahead's labels, a
-  `records` item with NOT); the per-place prose drifts again.
+  `records` item with `!`); the per-place prose drifts again.
 Source: the ideas file item 16 (its whole text in the details entry); a review's general-form note, filed by the manager.
 modes: n/a (parked: the idea; its first cut is the core piece)
 
@@ -129,7 +129,7 @@ modes: n/a (parked: not in the language)
 ### The Kleene completion rule for a joint condition with an absent part   [parked/ideas/kleene-completion]   parked 2026-11-19
 A Kleene completion rule for a joint condition one of whose parts is absent.
 Trigger: the owner's answer to **record-under-not** (predicates_draft.md §R.8 item 7), if it asks for the record to
-  equal the AND of its entries under NOT.
+  equal the AND of its entries under `!`.
 Source: the ideas file item 18 (its whole text in the details entry).
 modes: n/a (parked: not in the language)
 
@@ -393,4 +393,49 @@ A binding defined above in the same program (`isodate := ...`) would let its lat
 Trigger: his taking it up, or the idiom `isodate & (isodate.year: ..)` proving too heavy in the worked examples.
 Source: the record, the label-reference ruling entry (his words in the details entry).
 see: core/labels/paths/label-reference
+modes: n/a (parked: not in the language)
+
+### An export list giving two labels one name   [parked/ideas/export-two-labels]   parked 2026-11-25
+An export list on a part label that gives two of the part's labels one name, so a caller asks one group question over both.
+Trigger: adapting a library's labels from the user's side ("you might be using a library and want to adapt it from the user perspective").
+Source: the record, the owner's IDEA on arrays (2026-11-25), parked by the manager with array-argument.
+see: core/labels/export/export-list lib/counting/some
+modes: n/a (parked: not in the language)
+
+### A selection of an array's settings by position   [parked/ideas/select-by-position]   parked 2026-11-25
+A form that picks some of a label's settings by their position (the conditions on different sets of groups) before a group question asks over them.
+Trigger: adapting a library's labels from the user's side, as for export-two-labels; or a program the index `h[k]` cannot write.
+Source: the record, the owner's IDEA on arrays (2026-11-25), parked by the manager with array-argument.
+see: core/labels/labels-vs-captures/array-vs-passes core/modules/map/access
+modes: n/a (parked: not in the language)
+
+### The triple-quote string   [parked/ideas/triple-quote]   parked 2026-11-25
+A multi-line string between triple quotes; the quote form is reserved by string-literals line 5, not defined.
+Trigger: the first program that needs a block of literal text.
+Source: the record, the owner's question "Value to """ delimiter for multi line strings?" and string-literals line 5.
+- The minimal definition told to him: the text as written, the first newline dropped, every line end read as
+  `\n`, no indentation removed.
+see: core/patterns/strings
+modes: n/a (parked: not in the language)
+
+### A non-atomic lookahead   [parked/ideas/non-atomic-ahead]   parked 2026-11-27
+A positive lookahead `^A` that a later piece may make retry another way of matching A; that `!^A` answers yes or no and is untouched is a reading.
+Trigger: a printed program whose answer needs the retry.
+Source: the record, the owner's future note "! with nonatomic lookaround?" (2026-11-27); the manager's reading that only `^A` is concerned (hand-reasoned, not run).
+see: core/patterns/lookaround/ahead
+modes: n/a (parked: not in the language)
+
+### A lookbehind operator   [parked/ideas/lookbehind-operator]   parked 2026-11-27
+A prefix or postfix operator for lookbehind, the mirror of `^A`; today rx text writes it (`(?<=x)`, `(?<!x)`).
+Trigger: three or more library bodies writing `(?<=` or `(?<!` in rx text because no operator exists (today: core 3, library 1, parked 0), or the stream roadmap's reverse DFA in a VM lookbehind as its first engine client.
+Source: the record, bang-split line 6 ("Lookbehind gets no operator for now"); parked by the manager from a review's general form.
+- It falls out of core/filters/family's kind table as one row: a lookbehind is a lookaround, a test for `!`.
+see: core/patterns/lookaround/ahead core/filters/family
+modes: n/a (parked: not in the language)
+
+### A complement written in place means "cannot match here"   [parked/ideas/in-place-complement]   parked 2026-11-25
+The general rule that a complement written anywhere a match is needed in place means "cannot match here", a negative lookahead.
+Trigger: the owner asks it as its own question; it would reverse the ruled compile error for a lone complement where a match is needed (core/filters/kinds).
+Source: the record, drop-not's reading line 4 ("NOT taken ... its own question, not asked"); bang-split spells the lookahead `!^A` instead.
+see: core/filters/kinds core/patterns/lookaround/ahead
 modes: n/a (parked: not in the language)

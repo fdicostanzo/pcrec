@@ -1,0 +1,18 @@
+A := \d   B := \d\d   C := \w
+   today AB|(?!A)C | WHOLE 123 HOLDS x HOLDS 1 FAILS | SEARCHED 12 x 123 1x 7 ('x', 3) | FIND-ALL [('x', 3), ('123', 5), ('x', 10)]
+   (A SEQ B) | (C &! A) | WHOLE 123 HOLDS x HOLDS 1 FAILS | SEARCHED 12 x 123 1x 7 ('x', 3) | FIND-ALL [('x', 3), ('123', 5), ('x', 10)]
+   (A SEQ B) | (C &! (A SEQ anything)) | WHOLE 123 HOLDS x HOLDS 1 FAILS | SEARCHED 12 x 123 1x 7 ('x', 3) | FIND-ALL [('x', 3), ('123', 5), ('x', 10)]
+   today  against  (A SEQ B) | (C &! A): 0 of 1093 differ
+   today  against  (A SEQ B) | (C &! (A SEQ anything)): 0 of 1093 differ
+A := \d   B := \d\d   C := \w+
+   today AB|(?!A)C | WHOLE 123 HOLDS 1ab FAILS ab HOLDS | SEARCHED 12 x 123 1x 7 ('x', 3) | FIND-ALL [('x', 3), ('123', 5), ('x', 10)]
+   (A SEQ B) | (C &! A) | WHOLE 123 HOLDS 1ab HOLDS ab HOLDS | SEARCHED 12 x 123 1x 7 ('12', 0) | FIND-ALL [('12', 0), ('x', 3), ('123', 5), ('1x', 9)]
+   (A SEQ B) | (C &! (A SEQ anything)) | WHOLE 123 HOLDS 1ab FAILS ab HOLDS | SEARCHED 12 x 123 1x 7 ('x', 3) | FIND-ALL [('x', 3), ('123', 5), ('x', 10)]
+   today  against  (A SEQ B) | (C &! A): 442 of 1093 differ
+   today  against  (A SEQ B) | (C &! (A SEQ anything)): 0 of 1093 differ
+A := \d\d   B := x   C := \w
+   today AB|(?!A)C | WHOLE 12x HOLDS 1 HOLDS x HOLDS | SEARCHED 12 1 12x x ('2', 1) | FIND-ALL [('2', 1), ('1', 3), ('12x', 5), ('x', 9)]
+   (A SEQ B) | (C &! A) | WHOLE 12x HOLDS 1 HOLDS x HOLDS | SEARCHED 12 1 12x x ('1', 0) | FIND-ALL [('1', 0), ('2', 1), ('1', 3), ('12x', 5), ('x', 9)]
+   (A SEQ B) | (C &! (A SEQ anything)) | WHOLE 12x HOLDS 1 HOLDS x HOLDS | SEARCHED 12 1 12x x ('1', 0) | FIND-ALL [('1', 0), ('2', 1), ('1', 3), ('12x', 5), ('x', 9)]
+   today  against  (A SEQ B) | (C &! A): 288 of 1093 differ
+   today  against  (A SEQ B) | (C &! (A SEQ anything)): 288 of 1093 differ

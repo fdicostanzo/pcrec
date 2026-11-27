@@ -20,6 +20,7 @@ source the documents were cut from), `docs/design/predicates_future.md` (retired
   commits on its branch). `done:` lines, plan-row status to record, decision text to file.
 - `doc_format.md` — the format of the predicate documents (pieces, tags, statuses, details fields, the lint rules).
 - `doc_ratchet.tsv` — the lint's count of unconverted pieces (all zero; only shrinks).
+- `bang_candidate.md` — the `!` candidate rule set (PROPOSED, 2026-11-27), the subject of review r109; evidence `docs/dev/lanes/predbang_evidence/`.
 - `owner.md` — the owner's view of the predicate work (GITIGNORED; `/q` reads it in that session).
 
 ## Rules

@@ -585,3 +585,47 @@ Entries are `P-n`, dated, never deleted. `done:` lines name the branch tip and t
   missed and a full-size critic round was launched"; section 4: "after merging a lane, the manager re-runs its
   model at the MERGED tip before the done: line (record entries land while a lane runs)".
 - REPLY: one line, either way (merged, or what blocks).
+
+## P-32 (2026-11-25, predicate manager) — pausing (the owner's close); NOT a delivery
+
+- Branch `lane/pred-rev28`, tip = the commit carrying this entry. Beyond your merge of 16625c1f7 it carries NO
+  predicate document change: record entries (the whole session), my journal and wake, this file, and lane
+  predmap's study (docs/dev/lanes/predmap_report.md + predmap_evidence/, its history line). Lint 9,182+ / 0;
+  plan-lint green. Safe to merge if you want the record on main; nothing needs it.
+- RULED by the owner today, in the record, NOT yet in the documents (one fold lane owed, waiting for his go
+  because of the slow-burn week): drop-not; array-argument (with `every`); brace-counts; map-creator (seven
+  lines); string-literals (five lines). His stated goal: P-30.
+- [COND-FAMILY] status line: "2026-11-25 late: r90's fold on main; ruled and not folded: drop-not (`NOT` leaves,
+  the negative peek is `peek(!A)`), array-argument (group questions take the array form; `every` over the array),
+  brace-counts (`x{a,b}` a postfix operator), map-creator (a labelled array with an enforcing literal; `m[key]` a
+  search; `.index`), string-literals (no operators, either quote, five escapes, one line; the triple quote
+  reserved); the owner's goal: all DFA unless specified by the user; queued: five questions from r90 and the
+  map's open edges".
+- REQUEST, when the fold's critic round comes (not now): a review number. I will ask again before launching.
+- Worktree free to prune after your next merge of my branch: predmap.
+- PROPOSED SKILL EDITS, pcrec-predicate-manager: section 2: "before withdrawing an answer already told to the
+  owner on a principle's ground, RUN the principle on the case (the two spellings through the rule)" (I withdrew
+  the key's-order answer and had to restore it the next turn); section 2: "when the owner asks 'couldn't X
+  handle it' or 'should these take Y', grep the record for where the current form came from before defending
+  it" (three times today it was the manager's, not his); section 1, for a slow-burn week: "the wake reads
+  core.md's principles and the pieces the queue touches, not the whole file" (the whole read is about 90k
+  tokens): yours and the owner's to decide.
+- Nothing of mine in flight, in the box queue or on a cron. No reply needed.
+
+P-33 (2026-11-27): review r109 (predbang) filed on lane/pred-rev28 with dispositions ruled; nothing to merge
+urgently. NEW OWNER RULING in the record: bang-split (`!` = logical not of a test; `~` = the complement,
+filter-only; `^A` lookahead, `!^A`; no lookbehind operator for now). Not folded; it joins the five rulings of
+2026-11-25 in one fold lane awaiting his go. Proposed pcrec-critic skill edits from the round: in a multi-variant
+subject give "operand kinds of each new operator" to ONE lens in COMMON; a per-variant ruling table as standard.
+
+P-34 (2026-11-27) done: the fold of 2026-11-25/27 with review r111 ruled, applied and filed. Branch lane/pred-rev28,
+tip after this commit (the merge of lane/predfix111 is aa3f2c296). Reports: docs/dev/lanes/predfold1125_report.md,
+docs/dev/lanes/predfix111_report.md; reviews docs/dev/reviews/2026-11-27-r109-predbang.md and
+2026-11-27-r111-predfold1125.md. Fifteen owner rulings folded (drop-not, array-argument, brace-counts, map-creator,
+string-literals, bang-split, and-not, sent-label-wall, label-needs-mark, skip-past-wall, equivalence-inside,
+alone-as-middle, shorthand-outside, group-node, peek-name). Lint failed 0; plan-lint green; predfix111_model 14/0.
+Design documents and evidence only: nothing under src/ cli/ lib/ memfn/ tests/ scripts/. Worktrees predfold1125,
+predfix111 and their branches are free to prune after your merge. Proposed pcrec-critic skill edit (r111's
+process finding): when re-running evidence in a clone, create every branch ref the models read by name; models
+pin commits, not branch names. Plan-row status for [COND-FAMILY]: two owner questions open (gate-beside-label,
+gate-twice-scope); no build asked.

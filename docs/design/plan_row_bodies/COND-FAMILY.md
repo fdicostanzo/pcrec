@@ -10949,3 +10949,1298 @@ At the merged tip: lint `checks passed 9106, failed 0`; the model re-run by the 
   successor declaration (keyed by its crash rows, its reason naming the crash, never "documents moved"; a new or
   changed crash row fails). Four historical models carry one; their files are not edited.
 - A12's unified reachability statement: not done, PLAN, its trigger as ruled.
+
+### 2026-11-25 OWNER, on arrays: "Would it now be valuable to bring back every()"; and an IDEA: one group under several labels, conditions on different sets of groups, "you might be using a library and want to adapt it from the user perspective"
+tags: lib/counting/every-pass lib/counting/some lib/counting/occurs core/labels/labels-vs-captures/array-vs-passes core/labels/rule/stacked-chain core/labels/export/export-list core/labels/one-rule lib/structural/each parked/ideas/user-doc-traps
+
+Said in the array-argument discussion (after the manager's thoughts on the cost of losing a condition as a
+ready-made argument). HIS WORDS, whole:
+
+"Arrays: Would it now be valuable to bring back every(). Before it wasn't but if it's on an array, it can
+expressively put conditions on labels defined in different locations.
+2. An interesting thought occurred to me. Let's say I had 3 groups. I label the first two x then the last
+two,which includes the middle again, y. Then I can put conditions on different sets of groups. Or if I selected
+even numbered groups and said they had to be even and odd groups odd. I guess there's easier ways to do it if
+you control the whole process. The advantage of this kind of thinking is that you might be using a library and
+want to adapt it from the user perspective"
+
+Class: (1) a QUESTION that is a PROPOSAL: a named "every" over an array. (2) an IDEA ("An interesting thought"):
+one group carrying several labels, so that conditions fall on different SETS of groups; selecting groups by
+position (even, odd); its stated value: adapting a LIBRARY's pattern from the user's side, where the user does
+not control the pattern. Neither a ruling; array-argument is NOT answered (his (1) presumes the array form).
+CHECKED AGAINST THE RECORD: `all` was retired by "all-question: retire" (2026-11-16), asked on the list example
+`/(?:(?<h>\d);)*/` with `all` read as "every PASS passes, none needed", to keep one kind of absence (a loop that
+never ran, a pass that set nothing). The open piece lib/counting/every-pass (every-pass-spelling) holds the
+named form as candidate (b). Over an array a setting is never absent, so that ground does not reach it.
+RUN before answering (python models of the paths, most items first; output pasted):
+every(@d, <5) | WHOLE 1-2 HOLDS 1-2,3 HOLDS 1-7,3 FAILS 1-2,3,9 FAILS | SEARCHED 7-1 1-2,3,9 -> ('1-2,3', 4) | FIND-ALL 1-2,3 5-1 3-4,9,1 -> [('1-2,3', 0), ('3-4', 10)]
+(the pattern `/(?<d>\d)-(?<d>\d)(?:,(?<d>\d))*/`: `d` set in three places)
+x,y overlap | WHOLE 1-3-9 HOLDS 1-2-9 FAILS 7-3-3 FAILS | SEARCHED [('1-3-9', 0)] | FIND-ALL [('1-3-9', 0), ('4-4-4', 12)]
+(the pattern `\d-\d-\d`, x on groups 1 and 2, y on groups 2 and 3, "every x under 5 and every y at least 3")
+The manager's answer (told to him; the manager's reading; nothing applied): (1) yes: `every(@d, S)` is
+`occurs.none(@d, !S)` by meaning, true on an empty array; its value is exactly his: the item form needs the
+condition written at each place the label is set, which a library's user cannot do. (2) the overlap is writable
+under the rules in force where the user writes the groups (a spot may carry stacked labels; several groups of one
+name give one array); from the USER's side of a library two things are not stated: whether an export list may
+give two of a part's labels one name (`[(x = a, x = b) = lib]`), and any selection of an array's settings by
+position. DFA category: `every` maybe about 0.8, as the other group questions; a selection by position adds a
+small counter, maybe about 0.7.
+
+### 2026-11-25 OWNER RULING — array-argument: "yes including every"
+tags: lib/counting/some lib/counting/count lib/counting/occurs lib/counting/every-pass core/model/table/group-truth core/labels/labels-vs-captures/array-vs-passes core/labels/labels-vs-captures core/conditions/form core/conditions/form/record-in-some core/conditions/form/value-left core/conditions/form/optional-entry core/values/tuples lib/modifiers/length lib/search/hits lib/search/occurrences lib/structural/capture core/spellings/placeholders core/diagnostics/errors
+
+ASKED AS A RULING (slug array-argument, 2026-11-25, the statement put to him: "1. The group questions take the
+array form of a label and a set, not a condition: `some(@d, "7")`, `occurs.none(@d, "7")`,
+`occurs.exactly(2, @d, "7")`, `count(@d, "7")`, and `count(@d)` for how many settings there are. The spellings are
+placeholders, yours where you gave them. 2. A condition `(d: S)` reads the label, the same everywhere. The array
+is only ever written with its mark. 3. One array per call. "Some h is 5 and some m is 3" is written as two calls
+joined by `&`. Pairing two arrays stays refused for now, as you ruled for the joint entry. 4. Group-truth closes
+inside it. Since a setting is never absent, the negation moves to the set: `!some(@d, "7")` and
+`occurs.none(@d, "7")` are one question; `occurs.none(@d, !"7")` is the other, "every setting is 7"."; then, after
+his proposal of the entry above, "If you rule it yes, I would add `every(@d, S)` to it as a fifth line", `every`
+as told to him: "every setting of d is in S. That is the same as `occurs.none(@d, !S)`, and it is true when
+there are no settings"; the manager's leaning yes; the answers RUN in the entries "on group-truth" and "on
+arrays" above). HIS WORDS, whole:
+
+"array-argument: yes including every"
+
+Class: a RULING: lines 1 to 4 as put, and `every(@d, S)` as told. It REVISES the argument shape of `some(c)`
+(2026-11-15) and of `count`, `occurs` (a condition becomes the array form and a set); it keeps WHAT they read
+(array-vs-passes, 2026-11-21). It REVERSES "all-question: retire" (2026-11-16) for a question over the ARRAY, by
+his own proposal ("Before it wasn't but if it's on an array ..."): the retired thing was `all` over passes.
+It CLOSES: group-truth (line 4); every-pass-spelling (the named form is `every`, over settings; the item form
+stays the way to judge every ITEM, a pass that sets nothing included).
+It DISSOLVES (the manager's reading, told to him as a force of the question, marked): record-in-some (no record
+stands inside a group question; line 3); the fences "a value entry / a joint entry / `?:` inside a group
+question" (no condition stands there); "what `count` counts on several entries".
+The manager's readings (marked; for the fold to test): (a) the old form, a condition as the argument
+(`some((d: "7"))`), is a compile error whose message names the array form (one head per name, call-forms);
+(b) the array mark on a path is a placeholder (`@chars.ch`, or his `x.@a`): for the spellings review; (c) the set
+may read a label as it stands (`some(@h, $m)`), an ordinary read; (d) the finished question is a test: it stands
+in an `&` chain, a sequence or a hole as before, may be passed as an argument, and takes `!` as a condition does
+(drop-not); (e) on `0` there is no array: `@0` is a compile error (zero-open); (f) the array's scope is unchanged
+(array-scope, array-in-piece); (g) a capture request as the set of a group question stays a compile error for
+now; (h) `every` on an empty array holds and `some` fails; "at least one and all" is the two joined by `&`;
+(i) the parameter order of the `occurs` members is a placeholder.
+PARKED by the manager from his IDEA of the entry above (two pieces owed at the fold, trigger: adapting a
+library's labels from the user's side): an export list giving two of a part's labels one name; a selection of an
+array's settings by position.
+DFA category (his standing question): maybe, about 0.8, for each group question, `every` included (a per-setting
+test against a fixed set and a capped counter; it rests on DFA captures for a looped label); the ruling changes
+no category.
+For the next fold, with drop-not (one lane: both re-spell the same printed lines).
+
+### 2026-11-25 OWNER PROPOSAL — braces as counting syntax: "{} as counting syntax like we use +. Thoughts?"
+tags: core/patterns/quantifiers lib/rx/repeat core/holes/count core/operators/precedence core/operators/bindings/unspecified core/spellings/placeholders
+
+HIS WORDS, whole:
+
+"Proposal: {} as counting syntax like we use +. Thoughts?"
+
+Class: a PROPOSAL (his word), with a request for thoughts: counts in braces as a postfix operator of the
+expression level, beside the nine postfix quantifiers. NOT a ruling.
+CHECKED AGAINST THE RECORD: it would reverse his own ruling of 2026-11-17 ("2026-11-17 OWNER RULING — quantifier
+operators", the addendum): "lets include the possessive forms but the brace counts are repeat." Said when
+`repeat` "took a single decimal" (his words elsewhere, the conservative route); since then the repeat head is
+ruled (repeat-head, 2026-11-23: `repeat(x, min = _, max = min)`; one count exact, 0 included; `_` leaves a bound
+out). The documents today: core/patterns/quantifiers "counts in braces are `repeat`"; lib/rx/repeat "A count in
+braces is not an operator of the language; inside a regex literal it is regex's own."
+RUN before answering (python `re`, subject `1 12345678 123`; each line the regex the brace form would be; output
+pasted):
+rx.digit{2,4}  = \d{2,4} | WHOLE '1' FAILS '12' HOLDS '1234' HOLDS '12345' FAILS | SEARCHED ('1234', 2) | FIND-ALL [('1234', 2), ('5678', 6), ('123', 11)]
+rx.digit{2,4}? = \d{2,4}? | WHOLE '1' FAILS '12' HOLDS '1234' HOLDS '12345' FAILS | SEARCHED ('12', 2) | FIND-ALL [('12', 2), ('34', 4), ('56', 6), ('78', 8), ('12', 11)]
+rx.digit{3}    = \d{3} | WHOLE '1' FAILS '12' FAILS '1234' FAILS '12345' FAILS | SEARCHED ('123', 2) | FIND-ALL [('123', 2), ('456', 5), ('123', 11)]
+rx.digit{3,}   = \d{3,} | WHOLE '1' FAILS '12' FAILS '1234' HOLDS '12345' HOLDS | SEARCHED ('12345678', 2) | FIND-ALL [('12345678', 2), ('123', 11)]
+rx.digit{,2}   = \d{0,2} | WHOLE '1' HOLDS '12' HOLDS '1234' FAILS '12345' FAILS | SEARCHED ('1', 0) | FIND-ALL [('1', 0), ('', 1), ('12', 2), ('34', 4), ('56', 6), ('78', 8), ('', 10), ('12', 11), ('3', 13), ('', 14)]
+The manager's thoughts (told to him; the manager's reading; nothing applied): in favour. (1) it is regex's own
+spelling, beside nine operators that already are; (2) it needs no new meaning: `x{a}`, `x{a,b}`, `x{a,}`, `x{,b}`
+are the ruled repeat head's four calls (`repeat(x, a)`, `(x, a, b)`, `(x, a, _)`, `(x, _, b)`), so the operator
+and the name are one construct; (3) it brings the lazy and possessive counted forms (`x{2,4}?`, `x{2,4}+`), which
+`rx.repeat` cannot write today; (4) inside the braces a count is a VALUE of the expression level (a constant, a
+binding, an array making copies as the count hole rules), with no `${}`. Costs: a reader's trap between
+`d{n}` (the binding n) and `/\d{n}/` (in rx text, the four characters, as PCRE); `{` after an operand is taken
+for good at the expression level (a map written in place, still queued, could not use a postfix brace); `x{}`
+and `x{,}` need a line (a compile error; `x*` is the spelling). DFA category: YES for constant counts, the states
+growing with the count. Put to him as a ruling, slug brace-counts.
+
+### 2026-11-25 OWNER RULING — brace-counts: "I rule we should do this"; an OBSERVATION on its origin (maps, "this is pcre so I should try to stay familiar"); next topics: maps, then strings
+tags: core/patterns/quantifiers lib/rx/repeat core/holes/count core/operators/precedence core/conditions/quantified core/spellings/placeholders core/principles/regex-default core/modules/map
+
+ASKED AS A RULING (slug brace-counts, 2026-11-25, the statement put to him: "1. A count in braces is a postfix
+operator on a pattern, beside the nine: `x{a}`, `x{a,b}`, `x{a,}`, `x{,b}`, each the repeat head's call of the same
+shape. `x{a}` is exact, 0 included. 2. `?` or `+` after the braces is regex's lazy or possessive form. 3. A count
+inside the braces is a value of the expression level; an array makes copies as the count hole rules. 4. `x{}` and
+`x{,}` are compile errors. On a condition the braces are the same compile error as any quantifier. 5. `rx.repeat`
+stays as the named form of the same construct."; the manager's leaning yes to all five; the brace forms RUN as
+regex in the entry above). HIS WORDS, whole:
+
+"My leaning is also yes and I like your lazy, etc idea. I actually started this as a proposal to use it for maps
+with a{} an accessor for maps but as I looked at it I reminded myself that this is pcre so I should try to stay
+familiar.
+I rule we should do this.
+I want to discuss maps after this.
+After that, strings."
+
+Class: a RULING ("I rule we should do this"), on the five lines as put, the lazy and possessive forms named by
+him ("I like your lazy, etc idea"). It REVERSES his "the brace counts are repeat" (2026-11-17) for the spelling:
+braces are now an operator; `repeat` stays, the named form of the same construct (line 5).
+An OBSERVATION on its origin: he first thought of `a{}` as an ACCESSOR for maps and dropped that for regex
+familiarity: "this is pcre so I should try to stay familiar" (a use of core/principles/regex-default, his words;
+recorded for that principle's details).
+A DIRECTION for the discussion: maps next, then strings.
+The manager's readings (marked; for the fold to test): (a) the braces bind as the nine postfix operators do
+(level 2 of core/operators/precedence, on the single operand before them), and a postfix `{` is told from any
+other use by standing directly after an operand; (b) `x{a,b}?` and `x{a,b}+` are one token each with the braces,
+read longest first, as `+?` and `++` are; `rx.repeat` gains no lazy parameter by this ruling; (c) an unspecified
+bound is written by leaving it out (`x{a,}`, `x{,b}`); the underscore inside the braces is not needed and is a
+compile error for now; (d) the count values follow core/holes/count (a member that is not a count is a compile
+error; several values make copies; an illegal copy removed); a count read at match time (`x{$n}`) is under
+construction, as in a count hole; (e) white space inside the braces is layout.
+DFA category (his standing question): YES for constant counts (the states grow with the count).
+For the next fold, with drop-not and array-argument.
+
+### 2026-11-25 OWNER, on maps: "I want to provide a map creator ... essentially an array but each element is labeled"; the accessor "current plus a postfix form. I want to use []"; a QUESTION: "m["a"|1] what does that return?"
+tags: core/modules/map core/arrays/lift core/values/metadata core/labels/numbers core/operators/precedence core/labels/paths core/modules/binding-list parked/ideas/call-head-forms core/spellings/placeholders
+
+Said on the manager's summary of where maps stand and its question (which problem maps are to solve). HIS WORDS,
+whole:
+
+"I want to provide a map creator. We have an array creator so the interface concept is true excepting you can
+create a (in the case of maps) a degenerate form for maps:
+1. essentially an array but each element is labeled.
+2. literal form enforces labeling syntactically
+That's it for map creation. It acts like an array pattern. You can access the elements like a map currently.
+Accessor is current plus a postfix form. I want to use [] but when we last discussed it the issue was the clash
+as which interface you were accessing depended on the argument you provided. m["a"|1] what does that return?"
+
+Class: a PROPOSAL stated as what he wants ("I want to provide a map creator"), its definition in his words (an
+array each of whose elements is labelled; a literal form that enforces the labelling by its syntax; "It acts like
+an array pattern"; the elements reached as a map's are today); a LEAN on the accessor (the current `.` plus a
+postfix form, `[]` wanted); and a QUESTION he poses on the clash: `m["a"|1]`. NOT asked as a ruling; nothing ruled.
+It qualifies the agreed "ARRAY and MAP are INTERFACES applied to a thing, not values that can be created"
+(2026-11-15): "the interface concept is true excepting" the array creator and this degenerate map creator.
+CHECKED AGAINST THE DOCUMENTS: `[a, b, c]` is `a | b | c` (core/operators/precedence); inside `[ ]` a label set
+may stand on an entry (`[a = A | b = B]` "is two labelled entries"), so a labelled array is already writable, not
+enforced; a part label over an array carries `.index` and `.label`, "that member's name" (core/values/metadata);
+`X[..]` is the index, postfix after an operand, 1-based, "`[0]` is the whole rx"; a number and a name are already
+"two names of one label" for a group, and a group's name never looks like a number (core/labels/numbers).
+RUN before answering (python `re`; the map m with a = `/ab/`, b = `/a/`, as the alternation it would be, and the
+selection in the key's order; output pasted):
+m, a = /ab/, b = /a/ : (?:ab)|(?:a) | WHOLE 'ab' HOLDS 'a' HOLDS 'b' FAILS | SEARCHED ('ab', 0) | FIND-ALL [('ab', 0), ('a', 3), ('ab', 5), ('ab', 7)]
+m["b"|1] : (?:a)|(?:ab) | WHOLE 'ab' HOLDS 'a' HOLDS 'b' FAILS | SEARCHED ('a', 0) | FIND-ALL [('a', 0), ('a', 3), ('a', 5), ('a', 7)]
+m["b"] : (?:a) | WHOLE 'ab' FAILS 'a' HOLDS 'b' FAILS | SEARCHED ('a', 0) | FIND-ALL [('a', 0), ('a', 3), ('a', 5), ('a', 7)]
+The manager's answer (told to him; the manager's reading; nothing applied): the clash does not arise if a map's
+keys are label NAMES: a name is never a numeral, so inside `[ ]` a canonical numeral is a position and anything
+else is a name, as PCRE's own references take a number or a name in one slot. A key of several strings is the
+lift (core/arrays/lift): `m["a"|1]` is `m["a"] | m[1]`, the selected elements as an array, labels kept, in the
+key's order. Edges named to him: a key no element has (a compile error when known at compile time); a key read at
+match time; a key that is an infinite set (a selector, as `@warn.off` takes). Put to him as a ruling, slug
+map-creator. DFA category: creation YES (an alternation); a key known at compile time YES; a key read at match
+time MAYBE, about 0.6 (a choice among finitely many alternatives by a read).
+
+### 2026-11-25 OWNER, on map-creator: "I'm leaning yes but I'd love you have a lane consider how the accessor would be used"; and to the manager: "would there be value in an alternative use of maps like a sequence map"
+tags: core/modules/map core/arrays/lift core/values/metadata core/labels/numbers core/operators/precedence lib/builtin/import lib/strings/join lib/records/any-order lib/records/list-of parked/ideas/call-head-forms
+
+Asked **map-creator** (five lines: a map is an array every element of which is labelled, its literal making a
+missing label a syntax error; as a pattern the alternation of its elements; elements reached `m.a` and by the
+postfix `m[key]`; in `m[key]` a numeral is a position, any other string a name, a key of several strings the
+selected elements in the key's order; a key no element has a compile error when known at compile time; three
+edges left unruled: a key read at match time, a key that is an infinite set, a name on an unlabelled array; the
+manager's leaning yes). HIS WORDS, whole:
+
+"I'm leaning yes but I'd love you have a lane consider how the accessor would be used. Consider clash issues.
+consider we can't use numbers to refer to group numbers. What about selecting label names via pattern? Combining
+names and numbers? Tables of patterns? Overlap with library namespaces?
+Consider yourself: would there be value in an alternative use of maps like a sequence map."
+
+Class: a LEAN (yes) on map-creator, NOT a ruling; a REQUEST for a lane on how the accessor would be used, with
+his list (clashes; numbers and group numbers; selecting label names by a pattern; names and numbers combined;
+tables of patterns; the overlap with library namespaces); and a QUESTION to the manager itself (an alternative use
+of maps, "like a sequence map"). His request for a lane is taken as his go for ONE lane in the slow-burn week.
+Lane predmap (sonnet, a study: a report and runs, no edit of the predicate documents) launched on it.
+The manager's own thought on the sequence map (told to him; the manager's reading; nothing applied): yes, there
+is value, and it needs no second kind of map: the map is the labelled parts, and what joins them is chosen by the
+name applied to it: bare, the alternation (the array view); `join(m, sep = ..)`, the parts in sequence (the
+documents' isodate, written today as labelled parts with the sequence operator); `any_order(m, ..)`, the fixed
+set in any order (under construction); `list_of`, repeated. lib/strings/join already has "Ordered, fixed: `join`;
+ordered, repeated: `list_of`" and a stale line on the joined parts' labels: what a join over a map does with the
+labels is the point to state. DFA category: YES (a sequence, an alternation); any order: YES in principle, the
+states growing with the number of parts.
+
+### 2026-11-25 MANAGER — after lane predmap (the study he asked for): its findings, and one answer of the manager's WITHDRAWN (the key's order); no owner words
+tags: core/modules/map core/arrays/lift core/values/metadata core/labels/numbers core/labels/labels-vs-captures/array-vs-passes core/operators/precedence core/principles/meaning-not-spelling lib/strings/join lib/builtin/warn
+
+Lane predmap (sonnet; delivered, lanecheck DONE; merged into `lane/pred-rev28`; report
+docs/dev/lanes/predmap_report.md, evidence docs/dev/lanes/predmap_evidence/, `predmap_runs: 54 cases, 0 failed`).
+A study: it rules nothing. Its findings the manager takes to him:
+- Three number spaces share a numeral and are told apart by the SLOT: a group number (left of `:`, after `$`;
+  refused on anything but one written literal), a position in an array (`m[1]`), the k-th setting of a label
+  (`h[k]`, ruled). A map element's position is not its group number (position 2 was group 4 in the lowering). On
+  a part label over an array, `w[1]` as a setting and as a member PART (its run N3b).
+- The clash grid: 49 cells; 1 ruled (`h[k]`), 4 resting on the manager's statement, 44 undecided.
+- A key's order is the alternation's priority (`m["b"|1]` finds `a`@0 where the map finds `ab`@0); a pattern key
+  parts the same way (map order `x`@0, the key's enumeration `xyz`@0); enumerating an infinite key is refused,
+  filtering the map's own names is always finite.
+- One element list feeds the bare alternation, `join`, `any_order` and `list_of`: a sequence map is a function
+  over the one map.
+- Not in his list: `m.a` on a created map can be the element (a pattern) or the label (its text); the documents'
+  "A map interface is not a created value" stands against the proposal as worded.
+WITHDRAWN, the manager's answer to his `m["a"|1]` ("the selected elements as an array ... in the key's order", by
+the lift): it breaks core/principles/meaning-not-spelling. `"a"|"b"` and `/a|b/` are one set in two spellings; a
+finite key would order by its own enumeration and an infinite key could only filter in the map's order, so two
+spellings of one set would give two patterns. The manager's reading now (marked; put to him): the key is a SET
+taken whole, as a selector is (lib/builtin/warn: "a set of names written as an rx, matched whole"), not an operand
+the lift walks (core/arrays/lift lifts "a parameter that needs its operand SINGLE, not one that takes a FINITE or
+ANY operand whole"); the selection keeps the elements whose name or position is in the set, in the MAP's order,
+each once. A reorder is written as a new array. Further readings (marked): the KIND of name left of the bracket
+decides between members and settings (a binding: members; a label: settings, `h[k]`); a bare name inside the
+brackets is a binding's value, as on any value side; a numeral is no label name.
+
+### 2026-11-25 OWNER, on map-creator: "m["a"|1]: I would not deduplicate. This is two results ... it's a search which might be empty"; and a QUESTION with an example: "how do I get an index from a label in a map? .index? And is that the index of the alternation?"
+tags: core/modules/map core/values/metadata core/arrays/lift core/operators/precedence core/patterns/alternation lib/modifiers/month-numbered core/labels/paths
+
+Asked **map-creator**, restated (six lines; line 4: "`m[S]` is a selection by a set of keys: a numeral is a
+position, any other string a name. The result is the selected elements in the map's order, each once, labels
+kept."; line 5: "A listed key that no element has is a compile error. A pattern key that selects nothing gives the
+empty array with a warning"; the manager's leaning yes to all six). HIS WORDS, whole:
+
+"1. m["a"|1]: I would not deduplicate. This is two results, if they both exist. The key is that it's a search
+which might be empty
+2. how do I get an index from a label in a map? .index? And is that the index of the alternation?
+F :=[a=99]seq [b=76]|[c=87]
+F["a"].index is F.a.index
+F.a.index is 1
+F.b.index is 1
+F.c.index is 2"
+
+Class: (1) a POSITION on line 4 ("I would not deduplicate"): `m["a"|1]` is two results where both exist; the
+accessor is "a search which might be empty". It is against line 4's "each once" and, as the manager reads it,
+against line 5's compile error for a key that finds nothing. map-creator is NOT ruled by these words. (2) a
+QUESTION with his own EXAMPLE and four statements of what he expects: `.index` read through a label of F, the
+bracket and the dot agreeing (`F["a"].index is F.a.index`), the values 1, 1, 2. Spellings are his placeholders
+(`seq`). His F is not written with a map literal: it is an ordinary pattern with labels.
+CHECKED AGAINST THE DOCUMENTS: his F parses as `([a = 99] SEQ [b = 76]) | [c = 87]` (core/operators/precedence:
+the sequence operator binds tighter than `|`): two alternatives, a and b in the first, c in the second; his three
+values are the position of the alternative each label is written in. core/values/metadata (a READING, not ruled)
+has `.index` on "A part label over an array": "the 1-based position in the array of the member that matched",
+read at match time (`w.index` is 2 on `Tue`); a label INSIDE one alternative has no `.index` there.
+RUN before answering (python `re`, F lowered mechanically with a group around each alternative; output pasted):
+F | WHOLE 9976 HOLDS 87 HOLDS 99 FAILS | SEARCHED 9976@0 alternative 1, set: a,b | FIND-ALL ['9976@0 alternative 1, set: a,b', '87@5 alternative 2, set: c', '87@11 alternative 2, set: c']
+The manager's answer (told to him; the manager's reading; nothing applied): (1) taken: the accessor is a search;
+its results are kept as found, no deduplication, and finding nothing is a result (the empty array), not an error.
+What is left to ask is the ORDER of the results: the manager's candidate, the map's order, an element appearing
+once for each key string that finds it (by its name, by its position), which gives `m["a"|1]` its two results and
+keeps two spellings of one key set alike. (2) one sentence fits his example and the documents' reading: `X.a.index`
+is the position, among X's alternatives, of the alternative `a` was set in; for a label written inside one
+alternative that is a constant (his 1, 1, 2); for a label over the whole array it is the member that matched
+(`w.index`, the month number). Edges named to him: a label whose alternative was not taken (unset, or the
+constant); which alternation counts when alternations nest (the source named in the path). His
+`F["a"].index is F.a.index` says a single-name bracket and the dot reach the same thing, the index staying F's:
+a result of the search is still F's element, not a renumbered copy.
+
+### 2026-11-25 OWNER, on map-creator: "Specifically F["z"] is a search and F.z must exist or error"
+tags: core/modules/map core/labels/paths core/values/metadata core/diagnostics/errors core/diagnostics/warnings
+
+Said after the manager took his "a search which might be empty" and asked the order of the results (slug
+key-order). HIS WORDS, whole:
+
+"Specifically F["z"] is a search and F.z must exist or error"
+
+Class: a STATEMENT of the difference between the two accessors, his: the bracket is a SEARCH (finding nothing is
+a result); the dot NAMES a thing that must exist, or it is an error. Not asked as a ruling; map-creator and
+key-order are NOT answered by it.
+CHECKED AGAINST THE DOCUMENTS: the dot half is what core/labels/paths already has as a reading: "A path to a label
+NOT VISIBLE through its source is a compile error, a typo'd path (`c.e`) alike". The bracket half replaces the
+manager's line 5 ("A listed key that no element has is a compile error"): withdrawn.
+The manager's reading (marked): `F["z"]` with no `z` is the empty array, the pattern that never matches
+(core/holes/zero-values/pattern's `(?!)`), with the can-never-match warning where it is known at compile time; so
+his `F["a"].index is F.a.index` holds where `a` exists, and where it does not the bracket form is empty and the
+dot form refused.
+
+### 2026-11-25 OWNER, on key-order: "I'd see it as the keys order. Why otherwise and how would you order results in a particular way?"
+tags: core/modules/map core/arrays/lift core/values/one-type lib/builtin/enumerate core/principles/meaning-not-spelling lib/strings/join
+
+Asked **key-order** (the results of `m[S]` in the map's order, the manager's leaning, or in the key's order). HIS
+WORDS, whole:
+
+"Key order: I'd see it as the keys order. Why otherwise and how would you order results in a particular way?"
+
+Class: a LEAN (the key's order) with two QUESTIONS to the manager (why the map's order; how a user would then
+order results). NOT a ruling.
+The manager's answer (told to him; marked; nothing applied): he is right, and the manager's withdrawal of the
+entry "after lane predmap" is itself WITHDRAWN in its reason. Re-derived: core/values/one-type has an rx as "a
+set of strings offered in an order", and `enumerate` gives that order ("at each choice point the first
+alternative first", a class ascending): `"a"|"b"` and `/a|b/` enumerate alike (a, then b), so the key's order does
+NOT part two spellings of one key; the manager's meaning-not-spelling argument was wrong for every key
+`enumerate` accepts. The key's order is the ruled lift (core/arrays/lift: "the nested loop over each operand's
+`enumerate`"), which is what the manager first answered. To his second question: under the map's order a reorder
+could only be written by building a new array by hand, which is the cost he points at; the lane's run of the
+reorder under `join` (`[J2.dmy]`, the key's order as the sequence's order) is the use. What is left of the
+manager's objection is ONE case: a key `enumerate` refuses (an infinite set, `m[/a.*/]`): no enumeration, so no
+key's order; the manager's proposal for it: under construction for now (the lift's own rule for an unbounded
+operand, core/values/functions), not the map's order as a second rule.
+
+### 2026-11-25 OWNER RULING — map-creator: "Yes to all seven"
+tags: core/modules/map core/arrays/lift core/values/metadata core/values/one-type core/labels/numbers core/labels/paths core/labels/labels-vs-captures/array-vs-passes core/operators/precedence core/modules/names core/diagnostics/errors core/diagnostics/warnings core/diagnostics/under-construction lib/modifiers/month-numbered lib/strings/join core/spellings/placeholders
+
+ASKED AS A RULING (slug map-creator, 2026-11-25, the statement as last put to him: "1. A map is created as an
+array every element of which is labelled; its literal makes a missing label a syntax error. A numeral is not a
+label name. 2. As a pattern it is the alternation of its elements in written order, each under its label.
+3. `m.a` names a thing that must exist, or it is a compile error. It is the element where a pattern is expected
+and the label's text left of a colon. 4. `m[key]` is a search. A numeral is a position; any other string is a
+name. Each string of the key is looked up in the key's order; every result is kept, with no deduplication;
+finding nothing gives the empty array. 5. A key that cannot be listed out (an infinite set) is under
+construction for now. 6. Left of the bracket, a binding gives members and a label gives settings.
+7. `X.a.index` is the position, among X's alternatives, of the alternative `a` was set in: a constant for a label
+inside one alternative (your 1, 1, 2), the matched member for a label over the whole array."; "Left for later,
+each its own question: a key read at match time, brackets on a module, labels under a join, and the two `.index`
+edges (a label whose alternative was not taken; nested alternations)."; the manager's leaning yes; DFA category
+told: yes for all seven; the runs in the entries above and in docs/dev/lanes/predmap_evidence/). HIS WORDS, whole:
+
+"Yes to all seven"
+
+Class: a RULING on the seven lines as put. The lines carry his own words of the entries above: the creator ("an
+array but each element is labeled", "literal form enforces labeling syntactically"), "I would not deduplicate",
+"a search which might be empty", "F.z must exist or error", the key's order, his `.index` example.
+It AMENDS core/modules/map's "A map interface is not a created value: no map value is passed around" (agreed
+2026-11-15) by his "the interface concept is true excepting": an array and this degenerate map can be created.
+It RULES `.index` where core/values/metadata was a reading: line 7 keeps that reading's answer for a label over a
+whole array (the month number) and adds the constant for a label inside one alternative.
+NOT ruled (kept open, each a question of its own): a key read at match time (`m[$k]`); brackets on a module;
+whether a join over a map keeps the parts' labels (his "sequence map" question, the manager's view recorded);
+`.index` of a label whose alternative was not taken; which alternation counts when alternations nest.
+The manager's readings (marked; for the fold to test): (a) the literal's spelling is a placeholder
+(`{a = A, b = B}`); `[a = A | b = B]`, the labelled array, stays legal and unenforced; (b) the accessor works on
+ANY pattern with labels, as his `F := [a=99]seq [b=76]|[c=87]` shows: positions over its alternatives, names over
+the labels its path rules make visible; the map literal only guarantees every element is named; (c) a bare name
+inside the brackets is a binding's value, as on any value side; the name itself is written as a string or with
+the dot; (d) a single-name search result is still the source's element (`F["a"].index is F.a.index`): its index
+is not renumbered; the positions of a several-result selection are not stated; (e) the empty array from a search
+is the never-matching pattern, with the can-never-match warning where known at compile time; (f) `X[0]` stays
+"the whole rx"; (g) a name looked up on a plain unlabelled array finds nothing; (h) "under construction" for an
+infinite key is the under-construction error, a direction acknowledged (a selector over the names); (i) the
+same result twice in an alternation matches as once (the first occurrence wins), and twice under a `join`.
+DFA category (his standing question): YES for all seven lines (settled at compile time; the matched member of
+line 7 is "which alternative was taken", maybe about 0.8 where alternatives overlap).
+For the next fold, with drop-not, array-argument and brace-counts.
+
+### 2026-11-25 OWNER, on strings: "a string has no pattern operators. Everything is a character literal"; "either " or ' delimits"; QUESTIONS: "allowed escapes? Auto Literal concatenation ?"
+tags: core/values/one-type core/patterns/literals core/patterns/flags core/patterns/sequence core/holes/insert lib/builtin/options lib/strings/join core/spellings/placeholders
+
+Said on the manager's summary of where strings stand ("What do you have in mind for strings?"). HIS WORDS, whole:
+
+"1. a string has no pattern operators. Everything is a character literal. Obvious but should be said
+2. either " or ' delimits
+3. allowed escapes? Auto Literal concatenation ?"
+
+Class: (1) a STATEMENT he wants written ("Obvious but should be said"): a string holds no pattern operators,
+every character is a literal. (2) a STATEMENT on syntax: either quote delimits. (3) two QUESTIONS: which escapes;
+whether adjacent literals concatenate. None asked as a ruling.
+CHECKED AGAINST THE DOCUMENTS: no piece states a string constant's syntax. core/values/one-type has "A constant
+(`5`, `"a"`) is a one-string rx known at compile time"; lib/builtin/options (ruled) has the weak `i` reaching a
+string constant and "`x` never applies to a string"; core/patterns/sequence (ruled 2026-11-17) has "There is one
+sequence operator ...; juxtaposition is not used", his words then: "A B isn't legal so its the addition form";
+core/values/arithmetic has "`+` never joins strings or patterns".
+RUN before answering (python `re`, subject `a.b axb a.b+`; output pasted):
+the string "a.b+" as character literals | regex a\.b\+ | WHOLE a.b+ HOLDS axb FAILS axbbb FAILS | SEARCHED ('a.b+', 8) | FIND-ALL [('a.b+', 8)]
+the literal /a.b+/ | regex a.b+ | WHOLE a.b+ FAILS axb HOLDS axbbb HOLDS | SEARCHED ('a.b', 0) | FIND-ALL [('a.b', 0), ('axb', 4), ('a.b', 8)]
+The manager's answer (told to him; the manager's reading; nothing applied): (1) and (2) agreed; the consequence
+to state with (1): `${` in a string is three plain characters, no hole (a hole is rx text's mark); a string `"s"`
+is the rx text `\Qs\E`. Escapes: the manager's proposal: the backslash itself, either quote, `\n`, `\r`, `\t`, and
+a character by its code in PCRE's own spelling (`\x{..}`); every OTHER backslash sequence a compile error, so
+`"\d"` is refused with a message pointing at `/\d/` rather than read as a class or as the letter d. Automatic
+concatenation: the manager's leaning no: it would be the one juxtaposition in a language he ruled has none, a
+missing comma in an array would join two entries silently, and `"ab" SEQ "cd"` already is the one string.
+DFA category: YES (literal text).
+
+### 2026-11-25 OWNER, on string-literals: "Value to """ delimiter for multi line strings? Thereby "..." strings are a single line?"
+tags: core/values/one-type core/patterns/literals core/operators/statements core/spellings/placeholders core/principles/conservative-first
+
+Asked **string-literals** (four lines: no pattern operators and no holes; either quote delimits; the escapes are
+the backslash, the two quotes, `\n`, `\r`, `\t`, `\x{..}`, any other backslash sequence a compile error; adjacent
+strings do not join; the manager's leaning yes; "Is there an escape you want that I left out?"). HIS WORDS, whole:
+
+"Value to """ delimiter for multi line strings? Thereby "..." strings are a single line?"
+
+Class: two QUESTIONS that carry an IDEA: a triple-quote delimiter for strings of several lines, the one-quote
+string then ending on its own line. NOT a ruling; string-literals is NOT answered.
+RUN before answering (python `re`; a two-line block as literal text, written in a file with LF line ends and in
+one with CRLF line ends taken raw; subject `x BEGIN\nEND y BEGIN\r\nEND`; output pasted):
+block written in a file with LF line ends | WHOLE 'BEGIN\nEND' HOLDS 'BEGIN\r\nEND' FAILS | SEARCHED ('BEGIN\nEND', 2) | FIND-ALL [('BEGIN\nEND', 2)]
+the same block written in a file with CRLF line ends, taken raw | WHOLE 'BEGIN\nEND' FAILS 'BEGIN\r\nEND' HOLDS | SEARCHED ('BEGIN\r\nEND', 14) | FIND-ALL [('BEGIN\r\nEND', 14)]
+The manager's answer (told to him; the manager's reading; nothing applied): the one-line rule has value by itself
+(a missing closing quote is caught at the end of its line; a newline in a string is written `\n`): proposed as a
+fifth line. The triple quote: reserved, and it is free to reserve because line 4 refuses adjacent strings (`""`
+then `"` is no legal program). Defining it needs three small rules (the newline after the opening mark; the
+indentation; the file's own line ends, which would otherwise leak into what the string matches: the run above),
+so the manager's leaning is to park it with a trigger (the first program that needs a block of literal text),
+with a minimal definition ready if he wants it now: the text exactly as written, the first newline dropped, every
+line end read as `\n`, no indentation removed. DFA category: YES.
+
+### 2026-11-25 OWNER RULING — string-literals: "Yes all five"
+tags: core/values/one-type core/patterns/literals core/patterns/flags core/patterns/sequence core/holes/insert lib/builtin/options lib/strings/join core/diagnostics/errors core/spellings/placeholders
+
+ASKED AS A RULING (slug string-literals, 2026-11-25, the statement as last put to him: "1. A string has no
+pattern operators and no holes; every character is a literal. 2. Either `"` or `'` delimits; the other quote is a
+plain character inside. 3. The escapes are the backslash, the two quotes, `\n`, `\r`, `\t` and `\x{..}`. Any other
+backslash sequence is a compile error. 4. Adjacent strings do not join. Joining is the sequence operator or
+`join`. 5. A string ends on the line it starts on. The triple quote is reserved for a multi-line form, not
+defined yet."; the manager's leaning yes; "Do you want the triple quote parked as in line 5, or defined now with
+the minimal form?"; DFA category told: yes; the runs in the two entries above). HIS WORDS, whole:
+
+"Yes all five. Then let's close the session"
+
+Class: a RULING on the five lines as put; by line 5 the triple quote is RESERVED and parked, not defined (his yes
+to line 5 as written is taken as the answer to the closing question: told to him). Lines 1 and 2 are his own
+statements of the entry "on strings". And a request to close the session.
+The manager's readings (marked; for the fold to test): (a) a string `"s"` is the rx text `\Qs\E` after its
+escapes; `${` in it is plain characters; (b) a raw line end inside a one-quote string is a compile error (line
+5), the newline written `\n`; (c) `\x{..}` is the only code form (`\x41` is a compile error by line 3); whether
+the code is a character or a byte follows the encoding question, not settled; (d) `""` is the empty text; (e)
+the ruled options stand: the weak `i` reaches a string, `x` never does; (f) a string used as a name (a capture's
+name, a map key, a parameter value) has the same syntax; (g) `"ab" SEQ "cd"` is the one string `abcd`, a constant
+where a constant is needed; (h) a parked piece is owed for the triple-quote form, its trigger the first program
+that needs a block of literal text, with the minimal definition told to him (the text as written, the first
+newline dropped, every line end read as `\n`, no indentation removed).
+DFA category (his standing question): YES (literal text).
+For the next fold, with drop-not, array-argument, brace-counts and map-creator.
+
+### 2026-11-27 OWNER, an IDEA ("half baked") on `!`: "what is !B as an object? ... formally: 1. you can use ! on conditions. 2. there is a &! operator. 3. maybe something for when case"
+tags: core/filters/complement core/filters/kinds core/filters/negation core/conditions/two-valued core/operators/bindings core/model/places lib/control/peek lib/control/when lib/control/when-test lib/control/when-test/not lib/sets/anything
+
+Said at the start of the tenth session ("i wanted to discuss ! again"), on the manager's summary of where `!`
+stands after drop-not (three places: the complement on a pattern or set as a filter, on a condition, as the
+argument of a peek). HIS WORDS, whole:
+
+"i was thinking about ! which we seem to imply is a general mechanism but really, there is only a few places it
+can be used. specifically your first three bullet items. i'm wondering if we formalize it and revert to a system
+you had originally proposed with some modifications. this idea is half baked. A:= !B is not disallowed. but what
+is !B as an object? you can't seq it or use it where you can B. does !B & !C have meaning? formally:  1. you can
+use ! on conditions. 2. there is a &! operator. 3. maybe something for when case"
+
+Class: an IDEA in DISCUSSION (his words: "this idea is half baked"), with two QUESTIONS ("what is !B as an
+object?"; "does !B & !C have meaning?") and a three-line sketch. NOT a ruling; drop-not stands as ruled.
+CHECKED AGAINST THE RECORD: (1) "a system you had originally proposed": the entries of 2026-11-13 have the shared
+operators "`&`, `&!`, `|`" ("& = intersection (D196), &! = difference"; "consistent with Frank's preference for &!
+over a bare !"; his "I can't think of better syntax than & &! | and related"); the 2026-11-14 entry SUPERSEDED it
+on his remark that `&!` "could be `&` and `!` as two items" ("`&!` dissolves into `&` + filter"). (2) "A:= !B is
+not disallowed": so, by his ruling complement-place (2026-11-18: "It stands alone. I think it's the use that is
+the problem") and his "There is rx that can match. There is rx that can filter. Neither is wholly a subset of the
+other". (3) "does !B & !C have meaning": today yes, core/filters/kinds: a complement "may be bound, named, passed
+around and combined with other complements, and used as an operand of `&` in a chain that has at least one
+positive pattern" (its printed example `neither := !/7\d*/ & !/8\d*/`).
+RUN before answering (python `re`, scratch `bang_forms.py`; A := `\d+`, its paths at a start longest first, a
+filter judging the stretch whole; B := `7\d*`, C := `\d*3`; subject `7 73 37 77 12 713`; output pasted):
+A & !B & !C | WHOLE 12 HOLDS 7 FAILS 73 FAILS 713 FAILS | SEARCHED ('37', 5) | FIND-ALL [('37', 5), ('12', 11), ('1', 15)]
+A &! (B | C) | WHOLE 12 HOLDS 7 FAILS 73 FAILS 713 FAILS | SEARCHED ('37', 5) | FIND-ALL [('37', 5), ('12', 11), ('1', 15)]
+A & !(0:B) & !(0:C) | WHOLE 12 HOLDS 7 FAILS 73 FAILS 713 FAILS | SEARCHED ('37', 5) | FIND-ALL [('37', 5), ('12', 11), ('1', 15)]
+A & (C | !B) | WHOLE 12 HOLDS 7 FAILS 73 HOLDS 713 HOLDS | SEARCHED ('73', 2) | FIND-ALL [('73', 2), ('37', 5), ('12', 11), ('713', 14)]
+A &! (B &! C) | WHOLE 12 HOLDS 7 FAILS 73 HOLDS 713 HOLDS | SEARCHED ('73', 2) | FIND-ALL [('73', 2), ('37', 5), ('12', 11), ('713', 14)]
+A & !B & !C  against  A &! (B | C): 0 of 5461 differ
+A & (C | !B)  against  A &! (B &! C): 0 of 5461 differ
+A & !B & !C  against  A & (C | !B): 2970 of 5461 differ
+(The third row is the model's own restatement of the first, not an independent check; the last line is the
+control: the comparison can see a difference.)
+The manager's thoughts (told to him; every line the manager's reading; nothing applied):
+- What `!B` is today: an rx of the kind "can filter, cannot match", his two-kinds ruling. That kind exists almost
+  only to give `!B` a home (the other member is an rx with an outward-looking edge assertion, which can match and
+  not filter). Its cost in the documents: the error rows for a lone complement, a complement in a sequence, in a
+  pattern hole, in an `occurrences` argument, in a test; the hole row drop-not added for `peek(!A)`.
+- His sketch as one system: `!` negates a TEST (a zero-width yes or no at a point: a condition); `A &! B` is the
+  difference of stretches, and is the shorthand of `A & !(0: B)` (hand-derived from the ruled "`A & B` holds
+  exactly when `A & (0: B)` holds"). `!B` is then no object: `A := !B`, `!B & !C`, a complement in a hole are not
+  grammatical, so their error rows leave.
+- Nothing is lost in what can be written under an `&`: `A & !B & !C` is `A &! (B | C)`, and the mixed case
+  `A & (C | !B)` is `A &! (B &! C)` (the runs above). Lost: a NAMED complement (`not_seven := !seven`, his own
+  example of 2026-11-18), until a condition can be bound alone (bound-condition: an error for now); the user names
+  the positive pattern and writes `&!` at the use.
+- Line 3, the peek and `when`: if `!` negates a test and a peek is a test, the negative peek is `!peek(A)` and
+  `peek(!A)` is not writable: the REVERSE of the two forms as drop-not ruled them. `when(!x, z)` on a bare pattern
+  needs the test position of `when` to make its argument a test; today a bare pattern there is consumed
+  (lib/control/when-test).
+- Not covered by his three lines: the complement of a SET after a label, `(h: !<5)` ("h present and outside
+  `<5`"; `!(h: <5)` also holds where h is absent), and `!<200` among the comparison sets.
+DFA category (his standing question): YES for every form, unchanged: each spelling lowers to the same regex.
+
+### 2026-11-27 OWNER, on the `!` idea: "would the test cases be solved using (x! <5) and (x?! <5)"
+tags: core/conditions/form core/conditions/form/optional-entry core/conditions/two-valued core/filters/complement core/filters/negation core/conditions/match-so-far core/spellings/placeholders core/operators/precedence
+
+Said on the manager's thoughts of the entry above (their last cost: the complement of a SET after a label,
+`(h: !<5)`, is not covered by his three lines). HIS WORDS, whole:
+
+"would the test cases be solved using (x! <5) and (x?! <5)"
+
+Class: a QUESTION carrying a PROPOSAL of two entry operators beside `:` and `?:` (spellings placeholders, D193
+addendum 4). NOT a ruling. THE READING TAKEN (told to him): "the test cases" = the set cases the manager said his
+three lines left out (phone autocorrect, or the cases under test); `(x! <5)` = x present and OUTSIDE the set (the
+negative of `?:`), `(x?! <5)` = x absent or outside (the negative of `:`).
+RUN before answering (python `re`, scratch `bang_entry.py`; the documents' own example `/(?<h>\d)?x/` of
+core/conditions/form/optional-entry, subject `7x 3x x`; output pasted):
+(h: <5)   present and in | WHOLE x FAILS 3x HOLDS 7x FAILS | SEARCHED ('3x', 3) | FIND-ALL [('3x', 3)]
+(h ?: <5) absent or in | WHOLE x HOLDS 3x HOLDS 7x FAILS | SEARCHED ('x', 1) | FIND-ALL [('x', 1), ('3x', 3), ('x', 6)]
+(h ! <5)  present and outside | WHOLE x FAILS 3x FAILS 7x HOLDS | SEARCHED ('7x', 0) | FIND-ALL [('7x', 0)]
+(h ?! <5) absent or outside | WHOLE x HOLDS 3x FAILS 7x HOLDS | SEARCHED ('7x', 0) | FIND-ALL [('7x', 0), ('x', 4), ('x', 6)]
+The first two rows reproduce the documents' printed lines ("The plain entry", "The entry `?:`"); the third the
+printed "Under `NOT`" line (`NOT (h ?: <5)`, which the documents equate with `(h: !S)`).
+The manager's thoughts (told to him; the manager's reading; nothing applied):
+- Yes: the four operators are the four cells of (present or absent-allowed) x (in or outside); `(h ! S)` is
+  today's `(h: !S)`, `(h ?! S)` is today's `!(h: S)`. The complement of a set after a label needs no `!` on a set.
+- They are each other's negations crosswise: `!(h: S)` = `(h ?! S)`, `!(h ?: S)` = `(h ! S)`. So a prefix `!` on a
+  ONE-entry condition becomes a second spelling of an operator; it is still wanted on a record of entries or a
+  compound (`!(a: S, b: T)`), unless he prefers those written out by hand.
+- His line 2 falls inside it: `A &! B` is `A & (0 ! B)`, and `0` is never absent, so `0 ! B` and `0 ?! B` agree
+  (hand-derived from "`A & B` holds exactly when `A & (0: B)` holds" and zero-open's "never absent").
+- Not solved by it: his line 3 (the negative peek, `when(!x, z)`): an entry reads a label that is set; a peek
+  asks about text not yet matched.
+- Spelling notes for the review: `(x! <5)` beside a set that begins with `!` no longer arises (no `!` on sets);
+  no `!=` comparison is in the documents today (grep of core.md: none), so `x! =5` has no rival reading now.
+DFA category (his standing question): YES where the entry itself is (one label against a fixed set, with the
+MAYBE of DFA captures for a label set in a loop or an optional, as told 2026-11-25); the operator adds nothing.
+
+### 2026-11-27 OWNER, on the `!` idea: "can !(a: S, b: T) be rewritten?"
+tags: core/conditions/form core/conditions/form/optional-entry core/conditions/form/optional-edges core/conditions/two-valued core/filters/negation core/patterns/alternation core/values/tuples
+
+Said on the manager's question whether a prefix `!` is kept for compound conditions. HIS WORDS, whole:
+
+"can !(a: S, b: T) be rewritten?"
+
+Class: a QUESTION. NOT a ruling.
+RUN before answering (python, scratch `bang_record.py`; a and b each absent or a digit, 121 cases; S := `<5`,
+T := `>=3`; output pasted):
+!(a: S, b: T)  against  (a ?! S) | (b ?! T): 0 of 121 differ
+!((a, b): >= (5, 3))  against  (a ?! >=5) | (b ?! >=3): 12 of 121 differ
+!((a, b): >= (5, 3))  against  (a ?! >5) & ((a ?! 5) | (b ?! >=3)): 4 of 121 differ
+The manager's answer (told to him; the manager's reading; nothing applied):
+- A record: yes. By core/conditions/form a record "holds when every entry's left part ... is in its set", so its
+  negation is "some entry fails": `(a ?! S) | (b ?! T)`, `|` between conditions being "an alternation of two
+  zero-width tests at one place" (core/patterns/alternation). Line 1 of the run.
+- A joint entry over a set that is not a product (`((a, b): >= (5, 3))`, dictionary order): not entry by entry
+  (line 2), and the documents' own split `(h: >5) | (h: 5, m: >=3)`, negated by hand, still parts on 4 cases, each
+  a set first label with the second absent (the split is stated "where both are set"; line 3). Its exact negation
+  is the operator on the joint left part, `((a, b) ?! >= (5, 3))`: that position is today "a compile error for
+  now" for `?:` (the open optional-entry-edges), so the negative operators inherit that open edge.
+- So with the two operators the prefix `!` on a condition is never NEEDED; what it would save is the hand
+  rewriting of a long record or a nested compound.
+
+### 2026-11-27 OWNER, an IDEA on `when`: "what if when only took conditions. consuming might be ..."; corrected twice to "when((0: A), A seq B, C)"
+tags: lib/control/when lib/control/when-test lib/control/when-test/not lib/control/peek core/conditions/match-so-far core/conditions/form core/filters/negation core/patterns/lookaround core/patterns/atomic
+
+Said on the manager's "That leaves your line 3, the negative peek and `when(!x, z)` ... Shall we take that next?".
+HIS WORDS, three messages in order, each whole:
+
+"yes. what if when only took conditions. consuming might be A & when((0: A), B, C). validate"
+
+"no. its  when((0: A), A seq B, A seq C)"
+
+"no. its  when((0: A), A seq B, C)"
+
+Class: an IDEA with a request to check it ("validate"); the second and third messages CORRECT the example (the
+last one stands; `seq` is his word for the sequence operator). NOT a ruling.
+RUN (python `re`; A := `\d`, B := `\d\d`, C := `\w`; scratch `when_zero2.py`, `when_cond.py`, `when_peek.py`;
+output pasted). The target is the documents' line for a bare test (lib/control/when-test: `when(/\d/, /\d\d/,
+else = /\w/)` "is `\d\d\d|(?!\d)\w`"):
+today, bare test: when(A, B, C) is AB|(?!A)C
+    WHOLE 123 HOLDS x HOLDS 1 FAILS | SEARCHED 123 ('123', 0) | FIND-ALL 12 x 123 1x 7 [('x', 3), ('123', 5), ('x', 10)]
+when((0: A), A SEQ B, C), 0 the match so far (empty where the call stands first; never an A)
+    WHOLE 123 FAILS x HOLDS 1 HOLDS | SEARCHED 123 ('1', 0) | FIND-ALL 12 x 123 1x 7 [('1', 0), ('2', 1), ('x', 3), ('1', 5), ('2', 6), ('3', 7), ('1', 9), ('x', 10), ('7', 12)]
+when((0: A), A SEQ B, C), the test read as 'A matches from here': (?=A)AB|(?!A)C
+    WHOLE 123 HOLDS x HOLDS 1 FAILS | SEARCHED 123 ('123', 0) | FIND-ALL 12 x 123 1x 7 [('x', 3), ('123', 5), ('x', 10)]
+today against the first reading: 966 of 1093 differ; against the second: 0 of 1093 differ.
+Also run, a conditions-only `when` over a LABEL (from `when_cond.py` and `when_peek.py`):
+(?<t>A)?(?(t)B|C), the label on an optional A, the test "t is set": 916 of 1093 differ from today's bare test
+(?<t>A)?+(?(t)B|C), the same with a possessive optional: 0 of 1093 differ
+(?P<t>(?=\d))?+(?(t)\d\d|\w) against today's `when(peek(A), B, C)`, `(?=\d)\d\d|(?!\d)\w`: 0 of 1093 differ
+The manager's answer (told to him; the manager's reading; nothing applied):
+- His final form gives today's answers exactly when its test means "A matches from here". By the ruled piece `0`
+  is "the match so far ... the text its definition has matched from its start to the condition's point"
+  (core/conditions/match-so-far; zero-in-sequence, zero-open): text BEHIND the point. Read so, the form does not
+  validate (the second block).
+- So the shape works and the name does not: what it needs is an entry whose left part is the text AHEAD of the
+  point. THE MANAGER'S IDEA, put to him, not his: one more open name beside `0` for "what follows from here"
+  (placeholder `ahead`), `(ahead: A)` holding when A matches from the point: the peek written as a condition. The
+  entry operators then give the negative peek with no `!` anywhere: `(ahead ! A)`. `when` takes conditions only,
+  its body negates its test, and the bare test, the consuming-test warning, not-test and `peek(!A)` all leave.
+- A difference to state if it is taken: an entry is whole-text membership (`x: S`, x's text in S); `ahead` would
+  be "some start of what follows is in S".
+- `when`'s body must negate a condition it receives, and a body cannot swap the operator of an entry it did not
+  write: so the prefix `!` on a condition is NEEDED after all (or `when` is native). The manager's leaning of the
+  entry above ("drop the prefix `!`") is WITHDRAWN on this ground.
+- The label route (a possessive optional and a test on the label) also reproduces today's answers without a
+  lookahead, but only with the possessive mark: an idiom, not a definition.
+DFA category (his standing question): YES for the `ahead` entry and its negative (they are the lookaheads already
+classed YES on 2026-11-25); the possessive idiom: not classed, nothing checked.
+
+### 2026-11-27 OWNER, on `when` and `ahead`: "if i provided when(A, B, C) could we do something like := A seq B | (ahead ! A) seq C. the problem is A looks forward and (blah: A) looks back. they are different"
+tags: lib/control/when lib/control/when-test lib/control/peek core/conditions/match-so-far core/conditions/form core/filters/negation core/patterns/lookaround core/principles/matching-language
+
+Said on the manager's idea of an open name for the text ahead (`ahead`, a placeholder) and a conditions-only
+`when`; before it, on the manager's runs, he wrote "i'm still learning this". HIS WORDS, whole:
+
+"if i provided when(A, B, C) could we do something like := A seq B | (ahead ! A) seq C. the problem is A looks
+forward and (blah: A) looks back. they are different"
+
+Class: a QUESTION with a PROPOSED body and an OBSERVATION (a pattern in a sequence looks forward; an entry on a
+label looks back). NOT a ruling. It sets aside his own "what if when only took conditions" of the entry above
+(`when` takes a pattern again).
+NOTHING NEW RUN: his body lowers, for a bare pattern A, to `AB|(?!A)C`, the text of the documents' line for
+today's bare test (lib/control/when-test: "`when(A, B, else = C)` is `AB|(?!A)C`"), so today's printed answers are
+its answers; for a peek as A the guard is `(?!(?=A))`, run on 2026-11-25 against `(?!A)`: "0 of 1456 differ".
+For a condition as A: hand-worked, not run (the guard is "the condition cannot hold here", today's `NOT c`).
+The manager's answer (told to him; the manager's reading; nothing applied):
+- Yes. It is today's ruled body with the guard re-spelled: `NOT peek(test)` (documents), `peek(!test)`
+  (drop-not), `(ahead ! test)` (this). No answer of `when` moves; a bare test still consumes, with its warning.
+- His observation is the reason it reads right: the test of `when` is a pattern standing in the sequence, so it
+  looks forward; the one thing the body needs that looks forward WITHOUT consuming is the guard, and `ahead` is
+  the one entry that does.
+- RE-DERIVED on the changed premise: with this body `when` does not negate a condition it receives (the guard
+  covers every kind of test), so the ground on which the manager said the prefix `!` on a condition is NEEDED
+  (the conditions-only `when`) is gone; it is again a convenience, never needed.
+- What `ahead` would then replace: `peek(!A)` and its hole row (drop-not line 2). `peek(A)` and `(ahead: A)`
+  would be two spellings of the positive form; `peek` passes A's labels on (wrapper-export), which an entry's set
+  does not today: a reason to keep `peek` as the labelled form.
+DFA category (his standing question): YES, unchanged: the same regex as today's `when`.
+
+### 2026-11-27 OWNER, two ALTERNATIVES for the `when` guard: "peeknot(A) := /(?!${A})/ is an ugly little function but in the case of when is hidden"; and "does this work for when := A seq B | C &! A"
+tags: lib/control/when lib/control/when-test lib/control/peek core/filters/negation core/filters/complement core/patterns/lookaround core/conditions/form core/principles/explicit-exceptions
+
+Said on the manager's four-line sketch (the entry operators, `&!` as a shorthand, `ahead` as the one
+forward-looking name, no `!B` object). HIS WORDS, whole ("feek" is "feel"):
+
+"i feek we're close but not quite. alternatives: 1. what comes around goes around. peeknot(A) := /(?!${A})/ is an
+ugly little function but in the case of when is hidden and lets us clean up ! and not add semantics to
+conditions. 2. does this work for when := A seq B | C &! A"
+
+Class: DISCUSSION: an assessment ("close but not quite") and two ALTERNATIVES, the second a QUESTION. NOT a
+ruling. His stated ground for (1): it "lets us clean up ! and not add semantics to conditions" (against the
+manager's `ahead`). CHECKED AGAINST THE RECORD: (1) is line 2 of drop-not as first ASKED on 2026-11-25 ("The
+negative peek is the provided macro `peeknot(A)`, the body `/(?!${A})/`"), replaced in his ruling by `peek(!A)`.
+RUN for (2) (python `re`, scratch `when_diff.py`; `C &! A` modelled as C's paths longest first, the stretch not
+an A whole; output pasted):
+A := \d   B := \d\d   C := \w
+   today AB|(?!A)C | WHOLE 123 HOLDS x HOLDS 1 FAILS | SEARCHED 12 x 123 1x 7 ('x', 3) | FIND-ALL [('x', 3), ('123', 5), ('x', 10)]
+   (A SEQ B) | (C &! A) | WHOLE 123 HOLDS x HOLDS 1 FAILS | SEARCHED 12 x 123 1x 7 ('x', 3) | FIND-ALL [('x', 3), ('123', 5), ('x', 10)]
+   today  against  (A SEQ B) | (C &! A): 0 of 1093 differ
+   today  against  (A SEQ B) | (C &! (A SEQ anything)): 0 of 1093 differ
+A := \d   B := \d\d   C := \w+
+   today AB|(?!A)C | WHOLE 123 HOLDS 1ab FAILS ab HOLDS | SEARCHED 12 x 123 1x 7 ('x', 3) | FIND-ALL [('x', 3), ('123', 5), ('x', 10)]
+   (A SEQ B) | (C &! A) | WHOLE 123 HOLDS 1ab HOLDS ab HOLDS | SEARCHED 12 x 123 1x 7 ('12', 0) | FIND-ALL [('12', 0), ('x', 3), ('123', 5), ('1x', 9)]
+   (A SEQ B) | (C &! (A SEQ anything)) | WHOLE 123 HOLDS 1ab FAILS ab HOLDS | SEARCHED 12 x 123 1x 7 ('x', 3) | FIND-ALL [('x', 3), ('123', 5), ('x', 10)]
+   today  against  (A SEQ B) | (C &! A): 442 of 1093 differ
+   today  against  (A SEQ B) | (C &! (A SEQ anything)): 0 of 1093 differ
+A := \d\d   B := x   C := \w
+   today AB|(?!A)C | WHOLE 12x HOLDS 1 HOLDS x HOLDS | SEARCHED 12 1 12x x ('2', 1) | FIND-ALL [('2', 1), ('1', 3), ('12x', 5), ('x', 9)]
+   (A SEQ B) | (C &! A) | WHOLE 12x HOLDS 1 HOLDS x HOLDS | SEARCHED 12 1 12x x ('1', 0) | FIND-ALL [('1', 0), ('2', 1), ('1', 3), ('12x', 5), ('x', 9)]
+   today  against  (A SEQ B) | (C &! A): 288 of 1093 differ
+   today  against  (A SEQ B) | (C &! (A SEQ anything)): 288 of 1093 differ
+The manager's answer (told to him; the manager's reading; nothing applied):
+- (2) does not hold in general. It agrees where C and A are the same width (the first block), and parts two
+  ways: C longer than A (`1ab`: the stretch is not an A whole, though an A starts it; the repair
+  `C &! (A SEQ anything)` mends this one), and A longer than C (third block: the guard has to see text BEYOND
+  what C takes; no filter on C's stretch can, repaired or not). Hand-worked, not run: with the default else `//`
+  the stretch is empty, so `// &! A` holds wherever A is not nullable and the guard is gone.
+  The ground is his own sentence of the entry above: the guard looks forward past the match; `&!` judges a
+  stretch already taken.
+- (1) works, with no run needed: `/(?!${A})/` is the guard's own text in the documents' lowering today. It adds
+  nothing to conditions (no `ahead`, no forward-looking entry), and the body is plain PCRE in a literal, his
+  method's default. Cost: a user who wants the negative peek writes the same "ugly little function" (or the
+  literal); `when(!x, z)` on a bare pattern is not writable at all (no `!x` object), else-only is
+  `when(peeknot(x), z)` or a negative entry, `when((h ?! <5), z)`.
+- The manager's leaning: (1). `ahead` can be added later without changing an answer; the reverse is not true.
+DFA category (his standing question): YES for (1), the same regex as today.
+
+### 2026-11-27 OWNER PROPOSAL — a peek operator and a peeknot operator: "consuming: when(A,B,C), nonconsuming: when(^A, B, C) nonconsuming not: when(^!A, B, C)"
+tags: lib/control/when lib/control/when-test lib/control/peek core/patterns/lookaround core/operators/precedence core/operators/bindings core/filters/negation core/filters/operand-context core/spellings/placeholders
+
+Said on the manager's answer to his two alternatives (the hidden `peeknot`; `C &! A` refuted by run). HIS WORDS,
+whole:
+
+"looking forward, we have entirely ignore the subject of lookarounds. if we included an operator for it,
+essentially a peek and peeknot operator, then this would look a little cleaner. consuming: when(A,B,C),
+nonconsuming: when(^A, B, C) nonconsuming not: when(^!A, B, C). its an odd syntax because we can't use regex as =
+has meaning and frankly, lookarounds are an odd feature."
+
+Class: a PROPOSAL in the discussion (two prefix operators, a peek and a negative peek; `^` and `^!` are his
+placeholder spellings, D193 addendum 4), with an OBSERVATION ("we have entirely ignore the subject of
+lookarounds") and his reason the regex spelling is not taken ("= has meaning": PCRE's `(?=`). NOT a ruling.
+CHECKED: outside rx text the documents give `^` no meaning today (grep of core.md: only the anchor inside rx text
+and the class mark); his 2026-11-13 lean stands beside it ("I'd like to use operators for primitives and save
+names for macros if possible").
+RUN (python `re`, scratch `caret.py`; the body `when(T, B, C) := T SEQ B | ^!T SEQ C`, A := `\d`; output pasted):
+when(^A, B, C): (?=A)B|(?!(?=A))C  against  (?=A)B|(?!A)C
+    WHOLE 12 HOLDS 1 FAILS x HOLDS xy FAILS | SEARCHED 12 x 123 1x xy ('12', 0) | FIND-ALL [('12', 0), ('x', 3), ('12', 5), ('x', 10), ('x', 12), ('y', 13)]
+    0 of 1093 differ
+when(^!A, B, C): (?!A)B|(?!(?!A))C  against  (?!A)B|(?=A)C
+    WHOLE 12 FAILS 1 HOLDS x FAILS xy HOLDS | SEARCHED 12 x 123 1x xy ('1', 0) | FIND-ALL [('1', 0), ('2', 1), ('1', 5), ('2', 6), ('3', 7), ('1', 9), ('xy', 12)]
+    0 of 1093 differ
+(first block B := `\d\d`, C := `\w`; second block B := `\w\w`, C := `\w`.)
+The manager's thoughts (told to him; the manager's reading; nothing applied):
+- It works with ONE body for every kind of test, `T SEQ B | ^!T SEQ C`: a bare test consumes, `^A` does not,
+  `^!A` is the negative test and its guard `^!(^!A)` has the answers of `^A` (the runs).
+- `^A` and `^!A` are ordinary zero-width patterns that CAN MATCH: usable wherever a pattern is (a sequence, a
+  binding, an argument, a hole), refused as an `&` operand by the existing rule (core/filters/operand-context:
+  "any piece that might look outside the matched text is a compile error"). No new kind of object, where `!B`
+  needed the filter-only kind.
+- `^!` has to be ONE operator, not `^` on `!A` (there is no `!A` object). THE GENERAL FORM the manager sees, put
+  to him: `!` is never an operator by itself; it is the negative mark on an operator: the entry (`:` and his
+  `!`, `?:` and `?!`), the filter (`&` and `&!`), the peek (`^` and `^!`). Fits these four pairs; for the
+  spellings review, the lone entry `!` is the one that does not show its positive partner (`:`).
+- `peek(A)` would become `^A` (the same body, A's labels passed on); `^!A` passes none on.
+- Not answered by it: the behind pair (PCRE's `(?<=`, `(?<!`) and PCRE2's two non-atomic forms; all stay
+  writable in rx text.
+DFA category (his standing question): YES, unchanged: `^A` and `^!A` are the lookaheads classed YES 2026-11-25.
+
+### 2026-11-27 OWNER, a LEAN and a QUESTION on the peek operators: "i lean strongly to adopting this. one thing bothers me is that pcre has the (?!A) form and we are avoiding it ... if i said that !(A) := /(?!${A})/ would i be making a mistake because it exists and it even uses the same operator?"
+tags: lib/control/when lib/control/peek core/patterns/lookaround core/filters/negation core/filters/complement core/filters/operand-context core/conditions/two-valued core/principles/regex-default core/operators/precedence
+
+Said on the manager's thoughts on his peek and peeknot operators (`^A`, `^!A`; one body for `when`; `!` as the
+negative mark on an operator). HIS WORDS, whole:
+
+"i lean strongly to adopting this. one thing bothers me is that pcre has the (?!A) form and we are avoiding it.
+should we 1. accept the ground reality and include it in the language, 2. keep it but put it in a macro which is
+one level of obscuring, 3. keep it available as a literal hole like the above examples. in other words, am i
+pushing this is the wrong direction and if i said that !(A) := /(?!${A})/ would i be making a mistake because it
+exists and it even uses the same operator?"
+
+Class: a LEAN ("i lean strongly to adopting this": the peek operators with the sketch around them), a CONCERN
+(PCRE's `(?!A)` exists and the design avoids it), three OPTIONS he lists, and a QUESTION asked of the manager's
+judgement (is a prefix `!` defined as the negative lookahead a mistake). NOT a ruling.
+NOTHING NEW RUN; the runs relied on are in the record: the complement against the negative peek part
+("complement /\d+/ & !/7/ ... negative peek (?!7)\d+", 2026-11-25); `(?!(?!A))` against `(?=A)` as a `when`
+guard, "0 of 1093 differ" (the entry above).
+The manager's answer (told to him; the manager's judgement and reading; nothing applied):
+- Not a mistake, ONCE the complement object is gone. `!A` as the negative lookahead was refused on 2026-11-25 for
+  one reason: `!B` already meant the complement (a whole stretch is not B), and the two part. His sketch of today
+  moves that meaning to `&!` and the entry operators, so a prefix `!` on a pattern is free.
+- It then says one thing everywhere: "this cannot match (or hold) here". On a condition the documents already
+  read it so ("`NOT c` on a condition holds exactly when c fails, a negative lookahead at its point"), so `!` on a
+  condition and `!` on a pattern become one operator, PCRE's own, and `when(!x, z)` works as he expected on
+  2026-11-25 ("I'd expect as a user ... the "not" operator to provide not like behavior").
+- His three options do not exclude each other: (3) holds whatever is chosen (rx text is PCRE's, a hole included);
+  (2) is the same thing under a name; (1) taken as the prefix `!` is the one that adds something.
+- The cost: `A & !B`, written for weeks as the difference, becomes a lookahead used as a filter operand, a
+  compile error by the existing rule (core/filters/operand-context), whose message should name `A &! B`. An
+  error, never a changed answer; `A & !c` with a condition stays legal.
+- With it `^!` is not needed, and the general form told to him in the entry above ("`!` is never an operator by
+  itself") is WITHDRAWN: prefix `!` is the point test, `&!` and the entry `!` / `?!` are the membership tests.
+  The positive peek keeps a form of its own: his `^A`, or today's `peek(A)`; `!!A` has its answers but passes no
+  labels on.
+DFA category (his standing question): YES, unchanged.
+
+### 2026-11-27 OWNER, on the entry's negative spelling: "do we have to change condition !. i was thinking for consistency it could be :! which would match &! or |!  we'd get monstrosities like ?:!"
+tags: core/conditions/form core/conditions/form/optional-entry core/filters/negation core/filters/complement core/filters/and core/operators/precedence core/spellings/placeholders core/patterns/alternation
+
+Said on the manager's answer that a prefix `!` as the negative lookahead is no mistake once the complement object
+is gone, and its table of point tests and membership tests. HIS WORDS, whole:
+
+"do we have to change condition !. i was thinking for consistency it could be :! which would match &! or |!  we'd
+get monstrosities like ?:! but if you see that its a good time to think about it and the operator modifiers are
+clear and on different sides of the :"
+
+Class: a QUESTION ("do we have to change condition !") and a SPELLING PROPOSAL: the negative entries are `:!` and
+`?:!` (replacing his `!` and `?!` of this morning), "for consistency" with `&!`; the modifiers on different sides
+of the colon (`?` before, `!` after). Spellings are placeholders (D193 addendum 4); the MEANING is unchanged from
+the entry "would the test cases be solved". He also writes `|!`: no meaning was given to it in today's sketch.
+NOT a ruling.
+COUNTED, not a check (scratch `bang_census.py`, a crude count of `!` in the code spans of core.md and library.md
+by the token before it): after `:` 11 (`(h: !<5)`, `(h: !S)`, `(0: !contains("7"))`), after `&` 11 (`A & !B`,
+`P & !(P & (h: <5))`).
+The manager's answer (told to him; the manager's reading; UNTESTED against the printed examples: for the fold
+lane to test on every one):
+- The prefix `!` on a condition does not change: `!(h: <5)` is "the condition fails here", as ruled
+  (condition-not, absent-under-not).
+- `:!` and `?:!` have a consequence beyond consistency: `(h: !<5)` as printed today is the same characters as
+  `(h :! <5)` and has the same meaning ("h present and outside `<5`"), and `A & !B` the same characters as
+  `A &! B` with the same meaning (the difference). So if `!` straight after `&`, `:` or `?:` is read as that
+  operator's negative mark (spaces allowed), the forms written for weeks keep both their spelling and their
+  answers, and the cost named in the entry above (`A & !B` becoming a compile error) does not arise.
+- What then changes in the language is small: (1) a complement is no longer an object (no `neither := !B & !C`,
+  no `!B & A`, no passing one as an argument); (2) `!A` where a pattern stands in place (a sequence, an argument,
+  a `when` test), a compile error today, becomes the negative lookahead; (3) `?:!` is new.
+- `A & (!B)`, the parentheses making it the prefix form, is then a lookahead as a filter operand: the existing
+  compile error (core/filters/operand-context).
+- `|!`: not defined by the sketch; `A | !B` reads by composition as "A, or else a point where B cannot match".
+DFA category (his standing question): YES, unchanged (spellings only).
+
+### 2026-11-27 OWNER, on `:!`: "so is (a: !<v) read as (a:! <v) or is the first just a compiler error. you can't put a lookahead in a condition being the idea"
+tags: core/conditions/form core/conditions/form/optional-entry core/filters/negation core/filters/operand-context core/operators/precedence core/diagnostics/errors core/principles/conservative-first
+
+Said on the manager's answer that `(h: !<5)` as printed is the same characters as `(h :! <5)` with the same
+meaning. HIS WORDS, whole:
+
+"so is (a: !<v) read as (a:! <v) or is the first just a compiler error. you can't put a lookahead in a condition
+being the idea"
+
+Class: a QUESTION between two readings, with the idea behind the second stated ("you can't put a lookahead in a
+condition"). NOT a ruling.
+RUN before answering (python; x over 0..999; output pasted):
+(x: !<200 | >900)  prefix on the first set: 800 values hold; the operator on the whole set: 701 ; they differ on 99
+(x: !<200 & >100)  prefix on the first set: 800 values hold; the operator on the whole set: 901 ; they differ on 101
+LISTED (grep of core.md and library.md, a `!` after `:` or `&` in a code span): `(h: !<5)`, `(h: !S)`,
+`(h = "x": !<5)`, `(x: !B)`, `(0: !contains("7"))`, `A & !B`, `anything & !X`, `rx.any & !S`,
+`P & !(P & (h: <5))`: each negates ONE atom or one parenthesised group.
+The manager's answer (told to him; the manager's reading; nothing applied):
+- A CORRECTION of the entry above: "the same characters ... the same meaning" holds only where the `!` stands
+  before a single atom, which is every printed form (the list). Before a compound set the two readings part (the
+  run): today's prefix `!` takes the first atom (core/operators/precedence, level 3), the entry operator `:!`
+  the whole set (inside an entry `&` and `|` bind tighter than `:`).
+- So the manager's leaning is his second reading: `:!`, `?:!` and `&!` are each ONE token, written together;
+  `(a: !<v)` is a prefix `!` in a set, a lookahead where a set is judged against a label's text, and a compile
+  error whose message names `:!`. Likewise `A & !B` (the message names `&!`). An error now relaxes later without
+  changing an answer; the silent reading could not be taken back.
+- The cost returns: the printed forms of the list are re-spelled at the fold (mechanical: each is a single atom).
+DFA category (his standing question): YES, unchanged (a spelling and an error).
+
+### 2026-11-27 OWNER, "agree" on the one-token reading; and a PROPOSAL: "we keep ! out of the language and use ^ ^! ~ ~! ... the alternative is ^^ and ^^!"
+tags: core/filters/negation core/filters/complement core/conditions/form core/patterns/lookaround lib/control/peek lib/control/when core/operators/precedence core/spellings/placeholders core/conditions/two-valued
+
+Said on the manager's leaning that `:!`, `?:!` and `&!` are each one token and `(a: !<v)` and `A & !B` are
+compile errors naming them. HIS WORDS, whole:
+
+"agree. and idea: we split off ! because in different places the negation/complement idea was different
+semantics. i don't disagree with that. i propose we keep ! out of the language and use ^ ^! ~ ~! because frankly
+we are running out of keyboard symbols. i know ~ meant search but i don't think we use it like that anymore. the
+alternative is ^^ and ^^!"
+
+Class: (1) AGREEMENT with the leaning of the entry above (READING TAKEN: `:!`, `?:!`, `&!` one token each;
+`(a: !<v)` and `A & !B` compile errors; not asked under a slug, so it goes into the ruling statement to be put to
+him, not recorded as a ruling by itself). (2) a PROPOSAL: no `!` by itself in the language; four prefix
+operators, READ AS `^A` ahead, `^!A` not ahead, `~A` behind, `~!A` not behind (`^^` and `^^!` his alternative
+spelling for the behind pair); spellings are placeholders. (3) a RECOLLECTION: `~` meant search and is no longer
+used so. CHECKED: the record has his `=~` lean of 2026-11-13 ("instead of search() use Perl =~"); the three base
+documents hold no `~` today (grep: none), and the search inside a text is written `contains(..)`.
+RUN (python `re`, subject `1x2 x3 4x x`, A := `\d`; output pasted; the four lines agree with the peek-family run
+of 2026-11-25):
+x SEQ ^A: x(?=\d) | WHOLE x FAILS | SEARCHED ('x', 1) | FIND-ALL [('x', 1), ('x', 4)]
+x SEQ ^!A: x(?!\d) | WHOLE x HOLDS | SEARCHED ('x', 8) | FIND-ALL [('x', 8), ('x', 10)]
+~A SEQ x: (?<=\d)x | WHOLE x FAILS | SEARCHED ('x', 1) | FIND-ALL [('x', 1), ('x', 8)]
+~!A SEQ x: (?<!\d)x | WHOLE x HOLDS | SEARCHED ('x', 4) | FIND-ALL [('x', 4), ('x', 10)]
+The manager's thoughts (told to him; the manager's reading; nothing applied):
+- It restores the general form withdrawn two entries above: `!` is never an operator by itself, only the
+  negative mark of an operator (`:!`, `?:!`, `&!`, `^!`, `~!`). The withdrawal is withdrawn with its ground (a
+  prefix `!` as the negative lookahead), which this proposal sets aside.
+- It answers the behind pair, left open by the peek operators. `~` over `^^`: one character, and the two
+  directions then look different.
+- THE READING TAKEN of "keep ! out", to be confirmed in the ruling: the prefix `!` on a condition leaves too;
+  "the condition fails here" is written `^!(h: <5)` in a sequence (the documents: "a negative lookahead at its
+  point"), `A &! (h: <5)` beside a pattern, and `(h ?:! <5)` for one entry. It re-spells condition-not, with no
+  change of meaning.
+DFA category (his standing question): `^` and `^!` YES (classed 2026-11-25); `~` and `~!` YES by the same closure,
+the manager's estimate, nothing run; in pcrec today every lookaround is VM (the build side is main's).
+
+### 2026-11-27 OWNER, on bang-split (asked, not answered): "i've not written out ! forever ... its both logical not and set complement depending on context. !(cond) and !A mean different things."
+tags: core/filters/negation core/filters/complement core/conditions/two-valued core/patterns/lookaround core/principles/build-later core/principles/match-and-filter core/operators/precedence
+
+ASKED AS A RULING the same turn (slug bang-split; the statement put to him: "1. No `!` by itself. The complement
+object goes. `X := !B`, `(a: !<v)` and `A & !B` are compile errors that name the operator to use. 2. Entries,
+each one token: `:` present and in the set; `?:` absent, or in the set; `:!` present and outside the set; `?:!`
+absent, or outside the set. 3. `A &! B` is the difference: A's stretch is not a B. It is shorthand for
+`A & (0 :! B)`. 4. Four lookaround operators, prefix and zero width; each makes an ordinary pattern usable
+wherever a pattern is: `^A` (A matches ahead), `^!A` (cannot), `~A` (A matches behind), `~!A` (cannot). `^A`
+replaces `peek(A)` and passes A's labels on; the negatives pass none. 5. `when(T, B, C) := T seq B | ^!T seq C`.
+A bare test consumes, as today. `when(^A, B, C)` does not consume. `when(^!A, B, C)` is the negative. 6.
+Negating a condition (my reading of "keep ! out", so please confirm it): `!(h: <5)` is written `^!(h: <5)` in a
+sequence, `A &! (h: <5)` beside a pattern, or `(h ?:! <5)` for one entry. The meaning does not change."; the
+manager's leaning: yes to all six). HIS WORDS, whole:
+
+"i've not written out ! forever. but what ! means in regex depends on how and where it is used and the above
+contain it to those areas. the trouble is that its both logical not and set complement depending on context.
+!(cond) and !A mean different things."
+
+Class: an OBSERVATION giving his reason, and a STATEMENT OF INTENT. READING TAKEN (told to him): "written out" is
+"ruled out" or "written off": a bare `!` is not gone for good; for now its meanings are contained in the
+operators of the statement. NOT an answer to bang-split by its slug: it is NOT recorded as ruled, and line 6
+(his "!(cond)") is not confirmed by it.
+The manager's reading (told to him; nothing applied): by his method, what is not needed now is UNDER
+CONSTRUCTION, "a direction acknowledged", never illegal: the bare `!` would be RESERVED, its compile errors
+saying so, in place of line 1's "goes". The two meanings he names sit on the two sides of the split already:
+"outside the set" in `:!`, `?:!`, `&!`; "does not hold here" in `^!` and `~!`.
+
+### 2026-11-27 OWNER, on line 6 of bang-split: "i don't like ^!(cond) because it looks like abuse. perhaps that is the one form and ! mean logical not"; QUESTIONS; and a REQUEST: "please have a critic lane look over these rules and provide feedback and a suggestion on !"
+tags: core/filters/negation core/filters/complement core/conditions/form core/conditions/form/optional-entry core/conditions/two-valued core/patterns/lookaround lib/control/when core/principles/build-later
+
+Said on the manager's two questions (line 6: is "the condition fails here" written `^!(h: <5)` for now, or does
+`!(cond)` stay as the one bare use; and bang-split itself). HIS WORDS, whole:
+
+"i don't like ^!(cond) because it looks like abuse. perhaps that is the one form and ! mean logical not. what is
+the difference between (a:! 5) and !(a: 5) ? perhaps its in the compound forms. please have a critic lane look
+over these rules and provide feedback and a suggestion on !. if !(cond) is ok, is there another place ! would
+also work? would it make sense to replace :! et al if we went with !(cond) or do they mean different things"
+
+Class: (1) a DISLIKE of line 6's `^!(cond)` ("looks like abuse") and a LEAN ("perhaps"): `!(cond)` the one bare
+form, `!` meaning logical not. (2) three QUESTIONS (the difference between `(a :! 5)` and `!(a: 5)`; another
+place `!` would work; whether `:!` and the others are replaced by `!(cond)` or mean different things). (3) a
+REQUEST: a critic round on the rules, with feedback and a suggestion on `!`. NOT a ruling; bang-split is NOT
+answered (line 6 as written is not what he wants).
+The manager's answer to the first question (told to him; from the run of the entry "would the test cases be
+solved", `bang_entry.py`, the rows `(h ! <5)` and `(h ?! <5)` there, now spelled `:!` and `?:!`): they differ
+exactly where the label is ABSENT: `(a :! 5)` needs a present and not 5 (on `/(?<h>\d)?x/`, `(h :! <5)`: WHOLE
+`x` FAILS); `!(a: 5)` holds there too (the answers of `(h ?:! <5)`: WHOLE `x` HOLDS). Crosswise, `!(a ?: 5)` is
+`(a :! 5)`. The rest is put to the round.
+ACTION: review r109 (predbang), design mode, sized small; the subject `docs/dev/pred/bang_candidate.md` (the
+candidate, four variants, his four questions verbatim), the evidence `docs/dev/lanes/predbang_evidence/`.
+
+### 2026-11-27 MANAGER — review r109 (predbang): the dispositions, the round's answers and suggestion; no owner words
+tags: core/filters/negation core/filters/complement core/filters/kinds core/conditions/form core/conditions/form/optional-entry core/patterns/lookaround core/operators/precedence lib/control/when lib/control/peek core/filters/negation/effects core/principles/match-and-filter
+
+The round the owner asked for (design mode, sized small: one opus coordinator, three opus critics: ruling,
+examples, general; subject `docs/dev/pred/bang_candidate.md` frozen at cb779ec71). Filed:
+`docs/dev/reviews/2026-11-27-r109-predbang.md` with the dispositions RULED by the manager. 24 findings, all
+confirmed, consolidated F1 to F15; no owner ruling touched, nothing applied to the documents.
+What the round found that changes the statement to re-ask (each the round's, accepted by the manager):
+- `A &! (cond)` was undefined: `&!` is the stretch difference only (F1); a condition right of it is an error.
+- The `when` body's guard on a condition test IS `^!(cond)`, the form he called abuse, in every variant that
+  keeps `^!` (F3); a prefix `!` on a zero-width test gives one body: `T SEQ B | !^T SEQ C`.
+- `(a :! S, b :! T)` against `!(a: S, b: T)`: "50 of 121 differ, all with both labels present" (F4): his
+  "perhaps its in the compound forms" is right; `:!` inside a record is proposed an error for now (to be ASKED).
+- `&!` needs its precedence stated: read left, `A &! B &! C` is `A &! (B | C)`; read right "341 of 1364 differ"
+  (F6). The manager's syntax call: `&`'s level, one chain, left to right.
+- With a prefix `!`, `~!` as a token and `~(!A)` part ("132 of 364 differ"): the negatives are `!^A`, `!~A` (F9).
+- `?:!` adds nothing beside `!(a: S)` and is refused in more places (the round's answer to his third question).
+THE MANAGER'S OWN STATEMENTS CORRECTED by the round: the candidate printed "His later words: not ruled out
+forever; so RESERVED, under construction": his words are "i've not written out ! forever", and "reserved, under
+construction" is the manager's reading (F12); the candidate's Goals were headed "the owner's" while resting on
+unruled remarks, and its third goal is the contrary of his ruled complement-place (F11): they are the manager's
+reading of the day's discussion. Line 6 of bang-split (`^!(cond)`) is WITHDRAWN.
+The round's SUGGESTION (the coordinator's; the three lenses leaned V-B, V-B, V-D): V-C: `!X` means "X cannot
+hold here", for now on zero-width tests only (a condition, `^A`, `~A`, a group question, another `!X`); `^A`,
+`~A` the positive lookarounds, `!^A`, `!~A` their negatives; one `when` body; entries `:`, `?:`, `:!` (single
+entry only); `A &! B`; no `?:!`; the complement object leaves; match-and-filter restated or retired as its own
+question. V-D (`!A` on a consuming pattern = `(?!A)`) is V-C with one error relaxed, no answer moving. The
+manager agrees with it and puts it to the owner as bang-split, re-asked.
+
+### 2026-11-27 OWNER, PROPOSAL — `!` the logical not, `~A` the complement; no `:!` operator
+tags: core/filters/complement core/filters/negation core/filters/kinds core/conditions/form/optional-entry lib/control/when
+His words, verbatim (after the manager's report of review r109 and the re-asked bang-split):
+"Let's say ! Is the logical not. For conditions and lookarounds its meaning is clear. My initial concern that set
+this off is that ! had two meanings. Now it doesn't. What that leaves is the need for a "complement" operator to
+take the place of !A. I'm going to steal our lookback operator for historical reasons. ~A means everything not in
+A, which has constraints around its usage, then the compound forms become easier and require no special :!
+Operator. Validate"
+Class: PROPOSAL (not an answer by slug to bang-split; nothing ruled). It answers the re-asked statement in part:
+its line 1 (`!` = the logical not of a test) is taken up; its lines 4 to 6 (`:!`, `&!`, "the complement object
+leaves") are replaced by a complement operator `~`.
+The run (`docs/dev/lanes/predbang_evidence/tilde.py`, output pasted from `tilde.out`):
+```
+1. entries, 11 states of h
+  (h: ~<5)  vs "present and outside": 0 of 11 differ
+  (h ?: ~<5) vs "absent or outside":   0 of 11 differ
+  !(h: <5)  vs (h ?: ~<5):             0 of 11 differ
+  !(h ?: <5) vs (h: ~<5):              0 of 11 differ
+  !(h: <5)  vs (h: ~<5):               1 of 11 differ (the absent state)
+  /(?<h>\d)?x/ & (h: ~<5)  | WHOLE x FAILS 3x FAILS 7x HOLDS | SEARCHED 7x@0 | FIND-ALL ['7x@0']
+  /(?<h>\d)?x/ & (h ?: ~<5) | WHOLE x HOLDS 3x FAILS 7x HOLDS | SEARCHED 7x@0 | FIND-ALL ['7x@0', 'x@4', 'x@6']
+  /(?<h>\d)?x/ & !(h: <5)  | WHOLE x HOLDS 3x FAILS 7x HOLDS | SEARCHED 7x@0 | FIND-ALL ['7x@0', 'x@4', 'x@6']
+2. records, 121 states of (a, b), S = <5, T = >=3
+  (a: ~S, b: ~T) vs "a present outside S and b present outside T": 0 of 121 differ
+  (a: ~S, b: ~T) vs !(a: S, b: T): 71 of 121 differ
+  !(a: S, b: T) vs (a ?: ~S) | (b ?: ~T): 0 of 121 differ
+  (a: S, b: ~T) holds in 15 of 121 states (5 values of a times 3 of b = 15)
+3. patterns: A & ~B, the stretch of A that B does not match whole
+  /\d+/ & ~/7\d*/ : WHOLE 123 HOLDS 712 FAILS | SEARCHED 12@2 | FIND-ALL ['12@2', '37@8']
+  /\d+/ & ~/7\d*/ & ~/\d*2/ : WHOLE 123 HOLDS 712 FAILS 12 FAILS | SEARCHED 1@2 | FIND-ALL ['1@2', '37@8']
+  ~B & ~C vs ~(B | C), as filters: 0 of 1093 strings differ
+  ~~B vs B, as filters: 0 of 1093 strings differ
+  C | ~B vs ~(B & ~C), as filters: 0 of 1093 strings differ
+4. the two words part: "x" seq !^/\d/  against  "x" seq ^~/\d/  (a stretch ahead that is not one digit)
+  differ at 1094 of 2005 positions of x (the empty stretch is always outside /\d/)
+```
+The manager's readings (each for the fold to test; none his words):
+- His `~A` is today's ruled complement (core/filters/complement: "takes a pattern or a set and is filter-only")
+  respelled; the piece's printed line `/\d+/ & !/7\d*/` reproduces under `~` (run 3, first line). So the
+  complement object STAYS (r109's line 6 falls), and his 2026-11-18 "can match, can filter" ruling stands
+  untouched: the follow-up question "what becomes of rx that can filter" is no longer owed.
+- `:!`, `?:!` and `&!` are not needed: `(h: ~S)`, `(h ?: ~S)`, `A & ~B` (run 1, run 3). r109 F4 (`:!` inside a
+  record) and F6 (`&!` chaining) have no subject: a record stays a product of sets (run 2), `&` chains as today.
+- `!X` takes a test only (a condition, a lookaround, a group question, another `!X`); `~X` takes a set or a
+  pattern only. `(h: !<5)`, `A & !B`, `X := !B` become errors naming `~`; `~(cond)` an error naming `!`.
+- The two do not collapse into one: a lookahead for a complement is nearly always true (run 4), so `!^A` cannot
+  be written `^~A`.
+- NOT SETTLED by his words: the spelling of the lookbehind operator, now that `~` is taken ("steal our lookback
+  operator"); the base documents print no lookbehind operator today (a grep: no code span holds `~`).
+- Census (`bang_census.py`, re-run today): of the printed `!` outside rx text, "11 after :", "11 after &" and
+  "19 span starts with !" are the complement sites to re-spell; the fold classes each by its operand.
+
+### 2026-11-27 OWNER RULING — bang-split: yes (`!` the logical not of a test, `~` the complement)
+tags: core/filters/complement core/filters/negation core/filters/kinds core/conditions/form/optional-entry lib/control/when
+His words, verbatim: "bang-split: yes. This is clean and what I was looking for.
+Should we allow binding to complements? I lean yes."
+RULED (answered by slug), the statement AS ASKED, quoted:
+"1. `!X` is the logical not of a test: a condition, a lookaround, a group question, or another `!X`.
+2. `~X` is the complement of a set or a pattern, filter-only as ruled today: `(h: ~S)`, `(h ?: ~S)`, `A & ~B`.
+3. There is no `:!`, `?:!` or `&!`.
+4. `!` on a set or pattern is an error naming `~`; `~` on a test is an error naming `!`.
+5. `^A` looks ahead and `!^A` is its negative. `when(T, B, C) := T seq B | !^T seq C`.
+6. Lookbehind gets no operator for now."
+Told to him with it: DFA category yes for `~` on a set and for `!^A`; `A & ~B` on patterns maybe about 0.8
+(regular in principle, build cost unmeasured). Evidence: `docs/dev/lanes/predbang_evidence/tilde.py`.
+What it changes in earlier rulings (the manager's reading, for the fold to test): drop-not (2026-11-25) said `!`
+on a pattern, set or condition and the negative peek `peek(!A)`: the complement is now `~`, the negative peek
+`!^A`, and `!peek(A)`'s error is gone with `peek` re-spelled `^A`; `when(!x, z)` on a bare pattern stays an error
+by line 4 (naming `~x` or `!^x`). A bare `when` test consumes as today.
+His second sentence is a QUESTION with a LEAN (not a ruling asked by slug): binding a complement. The record
+answers it: complement-place, ruled 2026-11-18: "A complement is a filter-only value. It may be bound, named,
+passed around and combined with other complements. It may be used as an operand of `&` in a chain that has at
+least one positive pattern. Any use that needs it to produce a match by itself is a compile error at that use".
+The manager's reading: that ruling carries over under `~` word for word (`not_seven := ~seven`); nothing new to
+rule.
+
+### 2026-11-27 OWNER, on the fold's budget; QUESTION on `&!`; a future note on `!` and a non-atomic lookaround
+tags: core/filters/complement core/filters/negation core/filters/and lib/control/peek
+His words, verbatim: "Budget is fine. Some last questions before fold:
+1. does &! still make sense. It reads well as "and not in" but it's using the logical operators in sets.
+2. future note: ! with nonatomic lookaround?"
+Class: "Budget is fine" answers fold-go (the manager's reading: the fold lane may launch once these two are
+settled); 1 is a QUESTION (bang-split line 3, "There is no `:!`, `?:!` or `&!`", stands until he says otherwise);
+2 is an IDEA for the parked list, nothing ruled.
+The manager's readings, told to him (none his words):
+- On 1: under bang-split `A &!(c)` already reads as `A & !(c)`, a filter by a negated condition; a token `&!`
+  meaning the set difference would give the same characters a second meaning by operand kind, which is the
+  two-meanings problem bang-split removed. "And not in" is written `A & ~B` (may be typed `A &~ B`).
+- On 2 (hand-reasoned, NOT run: python `re` has no non-atomic lookaround): `!X` answers yes or no and passes no
+  labels, so nothing can backtrack into it; atomic or not cannot change its answer. The non-atomic question
+  belongs to the POSITIVE `^A` only (whether a later piece may make `^A` retry another way of matching A). A
+  parked piece is owed at the fold: "a non-atomic `^A`", trigger: a printed program whose answer needs the retry.
+
+### 2026-11-27 OWNER RULING — and-not: no `&!`; "and not in" is written `A & ~B`
+tags: core/filters/complement core/filters/and
+His words, verbatim: "and-not: agree drop &!"
+RULED (answered by slug), the statement AS ASKED, quoted: "confirm there is no `&!`, and "and not in" is written
+`A & ~B`?" It confirms bang-split line 3. The fold lane (predfold1125, review number r111 from main) may launch.
+
+### 2026-11-27 OWNER RULING — sent-label-wall: error; and a STATEMENT: a body may not use an unmarked parameter as a label
+tags: core/labels/rule/sent-label-wall core/labels/rule/paths core/operators/bindings/label-in-argument core/operators/bindings/label-variables core/operators/bindings/label-kinds
+His words, verbatim: "sent-label-wall: error. The path would be x._.h which is not an allowed path. If the R macro
+reversed the label order it would be ok. If the caller put a label in A it could access A through that. Validate.
+Side note: a binding cannot use an argument as a label. if the macro definition didn't set l as a label argument,
+then the later l = would be an error. This is to catch an unintended miss of not setting the arg as a label arg."
+RULED (answered by slug): candidate (a) of core/labels/rule/sent-label-wall, as asked: "a compile error. The blank
+is in the path and is not its start." The piece closes as it reads; "the manager's reading" on it becomes his
+ruling. His three statements, each run through `predfix90_model`'s engine and its separate path-rule evaluator
+(`docs/dev/lanes/predbang_evidence/sentwall.py`; pasted from `sentwall.out`):
+```
+model exit code 0
+model last line: predfix90_model: 26 checks, 0 failed
+sent  | R(x:, A) & (x.h: <5) | A := /(?<h>\d)/; R(l:, v) := /${[l = [_ = v]]}xx/
+      rules say: refused ['sent'] | engine: refused `x.h`: the path crosses the underscore label `_`, not the start (a compile error, path-rules rule 2; the sent label is a start, the body's wall below it is crossed: sent-label-wall, the manager's reading) | answers against /(?P<h>[0-4])xx/: None
+arg   | B([a = A]) & (a.h: <5) | A := /(?<h>\d)/; B(rx) := /${[_ = rx]}xx/
+      rules say: legal ['e'] | engine: legal  | answers against /(?P<h>[0-4])xx/: (0, 0, 0)
+arg   | B([a = A]) & (a.h: <5) | A := /(?<h>\d)/; B(rx) := /${[n = [_ = rx]]}xx/
+      rules say: legal ['e'] | engine: legal  | answers against /(?P<h>[0-4])xx/: (0, 0, 0)
+reversed | R(l:, v) := /${[_ = [l = v]]}xx/ | engine: legal | answers [(True, (0, 3), (('3xx', 0),)), (False, None, ()), (False, (4, 7), (('3xx', 4),)), (False, (0, 3), (('3xx', 0), ('4xx', 8)))]
+unmarked | R(l, v) := /${[l = v]}xx/ called R(x, A) | engine: refused: path `x.h`: `x` is neither written nor a binding used in this definition
+unmarked, read as the body wrote it | (R.l.h: <5) | engine: legal, answers [(True, (0, 3), (('3xx', 0),)), (False, None, ()), (False, (4, 7), (('3xx', 4),)), (False, (0, 3), (('3xx', 0), ('4xx', 8)))]
+```
+Read (the manager's): "x._.h is not an allowed path": refused by rules and engine alike (line `sent`). "If the R
+macro reversed the label order it would be ok": legal, the document's printed answers (line `reversed`). "If the
+caller put a label in A it could access A through that": legal under a blank, and under a public label and a
+blank (the two `arg` lines; 0 answers differ from the built regex).
+THE SIDE NOTE is a STATEMENT of a rule, not asked as a question, so NOT recorded as a ruling; it is put to him
+next as **label-needs-mark**. Today's documents do not have it: with `l` unmarked the body's `[l = v]` writes a
+label literally named `l` (line "unmarked, read as the body wrote it": `R.l.h` legal), and the caller's `x.h` is
+refused at the READ, not at the definition (line `unmarked`).
+
+### 2026-11-27 OWNER RULING — label-needs-mark: yes ("And yes to literal issue")
+tags: core/operators/bindings/label-variables core/operators/bindings/label-kinds
+His words, verbatim: "label-needs-mark: yes. And yes to literal issue"
+RULED (answered by slug), the statement AS ASKED, quoted: "if a body writes `[l = ...]` and `l` is a parameter
+that was not marked as a label (`l:`), is that a compile error at the definition?" Told to him with it: "The
+definition itself is refused, with a message naming the missing mark."
+"yes to literal issue": the manager's reading is that it answers the line put beside the question, "I would also
+apply it to the group-name form, so `(?<:${l}>...)` with an unmarked `l` is the same error" (the label written in
+rx literal text). Told to him as the reading taken.
+The manager's readings, for the fold to test: the rule is about a label WRITTEN under a plain parameter's name;
+a body's own label that shares no name with a parameter is untouched; a parameter marked `l:` is unchanged.
+
+### 2026-11-27 OWNER RULING — skip-past-wall: "agree with lean" (legal paths only)
+tags: core/labels/rule/skip-past-wall core/labels/rule/paths core/labels/export/flat-read-outside
+His words, verbatim: "skip-past-wall: agree with lean"
+RULED (answered by slug). The lean as put to him, quoted: "(a). A private part should behave as if its labels
+were not there."; candidate (a) as asked: "only a `d` that a legal path reaches counts. The private one does not
+exist for this read, so `n.d` is `m`'s." The piece core/labels/rule/skip-past-wall closes as it reads (its first
+three printed lines are (a)'s); candidate (b) and the middle road (an error where a walled label would have won
+or tied) go to details as not taken.
+
+### 2026-11-27 OWNER RULING — equivalence-inside: "agree with lean" (no label `t`; the read is `_t.h`)
+tags: core/labels/rule/equivalence-inside core/labels/rule/paths
+His words, verbatim: "equivalence-inside: agree with lean. As you said, the line was only about accessibility"
+RULED (answered by slug). The lean as put to him, quoted: "no `t`; the read is `_t.h`. I'd keep your sentence in
+the documents as the picture of how a private label looks from outside, which is what it was said about."
+"the line" is his "[_t = A ] is equivalent to [_ = [t = A ]]" (the manager's reading: it states what can be
+reached from outside, not that a label `t` is made). The piece closes as it reads; candidate (b) to details.
+
+### 2026-11-27 OWNER, DISCUSSION on alone-as-middle: "a binding acted like a label. So it's like [Q = Q] then n.Q.d seems pretty clean"
+tags: core/labels/rule/alone-as-middle core/labels/rule/paths core/labels/export
+His words, verbatim (to the question alone-as-middle, the manager's lean being the compile error): "You don't
+mention it but the relevant rule was that a binding acted like a label. So it's like [Q = Q] then n.Q.d seems
+pretty clean. The "restart" in my read is a statement that none of the labels in Q are visible directly (flat)
+outside."
+Class: DISCUSSION with a LEAN toward candidate (b) (not an answer by slug; nothing ruled). The rule he names is
+in the documents: core/labels/export statement 2, "An UNLABELLED use carries the implicit label of the binding's
+name, protected". The manager's reading of his last sentence: "restart" is rule 6's "is a start inside its own
+binding"; he reads rule 6 as saying what is NOT visible from outside, not as forbidding the part's name as a
+middle step inside.
+The manager's lean (the compile error) is WITHDRAWN and re-derived on his premise: rule 4 as he wrote it, "if a
+legal path exists a.b.c and c can be unambiguously referenced from a, then b can be skipped a.c", makes `n.d`
+legal BECAUSE a full path exists; the documents print `n.d` legal for `[n = (P SEQ Q)]` while refusing the full
+path `n.Q.d`. With the part's name as a label (`[Q = Q]`, protected), the full path exists and rule 4 reads as
+written. The run (`docs/dev/lanes/predbang_evidence/alonemid.py`, predfix90_model's engine, TODAY's reading;
+pasted from `alonemid.out`):
+```
+model last line: predfix90_model: 26 checks, 0 failed
+[n = (P SEQ Q)] & (n.Q.d: <5) | - | refused: `n.Q.d`: `Q.d` is not visible through `n` (a compile error, core/labels/paths)
+[n = (P SEQ Q)] & (Q.d: <5) | - | legal [(True, (0, 3), (('7,3', 0),)), (False, None, ()), (False, (4, 7), (('7,3', 4),)), (False, (0, 3), (('7,3', 0), ('4,1', 8)))]
+[n = (P SEQ Q)] & (n.d: <5) | - | legal [(True, (0, 3), (('7,3', 0),)), (False, None, ()), (False, (4, 7), (('7,3', 4),)), (False, (0, 3), (('7,3', 0), ('4,1', 8)))]
+[n = (P SEQ Q)] & (n.P.d: <5) | - | refused: `n.P.d`: `P.d` is not visible through `n` (a compile error, core/labels/paths)
+[n = (P SEQ Q)] & (P.d: <5) | - | legal [(False, None, ()), (True, (0, 3), (('3,7', 0),)), (False, (0, 3), (('3,7', 0),)), (False, (4, 7), (('3,7', 4), ('4,1', 8)))]
+X & (X.Q.d: <5) | X := [n = (P SEQ Q)] | legal [(True, (0, 3), (('7,3', 0),)), (False, None, ()), (False, (4, 7), (('7,3', 4),)), (False, (0, 3), (('7,3', 0), ('4,1', 8)))]
+X & (X.d: <5) | X := [n = (P SEQ Q)] | refused: `X.d`: `d` is not visible through `X`: the path crosses `P`, a part used alone in it (a compile error, path-rules rule 6)
+X & (X.n.Q.d: <5) | X := [n = (P SEQ Q)] | refused: `X.n.Q.d`: `n.Q.d` is not visible through `X` (a compile error, core/labels/paths)
+X & (X.n.d: <5) | X := [n = (P SEQ Q)] | refused: `X.n.d`: `n.d` is not visible through `X`: the path crosses `P`, a part used alone in it (a compile error, path-rules rule 6)
+[n = (Q SEQ Q)] & (Q.d: <5) | - | refused: `Q.d`: Q is used 2 times here; label the part (`[left = Q]`) to read one use
+```
+Noted for the fix lane (the manager's observation, not his): the engine answers `X.Q.d` from outside "legal" while
+refusing `X.n.Q.d` and `X.d`; core/labels/export statement 3 says "A part used alone exports nothing", so that
+line of the model looks wrong and is to be checked.
+
+### 2026-11-27 OWNER, an IDEA on alone-as-middle: "you have to mention the gate label, Q in this case"
+tags: core/labels/rule/alone-as-middle core/labels/rule/paths core/labels/export
+His words, verbatim (to the re-asked alone-as-middle): "Interesting. It might be the correct reading of the rules
+but I'm concerned that it's confusing. "n.d" where does the d come from? Idea: you have to mention the gate
+label, Q in this case. For: clear paths. Against: an array on d constructed from multiple sources is possible.
+Thoughts?"
+Class: IDEA with a QUESTION ("Thoughts?"); nothing ruled; alone-as-middle stays open.
+The manager's reading of the idea: a part used alone is a GATE: its name may be a middle step (`n.Q.d`) and may
+NOT be skipped (`n.d` through `P SEQ Q` a compile error); a label someone WROTE (`[a = P]`) is still skipped by
+rule 4. The run for his "against" (`docs/dev/lanes/predbang_evidence/gate.py`, predfix90_model's engine, today's
+reading; subjects WHOLE `7,3` `3,7` `1,2` `8,9`, SEARCHED `8,9 3,7 1,2`, FIND-ALL `7,3 3,7 4,1 9,9`; pasted from
+`gate.out`; `all(` is not a name of the model's):
+```
+model last line: predfix90_model: 26 checks, 0 failed
+[n = ([a = P] SEQ [b = Q])] & (n.d: <5) | - | legal [(True, (0, 3), (('7,3', 0),)), (False, None, ()), (True, (0, 3), (('1,2', 0),)), (False, None, ()), (False, (8, 11), (('1,2', 8),)), (False, (0, 3), (('7,3', 0), ('4,1', 8)))]
+[n = ([a = P] SEQ [b = Q])] & some((n.d: <5)) | - | legal [(True, (0, 3), (('7,3', 0),)), (True, (0, 3), (('3,7', 0),)), (True, (0, 3), (('1,2', 0),)), (False, None, ()), (False, (4, 7), (('3,7', 4), ('1,2', 8))), (False, (0, 3), (('7,3', 0), ('3,7', 4), ('4,1', 8)))]
+[n = ([a = P] SEQ [b = Q])] & all((n.d: <5)) | - | refused: an undeclared name: all((n.d: <5))
+[n = (P SEQ Q)] & some((n.d: <5)) | - | legal [(True, (0, 3), (('7,3', 0),)), (True, (0, 3), (('3,7', 0),)), (True, (0, 3), (('1,2', 0),)), (False, None, ()), (False, (4, 7), (('3,7', 4), ('1,2', 8))), (False, (0, 3), (('7,3', 0), ('3,7', 4), ('4,1', 8)))]
+[n = (P SEQ Q)] & all((n.d: <5)) | - | refused: an undeclared name: all((n.d: <5))
+[n = (P SEQ Q)] & (P.d: <5) & (Q.d: <5) | - | legal [(False, None, ()), (False, None, ()), (True, (0, 3), (('1,2', 0),)), (False, None, ()), (False, (8, 11), (('1,2', 8),)), (False, (8, 11), (('4,1', 8),))]
+```
+The manager's readings: the array over several sources stays available under the idea by WRITING labels on the
+parts (lines 1 and 2: `n.d` over `[a = P] SEQ [b = Q]`), so the cost is those labels, not the array; the idea
+moves one printed line from an answer to a compile error (core/labels/rule/alone-as-middle, "Through the part
+used alone, skipped").
+
+### 2026-11-27 OWNER RULING — alone-as-middle: "yes to the gate"; a side note on `some` and the array form
+tags: core/labels/rule/alone-as-middle core/labels/rule/paths core/labels/export lib/counting/some
+His words, verbatim: "alone-as-middle: yes to the gate
+Side note: some would need to take an array like some((@..."
+RULED (answered by slug), the statement AS RE-ASKED, quoted: "inside the definition that uses it, a part used
+alone is a label of its own name that may start a path or be a middle step (`n.Q.d`), and is never skipped (`n.d`
+through it is a compile error naming `n.Q.d`). From outside it exports nothing, as today." Told with it: "A label
+someone wrote, like `[a = P]`, is still skippable by rule 4"; "One printed line in the documents moves from an
+answer to a compile error (`n.d` through the part used alone)"; used more than once, its name is refused as a
+step as it already is as a start (from the earlier re-ask of the same question).
+It REPLACES the manager's reading "an implicit label is a start, never a middle" (core/labels/rule/paths,
+core/labels/rule/alone-as-middle), withdrawn in the entry before.
+The side note (his message ends mid-word): the manager's programs of the last two entries wrote
+`some((n.d: <5))`, the form array-argument (2026-11-25) replaced; by that ruling the question is written with the
+array form and a set, `some(@d, "7")`; on a path the mark's place is a placeholder (its reading (b): `@n.d` or his
+`x.@a`). The manager's error, corrected here; the runs used the model's old spelling and their answers stand.
+
+### 2026-11-27 OWNER RULING — shorthand-outside: "error. Agree."
+tags: core/labels/paths/shorthand-outside core/labels/paths/argument-default core/labels/export
+His words, verbatim: "shorthand-outside: error. Agree."
+RULED (answered by slug): candidate (a) as asked: "compile error: the shorthand label is protected and adds no
+export"; the lean as put: "An implicit name, whether from a part used alone or from an argument passed by name,
+behaves one way: named inside, invisible outside." The piece closes as it reads; candidate (b) to details.
+
+### 2026-11-27 OWNER, a QUESTION on group-node: "_g comment: you mean wall the path?"
+tags: core/labels/rule/group-node core/labels/rule/paths core/labels/export
+His words, verbatim: "group-node: _g comment: you mean wall the path?"
+Class: a QUESTION about the asked statement (the line "a group named with an underscore, `(?<_g>...)`, would then
+wall off what is inside it, as `[_g = ...]` does", told to him as not run); not an answer; group-node stays open.
+The question as ASKED (slug group-node, the manager's framing; runs `predbang_evidence/groupnode.py`): "is a
+named group written in rx text a step in a path, the way a part label is?"; candidates "A group is a name for its
+own text only" (today) and "A group is a step like a part label"; the manager's leaning the second.
+The run his question called for (`docs/dev/lanes/predbang_evidence/groupwall.py`; the predfix90 ENGINE, today's
+reading; its own model line reads 6 failed because the documents it checks were folded since, which does not
+touch the engine; pasted from `groupwall.out`):
+```
+model last line: predfix90_model: 26 checks, 6 failed (PATHS10, GRID, SWEEP, ERRSWEEP, SUCCESSOR10, DOC)
+- || /(?<_g>(?<d>\d))x/ & (d: <5) | legal [(True, (0, 2), (('3x', 0),)), (False, None, ()), (False, (3, 5), (('3x', 3),)), (False, (0, 2), (('3x', 0), ('4x', 6)))]
+X := /(?<_g>(?<d>\d))x/ || X & (X.d: <5) | legal [(True, (0, 2), (('3x', 0),)), (False, None, ()), (False, (3, 5), (('3x', 3),)), (False, (0, 2), (('3x', 0), ('4x', 6)))]
+- || [n = /(?<_g>(?<d>\d))x/] & (n.d: <5) | legal [(True, (0, 2), (('3x', 0),)), (False, None, ()), (False, (3, 5), (('3x', 3),)), (False, (0, 2), (('3x', 0), ('4x', 6)))]
+- || [_g = /(?<d>\d)/] SEQ /x/ & (d: <5) | legal [(True, (0, 2), (('3x', 0),)), (False, None, ()), (False, (3, 5), (('3x', 3),)), (False, (0, 2), (('3x', 0), ('4x', 6)))]
+- || [_g = /(?<d>\d)/] SEQ /x/ & (_g.d: <5) | legal [(True, (0, 2), (('3x', 0),)), (False, None, ()), (False, (3, 5), (('3x', 3),)), (False, (0, 2), (('3x', 0), ('4x', 6)))]
+X := [_g = /(?<d>\d)/] SEQ /x/ || X & (X.d: <5) | refused: `X.d`: the path crosses the underscore label `_g`, not the start (a compile error, path-rules rule 2)
+- || [n = ([_g = /(?<d>\d)/] SEQ /x/)] & (n.d: <5) | refused: `n.d`: the path crosses the underscore label `_g`, not the start (a compile error, path-rules rule 2)
+```
+Read (the manager's): today an underscore GROUP walls nothing (`X.d`, `n.d` legal, lines 2 and 3) while an
+underscore PART LABEL walls the path (lines 6 and 7, rule 2). Under "a group is a step" lines 2 and 3 become
+compile errors like 6 and 7; the bare read inside (line 1) stays legal, as line 4 is.
+
+### 2026-11-27 OWNER RULING — group-node: "agree group as a step"; "Group names should be labels almost exactly excepting the explicit capture semantics"
+tags: core/labels/rule/group-node core/labels/rule/paths core/labels/labels-vs-captures core/labels/export lib/structural/capture
+His words, verbatim: "group-node: agree group as a step. Group names should be labels almost exactly excepting
+the explicit capture semantics"
+RULED (answered by slug), the statement AS LAST PUT, quoted: "a named group in rx text is a step in a path like a
+part label. `g.d` is legal, the flat read still works by skipping, and an underscore group walls what is inside
+it." The runs told with it: `predbang_evidence/groupnode.py`, `groupwall.py` (the entry before).
+His second sentence is a STATEMENT of the direction behind it (his words; not asked as a question): a group's
+name is a label "almost exactly", the exception being "the explicit capture semantics".
+NOT FOLDED: it was ruled after lane predfold1125 delivered and after review r111 froze its subject; it goes to
+the fix lane that follows r111.
+The manager's readings, for that lane to test: (a) the two printed lines of core/labels/rule/group-node flip:
+`/(?<g>(?<d>\d))x/ & (g.d: <5)` legal with the second line's answers; (b) a read from outside or from above
+through an underscore group becomes a compile error by rule 2 (`X.d`, `n.d` in groupwall.out, lines 2 and 3):
+every printed program that reads through an underscore-named group is found and listed; (c) a group around a hole
+(`/(?<g>${A})x/`) is `[g = A]` for paths: `g.h` legal, and by alone-as-middle A under it is named, not skipped
+(`g.A.h`; whether `g.h` then skips a gate is to be RUN and reported, not assumed); (d) "excepting the explicit
+capture semantics": what a group contributes to the caller's captures is unchanged (capture by request,
+lib/structural/capture; core/labels/labels-vs-captures); (e) the same-name rules for a group mentioned twice are
+the label rules already printed.
+
+### 2026-11-27 OWNER, a RECOLLECTION on group-node: "there was also difference in explicit back reference"
+tags: core/labels/rule/group-node core/labels/backreferences core/labels/labels-vs-captures
+His words, verbatim: "I think there was also difference in explicit back reference"
+Class: a RECOLLECTION ("I think"), checked against the documents; it adds a second exception to his statement of
+the entry before ("Group names should be labels almost exactly excepting the explicit capture semantics").
+What the documents say (quoted, core/labels/backreferences, ruled 2026-11-18): "`\k<y>` reads PCRE's capture";
+"A reference inside an rx to a name that rx does not define is a compile error, never a look into the
+surroundings"; and core/labels/labels-vs-captures: "`[x = A]` makes a label and no capture". So the recollection
+holds: a group's name can be the target of `\k<name>` inside its own rx text and reads PCRE's carried capture; a
+part label cannot be a backreference's target. The manager's reading, for the fix lane after r111: group-node's
+text states the two exceptions together (capture by request; `\k<name>` reads the group's PCRE capture), and
+nothing in the group-node ruling changes either.
+
+### 2026-11-27 OWNER RULING — peek-name: keep ("We can review choice later"); an IDEA set aside, `map(fn, A)`
+tags: lib/control/peek core/patterns/lookaround/ahead
+His words, verbatim: "Peek name: keep.
+We can review choice later. I'm not sure either. I had this idea we could create a map(fn, A) but really for peek
+that's no different than peek(A)"
+RULED (answered by slug; the manager's lean was to drop, mildly): the question as asked, "does the library still
+provide `peek(A)` as a named form of it, or is `^A` the only spelling?": KEEP, candidate (a) of lib/control/peek:
+`peek(A) := ^[(=) = A]`, in the default set, the piece closing as the library prints it. He marks it REVIEWABLE
+("We can review choice later. I'm not sure either"): the piece carries that sentence.
+The IDEA (`map(fn, A)`, applying a function to a pattern) he sets aside himself for peek ("no different than
+peek(A)"): recorded, not parked as a piece; nothing to fold. (`map` is also the map creator's word, 2026-11-25.)
+For the fix lane after r111: lib/control/peek closes RULED keep, with his reviewable sentence; "which peek forms
+the library provides" is answered for the lookahead only (the negative is `!^A` or `!peek(A)`; no lookbehind form).
+
+### 2026-11-27 MANAGER — review r111 (predfold1125): the dispositions; two questions for the owner; no owner words
+tags: core/labels/rule/alone-as-middle core/labels/rule/paths core/filters/family lib/control/peek
+Review r111 (design; one opus coordinator, three opus critics: ruling, examples, general form; subject the fold
+merged at ddad6c680) returned 26 consolidated findings, none refuted; evidence re-runs green (model 15/0, lint
+9795/0). The manager RULED the dispositions (`/var/tmp/pcrec-pcrec/scratch/crit-predfold1125/dispositions.md`;
+filed by lane predfix111 as `docs/dev/reviews/2026-11-27-r111-predfold1125.md`): every proposal accepted; F10
+(`peek` re-tagged open) superseded by his peek-name ruling; F25 and a lookbehind operator PLAN.
+No owner ruling is touched. Two cells the rulings do not decide go to him (the round's, accepted):
+- gate-beside-label (F3): `[n = ([a = P] SEQ Q)] & (n.d: <5)`: a part used alone BESIDE a written label; a compile
+  error, the written label's `d`, or Q's `d`.
+- gate-twice-scope (F2): whether "used more than once" for a part's name as a STEP counts over the whole
+  definition or under the path's prefix.
+MARKED READINGS the fix lane prints, to be told to him: `!` on a lookaround written in rx text (`!/(?=\d)/`) is
+legal by bang-split line 1; `^` on a condition is the condition itself; an unmarked parameter as a group's whole
+name (`(?<${n}>...)`) is the label-needs-mark error; a label set only inside `!^A` and read after it is a compile
+error.
+THE MANAGER'S OWN STATEMENTS CORRECTED by the round: none of his words; the fold (on the manager's brief) had
+re-tagged lib/control/peek as an open question that no record entry asked (F10); the manager then asked it and he
+ruled it.

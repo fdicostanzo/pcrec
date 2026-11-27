@@ -1239,3 +1239,83 @@ wake.md says (read the draft WHOLE first; A4 is a ruled-words finding: read his 
   owner says so; the drop-not (+ array-argument, if ruled) fold waits.
 - NEXT: his answer on array-argument; then the r90 questions one at a time (sent-label-wall, skip-past-wall,
   equivalence-inside, shorthand-outside, alone-as-middle); the fold lane when he says go or the week resets.
+
+## 2026-11-25 — array-argument and brace-counts RULED; main merged P-31; maps: lane predmap launched
+
+- Main: `lane/pred-rev28` 16625c1f7 MERGED into main (r90's fold); P-30 journaled for [COND-FAMILY]; P-31's skill
+  edits join main's owed doc lane; predfold1124 and predfix90 to be pruned by main.
+- RULED by the owner: array-argument "yes including every" (the group questions take `@d` and a set; `every`
+  back, over the array; group-truth and every-pass-spelling closed; record-in-some dissolved, my reading);
+  brace-counts "I rule we should do this" (`x{a,b}` postfix, lazy and possessive forms; `rx.repeat` stays).
+  With drop-not: THREE rulings in the record, not in the documents; one fold lane owed (waits for his go or the
+  weekly reset).
+- His ideas parked (pieces owed at the fold): one name for two of a library's labels by the export list; a
+  selection of an array's settings by position.
+- MAPS (his order: maps, then strings): his proposal of a map creator recorded; map-creator ASKED (five lines);
+  he LEANS yes and asked for a lane on the accessor's uses: lane predmap LAUNCHED (sonnet, a study; worktree
+  `worktrees/predmap`, cut at 956869507; deliver + empty rulings first; lanewatch armed; no subagents). My own
+  thought on his "sequence map" told to him: one map, the joining chosen by the name applied (`join`, `any_order`).
+- NEXT: predmap's report -> put map-creator back to him with its findings; then strings; then the r90 questions.
+
+## 2026-11-25 — close: map-creator and string-literals RULED; predmap merged; nothing folded
+
+- Lane predmap DELIVERED (lanecheck DONE; `predmap_runs: 54 cases, 0 failed`), MERGED; stopped. A study, no
+  document change.
+- RULED by the owner: map-creator "Yes to all seven" (after: no deduplication, "a search which might be empty",
+  "F.z must exist or error", the key's order, his `.index` example); string-literals "Yes all five" (the triple
+  quote reserved, parked).
+- MY ERROR, recorded: I withdrew the key's-order answer on meaning-not-spelling without running it; he asked
+  "why otherwise"; the two spellings enumerate alike; withdrawal withdrawn.
+- FIVE rulings and his all-DFA goal are in the record, NOT in the documents. The fold lane (predfold1125) waits
+  for his go or the weekly reset (slow-burn week).
+- wake.md REWRITTEN from scratch; owner.md current; P-32 (pausing) posted; main told. Nothing in flight; no cron.
+
+## 2026-11-27 — tenth session: the owner reopens `!`; bang-split asked, not answered; review r109 launched
+
+- Wake: session registered; main merged into the branch (history index conflict, both sides kept); lints green;
+  main told. The whole-file read of core.md was NOT done (the owner opened with `!` at once; pieces read by tag).
+- The owner's discussion of `!` (twelve record entries, each with runs): his idea (no `!B` object; `!` on
+  conditions; an `&!` operator; something for `when`); entry operators for "outside" (`:!`, `?:!` after his `!`,
+  `?!`); `when` over conditions only (his `(0: A)` form validates only if the test means "A matches from here";
+  `0` is the match so far); `C &! A` as the guard REFUTED by run; his peek operators `^A`, `^!A`, then `~A`, `~!A`
+  and "keep ! out of the language"; his question whether prefix `!A` as `(?!A)` is a mistake.
+- bang-split ASKED (six lines). NOT answered: he dislikes `^!(cond)` ("looks like abuse"), leans to `!(cond)` as
+  the one bare form, and asked for a critic round with a suggestion on `!`.
+- My corrections, recorded: "same characters, same meaning" for `(h: !<5)` / `:!` holds for single atoms only
+  (99 of 1000 differ on a compound set); "drop the prefix `!`" withdrawn, then re-derived when the premise
+  changed; "`!` is never an operator by itself" withdrawn and restored with its ground.
+- Review r109 (predbang, design, sized small; number from main): coordinator crit-predbang launched (opus);
+  subject `docs/dev/pred/bang_candidate.md`, evidence `docs/dev/lanes/predbang_evidence/`. Round dir
+  `$PCREC_TMPDIR/scratch/crit-predbang/`.
+- Still owed: the fold of the five rulings of 2026-11-25 (waits; it will fold with whatever he rules on `!`).
+- NEXT: the round's draft -> rule dispositions -> put its answers and suggestion to him -> bang-split re-asked.
+
+### 2026-11-27 — tenth session: r109 handed back and ruled; bang-split RULED
+- Review r109 (predbang) handed back, dispositions ruled by the manager, filed
+  (`docs/dev/reviews/2026-11-27-r109-predbang.md`); coordinator stopped. Reported to the owner with a re-asked
+  bang-split (the round's V-C).
+- The owner replaced it with his own form: `!` the logical not of a test, `~` the complement (today's ruled
+  complement respelled), no `:!`/`?:!`/`&!`. Validated by run (`predbang_evidence/tilde.py`), re-asked, and RULED:
+  "bang-split: yes". His question on binding a complement is answered by complement-place (2026-11-18).
+- r109's F1, F4, F6 (`&!`, `:!` in a record) have no subject under the ruling; F5, F7, F13 go to the fold brief.
+- Waiting: his go for the fold lane (six rulings now). Nothing running.
+- and-not RULED ("agree drop &!"); his "Budget is fine" read as the fold's go. Review number r111 from main.
+  LAUNCHED lane predfold1125 (opus; worktree worktrees/predfold1125 cut at 212e234e6; deliver + empty rulings
+  written first; lanewatch --follow armed). Seven rulings in its brief. Waiting on the lane's delivery.
+- Asked and RULED while the lane ran (each sent to it as R-1..R-6): sent-label-wall (error), label-needs-mark
+  (yes), skip-past-wall (legal paths only), equivalence-inside (no label `t`), alone-as-middle ("yes to the
+  gate": a part used alone may be named as a step, never skipped; the manager's first lean withdrawn on his
+  point), shorthand-outside (error). group-node framed and ASKED (runs: predbang_evidence/groupnode.py).
+- Lane predfold1125 DELIVERED (lanewatch DONE; lint 9770/0; model 15/0; 15 plants caught), merged at ddad6c680
+  (lint 9795/0, plan-lint green), stopped. Owed by me at the fix: a rulings item per R-1..R-6 citing the record.
+- LAUNCHED critic round r111 (crit-predfold1125, opus coordinator, three critics, design mode, freeze ddad6c680).
+  Waiting on its draft and on the owner's group-node answer.
+- group-node RULED (a group is a step; an underscore group walls), his backreference recollection checked;
+  peek-name RULED keep (reviewable). Review r111 handed back (26 findings), dispositions ruled, coordinator
+  stopped. LAUNCHED fix lane predfix111 (opus; worktree cut at cec257072; applies r111, folds group-node and
+  peek-name, files the review; lanewatch armed). Owner questions from the round: gate-beside-label,
+  gate-twice-scope (answers go to the lane's rulings file as R-n).
+- Lane predfix111 DELIVERED (lanewatch DONE; lint 9998/0; model 14/0; 14 plants caught; 67 successor reds
+  declared), merged at aa3f2c296, stopped. Review r111 filed by it. P-34 done line written; main told. Open with the
+  owner: gate-beside-label (asked; the lane printed (ii) as a marked reading; `g.h` over `/(?<g>${A})x/` is the
+  same cell), gate-twice-scope (next). Marked readings told to him at the r111 report.

@@ -1,0 +1,22 @@
+1. entries, 11 states of h
+  (h: ~<5)  vs "present and outside": 0 of 11 differ
+  (h ?: ~<5) vs "absent or outside":   0 of 11 differ
+  !(h: <5)  vs (h ?: ~<5):             0 of 11 differ
+  !(h ?: <5) vs (h: ~<5):              0 of 11 differ
+  !(h: <5)  vs (h: ~<5):               1 of 11 differ (the absent state)
+  /(?<h>\d)?x/ & (h: ~<5)  | WHOLE x FAILS 3x FAILS 7x HOLDS | SEARCHED 7x@0 | FIND-ALL ['7x@0']
+  /(?<h>\d)?x/ & (h ?: ~<5) | WHOLE x HOLDS 3x FAILS 7x HOLDS | SEARCHED 7x@0 | FIND-ALL ['7x@0', 'x@4', 'x@6']
+  /(?<h>\d)?x/ & !(h: <5)  | WHOLE x HOLDS 3x FAILS 7x HOLDS | SEARCHED 7x@0 | FIND-ALL ['7x@0', 'x@4', 'x@6']
+2. records, 121 states of (a, b), S = <5, T = >=3
+  (a: ~S, b: ~T) vs "a present outside S and b present outside T": 0 of 121 differ
+  (a: ~S, b: ~T) vs !(a: S, b: T): 71 of 121 differ
+  !(a: S, b: T) vs (a ?: ~S) | (b ?: ~T): 0 of 121 differ
+  (a: S, b: ~T) holds in 15 of 121 states (5 values of a times 3 of b = 15)
+3. patterns: A & ~B, the stretch of A that B does not match whole
+  /\d+/ & ~/7\d*/ : WHOLE 123 HOLDS 712 FAILS | SEARCHED 12@2 | FIND-ALL ['12@2', '37@8']
+  /\d+/ & ~/7\d*/ & ~/\d*2/ : WHOLE 123 HOLDS 712 FAILS 12 FAILS | SEARCHED 1@2 | FIND-ALL ['1@2', '37@8']
+  ~B & ~C vs ~(B | C), as filters: 0 of 1093 strings differ
+  ~~B vs B, as filters: 0 of 1093 strings differ
+  C | ~B vs ~(B & ~C), as filters: 0 of 1093 strings differ
+4. the two words part: "x" seq !^/\d/  against  "x" seq ^~/\d/  (a stretch ahead that is not one digit)
+  differ at 1094 of 2005 positions of x (the empty stretch is always outside /\d/)
