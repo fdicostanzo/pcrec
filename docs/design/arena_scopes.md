@@ -372,7 +372,8 @@ are Job fields freed by `job_cleanup`, safe on every arrival); U1 (no measured p
 | S11 `tail` | F3 | none filed: C0(c) names one if `alloc_check --sites` reaches `splice_mark`'s window | SINGLE-CONTROL (the scanner row only) |
 | S12 `o` | F3 | none filed: C0(c) names one if a witness reaches `render_buf` while `o` is live | SINGLE-CONTROL; no sabotage row (r107 D: its heap plant is the scanner rule S3572 holds red; no alloc witness compiles a layout-marked artifact) |
 | S14 clskit | F2 | none filed; clskit did not appear in 3 single-compile profiles (r102 B22): C0(c) searches the clskit corpus | SINGLE-CONTROL |
-| S14b clskit whole | SCOPE-4 | none filed (the body allocates scratch only; same SINGLE-CONTROL reasoning as S14); S3643 (close deleted) is scored by the L2 runtime check + the scanner; S3644 (body back on the parent) has no strand witness, its nets are `make alloc`'s exact pins (incidental) and memgate `peak` under `MG_ENC=1 MG_ENG=2` | SINGLE-CONTROL |
+| S14b clskit whole | SCOPE-4 | none filed (the body allocates scratch only; same SINGLE-CONTROL reasoning as S14); S3643 (close deleted) is scored by the L2 runtime check + the scanner; S3644 (body back on the parent) has no strand witness and NO mech suite catches it (r108 A, measured: `make alloc --both` 13 PASS / 0 FAIL on the plant), so it is declared `SAB_EXPECT=UNDETECTED`; its net is `MG_ENC=1 MG_ENG=2 python3 -I tests/core/memgate/memgate.py peak CLEAN PLANT OUT --bound 0` (exit 1 on the plant) | SINGLE-CONTROL |
+| S14c clskit whole_bytes | SCOPE-4 (lane scope4fix, r108 B) | none filed (the pricing tables are scratch, the result is one scalar: nothing can escape); S3648 (pricing body on the parent) is declared `SAB_EXPECT=UNDETECTED`, net = the same memgate command as S3644 | SINGLE-CONTROL |
 | S15 scanedge | F5 | none (its only refusals today free first) | SINGLE-CONTROL |
 | S29 `uprops_produce` | F6 | alloc_check W3 (`\p{L}` under `-e utf8`), SEEN by the stranded-arena gate (Tests and sabotage, "THE SEEN GATE"); the filed `known_stranded` row F1 adds for it is REACHED before F6 deletes it | |
 
@@ -829,12 +830,20 @@ Listed for the pre-go briefing; under D191 addendum 2 they need no go of their o
 - SCOPE-4 BUILT (lane scope4, 2026-11-27; `docs/dev/lanes/scope4_report.md`; review r105 SCOPE-4, measured by lane f3).
   `pcrec_clskit_emit_whole(c, parent, ...)` has F2's shape: the empty-set return first (no scope, no record), then a
   scope on `parent`, the body (`emit_whole_body`, static) on `pcrec_scope_arena(&sc)`, the close. Client S14b. Its sole
-  compile route is the attempt (compile.c's `pcrec_emit_vm`/`pcrec_emit_dfa`; r107 C), so a refusal inside the body
+  compile route is the attempt (compile.c's `pcrec_emit_vm`, the one caller; r107 C, r108 D), so a refusal inside the body
   is released by compile_driver's handler-top unwind. Emitted C is byte-identical (no abi change). Measured at f3:
   under `-e utf8` + VM, 108 of 7,402 compiles move, all down (median -131,120 B, max -327,920 B). The memgate gate
   needed two levers to see it: `MG_ENC` (encoding) and `MG_ENG` (corpus engine), tests/core/memgate/CLAUDE.md.
   `MIN_SCOPE_OPENS` stays 3 (half of 7, rounded down; D110, grep in its comment). Sabotage S3643 (close deleted;
   S3613 re-anchored one line up because both closes read alike), S3644 (body routed back to the parent).
+- S14c BUILT (lane scope4fix, 2026-11-27; review r108 B + A/C/D/E; `docs/dev/lanes/scope4fix_report.md`). F2's shape on
+  `pcrec_clskit_whole_bytes(parent, ...)`, the selection-time pricing of a whole-set form: the `CLSF_PAGE2`/`PAGE3` tables
+  (about 74 KB on a 650-range set, the twin of the copy SCOPE-4 removed) are built in a scope's child arena by a static
+  body and released at the close; the result is one scalar. `CLSF_BITMAP1` and the empty set open no scope. Emitted C
+  byte-identical (96 BASE/SUBJECT pairs, VM and auto, `-e utf8`). Sabotage S3648 (pricing body on the parent). The scope
+  floor `MIN_SCOPE_OPENS` re-derived 3 -> 4 (half of 8 sites, D110, command in its comment). r108 A: S3644 and S3648 are
+  declared `UNDETECTED` (no mech suite can see an arena identity); their net is memgate `peak` under the levers with
+  `--bound 0`. Sibling not scoped: `pcrec_clskit_partition`'s DP scratch is mixed-lifetime (`out->sec` lives on the parent).
 
 ## r102 disposition
 

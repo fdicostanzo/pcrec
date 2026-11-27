@@ -37,11 +37,12 @@ first and every ratio would be 1 by construction (that is why T1's first noise r
       every compile over --band (default 1.02) listed OVER-BAND. The driver runs under `setarch -R`
       (ASLR off): the count is address-dependent otherwise (drv_argv).
 
-POPULATION LEVERS (env, [ARENA-SCOPES] SCOPE-4; peak and instr, both sides): `MG_ENC=N` sets
+POPULATION LEVERS (env, [ARENA-SCOPES] SCOPE-4; every mode prints them: `<mode>: levers MG_ENC=.. MG_ENG=..`; MG_ENG moves only
+the peak/instr corpus items, MG_ENC reaches every driver; both sides): `MG_ENC=N` sets
 pcrec_options.encoding for every compile (mg_drv.c reads it; 0 byte, 1 utf8), `MG_ENG=N` sets the engine of the
 CORPUS items (cells keep their own; 0 auto, 2 VM). Unset = byte mode, auto engine: the default population, which
 cannot reach the VM whole-set class matchers (`MG_ENC=1 MG_ENG=2` does). A non-integer value is refused at
-start; `peak` prints the levers it ran under.
+start.
 
 Exit status (r104 MEMGATE-2): after the full report, 1 on a STOP / MOVED verdict or any ERR side; 0 on WITHIN /
 IDENTICAL / LAYOUT. `python3 -I tests/core/memgate/test_verdicts.py` is the control for the verdict logic (fake sides).
@@ -262,6 +263,7 @@ def mode_peak(a, items):
 
 def mode_instr(a, items):
     A, B = a.A, a.B
+    print("instr: levers MG_ENC=%d MG_ENG=%d" % levers())
     rows, nerr = [], 0
     with cf.ThreadPoolExecutor(a.jobs) as ex:
         for key, out in ex.map(drv_one("mg_instr", (A, B)), items):
@@ -346,6 +348,7 @@ def rung_layout(a, item, out):
 
 def mode_rungs(a, items):
     A, B = a.A, a.B
+    print("rungs: levers MG_ENC=%d MG_ENG=%d" % levers())
     n = err = 0
     moves = []
     with open(os.path.join(a.out, "rungs%s.tsv" % a.shard.replace("/", "of")), "w") as fo:

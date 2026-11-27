@@ -11,9 +11,9 @@ bisection calls monkeypatched) and asserts the verdict line AND the exit status:
   - a refusing-message change           -> MOVED
   - identical sides                     -> IDENTICAL, exit 0
   - peak over its bound / instr over its band -> STOP and a nonzero exit (MEMGATE-2)
-Run: python3 -I tests/core/memgate/test_verdicts.py   (no build, no compile; <1 s). Prints `ok N/N` or the failures.
+Run: python3 -I tests/core/memgate/test_verdicts.py   (builds the inject library incrementally for the MG_ENC behaviour check: ~2 s warm, longer cold). Prints `ok N/N` or the failures.
 """
-import argparse, contextlib, importlib.util, io, os, sys
+import argparse, contextlib, importlib.util, io, os, subprocess, sys
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 spec = importlib.util.spec_from_file_location("memgate", os.path.join(HERE, "memgate.py"))
@@ -132,9 +132,78 @@ try:
 except SystemExit:
     refused = True
 check("a non-integer lever is refused, not read as 0", refused, lambda g: g is True)
-check("mg_drv.c reads MG_ENC into pcrec_options.encoding",
-      'getenv("MG_ENC")' in open(os.path.join(HERE, "mg_drv.c")).read()
-      and "o.encoding = atoi(enc)" in open(os.path.join(HERE, "mg_drv.c")).read(), lambda g: g is True)
+# BEHAVIOUR, not text (r108 C): population() must hand MG_ENG to the corpus items, and the built mg_peak driver must
+# honour MG_ENC. Each check fails on its own mutation (levers()[1] ignored; getenv moved above pcrec_default_options;
+# the getenv turned into a comment): a grep of mg_drv.c shares its source with what it vouches for.
+class FakeRG:
+    LADDER = ()
+    build_cells = staticmethod(lambda *_: [])
+    limit = staticmethod(lambda _n: 0)
+
+
+def population_engines(**env):
+    saved = {k: os.environ.get(k) for k in ("MG_ENC", "MG_ENG", "PCREC")}
+    for k in saved:
+        os.environ.pop(k, None)
+    os.environ.update(env)
+    os.environ["PCREC"] = "/fake/pcrec"
+    fake_es = type(sys)("emit_sweep")
+    fake_es.enumerate_corpus = lambda pcrec, tree, n: [("f", "k", "a+b"), ("f", "k", "c+d")]
+    old = (mg.load_growth, sys.modules.get("emit_sweep"))
+    mg.load_growth = lambda side: ("/fake/tree", FakeRG)
+    sys.modules["emit_sweep"] = fake_es
+    d = os.path.join("/var/tmp", "pcrec-%s" % os.environ.get("USER", "x"), "scratch", "memgate_ctl")
+    os.makedirs(os.path.join(d, "pat"), exist_ok=True)
+    try:
+        return [it[3] for it in mg.population(ns(out=d, mode="peak", limit=0))]
+    finally:
+        mg.load_growth = old[0]
+        if old[1] is None:
+            sys.modules.pop("emit_sweep", None)
+        else:
+            sys.modules["emit_sweep"] = old[1]
+        for k, v in saved.items():
+            os.environ.pop(k, None)
+            if v is not None:
+                os.environ[k] = v
+
+
+check("population(): corpus items carry MG_ENG=2 as their engine", population_engines(MG_ENG="2"), lambda g: g == [2, 2])
+check("population(): unset MG_ENG leaves the corpus on engine 0", population_engines(), lambda g: g == [0, 0])
+
+
+def peak_lines(env_enc):
+    """Build the mg_peak driver here (the inject library, incremental) and compile `x\\p{L}y` under MG_ENG=2 once."""
+    root = os.path.abspath(os.path.join(HERE, "..", "..", ".."))
+    d = os.path.join("/var/tmp", "pcrec-%s" % os.environ.get("USER", "x"), "scratch", "memgate_ctl", "levers_build")
+    os.makedirs(d, exist_ok=True)
+    lib = os.path.join(d, "inject", "libpcrec.a")
+    r = subprocess.run(["make", "-C", root, "--no-print-directory", "-j8", "BUILD_DIR=" + os.path.join(d, "inject"),
+                        "CFLAGS=-O1 -g -include %s/tests/core/alloc_inject.h" % root, lib],
+                       stdout=subprocess.DEVNULL, stderr=subprocess.PIPE)
+    if r.returncode:
+        return "BUILD-FAIL " + r.stderr.decode()[-200:]
+    exe = os.path.join(d, "mg_peak")
+    r = subprocess.run(["gcc", "-O2", "-std=gnu11", "-DMG_PEAK", "-I" + os.path.join(root, "lib"), "-I" + os.path.join(root, "src"),
+                        "-o", exe, os.path.join(HERE, "mg_drv.c"), lib, "-lpthread", "-lm",
+                        "-Wl,--wrap=pcrec_arena_alloc", "-Wl,--wrap=pcrec_arena_free"],
+                       stdout=subprocess.DEVNULL, stderr=subprocess.PIPE)
+    if r.returncode:
+        return "DRV-FAIL " + r.stderr.decode()[-200:]
+    pf = os.path.join(d, "pat.txt")
+    open(pf, "w").write("x\\p{L}y")
+    env = dict(os.environ)
+    env.pop("MG_ENC", None)
+    if env_enc is not None:
+        env["MG_ENC"] = env_enc
+    r = subprocess.run([exe], input="0\t-\t2\t%s\n" % pf, capture_output=True, text=True, env=env)
+    return r.stdout.strip()
+
+
+off, on = peak_lines(None), peak_lines("1")
+check("mg_peak driver: MG_ENC=1 changes the compile (peak line differs from unset)", (off, on),
+      lambda g: g[0] and g[1] and not g[0].startswith(("BUILD-FAIL", "DRV-FAIL")) and not g[1].startswith(("BUILD-FAIL", "DRV-FAIL"))
+      and g[0] != g[1])
 run_peak(0, 0)
 check("peak prints the levers it ran under", run_peak.out, lambda g: "peak: levers MG_ENC=" in g)
 

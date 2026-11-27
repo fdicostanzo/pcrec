@@ -234,7 +234,7 @@ typedef enum {
 
 void pcrec_clskit_partition(Arena *a, const PcrecCpRange *iv, int n,
                             unsigned lam, unsigned leaf_allow, ClsKit *out);
-long long pcrec_clskit_whole_bytes(Arena *a, ClsForm f,
+long long pcrec_clskit_whole_bytes(Arena *parent, ClsForm f,
                                    const PcrecCpRange *iv, int n);
 bool pcrec_clskit_atoms(Arena *a, const PcrecCpRange *const *sets,
                         const int *nivs, int nset, ClsAtomTable *out);

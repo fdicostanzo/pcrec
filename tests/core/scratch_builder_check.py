@@ -476,7 +476,7 @@ def scope_self_test():
             out.append(f"the {rule} rule missed its fixture in {rel}")
     # floor plants (r105 CHECKS-1/2): one site seen is below the floor; an empty D-11 population trips its floor
     if not scope_floor_failures(1, D11_MIN_SEEN):
-        out.append("the scope-open floor did not trip on a single site (floor is half of 7, rounded down)")
+        out.append("the scope-open floor did not trip on a single site (floor is half of 8, rounded down)")
     if not scope_floor_failures(MIN_SCOPE_OPENS, 0):
         out.append("the D-11 binder floor did not trip on an empty population")
     for rel, text in SCOPE_MUST_PASS:
@@ -508,11 +508,11 @@ def scope_scan(root):
                     findings.append((rel, ln, rule, msg))
     return findings, nfiles, nopen
 
-# D110 floor: half (rounded down) of the 7 scope-opening sites at the SCOPE-4 subject:
-#   grep -rn --include=*.c 'pcrec_scope_open *(' src cli lib | grep -v '^src/core/arena.c'
-# -> minimize.c, mod_uprops.c, clskit.c (2: emit_kit, emit_whole), memfn_stamps.c (2: splice_mark,
+# D110 floor: half (rounded down) of the 8 scope-opening sites at the S14c subject (lane scope4fix):
+#   grep -rn --include=*.c 'pcrec_scope_open *(' src cli lib | grep -v 'src/core/arena.c'
+# -> minimize.c, mod_uprops.c, clskit.c (3: whole_bytes, emit_kit, emit_whole), memfn_stamps.c (2: splice_mark,
 #    target_headers_render), part_layout.c (render_buf); arena.c's unwind builds no open
-MIN_SCOPE_OPENS = 3
+MIN_SCOPE_OPENS = 4
 D11_MIN_SEEN = 1      # the one allowed binder, pcrec_memfn_art's `ma->u = &cx->arena`
 
 def scope_floor_failures(nopen, nseen):
