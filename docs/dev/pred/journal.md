@@ -1310,3 +1310,8 @@ wake.md says (read the draft WHOLE first; A4 is a ruled-words finding: read his 
   (lint 9795/0, plan-lint green), stopped. Owed by me at the fix: a rulings item per R-1..R-6 citing the record.
 - LAUNCHED critic round r111 (crit-predfold1125, opus coordinator, three critics, design mode, freeze ddad6c680).
   Waiting on its draft and on the owner's group-node answer.
+- group-node RULED (a group is a step; an underscore group walls), his backreference recollection checked;
+  peek-name RULED keep (reviewable). Review r111 handed back (26 findings), dispositions ruled, coordinator
+  stopped. LAUNCHED fix lane predfix111 (opus; worktree cut at cec257072; applies r111, folds group-node and
+  peek-name, files the review; lanewatch armed). Owner questions from the round: gate-beside-label,
+  gate-twice-scope (answers go to the lane's rulings file as R-n).

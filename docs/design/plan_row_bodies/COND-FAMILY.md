@@ -12224,3 +12224,23 @@ The IDEA (`map(fn, A)`, applying a function to a pattern) he sets aside himself 
 peek(A)"): recorded, not parked as a piece; nothing to fold. (`map` is also the map creator's word, 2026-11-25.)
 For the fix lane after r111: lib/control/peek closes RULED keep, with his reviewable sentence; "which peek forms
 the library provides" is answered for the lookahead only (the negative is `!^A` or `!peek(A)`; no lookbehind form).
+
+### 2026-11-27 MANAGER — review r111 (predfold1125): the dispositions; two questions for the owner; no owner words
+tags: core/labels/rule/alone-as-middle core/labels/rule/paths core/filters/family lib/control/peek
+Review r111 (design; one opus coordinator, three opus critics: ruling, examples, general form; subject the fold
+merged at ddad6c680) returned 26 consolidated findings, none refuted; evidence re-runs green (model 15/0, lint
+9795/0). The manager RULED the dispositions (`/var/tmp/pcrec-pcrec/scratch/crit-predfold1125/dispositions.md`;
+filed by lane predfix111 as `docs/dev/reviews/2026-11-27-r111-predfold1125.md`): every proposal accepted; F10
+(`peek` re-tagged open) superseded by his peek-name ruling; F25 and a lookbehind operator PLAN.
+No owner ruling is touched. Two cells the rulings do not decide go to him (the round's, accepted):
+- gate-beside-label (F3): `[n = ([a = P] SEQ Q)] & (n.d: <5)`: a part used alone BESIDE a written label; a compile
+  error, the written label's `d`, or Q's `d`.
+- gate-twice-scope (F2): whether "used more than once" for a part's name as a STEP counts over the whole
+  definition or under the path's prefix.
+MARKED READINGS the fix lane prints, to be told to him: `!` on a lookaround written in rx text (`!/(?=\d)/`) is
+legal by bang-split line 1; `^` on a condition is the condition itself; an unmarked parameter as a group's whole
+name (`(?<${n}>...)`) is the label-needs-mark error; a label set only inside `!^A` and read after it is a compile
+error.
+THE MANAGER'S OWN STATEMENTS CORRECTED by the round: none of his words; the fold (on the manager's brief) had
+re-tagged lib/control/peek as an open question that no record entry asked (F10); the manager then asked it and he
+ruled it.
