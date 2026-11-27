@@ -11647,3 +11647,44 @@ The manager's answer (told to him; the manager's reading; nothing applied):
   `when(peeknot(x), z)` or a negative entry, `when((h ?! <5), z)`.
 - The manager's leaning: (1). `ahead` can be added later without changing an answer; the reverse is not true.
 DFA category (his standing question): YES for (1), the same regex as today.
+
+### 2026-11-27 OWNER PROPOSAL — a peek operator and a peeknot operator: "consuming: when(A,B,C), nonconsuming: when(^A, B, C) nonconsuming not: when(^!A, B, C)"
+tags: lib/control/when lib/control/when-test lib/control/peek core/patterns/lookaround core/operators/precedence core/operators/bindings core/filters/negation core/filters/operand-context core/spellings/placeholders
+
+Said on the manager's answer to his two alternatives (the hidden `peeknot`; `C &! A` refuted by run). HIS WORDS,
+whole:
+
+"looking forward, we have entirely ignore the subject of lookarounds. if we included an operator for it,
+essentially a peek and peeknot operator, then this would look a little cleaner. consuming: when(A,B,C),
+nonconsuming: when(^A, B, C) nonconsuming not: when(^!A, B, C). its an odd syntax because we can't use regex as =
+has meaning and frankly, lookarounds are an odd feature."
+
+Class: a PROPOSAL in the discussion (two prefix operators, a peek and a negative peek; `^` and `^!` are his
+placeholder spellings, D193 addendum 4), with an OBSERVATION ("we have entirely ignore the subject of
+lookarounds") and his reason the regex spelling is not taken ("= has meaning": PCRE's `(?=`). NOT a ruling.
+CHECKED: outside rx text the documents give `^` no meaning today (grep of core.md: only the anchor inside rx text
+and the class mark); his 2026-11-13 lean stands beside it ("I'd like to use operators for primitives and save
+names for macros if possible").
+RUN (python `re`, scratch `caret.py`; the body `when(T, B, C) := T SEQ B | ^!T SEQ C`, A := `\d`; output pasted):
+when(^A, B, C): (?=A)B|(?!(?=A))C  against  (?=A)B|(?!A)C
+    WHOLE 12 HOLDS 1 FAILS x HOLDS xy FAILS | SEARCHED 12 x 123 1x xy ('12', 0) | FIND-ALL [('12', 0), ('x', 3), ('12', 5), ('x', 10), ('x', 12), ('y', 13)]
+    0 of 1093 differ
+when(^!A, B, C): (?!A)B|(?!(?!A))C  against  (?!A)B|(?=A)C
+    WHOLE 12 FAILS 1 HOLDS x FAILS xy HOLDS | SEARCHED 12 x 123 1x xy ('1', 0) | FIND-ALL [('1', 0), ('2', 1), ('1', 5), ('2', 6), ('3', 7), ('1', 9), ('xy', 12)]
+    0 of 1093 differ
+(first block B := `\d\d`, C := `\w`; second block B := `\w\w`, C := `\w`.)
+The manager's thoughts (told to him; the manager's reading; nothing applied):
+- It works with ONE body for every kind of test, `T SEQ B | ^!T SEQ C`: a bare test consumes, `^A` does not,
+  `^!A` is the negative test and its guard `^!(^!A)` has the answers of `^A` (the runs).
+- `^A` and `^!A` are ordinary zero-width patterns that CAN MATCH: usable wherever a pattern is (a sequence, a
+  binding, an argument, a hole), refused as an `&` operand by the existing rule (core/filters/operand-context:
+  "any piece that might look outside the matched text is a compile error"). No new kind of object, where `!B`
+  needed the filter-only kind.
+- `^!` has to be ONE operator, not `^` on `!A` (there is no `!A` object). THE GENERAL FORM the manager sees, put
+  to him: `!` is never an operator by itself; it is the negative mark on an operator: the entry (`:` and his
+  `!`, `?:` and `?!`), the filter (`&` and `&!`), the peek (`^` and `^!`). Fits these four pairs; for the
+  spellings review, the lone entry `!` is the one that does not show its positive partner (`:`).
+- `peek(A)` would become `^A` (the same body, A's labels passed on); `^!A` passes none on.
+- Not answered by it: the behind pair (PCRE's `(?<=`, `(?<!`) and PCRE2's two non-atomic forms; all stay
+  writable in rx text.
+DFA category (his standing question): YES, unchanged: `^A` and `^!A` are the lookaheads classed YES 2026-11-25.
