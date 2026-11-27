@@ -12127,3 +12127,20 @@ The manager's readings: the array over several sources stays available under the
 parts (lines 1 and 2: `n.d` over `[a = P] SEQ [b = Q]`), so the cost is those labels, not the array; the idea
 moves one printed line from an answer to a compile error (core/labels/rule/alone-as-middle, "Through the part
 used alone, skipped").
+
+### 2026-11-27 OWNER RULING — alone-as-middle: "yes to the gate"; a side note on `some` and the array form
+tags: core/labels/rule/alone-as-middle core/labels/rule/paths core/labels/export lib/counting/some
+His words, verbatim: "alone-as-middle: yes to the gate
+Side note: some would need to take an array like some((@..."
+RULED (answered by slug), the statement AS RE-ASKED, quoted: "inside the definition that uses it, a part used
+alone is a label of its own name that may start a path or be a middle step (`n.Q.d`), and is never skipped (`n.d`
+through it is a compile error naming `n.Q.d`). From outside it exports nothing, as today." Told with it: "A label
+someone wrote, like `[a = P]`, is still skippable by rule 4"; "One printed line in the documents moves from an
+answer to a compile error (`n.d` through the part used alone)"; used more than once, its name is refused as a
+step as it already is as a start (from the earlier re-ask of the same question).
+It REPLACES the manager's reading "an implicit label is a start, never a middle" (core/labels/rule/paths,
+core/labels/rule/alone-as-middle), withdrawn in the entry before.
+The side note (his message ends mid-word): the manager's programs of the last two entries wrote
+`some((n.d: <5))`, the form array-argument (2026-11-25) replaced; by that ruling the question is written with the
+array form and a set, `some(@d, "7")`; on a path the mark's place is a placeholder (its reading (b): `@n.d` or his
+`x.@a`). The manager's error, corrected here; the runs used the model's old spelling and their answers stand.
