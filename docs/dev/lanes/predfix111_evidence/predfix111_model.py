@@ -1302,6 +1302,22 @@ for k_, e_, b_ in MKR:
 check("MARKED111", not mk_bad, "%d legal readings against regexes written from their sentences, %d refusals; "
       "differing: %s" % (len(MK), len(MKR), mk_bad or "none"))
 
+unit111("EVERY111", "review r111 F5: `every` and the item form agree where the label is required, and part only "
+        "where it is optional (the critic's count, re-run over the texts of `17,x` up to length 5)")
+TV = texts11("17,x", 5)                                      # noqa: F821
+pairs = [("required", "/(?:(?<d>\\d),)*x/ & every(@d, \"7\")", "/(?:(?<d>\\d)${(d: \"7\")},)*x/"),
+         ("optional", "/(?:(?<d>\\d)?,)*x/ & every(@d, \"7\")", "/(?:(?<d>\\d)?${(d: \"7\")},)*x/")]
+ev = {}
+for k_, a_, b_ in pairs:
+    Pa_, ea_ = run11(a_)                                     # noqa: F821
+    Pb_, eb_ = run11(b_)                                     # noqa: F821
+    ev[k_] = diff11(Pa_, Pb_, TV) if Pa_ and Pb_ else (ea_, eb_)   # noqa: F821
+    print("   label %s: %d texts, every against the item form differ (whole, searched, find-all) %s" % (k_, len(TV), ev[k_]))
+if s111("s14"):
+    ev["required"] = (1, 0, 0)
+check("EVERY111", ev["required"] == (0, 0, 0) and isinstance(ev["optional"][0], int) and sum(ev["optional"]) > 0,   # noqa: F821
+      "required %s, optional %s" % (ev["required"], ev["optional"]))
+
 unit111("SWEEP111", "every printed three-mode line RUN under this model; the starting commit %s's lines under "
         "predfold1125's builder (X111 off, the control) against these, keyed by the program; every move DECLARED" % START111)
 exec(compile(_src11[_src11.index("def sw11(docs):"):_src11.index("def key11(k):")], P1125, "exec"), globals())   # noqa: S102  predfold1125's sweep, verbatim
@@ -1601,7 +1617,7 @@ else:
 
 PLANTS111 = {"s1": "CANARY111", "s2": "TABLE111", "s3": "GRID111", "s4": "GROUPNODE", "s5": "MARKED111",
              "s6": "SWEEP111", "s7": "ERRSWEEP111", "s8": "STALE111", "s9": "QUOTES111", "s10": "SUCCESSOR111",
-             "s11": "READ2", "s12": "READ3", "s13": "SPECLINES111"}
+             "s11": "READ2", "s12": "READ3", "s13": "SPECLINES111", "s14": "EVERY111"}
 if SAB111 == "all":
     caught = []
     for q_, tgt in sorted(PLANTS111.items(), key=lambda kv: int(kv[0][1:])):

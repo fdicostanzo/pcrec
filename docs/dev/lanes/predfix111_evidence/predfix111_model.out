@@ -1,0 +1,289 @@
+== library bodies (library.md): chars ([ch = /(?s:.)/])* ; length(S) := chars & (count((chars.ch: /(?s:.)/)): S) ; month_numbered(S) := months & (months.mname.index: S) ; between: >= lo & <= hi
+== months := [mname = [/Jan(?:uary)?/, /Feb(?:ruary)?/, /Mar(?:ch)?/, /Apr(?:il)?/, /May/, /June?/, /July?/, /Aug(?:ust)?/, /Sep(?:tember)?/, /Oct(?:ober)?/, /Nov(?:ember)?/, /Dec(?:ember)?/]]
+PATCH R-5 walk10: 3 lines replaced by 17
+PATCH R-5 path10: 2 lines replaced by 10
+PATCH R-5 g_eval: 2 lines replaced by 3
+== CANARY111: X111 off is predfold1125's builder (the control): it refuses the group step and answers the alone read of two uses by rewriting; X111 on answers both by the walker
+PASS CANARY111: off: `g.d`: `d` is not visible through `g` (a compile error, core/labels/paths) / `Q.d`: Q is used 2 times here; label the part (`[left = Q]`) to read one use; on: legal / legal
+== TABLE111: the label-kind table of core/labels/rule/kinds, read cell by cell, against WALK111's KINDS111 (the rows it models)
+   ROW a written part label         document ('yes', 'yes', 'yes', 'yes', 'yes'), walker ('yes', 'yes', 'yes', 'yes', 'yes')
+   ROW an underscore part label     document ('yes', 'wall', 'wall', 'wall', 'no'), walker ('yes', 'wall', 'wall', 'wall', 'no')
+   ROW the blank label              document ('no', 'wall', 'wall', 'wall', 'no'), walker ('no', 'wall', 'wall', 'wall', 'no')
+   ROW a part used alone            document ('yes', 'yes', 'gate', 'wall', 'no'), walker ('yes', 'yes', 'gate', 'wall', 'no')
+   ROW a macro call used alone      document ('yes', 'yes', 'gate', 'wall', 'no'), walker ('yes', 'yes', 'gate', 'wall', 'no')
+   ROW not modelled by WALK111: an argument's shorthand label (`A` in `B(A)`)
+   ROW not modelled by WALK111: a sent label (`x` of `R(x:, A)`)
+   ROW not modelled by WALK111: a label the caller writes in an argument
+   ROW a named group of rx text     document ('yes', 'yes', 'yes', 'yes', 'yes'), walker ('yes', 'yes', 'yes', 'yes', 'yes')
+   ROW an underscore group          document ('yes', 'wall', 'wall', 'wall', 'no'), walker ('yes', 'wall', 'wall', 'wall', 'no')
+PASS TABLE111: 7 rows modelled; differing: none; missing: none
+== GRID111: reads judged by WALK111 against hand-filled verdicts, each citing its ground; every legal read's answers against MECH111 (python `re` on the regex built from the program text, the target group named)
+   [n = (P SEQ Q)] & (n.Q.d: <5)                              n.Q.d    legal    alone-as-middle: a middle step
+   [n = (P SEQ Q)] & (n.d: <5)                                n.d      refused  alone-as-middle: never skipped
+   [n = (P SEQ Q)] & (Q.d: <5)                                Q.d      legal    path-rules rule 6: a start inside
+   [n = (P SEQ Q)] & (n.P.d: <5)                              n.P.d    legal    alone-as-middle
+   [n = (Q SEQ Q)] & (n.Q.d: <5)                              n.Q.d    refused  alone-as-middle: used twice
+   X & (X.Q.d: <5)                                            X.Q.d    refused  path-rules rule 6
+   X & (X.n.Q.d: <5)                                          X.n.Q.d  refused  path-rules rule 6
+   X & (X.d: <5)                                              X.d      refused  path-rules rule 6
+   [n = (P SEQ B(Q))] & (n.B.p.d: <5)                         n.B.p.d  legal    a reading (F6)
+   [n = (P SEQ B(Q))] & (n.B.d: <5)                           n.B.d    legal    a reading (F6), rule 4
+   [n = (P SEQ B(Q))] & (n.d: <5)                             n.d      refused  a reading (F6)
+   [n = (Q)] & (n.d: <5)                                      n.d      legal    a reading (F7), parentheses aside
+   [n = Q] & (n.d: <5)                                        n.d      legal    path-rules rule 4
+   [n = [m = P] SEQ "!"] & (n.d: <5)                          n.d      legal    path-rules rules 1, 4
+   [n = [_x = P]] & (n.d: <5)                                 n.d      refused  path-rules rule 2
+   [n = ([m = P] SEQ [_x = Q])] & (n.d: <5)                   n.d      legal    skip-past-wall
+   [n = ([_ = P] SEQ Q)] & (n.d: <5)                          n.d      refused  alone-as-middle (F25: the gate named)
+   /(?<g>(?<d>\d))x/ & (g.d: <5)                              g.d      legal    group-node
+   X & (X.g.d: <5)                                            X.g.d    legal    group-node, rule 5
+   X & (X.d: <5)                                              X.d      refused  group-node, rule 2
+   [n = /(?<_g>(?<d>\d))x/] & (n.d: <5)                       n.d      refused  group-node, rule 2
+   /(?<_g>(?<d>\d))x/ & (_g.d: <5)                            _g.d     legal    group-node, rule 2's start
+   /(?<g>${A})x/ & (g.A.h: <5)                                g.A.h    legal    group-node (c)
+   /(?<g>${A})x/ & (g.h: <5)                                  g.h      refused  group-node (c) with alone-as-middle
+   /(?<g>${A})x/ & (A.h: <5)                                  A.h      legal    group-node (c), rule 6's start
+   /(?<g>(?<d>\d))x/ SEQ /(?<g>(?<d>\d))y/ & (g.d: <5)        g.d      legal    group-node (e), last mention
+   /(?<g>(?<d>\d))\w/ & /\w(?<g>(?<d>\d))/ & (g.d: <5)        g.d      refused  group-node (e), `&`
+   [pub = B(A)] & (pub.A.h: <5)                               pub.A.h  refused  shorthand-outside
+PASS GRID111: 28 reads; verdicts differing none; legal reads against MECH111: 14, differing none
+== READ2: gate-twice-scope (F2), both readings RUN: (a) uses counted over the definition, (b) under the read's prefix (printed, marked)
+   (a) ('refused', '`n.Q.d`: `Q` is used more than once here, so it is not a step (a compile error, alone-as-middle)')
+   (b) ('legal', 'B:Q', 'd', 'one')
+PASS READ2: (a) refused; (b) legal, its answers against MECH111 equal
+== READ3: gate-beside-label (F3), the three readings RUN: (i) a compile error, (ii) a's `d` (printed, marked), (iii) Q's `d`, the last mention; each legal reading's answers against MECH111
+   (ii) ('legal', 'B:P', 'd', 'one'); answers against MECH111 equal
+   (iii) ('legal', 'B:Q', 'd', 'last mention'); answers against MECH111 equal
+   (i) ('refused', '`n.d`: the path skips a part used alone, which is never skipped inside its binding: write `n.Q.d` (a compile error, alone-as-middle)')
+PASS READ3: (i) refused; (ii) ('B:P', 'd'); (iii) ('B:Q', 'd')
+== GROUPNODE: the group-node ruling's readings (a)-(e) of its record entry, RUN; and every printed program naming an underscore group, found by grep, read by WALK111
+   /(?<g>(?<d>\d))x/ & (g.d: <5)                 g.d    legal
+   X & (X.d: <5)                                 X.d    refused
+   [n = /(?<_g>(?<d>\d))x/] & (n.d: <5)          n.d    refused
+   /(?<g>${A})x/ & (g.h: <5)                     g.h    refused
+   /(?<g>${A})x/ & (g.A.h: <5)                   g.A.h  legal
+   /(?<g>${A})x/ & (A.h: <5)                     A.h    legal
+   UGROUP core.md:596 `_g`, read through it: False
+   UGROUP core.md:597 `_g`, read through it: False
+   UGROUP core.md:598 `_g`, read through it: False
+   UGROUP core.md:620 `_g`, read through it: False
+   UGROUP core.md:838 `_v`, read through it: False
+   UGROUP core.md:2289 `_v`, read through it: False
+PASS GROUPNODE: (a) `g.d` legal, the answers of `[g = /(?<d>\d)/] SEQ /x/`: True; (b) the two walls refused: True; (c) g.h, g.A.h, A.h: ['refused', 'legal', 'legal']; (e) last mention and `&`: True; printed underscore groups 6, read through: 0
+== MARKED111: the marked readings the documents print, each RUN: against MECH111 where legal, refused where the reading refuses
+   `!` on a lookaround in rx text is its opposite: RUN, equal to `x(?!\d)`
+   `^c` on a condition is c: RUN, equal to `[0-4]x`
+   `when` with a condition test: RUN, equal to `(?:[0-4]a|[5-9]b)`
+   a group name from a marked parameter, `_:` its blank: RUN, equal to `(\d)x`
+   `.index` of a label inside one alternative is its constant: RUN, equal to `87`
+   a label set only inside `!^A`, read after it: `d` is set only inside `!^`, never visible after it (a compile error, core/labels/paths; a marked reading)
+   a group's whole name from an unmarked parameter: at the binding `C(n) := /(?<${n}>\d)x/`: the body places the parameter `n` as a group's whole name, a label; a label parameter is marked `n:` in the head (label-needs-mark; a marked reading)
+   `.index` of the other position never holds: never holds
+PASS MARKED111: 5 legal readings against regexes written from their sentences, 3 refusals; differing: none
+== EVERY111: review r111 F5: `every` and the item form agree where the label is required, and part only where it is optional (the critic's count, re-run over the texts of `17,x` up to length 5)
+   label required: 1365 texts, every against the item form differ (whole, searched, find-all) (0, 0, 0)
+   label optional: 1365 texts, every against the item form differ (whole, searched, find-all) (9, 182, 253)
+PASS EVERY111: required (0, 0, 0), optional (9, 182, 253)
+== SWEEP111: every printed three-mode line RUN under this model; the starting commit cec257072's lines under predfold1125's builder (X111 off, the control) against these, keyed by the program; every move DECLARED
+   DROPPED OR MOVED BY A RULING core.md:561 `[g = /(?<d>\d)/] SEQ /x/ & (g.d: <5)`: group-node: candidate (b)'s line, ruled; its answers now printed on the group's own program (GROUPNODE (a))
+   DROPPED OR MOVED BY A RULING core.md:1871 `C(_)`: r111 F8: re-spelled `C(_:)` with `C(n:) := /(?<${n}>\d)x/` (label-needs-mark on a group's whole name)
+   DROPPED OR MOVED BY A RULING core.md:2541 `m SEQ "!"`: r111 F14: the creator's no-deduplication line dropped; his words are of a search's results
+   DROPPED OR MOVED BY A RULING core.md:2559 `m["b" | 1] SEQ /\w/`: r111 F15: the key-order witness re-picked (`m["b" | "a"]` over `{a = /\d/, b = /\d\d/}`)
+   ADDED core.md:274 `"a\"b"`
+   ADDED core.md:275 `"a\nb"`
+   ADDED core.md:571 `[n = (P SEQ B(Q))] & (n.B.p.d: <5)`
+   ADDED core.md:573 `[n = (P SEQ Q)] SEQ ";" SEQ [m = (P SEQ Q)] & (n.Q.d: <5)`
+   ADDED core.md:574 `[n = (Q)] & (n.d: <5)`
+   ADDED core.md:575 `[n = ([a = P] SEQ Q)] & (n.d: <5)`
+   ADDED core.md:593 `/(?<g>(?<d>\d))x/ & (g.d: <5)`
+   ADDED core.md:594 `/(?<g>(?<d>\d))x/ & (d: <5)`
+   ADDED core.md:595 `X & (X.g.d: <5)`
+   ADDED core.md:598 `/(?<_g>(?<d>\d))x/ & (_g.d: <5)`
+   ADDED core.md:599 `/(?<g>${A})x/ & (g.A.h: <5)`
+   ADDED core.md:601 `/(?<g>${A})x/ & (A.h: <5)`
+   ADDED core.md:1651 `"x" SEQ !/(?=\d)/`
+   ADDED core.md:1652 `/(?<h>\d)/ SEQ ^(h: <5) SEQ /x/`
+   ADDED core.md:1653 `/(?<h>\d)/ SEQ when((h: <5), /a/, /b/)`
+   ADDED core.md:1780 `F & (F.c.index: 2)`
+   ADDED core.md:1781 `F & (F.c.index: 1)`
+   ADDED core.md:1960 `C(_:)`
+   ADDED core.md:2666 `m["b" | "a"]`
+   ADDED core.md:2667 `m["a" | "b"]`
+   INHERITED (the control's own, same key and status) core.md:168 DIFF `/\d+/ & /^\d$/`
+   INHERITED (the control's own, same key and status) core.md:1532 DIFF `/\d+/ & /^\d$/`
+   INHERITED (the control's own, same key and status) core.md:316 DIFF `wb SEQ digits SEQ wb`
+   INHERITED (the control's own, same key and status) core.md:392 DIFF `/(?=\d*(?<l>\d)\b)(?<f>\d)\d*/ & (l: > $f)`
+   INHERITED (the control's own, same key and status) core.md:687 DIFF `/(?:(?<h>\d+)(?::(?<m>\d\d))?,)*\k<m>/ & (m: "45")`
+   INHERITED (the control's own, same key and status) core.md:689 REFUSED `/(?J)(?<h>\d)(?:;(?<h>\d))?\k<h>/`
+   INHERITED (the control's own, same key and status) core.md:1102 REFUSED `B(A) & (B.d: <5)`
+   INHERITED (the control's own, same key and status) core.md:1235 DIFF `A SEQ B`
+   INHERITED (the control's own, same key and status) core.md:1255 REFUSED `/(\d):(\d)/ & (2: > $1)`
+   INHERITED (the control's own, same key and status) core.md:1263 REFUSED `/(?:(\d)?;)*/ & (1: <5)`
+   INHERITED (the control's own, same key and status) core.md:1700 REFUSED `/(?<x>\d+)/ & ($x & <5)`
+   INHERITED (the control's own, same key and status) core.md:1727 REFUSED `/\d+/ & <20`
+   INHERITED (the control's own, same key and status) core.md:1798 REFUSED `/${["7", "x", "41"] + 1}/`
+   INHERITED (the control's own, same key and status) core.md:1814 REFUSED `/${left(/foobar|bazqux/, 2)}/`
+   INHERITED (the control's own, same key and status) core.md:1834 REFUSED `/${[2, 4] + [1, 10]}/`
+   INHERITED (the control's own, same key and status) core.md:1862 REFUSED `/${\d + 1}/`
+   INHERITED (the control's own, same key and status) core.md:1863 REFUSED `/\b${\d + 1}\b/`
+   INHERITED (the control's own, same key and status) core.md:1864 REFUSED `/${10 - \d}/`
+   INHERITED (the control's own, same key and status) core.md:1865 REFUSED `/${\d + \d}/`
+   INHERITED (the control's own, same key and status) core.md:1866 REFUSED `/${\d{1,2}? + 1}/`
+   INHERITED (the control's own, same key and status) core.md:1867 REFUSED `/${\d + (1|9)}/`
+   INHERITED (the control's own, same key and status) core.md:1868 REFUSED `/${(1|9) + \d}/`
+   INHERITED (the control's own, same key and status) core.md:1869 REFUSED `/${\d{1,3}? + \d{1,3}?}/`
+   INHERITED (the control's own, same key and status) core.md:1870 REFUSED `/${\d{1,3}? + \d{1,3}}/`
+   INHERITED (the control's own, same key and status) core.md:1942 REFUSED `rx.repeat(rx.digit, min = n, max = n)`
+   INHERITED (the control's own, same key and status) library.md:841 REFUSED `rx.repeat(rx.digit, min = n, max = n)`
+   INHERITED (the control's own, same key and status) core.md:1973 REFUSED `/a[${c}q]/`
+   INHERITED (the control's own, same key and status) core.md:1979 REFUSED `/a[${a}${b}]/`
+   INHERITED (the control's own, same key and status) core.md:1987 REFUSED `/${/[${c}]/ + 1}/`
+   INHERITED (the control's own, same key and status) core.md:1988 REFUSED `/${/[09]/ + 1}/`
+   INHERITED (the control's own, same key and status) core.md:2000 REFUSED `/a[^${join(c)}]/`
+   INHERITED (the control's own, same key and status) core.md:2010 REFUSED `/[${lo}-m]/`
+   INHERITED (the control's own, same key and status) core.md:2027 REFUSED `/(?${o})ab/`
+   INHERITED (the control's own, same key and status) core.md:2061 REFUSED `/a[${[]}x]|b/`
+   INHERITED (the control's own, same key and status) core.md:2174 DIFF `/(?<h>a)-${q}\k<h>/`
+   INHERITED (the control's own, same key and status) core.md:2286 REFUSED `/(?<h>\d)/ & (h: >5)`
+   INHERITED (the control's own, same key and status) core.md:2320 REFUSED `/999${/\d+/ & <100}999/`
+   INHERITED (the control's own, same key and status) core.md:2325 REFUSED `/a\Q${x}\Eb/`
+   INHERITED (the control's own, same key and status) core.md:2389 REFUSED `pair(p) := /${p},${p}/`
+   INHERITED (the control's own, same key and status) core.md:2563 REFUSED `rx.repeat(rx.digit, n)`
+   INHERITED (the control's own, same key and status) core.md:2564 REFUSED `rx.repeat(rx.digit, n)`
+   INHERITED (the control's own, same key and status) core_details.md:2068 unparsed `10:15`
+   INHERITED (the control's own, same key and status) library.md:81 REFUSED `/${enumerate(/(?:a|ab){1,2}/)}/`
+   INHERITED (the control's own, same key and status) library.md:82 REFUSED `/${enumerate(/\d/) + 1}/`
+   INHERITED (the control's own, same key and status) library.md:152 REFUSED `/(?<x>\d+),${pattern($x)}/`
+   INHERITED (the control's own, same key and status) library.md:265 REFUSED `quoted(/^a\w*/)`
+   INHERITED (the control's own, same key and status) library.md:283 REFUSED `any_case("ho")`
+   INHERITED (the control's own, same key and status) library.md:284 REFUSED `any_case(/[a-z]x/ & /[A-Z]x/)`
+   INHERITED (the control's own, same key and status) library.md:310 REFUSED `length(==3)`
+   INHERITED (the control's own, same key and status) library.md:326 REFUSED `month_numbered(between(1, 6))`
+   INHERITED (the control's own, same key and status) library.md:575 REFUSED `/\d\d/ & between(1, 12)`
+   INHERITED (the control's own, same key and status) library.md:676 REFUSED `/a[^${join(c)}]/`
+   INHERITED (the control's own, same key and status) library.md:688 REFUSED `left(/foobar|bazqux/, 2)`
+   INHERITED (the control's own, same key and status) library.md:689 REFUSED `/${left(/\d{1,2}?/, 2)}/`
+   INHERITED (the control's own, same key and status) library.md:698 REFUSED `/(?<y>\w+)-${strlen($y)}/`
+   INHERITED (the control's own, same key and status) library.md:977 REFUSED `row(m:, "msg", contains("timeout"))`
+   INHERITED (the control's own, same key and status) library.md:978 REFUSED `row(v:, "v") & (v: "ok" | <5)`
+   INHERITED (the control's own, same key and status) library.md:979 REFUSED `row(lo:, "lo") & row(hi:, "hi") & (lo: <$hi)`
+   INHERITED (the control's own, same key and status) library.md:980 REFUSED `row(x:, "a" | "b") & (x: <5)`
+   INHERITED (the control's own, same key and status) library_details.md:508 REFUSED `(?(?!\d)\w|)`
+   INHERITED (the control's own, same key and status) library_details.md:789 REFUSED `/(?:(?<d>\d),)+/ & some((d: "7"))`
+   INHERITED (the control's own, same key and status) library_details.md:867 REFUSED `/(?:(?<d>\d)?,)+/ & some((d: "7")) & occurs.none(NOT (d: "7"))`
+PASS SWEEP111: 413 printed lines now (DIFF 7, REFUSED 54, same 351, unparsed 1), 371 keys at the starting commit; not same and not inherited 0 (inherited 62); moved 0; gone 0; declared 4; added 20; stale 0
+== ERRSWEEP111: every printed compile-error line of the base files refused under this model, no crash; each named form in the refusal's message (MSG111: predfold1125's rows and this lane's)
+   core.md:276 `"a\d"` : the escape `\d` is not a string escape (string-literals line 3: only the backslash, the two quotes, `\n`, `\r`
+   core.md:277 `"ab" "cd"` : adjacent strings do not join (string-literals line 4): the join is the sequence operator, `"ab" SEQ "cd"`
+   core.md:367 `rx.digit{}` : `x{}` is a compile error (brace-counts line 4): `x*` is the spelling
+   core.md:415 `!^/(?<d>\d)/ SEQ /\w/ & (d: <5)` : `d` is set only inside `!^`, never visible after it (a compile error, core/labels/paths; a marked reading)
+   core.md:416 `"x" SEQ ^~/\d/` : a complement cannot match by itself (complement-place): `^~/\d/` looks ahead for a match; the negative lookahe
+   core.md:487 `[n = [_x = P]] & (n.d: <5)` ['P := /(?<d>\\d)\\d/']: `n.d`: the path crosses the underscore label `_x`, not the start (a compile error, path-rules rule 2)
+   core.md:491 `[n = [_x = P] SEQ "!"] & (n.d: <5)` ['P := /(?<d>\\d)\\d/']: `n.d`: the path crosses the underscore label `_x`, not the start (a compile error, path-rules rule 2)
+   core.md:494 `X2 & (X2.h: <5)` ['A := /(?<h>\\d)/', 'X2 := A SEQ "!"']: `X2.h`: the path crosses `A`, a part used alone in it (a compile error, path-rules rule 6)
+   core.md:524 `R(x:, A) & (x.h: <5)` ['A := /(?<h>\\d)/', 'R(l:, v) := /${[l = [_ = v]]}xx/']: `x.h`: the path crosses the underscore label `_`, not the start (a compile error, path-rules rule 2; the sent 
+   core.md:546 `[_t = A] SEQ "!" & (t.h: <5)` ['A := /(?<h>\\d)/']: path `t.h`: `t` is neither written nor a binding used in this definition
+   core.md:547 `X & (X.t.h: <5)` ['A := /(?<h>\\d)/', 'X := [_ = [t = A]] SEQ "!"']: `X.t.h`: the path crosses the underscore label `_`, not the start (a compile error, path-rules rule 2)
+   core.md:567 `[n = (P SEQ Q)] & (n.d: <5)` ['P := /(?<d>\\d)/', 'Q := /,(?<d>\\d)/']: `n.d`: the path skips a part used alone, which is never skipped inside its binding: write `n.P.d` or `n.Q.d` (
+   core.md:569 `[n = (Q SEQ Q)] & (n.Q.d: <5)` ['Q := /,(?<d>\\d)/']: `n.Q.d`: `Q` is used more than once here, so it is not a step (a compile error, alone-as-middle)
+   core.md:570 `X & (X.Q.d: <5)` ['P := /(?<d>\\d)/', 'Q := /,(?<d>\\d)/', 'X := [n = (P SEQ Q)]']: `X.Q.d`: the path crosses `Q`, a part used alone in it (a compile error, path-rules rule 6)
+   core.md:572 `[n = (P SEQ B(Q))] & (n.d: <5)` ['P := /(?<d>\\d)/', 'Q := /,(?<d>\\d)/', 'B(rx) := /${[p = rx]}xx/']: `n.d`: the path skips a part used alone, which is never skipped inside its binding: write `n.B.d` or `n.P.d` (
+   core.md:596 `X & (X.d: <5)` ['X := /(?<_g>(?<d>\\d))x/']: `X.d`: the path crosses the underscore group `_g`, not the start (a compile error, path-rules rule 2; group-no
+   core.md:597 `[n = /(?<_g>(?<d>\d))x/] & (n.d: <5)` : `n.d`: the path crosses the underscore group `_g`, not the start (a compile error, path-rules rule 2; group-no
+   core.md:600 `/(?<g>${A})x/ & (g.h: <5)` ['A := /(?<h>\\d)/']: `g.h`: the path skips a part used alone, which is never skipped inside its binding: write `g.A.h` (a compile e
+   core.md:650 `[l = [_ = P]] & (l.d: <5)` ['P := /(?<d>\\d)\\d/']: `l.d`: the path crosses the underscore label `_`, not the start (a compile error, path-rules rule 2)
+   core.md:651 `B([a = A]) & (A.h: <5)` ['A := /(?<h>\\d)/', 'B(rx) := /${rx}xx/']: `A.`: the caller's own label `a` is made on the spot where B places `A` (a compile error, binding-as-label con
+   core.md:653 `B(A) & (B.n.h: <5)` ['A := /(?<h>\\d)/', 'B(rx) := /${[n = [_x = rx]]}xx/']: `B.n.h`: the path crosses the underscore label `_x`, not the start (a compile error, path-rules rule 2)
+   core.md:654 `Y & (Y.c.h: <5)` ['A := /(?<h>\\d)/', 'X := [_x = [n = A]] SEQ "!"', 'Y := [c = X] SEQ ";"']: `Y.c.h`: the path crosses the underscore label `_x`, not the start (a compile error, path-rules rule 2)
+   core.md:655 `B([a = A]) & (B.a.d: <5)` ['A := /(?<d>\\d)/', 'B(rx) := /${[n = [_x = rx]]}xx/']: `B.a.d`: the path crosses the underscore label `_x`, not the start (a compile error, path-rules rule 2)
+   core.md:794 `d & (d.h: "2")` ['d := /(?<h>\\d)\\d/ & /\\d(?<h>\\d)/']: `d.h`: both sides of `&` set `h`, an ambiguous reference (a compile error, core/labels/flow)
+   core.md:795 `(/(?<h>\d)\d/ & /\d(?<h>\d)/) SEQ $h` : `h`: two sides of one `&` set it and the read can see both, an ambiguous reference (a compile error, core/labe
+   core.md:797 `D1 & (D1.c: "3")` ['D1 := CA SEQ CB', 'CA := /(?<c>\\d)/', 'CB := /(?<c>\\d)/']: `D1.c`: the path crosses `CA`, a part used alone in it (a compile error, path-rules rule 6)
+   core.md:836 `p2 & (p2.h: <5)` ['p2 := /${A}!/', 'A := /(?<h>\\d)/']: `p2.h`: the path crosses `A`, a part used alone in it (a compile error, path-rules rule 6)
+   core.md:862 `C` ['C := B & (B.a: 9)', 'B := A & A', 'A := /(?<a>\\d)/']: `B.a`: `a` is not visible through `B`: the path crosses `A`, a part used alone in it (a compile error, path-ru
+   core.md:922 `date & (date.month: "01")` : an undeclared name: date
+   core.md:923 `[(=d) = B(A)] & (d: <5)` ['A := /(?<d>\\d)/', 'B(rx) := /${rx}xx/']: `d` is not a label the part exports (export-list: only an exported label is listed)
+   core.md:960 `A(x:) & (A.x: 5)` ['A(l:) := /(?<:${l}>\\d+)/']: `A.x`: a sent label read through the macro's name is not offered (a compile error for now, the manager's readi
+   core.md:961 `B(A & (h: "3"))` ['A := /(?<h>\\d)/', 'B(rx) := /${rx}xx/']: label `h` read in the argument `A & (h: "3")` is not written in the definition the argument is written in: ref
+   core.md:964 `identity((A)) & (identity.h: <5)` ['A := /(?<h>\\d)/', 'identity(x) := /${[(=) = x]}/']: `identity.h`: the path skips a part used alone, which is never skipped inside its binding: write `identity.A.h
+   core.md:965 `N(A) & (N.h: <5)` ['A := /(?<h>\\d)/', 'N(rx) := /${[(=h) = rx]}/']: at the binding `N(rx) := /${[(=h) = rx]}/`: `h` is not a label the part exports (export-list: only an exported
+   core.md:1000 `X & (X.ab.l: <5)` ['B := /(?<l>\\d)/', 'A := /a(?<l>\\d)/', 'X := [ab = (B | A)] SEQ "!"']: `X.ab.l`: the path crosses `B`, a part used alone in it (a compile error, path-rules rule 6)
+   core.md:1038 `D SEQ ";" SEQ X & (X.D.h: "4")` ['X := D SEQ "!"']: at the binding `X := D SEQ "!"`: an undeclared name: D
+   core.md:1040 `/${A},${A}/ & (A.d: <5)` ['A := /(?<d>\\d)/']: `A.d`: A is used 2 times here; label the part (`[left = A]`) to read one use
+   core.md:1041 `chars SEQ ":" SEQ chars & (chars.ch: "a")` : an undeclared name: chars
+   core.md:1065 `chars & (count(@ch, /(?s:.)/): ==3)` : an undeclared name: chars
+   core.md:1096 `[h = hits(/\d+/)] & (hits.hit: 3)` : `hits.`: the caller labels the call of hits, a label made on that use (a compile error, binding-as-label condi
+   core.md:1104 `occurrences(/\d/) SEQ ";" SEQ occurrences(/\d/) & (occurrences.hit: "9")` : `occurrences.hit`: occurrences is used 2 times here; label the part (`[left = occurrences]`) to read one use
+   core.md:1105 `B(A) & (B.d: <5)` ['A := /(?<d>\\d)/', 'B(rx) := /${rx}xx/']: `B.d`: the path skips a part used alone, which is never skipped inside its binding: write `B.A.d` (a compile e
+   core.md:1132 `[c = B(A)] & (c.d: <5)` ['A := /(?<d>\\d)/', 'B(rx) := /${[_ = rx]}xx/']: `c.d`: the path crosses the underscore label `_`, not the start (a compile error, path-rules rule 2)
+   core.md:1165 `B(A) SEQ A & (A.d: <5)` ['A := /(?<d>\\d)/', 'B(rx) := /${rx}xx/']: `A.`: the binding `A` is used 2 times in this definition, so its name is no shorthand for a label (a compile e
+   core.md:1171 `[pub = B(A)] & (pub.A.h: <5)` ['A := /(?<h>\\d)/', 'B(rx) := /${[p = rx]}xx/']: `pub.A.h`: the path crosses `A`, a part used alone in it (a compile error, path-rules rule 6)
+   core.md:1184 `[pub = B(A)] & (pub.A.h: <5)` ['A := /(?<h>\\d)/', 'B(rx) := /${[p = rx]}xx/']: `pub.A.h`: the path crosses `A`, a part used alone in it (a compile error, path-rules rule 6)
+   core.md:1320 `/(?<h>\d);(?:(?<h>\d);)*/ & some(($h: "7"))` : a group question takes the array form of a label and a set (array-argument line 1): write `some(@d, S)`, not a
+   core.md:1356 `/(?<h>\d);(?:(?<h>\d);)*/ & some((h ?: "7"))` : a group question takes the array form of a label and a set (array-argument line 1): write `some(@d, S)`, not a
+   core.md:1395 `/(?:(?<h>\d):(?<m>\d),)+/ & some((h: "5", m: "3"))` : a group question takes the array form of a label and a set (array-argument line 1): write `some(@d, S)`, not a
+   core.md:1476 `/(?<d>\d)+/ & some(@0, "1")` : a group question on `0`: `0` has no settings, so no array (a compile error, zero-open)
+   core.md:1477 `/(?<d>\d)+/ & (0[1]: "1")` : an index on `0`: `0` has no settings (a compile error, zero-open)
+   core.md:1556 `/(?<h>\d)/ & ~(h: <5)` : `~` on a test (`~(h: <5)`): the logical not of a test is `!(h: <5)` (bang-split line 4)
+   core.md:1594 `/\d+/ & !/7\d*/` : `!` on a set or pattern (`!/7\d*/`): the complement is `~/7\d*/`; "cannot match here" is `!^/7\d*/` (bang-spli
+   core.md:1595 `/(?<h>\d)/ & (h: !(<5 | >8))` : `!` on a set or pattern (`!(<5 | >8)`): the complement is `~(<5 | >8)`; "cannot match here" is `!^(<5 | >8)` (
+   core.md:1614 `when(/(?<d>\d)/ & (d: capture("d")), /x/)` : in `when`'s guard: a capture request under a negation (`NOT peek(/(?<d>\d)/ & (d: capture("d")))`): an effect 
+   core.md:1615 `/(?<h>\d)?x/ & !(h: capture("h"))` : a capture request under a negation (`NOT (h: capture("h"))`): an effect macro cannot be under negation (a comp
+   core.md:1616 `/(?<h>\d)?x/ & (h: ~capture("h"))` : a capture request under a negation (`!capture("h")`): an effect macro cannot be under negation (a compile erro
+   core.md:1654 `"x" SEQ ~^/\d/` : `~` on a test (`~^/\d/`): the logical not of a test is `!^/\d/` (bang-split line 4)
+   core.md:1959 `A(x:) SEQ "!"` ['A(l:) := /(?<:f_${l}>\\d)/']: `(?<:f_${l}>`: a label-only group's name hole must be the whole name (a compile error, label-hole-full: "pure 
+   core.md:2304 `c` ['c := (0: 5)']: `c := (0: 5)`: a condition on `0` bound alone (a compile error for now, zero-condition-binding)
+   core.md:2411 `A(x:) & A(x:) & (x: 5)` ['A(l:) := /(?<:${l}>\\d+)/']: `x`: both sides of `&` surface it, an ambiguous reference (core/labels/flow)
+   core.md:2426 `R(x, A)` ['A := /(?<h>\\d)/', 'R(l, v) := /${[l = v]}xx/']: the body places the parameter `l` as a label; a label parameter is marked `l:` in the head (label-needs-mark: 
+   core.md:2427 `A(x)` ['A(l) := /(?<:${l}>\\d+)/']: the body places the parameter `l` as a label; a label parameter is marked `l:` in the head (label-needs-mark: 
+   core.md:2429 `C(x)` ['C(n) := /(?<${n}>\\d)x/']: at the binding `C(n) := /(?<${n}>\d)x/`: the body places the parameter `n` as a group's whole name, a label; a
+   core.md:2458 `C(_:)` ['C(l:) := /(?<:${l}>\\d)/ & (l: <5)']: C(_:): the body reads its label parameter `l` and `_` names nothing to read (a compile error at the call, the 
+   core.md:2471 `A2() & (ts: 5)` ['A2(l = ts:) := /(?<:${l}>\\d+)/']: `A2`: a label parameter's head default names the label `ts`; for now the default is `_` only (a compile error,
+   core.md:2483 `A(x:, /\w/)` ['A(a:, B) := B & (a: 5)']: A reads its label parameter `a` and never places it: the reference kind, off limits for users (a compile error
+   core.md:2484 `A(x.d:)` ['A(l:) := /(?<:${l}>\\d)/']: `x.d:` for the label parameter `l` of A: a marked argument is ONE new name (label-kinds)
+   core.md:2555 `rx.repeat(rx.digit, max = 5, 2)` : a call of rx.repeat: a positional entry after a named one (a compile error for now, call-forms line 2)
+   core.md:2556 `rx.repeat(rx.digit, 3, min = 2)` : a call of rx.repeat fills `min` twice (a compile error, call-forms)
+   core.md:2557 `R(rx.digit)` ['R(x, min = max, max = _) := /(?:${x}){${min},${max}}/']: the default of `min` in R names `max`, not an earlier parameter (a compile error, call-forms line 3)
+   core.md:2558 `R(rx.digit)` ['R(x) := /${x}/', 'R(x, y) := /${x}${y}/']: a missing required parameter `y`
+   core.md:2590 `P2(_, /b/)` ['P2(a, b) := /${a}${b}/']: `_` passed for `a` of P2: the construct at that position has no form without the part (a compile error, unspec
+   core.md:2591 `E(rx.digit, _)` ['E(x, n) := /(?:${x}){${n}}/']: `_` passed for `n` of E: the construct at that position has no form without the part (a compile error, unspeci
+   core.md:2646 `m` ['m := {a = /x/, /y/}']: a map's element with no label (map-creator line 1: its literal makes a missing label a syntax error): `/y/`
+   core.md:2670 `m.z` ['m := {a = /x/, b = /y/}']: no member `z` in the map m (map-creator line 3: `m.a` must exist; the search is `m["z"]`)
+   library.md:49 `hide(A) & (hide.d: <5)` ['hide(x) := /${x}/']: an undeclared name: A
+   library.md:250 `padded_to(rx.digit, _)` : `_` passed for `n` of padded_to: the construct at that position has no form without the part (a compile error,
+   library.md:409 `when(!/x/, /\w/)` : `!` on a set or pattern (`!/x/`): the complement is `~/x/`; "cannot match here" is `!^/x/` (bang-split line 4)
+   library.md:882 `/\d${(0: capture("n"))}x/` : a capture request on an open `0` (pattern text follows the hole): a compile error for now (zero-open)
+   library.md:897 `/(?<h>\d)?x/ & (h: "3" | capture("h"))` : a capture request inside a set operator (`h: "3" | capture("h")`): a compile error for now (the conservative r
+   library.md:898 `/(?<h>\d)?x/ & (h: <5 & capture("h"))` : a capture request inside a set operator (`h: <5 & capture("h")`): a compile error for now (the conservative re
+   F25: `[n = ([_ = P] SEQ Q)] & (n.d: <5)`: `n.d`: the path skips a part used alone, which is never skipped inside its binding: write `n.Q.d` (a compile error, alone-as-middle)
+   SKIPPED (the reader cannot read it) core.md `A joint left part`
+   SKIPPED (the reader cannot read it) core.md `A value left part`
+   SKIPPED (the reader cannot read it) core.md `A set that reads a label, bound alone`
+PASS ERRSWEEP111: 82 compile-error lines read, each refused with no crash: bad none; named form missing none; message rows with no line none; F25's gate named first True; skipped (unread, counted) 3
+== SPECLINES111: every printed line new in this lane (not in its piece's file at the starting commit) is RUN: a three-mode line SAME as run (SWEEP111), a compile-error line refused (ERRSWEEP111)
+PASS SPECLINES111: 31 new printed lines: three-mode 21, compile-error 10, unread 0; not as printed: none
+== STALE111: the base files, continuation lines joined, hold none of the texts review r111 named stale
+PASS STALE111: 12 stale texts searched; found none
+== QUOTES111: the owner's words this lane quotes, each in the record at the PINNED starting commit and in its piece; every record title a 2026-11-27 item cites is a title of that record
+PASS QUOTES111: 6 quoted sentences (missing: none); 18 record titles cited (not a title at cec257072: none)
+== SUCCESSOR111: every in-force model re-run: predfold1125 in full, and the seventeen its SUCCESSOR11 re-runs (their outputs dumped by it); each red DECLARED in predfix111_succ_decl.tsv by predfix90's `red_key10` key, which carries the red's own FAIL line and no document line numbers; a traceback never
+   predarr       last line: predarr_model: 17 checks, 1 failed (DOC)
+   predbound     last line: predbound_model: 21 checks, 2 failed (MARKS, DOC)
+   predcall      last line: predcall_model: 14 checks, 5 failed (CLOSED, MARKS, SCAN, PREDREF, DOC)
+   preddef       last line: preddef_model: 22 checks, 5 failed (UNMARKED, SUCCESSOR, SWEEP, MARKS, DOC)
+   predfix77     last line: predfix77_model: 20 checks, 2 failed (MARKS, DOC)
+   predfix82     last line: predfix82_model: 22 checks, 5 failed (REPRINT, SUCCESSOR, SWEEP, MARKS, DOC)
+   predfix83     last line: predfix83_model: 25 checks, 5 failed (UNMARKED, SWEEP, SUCCESSOR, MARKS, DOC)
+   predfix84     last line: predfix84_model: 37 checks, 3 failed (GRID, SWEEP, DOC)
+   predfix86     last line: predfix86_model: 29 checks, 2 failed (SWEEP, DOC)
+   predfix88     last line: predfix88_model: 25 checks, 8 failed (UNSPEC, SHORTHAND, STACKCHAIN, SPOTON, TABLE, NAMEGRID, SWEEP, DOC)
+   predfix90     last line: predfix90_model: 26 checks, 5 failed (PATHS10, GRID, SWEEP, ERRSWEEP, DOC)
+   predfold1123  last line: predfold1123_model: 18 checks, 3 failed (SWEEP, NULLABLE, DOC)
+   predfold1123b last line: predfold1123b_model: 18 checks, 2 failed (SWEEP, DOC)
+   predfold1124  last line: predfold1124_model: 20 checks, 5 failed (NAMEGRID, FLAGS, SWEEP, ERRSWEEP, DOC)
+   predfold1125  last line: predfold1125_model: 15 checks, 6 failed (CENSUS11, SWEEP11, ERRSWEEP11, SUCCESSOR11, QUOTES11, DOC11)
+   predref       last line: predref_model: 8 checks, 3 failed (SCAN, MARKS, DOC)
+   predscope     last line: predscope_model: 20 checks, 2 failed (CLOSEDB, DOC)
+   predspot      last line: predspot_model: 27 checks, 3 failed (GRID, FSWEEP, DOC)
+PASS SUCCESSOR111: 18 models read, 67 reds, each against its declared key (67 declared): all as declared
+predfix111_model: 14 checks, 0 failed
