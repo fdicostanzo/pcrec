@@ -289,8 +289,9 @@ static ExtResult uprops_produce(Ctx *cx, ExtWant want, bool in_class,
      * rather than in the compile arena: a 4,000-item class keeps no 4,000
      * copies (decoding into `cx->arena` was measured at +29% peak RSS for
      * 4,000 `\p{L}` and refused, upropfix report). A refusal inside
-     * `pcrec_ast_class_from_iv` longjmps with the scope open; the compile
-     * arena's teardown releases the child ([ARENA-SCOPES] S29, the one
+     * `pcrec_ast_class_from_iv` longjmps with the scope open; compile_driver's
+     * handler-top unwind releases the child (teardown only on the
+     * count_groups/syntax_dump routes) ([ARENA-SCOPES] S29, the one
      * src/parse/ scope client: scratch_builder_check.py's L4 row). */
     Scope sc = pcrec_scope_open(&cx->arena);
     Arena *tmp = pcrec_scope_arena(&sc);

@@ -1120,8 +1120,8 @@ static void emit_empty(StrBuf *c, const char *fn)
  * shape). `cp_max` is the largest argument a caller can pass (0xFF for a
  * byte, `UINT_MAX` for a code point), which only the bound reads. Its
  * scratch text lives in a child arena of `parent` (a scope's ARENA entry:
- * released at the close below, or by the parent's teardown if a refusal
- * leaves here); the child takes no block until its first allocation, so the
+ * released at the close below, or by compile_driver's handler-top unwind if
+ * a refusal leaves here; teardown only on the count_groups/syntax_dump routes); the child takes no block until its first allocation, so the
  * empty set's path opens no scope and takes nothing. */
 void pcrec_clskit_emit_kit(StrBuf *c, Arena *parent, const char *fn,
                            const ClsKit *k, unsigned cp_max)

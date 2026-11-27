@@ -1103,7 +1103,7 @@ static int w7_plant(pcrec_error *err)
  * population 0 is a gate that passes by emptiness, K35); W3 has its
  * windows in minimize's scope and `uprops_produce`'s (F6: a scope on the attempt
  * arena, so the class constructor's allocations are scope-window points). `min_total`
- * is half the population measured after F6 (528, lane f2f6, job 190-f2f6-alloc; 535 at R-1,
+ * is half the population measured after F6 (528, from `ALLOC_ARGS=--w7-only make alloc`, lane f2f6; 535 at R-1,
  * lane arenabuild2, when the hand-kept `uprops_produce` window was in it; D110). */
 #define W7_ROWS \
     { "W7/W3 (unicode-props/utf8)", "\\p{L}", PCREC_ENC_UTF8, 1, 0, 264, 0, 0, NULL, NULL, 0 }, \
@@ -1119,10 +1119,16 @@ int main(int argc, char **argv)
         else if (!strcmp(argv[i], "--sites")) { show_sites = 1; }
         else if (!strcmp(argv[i], "--w7-only")) { w7_only = 1; }   /* measuring W7 alone */
         else {
-            fprintf(stderr, "usage: %s [--sustained|--both] [--sites]\n", argv[0]);
+            fprintf(stderr, "usage: %s [--sustained|--both] [--sites] [--w7-only]\n", argv[0]);
             return 2;
         }
     }
+
+    /* every statement after the witness loops that judges the WHOLE run (the
+     * K60 table, the stale known_stranded rows, W5) is gated by this one
+     * predicate: --w7-only runs one witness and cannot judge the whole run
+     * (r105 CHECKS-5). */
+    const int whole_run = !w7_only;
 
     static const Witness witnesses[] = {
         /* [D105] W1 and W3 are the LEGEND-CLASS witnesses: every one of
@@ -1243,7 +1249,7 @@ int main(int argc, char **argv)
         arena_mode = 0;
     }
 
-    if (do_single && do_sustained) {
+    if (whole_run && do_single && do_sustained) {
         /* [K60MEAS] THE DECISIVE COMPARISON, printed as data rather than
          * asserted: an absorption count that SURVIVES sustained failure is a
          * fallback path that genuinely does not need the memory; one that
@@ -1264,8 +1270,8 @@ int main(int argc, char **argv)
     /* [K155] every filed stranding must still be reached: one no witness
      * strands any more is fixed (or out of reach), and its exception is
      * stale -- the allowlist that quietly stops matching. A whole-run
-     * assertion: --w7-only runs one witness, so it cannot judge it. */
-    for (size_t j = 0; j < N_KNOWN_STRANDED && !w7_only; j++) {
+     * assertion (whole_run). */
+    for (size_t j = 0; j < N_KNOWN_STRANDED && whole_run; j++) {
         if (known_stranded_seen[j])
             ok("known stranding %s (%s%s%s): reached, %lld trial(s)", known_stranded[j].row,
                known_stranded[j].file, known_stranded[j].fn ? " under " : "",
@@ -1277,7 +1283,7 @@ int main(int argc, char **argv)
     }
 
     /* [W5] single-shot only, see its comment block. */
-    if (do_single) w5_run();
+    if (whole_run && do_single) w5_run();
 
     printf("\nchecks passed: %d\n", pass_n);
     printf("checks failed: %d\n", fail_n);

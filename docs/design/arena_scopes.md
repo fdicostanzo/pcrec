@@ -190,6 +190,9 @@ Rules; each has its check in "Discipline and checks".
   registry. The true reason is D77: no client needs a scope inside a child, and the check is one line. TRIGGER to
   lift it: the first client that needs marks inside a bump area (the owner's "special areas" form), or a helper
   reached from both a parent and a child arena that must open a scope (clskit.c `intern_records` is the candidate).
+  STATE (r105 SCOPE-5, 2026-11-26): the second half of the trigger has HALF-FIRED: after F2, `intern_records` is reached
+  from both a parent arena and clskit's child, but it opens no scope, so L5 stands; REGISTRY-1's trigger is unchanged
+  (the force loop reaches only `pf_derive` readers, 0 scope opens after force entry on 3 patterns hitting both clients).
 - L6 (B1) `pcrec_scope_free(s, p)` releases one HEAP entry of the INNERMOST scope only: it passes L1's check, then
   searches from `a->top` down to (not including) `s->mark` for a HEAP record holding `p`. MARK records are never matched
   (kind test), and the search cannot pass `s->mark`, so no call can unlink a nested scope's mark or an enclosing scope's
@@ -624,13 +627,16 @@ hold replaces `Arena.owned` itself (one record type, one walk, B7), and `walk_pa
   - BUDGET: W7 adds at most 2,000 trials and 60 s to `test-alloc` (unmeasured defaults; today about 162 malloc trials
     for W4 in about 60 s). A larger population at F1's profiling run is a STOP for F1; the fallback is a stated stride.
     DEVIATION AT BUILD (lane arenabuild2, ruling R-1): F1 measured 2,112 trials; the stride is 4 on scope-window-only
-    points, every hand-kept-window point kept (W7/W3: 535 trials at R-1, 528 after F6 removed the uprops hand-kept window), and the DFA memo arena is excluded from the
+    points, every hand-kept-window point kept (W7/W3: 535 trials at R-1, 528 after F6 removed the uprops hand-kept window; reproduce: `ALLOC_ARGS=--w7-only make alloc` prints W7/W3's population), and the DFA memo arena is excluded from the
     hand-kept window, its premise (compile_driver frees it on every arrival) asserted by alloc_check (sabotage S3603);
     "Deviations at build" below.
   - CONTROLS: sabotage (1) (drop the registry walk from `pcrec_arena_free`) makes W7 strand minimize's tables; C0(d)
     shows the lent window stranding the `into` copy on today's tree. After F4 the lent window's population is 0 by
     construction (C10): it stays as the pre-fix control only, and its floor is 0 for sabotage (9)'s member, so it is
     never counted as a gate that passes.
+  - r105 CHECKS-3 (the trade the SEEN gate now carries): after F6 no real compile exercises W7's hand-kept window (9 trial
+    points removed, 535 -> 528); the planted control (S3602's w7_plant) is the ONLY net on the hand-kept branch of the
+    wrap. The hand-kept window has a single control, and `SAB_REACH_POP` proves a definition exists, not that the control is wired.
   - THE SEEN GATE (r103 NEW, C20): `make test-alloc` is GREEN with the `uprops_produce` strand present, because its W3
     witness is `\p{L}` and a failure of `pcrec_ast_class_from_iv`'s arena allocations takes no malloc (they fit the
     compile arena's open block), while the `tmp` arena's block was taken earlier: alloc_check's malloc-trial counter never
