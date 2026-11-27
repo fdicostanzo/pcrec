@@ -116,7 +116,6 @@ ALLOW = [
     ("src/gen/memfn_stamps.c", "target_headers_render", "strbuf:nb", "[ARENA-SCOPES] client: K155's own site, the whole-artifact rewrite of csb"),
     ("src/gen/memfn_stamps.c", "splice_mark", "strbuf:tail", "[ARENA-SCOPES] client: a whole-artifact tail rewrite"),
     ("src/gen/part_layout.c", "render_buf", "strbuf:o", "[ARENA-SCOPES] client: the whole-artifact layout-mark rewrite"),
-    ("src/gen/clskit.c", "pcrec_clskit_emit_kit", "arena:a", "[ARENA-SCOPES] client: a private arena never registered on the Ctx"),
     ("src/parse/mod_uprops.c", "uprops_produce", "arena:tmp", "[ARENA-SCOPES] client, NOT safe across a refusal: the transient \\p decode, freed on return, is a KNOWN STRAND when pcrec_ast_class_from_iv runs out of memory or refuses; the class fix rides [ARENA-SCOPES] (the compile arena instead costs +29% peak at 4,000 \\p{L}, refused, upropfix)"),
     # -- outside a compile: no Ctx, so no longjmp can strand anything ------
     ("src/core/compile.c", "pcrec_subst_compile", "arena", "the subst compile: a detached arena, freed on return, no Ctx"),
@@ -375,6 +374,34 @@ CHAN_CALL = re.compile(r"\bpcrec_ctx_(nomem|fail)\s*\(\s*(?!\s|pcrec_err_chan\s*
 CHAN_OPEN_EOL = re.compile(r"\bpcrec_ctx_(nomem|fail)\s*\(\s*$")
 ARENA_ALLOC_CALL = re.compile(r"\bpcrec_arena_alloc\s*\(")
 OPEN_P_CALL = re.compile(r"\bpcrec_arena_open_p\s*\(")
+# [ARENA-SCOPES] D-11 (r103 C12): keyed on the TYPE `mf_arena`, so both spellings of a binder are seen: an assignment
+# (`ma->u = X;`, `ma.u = X;`) and a brace initializer (`mf_arena ar = { X, ...};`, the kit's own idiom). The one allowed
+# binder is pcrec_memfn_art's, and it must bind `&cx->arena`; a `mf_art_begin(` call outside that function is a finding.
+MF_DECL = re.compile(r"(?<![\w*])mf_arena\s+(\*?)\s*(\w+)\s*(=\s*\{\s*([^,}]*))?")
+MF_BEGIN = re.compile(r"\bmf_art_begin\s*\(")
+D11_FILE, D11_FN, D11_VALUE = "src/gen/memfn_sites.c", "pcrec_memfn_art", "&cx->arena"
+
+def d11_findings(rel, clean, fnames):
+    """-> ((line, rule, message) findings, allowed binders seen) for one file."""
+    out, seen = [], 0
+    names = set()
+    for l in clean:
+        for m in MF_DECL.finditer(l):
+            names.add(m.group(2))
+    assign = re.compile(r"\b(%s)\s*(->|\.)\s*u\s*=\s*([^;]*);" % "|".join(sorted(names))) if names else None
+    for i, l in enumerate(clean):
+        fn = fnames[i]
+        binds = [(m.group(4) or "").strip() for m in MF_DECL.finditer(l) if m.group(3)]
+        if assign:
+            binds += [m.group(3).strip() for m in assign.finditer(l)]
+        for v in binds:
+            if rel == D11_FILE and fn == D11_FN and v == D11_VALUE:
+                seen += 1
+            else:
+                out.append((i + 1, "D-11", "an mf_arena binder outside pcrec_memfn_art, or one not binding &cx->arena"))
+        if MF_BEGIN.search(l) and fn and not (rel == D11_FILE and fn == D11_FN):
+            out.append((i + 1, "D-11", "mf_art_begin called outside pcrec_memfn_art (the art's mf_arena is the attempt's arena)"))
+    return out, seen
 
 def scope_rule_findings(rel, clean, fnames):
     """-> (line, rule, message) for one file's scope-rule violations."""
@@ -405,6 +432,7 @@ def scope_rule_findings(rel, clean, fnames):
     for fn, ln in opens.items():
         if fn not in closes:
             out.append((ln, "L2-static", f"pcrec_scope_open in {fn or '<file scope>'} with no pcrec_scope_close in the same function"))
+    out += d11_findings(rel, clean, fnames)[0]
     return out
 
 # fixtures: (rel, text) that MUST produce the named rule, and one that must not
@@ -420,7 +448,15 @@ SCOPE_MUST_FAIL = [
     ("src/core/arena.c", "void k(Arena *a)\n{\n    (void)pcrec_arena_alloc(a, 8);\n}\n", "D-7"),
     ("src/gen/x.c", "void m(Arena *a)\n{\n    if (pcrec_arena_open_p(a)) return;\n}\n", "readers"),
 ]
+SCOPE_MUST_FAIL += [
+    # D-11, both spellings (an assignment binder, an initializer binder) and a foreign mf_art_begin caller
+    ("src/gen/x.c", "void b(Ctx *cx)\n{\n    mf_arena *ma = pcrec_arena_alloc(&cx->arena, 8);\n    ma->u = &other;\n}\n", "D-11"),
+    ("src/gen/x.c", "void b(Ctx *cx)\n{\n    mf_arena ar = { &fa, fh_alloc };\n    (void)ar;\n}\n", "D-11"),
+    ("src/gen/memfn_sites.c", "mf_arena *pcrec_memfn_art(Ctx *cx)\n{\n    mf_arena *ma = pcrec_arena_alloc(&cx->arena, 8);\n    ma->u = &sc_child;\n}\n", "D-11"),
+    ("src/gen/x.c", "void b(Ctx *cx)\n{\n    job->mf = mf_art_begin(ma, p);\n}\n", "D-11"),
+]
 SCOPE_MUST_PASS = [
+    ("src/gen/memfn_sites.c", "mf_arena *pcrec_memfn_art(Ctx *cx)\n{\n    mf_arena *ma = pcrec_arena_alloc(&cx->arena, 8);\n    ma->u = &cx->arena;\n    job->mf = mf_art_begin(ma, p);\n}\n"),
     ("src/core/sb.c", "void h(StrBuf *sb)\n{\n    if (sb->cx) pcrec_ctx_nomem( pcrec_err_chan(sb->cx));\n}\n"),
     ("src/core/sb.c", "void h(StrBuf *sb)\n{\n    if (sb->cx) pcrec_ctx_fail(\n        pcrec_err_chan(sb->cx), 0, \"x\");\n}\n"),
     ("src/opt/x.c", "void f(Ctx *cx)\n{\n    Scope s = pcrec_scope_open(&cx->arena);\n    int *t = pcrec_scope_malloc(&s, 8);\n    pcrec_scope_free(&s, t);\n    pcrec_scope_close(&s);\n}\n"),
@@ -444,6 +480,8 @@ def scope_self_test():
 def scope_scan(root):
     """-> (findings, files scanned, pcrec_scope_open sites) over src/ cli/ lib/ .c files."""
     findings, nfiles, nopen = [], 0, 0
+    global D11_SEEN
+    D11_SEEN = 0
     for top in ("src", "cli", "lib"):
         for dp, dn, fn in os.walk(os.path.join(root, top)):
             for f in sorted(fn):
@@ -456,6 +494,7 @@ def scope_scan(root):
                 fns = functions(clean)
                 nopen += sum(len(re.findall(r"\bpcrec_scope_open\s*\(", l)) for k, l in enumerate(clean)
                              if fns[k] and rel != "src/core/arena.c")
+                D11_SEEN += d11_findings(rel, clean, fns)[1]
                 for ln, rule, msg in scope_rule_findings(rel, clean, functions(clean)):
                     findings.append((rel, ln, rule, msg))
     return findings, nfiles, nopen
@@ -502,6 +541,9 @@ def main():
         rc = 1
     if nopen < MIN_SCOPE_OPENS:
         print(f"FAIL: saw only {nopen} pcrec_scope_open sites (floor {MIN_SCOPE_OPENS}): the scope scan is not reaching the tree")
+        return 2
+    if D11_SEEN < 1:
+        print("FAIL: saw no allowed mf_arena binder (pcrec_memfn_art's `ma->u = &cx->arena`): the D-11 rule is not reaching its site")
         return 2
     fields, freed = job_fields(root)
     if fields is None or freed is None:
