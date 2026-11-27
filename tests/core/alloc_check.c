@@ -451,8 +451,10 @@ typedef struct {
     /* W7: every trial must read STRANDED (the control that can fail) */
     int expect_all_stranded;
     /* [K163] W7's LENT window alone (F4): population 0 by construction on
-     * the fixed tree, so the row is the pre-fix control and sabotage (9)'s
-     * floor, never a gate that passes (K35): 0 trials prints an INFO line */
+     * the fixed tree (0 trials prints an INFO line, never a PASS: K35). It is
+     * NOT a pre-fix control anyone can repeat (the BASE tree has no lent
+     * window to read). It is a control by sabotage S3654: the member back AND
+     * walk_part's refusal neutered, where it sweeps and FAILS (r110 B2). */
     int lent_window;
 } Witness;
 
@@ -676,7 +678,7 @@ static void report(const Witness *w, const Tally *t, int sust)
      * like any other (a stranded trial is the K163 class back) */
     if (w->lent_window && t->total == 0) {
         printf("INFO: %s%s: 0 trial points (the lent window is empty by construction after F4: "
-               "the pre-fix control and sabotage (9)'s floor, not a gate)\n", w->name, tag);
+               "a control only under sabotage S3654, not a gate)\n", w->name, tag);
         return;
     }
     /* [ARENA-SCOPES] the W7 control: a planted strand every trial must SEE */
@@ -738,7 +740,13 @@ static void report(const Witness *w, const Tally *t, int sust)
         bad("%s%s: %lld of %lld forced allocations were diagnosed with an EMPTY message -- first at N=%lld (rc == -1, err.msg[0] == 0)",
             w->name, tag, t->n_silent, t->total, t->first_silent_n);
     }
-    if (t->n_memo)
+    if (t->n_memo && w->lent_window)
+        bad("%s%s: %lld of %lld forced allocations through the LENT outer channel returned with the part's inner "
+            "compile STRANDED (a DFA memo arena still holding a block; first N=%lld): the K163 strand -- a nested "
+            "part compile allocated through the enclosing compile's error channel, so its failure landed at the "
+            "OUTER recovery point and skipped the inner teardown. Sabotage S3654 plants exactly this",
+            w->name, tag, t->n_memo, t->total, t->first_memo_n);
+    else if (t->n_memo)
         bad("%s%s: %lld of %lld forced allocations returned with a DFA memo arena still holding a block (first N=%lld): "
             "compile_driver did not free cx->dfa_memo on that arrival, the premise of W7's memo exclusion (R-1)",
             w->name, tag, t->n_memo, t->total, t->first_memo_n);
@@ -1201,7 +1209,9 @@ int main(int argc, char **argv)
              * stranded the part's compile; after F4 the copy is the part's
              * own heap allocation, so the window is EMPTY by construction
              * (floor 0, an INFO line, never a PASS). Sabotage S3653 restores
-             * the copy: the profiling compile refuses on the lent count. */
+             * the copy: the profiling compile refuses on the lent count, so
+             * this row never sweeps there; S3654 (the copy back AND the
+             * refusal neutered) makes it sweep, and it FAILS (r110 B2). */
             { "W7/W6 lent window (compound split)", "^abc|x+$", PCREC_ENC_BYTE, 0, 0,
               0, 0, 0, NULL, NULL, 0, 1 },
         };
