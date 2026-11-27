@@ -232,10 +232,6 @@ static int show_sites = 0;   /* --sites */
 static const struct { const char *file, *fn, *row; } known_stranded[] = {
     /* K155's own site: the whole-artifact rewrite buffer of csb */
     { "src/core/sb.c", "target_headers_render", "[ARENA-SCOPES] (K155, target_headers_render nb)" },
-    /* the transient \p decode's hand-kept arena (`Arena tmp`), live across
-     * pcrec_ast_class_from_iv's arena allocations; seen by W7's hand-kept
-     * window under W3 (the SEEN gate). Unit F6 scopes it and deletes this. */
-    { "src/core/arena.c", "uprops_produce", "[ARENA-SCOPES] (uprops_produce tmp arena)" },
 };
 /* the files whose blocks record their allocation stack (every `fn` row's
  * file): a StrBuf's storage comes from sb.c, an arena's blocks from arena.c */
@@ -1104,8 +1100,9 @@ static int w7_plant(pcrec_error *err)
 /* W7's compile rows: a malloc witness whose compile has a NONEMPTY window.
  * Measured at F1: W1, W2, W4 and W6 have none (their minimize merges
  * nothing and they hold no hand-kept arena), so they have no row (a row of
- * population 0 is a gate that passes by emptiness, K35); W3 has two
- * windows, `uprops_produce`'s tmp arena and minimize's scope. `min_total`
+ * population 0 is a gate that passes by emptiness, K35); W3 has its
+ * windows in minimize's scope and `uprops_produce`'s (F6: a scope on the attempt
+ * arena, so the class constructor's allocations are scope-window points). `min_total`
  * is half the population measured at R-1's stride (535, lane arenabuild2;
  * D110). */
 #define W7_ROWS \

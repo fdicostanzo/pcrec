@@ -775,6 +775,14 @@ Listed for the pre-go briefing; under D191 addendum 2 they need no go of their o
   move. Numbers: `docs/dev/lanes/arenabuild2_report.md`.
 - R-6, the rung rule (the owner, 2026-11-25, "rung-edge: agree with lean"): rungs are judged on requested bytes; D-9
   states it and memgate `rungs` applies it.
+- F2 and F6 BUILT (lane f2f6, 2026-11-26; the Clients rows F2 and F6 above are delivered, validation OWED to the queue,
+  `docs/dev/lanes/f2f6_report.md`). F2: `pcrec_clskit_emit_kit(c, parent, fn, k, cp_max)`; the scope opens AFTER the
+  empty-set return, so the empty path opens no scope and takes no record; the D-11 rule is `d11_findings` in
+  `scratch_builder_check.py` (type-keyed on `mf_arena`, both spellings, `mf_art_begin(` callers; floor: one allowed binder
+  seen); sabotage S3613 (close deleted), S3614 (binder spelled through a cast). F6: `uprops_produce` opens its scope on
+  `&cx->arena` and `pcrec_ucd_find` allocates into the child; `SCOPE_PARSE_ALLOW` carries the one row; the scanner's
+  uprops `ALLOW` row, the filed `uprops_produce` `known_stranded` row and K155's uprops sibling line are deleted; S3602's
+  re-aim (its witness was that row) is the planted-strand control alone; sabotage S3615 (close deleted).
 - r104 (code review of F1, the manager's ruling 2026-11-25), REGISTRY-1: sabotage (3), dropping the handler-top
   `pcrec_scope_unwind`, is UNREACHED. Its one reason is FIT_FORCE_NEXT, and the only scope client (minimize, a leaf)
   is not reachable from `pcrec_facts_force_all`, so no witness exists (C0(e) answers: none) and no row is built

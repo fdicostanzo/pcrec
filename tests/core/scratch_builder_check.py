@@ -64,7 +64,7 @@ checks"), on the same noise-stripped text, each with fixtures that must FAIL:
   L4         a `pcrec_scope_*` result is stored only in a plain local (never
              through `->` or `.` into a longer-lived struct), and no
              `pcrec_scope_` call sits under src/parse/ outside SCOPE_PARSE_ALLOW
-             (empty until unit F6's `uprops_produce` row);
+             (one row, unit F6's `uprops_produce`);
   D-7        in src/core/arena.c and sb.c every `pcrec_ctx_nomem(`/
              `pcrec_ctx_fail(` takes `pcrec_err_chan(` as its Ctx, and no
              arena.c function calls `pcrec_arena_alloc` (the test link wraps
@@ -116,7 +116,6 @@ ALLOW = [
     ("src/gen/memfn_stamps.c", "target_headers_render", "strbuf:nb", "[ARENA-SCOPES] client: K155's own site, the whole-artifact rewrite of csb"),
     ("src/gen/memfn_stamps.c", "splice_mark", "strbuf:tail", "[ARENA-SCOPES] client: a whole-artifact tail rewrite"),
     ("src/gen/part_layout.c", "render_buf", "strbuf:o", "[ARENA-SCOPES] client: the whole-artifact layout-mark rewrite"),
-    ("src/parse/mod_uprops.c", "uprops_produce", "arena:tmp", "[ARENA-SCOPES] client, NOT safe across a refusal: the transient \\p decode, freed on return, is a KNOWN STRAND when pcrec_ast_class_from_iv runs out of memory or refuses; the class fix rides [ARENA-SCOPES] (the compile arena instead costs +29% peak at 4,000 \\p{L}, refused, upropfix)"),
     # -- outside a compile: no Ctx, so no longjmp can strand anything ------
     ("src/core/compile.c", "pcrec_subst_compile", "arena", "the subst compile: a detached arena, freed on return, no Ctx"),
     ("src/gen/emit_subst.c", "support_unit", "strbuf", "the subst support unit: no Ctx"),
@@ -364,8 +363,12 @@ def job_fields(root):
 #   - a CHAN_CALL whose channel argument starts on the line after the one after the call's `(`.
 # What it does see: a store `x->f = [cast] pcrec_scope_*(` and a handle copy `x->f = NAME;` for a `Scope NAME` of the file.
 # [ARENA-SCOPES] L4: the src/parse functions allowed to use a scope
-# (file, function, reason); unit F6 adds `uprops_produce`'s row
-SCOPE_PARSE_ALLOW = []
+# (file, function, reason). The one row is S29 `uprops_produce` (unit F6, r103 C20): a scope opened and closed inside the
+# parse, on the attempt arena, whose child holds the transient \p decode; no AST payload can capture it (D70 not met)
+SCOPE_PARSE_ALLOW = [
+    ("src/parse/mod_uprops.c", "uprops_produce",
+     "S29: the transient \\p decode lives in a scope child, closed before the function returns (the compile arena costs +29% peak at 4,000 \\p{L}, refused)"),
+]
 SCOPE_CALL = re.compile(r"\bpcrec_scope_\w+\s*\(")
 SCOPE_STORE = re.compile(r"(->|\.)\s*\w+(\s*\[[^]]*\])?\s*=\s*(\(\s*[\w\s*]+\)\s*)?pcrec_scope_\w+\s*\(")
 SCOPE_DECL = re.compile(r"\bScope\s+(\w+)\s*[=;,]")
@@ -449,6 +452,8 @@ SCOPE_MUST_FAIL = [
     ("src/gen/x.c", "void m(Arena *a)\n{\n    if (pcrec_arena_open_p(a)) return;\n}\n", "readers"),
 ]
 SCOPE_MUST_FAIL += [
+    # L4's one src/parse/ row admits uprops_produce only: another function of the same file must still FAIL
+    ("src/parse/mod_uprops.c", "void other(Ctx *cx)\n{\n    Scope s = pcrec_scope_open(&cx->arena);\n    pcrec_scope_close(&s);\n}\n", "L4"),
     # D-11, both spellings (an assignment binder, an initializer binder) and a foreign mf_art_begin caller
     ("src/gen/x.c", "void b(Ctx *cx)\n{\n    mf_arena *ma = pcrec_arena_alloc(&cx->arena, 8);\n    ma->u = &other;\n}\n", "D-11"),
     ("src/gen/x.c", "void b(Ctx *cx)\n{\n    mf_arena ar = { &fa, fh_alloc };\n    (void)ar;\n}\n", "D-11"),
@@ -456,6 +461,7 @@ SCOPE_MUST_FAIL += [
     ("src/gen/x.c", "void b(Ctx *cx)\n{\n    job->mf = mf_art_begin(ma, p);\n}\n", "D-11"),
 ]
 SCOPE_MUST_PASS = [
+    ("src/parse/mod_uprops.c", "void uprops_produce(Ctx *cx)\n{\n    Scope s = pcrec_scope_open(&cx->arena);\n    Arena *t = pcrec_scope_arena(&s);\n    (void)t;\n    pcrec_scope_close(&s);\n}\n"),
     ("src/gen/memfn_sites.c", "mf_arena *pcrec_memfn_art(Ctx *cx)\n{\n    mf_arena *ma = pcrec_arena_alloc(&cx->arena, 8);\n    ma->u = &cx->arena;\n    job->mf = mf_art_begin(ma, p);\n}\n"),
     ("src/core/sb.c", "void h(StrBuf *sb)\n{\n    if (sb->cx) pcrec_ctx_nomem( pcrec_err_chan(sb->cx));\n}\n"),
     ("src/core/sb.c", "void h(StrBuf *sb)\n{\n    if (sb->cx) pcrec_ctx_fail(\n        pcrec_err_chan(sb->cx), 0, \"x\");\n}\n"),
