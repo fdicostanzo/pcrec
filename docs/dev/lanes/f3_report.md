@@ -125,8 +125,28 @@ the corpus engine. The in-tree memgate population is byte mode with the auto eng
 
 ## Cloud runs
 
-PLACEHOLDER (filled after dispatch).
+One cloud growth run, on the branch's last CODE commit f6ba0edc9 (the commits after it change only this report):
+`scripts/cloudrun --owner main --kind growth --name f3 --ref f6ba0edc95670eeb70651b613caca34e6778df6a` printed
+"cloudrun: DONE rc=0 pushed f6ba0edc9 -> cloud/main/growth/f3 owner=main kind=growth; verdict arrives as CLOUD-DONE via
+queuewatch (not waiting)". Proof: `git ls-remote origin 'refs/heads/cloud/main/*/f3*'` printed
+`f6ba0edc95670eeb70651b613caca34e6778df6a	refs/heads/cloud/main/growth/f3`. The verdict goes to the manager. The
+gate is no LSan leak at a client site (`target_headers_render`, `splice_mark`, `render_buf`). The known non-K155 reds
+(the ASan strstr timeouts, `vm_cls_reads`; K157/K158/K161/K162) are not this lane's.
 
 ## STATE AT HANDOFF
 
-PLACEHOLDER
+- STATE: delivered, validation OWED. Branch `lane/f3`: code-final f6ba0edc9 plus report-only commits. Rulings file
+  `f3_rulings.md`: empty at each re-read (before commits, runs and this report). Last R-n applied: none.
+- OWED queue keys (job scripts in `$PCREC_TMPDIR/scratch/f3/`):
+  - `200-f3-test`: `make test` via perfrun, log `build/f3_test.log`.
+  - `200-f3-mech`: S3572 S3584 S3570 S1897 S1899 S1111 S1127 S256 S3593 S3594. Expect S3572 and S3584 caught by
+    the core arm.
+  - `200-f3-mg`: `make memgate MEMGATE_BASE=399469aad MEMGATE_BOUND=256`, out `$PCREC_TMPDIR/scratch/f3/mg`. Expect peak
+    WITHIN with max +248, and rungs IDENTICAL or LAYOUT.
+  - `190-f3-alloc`: `make alloc`, the whole run. Expect W6 single "1014 of 1057" pinned NOTE, everything else PASS.
+    If W6 reads another count, re-pin UP to it (D110) in `alloc_check.c` and `docs/testing.md`.
+- OWED cloud: growth run `cloud/main/growth/f3` at f6ba0edc9.
+- abi: no change (42/42 byte-identical spot check). No new K/D numbers. Sabotage ids S3628-S3637: none used (two
+  existing rows re-aimed instead).
+- For the manager: the deletion of the whole filed-stranding table (Changes, JUDGMENT) and the SCOPE-4 ruling (build
+  or not; above noise only on VM wide classes under UTF-8).
