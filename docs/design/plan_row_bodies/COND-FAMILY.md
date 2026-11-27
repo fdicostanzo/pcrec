@@ -11878,3 +11878,32 @@ exactly where the label is ABSENT: `(a :! 5)` needs a present and not 5 (on `/(?
 `(a :! 5)`. The rest is put to the round.
 ACTION: review r109 (predbang), design mode, sized small; the subject `docs/dev/pred/bang_candidate.md` (the
 candidate, four variants, his four questions verbatim), the evidence `docs/dev/lanes/predbang_evidence/`.
+
+### 2026-11-27 MANAGER — review r109 (predbang): the dispositions, the round's answers and suggestion; no owner words
+tags: core/filters/negation core/filters/complement core/filters/kinds core/conditions/form core/conditions/form/optional-entry core/patterns/lookaround core/operators/precedence lib/control/when lib/control/peek core/filters/negation/effects core/principles/match-and-filter
+
+The round the owner asked for (design mode, sized small: one opus coordinator, three opus critics: ruling,
+examples, general; subject `docs/dev/pred/bang_candidate.md` frozen at cb779ec71). Filed:
+`docs/dev/reviews/2026-11-27-r109-predbang.md` with the dispositions RULED by the manager. 24 findings, all
+confirmed, consolidated F1 to F15; no owner ruling touched, nothing applied to the documents.
+What the round found that changes the statement to re-ask (each the round's, accepted by the manager):
+- `A &! (cond)` was undefined: `&!` is the stretch difference only (F1); a condition right of it is an error.
+- The `when` body's guard on a condition test IS `^!(cond)`, the form he called abuse, in every variant that
+  keeps `^!` (F3); a prefix `!` on a zero-width test gives one body: `T SEQ B | !^T SEQ C`.
+- `(a :! S, b :! T)` against `!(a: S, b: T)`: "50 of 121 differ, all with both labels present" (F4): his
+  "perhaps its in the compound forms" is right; `:!` inside a record is proposed an error for now (to be ASKED).
+- `&!` needs its precedence stated: read left, `A &! B &! C` is `A &! (B | C)`; read right "341 of 1364 differ"
+  (F6). The manager's syntax call: `&`'s level, one chain, left to right.
+- With a prefix `!`, `~!` as a token and `~(!A)` part ("132 of 364 differ"): the negatives are `!^A`, `!~A` (F9).
+- `?:!` adds nothing beside `!(a: S)` and is refused in more places (the round's answer to his third question).
+THE MANAGER'S OWN STATEMENTS CORRECTED by the round: the candidate printed "His later words: not ruled out
+forever; so RESERVED, under construction": his words are "i've not written out ! forever", and "reserved, under
+construction" is the manager's reading (F12); the candidate's Goals were headed "the owner's" while resting on
+unruled remarks, and its third goal is the contrary of his ruled complement-place (F11): they are the manager's
+reading of the day's discussion. Line 6 of bang-split (`^!(cond)`) is WITHDRAWN.
+The round's SUGGESTION (the coordinator's; the three lenses leaned V-B, V-B, V-D): V-C: `!X` means "X cannot
+hold here", for now on zero-width tests only (a condition, `^A`, `~A`, a group question, another `!X`); `^A`,
+`~A` the positive lookarounds, `!^A`, `!~A` their negatives; one `when` body; entries `:`, `?:`, `:!` (single
+entry only); `A &! B`; no `?:!`; the complement object leaves; match-and-filter restated or retired as its own
+question. V-D (`!A` on a consuming pattern = `(?!A)`) is V-C with one error relaxed, no answer moving. The
+manager agrees with it and puts it to the owner as bang-split, re-asked.
