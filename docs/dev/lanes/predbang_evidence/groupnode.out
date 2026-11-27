@@ -1,0 +1,13 @@
+model last line: predfix90_model: 26 checks, 0 failed
+/(?<g>(?<d>\d))x/ & (g.d: <5) | refused: `g.d`: `d` is not visible through `g` (a compile error, core/labels/paths)
+/(?<g>(?<d>\d))x/ & (d: <5) | legal [(True, (0, 2), (('3x', 0),)), (False, None, ()), (False, (3, 5), (('3x', 3),)), (False, (0, 2), (('3x', 0), ('4x', 6)))]
+/(?<g>(?<d>\d))x/ & (g: <5) | legal [(True, (0, 2), (('3x', 0),)), (False, None, ()), (False, (3, 5), (('3x', 3),)), (False, (0, 2), (('3x', 0), ('4x', 6)))]
+/(?<g>${A})x/ & (g.h: <5) | refused: `g.h`: `h` is not visible through `g` (a compile error, core/labels/paths)
+/(?<g>${A})x/ & (A.h: <5) | legal [(True, (0, 2), (('3x', 0),)), (False, None, ()), (False, (3, 5), (('3x', 3),)), (False, (0, 2), (('3x', 0), ('4x', 6)))]
+/(?<g>${A})x/ & (h: <5) | refused: label `h` is not written in this definition: reference it with its source
+/(?<g>${A})x/ & (g: <5) | legal [(True, (0, 2), (('3x', 0),)), (False, None, ()), (False, (3, 5), (('3x', 3),)), (False, (0, 2), (('3x', 0), ('4x', 6)))]
+/(?<g>${[a = A]})x/ & (g.a.h: <5) | refused: `g.a.h`: `a.h` is not visible through `g` (a compile error, core/labels/paths)
+/(?<g>${[a = A]})x/ & (a.h: <5) | legal [(True, (0, 2), (('3x', 0),)), (False, None, ()), (False, (3, 5), (('3x', 3),)), (False, (0, 2), (('3x', 0), ('4x', 6)))]
+[g = A] SEQ /x/ & (g.h: <5) | legal [(True, (0, 2), (('3x', 0),)), (False, None, ()), (False, (3, 5), (('3x', 3),)), (False, (0, 2), (('3x', 0), ('4x', 6)))]
+X & (X.g.h: <5) | refused: `X.g.h`: `g.h` is not visible through `X` (a compile error, core/labels/paths)
+X & (X.h: <5) | legal [(True, (0, 2), (('3x', 0),)), (False, None, ()), (False, (3, 5), (('3x', 3),)), (False, (0, 2), (('3x', 0), ('4x', 6)))]
