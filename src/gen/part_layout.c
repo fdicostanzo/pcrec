@@ -597,18 +597,23 @@ static void render_buf(Ctx *cx, StrBuf *sb, unsigned char seen[PCREC_ENTRY_N + 1
 {
     if (!sb->p || !memchr(sb->p, PCREC_PREFIX_LEAD, sb->len)) return;
     const PcrecPartLayout *pl = &cx->job->pl;
-    StrBuf o = { .cx = cx };   /* [ARENA-SCOPES] client (K155) */
+    /* the new text is a scope's STRBUF entry ([ARENA-SCOPES] S12): `sb`
+     * adopts its storage (no copy), so the close below frees nothing;
+     * compile_driver's handler-top unwind releases it if a refusal leaves
+     * here first (teardown only on the count_groups/syntax_dump routes) */
+    Scope sc = pcrec_scope_open(&cx->arena);
+    StrBuf *o = pcrec_scope_sb(&sc);
     size_t i = 0;
     while (i < sb->len) {
         const char *q = memchr(sb->p + i, PCREC_PREFIX_LEAD, sb->len - i);
         size_t at = q ? (size_t)(q - sb->p) : sb->len;
-        if (at > i) pcrec_sb_printf(&o, "%.*s", (int)(at - i), sb->p + i);
+        if (at > i) pcrec_sb_printf(o, "%.*s", (int)(at - i), sb->p + i);
         if (!q) break;
         int h1 = at + 3 < sb->len ? hexval(sb->p[at + 2]) : -1;
         int h0 = at + 3 < sb->len ? hexval(sb->p[at + 3]) : -1;
         if (at + 1 >= sb->len || sb->p[at + 1] != 'L' || h1 < 0 || h0 < 0) {
             /* not a layout mark: the prefix placeholder, rendered later */
-            pcrec_sb_putc(&o, sb->p[at]);
+            pcrec_sb_putc(o, sb->p[at]);
             i = at + 1;
             continue;
         }
@@ -616,7 +621,7 @@ static void render_buf(Ctx *cx, StrBuf *sb, unsigned char seen[PCREC_ENTRY_N + 1
         if (id == PCREC_ENTRY_N) {
             if (!pl->stamp_marked)
                 pcrec_ctx_fail(cx, 0, "internal error: part layout: a stamp mark nobody wrote");
-            stamp_lines(cx, &o);
+            stamp_lines(cx, o);
             seen[PCREC_ENTRY_N]++;
             if (at + 4 < sb->len && sb->p[at + 4] == '\n') i = at + 5;   /* the mark's line */
             else pcrec_ctx_fail(cx, 0, "internal error: part layout: a stamp mark not on a line of its own");
@@ -635,13 +640,14 @@ static void render_buf(Ctx *cx, StrBuf *sb, unsigned char seen[PCREC_ENTRY_N + 1
             if (at < 7 || memcmp(sb->p + at - 7, "static ", 7) != 0)
                 pcrec_ctx_fail(cx, 0, "internal error: part layout: a mark on a "
                                "definition that is not static (entry %u)", id);
-            pcrec_sb_puts(&o, pcrec_attr_text(layout_attr(p->layout)));
+            pcrec_sb_puts(o, pcrec_attr_text(layout_attr(p->layout)));
             seen[id]++;
         }
         i = at + 4;
     }
-    pcrec_sb_adopt(sb, &o);
+    pcrec_sb_adopt(sb, o);
     sb->layout_bytes = 0;
+    pcrec_scope_close(&sc);
 }
 
 void pcrec_part_layout_render(Ctx *cx)

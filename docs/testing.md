@@ -5160,13 +5160,12 @@ DIAGNOSED refusal is no longer enough: the injector also frees-tracks
 (`free` is redirected too) and keeps the injected tree's live heap, and a
 trial whose refusal leaves any block live after `pcrec_compile` returns
 FAILS ("diagnosed but STRANDED HEAP"; `--sites` names each block's
-allocating `file:line`). The exceptions are the `known_stranded` table,
-filed defects each tied to a plan row and each required to be REACHED
-(stale = FAIL); a row may narrow itself to blocks allocated UNDER one
-function (the allocation stack, symbolized with `addr2line -i` only for
-stranded blocks), because every StrBuf's storage comes from `sb.c`. Today:
-`minimize.c`'s tables and K155's `target_headers_render` rewrite buffer,
-both [ARENA-SCOPES] clients. Its static complement is
+allocating `file:line`). There are no exceptions: the filed-stranding table
+(`known_stranded`, each row tied to a plan row and required REACHED, a row
+narrowable to one function by its symbolized allocation stack) held
+`minimize.c`'s tables and K155's `target_headers_render` rewrite buffer
+until both moved onto [ARENA-SCOPES] scopes (F1, F3), and was deleted with
+its last row (an unreachable table checks nothing). Its static complement is
 `tests/core/scratch_builder_check.py` (in `make test` via test-core): the
 census of compile-path heap builders, which sees the sites no witness
 reaches. Witness W6 (`^abc|x+$`, review r96) runs the compound walk, the one
