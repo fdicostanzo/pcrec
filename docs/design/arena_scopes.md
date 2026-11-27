@@ -856,7 +856,7 @@ Listed for the pre-go briefing; under D191 addendum 2 they need no go of their o
   `walk_part` only), with fixtures. W7's lent window is its own row over W6 (`lent_window`: only lent points are trials,
   each one a trial); population 0 prints an INFO line, never a PASS. Sabotage (9) is S3653 (two edits: `walk_part`
   hands the outer arena where the hold was, the part's compile_driver copies into it with `pcrec_sb_fragf`). Measured:
-  lent uses 0 over tests/compound/split.rxt; emitted C byte-identical (102 compiled + 3 refused identically, no abi move); W6 1016 of 1061.
+  lent uses 0 over tests/compound/split.rxt; r110 (lane f4fix): doc claims narrowed to "allocates", scanner rules `counted` and `seam`, sabotage S3654 (the lent row's control, proven by alloc_check's exit code), the row's K163 message; emitted C byte-identical (102 compiled + 3 refused identically, no abi move); W6 1016 of 1061.
 
 ## r102 disposition
 
