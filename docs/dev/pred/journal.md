@@ -1269,3 +1269,23 @@ wake.md says (read the draft WHOLE first; A4 is a ruled-words finding: read his 
 - FIVE rulings and his all-DFA goal are in the record, NOT in the documents. The fold lane (predfold1125) waits
   for his go or the weekly reset (slow-burn week).
 - wake.md REWRITTEN from scratch; owner.md current; P-32 (pausing) posted; main told. Nothing in flight; no cron.
+
+## 2026-11-27 — tenth session: the owner reopens `!`; bang-split asked, not answered; review r109 launched
+
+- Wake: session registered; main merged into the branch (history index conflict, both sides kept); lints green;
+  main told. The whole-file read of core.md was NOT done (the owner opened with `!` at once; pieces read by tag).
+- The owner's discussion of `!` (twelve record entries, each with runs): his idea (no `!B` object; `!` on
+  conditions; an `&!` operator; something for `when`); entry operators for "outside" (`:!`, `?:!` after his `!`,
+  `?!`); `when` over conditions only (his `(0: A)` form validates only if the test means "A matches from here";
+  `0` is the match so far); `C &! A` as the guard REFUTED by run; his peek operators `^A`, `^!A`, then `~A`, `~!A`
+  and "keep ! out of the language"; his question whether prefix `!A` as `(?!A)` is a mistake.
+- bang-split ASKED (six lines). NOT answered: he dislikes `^!(cond)` ("looks like abuse"), leans to `!(cond)` as
+  the one bare form, and asked for a critic round with a suggestion on `!`.
+- My corrections, recorded: "same characters, same meaning" for `(h: !<5)` / `:!` holds for single atoms only
+  (99 of 1000 differ on a compound set); "drop the prefix `!`" withdrawn, then re-derived when the premise
+  changed; "`!` is never an operator by itself" withdrawn and restored with its ground.
+- Review r109 (predbang, design, sized small; number from main): coordinator crit-predbang launched (opus);
+  subject `docs/dev/pred/bang_candidate.md`, evidence `docs/dev/lanes/predbang_evidence/`. Round dir
+  `$PCREC_TMPDIR/scratch/crit-predbang/`.
+- Still owed: the fold of the five rulings of 2026-11-25 (waits; it will fold with whatever he rules on `!`).
+- NEXT: the round's draft -> rule dispositions -> put its answers and suggestion to him -> bang-split re-asked.
