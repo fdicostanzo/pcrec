@@ -1,0 +1,433 @@
+== CONTROL: printed lines answered by rxbuild (the builder against the documents' printed answers)
+SAME core.md, Through a call, the middle label skipped
+   printed WHOLE `3xx` HOLDS, `7xx` FAILS / SEARCHED `7xx 3xx` `3xx`@4 / FIND-ALL `3xx 7xx 4xx` [`3xx`@0, `4xx`@8]
+   built   WHOLE `3xx` HOLDS, `7xx` FAILS / SEARCHED `7xx 3xx` `3xx`@4 / FIND-ALL `3xx 7xx 4xx` [`3xx`@0, `4xx`@8]
+SAME core.md, Used twice alone, the last mention
+   printed WHOLE `7,3` HOLDS, `3,7` FAILS / SEARCHED `3,7 7,3` `7,3`@4 / FIND-ALL `7,3 3,7 1,2` [`7,3`@0, `1,2`@8]
+   built   WHOLE `7,3` HOLDS, `3,7` FAILS / SEARCHED `3,7 7,3` `7,3`@4 / FIND-ALL `7,3 3,7 1,2` [`7,3`@0, `1,2`@8]
+SAME core.md, d as the call exports it, the body's own
+   printed WHOLE `7-3` HOLDS, `3-7` FAILS, `3-3` HOLDS / SEARCHED `3-7 7-3` `7-3`@4 / FIND-ALL `7-3 3-7 1-2 9-9` [`7-3`@0, `1-2`@8]
+   built   WHOLE `7-3` HOLDS, `3-7` FAILS, `3-3` HOLDS / SEARCHED `3-7 7-3` `7-3`@4 / FIND-ALL `7-3 3-7 1-2 9-9` [`7-3`@0, `1-2`@8]
+SAME library.md, Two arguments, labelled
+   printed WHOLE `7;3` HOLDS, `3;7` FAILS / SEARCHED `x3;7 7;3` `7;3`@5 / FIND-ALL `7;3 3;7 1;3` [`7;3`@0, `1;3`@8]
+   built   WHOLE `7;3` HOLDS, `3;7` FAILS / SEARCHED `x3;7 7;3` `7;3`@5 / FIND-ALL `7;3 3;7 1;3` [`7;3`@0, `1;3`@8]
+SAME core.md, The mark written
+   printed WHOLE `3xx` HOLDS, `7xx` FAILS / SEARCHED `7xx 3xx` `3xx`@4 / FIND-ALL `3xx 7xx 4xx` [`3xx`@0, `4xx`@8]
+   built   WHOLE `3xx` HOLDS, `7xx` FAILS / SEARCHED `7xx 3xx` `3xx`@4 / FIND-ALL `3xx 7xx 4xx` [`3xx`@0, `4xx`@8]
+
+== list-over-label: a body that lists a place it also labels, `[(=) = [p = rx]]`
+   program `B1(A) & (B1.h: <5)`, A := /(?<h>\d)/; B1(rx) := /${[(=) = [p = rx]]}xx/
+   read B1.h
+      now  legal (one, B:A's h)
+      A0   ERROR: `B1.h`: `h` is not visible through `B1` (a compile error, core/labels/paths)
+      A    ERROR: `B1.h`: `h` is not visible through `B1` (a compile error, core/labels/paths)
+      A2   legal (one, B:A's h)
+      B    ERROR: `B1.h`: `h` is not visible through `B1` (a compile error, core/labels/paths)
+   read B1.p.h
+      now  legal (one, B:A's h)
+      A0   ERROR: `B1.p.h`: `p.h` is not visible through `B1` (a compile error, core/labels/paths)
+      A    ERROR: `B1.p.h`: `p.h` is not visible through `B1` (a compile error, core/labels/paths)
+      A2   legal (one, B:A's h)
+      B    ERROR: `B1.p.h`: `p.h` is not visible through `B1` (a compile error, core/labels/paths)
+   read B1.p
+      now  legal (one, B:B1's p)
+      A0   legal (one, B:B1's p)
+      A    legal (one, B:B1's p)
+      A2   legal (one, B:B1's p)
+      B    legal (one, B:B1's p)
+   RUN B1.h reads A's h (the list passes the part [p = rx]'s labels):
+      WHOLE `3xx` HOLDS, `7xx` FAILS / SEARCHED `7xx 3xx` `3xx`@4 / FIND-ALL `3xx 7xx 4xx` [`3xx`@0, `4xx`@8]
+      (regex (?:(?:(?:(?P<g1>(?:(?:(?P<g0>[0-4]))))))xx))
+
+== label-over-list: a body that labels a listed place, `[p = [(=) = rx]]`
+   program `B2(A) & (B2.h: <5)`, A := /(?<h>\d)/; B2(rx) := /${[p = [(=) = rx]]}xx/
+   read B2.h
+      now  legal (one, B:A's h)
+      A0   legal (one, B:A's h)
+      A    legal (one, B:A's h)
+      A2   legal (one, B:A's h)
+      B    legal (one, B:A's h)
+   read B2.p.h
+      now  legal (one, B:A's h)
+      A0   legal (one, B:A's h)
+      A    legal (one, B:A's h)
+      A2   legal (one, B:A's h)
+      B    legal (one, B:A's h)
+   read B2.p
+      now  legal (one, B:B2's p)
+      A0   legal (one, B:B2's p)
+      A    legal (one, B:B2's p)
+      A2   legal (one, B:B2's p)
+      B    legal (one, B:B2's p)
+   RUN B2.h, B2.p.h read A's h:
+      WHOLE `3xx` HOLDS, `7xx` FAILS / SEARCHED `7xx 3xx` `3xx`@4 / FIND-ALL `3xx 7xx 4xx` [`3xx`@0, `4xx`@8]
+      (regex (?:(?:(?P<g1>(?:(?:(?:(?P<g0>[0-4]))))))xx))
+
+== named-list-has: a named list `[(=h) = rx]`, the argument has h (his use-error lean: legal here)
+   program `N(A) & (N.h: <5)`, A := /(?<h>\d)/; N(rx) := /${[(=h) = rx]}xx/
+   read N.h
+      now  unparsed: label [(=h) = rx]
+      A0   unparsed: label [(=h) = rx]
+      A    unparsed: label [(=h) = rx]
+      A2   unparsed: label [(=h) = rx]
+      B    unparsed: label [(=h) = rx]
+   hand: the walker does not parse a named list; printed today: a compile error AT N's DEFINITION (core/labels/export/arguments, the line "A named list on a spot"); under his lean: legal for A
+   RUN N.h reads A's h:
+      WHOLE `3xx` HOLDS, `7xx` FAILS / SEARCHED `7xx 3xx` `3xx`@4 / FIND-ALL `3xx 7xx 4xx` [`3xx`@0, `4xx`@8]
+      (regex (?:(?:(?:(?:(?:(?P<g0>[0-4])))))xx))
+
+== named-list-twice: a named list `[(=h) = rx]`, the argument sets h twice
+   program `N(A2) & (N.h: <5)`, A2 := /(?<h>\d)(?<h>\d)/; N(rx) := /${[(=h) = rx]}xx/
+   read N.h
+      now  unparsed: label [(=h) = rx]
+      A0   unparsed: label [(=h) = rx]
+      A    unparsed: label [(=h) = rx]
+      A2   unparsed: label [(=h) = rx]
+      B    unparsed: label [(=h) = rx]
+   hand: the alias reads A2's own h, which two groups of ONE literal set: label flow, the last mention (core/labels/flow, `D2.c`); it is a use that is legal, not an error, whatever the lean
+   RUN the last mention (export-list: the alias has the part's settings; flow: last mention):
+      WHOLE `37xx` FAILS, `73xx` HOLDS / SEARCHED `37xx 73xx` `73xx`@5 / FIND-ALL `37xx 73xx 44xx` [`73xx`@5, `44xx`@10]
+      (regex (?:(?:(?:(?:(?:(?P<g0>\d)(?P<g1>[0-4])))))xx))
+   RUN the first setting:
+      WHOLE `37xx` HOLDS, `73xx` FAILS / SEARCHED `37xx 73xx` `37xx`@0 / FIND-ALL `37xx 73xx 44xx` [`37xx`@0, `44xx`@10]
+      (regex (?:(?:(?:(?:(?:(?P<g0>[0-4])(?P<g1>\d)))))xx))
+
+== named-list-lacks: a named list `[(=h) = rx]`, the argument lacks h, has it behind a wall, or behind a gate
+   program `N(Ae) SEQ N(Aw) SEQ N(Ag)`, Ae := /(?<e>\d)/; Aw := [_w = /(?<h>\d)/]; Q := /(?<h>\d)/; Ag := /${Q}/; N(rx) := /${[(=h) = rx]}xx/
+   hand: his lean: each call is a USE error at the call (Ae exports no h; Aw keeps it behind `_w`; Ag uses Q alone, exporting nothing): the error names the call and the argument; N's definition is legal
+
+== named-list-nested: his use error when the named-list macro is called inside another body
+   program `M(Ae) & (M.h: <5)`, Ae := /(?<e>\d)/; M(r) := /<${[(=) = N(r)]}>/; N(rx) := /${[(=h) = rx]}xx/
+   read M.h
+      now  unparsed: label [(=h) = rx]
+      A0   unparsed: label [(=h) = rx]
+      A    unparsed: label [(=h) = rx]
+      A2   unparsed: label [(=h) = rx]
+      B    unparsed: label [(=h) = rx]
+   hand: M's definition cannot be judged (r is unknown there), so the error surfaces at `M(Ae)`, two bodies away from the list that requires h; the message must name N's list, M's place and Ae. With M2(r) := /<${N([q = r])}>/ the candidate DECIDES it at M2's definition: `[q = r]` exports only q (the place of r passes nothing through q), so `(=h)` can never be met: a definition error after all
+
+== sent-label-over-body-label: a sent label placed above a label the body writes on the place
+   program `R2(x:, A) & (x.h: <5)`, A := /(?<h>\d)/; R2(l:, v) := /${[l = [p = v]]}xx/
+   hand: the walker does not parse label parameters. Reading (i): x is the sender's own name, so x.h and x.p.h are legal (route 3). Reading (ii): the path from x crosses the body's p and then the argument's place, so x.p.h (and x.h, which skips p) go THROUGH the place: errors. Today: legal (the sent label is a start, one-path skips p)
+   RUN x.h reads A's h (the sender's own name x starts the path):
+      WHOLE `3xx` HOLDS, `7xx` FAILS / SEARCHED `7xx 3xx` `3xx`@4 / FIND-ALL `3xx 7xx 4xx` [`3xx`@0, `4xx`@8]
+      (regex (?:(?:(?P<g2>(?P<g1>(?:(?:(?P<g0>[0-4]))))))xx))
+
+== label-forward: a label parameter forwarded, the sent label read
+   program `F(x:, A) & (x.h: <5)`, A := /(?<h>\d)/; F(l:, v) := /<${R(l:, v)}>/; R(l:, v) := /${[l = v]}xx/
+   hand: the sender's own name x, placed by R on its place which holds F's place: route 3 under both readings of the probe before (x labels the place itself, nothing of the body's lies between)
+   RUN x.h reads A's h:
+      WHOLE `<3xx>` HOLDS, `<7xx>` FAILS / SEARCHED `<7xx> <3xx>` `<3xx>`@6 / FIND-ALL `<3xx> <7xx> <4xx>` [`<3xx>`@0, `<4xx>`@12]
+      (regex (?:<(?:(?:(?:(?P<g1>(?:(?:(?:(?P<g0>[0-4]))))))xx))>))
+
+== shorthand-twice: the same binding passed twice, a body that labels both places
+   program `B2a([a = A], [b = A]) & (b.h: <5)`, A := /(?<h>\d)/; B2a(u, v) := /${[p = u]}-${[q = v]}/
+   read B2a.q.h
+      now  legal (one, B:A's h)
+      A0   ERROR: `B2a.q.h`: `q.h` is not visible through `B2a` (a compile error, core/labels/paths)
+      A    ERROR: `B2a.q.h`: `q.h` is not visible through `B2a` (a compile error, core/labels/paths)
+      A2   ERROR: `B2a.q.h`: `q.h` is not visible through `B2a` (a compile error, core/labels/paths)
+      B    ERROR: `B2a.q.h`: `q.h` is not visible through `B2a` (a compile error, core/labels/paths)
+   read B2a.h
+      now  ERROR: `B2a.h`: 2 labels `h` are visible from `B2a`, so no step may be skipped: write the full path, `B2a.p.h` or `B2a.q.h` (a compile error, core/labels/rule/paths rule 4, one-
+      A0   ERROR: `B2a.h`: `h` is not visible through `B2a` (a compile error, core/labels/paths)
+      A    ERROR: `B2a.h`: `h` is not visible through `B2a` (a compile error, core/labels/paths)
+      A2   ERROR: `B2a.h`: `h` is not visible through `B2a` (a compile error, core/labels/paths)
+      B    ERROR: `B2a.h`: `h` is not visible through `B2a` (a compile error, core/labels/paths)
+   hand: `B2a(A, A) & (A.h: ..)` is condition 1's compile error today and after (A referenced twice); today `B2a.q.h` names the second; under the candidate only the caller's labels do
+   RUN b.h reads the second A's h:
+      WHOLE `7-3` HOLDS, `3-7` FAILS / SEARCHED `3-7 7-3` `7-3`@4 / FIND-ALL `7-3 3-7 1-2 9-9` [`7-3`@0, `1-2`@8]
+      (regex (?:(?:(?P<g2>(?:(?P<g1>(?:(?P<g0>\d))))))-(?:(?P<g5>(?:(?P<g4>(?:(?P<g3>[0-4]))))))))
+
+== in-place: an in-place argument: its group is the sender's own, read bare
+   program `B(/(?<d>\d)/) & (d: <5)`, B(rx) := /${[p = rx]}xx/
+   read B.d
+      now  legal (one, P's d)
+      A0   ERROR: `B.d`: `d` is not visible through `B` (a compile error, core/labels/paths)
+      A    ERROR: `B.d`: `d` is not visible through `B` (a compile error, core/labels/paths)
+      A2   ERROR: `B.d`: `d` is not visible through `B` (a compile error, core/labels/paths)
+      B    ERROR: `B.d`: `d` is not visible through `B` (a compile error, core/labels/paths)
+   read B.p.d
+      now  legal (one, P's d)
+      A0   ERROR: `B.p.d`: `p.d` is not visible through `B` (a compile error, core/labels/paths)
+      A    ERROR: `B.p.d`: `p.d` is not visible through `B` (a compile error, core/labels/paths)
+      A2   ERROR: `B.p.d`: `p.d` is not visible through `B` (a compile error, core/labels/paths)
+      B    ERROR: `B.p.d`: `p.d` is not visible through `B` (a compile error, core/labels/paths)
+   RUN d bare (two-sources: the caller's own):
+      WHOLE `3xx` HOLDS, `7xx` FAILS / SEARCHED `7xx 3xx` `3xx`@4 / FIND-ALL `3xx 7xx 4xx` [`3xx`@0, `4xx`@8]
+      (regex (?:(?:(?P<g1>(?:(?P<g0>[0-4]))))xx))
+
+== nested-list-list: B(C(A)), both bodies list
+   program `L1(L2(A)) & (L1.h: <5)`, A := /(?<h>\d)/; L1(x) := /${[(=) = x]}/; L2(x) := /${[(=) = x]}/
+   read L1.h
+      now  legal (one, B:A's h)
+      A0   legal (one, B:A's h)
+      A    legal (one, B:A's h)
+      A2   legal (one, B:A's h)
+      B    legal (one, B:A's h)
+   hand: `L2.h` (the inner call's name, written in the caller's text) is a start the walker does not place: by hand legal under the candidate (the sender's own name for the inner call, which lists)
+   RUN L1.h reads A's h:
+      WHOLE `3` HOLDS, `7` FAILS / SEARCHED `7 3` `3`@2 / FIND-ALL `3 7 4` [`3`@0, `4`@4]
+      (regex (?:(?:(?:(?:(?:(?:(?:(?:(?:(?P<g0>[0-4])))))))))))
+
+== nested-list-label: B(C(A)), the outer lists, the inner labels
+   program `L1(T2(A)) & (L1.h: <5)`, A := /(?<h>\d)/; L1(x) := /${[(=) = x]}/; T2(x) := /${[t = x]}/
+   read L1.h
+      now  legal (one, B:A's h)
+      A0   ERROR: `L1.h`: `h` is not visible through `L1` (a compile error, core/labels/paths)
+      A    ERROR: `L1.h`: `h` is not visible through `L1` (a compile error, core/labels/paths)
+      A2   ERROR: `L1.h`: `h` is not visible through `L1` (a compile error, core/labels/paths)
+      B    ERROR: `L1.h`: `h` is not visible through `L1` (a compile error, core/labels/paths)
+   read L1.t.h
+      now  legal (one, B:A's h)
+      A0   ERROR: `L1.t.h`: `t.h` is not visible through `L1` (a compile error, core/labels/paths)
+      A    ERROR: `L1.t.h`: `t.h` is not visible through `L1` (a compile error, core/labels/paths)
+      A2   ERROR: `L1.t.h`: `t.h` is not visible through `L1` (a compile error, core/labels/paths)
+      B    ERROR: `L1.t.h`: `t.h` is not visible through `L1` (a compile error, core/labels/paths)
+   RUN A.h (the shorthand):
+      WHOLE `3` HOLDS, `7` FAILS / SEARCHED `7 3` `3`@2 / FIND-ALL `3 7 4` [`3`@0, `4`@4]
+      (regex (?:(?:(?:(?:(?:(?:(?P<g1>(?:(?:(?P<g0>[0-4])))))))))))
+
+== nested-label-list: B(C(A)), the outer labels, the inner lists
+   program `T1(L2(A)) & (T1.h: <5)`, A := /(?<h>\d)/; T1(x) := /${[t = x]}/; L2(x) := /${[(=) = x]}/
+   read T1.h
+      now  legal (one, B:A's h)
+      A0   ERROR: `T1.h`: `h` is not visible through `T1` (a compile error, core/labels/paths)
+      A    ERROR: `T1.h`: `h` is not visible through `T1` (a compile error, core/labels/paths)
+      A2   ERROR: `T1.h`: `h` is not visible through `T1` (a compile error, core/labels/paths)
+      B    ERROR: `T1.h`: `h` is not visible through `T1` (a compile error, core/labels/paths)
+   read T1.t.h
+      now  legal (one, B:A's h)
+      A0   ERROR: `T1.t.h`: `t.h` is not visible through `T1` (a compile error, core/labels/paths)
+      A    ERROR: `T1.t.h`: `t.h` is not visible through `T1` (a compile error, core/labels/paths)
+      A2   ERROR: `T1.t.h`: `t.h` is not visible through `T1` (a compile error, core/labels/paths)
+      B    ERROR: `T1.t.h`: `t.h` is not visible through `T1` (a compile error, core/labels/paths)
+   RUN A.h (the shorthand):
+      WHOLE `3` HOLDS, `7` FAILS / SEARCHED `7 3` `3`@2 / FIND-ALL `3 7 4` [`3`@0, `4`@4]
+      (regex (?:(?:(?P<g1>(?:(?:(?:(?:(?:(?:(?P<g0>[0-4])))))))))))
+
+== body-passes-on-listed: a body that passes its argument to another macro, which lists; the outer lists that call
+   program `Mx(A) & (Mx.h: <5)`, A := /(?<h>\d)/; L2(x) := /${[(=) = x]}/; Mx(r) := /<${[(=) = L2(r)]}>/
+   read Mx.h
+      now  legal (one, B:A's h)
+      A0   ERROR: `Mx.h`: `h` is not visible through `Mx` (a compile error, core/labels/paths)
+      A    legal (one, B:A's h)
+      A2   legal (one, B:A's h)
+      B    legal (one, B:A's h)
+   RUN Mx.h reads A's h:
+      WHOLE `<3>` HOLDS, `<7>` FAILS / SEARCHED `<7> <3>` `<3>`@4 / FIND-ALL `<3> <7> <4>` [`<3>`@0, `<4>`@8]
+      (regex (?:<(?:(?:(?:(?:(?:(?:(?:(?:(?P<g0>[0-4])))))))))>))
+
+== body-passes-on-labelled: a body that passes its argument to another macro, which labels; the outer lists that call
+   program `Mt(A) & (Mt.h: <5)`, A := /(?<h>\d)/; T2(x) := /${[t = x]}/; Mt(r) := /<${[(=) = T2(r)]}>/
+   read Mt.h
+      now  legal (one, B:A's h)
+      A0   ERROR: `Mt.h`: `h` is not visible through `Mt` (a compile error, core/labels/paths)
+      A    ERROR: `Mt.h`: `h` is not visible through `Mt` (a compile error, core/labels/paths)
+      A2   ERROR: `Mt.h`: `h` is not visible through `Mt` (a compile error, core/labels/paths)
+      B    ERROR: `Mt.h`: `h` is not visible through `Mt` (a compile error, core/labels/paths)
+   read Mt.t.h
+      now  legal (one, B:A's h)
+      A0   ERROR: `Mt.t.h`: `t.h` is not visible through `Mt` (a compile error, core/labels/paths)
+      A    ERROR: `Mt.t.h`: `t.h` is not visible through `Mt` (a compile error, core/labels/paths)
+      A2   ERROR: `Mt.t.h`: `t.h` is not visible through `Mt` (a compile error, core/labels/paths)
+      B    ERROR: `Mt.t.h`: `t.h` is not visible through `Mt` (a compile error, core/labels/paths)
+   RUN A.h (the shorthand):
+      WHOLE `<3>` HOLDS, `<7>` FAILS / SEARCHED `<7> <3>` `<3>`@4 / FIND-ALL `<3> <7> <4>` [`<3>`@0, `<4>`@8]
+      (regex (?:<(?:(?:(?:(?:(?P<g1>(?:(?:(?:(?P<g0>[0-4])))))))))>))
+
+== array-listed-twice: the array form over a place listed twice
+   program `pair(A) & some(@pair.d, <5)`, A := /(?<d>\d)/; pair(p) := /${[(=) = p]},${[(=) = p]}/
+   read @pair.d
+      now  legal (array)
+      A0   legal (array)
+      A    legal (array)
+      A2   legal (array)
+      B    legal (array)
+   RUN every setting:
+      WHOLE `7,3` HOLDS, `3,7` HOLDS, `7,7` FAILS / SEARCHED `7,7 3,7` `3,7`@4 / FIND-ALL `7,3 7,7 1,2` [`7,3`@0, `1,2`@8]
+      (regex (?:(?:(?:(?:(?:(?:(?P<T0>[0-4]))))),(?:(?:(?:(?:(?P<ZZ0_g1>\d))))))|(?:(?:(?:(?:(?:(?P<ZZ1_g0>\d))))),(?:(?:(?:(?:(?P<T1>[0-4]))))))))
+
+== array-labelled: the array form through a labelled place
+   program `B(A) & some(@B.h, <5)`, A := /(?<h>\d)/; B(rx) := /${[p = rx]}xx/
+   read @B.h
+      now  legal (array)
+      A0   ERROR: `B.h`: `h` is not visible through `B` (a compile error, core/labels/paths)
+      A    ERROR: `B.h`: `h` is not visible through `B` (a compile error, core/labels/paths)
+      A2   ERROR: `B.h`: `h` is not visible through `B` (a compile error, core/labels/paths)
+      B    ERROR: `B.h`: `h` is not visible through `B` (a compile error, core/labels/paths)
+   RUN A's h:
+      WHOLE `3xx` HOLDS, `7xx` FAILS / SEARCHED `7xx 3xx` `3xx`@4 / FIND-ALL `3xx 7xx 4xx` [`3xx`@0, `4xx`@8]
+      (regex (?:(?:(?:(?P<ZZ0_g1>(?:(?:(?P<T0>[0-4])))))xx)))
+
+== array-gate-listed: the array form through a call used alone that lists (the gate)
+   program `[n = (P SEQ L1(Q))] & some(@n.d, <5)`, P := /(?<d>\d)/; Q := /,(?<d>\d)/; L1(x) := /${[(=) = x]}/
+   read @n.d
+      now  ERROR: `n.d`: a `d` sits behind a gate (a part used alone is never skipped): write the full path, `n.L1.d` or `n.P.d` (a compile error, core/labels/rule/paths rule 4, one-path)
+      A0   ERROR: `n.d`: a `d` sits behind a gate (a part used alone is never skipped): write the full path, `n.L1.d` or `n.P.d` (a compile error, core/labels/rule/paths rule 4, one-path)
+      A    ERROR: `n.d`: a `d` sits behind a gate (a part used alone is never skipped): write the full path, `n.L1.d` or `n.P.d` (a compile error, core/labels/rule/paths rule 4, one-path)
+      A2   ERROR: `n.d`: a `d` sits behind a gate (a part used alone is never skipped): write the full path, `n.L1.d` or `n.P.d` (a compile error, core/labels/rule/paths rule 4, one-path)
+      B    ERROR: `n.d`: a `d` sits behind a gate (a part used alone is never skipped): write the full path, `n.L1.d` or `n.P.d` (a compile error, core/labels/rule/paths rule 4, one-path)
+   read n.L1.d
+      now  legal (one, B:Q's d)
+      A0   legal (one, B:Q's d)
+      A    legal (one, B:Q's d)
+      A2   legal (one, B:Q's d)
+      B    legal (one, B:Q's d)
+   RUN n.L1.d, Q's d:
+      WHOLE `7,3` HOLDS, `3,7` FAILS / SEARCHED `3,7 7,3` `7,3`@4 / FIND-ALL `7,3 3,7 1,2` [`7,3`@0, `1,2`@8]
+      (regex (?P<g2>(?:(?:(?P<g0>\d))(?:(?:(?:(?:(?:,(?P<g1>[0-4])))))))))
+
+== index: metadata of a label inside an argument, and of the body's own label on the place
+   program `[c = Bm(A)] & (c.a.h: <5)`, A := /(?<h>\d)/; Bm(x) := [a = x] | [b = /z/]
+   read c.a.h
+      now  legal (one, B:A's h)
+      A0   ERROR: `c.a.h`: `a.h` is not visible through `c` (a compile error, core/labels/paths)
+      A    ERROR: `c.a.h`: `a.h` is not visible through `c` (a compile error, core/labels/paths)
+      A2   ERROR: `c.a.h`: `a.h` is not visible through `c` (a compile error, core/labels/paths)
+      B    ERROR: `c.a.h`: `a.h` is not visible through `c` (a compile error, core/labels/paths)
+   read c.a
+      now  legal (one, B:Bm's a)
+      A0   legal (one, B:Bm's a)
+      A    legal (one, B:Bm's a)
+      A2   legal (one, B:Bm's a)
+      B    legal (one, B:Bm's a)
+   hand: `(c.a.index: 1)` (the body's own label's metadata, a path that ends on the place) and `(c.b.index: 2)` stay legal; `c.a.h` and any metadata below it (`c.a.h.index` where h sits under a member) go through the place
+   RUN A.h:
+      WHOLE `3` HOLDS, `z` FAILS, `7` FAILS / SEARCHED `7 z 3` `3`@4 / FIND-ALL `3 z 7 4` [`3`@0, `4`@6]
+      (regex (?P<g3>(?:(?:(?P<g1>(?:(?:(?P<g0>[0-4]))))|(?P<g2>z)))))
+
+== capture: a capture request for an argument's label
+   program `B(A) & (B.h: <5)`, A := /(?<h>\d)/; B(rx) := /${[p = rx]}xx/
+   read B.h
+      now  legal (one, B:A's h)
+      A0   ERROR: `B.h`: `h` is not visible through `B` (a compile error, core/labels/paths)
+      A    ERROR: `B.h`: `h` is not visible through `B` (a compile error, core/labels/paths)
+      A2   ERROR: `B.h`: `h` is not visible through `B` (a compile error, core/labels/paths)
+      B    ERROR: `B.h`: `h` is not visible through `B` (a compile error, core/labels/paths)
+   hand: `B(A) & (B.h: capture("h"))` is route (1): an error under the candidate (the path is the read's, lib/structural/capture: "the label is named where conditions name labels, by its path"); `(A.h: capture("h"))` and, through a list, `identity(A) & (identity.h: capture("h"))` stay
+
+== when-shape: when's then branch: test and then both set h (the shape W of the library)
+   program `W(/(?<h>\d)/, /;(?<h>\d)/) & (W.h: <5)`, W(a, b) := [(=) = a] SEQ [(=) = b]
+   read W.h
+      now  ERROR: `W.h`: 2 labels `h` are visible from `W`, so no step may be skipped: no path from `W` names one of them alone (a compile error, core/labels/rule/paths rule 4, one-path)
+      A0   ERROR: `W.h`: 2 labels `h` are visible from `W`, so no step may be skipped: no path from `W` names one of them alone (a compile error, core/labels/rule/paths rule 4, one-path)
+      A    ERROR: `W.h`: 2 labels `h` are visible from `W`, so no step may be skipped: no path from `W` names one of them alone (a compile error, core/labels/rule/paths rule 4, one-path)
+      A2   ERROR: `W.h`: 2 labels `h` are visible from `W`, so no step may be skipped: no path from `W` names one of them alone (a compile error, core/labels/rule/paths rule 4, one-path)
+      B    legal (last mention, P's h)
+   RUN the last mention, then's h (reading B: the listed labels are the body's own):
+      WHOLE `7;3` HOLDS, `3;7` FAILS / SEARCHED `3;7 7;3` `7;3`@4 / FIND-ALL `7;3 3;7 1;2` [`7;3`@0, `1;2`@8]
+      (regex (?:(?:(?:(?P<g0>\d)))(?:(?:;(?P<g1>[0-4])))))
+
+== map: a map built by a macro from its arguments (as a pattern: labelled alternatives)
+   program `[m = Mk(A, Z)] & (m.a.h: <5)`, A := /(?<h>\d)/; Z := /z/; Mk(x, y) := [a = x] | [b = y]
+   read m.a.h
+      now  legal (one, B:A's h)
+      A0   ERROR: `m.a.h`: `a.h` is not visible through `m` (a compile error, core/labels/paths)
+      A    ERROR: `m.a.h`: `a.h` is not visible through `m` (a compile error, core/labels/paths)
+      A2   ERROR: `m.a.h`: `a.h` is not visible through `m` (a compile error, core/labels/paths)
+      B    ERROR: `m.a.h`: `a.h` is not visible through `m` (a compile error, core/labels/paths)
+   read m.a
+      now  legal (one, B:Mk's a)
+      A0   legal (one, B:Mk's a)
+      A    legal (one, B:Mk's a)
+      A2   legal (one, B:Mk's a)
+      B    legal (one, B:Mk's a)
+   hand: a module's members are reached by `.`; a member a macro builds on an argument (`{a = x}`) is the body's own label on the place: `m.a` stays, `m.a.h` is route (1); `{a = [(=) = x]}` would be the carve-out
+   RUN A.h:
+      WHOLE `3` HOLDS, `z` FAILS, `7` FAILS / SEARCHED `7 z 3` `3`@4 / FIND-ALL `3 z 7 4` [`3`@0, `4`@6]
+      (regex (?P<g3>(?:(?:(?P<g1>(?:(?:(?P<g0>[0-4]))))|(?P<g2>(?:(?:z)))))))
+
+== own-then-listed: unpredictability: the body's own d BEFORE the listed place
+   program `Bo(Ad) & (Bo.d: <5)`, Ad := /(?<d>\d)/; Bo(rx) := /(?<d>\d)-${[(=) = rx]}/
+   read Bo.d
+      now  legal (one, B:Bo's d)
+      A0   legal (one, B:Bo's d)
+      A    legal (one, B:Bo's d)
+      A2   legal (one, B:Bo's d)
+      B    legal (last mention, B:Ad's d)
+   RUN the body's own d (body-own-name: direct beats a skip):
+      WHOLE `3-7` HOLDS, `7-3` FAILS, `3-3` HOLDS, `7-7` FAILS / SEARCHED `7-7 3-7` `3-7`@4 / FIND-ALL `3-7 7-3 1-2 9-9` [`3-7`@0, `1-2`@8]
+      (regex (?:(?P<g0>[0-4])-(?:(?:(?:(?:(?P<g1>\d)))))))
+   RUN the argument's d (reading B: both own, the last mention):
+      WHOLE `3-7` FAILS, `7-3` HOLDS, `3-3` HOLDS, `7-7` FAILS / SEARCHED `7-7 3-7` FAILS / FIND-ALL `3-7 7-3 1-2 9-9` [`7-3`@4, `1-2`@8]
+      (regex (?:(?P<g0>\d)-(?:(?:(?:(?:(?P<g1>[0-4])))))))
+
+== own-then-listed-no-d: the same body, the argument without d
+   program `Bo(Ae) & (Bo.d: <5)`, Ae := /(?<e>\d)/; Bo(rx) := /(?<d>\d)-${[(=) = rx]}/
+   read Bo.d
+      now  legal (one, B:Bo's d)
+      A0   legal (one, B:Bo's d)
+      A    legal (one, B:Bo's d)
+      A2   legal (one, B:Bo's d)
+      B    legal (one, B:Bo's d)
+   RUN the body's own d:
+      WHOLE `3-7` HOLDS, `7-3` FAILS, `3-3` HOLDS, `7-7` FAILS / SEARCHED `7-7 3-7` `3-7`@4 / FIND-ALL `3-7 7-3 1-2 9-9` [`3-7`@0, `1-2`@8]
+      (regex (?:(?P<g0>[0-4])-(?:(?:(?:(?:(?P<g1>\d)))))))
+
+== listed-then-own: the body's own d AFTER the listed place, the argument with d
+   program `Bb(Ad) & (Bb.d: <5)`, Ad := /(?<d>\d)/; Bb(rx) := /${[(=) = rx]}-(?<d>\d)/
+   read Bb.d
+      now  legal (one, B:Bb's d)
+      A0   legal (one, B:Bb's d)
+      A    legal (one, B:Bb's d)
+      A2   legal (one, B:Bb's d)
+      B    legal (last mention, B:Bb's d)
+   RUN the body's own d (both readings agree):
+      WHOLE `3-7` FAILS, `7-3` HOLDS, `3-3` HOLDS, `7-7` FAILS / SEARCHED `7-7 3-7` FAILS / FIND-ALL `3-7 7-3 1-2 9-9` [`7-3`@4, `1-2`@8]
+      (regex (?:(?:(?:(?:(?:(?P<g0>\d)))))-(?P<g1>[0-4])))
+
+== w-one-arg-has: two listed places, only one argument sets h
+   program `W(/(?<h>\d)/, /;(?<e>\d)/) & (W.h: <5)`, W(a, b) := [(=) = a] SEQ [(=) = b]
+   read W.h
+      now  legal (one, P's h)
+      A0   legal (one, P's h)
+      A    legal (one, P's h)
+      A2   legal (one, P's h)
+      B    legal (one, P's h)
+   RUN the first argument's h:
+      WHOLE `3;7` HOLDS, `7;3` FAILS / SEARCHED `7;3 3;7` `3;7`@4 / FIND-ALL `3;7 7;3 1;2` [`3;7`@0, `1;2`@8]
+      (regex (?:(?:(?:(?P<g0>[0-4])))(?:(?:;(?P<g1>\d)))))
+
+== own-label-on-place: the body's own label on the place, read as itself; its message below
+   program `B(A) & (B.p: "3")`, A := /(?<h>\d)/; B(rx) := /${[p = rx]}xx/
+   read B.p
+      now  legal (one, B:B's p)
+      A0   legal (one, B:B's p)
+      A    legal (one, B:B's p)
+      A2   legal (one, B:B's p)
+      B    legal (one, B:B's p)
+   read B.p.h
+      now  legal (one, B:A's h)
+      A0   ERROR: `B.p.h`: `p.h` is not visible through `B` (a compile error, core/labels/paths)
+      A    ERROR: `B.p.h`: `p.h` is not visible through `B` (a compile error, core/labels/paths)
+      A2   ERROR: `B.p.h`: `p.h` is not visible through `B` (a compile error, core/labels/paths)
+      B    ERROR: `B.p.h`: `p.h` is not visible through `B` (a compile error, core/labels/paths)
+   RUN B.p, the label's text:
+      WHOLE `3xx` HOLDS, `7xx` FAILS / SEARCHED `7xx 3xx` `3xx`@4 / FIND-ALL `3xx 7xx 4xx` [`3xx`@0]
+      (regex (?:(?:(?P<g1>(?=3)(?:(?:(?P<g0>\d)))))xx))
+
+== outside-written: a label the caller writes in an argument, read from a binding that uses the caller
+   program `Y & (Y.a.h: <5)`, A := /(?<h>\d)/; B(rx) := /${[p = rx]}xx/; Y := [c = B([a = A])] SEQ "!"
+   read Y.a.h
+      now  legal (one, B:A's h)
+      A0   ERROR: `Y.a.h`: `a.h` is not visible through `Y` (a compile error, core/labels/paths)
+      A    ERROR: `Y.a.h`: `a.h` is not visible through `Y` (a compile error, core/labels/paths)
+      A2   ERROR: `Y.a.h`: `a.h` is not visible through `Y` (a compile error, core/labels/paths)
+      B    ERROR: `Y.a.h`: `a.h` is not visible through `Y` (a compile error, core/labels/paths)
+   read Y.c.a.h
+      now  legal (one, B:A's h)
+      A0   ERROR: `Y.c.a.h`: `c.a.h` is not visible through `Y` (a compile error, core/labels/paths)
+      A    ERROR: `Y.c.a.h`: `c.a.h` is not visible through `Y` (a compile error, core/labels/paths)
+      A2   ERROR: `Y.c.a.h`: `c.a.h` is not visible through `Y` (a compile error, core/labels/paths)
+      B    ERROR: `Y.c.a.h`: `c.a.h` is not visible through `Y` (a compile error, core/labels/paths)
+   read Y.c.h
+      now  legal (one, B:A's h)
+      A0   ERROR: `Y.c.h`: `c.h` is not visible through `Y` (a compile error, core/labels/paths)
+      A    ERROR: `Y.c.h`: `c.h` is not visible through `Y` (a compile error, core/labels/paths)
+      A2   ERROR: `Y.c.h`: `c.h` is not visible through `Y` (a compile error, core/labels/paths)
+      B    ERROR: `Y.c.h`: `c.h` is not visible through `Y` (a compile error, core/labels/paths)
+   hand: reading (i): Y's text writes `a`, and a binding exports the labels its own text writes (export statement 3), so Y.a.h is legal; reading (ii): the path Y, B, p, the place, a crosses B's place: an error, and then a caller's label in an argument never leaves the caller
+   RUN A's h:
+      WHOLE `3xx!` HOLDS, `7xx!` FAILS / SEARCHED `7xx! 3xx!` `3xx!`@5 / FIND-ALL `3xx! 7xx! 4xx!` [`3xx!`@0, `4xx!`@10]
+      (regex (?:(?P<g3>(?:(?:(?P<g2>(?:(?P<g1>(?:(?P<g0>[0-4]))))))xx))!))

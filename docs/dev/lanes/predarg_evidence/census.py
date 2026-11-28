@@ -8,12 +8,8 @@ case they count as the body's own labels", under two readings of the carve-out:
   NOW    the in-force walker WALK1127 (lane predfold1127's model, loaded unchanged by load.py) with the two rulings
          the documents do not carry yet applied: body-own-name (READ1127 "direct" = "wins": a path that skips nothing
          reads the label directly under its last step) and array-gate ("array" = "error", the model's default).
-  CAND-A the candidate, the carve-out read as a DOOR: a spot whose chain from the start passes an argument's place
-         is dropped unless that place sits directly under an export list `[(=) = x]`; the list's alias and the
-         argument's place stay steps between (the model's own counting, so a read through a list still "skips").
-  CAND-B the candidate, the carve-out read literally as "they count as the body's own labels": as CAND-A, and the
-         list, the listed place and the argument's binding used there are NOT steps (the listed labels sit directly
-         under the call, as a label the body writes does).
+  CAND-A the candidate, the carve-out read as a DOOR (cand.py mode A: a place passes only where it is listed).
+  CAND-B the candidate, the carve-out read literally as "they count as the body's own labels" (cand.py mode B).
 
 Routes (the brief's): (1) through a label the body writes on the argument's place, or a place used alone;
 (2) through an export list on the place; (3) the sender's own names (the shorthand `A.h`, a label the caller writes
@@ -26,6 +22,7 @@ import re
 import sys
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+import cand  # noqa: E402
 import load  # noqa: E402
 
 NS = load.NS
@@ -125,46 +122,8 @@ def route_of(chain):
     return "2" if all(n.parent is not None and n.parent.k == "list" for n in args) else "1"
 
 
-ORIG_BETWEEN = NS["_between"]
-MODE = ["now"]
-
-
-def between_c(start, x, P):
-    out = ORIG_BETWEEN(start, x, P)
-    if MODE[0] == "now":
-        return out
-    res = []
-    for node, betw, gates, walls, chain in out:
-        crossed = [n for n in chain[1:] if n.k == "arg"]
-        if any(n.parent is None or n.parent.k != "list" for n in crossed):
-            continue                                         # the candidate: no path through an argument's place
-        if MODE[0] == "B":
-            listed = set()
-            for n in crossed:
-                listed |= {id(n), id(n.parent)}
-                for k in n.kids:
-                    if k.k in ("use", "call"):
-                        listed.add(id(k))
-            betw = [n for n in betw if id(n) not in listed]
-            gates = [n for n in gates if id(n) not in listed]
-        res.append((node, betw, gates, walls, chain))
-    return res
-
-
-NS["_between"] = between_c
-
-
-def verdict(e, binds, read, mode, array):
-    MODE[0] = mode
-    try:
-        v = NS["walk_v27"](e, binds, read, reading={"direct": "wins"}, array=array)
-    finally:
-        MODE[0] = "now"
-    if v[0] == "legal":
-        return "legal (%s%s)" % (v[3], "" if v[1] is None else ", %s's %s" % (v[1], v[2]))
-    if v[0] == "refused":
-        return "ERROR: " + v[1][:150]
-    return "unparsed: " + v[1][:60]
+ORIG_BETWEEN = cand.ORIG_BETWEEN
+verdict = cand.verdict
 
 
 def main():

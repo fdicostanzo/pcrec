@@ -24,9 +24,9 @@ core.md:606 [three-mode] n.B.p.d   in `[n = (P SEQ B(Q))] & (n.B.p.d: <5)`   P :
       CAND-B ERROR: `n.B.p.d`: `B.p.d` is not visible through `n` (a compile error, core/labels/paths)
 core.md:607 [compile error] n.d   in `[n = (P SEQ B(Q))] & (n.d: <5)`   P := /(?<d>\d)/; Q := /,(?<d>\d)/; B(rx) := /${[p = rx]}xx/
       PRINTED ERROR (the line's kind, the documents at the start commit)
-      NOW    ERROR: `n.d`: a `d` sits behind a gate (a part used alone is never skipped): write the full path, `n.B.d` or `n.P.d` (a compile error, core/labels/rule/paths
-      CAND-A ERROR: `n.d`: a `d` sits behind a gate (a part used alone is never skipped): write the full path, `n.P.d` (a compile error, core/labels/rule/paths rule 4, on
-      CAND-B ERROR: `n.d`: a `d` sits behind a gate (a part used alone is never skipped): write the full path, `n.P.d` (a compile error, core/labels/rule/paths rule 4, on
+      NOW    ERROR: `n.d`: a `d` sits behind a gate (a part used alone is never skipped): write the full path, `n.B.d` or `n.P.d` (a compile error, core/labels/rule/paths rule 4, one-path)
+      CAND-A ERROR: `n.d`: a `d` sits behind a gate (a part used alone is never skipped): write the full path, `n.P.d` (a compile error, core/labels/rule/paths rule 4, one-path)
+      CAND-B ERROR: `n.d`: a `d` sits behind a gate (a part used alone is never skipped): write the full path, `n.P.d` (a compile error, core/labels/rule/paths rule 4, one-path)
 core.md:689 [compile error] B.n.h   in `B(A) & (B.n.h: <5)`   A := /(?<h>\d)/; B(rx) := /${[n = [_x = rx]]}xx/
       PRINTED ERROR (the line's kind, the documents at the start commit)
       NOW    ERROR: `B.n.h`: the path crosses the underscore label `_x`, not the start (a compile error, path-rules rule 2)
@@ -116,8 +116,8 @@ core.md:1002 [compile error] identity.h   in `identity((A)) & (identity.h: <5)` 
       CAND-B legal (one, B:A's h)
 core.md:1140 [compile error] pair.d   in `pair(A) & (pair.d: <5)`   A := /(?<d>\d)/; pair(p) := /${[(=) = p]},${[(=) = p]}/   <== THE WALKER MOVES IT
       PRINTED ERROR (the line's kind, the documents at the start commit)
-      NOW    ERROR: `pair.d`: 2 labels `d` are visible from `pair`, so no step may be skipped: no path from `pair` names one of them alone (a compile error, core/labels/r
-      CAND-A ERROR: `pair.d`: 2 labels `d` are visible from `pair`, so no step may be skipped: no path from `pair` names one of them alone (a compile error, core/labels/r
+      NOW    ERROR: `pair.d`: 2 labels `d` are visible from `pair`, so no step may be skipped: no path from `pair` names one of them alone (a compile error, core/labels/rule/paths rule 4, on
+      CAND-A ERROR: `pair.d`: 2 labels `d` are visible from `pair`, so no step may be skipped: no path from `pair` names one of them alone (a compile error, core/labels/rule/paths rule 4, on
       CAND-B unparsed: one node at two spots, nothing skipped
 core.md:1168 [three-mode] B.d   in `B(A) & (B.d: <5)`   A := /(?<d>\d)/; B(rx) := /${[(=) = rx]}xx/
       PRINTED legal (the line's kind, the documents at the start commit)
@@ -131,8 +131,8 @@ library.md:49 [three-mode] identity.d   in `identity(A) & (identity.d: <5)`   A 
       CAND-B legal (one, B:A's d)
 library.md:52 [compile error] W.h   in `W(/(?<h>\d)/, /;(?<h>\d)/) & (W.h: "3")`   W(a, b) := [(=) = a] SEQ [(=) = b]   <== THE WALKER MOVES IT
       PRINTED ERROR (the line's kind, the documents at the start commit)
-      NOW    ERROR: `W.h`: 2 labels `h` are visible from `W`, so no step may be skipped: no path from `W` names one of them alone (a compile error, core/labels/rule/paths
-      CAND-A ERROR: `W.h`: 2 labels `h` are visible from `W`, so no step may be skipped: no path from `W` names one of them alone (a compile error, core/labels/rule/paths
+      NOW    ERROR: `W.h`: 2 labels `h` are visible from `W`, so no step may be skipped: no path from `W` names one of them alone (a compile error, core/labels/rule/paths rule 4, one-path)
+      CAND-A ERROR: `W.h`: 2 labels `h` are visible from `W`, so no step may be skipped: no path from `W` names one of them alone (a compile error, core/labels/rule/paths rule 4, one-path)
       CAND-B legal (last mention, P's h)
 library.md:54 [three-mode] identity.d   in `identity(A) & (identity.d: <5)`   A := /(?<d>\d)/; identity(x) := /${[(=) = x]}/
       PRINTED legal (the line's kind, the documents at the start commit)
@@ -151,8 +151,8 @@ library.md:349 [three-mode] peek.d   in `peek(/(?<d>\d)/) SEQ /\d\d/ & (peek.d: 
       CAND-B legal (one, P's d)
 library.md:762 [compile error] list_of.h   in `list_of(/(?<h>\d)/, sep = ",") & (list_of.h: "5")`      <== THE WALKER MOVES IT
       PRINTED ERROR (the line's kind, the documents at the start commit)
-      NOW    ERROR: `list_of.h`: 2 labels `h` are visible from `list_of`, so no step may be skipped: no path from `list_of` names one of them alone (a compile error, core
-      CAND-A ERROR: `list_of.h`: 2 labels `h` are visible from `list_of`, so no step may be skipped: no path from `list_of` names one of them alone (a compile error, core
+      NOW    ERROR: `list_of.h`: 2 labels `h` are visible from `list_of`, so no step may be skipped: no path from `list_of` names one of them alone (a compile error, core/labels/rule/paths r
+      CAND-A ERROR: `list_of.h`: 2 labels `h` are visible from `list_of`, so no step may be skipped: no path from `list_of` names one of them alone (a compile error, core/labels/rule/paths r
       CAND-B unparsed: one node at two spots, nothing skipped
 
 == route 3 (54)
