@@ -892,6 +892,7 @@ readings:
 evidence: review r113, docs/dev/reviews/2026-11-27-r113-predfold1128/ruling.findings.md (RULING-7).
 history:
 - 2026-11-27 (lane predfix113, review r113 RULING-7, PLAN, the manager's dispositions): a new parked piece.
+- 2026-11-28 (lane predfold1129, argument-is-gate; record "2026-11-28 OWNER RULING — argument-is-gate"): the members bullet read "Under it the strong lean reads "an undeclared interface is empty""; the lean is replaced by the ruling, no answer moved.
 
 ## parked/ideas/label-symbol — A label pre-defined as a symbol
 slugs: 

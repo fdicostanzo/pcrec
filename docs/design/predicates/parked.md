@@ -234,8 +234,9 @@ see: core/labels/export/named-list core/operators/bindings/reference lib/convent
   reference (unplaced, declared in the head); the `(=)` convention (placed, interface "all"); macro-types' meaning
   (ii) (an interface named by a binding's exports); the natives' reference kind (unplaced, by value); a bound
   condition's target, which the head supplies.
-- Under it the strong lean reads "an undeclared interface is empty"; the four param-reference lines, named-list-use's
-  three edges and the door are one rule set. No rule changes and no answer moves by filing it.
+- Under it argument-is-gate reads an undeclared interface as a gate named by the body's label; the four
+  param-reference lines, named-list-use's three edges and the door are one rule set. No rule changes and no answer
+  moves by filing it.
 - Unlocks, each with its trigger: `checked` and his named-list purpose (a date-shaped argument) get one spelling,
   placed and declared (the answer to reference-example-checked); macro-types' meaning (ii) closes as "the interface is
   a binding's export set" (macro-types next asked); whether the call carries a mark, and the head's list against the

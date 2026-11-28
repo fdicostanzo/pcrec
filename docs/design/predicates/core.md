@@ -323,7 +323,7 @@ needs: core/model/match core/patterns/sequence
 - Between conditions `c | d` is this same `|`: an alternation of two zero-width tests at one place.
 - Entering an alternation resets the labels inside it (core/labels/one-rule).
 see: core/filters/and core/labels/one-rule core/arrays/lift
-WHOLE `25` HOLDS (l = `2`), `7` FAILS / SEARCHED `25` `25`@0 / FIND-ALL `25 13` [`25`@0, `13`@3] (`[ab = ([b = B] | [a = A])] & (ab.l: <20)`, A := `/(?<l>\d)\d/`, B := `/(?<l>\d\d)/`)
+WHOLE `25` HOLDS (l = `2`), `7` FAILS / SEARCHED `25` `25`@0 / FIND-ALL `25 13` [`25`@0, `13`@3] (`[ab = ([b = /(?<l>\d\d)/] | [a = /(?<l>\d)\d/])] & (ab.l: <20)`)
 
 ### Postfix quantifier operators   [core/patterns/quantifiers]   ruled 2026-11-25
 Nine postfix operators `+ +? ++ * *? *+ ? ?? ?+` and the brace counts are regex's quantifiers on the operand before them; binary `+` is addition.
@@ -378,7 +378,7 @@ needs: core/model/match core/model/table
   then `ab.l`) is the caller's own (core/labels/export/arguments; the line "A part label over an expression").
 see: lib/control/atomic parked/ideas/atomic
 WHOLE `25` FAILS, `13` HOLDS / SEARCHED `25` FAILS / FIND-ALL `25 13` [`13`@3] (`atomic(/(?<l>\d\d)/ | /(?<l>\d)\d/) & (atomic.l: <20)`)
-A part label over an expression in an argument: WHOLE `25` FAILS, `13` HOLDS / SEARCHED `25` FAILS / FIND-ALL `25 13` [`13`@3] (`atomic([ab = ([b = B] | [a = A])]) & (ab.l: <20)`, A := `/(?<l>\d)\d/`, B := `/(?<l>\d\d)/`)
+A part label over an expression in an argument: WHOLE `25` FAILS, `13` HOLDS / SEARCHED `25` FAILS / FIND-ALL `25 13` [`13`@3] (`atomic([ab = ([b = /(?<l>\d\d)/] | [a = /(?<l>\d)\d/])]) & (ab.l: <20)`)
 
 ### Lookaround   [core/patterns/lookaround]   ruled 2026-11-18
 Labels set inside a lookahead are visible after it, read by the usual label rules, as in PCRE.
@@ -456,93 +456,104 @@ The caller's own shorthand, under a closing body: WHOLE `3xx` HOLDS, `7xx` FAILS
 A path runs from a start label to its target and contains no underscore label unless that is its start; inside a binding any label it writes may start a path; a middle label may be skipped (one-path).
 needs: core/labels/rule
 see: core/labels/rule/one-path core/labels/rule/stacked-chain core/labels/ownership core/labels/export core/labels/export/flat-read-outside core/labels/paths/label-reference core/labels/paths/closed-argument core/labels/rule/sent-label-wall core/labels/rule/skip-past-wall core/labels/rule/equivalence-inside core/labels/rule/alone-as-middle core/labels/rule/group-node core/labels/rule/kinds
-- His words: "path-rules: yes", on his four rules for paths within a binding, as he wrote them:
-  1. in the label DAG there is a target label and a starting label. The starting label has at least one path to
-     the target label
-  2. the path may not contain any underscore labels full or prefix unless the underscore prefix label is the start
-  3. within a binding, any label on the path may be used as a start label
-  4. if a legal path exists a.b.c and c can be unambiguously referenced from a, then b can be skipped a.c
-- With them, as put: "'Any label on the path may be used as a start' means a label the binding's own text writes.
-  A label held by a used binding is still read with its source, as you ruled under label-reference." Rule 4's
-  "unambiguously" is the one-path rule (his words: "one-path: yes all five"; core/labels/rule/one-path): a step may
-  be skipped only when exactly one label of that name is visible from the start (a wall hides: skip-past-wall),
-  counted within one match (a read into `|` is legal), a part used alone never skipped, the array form exempt, uses
-  counted under the start; across `&` a name both sides set stays ambiguous. Across bindings, as put:
-  5. From outside, the start is the binding's name, a macro's name at its call, or a label written on the use. The
-     path then continues into that binding's tree by rules 1, 2 and 4.
-  6. A part used alone inside a binding is crossed from outside as an underscore label is, and is a start inside
-     its own binding.
-- Terms (the manager's wording): a node is a label a text writes (public or underscore), a label used alone (a
-  binding's or a macro's name on its part: implicit) or a list's alias; "contain" is his word, so an underscore
-  label that is the TARGET is in the path too; "within a binding" is the text of one definition.
-- His picture of rule 2: "[_t = A ] is equivalent to [_ = [t = A ]]". It holds from outside: `X.t.h` and `X.h`
-  are refused alike: the picture of how a private label looks from outside. Inside, `[_t = A]` makes no `t`
-  (his ruling, core/labels/rule/equivalence-inside).
-- Readings (the manager's): the blank label is never a start, having no name; rule 4 applies repeatedly, two or
-  more middle labels skipped at once (its ground: `X.h`, `X.m.h` "all legal" for `[n = [m = A]]`, as asked); a label
-  the caller writes in an argument, a sent label and the caller's shorthand label are starts in the CALLER's
-  binding, a start under the body's wall but never a licence to cross a wall below it; rule 5's start by a
-  binding's or macro's name is line 3's shorthand under its four conditions; from outside, through a call, the
-  body's labels are the tree (`B.p`), and a path never passes an argument's place but by a list on it (core/labels/rule/argument-place) (the owner's strong lean, entailed by carve-out-reading and caller-label-export; to be confirmed).
+- His words: "path-rules: yes", on his four rules for paths within a binding, as he wrote them: 1. in the label DAG there is a target label and a starting label. The starting label has at least one path to the target label 2. the path may not contain any underscore labels full or prefix unless the underscore prefix label is the start 3. within a binding, any label on the path may be used as a start label 4. if a legal path exists a.b.c and c can be unambiguously referenced from a, then b can be skipped a.c
+- With them, as put: "'Any label on the path may be used as a start' means a label the binding's own text writes. A label held by a used binding is still read with its source, as you ruled under label-reference." Rule 4's "unambiguously" is the one-path rule (his words: "one-path: yes all five"; core/labels/rule/one-path): a step may be skipped only when exactly one label of that name is visible from the start (a wall hides: skip-past-wall), counted within one match (a read into `|` is legal), a part used alone never skipped, the array form exempt, uses counted under the start; across `&` a name both sides set stays ambiguous. Across bindings, as put: 5. From outside, the start is the binding's name, a macro's name at its call, or a label written on the use. The path then continues into that binding's tree by rules 1, 2 and 4. 6. A part used alone inside a binding is crossed from outside as an underscore label is, and is a start inside its own binding.
+- Terms (the manager's wording): a node is a label a text writes (public or underscore), a label used alone (a binding's or a macro's name on its part: implicit) or a list's alias; "contain" is his word, so an underscore label that is the TARGET is in the path too; "within a binding" is the text of one definition.
+- His picture of rule 2: "[_t = A ] is equivalent to [_ = [t = A ]]". It holds from outside: `X.t.h` and `X.h` are refused alike: the picture of how a private label looks from outside. Inside, `[_t = A]` makes no `t` (his ruling, core/labels/rule/equivalence-inside).
+- Readings (the manager's): the blank label is never a start, having no name; rule 4 applies repeatedly, two or more middle labels over text written in place skipped at once (a gate is never skipped: core/labels/rule/gates, so of the ground as asked, `X.h` and `X.m.h` "all legal" for `[n = [m = A]]`, `X.m.h` stands); a label the caller writes in an argument, a sent label and the caller's shorthand label are starts in the CALLER's binding, a start under the body's wall but never a licence to cross a wall below it; rule 5's start by a binding's or macro's name is line 3's shorthand under its four conditions; from outside, through a call, the body's labels are the tree (`B.p`), and a placed parameter is a gate like any other, named by the body's label on it (`B.p.h`; core/labels/rule/argument-place).
 Outer the caller's, inner private: modes: a compile error (`[n = [_x = P]] & (n.d: <5)`, P := `/(?<d>\d)\d/`: the path crosses `_x`, not its start (rule 2); the read is `_x.d`).
 The private label as the start: WHOLE `37` HOLDS, `73` FAILS, `3` FAILS / SEARCHED `73 37` `37`@3 / FIND-ALL `37 73 14` [`37`@0, `14`@6] (`[n = [_x = P]] & (_x.d: <5)`, P := `/(?<d>\d)\d/`)
 Outer private, inner the caller's: WHOLE `37` HOLDS, `73` FAILS, `3` FAILS / SEARCHED `73 37` `37`@3 / FIND-ALL `37 73 14` [`37`@0, `14`@6] (`[_x = [n = P]] & (n.d: <5)`, P := `/(?<d>\d)\d/`)
-A public label between: WHOLE `37!` HOLDS, `73!` FAILS / SEARCHED `73! 37!` `37!`@4 / FIND-ALL `37! 73! 14!` [`37!`@0, `14!`@8] (`[n = [m = P] SEQ "!"] & (n.d: <5)`, P := `/(?<d>\d)\d/`): rules 1 and 4
+A public label between, over text in place: WHOLE `37!` HOLDS, `73!` FAILS / SEARCHED `73! 37!` `37!`@4 / FIND-ALL `37! 73! 14!` [`37!`@0, `14!`@8] (`[n = [m = /(?<d>\d)\d/] SEQ "!"] & (n.d: <5)`): rules 1 and 4
+A public label between, on a use: modes: a compile error (`[n = [m = P] SEQ "!"] & (n.d: <5)`, P := `/(?<d>\d)\d/`: `n.d`: a `d` sits behind a gate, which is never skipped: write `n.m.d` (a compile error, label-names-gate))
+A public label between, the gate named: WHOLE `37!` HOLDS, `73!` FAILS / SEARCHED `73! 37!` `37!`@4 / FIND-ALL `37! 73! 14!` [`37!`@0, `14!`@8] (`[n = [m = P] SEQ "!"] & (n.m.d: <5)`, P := `/(?<d>\d)\d/`)
 Something between the two labels: modes: a compile error (`[n = [_x = P] SEQ "!"] & (n.d: <5)`, P := `/(?<d>\d)\d/`: the path crosses `_x` (rule 2)).
-Through a call, the middle label skipped: modes: a compile error (`B(A) & (B.h: <5)`, A := `/(?<h>\d)/`, B(rx) := `/${[p = rx]}xx/`: the path passes B's argument place, which no list opens: read `A.h`, the line "Through a call, the sender's name" of core/labels/rule/argument-place) (the owner's strong lean, entailed by carve-out-reading and caller-label-export; to be confirmed)
+Through a call, the middle label skipped: modes: a compile error (`B(A) & (B.h: <5)`, A := `/(?<h>\d)/`, B(rx) := `/${[p = rx]}xx/`: `B.h`: a `h` sits behind a gate, which is never skipped: write `B.p.h` (a compile error, label-names-gate))
 The caller's label, a start under the body's wall: WHOLE `3xx` HOLDS, `7xx` FAILS / SEARCHED `7xx 3xx` `3xx`@4 / FIND-ALL `3xx 7xx 4xx` [`3xx`@0, `4xx`@8] (`B([a = A]) & (a.h: <5)`, A := `/(?<h>\d)/`, B(rx) := `/${[n = [_x = rx]]}xx/`): the manager's reading (e)
 From outside, a part used alone: modes: a compile error (`X2 & (X2.h: <5)`, A := `/(?<h>\d)/`, X2 := `A SEQ "!"`: A is used alone in X2 (rule 6); `X2 & (X2.A.h: <5)` alike; inside X2 `A.h` is legal).
 
-### Skipping a step: one label of the name in view   [core/labels/rule/one-path]   ruled 2026-11-27
-A step in a path may be skipped only when exactly one label of that name is visible from the start, within one match; a gate is never skipped; a path that skips nothing is always legal.
+### Every crossing is a gate   [core/labels/rule/gates]   ruled 2026-11-28
+Every crossing into another definition's text (a binding used, a macro called, a parameter placed) is a gate: one step, never skipped, named by the label written on it, else by its own name.
+needs: core/labels/rule/paths
+see: core/labels/rule/one-path core/labels/rule/alone-as-middle core/labels/rule/argument-place core/labels/rule/stacked-chain core/labels/rule/kinds core/labels/export/export-list
+- His words: "label-names-gate: yes all five", on:
+  "1. Every crossing from one definition's text into another (a binding used, a macro called, a parameter placed)
+  is a gate. A gate is one step of the path and is never skipped.
+  2. The gate's name is the label written directly on it (`dd`). Where none is written, it is the thing's own name
+  (`rx`, `Q`, `B`).
+  3. Only a label over text written right there may be skipped. In `[a = /${..}xx/]`, the label `a` sits over a
+  literal, so the reader of that line can see what is under it.
+  4. So your example needs `a.dd.g` or `dd.g`. A bare `a.g` is an error naming both.
+  5. An export list is still the way to flatten on purpose: `[(=) = rx]` lifts the labels up, and then `a.g` is
+  legal." His example: A := `[g = digit]`, `B(rx) := [a = /${[dd = rx]}xx/] & (a.g: <7)`, `B(A)` (run with `/\d/`).
+- Skippable: a label over text written in place (a literal, a sequence, a parenthesised composition: in
+  `[n = (P SEQ Q)]` the gates are P and Q, `n.Q.d` the read, core/labels/rule/alone-as-middle; the manager's
+  reading, run). Stacked labels on a gate are equal names of it (label-doors line 5; the manager's reading, run:
+  `n.d`, `m.d` and `n.m.d` over `[n = [m = P]]`, core/labels/rule/stacked-chain; `[n = (Q)]`, `n.d` alike).
+- A gate named only by the thing's own name is named inside the text that writes it; from outside it is a wall
+  (rule 6), an unlabelled parameter's place to the caller included (core/labels/rule/argument-place).
+- A list is the door: the step it makes has no name and is passed (core/labels/rule/argument-door).
+- The refusal names the gate and the full path (its wording the manager's call).
+His example: modes: a compile error (`B(A)`, A := `[g = /\d/]`, B(rx) := `[a = /${[dd = rx]}xx/] & (a.g: <7)`: `a.g`: a `g` sits behind a gate, which is never skipped: write `a.dd.g` (a compile error, label-names-gate))
+His example, the full path: WHOLE `3xx` HOLDS, `8xx` FAILS / SEARCHED `8xx 3xx` `3xx`@4 / FIND-ALL `3xx 8xx 4xx` [`3xx`@0, `4xx`@8] (`B(A)`, A := `[g = /\d/]`, B(rx) := `[a = /${[dd = rx]}xx/] & (a.dd.g: <7)`)
+His example, the gate's own name: WHOLE `3xx` HOLDS, `8xx` FAILS / SEARCHED `8xx 3xx` `3xx`@4 / FIND-ALL `3xx 8xx 4xx` [`3xx`@0, `4xx`@8] (`B(A)`, A := `[g = /\d/]`, B(rx) := `[a = /${[dd = rx]}xx/] & (dd.g: <7)`)
+His example, the list: WHOLE `3xx` HOLDS, `8xx` FAILS / SEARCHED `8xx 3xx` `3xx`@4 / FIND-ALL `3xx 8xx 4xx` [`3xx`@0, `4xx`@8] (`B(A)`, A := `[g = /\d/]`, B(rx) := `[a = /${[(=) = rx]}xx/] & (a.g: <7)`)
+
+### Skipping a step: one path in view   [core/labels/rule/one-path]   ruled 2026-11-28
+A step may be skipped only when exactly one path is possible from the start (every label reached has one full path, the last mention read); a gate is never skipped; a full path is always legal.
 needs: core/labels/rule/paths
 see: core/labels/rule/skip-past-wall core/labels/rule/alone-as-middle core/labels/flow core/labels/export/flat-read-outside core/labels/paths/call-prefix core/labels/paths/two-sources core/labels/rule/kinds lib/counting/some
-- His words: "one-path: yes all five", on: "a step in a path may be skipped only when exactly one label of that
-  name is visible from the start.
-  1. It is counted within one match, so a read into an alternation is legal: `pair.x` for `pair := [b =
-     /(?<x>\d)/] | [c = /a(?<x>\d)/]` reads the `x` of the branch taken.
-  2. A part used alone is still never skipped, even when it holds the only target.
-  3. The array form is exempt, as you just said.
-  4. It replaces "in a sequence the last mention wins" for skipped reads. Four printed reads become errors that
-     ask for the full path, for example `date.v` over `[y = /(?<v>\d)/] SEQ "-" SEQ [m = /(?<v>\d)/]`.
-  5. A name counts as used once or twice by what lies under the path's start, which answers gate-twice-scope."
-- His sentence it came from: "skipping steps in a path is available when there is exactly one path possible from
-  the start to any end label visible from that start." His principle, on gate-beside-label: "Skipping labels is
-  about efficiency in total clarity."
+- His words: "one-path: yes all five", on: "a step in a path may be skipped only when exactly one label of that name is visible from the start. 1. It is counted within one match, so a read into an alternation is legal: `pair.x` for `pair := [b = /(?<x>\d)/] | [c = /a(?<x>\d)/]` reads the `x` of the branch taken. 2. A part used alone is still never skipped, even when it holds the only target. 3. The array form is exempt, as you just said. 4. It replaces "in a sequence the last mention wins" for skipped reads. Four printed reads become errors that ask for the full path, for example `date.v` over `[y = /(?<v>\d)/] SEQ "-" SEQ [m = /(?<v>\d)/]`. 5. A name counts as used once or twice by what lies under the path's start, which answers gate-twice-scope."
+- His words: "same-path-last: yes all three", on: "1. A skip is legal when every label it could reach has the same full path. Then it reads what the full path reads: the last mention. 2. Two different full paths are still an error naming both: `n.d` over `[n = ([a = P] SEQ [b = Q])]` reaches `n.a.d` and `n.b.d`. 3. Gates, walls and the array form are unchanged." It revises line 4: one-path counts distinct full paths.
+- His sentence it came from: "skipping steps in a path is available when there is exactly one path possible from the start to any end label visible from that start." His principle, on gate-beside-label: "Skipping labels is about efficiency in total clarity."
 - His words: "body-own-name: agree", on: "a path that skips nothing is always legal and reads the label directly under its last step; one-path limits only reads that skip a step." His ground for the call case: "Within the macro, the d from A is outside and would have to gate through rx but rx as an arg cant be directly on a path."
-- It is rule 4's "unambiguously" for a skipped read (core/labels/rule/paths): in a sequence a compile error, no
-  longer the last mention (line 4); across `|` the branch taken (line 1); across `&` the ambiguous reference.
-- Visible (readings, run): a wall hides its labels (core/labels/rule/skip-past-wall), and from outside a gate is a wall (rule 6), so its targets are not counted; inside, a gate does not hide, so a gated target beside a written one makes two (core/labels/rule/alone-as-middle). A step is any node between the start and the target: a label, a group, a part or a call used alone, a list's alias, an argument's place in a body.
+- It is rule 4's "unambiguously" for a skipped read (core/labels/rule/paths): in a sequence one full path reached twice reads its last mention, two full paths are a compile error naming both (same-path-last); across `|` the branch taken (line 1); across `&` the ambiguous reference.
+- Visible (readings, run): a wall hides its labels (core/labels/rule/skip-past-wall); a gate is never skipped (core/labels/rule/gates), so a skip that would pass one is the gate's error. A step is any node between the start and the target: a label, a group, a gate, a list's alias.
 - Nothing skipped (body-own-name): two settings of the name itself (`D2.c` over `/(?<c>\d)(?<c>\d)/`, two `[aa = ..]` read `aa.h`) are label flow, the last mention; a target directly under the step is read and those reached by a skip beside it are not counted: `c.d` and `B.d` over a body and an argument that each set `d` read the body's own (the argument's is `A.d`), `X.d` over `[a = P] SEQ /;(?<d>\d)/` X's own, and a gated target beside it too, his words: "gate-beside-direct: legal" (the line "A direct target beside a gate"). A bare read is no path (core/labels/paths/two-sources).
-- What moved: of the printed reads that skipped to two labels, four are compile errors: `date.v` (write `date.m.v`), and `W.h`, `pair.d`, `list_of.h`, for which no path names one target, so the caller labels the argument (`W([x = ..], [y = ..])`, `pair([x = A])`, `list_of([x = ..])`), each line printed at its piece; `c.d` and both `B.d` read the body's own.
+- One full path reached twice reads the last mention: `W.h` over two listed arguments, `pair.d` over one argument listed twice, `list_of.h`, each printed at its piece; `date.v` over `[y = /(?<v>\d)/] SEQ "-" SEQ [m = /(?<v>\d)/]` reaches `date.y.v` and `date.m.v`, a compile error naming both; `c.d` and both `B.d` read the body's own.
 - The array form through a gate: a compile error, a gate is never skipped, array or not (his words: "array-gate: error. Agree with lean"; lib/counting/some).
 - Optionals and loops (a reading, not run): two labels of the name are two where one match can leave both set at the read: `|` under a loop one each, an optional beside a sequence two, list_of's looped spot and last spot two.
-Two written labels, a skip: modes: a compile error (`[n = ([a = P] SEQ [b = Q])] & (n.d: <5)`, P := `/(?<d>\d)/`, Q := `/,(?<d>\d)/`: two labels `d` are visible from `n`: write `n.a.d` or `n.b.d`).
+Two written labels, a skip: modes: a compile error (`[n = ([a = /(?<d>\d)/] SEQ [b = /,(?<d>\d)/])] & (n.d: <5)`: `n.d`: two labels `d` with different full paths are visible from `n`: write `n.a.d` or `n.b.d` (a compile error, same-path-last 2))
+Two labels on uses, a skip: modes: a compile error (`[n = ([a = P] SEQ [b = Q])] & (n.d: <5)`, P := `/(?<d>\d)/`, Q := `/,(?<d>\d)/`: `n.d`: a `d` sits behind a gate, which is never skipped: write `n.a.d` or `n.b.d` (a compile error, label-names-gate))
 The full path: WHOLE `7,3` HOLDS, `3,7` FAILS / SEARCHED `3,7 7,3` `7,3`@4 / FIND-ALL `7,3 3,7 1,2` [`7,3`@0, `1,2`@8] (`[n = ([a = P] SEQ [b = Q])] & (n.b.d: <5)`, P := `/(?<d>\d)/`, Q := `/,(?<d>\d)/`)
-The array form, exempt: WHOLE `7,3` HOLDS, `3,7` HOLDS, `7,7` FAILS / SEARCHED `7,7 3,7` `3,7`@4 / FIND-ALL `7,3 7,7 1,2` [`7,3`@0, `1,2`@8] (`[n = ([a = P] SEQ [b = Q])] & some(@n.d, <5)`, P := `/(?<d>\d)/`, Q := `/,(?<d>\d)/`)
+The array form, exempt: WHOLE `7,3` HOLDS, `3,7` HOLDS, `7,7` FAILS / SEARCHED `7,7 3,7` `3,7`@4 / FIND-ALL `7,3 7,7 1,2` [`7,3`@0, `1,2`@8] (`[n = ([a = /(?<d>\d)/] SEQ [b = /,(?<d>\d)/])] & some(@n.d, <5)`)
+The array form past two written gates: modes: a compile error (`[n = ([a = P] SEQ [b = Q])] & some(@n.d, <5)`, P := `/(?<d>\d)/`, Q := `/,(?<d>\d)/`: `n.d`: a `d` sits behind a gate, which is never skipped: write `n.a.d` or `n.b.d` (a compile error, label-names-gate))
+One full path twice, the last mention: WHOLE `73` HOLDS, `37` FAILS / SEARCHED `37 73` `73`@3 / FIND-ALL `73 37 12` [`73`@0, `12`@6] (`[y = [x = [r = A] SEQ [r = A]]] & (y.r.g: <5)`, A := `[g = /\d/]`)
+One full path twice, written out: WHOLE `73` HOLDS, `37` FAILS / SEARCHED `37 73` `73`@3 / FIND-ALL `73 37 12` [`73`@0, `12`@6] (`[y = [x = [r = A] SEQ [r = A]]] & (y.x.r.g: <5)`, A := `[g = /\d/]`)
+One full path twice, the gate skipped: modes: a compile error (`[y = [x = [r = A] SEQ [r = A]]] & (y.g: <5)`, A := `[g = /\d/]`: `y.g`: a `g` sits behind a gate, which is never skipped: write `y.r.g` (a compile error, label-names-gate))
+
 The array form through a gate: modes: a compile error (`[n = (P SEQ Q)] & some(@n.d, <5)`, P := `/(?<d>\d)/`, Q := `/,(?<d>\d)/`: a `d` sits behind a gate, array or not).
 The binding's own, nothing skipped: WHOLE `7;3` HOLDS, `3;7` FAILS / SEARCHED `3;7 7;3` `7;3`@4 / FIND-ALL `7;3 3;7 1;2 9;9` [`7;3`@0, `1;2`@8] (`X & (X.d: <5)`, P := `/(?<d>\d)/`, X := `[a = P] SEQ /;(?<d>\d)/`)
 A direct target beside a gate: WHOLE `7,3` HOLDS, `3,7` FAILS / SEARCHED `3,7 7,3` `7,3`@4 / FIND-ALL `7,3 3,7 1,2` [`7,3`@0, `1,2`@8] (`[n = (P SEQ /,(?<d>\d)/)] & (n.d: <5)`, P := `/(?<d>\d)/`): the group; the gate's `d` is `n.P.d` (gate-beside-direct)
 
 ### Two public labels stacked   [core/labels/rule/stacked-chain]   ruled 2026-11-23
-Two public labels stacked on one spot (`[n = [m = P]]`) chain: `n.m.d` is the full path, `n.d` skips `m` (rule 4), `m.d` starts at `m` (rule 3); from outside the binding's name starts the same paths.
+Two public labels stacked on one spot (`[n = [m = P]]`) are equal names of it: `n.m.d`, `n.d` and `m.d` read P's `d`; from outside the binding's name starts the same paths, naming the gate.
 needs: core/labels/rule/paths
 see: core/labels/export core/labels/export/flat-read-outside
 - His words: "path-rules: yes" (core/labels/rule/paths): rule 1 makes `n.m.d` a path, rule 3 lets `m` start one,
-  rule 4 lets `n.d` skip `m`. From outside (rule 5) the binding's name starts the same tree: with X := `[n = [m =
-  A]] SEQ "!"`, `X.n.m.h`, `X.n.h`, `X.m.h` and `X.h` (rule 4) read A's `h`.
+  rule 4 lets `n.d` skip `m`. On P's use both labels name one gate (core/labels/rule/gates; the manager's reading of
+  label-doors line 5, run), so `n.d` skips nothing. From outside (rule 5) the binding's name starts the same tree:
+  with X := `[n = [m = A]] SEQ "!"`, `X.n.m.h`, `X.n.h` and `X.m.h` read A's `h`; `X.h` skips the gate, a compile
+  error (the line "From outside, by name").
 - The nested form `[n = ([m = P])]`, two spots, reads the same (the line "Two spots, the nested form").
-- Rule 4 applied repeatedly (core/labels/rule/paths, a reading): `n.d` skips `m` and `k` in `[n = [m = [k =
-  P]]]`. Two binding levels up, `X.c.h` would pass B's argument place, a compile error; Y labels the argument and X reads its label, `X.a.h` (caller-label-export; the last two lines) (the owner's strong lean, entailed by carve-out-reading and caller-label-export; to be confirmed).
+- Three stacked: `n.d` over `[n = [m = [k = P]]]` reads through three names of one gate (a reading). Two binding
+  levels up, `X.c.h` skips the gate `y` and `X.y.c.h` the place's gate `p`: `X.y.c.p.h` is the full path; Y
+  labelling the argument, `X.y.a.h` (caller-label-export) and `X.y.c.a.h` (argument-is-gate) read it.
 The chain: WHOLE `3xx` HOLDS, `7xx` FAILS / SEARCHED `7xx 3xx` `3xx`@4 / FIND-ALL `3xx 7xx 4xx` [`3xx`@0, `4xx`@8] (`[n = [m = P]] & (n.m.d: <5)`, P := `/(?<d>\d)xx/`): rule 1
 The first name: WHOLE `3xx` HOLDS, `7xx` FAILS / SEARCHED `7xx 3xx` `3xx`@4 / FIND-ALL `3xx 7xx 4xx` [`3xx`@0, `4xx`@8] (`[n = [m = P]] & (n.d: <5)`, P := `/(?<d>\d)xx/`): rule 4
 The second name: WHOLE `3xx` HOLDS, `7xx` FAILS / SEARCHED `7xx 3xx` `3xx`@4 / FIND-ALL `3xx 7xx 4xx` [`3xx`@0, `4xx`@8] (`[n = [m = P]] & (m.d: <5)`, P := `/(?<d>\d)xx/`): rule 3
 Two spots, the nested form: WHOLE `3xx` HOLDS, `7xx` FAILS / SEARCHED `7xx 3xx` `3xx`@4 / FIND-ALL `3xx 7xx 4xx` [`3xx`@0, `4xx`@8] (`[n = ([m = P])] & (n.m.d: <5)`, P := `/(?<d>\d)xx/`)
 From outside, the chain: WHOLE `3!` HOLDS, `7!` FAILS / SEARCHED `7! 3!` `3!`@3 / FIND-ALL `3! 7! 4!` [`3!`@0, `4!`@6] (`X & (X.n.m.h: <5)`, A := `/(?<h>\d)/`, X := `[n = [m = A]] SEQ "!"`)
-From outside, by name: WHOLE `3!` HOLDS, `7!` FAILS / SEARCHED `7! 3!` `3!`@3 / FIND-ALL `3! 7! 4!` [`3!`@0, `4!`@6] (`X & (X.h: <5)`, A := `/(?<h>\d)/`, X := `[n = [m = A]] SEQ "!"`): rule 4
+From outside, by name: modes: a compile error (`X & (X.h: <5)`, A := `/(?<h>\d)/`, X := `[n = [m = A]] SEQ "!"`: `X.h`: a `h` sits behind a gate, which is never skipped: write `X.n.h` (a compile error, label-names-gate))
+From outside, the gate named: WHOLE `3!` HOLDS, `7!` FAILS / SEARCHED `7! 3!` `3!`@3 / FIND-ALL `3! 7! 4!` [`3!`@0, `4!`@6] (`X & (X.n.h: <5)`, A := `/(?<h>\d)/`, X := `[n = [m = A]] SEQ "!"`)
+From outside, its other name: WHOLE `3!` HOLDS, `7!` FAILS / SEARCHED `7! 3!` `3!`@3 / FIND-ALL `3! 7! 4!` [`3!`@0, `4!`@6] (`X & (X.m.h: <5)`, A := `/(?<h>\d)/`, X := `[n = [m = A]] SEQ "!"`)
 Three stacked, both middles skipped: WHOLE `3xx` HOLDS, `7xx` FAILS / SEARCHED `7xx 3xx` `3xx`@4 / FIND-ALL `3xx 7xx 4xx` [`3xx`@0, `4xx`@8] (`[n = [m = [k = P]]] & (n.d: <5)`, P := `/(?<d>\d)xx/`): rule 4 applied repeatedly (a reading)
-Two binding levels, through the call's label: modes: a compile error (`X & (X.c.h: <5)`, A := `/(?<h>\d)/`, B(rx) := `/${[p = rx]}xx/`, Y := `[c = B(A)] SEQ "!"`, X := `[y = Y] SEQ ";"`: the path passes B's argument place, which no list opens: Y labels the argument and X reads `X.a.h`, the next line (core/labels/rule/argument-place)) (the owner's strong lean, entailed by carve-out-reading and caller-label-export; to be confirmed)
-Two binding levels, the sender's label: WHOLE `3xx!;` HOLDS, `7xx!;` FAILS / SEARCHED `7xx!; 3xx!;` `3xx!;`@6 / FIND-ALL `3xx!; 7xx!; 4xx!;` [`3xx!;`@0, `4xx!;`@12] (`X & (X.a.h: <5)`, A := `/(?<h>\d)/`, B(rx) := `/${[p = rx]}xx/`, Y := `[c = B([a = A])] SEQ "!"`, X := `[y = Y] SEQ ";"`): rules 5 and 4, `y` skipped; `a` is Y's own text (caller-label-export)
+Two binding levels, through the call's label: modes: a compile error (`X & (X.c.h: <5)`, A := `/(?<h>\d)/`, B(rx) := `/${[p = rx]}xx/`, Y := `[c = B(A)] SEQ "!"`, X := `[y = Y] SEQ ";"`: `X.c.h`: a `c` sits behind a gate, which is never skipped: write `X.y.c.h` (a compile error, label-names-gate))
+Two binding levels, the place skipped: modes: a compile error (`X & (X.y.c.h: <5)`, A := `/(?<h>\d)/`, B(rx) := `/${[p = rx]}xx/`, Y := `[c = B(A)] SEQ "!"`, X := `[y = Y] SEQ ";"`: `X.y.c.h`: a `h` sits behind a gate, which is never skipped: write `X.y.c.p.h` (a compile error, label-names-gate))
+Two binding levels, the full path: WHOLE `3xx!;` HOLDS, `7xx!;` FAILS / SEARCHED `7xx!; 3xx!;` `3xx!;`@6 / FIND-ALL `3xx!; 7xx!; 4xx!;` [`3xx!;`@0, `4xx!;`@12] (`X & (X.y.c.p.h: <5)`, A := `/(?<h>\d)/`, B(rx) := `/${[p = rx]}xx/`, Y := `[c = B(A)] SEQ "!"`, X := `[y = Y] SEQ ";"`)
+Two binding levels, the sender's label, `y` skipped: modes: a compile error (`X & (X.a.h: <5)`, A := `/(?<h>\d)/`, B(rx) := `/${[p = rx]}xx/`, Y := `[c = B([a = A])] SEQ "!"`, X := `[y = Y] SEQ ";"`: `X.a.h`: a `a` sits behind a gate, which is never skipped: write `X.y.a.h` (a compile error, label-names-gate))
+Two binding levels, the sender's label: WHOLE `3xx!;` HOLDS, `7xx!;` FAILS / SEARCHED `7xx!; 3xx!;` `3xx!;`@6 / FIND-ALL `3xx!; 7xx!; 4xx!;` [`3xx!;`@0, `4xx!;`@12] (`X & (X.y.a.h: <5)`, A := `/(?<h>\d)/`, B(rx) := `/${[p = rx]}xx/`, Y := `[c = B([a = A])] SEQ "!"`, X := `[y = Y] SEQ ";"`): `a` is Y's own text (caller-label-export)
+Two binding levels, through the call's label to the sender's: WHOLE `3xx!;` HOLDS, `7xx!;` FAILS / SEARCHED `7xx!; 3xx!;` `3xx!;`@6 / FIND-ALL `3xx!; 7xx!; 4xx!;` [`3xx!;`@0, `4xx!;`@12] (`X & (X.y.c.a.h: <5)`, A := `/(?<h>\d)/`, B(rx) := `/${[p = rx]}xx/`, Y := `[c = B([a = A])] SEQ "!"`, X := `[y = Y] SEQ ";"`)
 
 ### A sent label above the body's blank   [core/labels/rule/sent-label-wall]   ruled 2026-11-27
 When a body places a sent label ABOVE its own blank (`R(l:, v) := /${[l = [_ = v]]}xx/`), a caller's read through the sent label past the blank is a compile error.
@@ -556,16 +567,18 @@ see: core/operators/bindings/label-in-argument core/labels/rule/kinds
 The sent label above the body's blank: modes: a compile error (`R(x:, A) & (x.h: <5)`, A := `/(?<h>\d)/`, R(l:, v) := `/${[l = [_ = v]]}xx/`: the path x, `_`, h crosses the blank (rule 2)).
 The wall above the sent label: WHOLE `3xx` HOLDS, `7xx` FAILS / SEARCHED `7xx 3xx` `3xx`@4 / FIND-ALL `3xx 7xx 4xx` [`3xx`@0, `4xx`@8] (`R(x:, A) & (x.h: <5)`, A := `/(?<h>\d)/`, R(l:, v) := `/${[_ = [l = v]]}xx/`)
 ### Skipping past a private part   [core/labels/rule/skip-past-wall]   ruled 2026-11-27
-Rule 4's candidates count only the targets a legal path reaches: a private part behaves as if its labels were not there, so `n.d` reads m's `d` past `[_x = Q]`, per operator.
+Rule 4's candidates count only the targets a legal path reaches: a private part behaves as if its labels were not there, so `n.d` reads m's `d` past `[_x = Q]`, per operator, `m` over text in place.
 needs: core/labels/rule/paths
 see: core/labels/export/flat-read-outside core/labels/rule/kinds
 - His words: "skip-past-wall: agree with lean"; the lean as put: "(a). A private part should behave as if its
   labels were not there."
 - The inside twin of flat-read-outside's "a source it keeps protected does not exist for that read". Written
   public (`[k = Q]`), the competitor counts by the rule as worded; the not-taken candidate is in the details entry.
-In a sequence, the private part last: WHOLE `3,7` HOLDS, `7,3` FAILS / SEARCHED `7,3 3,7` `3,7`@4 / FIND-ALL `3,7 7,3 4,1` [`3,7`@0, `4,1`@8] (`[n = ([m = P] SEQ [_x = Q])] & (n.d: <5)`, P := `/(?<d>\d)/`, Q := `/,(?<d>\d)/`): m's `d`
-Across `&`: WHOLE `37` HOLDS, `73` FAILS / SEARCHED `73 37` `37`@3 / FIND-ALL `37 73 14` [`37`@0, `14`@6] (`[n = ([m = P] & [_x = Q])] & (n.d: <5)`, P := `/(?<d>\d)\d/`, Q := `/\d(?<d>\d)/`): m's `d`
-Across `|`: WHOLE `3` HOLDS, `a3` FAILS, `a7` FAILS / SEARCHED `a7 a3` `3`@4 / FIND-ALL `3 a7 a4` [`3`@0, `4`@6] (`[n = ([m = P] | [_x = Q])] & (n.d: <5)`, P := `/(?<d>\d)/`, Q := `/a(?<d>\d)/`): m's `d`, unset where the private branch is taken
+In a sequence, the private part last: WHOLE `3,7` HOLDS, `7,3` FAILS / SEARCHED `7,3 3,7` `3,7`@4 / FIND-ALL `3,7 7,3 4,1` [`3,7`@0, `4,1`@8] (`[n = ([m = /(?<d>\d)/] SEQ [_x = Q])] & (n.d: <5)`, Q := `/,(?<d>\d)/`): m's `d`
+Across `&`: WHOLE `37` HOLDS, `73` FAILS / SEARCHED `73 37` `37`@3 / FIND-ALL `37 73 14` [`37`@0, `14`@6] (`[n = ([m = /(?<d>\d)\d/] & [_x = Q])] & (n.d: <5)`, Q := `/\d(?<d>\d)/`): m's `d`
+Across `|`: WHOLE `3` HOLDS, `a3` FAILS, `a7` FAILS / SEARCHED `a7 a3` `3`@4 / FIND-ALL `3 a7 a4` [`3`@0, `4`@6] (`[n = ([m = /(?<d>\d)/] | [_x = Q])] & (n.d: <5)`, Q := `/a(?<d>\d)/`): m's `d`, unset where the private branch is taken
+With `m` on a use, a gate: modes: a compile error (`[n = ([m = P] SEQ [_x = Q])] & (n.d: <5)`, P := `/(?<d>\d)/`, Q := `/,(?<d>\d)/`: `n.d`: a `d` sits behind a gate, which is never skipped: write `n.m.d` (a compile error, label-names-gate))
+With `m` on a use, the gate named: WHOLE `3,7` HOLDS, `7,3` FAILS / SEARCHED `7,3 3,7` `3,7`@4 / FIND-ALL `3,7 7,3 4,1` [`3,7`@0, `4,1`@8] (`[n = ([m = P] SEQ [_x = Q])] & (n.m.d: <5)`, P := `/(?<d>\d)/`, Q := `/,(?<d>\d)/`), unset where the private branch is taken
 ### His equivalence inside the binding   [core/labels/rule/equivalence-inside]   ruled 2026-11-27
 Inside the binding that writes it, `[_t = A]` makes no label `t`: inside, `t.h` is a compile error and `_t.h` the read.
 needs: core/labels/rule/paths
@@ -584,11 +597,13 @@ see: core/labels/export core/labels/rule/kinds
 - His words: "alone-as-middle: yes to the gate"; the statement as re-asked: "inside the definition that uses it, a
   part used alone is a label of its own name that may start a path or be a middle step (`n.Q.d`), and is never
   skipped (`n.d` through it is a compile error naming `n.Q.d`). From outside it exports nothing, as today."
-- A label someone WROTE (`[a = P]`) is still skipped by rule 4. A part used more than once is refused as a step,
-  as it is as a start. From outside, `X.Q.d` crosses Q as a wall (rule 6), and `X.n.Q.d` alike.
+- A label written directly on a use, a call or a placed parameter names that gate and is not skipped
+  (core/labels/rule/gates); a label over text written in place is skipped by rule 4. A part used more than once is
+  a step read at its last placement written before the read (core/labels/paths/binding-prefix; the line "Used
+  twice, the last placement"). From outside, `X.Q.d` crosses Q as a wall (rule 6), and `X.n.Q.d` alike.
 - A binding's or a macro's use alike (a reading: "a binding's or a macro's name on its part", the paths' terms): a
   macro call used alone, `B(Q)`, is the step `B`; `n.B.p` reads the body's label, `n.d` through it is refused, and
-  `n.B.p.d` passes B's argument place, a compile error: Q's `d` is read `Q.d` (core/labels/rule/argument-place) (the owner's strong lean, entailed by carve-out-reading and caller-label-export; to be confirmed).
+  `n.B.p.d` is a full path through B's gate and the place's gate `p` to Q's `d` (core/labels/rule/argument-place).
 - "More than once" counts the uses under the path's start (one-path line 5, core/labels/rule/one-path): `n.Q.d` is
   legal where a second `Q` is under `m` only.
 - Beside a written label (`[n = ([a = P] SEQ Q)]`, `n.d`): a compile error, a `d` sits behind a gate, so say which,
@@ -599,9 +614,10 @@ see: core/labels/export core/labels/rule/kinds
 A part used alone as a middle, inside: WHOLE `7,3` HOLDS, `3,7` FAILS / SEARCHED `3,7 7,3` `7,3`@4 / FIND-ALL `7,3 3,7 4,1` [`7,3`@0, `4,1`@8] (`[n = (P SEQ Q)] & (n.Q.d: <5)`, P := `/(?<d>\d)/`, Q := `/,(?<d>\d)/`)
 Through the part used alone, skipped: modes: a compile error (`[n = (P SEQ Q)] & (n.d: <5)`, P := `/(?<d>\d)/`, Q := `/,(?<d>\d)/`: the path skips a part used alone, which is never skipped inside its binding: write `n.P.d` or `n.Q.d`).
 Its own start, alike: WHOLE `7,3` HOLDS, `3,7` FAILS / SEARCHED `3,7 7,3` `7,3`@4 / FIND-ALL `7,3 3,7 4,1` [`7,3`@0, `4,1`@8] (`[n = (P SEQ Q)] & (Q.d: <5)`, P := `/(?<d>\d)/`, Q := `/,(?<d>\d)/`)
-Used twice, not a step: modes: a compile error (`[n = (Q SEQ Q)] & (n.Q.d: <5)`, Q := `/,(?<d>\d)/`: `Q` is used more than once here, so it is not a step).
+Used twice, the last placement: WHOLE `,7,3` HOLDS, `,3,7` FAILS / SEARCHED `,3,7 ,7,3` `,7,3`@5 / FIND-ALL `,7,3 ,3,7 ,1,2` [`,7,3`@0, `,1,2`@10] (`[n = (Q SEQ Q)] & (n.Q.d: <5)`, Q := `/,(?<d>\d)/`)
 From outside, the part used alone: modes: a compile error (`X & (X.Q.d: <5)`, P := `/(?<d>\d)/`, Q := `/,(?<d>\d)/`, X := `[n = (P SEQ Q)]`: the path crosses `Q`, a part used alone in it (rule 6)).
-A macro call used alone, through its place: modes: a compile error (`[n = (P SEQ B(Q))] & (n.B.p.d: <5)`, P := `/(?<d>\d)/`, Q := `/,(?<d>\d)/`, B(rx) := `/${[p = rx]}xx/`: the path passes B's argument place, which no list opens: read `Q.d`) (the owner's strong lean, entailed by carve-out-reading and caller-label-export; to be confirmed)
+A macro call used alone, through its place: WHOLE `7,3xx` HOLDS, `3,7xx` FAILS / SEARCHED `3,7xx 7,3xx` `7,3xx`@6 / FIND-ALL `7,3xx 3,7xx 4,1xx` [`7,3xx`@0, `4,1xx`@12] (`[n = (P SEQ B(Q))] & (n.B.p.d: <5)`, P := `/(?<d>\d)/`, Q := `/,(?<d>\d)/`, B(rx) := `/${[p = rx]}xx/`)
+
 A macro call used alone, the sender's name: WHOLE `7,3xx` HOLDS, `3,7xx` FAILS / SEARCHED `3,7xx 7,3xx` `7,3xx`@6 / FIND-ALL `7,3xx 3,7xx 4,1xx` [`7,3xx`@0, `4,1xx`@12] (`[n = (P SEQ B(Q))] & (Q.d: <5)`, P := `/(?<d>\d)/`, Q := `/,(?<d>\d)/`, B(rx) := `/${[p = rx]}xx/`)
 A macro call used alone, skipped: modes: a compile error (`[n = (P SEQ B(Q))] & (n.d: <5)`, P := `/(?<d>\d)/`, Q := `/,(?<d>\d)/`, B(rx) := `/${[p = rx]}xx/`: the path skips a part used alone: write `n.P.d`, or `Q.d` for Q's).
 Two uses, one under the read's prefix: WHOLE `7,3;7,7` HOLDS, `7,7;7,3` FAILS / SEARCHED `7,7;7,3 7,3;7,7` `7,3;7,7`@8 / FIND-ALL `7,3;7,7 7,7;7,3 1,2;3,4` [`7,3;7,7`@0, `1,2;3,4`@16] (`[n = (P SEQ Q)] SEQ ";" SEQ [m = (P SEQ Q)] & (n.Q.d: <5)`, P := `/(?<d>\d)/`, Q := `/,(?<d>\d)/`): one-path line 5
@@ -635,37 +651,36 @@ A group around a hole, A named: WHOLE `3x` HOLDS, `7x` FAILS / SEARCHED `7x 3x` 
 A group around a hole, A skipped: modes: a compile error (`/(?<g>${A})x/ & (g.h: <5)`, A := `/(?<h>\d)/`: the path skips A, a part used alone, which is never skipped: write `g.A.h`).
 A group around a hole, A's own start: WHOLE `3x` HOLDS, `7x` FAILS / SEARCHED `7x 3x` `3x`@3 / FIND-ALL `3x 7x 4x` [`3x`@0, `4x`@6] (`/(?<g>${A})x/ & (A.h: <5)`, A := `/(?<h>\d)/`)
 
-### No path through an argument's place   [core/labels/rule/argument-place]   open no-path-through-argument 2026-11-27
-A path never passes an argument's place in a body: an argument's labels are reached by the sender's own names for it, or through a list the body writes on the place.
-needs: core/labels/rule/paths core/labels/rule/one-path
-see: core/labels/rule/kinds core/labels/export core/labels/export/arguments core/labels/paths/argument-default core/labels/paths/call-prefix lib/convention/argument-labels
-- His words: "no-path-through-argument: let's do a strong lean yes with your carve out for exported labels." on: "a
-  path never goes through an argument's place. The labels inside an argument are reached only by the sender's own
-  names for it, or where the body passes them on by an export list". Not asked as a ruling; two of his rulings rest
-  on it (the two sub-pieces below), so it is applied, and every site that states or rests on it carries the mark
-  (the owner's strong lean, entailed by carve-out-reading and caller-label-export; to be confirmed).
-- The place is where a body lays a parameter into its pattern (`${rx}`); it has no name, and it holds the
-  sender's text.
+### A placed parameter is a gate like any other   [core/labels/rule/argument-place]   ruled 2026-11-28
+A parameter placed in a body (`${rx}`) is a gate like any other: named by the body's label on it (`B.p.h` from the caller), else by the parameter's name inside the body only; a list lifts its labels.
+needs: core/labels/rule/gates
+see: core/labels/rule/kinds core/labels/export core/labels/export/arguments core/labels/paths/argument-default core/labels/paths/call-prefix core/operators/bindings/reference lib/convention/argument-labels
+- His words: "argument-is-gate: yes all five", on:
+  "1. A placed parameter is a gate like any other; there is no separate rule for arguments.
+  2. Named by the body's label, it is a step anyone may take: `dd.g` inside the body, `B.dd.g` from the caller.
+  3. Unlabelled, its name is the parameter's (`rx.g`), which exists only inside the body. From outside, the caller
+  reads its own name for what it sent, `A.g`, as today.
+  4. A label the argument lacks is an error at the read when the reader can see the argument (the caller), and at
+  the call when the reader is the body.
+  5. The export list stays the way to flatten: `[(=) = rx]` makes `B.g` legal."
+- Told with it, and so ruled: `Y.c.a.h` is legal, "a full path that skips nothing"; `Y.a.h` stays legal
+  (core/labels/rule/caller-label).
+- The place is where a body lays a parameter into its pattern (`${rx}`); it holds the sender's text. What this tag
+  stated before, and why it is kept: the details entry.
 - The sender's own names, each as before: the shorthand `A.h` of `B(A)` (core/labels/paths/argument-default); a
-  label the sender writes in the argument, `a.h` of `B([a = A])`, and from a binding that uses the sender by that
-  label's name (core/labels/rule/caller-label); a sent label, `x.h` of `R(x:, A)`
-  (core/operators/bindings/label-in-argument); a group of an in-place argument, read bare (`d` of `B(/(?<d>\d)/)`).
-- The way through from the body's side: a list on the place, `[(=) = rx]` (core/labels/rule/argument-door).
-  A label the body writes on the place is the body's own, read as itself (`B.p`), and passes nothing of the
-  argument: `B.p.h` and `B.h` through it are compile errors.
+  label the sender writes in the argument, `a.h` of `B([a = A])` (core/labels/rule/caller-label); a sent label,
+  `x.h` of `R(x:, A)` (core/operators/bindings/label-in-argument); a group of an in-place argument, read bare.
+- Inside the body the parameter's name is the place's own (`rx.g`, core/operators/bindings/reference); from the
+  caller an unlabelled place is a wall: `B.h` over `/${rx}xx/` is a compile error (core/labels/paths/call-prefix).
+- On the place, the body's label and a label the sender writes directly in the argument are stacked names of one
+  gate (label-doors line 5; the manager's reading, run): `B.a.h` and `B.p.a.h` read A's `h` (the last two lines).
 - The body's own labels beside the place are read as before (body-own-name, core/labels/rule/one-path).
-- The refusal names this rule and the ways in (its wording a reading, the manager's): "the path passes B's argument
-  place, which no list opens: read `A.h`, label the argument, or list it in the body".
-- What moved to a compile error, each printed at its piece with the sender's spelling and the same answers: `B.h`
-  (core/labels/rule/paths), `n.B.p.d` (core/labels/rule/alone-as-middle), `X.c.h` (core/labels/rule/stacked-chain;
-  not a re-spelling of the read but a different program, Y labelling its argument, `X.a.h`), `B.p.d`
-  (core/labels/paths/closed-argument), `pub.A.h` written out (core/labels/paths/argument-default,
-  core/labels/paths/shorthand-outside), `B.dd.d` (core/labels/paths/argument-default, and nested-scope's line
-  "Example 1, the spot labelled", core/holes/bare-condition/nested-scope).
 Through a call, the sender's name: WHOLE `3xx` HOLDS, `7xx` FAILS / SEARCHED `7xx 3xx` `3xx`@4 / FIND-ALL `3xx 7xx 4xx` [`3xx`@0, `4xx`@8] (`B(A) & (A.h: <5)`, A := `/(?<h>\d)/`, B(rx) := `/${[p = rx]}xx/`)
 Through a call, the body's label itself: WHOLE `3xx` HOLDS, `7xx` FAILS / SEARCHED `7xx 3xx` `3xx`@4 / FIND-ALL `3xx 7xx 4xx` [`3xx`@0, `4xx`@8] (`B(A) & (B.p: <5)`, A := `/(?<h>\d)/`, B(rx) := `/${[p = rx]}xx/`)
-Through a call, past the body's label: modes: a compile error (`B(A) & (B.p.h: <5)`, A := `/(?<h>\d)/`, B(rx) := `/${[p = rx]}xx/`: the path passes B's argument place, which no list opens: read `A.h`, label the argument, or list it in the body) (the owner's strong lean, entailed by carve-out-reading and caller-label-export; to be confirmed)
-The macro's name over a label the sender writes: modes: a compile error (`B([a = A]) & (B.a.h: <5)`, A := `/(?<h>\d)/`, B(rx) := `/${[p = rx]}xx/`: the path passes B's argument place; the read is `a.h`) (the owner's strong lean, entailed by carve-out-reading and caller-label-export; to be confirmed)
+Through a call, past the body's label: WHOLE `3xx` HOLDS, `7xx` FAILS / SEARCHED `7xx 3xx` `3xx`@4 / FIND-ALL `3xx 7xx 4xx` [`3xx`@0, `4xx`@8] (`B(A) & (B.p.h: <5)`, A := `/(?<h>\d)/`, B(rx) := `/${[p = rx]}xx/`)
+Through a call, the gate skipped: modes: a compile error (`B(A) & (B.h: <5)`, A := `/(?<h>\d)/`, B(rx) := `/${[p = rx]}xx/`: `B.h`: a `h` sits behind a gate, which is never skipped: write `B.p.h` (a compile error, label-names-gate))
+The macro's name over a label the sender writes: WHOLE `3xx` HOLDS, `7xx` FAILS / SEARCHED `7xx 3xx` `3xx`@4 / FIND-ALL `3xx 7xx 4xx` [`3xx`@0, `4xx`@8] (`B([a = A]) & (B.a.h: <5)`, A := `/(?<h>\d)/`, B(rx) := `/${[p = rx]}xx/`)
+Both names of the place: WHOLE `3xx` HOLDS, `7xx` FAILS / SEARCHED `7xx 3xx` `3xx`@4 / FIND-ALL `3xx 7xx 4xx` [`3xx`@0, `4xx`@8] (`B([a = A]) & (B.p.a.h: <5)`, A := `/(?<h>\d)/`, B(rx) := `/${[p = rx]}xx/`)
 
 ### The door: a list on the place   [core/labels/rule/argument-door]   ruled 2026-11-27
 A list a body writes on an argument's place opens a door through it: a path may pass it, and one-path and body-own-name apply to what is reached as they do anywhere else.
@@ -674,7 +689,8 @@ see: core/labels/export/export-list lib/convention/argument-labels lib/search/hi
 - His words: "carve-out-reading: agree with lean"; as asked: "a body's export list opens a door through the
   argument's place. A path may pass it, and one-path and body-own-name apply to what is reached as they do anywhere
   else."; the lean as put: "yes, the door. An argument can then cause an error at the caller's read but can never
-  change an answer silently." It rests on the base statement (the owner's strong lean, entailed by carve-out-reading and caller-label-export; to be confirmed).
+  change an answer silently." It is argument-is-gate's line 5, "`[(=) = rx]` makes `B.g` legal"
+  (core/labels/rule/argument-place).
 - The list's alias and the place are steps between: a read through the list skips them, and one-path counts what it
   reaches. One argument setting `h` is read (the line "One argument sets it"); two that both set it are a compile
   error (lib/convention/argument-labels, "Two arguments"), as are `pair.d` and `list_of.h` (core/labels/rule/one-path).
@@ -695,61 +711,71 @@ Without his remedy: modes: a compile error (`Bo(Ad) & (Bo.d: <5)`, Ad := `/(?<d>
 His remedy: WHOLE `3-7` HOLDS, `7-3` FAILS, `3-3` HOLDS, `7-7` FAILS / SEARCHED `7-7 3-7` `3-7`@4 / FIND-ALL `3-7 7-3 1-2 9-9` [`3-7`@0, `1-2`@8] (`Bo(Ad) & (Bo.d: <5)`, Ad := `/(?<d>\d)/`, Bo(rx) := `/${[q = /(?<d>\d)/]}-${[(=, _ = d) = rx]}/`)
 Under the body's label: WHOLE `3xx` HOLDS, `7xx` FAILS / SEARCHED `7xx 3xx` `3xx`@4 / FIND-ALL `3xx 7xx 4xx` [`3xx`@0, `4xx`@8] (`B2(A) & (B2.p.h: <5)`, A := `/(?<h>\d)/`, B2(rx) := `/${[p = [(=) = rx]]}xx/`)
 
-### A label the sender writes in an argument   [core/labels/rule/caller-label]   ruled 2026-11-27
-A label the sender writes in an argument is the sender's own text and exported like any label it writes (`Y.a.h`); the path through the call's own label (`Y.c.a.h`) is a compile error.
+### A label the sender writes in an argument   [core/labels/rule/caller-label]   ruled 2026-11-28
+A label the sender writes in an argument is the sender's own text and exported like any label it writes (`Y.a.h`); through the call's own label (`Y.c.a.h`) it is a full path too.
 needs: core/labels/rule/argument-place
 see: core/labels/export core/labels/export/arguments core/labels/paths/shorthand-outside core/labels/rule/stacked-chain
 - His words: "caller-label-export: agree first read. If they didn't want to export use _a label."; the first
   reading as asked, for Y := `[c = B([a = A])] SEQ "!"`, B(rx) := `/${[p = rx]}xx/`: "The label is Y's own text, so
-  Y exports it like any label it writes": `Y.a.h` legal; `Y.c.a.h` "an error: that path goes through B's argument
-  place". The lean as put: "A label the sender writes is the sender's own and travels with the sender's exports;
-  only the path through the call's own label is a path through the argument's place." The error rests on the base
-  statement (the owner's strong lean, entailed by carve-out-reading and caller-label-export; to be confirmed).
+  Y exports it like any label it writes": `Y.a.h` legal.
+- His words: "argument-is-gate: yes all five" (core/labels/rule/argument-place), told with it: `Y.c.a.h` "a full
+  path that skips nothing", legal; `Y.a.h` stays legal. `Y.c.h` skips the place's gate, a compile error naming
+  `Y.c.a.h`.
 - His second sentence: the sender keeps it in by an underscore label, `[_a = A]`, private as any underscore label
   (core/labels/export statement 6).
-- In the sender's own text the call's label and the macro's name are paths through the place alike (a reading, the
-  fold's): `pub.A.h` for `[pub = B([A = A])]` (core/labels/paths/shorthand-outside) and `B.a.h` are compile errors;
-  `A.h`, `a.h` the reads (the owner's strong lean, entailed by carve-out-reading and caller-label-export; to be confirmed).
-- A label above the call's label in the sender's own text, `k.a.h` over `[k = [c = B([a = A])]]` (a marked reading,
-  the lean read literally: the path passes `c` and the place; an owner question with the lean's confirmation): a
-  compile error (the line "A label above the call's label"); `a.h` the read. The other reading, a label the
-  sender writes reached from any label above the call, RUN: WHOLE `3xx` HOLDS, `7xx` FAILS / SEARCHED `7xx 3xx`
-  `3xx`@4 / FIND-ALL `3xx 7xx 4xx` [`3xx`@0, `4xx`@8]; `c.a.h` is a compile error in both.
+- In the sender's own text the call's label and the macro's name reach it alike (the manager's reading, run, derived
+  from the gate rule): `pub.A.h` for `[pub = B([A = A])]` (core/labels/paths/shorthand-outside) and `B.a.h` are
+  legal; `A.h`, `a.h` read the same spot.
+- A label above the call's label, `k.a.h` over `[k = [c = B([a = A])]]`: `k` and `c` are stacked names of the
+  call's gate, so `k.a.h` is `c.a.h`, legal (label-above-call, the manager's reading derived from the gate rule,
+  run: the line "A label above the call's label").
 Its own name, from a binding that uses the sender: WHOLE `3xx!` HOLDS, `7xx!` FAILS / SEARCHED `7xx! 3xx!` `3xx!`@5 / FIND-ALL `3xx! 7xx! 4xx!` [`3xx!`@0, `4xx!`@10] (`Y & (Y.a.h: <5)`, A := `/(?<h>\d)/`, B(rx) := `/${[p = rx]}xx/`, Y := `[c = B([a = A])] SEQ "!"`)
-Through the call's label: modes: a compile error (`Y & (Y.c.a.h: <5)`, A := `/(?<h>\d)/`, B(rx) := `/${[p = rx]}xx/`, Y := `[c = B([a = A])] SEQ "!"`: the path passes B's argument place: read `Y.a.h` (ruled, caller-label-export; its ground the strong lean, to be confirmed); `Y.c.h` alike (the owner's strong lean, entailed by carve-out-reading and caller-label-export; to be confirmed))
+Through the call's label: WHOLE `3xx!` HOLDS, `7xx!` FAILS / SEARCHED `7xx! 3xx!` `3xx!`@5 / FIND-ALL `3xx! 7xx! 4xx!` [`3xx!`@0, `4xx!`@10] (`Y & (Y.c.a.h: <5)`, A := `/(?<h>\d)/`, B(rx) := `/${[p = rx]}xx/`, Y := `[c = B([a = A])] SEQ "!"`)
+Through the call's label, the place skipped: modes: a compile error (`Y & (Y.c.h: <5)`, A := `/(?<h>\d)/`, B(rx) := `/${[p = rx]}xx/`, Y := `[c = B([a = A])] SEQ "!"`: `Y.c.h`: a `h` sits behind a gate, which is never skipped: write `Y.c.a.h` (a compile error, label-names-gate))
+Through the call's label and the body's: WHOLE `3xx!` HOLDS, `7xx!` FAILS / SEARCHED `7xx! 3xx!` `3xx!`@5 / FIND-ALL `3xx! 7xx! 4xx!` [`3xx!`@0, `4xx!`@10] (`Y & (Y.c.p.h: <5)`, A := `/(?<h>\d)/`, B(rx) := `/${[p = rx]}xx/`, Y := `[c = B([a = A])] SEQ "!"`): `p` and `a` stacked names of one spot
 Kept in by an underscore label: modes: a compile error (`Y & (Y.a.h: <5)`, A := `/(?<h>\d)/`, B(rx) := `/${[p = rx]}xx/`, Y := `[c = B([_a = A])] SEQ "!"`: Y exports no `a`; `_a` is private to Y)
-A label above the call's label: modes: a compile error (`[k = [c = B([a = A])]] & (k.a.h: <5)`, A := `/(?<h>\d)/`, B(rx) := `/${[p = rx]}xx/`: the path passes the call's label `c` and B's argument place: read `a.h`; a marked reading) (the owner's strong lean, entailed by carve-out-reading and caller-label-export; to be confirmed)
+A label above the call's label: WHOLE `3xx` HOLDS, `7xx` FAILS / SEARCHED `7xx 3xx` `3xx`@4 / FIND-ALL `3xx 7xx 4xx` [`3xx`@0, `4xx`@8] (`[k = [c = B([a = A])]] & (k.a.h: <5)`, A := `/(?<h>\d)/`, B(rx) := `/${[p = rx]}xx/`)
+The call's label: WHOLE `3xx` HOLDS, `7xx` FAILS / SEARCHED `7xx 3xx` `3xx`@4 / FIND-ALL `3xx 7xx 4xx` [`3xx`@0, `4xx`@8] (`[k = [c = B([a = A])]] & (c.a.h: <5)`, A := `/(?<h>\d)/`, B(rx) := `/${[p = rx]}xx/`)
 
 ### A list one label above the place   [core/labels/rule/list-over-label]   open list-over-label 2026-11-27
-A list written above a label the body puts on the place (`[(=) = [p = rx]]`) passes `p` only, so `B1.h` is a compile error: a marked reading, the study's lean; not asked.
+A list written above a label the body puts on the place (`[(=) = [p = rx]]`) passes `p` only: `B1.h` is a compile error, `B1.p.h` the read (the manager's reading, derived; not asked).
 needs: core/labels/rule/argument-door
-- The reading printed (the study's lean): the list takes what the part `[p = rx]` exports, and under the base
-  statement that is `p` only (the owner's strong lean, entailed by carve-out-reading and caller-label-export; to be confirmed); the body writes `[p = [(=) = rx]]` to pass both.
+- The reading printed (the manager's, derived): `p` is written directly on the placed parameter and names its gate
+  (core/labels/rule/gates); the list lifts what the part `[p = rx]` exports, `p`, and `h` stays behind the gate
+  `p`: `B1.h` skips a gate, `B1.p.h` names it. The body writes `[p = [(=) = rx]]` to pass both.
 - The other reading: any list above the place inside the body opens it, and `B1.h` reads A's `h`, RUN: WHOLE `3xx`
   HOLDS, `7xx` FAILS / SEARCHED `7xx 3xx` `3xx`@4 / FIND-ALL `3xx 7xx 4xx` [`3xx`@0, `4xx`@8].
-- `B1.p` is legal in both, the body's label (the second line).
-A list above the body's label: modes: a compile error (`B1(A) & (B1.h: <5)`, A := `/(?<h>\d)/`, B1(rx) := `/${[(=) = [p = rx]]}xx/`: the list passes the part `[p = rx]`'s labels, `p` only: the body writes `[p = [(=) = rx]]` to pass both; a marked reading) (the owner's strong lean, entailed by carve-out-reading and caller-label-export; to be confirmed)
+- `B1.p` is legal in both, the body's label (the last line).
+A list above the body's label: modes: a compile error (`B1(A) & (B1.h: <5)`, A := `/(?<h>\d)/`, B1(rx) := `/${[(=) = [p = rx]]}xx/`: `B1.h`: a `h` sits behind a gate, which is never skipped: write `B1.p.h` (a compile error, label-names-gate))
+A list above the body's label, the gate named: WHOLE `3xx` HOLDS, `7xx` FAILS / SEARCHED `7xx 3xx` `3xx`@4 / FIND-ALL `3xx 7xx 4xx` [`3xx`@0, `4xx`@8] (`B1(A) & (B1.p.h: <5)`, A := `/(?<h>\d)/`, B1(rx) := `/${[(=) = [p = rx]]}xx/`)
 The body's label under the list: WHOLE `3xx` HOLDS, `7xx` FAILS / SEARCHED `7xx 3xx` `3xx`@4 / FIND-ALL `3xx 7xx 4xx` [`3xx`@0, `4xx`@8] (`B1(A) & (B1.p: <5)`, A := `/(?<h>\d)/`, B1(rx) := `/${[(=) = [p = rx]]}xx/`)
 
-### A body that passes its parameter on   [core/labels/rule/forwarded-place]   open forwarded-place 2026-11-27
-When a body passes its parameter to another macro that lists it, and lists that call (`Mx(r) := /<${[(=) = L2(r)]}>/`), `Mx.h` passes: a marked reading, the study's lean; not asked.
+### A body that passes its parameter on   [core/labels/rule/forwarded-place]   reading 2026-11-28
+When a body passes its parameter to another macro that lists it, and lists that call (`Mx(r) := /<${[(=) = L2(r)]}>/`), `Mx.h` passes (the manager's reading, derived; not asked).
 needs: core/labels/rule/argument-door
-- The reading printed (the study's lean): the inner body's list opens the place the parameter is forwarded to, and
-  Mx lists that call, so every place on the way is listed; wrappers of wrappers are the library's normal shape (the owner's strong lean, entailed by carve-out-reading and caller-label-export; to be confirmed).
-- The other reading: only Mx's own list on Mx's own place counts, and Mx writes none there: `Mx.h` is a compile
-  error, RUN by the model's switch (the line's program refused).
-- An inner body that labels the place (`T2(x) := /${[t = x]}/`) makes `Mt.h` and `Mt.t.h` errors in both readings.
-Forwarded to a listing body: WHOLE `<3>` HOLDS, `<7>` FAILS / SEARCHED `<7> <3>` `<3>`@4 / FIND-ALL `<3> <7> <4>` [`<3>`@0, `<4>`@8] (`Mx(A) & (Mx.h: <5)`, A := `/(?<h>\d)/`, Mx(r) := `/<${[(=) = L2(r)]}>/`, L2(x) := `/${[(=) = x]}/`): a marked reading
+- The reading (the manager's, derived from argument-is-gate and label-names-gate): each place on the way is a gate,
+  and a list on it is the door (his line 5, "`[(=) = rx]` makes `B.g` legal"); Mx lists the call `L2(r)`, and L2
+  lists its own place, so `Mx.h` names no gate it skips. Wrappers of wrappers are the library's normal shape.
+- An inner body that labels the place (`T2(x) := /${[t = x]}/`, Mt(r) := `/<${[(=) = T2(r)]}>/`): the list lifts
+  `t`, the name of T2's place: `Mt.h` skips that gate, a compile error; `Mt.t.h` names it (the last two lines).
+- The other reading once printed (only Mx's own list on Mx's own place counts) is not what the gate rule derives:
+  the details entry.
+Forwarded to a listing body: WHOLE `<3>` HOLDS, `<7>` FAILS / SEARCHED `<7> <3>` `<3>`@4 / FIND-ALL `<3> <7> <4>` [`<3>`@0, `<4>`@8] (`Mx(A) & (Mx.h: <5)`, A := `/(?<h>\d)/`, Mx(r) := `/<${[(=) = L2(r)]}>/`, L2(x) := `/${[(=) = x]}/`)
+An inner body that labels the place: modes: a compile error (`Mt(A) & (Mt.h: <5)`, A := `/(?<h>\d)/`, Mt(r) := `/<${[(=) = T2(r)]}>/`, T2(x) := `/${[t = x]}/`: `Mt.h`: a `h` sits behind a gate, which is never skipped: write `Mt.t.h` (a compile error, label-names-gate))
+An inner body that labels the place, the gate named: WHOLE `<3>` HOLDS, `<7>` FAILS / SEARCHED `<7> <3>` `<3>`@4 / FIND-ALL `<3> <7> <4>` [`<3>`@0, `<4>`@8] (`Mt(A) & (Mt.t.h: <5)`, A := `/(?<h>\d)/`, Mt(r) := `/<${[(=) = T2(r)]}>/`, T2(x) := `/${[t = x]}/`)
 
 ### A sent label above a label of the body's   [core/labels/rule/sent-over-body-label]   open sent-over-body-label 2026-11-27
-A sent label the body places above a label of its own (`Rs(l:, v) := /${[l = [p = v]]}xx/`) is the sender's own name, a start: `x.h` and `x.p.h` are legal (a marked reading; not asked).
+A sent label the body places above a label of its own (`Rs(l:, v) := /${[l = [p = v]]}xx/`) is the sender's own name: `x.h` and `x.p.h` are legal (the manager's reading, derived; not asked).
 needs: core/labels/rule/argument-place
 see: core/operators/bindings/label-needs-mark core/operators/bindings/label-in-argument
-- The reading printed (the study's lean): "the sender's own names" make the sent label a start wherever the body
-  places it, which is what keeps the printed `R(x:, A) & (x.h: <5)` (core/operators/bindings/label-needs-mark).
-- The other reading: the path from `x` passes the body's `p` and then the place: `x.h` and `x.p.h` are compile
-  errors (the owner's strong lean, entailed by carve-out-reading and caller-label-export; to be confirmed); RUN as the refusal of the model's switch.
-A sent label above the body's label: WHOLE `3xx` HOLDS, `7xx` FAILS / SEARCHED `7xx 3xx` `3xx`@4 / FIND-ALL `3xx 7xx 4xx` [`3xx`@0, `4xx`@8] (`Rs(x:, A) & (x.h: <5)`, A := `/(?<h>\d)/`, Rs(l:, v) := `/${[l = [p = v]]}xx/`): a marked reading
+- The reading printed (the manager's, derived): `l` and `p` are stacked directly on the placed parameter `v`, so
+  both name its gate (core/labels/rule/gates, label-doors line 5); the sender's `x` is `l`, so `x.h` names the gate
+  and skips nothing, and `x.p.h` steps between two names of one spot. It keeps the printed `R(x:, A) & (x.h: <5)`
+  (core/operators/bindings/label-needs-mark).
+- The other reading: the path from `x` passes the body's `p` as a step of its own: `x.h` is a compile error and
+  `x.p.h` the read; RUN as the refusal of the model's switch.
+A sent label above the body's label: WHOLE `3xx` HOLDS, `7xx` FAILS / SEARCHED `7xx 3xx` `3xx`@4 / FIND-ALL `3xx 7xx 4xx` [`3xx`@0, `4xx`@8] (`Rs(x:, A) & (x.h: <5)`, A := `/(?<h>\d)/`, Rs(l:, v) := `/${[l = [p = v]]}xx/`)
+Through both names: WHOLE `3xx` HOLDS, `7xx` FAILS / SEARCHED `7xx 3xx` `3xx`@4 / FIND-ALL `3xx 7xx 4xx` [`3xx`@0, `4xx`@8] (`Rs(x:, A) & (x.p.h: <5)`, A := `/(?<h>\d)/`, Rs(l:, v) := `/${[l = [p = v]]}xx/`)
 
 ### The kinds of labels, door by door   [core/labels/rule/kinds]   reading 2026-11-27
 Each kind of label has one row of doors: whether it starts a path inside, is a middle step inside, may be skipped inside, is crossed from outside, and is exported.
@@ -759,22 +785,24 @@ see: core/labels/rule/alone-as-middle core/labels/export core/labels/export/argu
   the text of one definition; "outside" the bindings that use it (path-rules rule 5).
   | the kind | start inside | middle step inside | skippable inside | crossed from outside | exported |
   |---|---|---|---|---|---|
-  | a written part label `[x = A]` | yes (path-rules 3) | yes (path-rules 1) | yes, by one-path (path-rules 4) | yes (path-rules 5) | yes (export 3) |
+  | a written part label over text in place `[x = /..(?<h>.)/]` | yes (path-rules 3) | yes (path-rules 1) | yes, by one-path (path-rules 4; label-names-gate 3) | yes (path-rules 5) | yes (export 3) |
+  | a written label on a use, a call or a place `[x = A]` | yes (path-rules 3) | yes, the gate's name (label-names-gate 2) | no, a gate (label-names-gate 1) | yes, the gate's name (path-rules 5) | yes (export 3) |
   | an underscore part label `[_x = A]` | yes, as `_x` (equivalence-inside) | no (path-rules 2) | no: its labels count as absent (skip-past-wall) | no (path-rules 2) | no (export 6) |
   | the blank label `[_ = A]` | no, it has no name (a reading) | no (path-rules 2) | no (skip-past-wall) | no (path-rules 2) | no (label-doors, export 7) |
-  | a part used alone `Q` | yes (path-rules 6) | yes (alone-as-middle) | no, a gate (alone-as-middle, one-path 2) | no, a wall (path-rules 6) | no (export 3) |
-  | a macro call used alone `B(Q)` | yes, as `B` (a reading) | yes (a reading) | no, a gate (a reading) | no, a wall (a reading) | no (a reading) |
-  | an argument's shorthand label (`A` in `B(A)`) | yes, the caller's (shorthand-is-callers) | no, a start only (a reading) | no: it is a start, and a read through the call reaches the argument only through a list on its place (argument-place) (the owner's strong lean, entailed by carve-out-reading and caller-label-export; to be confirmed); a body's own `h` is read by `B.h` (body-own-name) | no (shorthand-outside) | no (shorthand-outside) |
+  | a part used alone `Q` | yes (path-rules 6) | yes (alone-as-middle) | no, a gate (label-names-gate 1) | no, a wall (path-rules 6) | no (export 3) |
+  | a macro call used alone `B(Q)` | yes, as `B` (label-names-gate 2) | yes (label-names-gate 1) | no, a gate (label-names-gate 1) | no, a wall (path-rules 6, a reading) | no (a reading) |
+  | an argument's shorthand label (`A` in `B(A)`) | yes, the caller's (shorthand-is-callers) | no, a start only (a reading) | no: it is a start; through the call the place is a gate named by the body's label (`B.p.h`, argument-is-gate 2), a body's own `h` is read by `B.h` (body-own-name) | no (shorthand-outside) | no (shorthand-outside) |
   | a sent label (`x` of `R(x:, A)`) | yes, read bare (label-in-argument) | no, a start only (sent-label-wall) | no wall below it is crossed (sent-label-wall) | as a written label (a reading) | as a written label (a reading) |
-  | a label the caller writes in an argument | yes, the caller's own (closing-own-label) | as a written label (a reading) | as a written label (a reading) | yes, by its own name from a binding that uses the caller (`Y.a.h`); never through the call's label or the macro's name (`Y.c.a.h` caller-label-export; `B.a.h` a reading (the owner's strong lean, entailed by carve-out-reading and caller-label-export; to be confirmed)) | yes, with the caller's exports; an underscore label keeps it in (caller-label-export) |
+  | a label the caller writes in an argument | yes, the caller's own (closing-own-label) | as a written label (a reading) | as a written label (a reading) | yes, by its own name from a binding that uses the caller (`Y.a.h`), and through the call's label (`Y.c.a.h`, argument-is-gate); `B.a.h`, a name of the place's gate (a reading) | yes, with the caller's exports; an underscore label keeps it in (caller-label-export) |
   | a named group of rx text `(?<g>X)` | yes (path-rules 3) | yes (group-node) | yes, by one-path (group-node) | yes (group-node) | yes (export 3) |
   | an underscore group `(?<_g>X)` | yes, as `_g` (group-node) | no (group-node) | no (group-node) | no (group-node) | no (export 3) |
   | a list's alias `[(=) = a]` in a body | no, it has no name (a reading) | no, it has no name (a reading) | always passed, a node between (one-path, a reading) | through the call (transform-export) | its argument's labels (transform-export) |
-  | an argument's place (`${rx}` in a body) | no, it has no name (a reading) | no, it has no name (a reading) | passed only through a list on it, a node between (carve-out-reading; one-path); a target across it beside a direct one is not counted (body-own-name) | no: a wall to every path but the sender's own names; a door under a list (argument-place) | only through a list on it; a label the body writes on it passes nothing (argument-place) |
+  | an argument's place (`${rx}` in a body) | yes, by the parameter's name inside the body (`rx.g`, argument-is-gate 3) | yes, a gate (argument-is-gate 1) | no, a gate (label-names-gate 1); a target across it beside a direct one is not counted (body-own-name) | through the body's label on it (`B.p.h`, argument-is-gate 2); unlabelled, a wall (argument-is-gate 3) | through the body's label on it or a list (argument-is-gate 2, 5) |
+  | a placed path (`date.year` in pattern position) | no implicit label: label it (part-of-argument 5) | as its label (a reading) | no, a gate (part-of-argument 5) | as its label (a reading) | as its label (a reading) |
 - A path is inside while it crosses no call boundary: past a call, the body's labels are reached from outside, and
   an argument's own uses below the call are crossed as from outside (a marked reading; so `pub.A.h` for
   `[pub = B(A)]` is refused while `n.Q.d` is legal in one definition).
-- The two place rows rest on core/labels/rule/argument-place (the owner's strong lean, entailed by carve-out-reading and caller-label-export; to be confirmed).
+- The gate rows rest on core/labels/rule/gates and core/labels/rule/argument-place.
 - A label set only inside `!^A` is not visible after it (core/patterns/lookaround/ahead, a marked reading), whatever
   its row.
 modes: n/a (each row's lines are in the piece it points at)
@@ -792,16 +820,14 @@ see: core/labels/export core/labels/export/arguments core/labels/paths/argument-
 | who writes the name | used alone | labelled | listed | closed by the blank mark | stacked labels |
 |---|---|---|---|---|---|
 | the reading definition's own text (`/(?<h>\d)/` written there) | `h` bare (line 1) | `h` bare, `p.h` too (lines 1, 2) | `h` bare (line 1) | `h` bare: its owner always reads it (line 4, as told to him: a reading) | `h` bare, `_x.h` too (line 1, rule 3); `n.h` a compile error (rule 2: the path crosses `_x`) |
-| an argument's binding, passed whole (`B(A)`, A writes `h`) | `A.h`, the shorthand (line 3; core/labels/paths/argument-default) | `A.h`, the caller's shorthand; `B.p.h` a compile error: it passes the argument's place (core/labels/rule/argument-place) | `A.h`; `B.h` too (transform-export) | `A.h`: the caller's own label (line 3); `B.h` a compile error (rule 2) | `A.h`; `B.n.h` a compile error (rule 2) |
-| the body (the label it writes on the spot) | no label: `B.h` a compile error (core/labels/paths/call-prefix) | `B.p` the body's label (rule 5); `B.p.h` and `B.h` into the argument compile errors (core/labels/rule/argument-place) | `B.h` (transform-export) | none: `B.h` a compile error (rule 2) | `B.n.h` a compile error (rule 2: the path crosses `_x`); `B._x.h` a compile error, private |
+| an argument's binding, passed whole (`B(A)`, A writes `h`) | `A.h`, the shorthand (line 3; core/labels/paths/argument-default) | `A.h`, the caller's shorthand; `B.p.h` too, through the place's gate (core/labels/rule/argument-place) | `A.h`; `B.h` too (transform-export) | `A.h`: the caller's own label (line 3); `B.h` a compile error (rule 2) | `A.h`; `B.n.h` a compile error (rule 2) |
+| the body (the label it writes on the spot) | no label: `B.h` a compile error (core/labels/paths/call-prefix) | `B.p` the body's label (rule 5); `B.p.h` into the argument (core/labels/rule/argument-place); `B.h` a compile error, the gate `p` skipped (core/labels/rule/gates) | `B.h` (transform-export) | none: `B.h` a compile error (rule 2) | `B.n.h` a compile error (rule 2: the path crosses `_x`); `B._x.h` a compile error, private |
 | the caller, inside an argument (`B([a = A])`; `A.h` there a compile error, condition 4) | `a.h` (core/labels/export/arguments) | `a.h` | `a.h` | `a.h`: another door (line 4; core/labels/paths/closed-argument) | `a.h` (rule 3, a reading: the caller's label a start) |
 | a sent label (`B(S(x:))`), or a label parameter a body passes on (core/operators/bindings/label-forward) | `x` bare (core/operators/bindings/label-in-argument) | `x` bare | `x` bare | `x` bare: another door (line 4) | `x` bare (line 1) |
-- The two "labelled" cells rest on core/labels/rule/argument-place (the owner's strong lean, entailed by carve-out-reading and caller-label-export; to be confirmed).
-- A body that passes its PATTERN parameter on to another macro is no column here: rule 5 starts a path at each
-  call (core/labels/paths/call-prefix). A `_` part label, a body placing its argument twice or never, and an in-place group: their own pieces.
-- A blank or private label stacked on a spot shuts every path that crosses it, inside the binding and out (rule 2;
-  the line below); a start below it stays open (core/labels/rule/paths); an unspecified label on a part is the part
-  with no label, not the blank mark (the manager's consequence of unspecified-rule: core/operators/bindings/label-omitted).
+- The two "labelled" cells rest on core/labels/rule/argument-place (argument-is-gate 2).
+
+- A body that passes its PATTERN parameter on to another macro is no column here: rule 5 starts a path at each call (core/labels/paths/call-prefix). A `_` part label, a body placing its argument twice or never, and an in-place group: their own pieces.
+- A blank or private label stacked on a spot shuts every path that crosses it, inside the binding and out (rule 2; the line below); a start below it stays open (core/labels/rule/paths); an unspecified label on a part is the part with no label, not the blank mark (the manager's consequence of unspecified-rule: core/operators/bindings/label-omitted).
 A blank label in the stack: modes: a compile error (`[l = [_ = P]] & (l.d: <5)`, P := `/(?<d>\d)\d/`: the path crosses the blank label (core/labels/rule/paths rule 2)).
 The caller's label, then the binding's name: modes: a compile error (`B([a = A]) & (A.h: <5)`, A := `/(?<h>\d)/`, B(rx) := `/${rx}xx/`: the caller's label `a` is made on the spot (condition 4); the read is `a.h`).
 The caller's list: WHOLE `3xx` HOLDS, `7xx` FAILS / SEARCHED `7xx 3xx` `3xx`@4 / FIND-ALL `3xx 7xx 4xx` [`3xx`@0, `4xx`@8] (`[(=) = A] SEQ /xx/ & (h: <5)`, A := `/(?<h>\d)/`)
@@ -960,16 +986,9 @@ see: core/labels/rule/kinds core/labels/backreferences core/labels/export/flat-r
 1. A private label (a `_` LABEL) is visible only inside the binding it is written in; a `_` PART LABEL is protected
    (statement 6); the bare `_` of `[_ = A]` is a leave-out's unusable name (core/modules/leave-out; statement 7).
 2. Inside a binding the public labels of everything written or used there are visible, read as labels are (last
-   mention; an ambiguous reference is the error). An UNLABELLED use carries the implicit label of the binding's name,
-   protected, exported nowhere: `A.h`, a step `n.A.h`, never skipped (rule/alone-as-middle; rule line 3). Parentheses aside: `[n = (Q)]` is `[n = Q]`, a labelled use (bare parentheses are no spot; a NAMED group of rx text is one, rule/group-node).
+   mention; an ambiguous reference is the error). An UNLABELLED use carries the implicit label of the binding's name, protected, exported nowhere: `A.h`, a step `n.A.h`, never skipped (rule/alone-as-middle; rule line 3). Parentheses aside: `[n = (Q)]` is `[n = Q]`, a labelled use (bare parentheses are no spot; a NAMED group of rx text is one, rule/group-node).
 3. Outside a binding, what passes out is what it EXPORTS: its OWN names (a group in its literals, a part label it
-   writes, a label an export list it writes takes; none beginning with `_`) and, through a public part label, the
-   labels that part exports, by path (`pub.a.h`, core/labels/rule/paths rules 1 and 5, a member's metadata alike)
-   and by name (`pub.h`, rule 4) (run: the lines "Statement 3"). A label under an underscore label is not exported
-   (rule 2, a reading: core/labels/ownership). A part used alone exports nothing, through a hole and the sequence
-   operator alike, nor, through it, a part under a `_` part label or `[_ = A]` (that door is closed; other doors
-   stay, statement 7); a read from outside of a label only such a part holds is a compile error (rule 6, run: the line "Used alone, from outside").
-   A call exports what its body exports; of an argument, only what a list on its place passes (core/labels/rule/argument-place) (the owner's strong lean, entailed by carve-out-reading and caller-label-export; to be confirmed). A passed label is referenced with its source and read as labels are inside (core/labels/paths/label-reference). `pub := [a = A] SEQ "!"` shows `a`, `h`; `/${A}!/`, `A SEQ "!"` none.
+   writes, a label an export list it writes takes; none beginning with `_`) and, through a public part label, the labels that part exports, by path (`pub.a.h`, core/labels/rule/paths rules 1 and 5, a member's metadata alike), and by name (`pub.h`, rule 4) only where the part label is over text in place: on a use it names a gate, never skipped (core/labels/rule/gates) (run: the lines "Statement 3"). A label under an underscore label is not exported (rule 2, a reading: core/labels/ownership). A part used alone exports nothing, through a hole and the sequence operator alike, nor, through it, a part under a `_` part label or `[_ = A]` (that door is closed; other doors stay, statement 7); a read from outside of a label only such a part holds is a compile error (rule 6, run: the line "Used alone, from outside"). A call exports what its body exports; of an argument, what the body's label on its place or a list on it passes (core/labels/rule/argument-place). A passed label is referenced with its source and read as labels are inside (core/labels/paths/label-reference). `pub := [a = A] SEQ "!"` shows `a` and, through it, `a.h`; `/${A}!/`, `A SEQ "!"` none.
 4. A part label only disambiguates; it gives no access to anything private.
 5. The caller's captures are those the program asks for (lib/structural/capture): a named group in a part of a
    composed program is no capture by default (core/labels/export/capture-export); one literal stays plain PCRE (a reading).
@@ -986,7 +1005,8 @@ see: core/labels/rule/kinds core/labels/backreferences core/labels/export/flat-r
   | `[(=year) = A]` | (export-list) | the listed `year` only, as the binding's own (core/labels/export/export-list) | `year` |
 - A backreference or group number to a name its rx does not define is a compile error (core/labels/backreferences); a `$` read resolves where written (core/values/reads); a filter operand's labels are visible as any: visibility goes by export, not by role (a reading).
 - A `_` label is, his words, "1. purely predicate labels and 2. cannot become exported captures (although they might be internal captures)"; its use: "a binding level label like the quote character in a string".
-Statement 3: WHOLE `3!` HOLDS, `7!` FAILS / SEARCHED `7! 3!` `3!`@3 / FIND-ALL `3! 7! 4!` [`3!`@0, `4!`@6] (`pub & (pub.h: <5)`, pub := `[a = A] SEQ "!"`, A := `/(?<h>\d)/`)
+Statement 3, by name: WHOLE `3!` HOLDS, `7!` FAILS / SEARCHED `7! 3!` `3!`@3 / FIND-ALL `3! 7! 4!` [`3!`@0, `4!`@6] (`pub & (pub.h: <5)`, pub := `[a = /(?<h>\d)/] SEQ "!"`)
+Statement 3, by name past a gate: modes: a compile error (`pub & (pub.h: <5)`, pub := `[a = A] SEQ "!"`, A := `/(?<h>\d)/`: `pub.h`: a `h` sits behind a gate, which is never skipped: write `pub.a.h` (a compile error, label-names-gate))
 Statement 3, a path: WHOLE `3!` HOLDS, `7!` FAILS / SEARCHED `7! 3!` `3!`@3 / FIND-ALL `3! 7! 4!` [`3!`@0, `4!`@6] (`pub & (pub.a.h: <5)`, pub := `[a = A] SEQ "!"`, A := `/(?<h>\d)/`)
 Used alone, inside: WHOLE `3!` HOLDS, `7!` FAILS / SEARCHED `7! 3!` `3!`@3 / FIND-ALL `3! 7! 4!` [`3!`@0, `4!`@6] (`p2`, p2 := `/${A}!/ & (A.h: <5)`, A := `/(?<h>\d)/`)
 Used alone, from outside: modes: a compile error (`p2 & (p2.h: <5)`, p2 := `/${A}!/`, A := `/(?<h>\d)/`; p2 := `A SEQ "!"` alike: A is used alone, so p2 exports no `h`).
@@ -1009,7 +1029,8 @@ see: core/labels/paths core/labels/one-rule core/labels/paths/label-reference
   plain read and a group question alike (core/labels/rule/paths rule 6).
 - A read from OUTSIDE sees the binding's EXPORTED settings only: a source it keeps protected does not exist for that
   read, so it supplies no value and makes no `&` ambiguity (a reading, the manager's; run: the line "The exported
-  setting only", the first digit, not the last mention; `B.a`, B := `A & /(?<a>\d)/`, is legal). His example, with A := `/(?<a>\d)/` for his `<label a>`: "A := <label a>
+  setting only", the first digit, not the last mention, its part label over text in place; on A's use it is a gate,
+  read `pub.a.h`; `B.a`, B := `A & /(?<a>\d)/`, is legal). His example, with A := `/(?<a>\d)/` for his `<label a>`: "A := <label a>
   B := A & A   C := B & (B.a: 9) here B.a is always an error.": B exports no `a` (the line "His example"). With
   each use labelled, `B := [x = A] & [y = A]` exports `x.a` and `y.a` (the lines "Each use labelled").
 Across `|`: WHOLE `3` HOLDS, `a3` HOLDS, `a7` FAILS / SEARCHED `a7 a3` `a3`@3 / FIND-ALL `3 a7 a4` [`3`@0, `a4`@5] (`pair & (pair.x: <5)`, pair := `[b = /(?<x>\d)/] | [c = /a(?<x>\d)/]`)
@@ -1019,7 +1040,10 @@ Through a part label inside the binding: WHOLE `3` HOLDS, `a3` FAILS, `7` FAILS 
 His example: modes: a compile error (`C`, C := `B & (B.a: 9)`, B := `A & A`, A := `/(?<a>\d)/`; `B & some(@B.a, "9")` alike: B exports no `a`).
 Each use labelled, x: WHOLE `9` HOLDS, `7` FAILS / SEARCHED `x7 9` `9`@3 / FIND-ALL `9 7 99 9` [`9`@0, `9`@4, `9`@5, `9`@7] (`B & (B.x.a: 9)`, B := `[x = A] & [y = A]`, A := `/(?<a>\d)/`)
 Each use labelled, y: WHOLE `9` HOLDS, `7` FAILS / SEARCHED `x7 9` `9`@3 / FIND-ALL `9 7 99 9` [`9`@0, `9`@4, `9`@5, `9`@7] (`B & (B.y.a: 9)`, B := `[x = A] & [y = A]`, A := `/(?<a>\d)/`)
-The exported setting only: WHOLE `37` HOLDS, `73` FAILS / SEARCHED `73 37` `37`@3 / FIND-ALL `37 73 14` [`37`@0, `14`@6] (`pub & (pub.h: <5)`, pub := `[a = A] SEQ A`, A := `/(?<h>\d)/`)
+The exported setting only: WHOLE `37` HOLDS, `73` FAILS / SEARCHED `73 37` `37`@3 / FIND-ALL `37 73 14` [`37`@0, `14`@6] (`pub & (pub.h: <5)`, pub := `[a = /(?<h>\d)/] SEQ A`, A := `/(?<h>\d)/`)
+The exported setting only, the label on a use: modes: a compile error (`pub & (pub.h: <5)`, pub := `[a = A] SEQ A`, A := `/(?<h>\d)/`: `pub.h`: a `h` sits behind a gate, which is never skipped: write `pub.a.h` (a compile error, label-names-gate))
+The exported setting only, the gate named: WHOLE `37` HOLDS, `73` FAILS / SEARCHED `73 37` `37`@3 / FIND-ALL `37 73 14` [`37`@0, `14`@6] (`pub & (pub.a.h: <5)`, pub := `[a = A] SEQ A`, A := `/(?<h>\d)/`)
+
 
 ### What the caller gets for an unreferenced shared capture   [core/labels/export/caller-ambiguous]   ruled 2026-11-23
 Two capture requests that give one caller name follow the same-label-twice rules: in a sequence the last mention, across `|` the branch taken, across `&` an ambiguous name, a compile error.
@@ -1135,28 +1159,29 @@ see: core/labels/export/export-list core/labels/rule/argument-door core/operator
   named label through the call, an alias of the argument's (`N.h`, the first line).
 - Lacking it: an argument that exports no `h` (none, one behind an underscore label or group, one used alone in it)
   is the use error at the call (the line "The argument lacks it" and the three "Lacking it" lines).
-- Two cells, marked readings, each an owner question with reference-example-checked: the body reading the named
-  label itself (`N2`) is a compile error by nested-scope's statement (the line "The body reads the named label");
-  the other reading, the body reads what its list names as a declared reference does, RUN: WHOLE `3` HOLDS, `7`
-  FAILS / SEARCHED `7 3` `3`@2 / FIND-ALL `3 7 4` [`3`@0, `4`@4]. An argument holding `h` in two labelled parts is
-  one-path's error (the line "Two labelled parts"), against the edge "set twice ... reads the last"; the other
-  reading, the last part's, RUN: WHOLE `7,3` HOLDS, `3,7` FAILS / SEARCHED `3,7 7,3` `7,3`@4 / FIND-ALL `7,3 3,7
-  1,2` [`7,3`@0, `1,2`@8]. The cells still open, each with its trigger: the details entry.
+- His words: "named-list-body-read: yes same as before.", on: `N2(rx) := /${[(=h) = rx]}/ & (h: <5)` legal, "The
+  body reads bare what its own list names, and nothing else of the argument" (the line "The body reads the named
+  label"); with `(=)` a bare read stays a compile error (the line "The whole list, a bare read").
+- An argument holding `h` in two labelled parts reaches two full paths, `a.h` and `b.h`: an error at the call
+  (same-path-last 2; the line "Two labelled parts"); one full path set twice reads the last ("Set twice").
 - Set twice: the alias reads the argument's `h`, the last mention (core/labels/flow; the line "Set twice").
 - Forwarded: `M(r) := /<${[(=) = N(r)]}>/` cannot be judged at M's definition; the error is raised at `M(Ae)` and
   traces N's list through M's place (the line "Through a forwarding body").
-- Never satisfiable: in `M2(r) := /<${N([q = r])}>/` the label `[q = r]` passes nothing of `r` through `q`, so
-  `(=h)` can never be met: an error at M2's definition (the owner's strong lean, entailed by carve-out-reading and caller-label-export; to be confirmed).
+- Never satisfiable: in `M2(r) := /<${N([q = r])}>/` the label `[q = r]` names the gate on `r`
+  (core/labels/rule/gates), so the argument exports `q` and `q.h`, never a flat `h`: `(=h)` can never be met, an
+  error at M2's definition (the manager's reading, derived from the gate rule).
 A named list on a spot: WHOLE `3` HOLDS, `7` FAILS / SEARCHED `7 3` `3`@2 / FIND-ALL `3 7 4` [`3`@0, `4`@4] (`N(A) & (N.h: <5)`, A := `/(?<h>\d)/`, N(rx) := `/${[(=h) = rx]}/`)
 The argument lacks it: modes: a compile error (`N(Ae) & (N.h: <5)`, Ae := `/(?<e>\d)/`, N(rx) := `/${[(=h) = rx]}/`: at the call: the argument exports no `h`, which N's list `(=h)` demands)
 Lacking it, behind an underscore label: modes: a compile error (`N(Aw) & (N.h: <5)`, Aw := `[_w = /(?<h>\d)/]`, N(rx) := `/${[(=h) = rx]}/`: at the call: the argument exports no `h`, which N's list `(=h)` demands; `_w` keeps it in)
 Lacking it, behind an underscore group: modes: a compile error (`N(Au) & (N.h: <5)`, Au := `/(?<_g>(?<h>\d))/`, N(rx) := `/${[(=h) = rx]}/`: at the call: the argument exports no `h`, which N's list `(=h)` demands; `_g` keeps it in)
 Lacking it, a part used alone in it: modes: a compile error (`N(As) & (N.h: <5)`, A := `/(?<h>\d)/`, As := `A SEQ "!"`, N(rx) := `/${[(=h) = rx]}/`: at the call: the argument exports no `h`, which N's list `(=h)` demands; A is used alone in As)
-The body reads the named label: modes: a compile error (`N2(A)`, A := `/(?<h>\d)/`, N2(rx) := `/${[(=h) = rx]}/ & (h: <5)`: at N2's definition: `h` is a label its parameter holds, not its to name; a marked reading)
-Two labelled parts: modes: a compile error (`N([a = P] SEQ [b = Q]) & (N.h: <5)`, P := `/(?<h>\d)/`, Q := `/,(?<h>\d)/`, N(rx) := `/${[(=h) = rx]}/`: at the call: two labels `h` in the argument, `a.h` and `b.h`, which N's list `(=h)` cannot pick between; a marked reading)
+The body reads the named label: WHOLE `3` HOLDS, `7` FAILS / SEARCHED `7 3` `3`@2 / FIND-ALL `3 7 4` [`3`@0, `4`@4] (`N2(A)`, A := `/(?<h>\d)/`, N2(rx) := `/${[(=h) = rx]}/ & (h: <5)`)
+The whole list, a bare read: modes: a compile error (`N3(A)`, A := `/(?<h>\d)/`, N3(rx) := `/${[(=) = rx]}/ & (h: <5)`: at N3's definition: `h` is not written in its text, and `(=)` names no label)
+Two labelled parts: modes: a compile error (`N([a = P] SEQ [b = Q]) & (N.h: <5)`, P := `/(?<h>\d)/`, Q := `/,(?<h>\d)/`, N(rx) := `/${[(=h) = rx]}/`: at the call: two labels `h` in the argument with different full paths, `a.h` and `b.h`, which N's list `(=h)` cannot pick between)
 Set twice: WHOLE `37` FAILS, `73` HOLDS / SEARCHED `37 73` `73`@3 / FIND-ALL `37 73 44` [`73`@3, `44`@6] (`N(A2) & (N.h: <5)`, A2 := `/(?<h>\d)(?<h>\d)/`, N(rx) := `/${[(=h) = rx]}/`)
 Through a forwarding body: modes: a compile error (`M(Ae) & (M.h: <5)`, Ae := `/(?<e>\d)/`, M(r) := `/<${[(=) = N(r)]}>/`, N(rx) := `/${[(=h) = rx]}/`: at `M(Ae)`: the argument exports no `h`, which N's list `(=h)` demands, through M's place)
-Never satisfiable: modes: a compile error (`M2(A)`, A := `/(?<h>\d)/`, M2(r) := `/<${N([q = r])}>/`, N(rx) := `/${[(=h) = rx]}/`: at M2's definition: `[q = r]` passes no `h` to N's list `(=h)`) (the owner's strong lean, entailed by carve-out-reading and caller-label-export; to be confirmed)
+Never satisfiable: modes: a compile error (`M2(A)`, A := `/(?<h>\d)/`, M2(r) := `/<${N([q = r])}>/`, N(rx) := `/${[(=h) = rx]}/`: at M2's definition: `[q = r]` passes no flat `h` to N's list `(=h)`)
+
 
 ### Part labels and paths   [core/labels/paths]   ruled 2026-11-22
 A part label `[x = A]` names part A; `x.h` is the label h as part A exports it, and a part label mentioned more than once names its last mention where the reference is written.
@@ -1173,15 +1198,15 @@ needs: core/labels/flow core/labels/export
   h only (a reading); through bindings the source names the part, `A & (B & (B.h: ..))`.
 - In a value position `alt.x[1]` stays legal (a reading).
 - A binding's name is a prefix of its own: an unlabelled use carries the implicit label of the binding's name,
-  protected (core/labels/export, statement 2); used twice, a plain read is the compile error:
-  core/labels/paths/binding-prefix; a macro's name at its call likewise: core/labels/paths/call-prefix.
+  protected (core/labels/export, statement 2); placed twice, a plain read reaches the last placement written before
+  it: core/labels/paths/binding-prefix; a macro's name at its call likewise: core/labels/paths/call-prefix.
 - A part label over an EXPRESSION (`[ab = (B | A)]`) reads, inside the definition, the labels visible in it by the
   inside rules, and exports outward only what the expression's own text exports (a reading, the manager's; run: the
   line "Outward"); below it, and below a hole, a part used alone is crossed as rule 6 says (core/labels/rule/paths;
   the two "From outside" lines).
-- A macro's parameter is not a part whose labels the body may name (core/holes/bare-condition/nested-scope):
-  statement 2 of core/labels/export does not license `rx.d`. The exception: a declared reference's listed names,
-  read bare (core/operators/bindings/reference).
+- A macro's parameter placed in the body is a gate (core/labels/rule/argument-place): the body names its labels
+  through the parameter's name (`rx.d`, `B.year`) or its own label on the place (`dd.d`); a bare `d` is no read, "No
+  gate" (core/operators/bindings/reference; core/holes/bare-condition/nested-scope).
 - His statement "[ c = B(A) ] does not allow c.A": a call's label reaches no argument by the argument's name. The
   ground (the manager's reading (b) of shorthand-is-callers): the shorthand label `A` is the caller's and protected,
   so it adds no export through the call's label `c` (core/labels/paths/argument-default): `[c = B(A)] & (c.A.d: <5)`
@@ -1193,36 +1218,21 @@ WHOLE `12` HOLDS, `21` FAILS / SEARCHED `21 12` `12`@3 / FIND-ALL `12 21 10` [`1
 A part label used twice: WHOLE `7,3` HOLDS, `3,7` FAILS / SEARCHED `3,7 7,3` `7,3`@4 / FIND-ALL `7,3 3,7 1,2` [`7,3`@0, `1,2`@8] (`[aa = /(?<h>\d)/] SEQ "," SEQ [aa = /(?<h>\d)/] & (aa.h: <5)`)
 Outward, what the expression's text writes: WHOLE `13;3!` HOLDS, `13;7!` FAILS / SEARCHED `13;7! 13;3!` `13;3!`@6 / FIND-ALL `13;3! 13;7! 22;1!` [`13;3!`@0, `22;1!`@12] (`X & (X.ab.l: <5)`, X := `[ab = A SEQ /;(?<l>\d)/] SEQ "!"`, A := `/(?<l>\d)\d/`)
 From outside, alone in an expression: modes: a compile error (`X & (X.ab.l: <5)`, B := `/(?<l>\d)/`, A := `/a(?<l>\d)/`, X := `[ab = (B | A)] SEQ "!"`: B and A are used alone in it (core/labels/rule/paths rule 6); through a hole, X := `[n = /${Q},/] SEQ "!"`, alike).
-From outside, a public part beside a part used alone: WHOLE `3,7!` HOLDS, `7,3!` FAILS / SEARCHED `7,3! 3,7!` `3,7!`@5 / FIND-ALL `3,7! 7,3! 4,1!` [`3,7!`@0, `4,1!`@10] (`X & (X.n.d: <5)`, P := `/(?<d>\d)/`, Q := `/,(?<d>\d)/`, X := `[n = ([m = P] SEQ Q)] SEQ "!"`): m's `d` (rule 6: Q, used alone, is crossed as a wall)
+From outside, a public part beside a part used alone: WHOLE `3,7!` HOLDS, `7,3!` FAILS / SEARCHED `7,3! 3,7!` `3,7!`@5 / FIND-ALL `3,7! 7,3! 4,1!` [`3,7!`@0, `4,1!`@10] (`X & (X.n.m.d: <5)`, P := `/(?<d>\d)/`, Q := `/,(?<d>\d)/`, X := `[n = ([m = P] SEQ Q)] SEQ "!"`): m's `d` (rule 6: Q, used alone, is crossed as a wall; m, a gate, is named)
 
-### A binding's name as a label prefix   [core/labels/paths/binding-prefix]   ruled 2026-11-22
-A binding's name is a label prefix (`chars.ch`): a group question through it reads every use's settings, in order; a plain read through it with the binding used twice or more is a compile error.
+### A binding's name as a label prefix   [core/labels/paths/binding-prefix]   ruled 2026-11-28
+A binding's name is a label prefix (`chars.ch`): a group question through it reads every use's settings, in order; a plain read through a name placed twice reads the last placement before the read.
 needs: core/labels/paths core/labels/labels-vs-captures/array-vs-passes
 see: core/labels/flow core/labels/export core/labels/paths/label-reference
-- His words: "binding-prefix" 1. yes. 2. i agree with your lean (a)"; his example, "chars SEQ ":" SEQ chars &
-  (count(chars.ch): ==5) says all chars must total 5" (his `count(chars.ch)` written `count(@chars.ch, anything)`).
-- The definition he liked: an unlabelled use carries the implicit label of the binding's name, protected
-  (core/labels/export, statement 2); with ONE use `A.h` reads as `aa.h` does under `[aa = A]` (the lines "One
-  use"): legal, ruled by default-export (core/labels/paths/one-use-read).
-- The name reaches the UNLABELLED uses only; a labelled use is reached by its label and is not counted (a reading,
-  the manager's, the shorthand's "through the shorthand in that binding"; run: the line "The unlabelled use";
-  `[a = A] SEQ "!" & (A.h: <5)` is a compile error, no unlabelled use). A part label written in the definition with the binding's own name wins, with the hide-label warning.
-- Through a call it is the same rule: a binding passed whole is read by its name, the caller's shorthand label,
-  whatever the body does with its spot (core/labels/rule line 3; core/labels/ownership); "used more than once" is
-  the shorthand's condition 1 ("the binding is referenced unambiguously").
-- The compile error's message says to label the part (`[left = chars]`), then read `left.ch`. "Used more than
-  once" is counted in the TEXT of the definition the reference is written in, before macros expand: `pair(A)` writes
-  A once, `/${A},${A}/` twice (a reading, run).
-- The prefix reaches the uses written in the referencing definition's own text, not a use nested inside another
-  used binding (a reading, run: the line "A use inside another used binding"); that use is X's, exported only under a
-  part label X writes (`X := [d = D] SEQ "!"`, `X.d.h`); `X.D.h` is a compile error, D used alone in X (the lines "X's use").
-- The index `A.h[k]` through the prefix is in text order across sequenced uses; through uses joined by `&` it is a
-  compile error for now, the two sides of `&` being unordered (a reading, run: the line "The index through sequenced uses").
-- Readings: an explicit part label mentioned twice is unchanged (its last mention, core/labels/paths); the prefix
-  reaches nothing private, and nothing under `_` or `[_ = A]` (core/labels/export statements 4 and 7;
-  core/labels/rule line 4); a MACRO's name is a
-  prefix too, under the same two rules (core/labels/paths/call-prefix); the error may later relax to the last use
-  without changing an answer.
+- His words: "binding-prefix" 1. yes. 2. i agree with your lean (a)"; his example, "chars SEQ ":" SEQ chars & (count(chars.ch): ==5) says all chars must total 5" (his `count(chars.ch)` written `count(@chars.ch, anything)`).
+- His words: "last-placement: 1. yes but local implicit. 2,3,4,5 agree.", on: "1. A placement makes a label of the thing's own name; a reference is a read of a label. This is your sentence. 2. Placed more than once, a plain read reaches the last placement written before the read, exactly as an explicit label mentioned twice does. 3. A read written after all of them, such as a filter at the end, reaches the last one. 4. The group questions are unchanged: `some(@rx.g, ..)` reads every placement, in order. 5. From outside the definition nothing changes: an unlabelled placement exports nothing." His amendment to line 1: the label is the LOCAL implicit one (line 5).
+- The definition he liked: an unlabelled use carries the implicit label of the binding's name, protected (core/labels/export, statement 2); with ONE use `A.h` reads as `aa.h` does under `[aa = A]` (the lines "One use"): legal, ruled by default-export (core/labels/paths/one-use-read).
+- The name reaches the UNLABELLED uses only; a labelled use is reached by its label and is not counted (a reading, the manager's, the shorthand's "through the shorthand in that binding"; run: the line "The unlabelled use"; `[a = A] SEQ "!" & (A.h: <5)` is a compile error, no unlabelled use). A part label written in the definition with the binding's own name wins, with the hide-label warning.
+- Through a call it is the same rule: a binding passed whole is read by its name, the caller's shorthand label, whatever the body does with its spot (core/labels/rule line 3; core/labels/ownership); "used more than once" is the shorthand's condition 1 ("the binding is referenced unambiguously").
+- To read another use than the last, label it (`[left = chars]`, `left.ch`). "Placed more than once" is counted in the TEXT of the definition the reference is written in, before macros expand: `pair(A)` writes A once, `/${A},${A}/` twice, the last placement read (a reading, run: the line "Counted in the text").
+- The prefix reaches the uses written in the referencing definition's own text, not a use nested inside another used binding (a reading, run: the line "A use inside another used binding"); that use is X's, exported only under a part label X writes (`X := [d = D] SEQ "!"`, `X.d.h`); `X.D.h` is a compile error, D used alone in X (the lines "X's use").
+- The index `A.h[k]` through the prefix is in text order across sequenced uses; through uses joined by `&` it is a compile error for now, the two sides of `&` being unordered (a reading, run: the line "The index through sequenced uses").
+- Readings: an explicit part label mentioned twice is unchanged (its last mention, core/labels/paths); the prefix reaches nothing private, and nothing under `_` or `[_ = A]` (core/labels/export statements 4 and 7; core/labels/rule line 4); a MACRO's name is a prefix too, under the same two rules (core/labels/paths/call-prefix); a placement written after the read is not reached by it (line 2), a read after all of them reaches the last (line 3).
 His example, every use: WHOLE `ab:cde` HOLDS, `:abcde` HOLDS, `ab:cd` FAILS, `abcdef` FAILS / SEARCHED `ab:cde` `ab:cde`@0 / FIND-ALL `ab:cde 1:23456 xyz` [`ab:cde`@0, ` 1:234`@6] (`chars SEQ ":" SEQ chars & (count(@chars.ch, anything): ==5)`)
 One use: WHOLE `12` HOLDS, `21` FAILS / SEARCHED `21 12` `12`@3 / FIND-ALL `12 21 10` [`12`@0, `10`@6] (`A & B & (A.h: <2)`, A := `/(?<h>\d)\d/`, B := `/\d(?<h>\d)/`)
 One use, the second operand: WHOLE `12` FAILS, `21` HOLDS / SEARCHED `21 12` `21`@0 / FIND-ALL `12 21 10` [`21`@3, `10`@6] (`A & B & (B.h: <2)`, A := `/(?<h>\d)\d/`, B := `/\d(?<h>\d)/`)
@@ -1232,8 +1242,11 @@ A use inside another used binding: WHOLE `14;23!` HOLDS, `12;34!` FAILS / SEARCH
 X's use, labelled in X: WHOLE `14;23!` FAILS, `12;34!` HOLDS, `23;14!` HOLDS / SEARCHED `12;34! 14;24!` `12;34!`@0 / FIND-ALL `14;23! 12;34! 4;14!` [`12;34!`@7, `4;14!`@14] (`D SEQ ";" SEQ X & (X.d.h: "4")`, D := `/(?<h>\d)+/`, X := `[d = D] SEQ "!"`)
 X's use, used alone in X: modes: a compile error (`D SEQ ";" SEQ X & (X.D.h: "4")`, X := `D SEQ "!"`: X exports none of D's labels).
 The index through sequenced uses: WHOLE `7,3,` HOLDS, `3,7,` FAILS / SEARCHED `x7,3,` `7,3,`@1 / FIND-ALL `7,3, 3,7, 1,3,` [`7,3,`@0, `1,3,`@10] (`A SEQ A & (A.h[2]: "3")`, A := `/(?<h>\d),/`); through `&`-joined uses, `A & A & (A.h[2]: "3")`, a compile error
-Counted in the text: modes: a compile error (`/${A},${A}/ & (A.d: <5)`, A := `/(?<d>\d)/`: A written twice), where `pair(A) & (A.d: <5)` writes it once (core/labels/paths/call-prefix, the line "Used twice alone, the last mention").
-Twice used, a plain read: modes: a compile error (`chars SEQ ":" SEQ chars & (chars.ch: "a")`, `$chars.ch` alike).
+Counted in the text: WHOLE `7,3` HOLDS, `3,7` FAILS / SEARCHED `3,7 7,3` `7,3`@4 / FIND-ALL `7,3 3,7 1,2` [`7,3`@0, `1,2`@8] (`/${A},${A}/ & (A.d: <5)`, A := `/(?<d>\d)/`): A written twice, the last placement; `pair(A) & (A.d: <5)` writes it once (core/labels/paths/call-prefix, the line "Used twice alone, the last mention")
+Twice used, a plain read: WHOLE `ab:ca` HOLDS, `ab:ac` FAILS, `a:b` FAILS / SEARCHED `xb:a b:c` `xb:a`@0 / FIND-ALL `b:a a:b c:a` [`b:a a:b c:a`@0] (`chars SEQ ":" SEQ chars & (chars.ch: "a")`): the last placement (`$chars.ch` alike)
+Placed twice in a body, a read after each: WHOLE `3;4` HOLDS, `3;7` FAILS, `7;3` FAILS / SEARCHED `7;3 3;4` `3;4`@4 / FIND-ALL `3;4 7;3 1;2` [`3;4`@0, `1;2`@8] (`B(A)`, A := `[g = /\d/]`, B(rx) := `(rx & (rx.g: < 5)) SEQ ";" SEQ (rx & (rx.g: < 5))`)
+Placed twice in a body, one read at the end: WHOLE `7;3` HOLDS, `3;7` FAILS / SEARCHED `3;7 7;3` `7;3`@4 / FIND-ALL `7;3 3;7 1;2` [`7;3`@0, `1;2`@8] (`B(A)`, A := `[g = /\d/]`, B(rx) := `rx SEQ ";" SEQ rx & (rx.g: < 5)`)
+
 The unlabelled use: WHOLE `37` FAILS, `73` HOLDS / SEARCHED `37 73` `73`@3 / FIND-ALL `73 37 14` [`73`@0, `14`@6] (`[a = A] SEQ A & (A.h: <5)`, A := `/(?<h>\d)/`)
 
 ### A label is referenced with its source   [core/labels/paths/label-reference]   ruled 2026-11-22
@@ -1263,27 +1276,12 @@ Bare: modes: a compile error (`chars & (count(@ch, /(?s:.)/): ==3)`: `ch` is not
 A macro's name qualifies the labels its call exports (`hits(/\d+/) & (hits.hit: 3)`) under a binding prefix's two rules; a call exports what its body exports; the caller's `A.d`: argument-default.
 needs: core/labels/paths/binding-prefix core/labels/paths/label-reference
 see: lib/search/hits lib/search/occurrences core/holes/bare-condition/nested-scope core/operators/bindings/macro-types core/labels/paths/closed-argument
-- His words, whole: "call-prefix. case 1. yes use the macro name as shown to qualify the label. 2. i'd say A.d is
-  legal there. i'm trying to figure out if B(A) would ever remove the d. its possible it changes the answer to go
-  through [ c = B(A) ] as B may defined d".
-- Case 1, ruled: the macro's name is a prefix of the labels its call exports (not an argument the body uses alone:
-  the manager's reading (e) of default-export, run: the line "By the macro's name, the body writing no `d`").
-  With binding-prefix's two rules (a reading): called once in the definition, a plain read through the name is
-  legal; called more than once, a plain read is the compile error saying to label the call, and a group question
-  reads every call's settings, in order (the lines "By the macro's name, his example" and "Called twice").
-- Case 1 is line 3's shorthand for the call (core/labels/rule): the macro's name stands for a label skipped on it. A
-  labelled call reads, for one call, the same label (the line "Labelled"), and the macro's name is then a compile
-  error, a label being made on that use (condition 4, a reading; the line "A labelled call, through the macro's name").
-- A prefix `X.d` reads `d` as X exports it (a reading, run): a call exports what its body exports (core/labels/export statement 3), so `B.d`, and
-  `c.d` under `[c = B(A)]`, are the body's own `d` or one a list on the argument's place passes (`B(rx) := /${[(=) = rx]}xx/`), never one behind a label the body writes there (core/labels/rule/argument-place) (the owner's strong lean, entailed by carve-out-reading and caller-label-export; to be confirmed); where the body writes none and labels none (`B(rx) := /${rx}xx/`) both are compile errors; where the body and the argument each set one, the body's own, a path that skips nothing (core/labels/rule/one-path, body-own-name); the argument's is `A.d`. `A.d` reads A's
-  `d` by the caller's shorthand label, whatever the body does with the spot (case 2, `A.d` in `B(A)`: core/labels/paths/argument-default; core/labels/ownership). A group in a USER macro's
-  body is a label and no capture by default, as in any part of a composed program (core/labels/export/capture-export); helper-captures is for provided bodies only (a reading).
-- An argument used twice: with the list on both spots (`pair(p) := /${[(=) = p]},${[(=) = p]}/`) `pair.d` sees two `d`, a compile error (core/labels/rule/one-path; the line "An argument used twice by the body"); with no label on either spot (`/${p},${p}/`) `A.d` reads the last mention, the caller's shorthand label
-  set at each spot (the manager's reading, run). A group written in an argument in place is the caller's own (`hits(/a(?<g>x)?/) & (g: "x")`, read
-  bare: lib/search/hits; core/labels/export/arguments); a parameter's label inside the body is not nameable
-  (core/holes/bare-condition/nested-scope), but a declared reference's listed names (core/operators/bindings/reference); a call's label reaches no argument by the argument's name (core/labels/paths).
-- A part label written in the definition named like the macro (`[hits = ..] & hits(..)`) wins: `hits.hit` is the
-  part label's, with the hide-label warning (a reading, run: the line "A part label named like the macro").
+- His words, whole: "call-prefix. case 1. yes use the macro name as shown to qualify the label. 2. i'd say A.d is legal there. i'm trying to figure out if B(A) would ever remove the d. its possible it changes the answer to go through [ c = B(A) ] as B may defined d".
+- Case 1, ruled: the macro's name is a prefix of the labels its call exports (not an argument the body uses alone: the manager's reading (e) of default-export, run: the line "By the macro's name, the body writing no `d`"). With binding-prefix's two rules (a reading): called once in the definition, a plain read through the name is legal; called more than once, a plain read reaches the last call written before the read (last-placement 2), and a group question reads every call's settings, in order (the lines "By the macro's name, his example" and "Called twice").
+- Case 1 is line 3's shorthand for the call (core/labels/rule): the macro's name stands for a label skipped on it. A labelled call reads, for one call, the same label (the line "Labelled"), and the macro's name is then a compile error, a label being made on that use (condition 4, a reading; the line "A labelled call, through the macro's name").
+- A prefix `X.d` reads `d` as X exports it (a reading, run): a call exports what its body exports (core/labels/export statement 3), so `B.d`, and `c.d` under `[c = B(A)]`, are the body's own `d` or one a list on the argument's place passes (`B(rx) := /${[(=) = rx]}xx/`); one behind a label the body writes there is read by naming that gate, `B.p.d` (core/labels/rule/argument-place); where the body writes none and labels none (`B(rx) := /${rx}xx/`) both are compile errors; where the body and the argument each set one, the body's own, a path that skips nothing (core/labels/rule/one-path, body-own-name); the argument's is `A.d`. `A.d` reads A's `d` by the caller's shorthand label, whatever the body does with the spot (case 2, `A.d` in `B(A)`: core/labels/paths/argument-default; core/labels/ownership). A group in a USER macro's body is a label and no capture by default, as in any part of a composed program (core/labels/export/capture-export); helper-captures is for provided bodies only (a reading).
+- An argument used twice: with the list on both spots (`pair(p) := /${[(=) = p]},${[(=) = p]}/`) `pair.d` reaches one full path twice and reads the last (same-path-last 1; the line "An argument used twice by the body"); with no label on either spot (`/${p},${p}/`) `A.d` reads the last mention, the caller's shorthand label set at each spot (the manager's reading, run). A group written in an argument in place is the caller's own (`hits(/a(?<g>x)?/) & (g: "x")`, read bare: lib/search/hits; core/labels/export/arguments); inside the body a placed parameter is named by its name or the body's label on it (core/labels/rule/argument-place); a call's label reaches no argument by the argument's name (core/labels/paths).
+- A part label written in the definition named like the macro (`[hits = ..] & hits(..)`) wins: `hits.hit` is the part label's, with the hide-label warning (a reading, run: the line "A part label named like the macro").
 By the macro's name, his example: WHOLE `a1b3` HOLDS, `a3b1` FAILS, `3` HOLDS, `a13` FAILS, `ab` FAILS / SEARCHED `x1 3` `x1 3`@0 / FIND-ALL `a3 b1 3` [`a3 b1 3`@0] (`hits(/\d+/) & (hits.hit: 3)`)
 Labelled: WHOLE `a1b3` HOLDS, `a3b1` FAILS, `3` HOLDS, `a13` FAILS, `ab` FAILS / SEARCHED `x1 3` `x1 3`@0 / FIND-ALL `a3 b1 3` [`a3 b1 3`@0] (`[h = hits(/\d+/)] & (h.hit: 3)`)
 A labelled call, through the macro's name: modes: a compile error (`[h = hits(/\d+/)] & (hits.hit: 3)`: a label is made on that use (condition 4, a reading); the read is `h.hit`).
@@ -1294,9 +1292,10 @@ Used twice alone, the last mention: WHOLE `7,3` HOLDS, `3,7` FAILS / SEARCHED `3
 d as the call exports it, the argument setting one too: WHOLE `7-3` HOLDS, `3-7` FAILS, `3-3` HOLDS / SEARCHED `3-7 7-3` `7-3`@4 / FIND-ALL `7-3 3-7 1-2 9-9` [`7-3`@0, `1-2`@8] (`[c = B(A)] & (c.d: <5)`, A := `/(?<d>\d)/`, B(rx) := `/${rx}-(?<d>\d)/`): the body's own, nothing skipped (body-own-name)
 d as the call exports it, an argument with no d: WHOLE `7-3` HOLDS, `3-7` FAILS, `3-3` HOLDS / SEARCHED `3-7 7-3` `7-3`@4 / FIND-ALL `7-3 3-7 1-2 9-9` [`7-3`@0, `1-2`@8] (`[c = B(A)] & (c.d: <5)`, A := `/(?<e>\d)/`, B(rx) := `/${rx}-(?<d>\d)/`)
 By the macro's name: WHOLE `7-3` HOLDS, `3-7` FAILS, `3-3` HOLDS / SEARCHED `3-7 7-3` `7-3`@4 / FIND-ALL `7-3 3-7 1-2 9-9` [`7-3`@0, `1-2`@8] (`B(A) & (B.d: <5)`, A := `/(?<d>\d)/`, B(rx) := `/${rx}-(?<d>\d)/`): the body's own (body-own-name)
-An argument used twice by the body: modes: a compile error (`pair(A) & (pair.d: <5)`, A := `/(?<d>\d)/`, pair(p) := `/${[(=) = p]},${[(=) = p]}/`: two labels `d` are visible from `pair`, one at each spot (core/labels/rule/one-path)).
+An argument used twice by the body: WHOLE `7,3` HOLDS, `3,7` FAILS, `3,3` HOLDS / SEARCHED `3,7 7,3` `7,3`@4 / FIND-ALL `7,3 3,7 1,2 9,9` [`7,3`@0, `1,2`@8] (`pair(A) & (pair.d: <5)`, A := `/(?<d>\d)/`, pair(p) := `/${[(=) = p]},${[(=) = p]}/`): one full path twice, the last
 An argument used twice by the body, the caller's label: WHOLE `7,3` HOLDS, `3,7` FAILS, `3,3` HOLDS / SEARCHED `3,7 7,3` `7,3`@4 / FIND-ALL `7,3 3,7 1,2 9,9` [`7,3`@0, `1,2`@8] (`pair([x = A]) & (x.d: <5)`, A := `/(?<d>\d)/`, pair(p) := `/${[(=) = p]},${[(=) = p]}/`)
-Called twice, a plain read: modes: a compile error (`occurrences(/\d/) SEQ ";" SEQ occurrences(/\d/) & (occurrences.hit: "9")`: label the call).
+Called twice, a plain read: WHOLE `1;9` HOLDS, `9;1` FAILS, `1;19` HOLDS / SEARCHED `x;1 9;` `x;1 9;`@0 / FIND-ALL `9;1 1;1 1;9` [`9;1 1;1 1;9`@0] (`occurrences(/\d/) SEQ ";" SEQ occurrences(/\d/) & (occurrences.hit: "9")`): the last call
+
 By the macro's name, the body writing no `d`: modes: a compile error (`B(A) & (B.d: <5)`, A := `/(?<d>\d)/`, B(rx) := `/${rx}xx/`; `[c = B(A)] & (c.d: <5)` alike: the argument is used alone in the body, so the call exports no `d`).
 A part label named like the macro: WHOLE `a1b3` HOLDS, `a3b9` HOLDS, `a12` HOLDS / SEARCHED `x9 3` `x9 3`@0 / FIND-ALL `a3 b9 c1` [`a3 b9 c1`@0] (`[hits = occurrences(/\d+/)] & hits(/\d/) & (hits.hit: <5)`); the part label wins, with the hide-label warning
 
@@ -1309,7 +1308,8 @@ needs: core/labels/paths/call-prefix core/labels/export core/labels/rule/paths
   binding) but doesn't block out the target." The manager's reading (d): inside the definition that makes the
   label, the labelled use is read by its label only (core/labels/paths/binding-prefix).
 - Through the call the path is the body's (core/labels/rule/paths rule 5): `B.p` the body's label itself, `B.d`
-  through a list (transform-export, the door); `B.p.d` passes the argument's place, a compile error (core/labels/rule/argument-place) (the owner's strong lean, entailed by carve-out-reading and caller-label-export; to be confirmed); through the blank mark or a `_` part label `B.d` and `c.d` under
+  through a list (transform-export, the door); `B.p.d` names the place's gate `p` and reads A's `d`
+  (core/labels/rule/argument-place); through the blank mark or a `_` part label `B.d` and `c.d` under
   `[c = B(A)]` cross an underscore label: compile errors (rule 2). `[_ = A]` does not make A's labels visible
   through A (core/labels/export statement 7): that door is the one B closed.
 - His words before: "[ c = B(A) ] does not allow c.A" (core/labels/paths). The caller's own label on the argument
@@ -1320,7 +1320,7 @@ needs: core/labels/paths/call-prefix core/labels/export core/labels/rule/paths
   argument twice or never: core/labels/paths/argument-default).
 The body using the argument alone: WHOLE `7-3` FAILS, `3-7` HOLDS, `3-3` HOLDS / SEARCHED `7-3 3-7` `3-7`@4 / FIND-ALL `7-3 3-7 1-2 9-9` [`3-7`@4, `1-2`@8] (`B(A) & (A.d: <5)`, A := `/(?<d>\d)/`, B(rx) := `/${rx}-(?<d>\d)/`)
 The body labelling the spot: WHOLE `7-3` FAILS, `3-7` HOLDS, `3-3` HOLDS / SEARCHED `7-3 3-7` `3-7`@4 / FIND-ALL `7-3 3-7 1-2 9-9` [`3-7`@4, `1-2`@8] (`B(A) & (A.d: <5)`, A := `/(?<d>\d)/`, B(rx) := `/${[p = rx]}-(?<d>\d)/`)
-Through the body's path: modes: a compile error (`B(A) & (B.p.d: <5)`, A := `/(?<d>\d)/`, B(rx) := `/${[p = rx]}-(?<d>\d)/`: the path passes B's argument place, which no list opens: read `A.d`, the line "The body labelling the spot") (the owner's strong lean, entailed by carve-out-reading and caller-label-export; to be confirmed)
+Through the body's path: WHOLE `7-3` FAILS, `3-7` HOLDS, `3-3` HOLDS / SEARCHED `7-3 3-7` `3-7`@4 / FIND-ALL `7-3 3-7 1-2 9-9` [`3-7`@4, `1-2`@8] (`B(A) & (B.p.d: <5)`, A := `/(?<d>\d)/`, B(rx) := `/${[p = rx]}-(?<d>\d)/`): A's `d`, the spot of "The body labelling the spot"
 The body listing the spot: WHOLE `3xx` HOLDS, `7xx` FAILS / SEARCHED `7xx 3xx` `3xx`@4 / FIND-ALL `3xx 7xx 4xx` [`3xx`@0, `4xx`@8] (`B(A) & (A.d: <5)`, A := `/(?<d>\d)/`, B(rx) := `/${[(=) = rx]}xx/`)
 Through the call, the list: WHOLE `3xx` HOLDS, `7xx` FAILS / SEARCHED `7xx 3xx` `3xx`@4 / FIND-ALL `3xx 7xx 4xx` [`3xx`@0, `4xx`@8] (`B(A) & (B.d: <5)`, A := `/(?<d>\d)/`, B(rx) := `/${[(=) = rx]}xx/`)
 Closed by the macro: WHOLE `3xx` HOLDS, `7xx` FAILS / SEARCHED `7xx 3xx` `3xx`@4 / FIND-ALL `3xx 7xx 4xx` [`3xx`@0, `4xx`@8] (`B(A) & (A.d: <5)`, A := `/(?<d>\d)/`, B(rx) := `/${[_ = rx]}xx/`)
@@ -1332,41 +1332,26 @@ The caller's own label, under a closing body: WHOLE `3xx` HOLDS, `7xx` FAILS / S
 The caller reads the labels of an argument's binding through its name (`A.d` in `B(A)`): the caller's own shorthand label on the spot, whatever the body does with it.
 needs: core/labels/paths/closed-argument core/labels/export core/principles/label-names-spot
 see: core/labels/paths/call-prefix core/labels/paths/two-sources core/holes/bare-condition/nested-scope lib/convention/argument-labels core/labels/rule/kinds
-- His words: "shorthand-is-callers: yes thats it exactly. Setting a label closes a path (through the shorthand in
-  that binding) but doesn't block out the target.", on: "The shorthand label is the caller's own: `B(A)` read
-  through `A.d` means `B([A = A])`, whatever B's body does with the spot. Condition 4 counts only labels made in
-  the text that writes the shorthand." The four conditions: core/labels/rule line 3 ("binding-as-label: yes").
-- The shorthand label is on the spot where the body places the template, as a written one would be
-  (core/principles/label-names-spot). Written out, `B(A)` is `B([A = A])` for every body, for the read through
-  `A.d` (his sentence; the lines "Written out" and "Alone first, written out").
-- Placed twice, or alone and labelled, the caller's shorthand label is set at every spot, under the same-label-twice
-  rules: the last mention in a sequence, the branch taken, across `&` the ambiguous reference (the manager's
-  reading; the lines "Both uses" and "Alone first"); never placed, the never-pass warning (a reading, not run).
-- The shorthand label is protected, as statement 2's implicit label is (core/labels/export): it adds no export the
-  caller did not write, so the expansion is the same READ, not the same export (his ruling, shorthand-outside:
-  core/labels/paths/shorthand-outside); through the call's label both are refused now, the written one by the place
-  (the two "From outside" lines), and they part from a binding that uses the caller (shorthand-outside) (the owner's strong lean, entailed by carve-out-reading and caller-label-export; to be confirmed).
-- Condition 1: the binding referenced more than once in the caller's text: a compile error (label the uses;
-  core/labels/paths/binding-prefix). Condition 4 counts the caller's own labels: the caller's own `B([a = A])`
-  makes `A.d` a compile error (the line "The caller's label, then the binding's name" of core/labels/ownership).
+- His words: "shorthand-is-callers: yes thats it exactly. Setting a label closes a path (through the shorthand in that binding) but doesn't block out the target.", on: "The shorthand label is the caller's own: `B(A)` read through `A.d` means `B([A = A])`, whatever B's body does with the spot. Condition 4 counts only labels made in the text that writes the shorthand." The four conditions: core/labels/rule line 3 ("binding-as-label: yes").
+- The shorthand label is on the spot where the body places the template, as a written one would be (core/principles/label-names-spot). Written out, `B(A)` is `B([A = A])` for every body, for the read through `A.d` (his sentence; the lines "Written out" and "Alone first, written out").
+- Placed twice, or alone and labelled, the caller's shorthand label is set at every spot, under the same-label-twice rules: the last mention in a sequence, the branch taken, across `&` the ambiguous reference (the manager's reading; the lines "Both uses" and "Alone first"); never placed, the never-pass warning (a reading, not run).
+- The shorthand label is protected, as statement 2's implicit label is (core/labels/export): it adds no export the caller did not write, so the expansion is the same READ, not the same export (his ruling, shorthand-outside: core/labels/paths/shorthand-outside); through the call's label both are refused now, the written one by the place (the line "From outside"); written out, `[pub = B([A = A])]`, the label `A` is the caller's own text and `pub.A.h` reads it (the line "From outside, written out"; core/labels/rule/caller-label).
+- Condition 1: the binding placed more than once in the caller's text: the read reaches the last placement (last-placement; core/labels/paths/binding-prefix). Condition 4 counts the caller's own labels: the caller's own `B([a = A])` makes `A.d` a compile error (the line "The caller's label, then the binding's name" of core/labels/ownership).
 - His example 1, `C := B(A) & (A.d: <100)`, B(rx) := `/${rx}xx/`, is legal (core/holes/bare-condition/nested-scope).
-- A label the caller writes in its own text inside the argument is the caller's own (argument-label, ruled:
-  core/labels/export/arguments): `B([a = A]) & (a.d: ..)` is legal (the line "A label written on the argument").
-- Readings of it (the manager's, each run): (c) a condition INSIDE the argument beside its own group travels with
-  the template (`occurrences(/(?<n>\d+)/ & (n: <100))`, lib/search/occurrences); (d) a label the body writes on the
-  spot passes nothing of the argument: `B.dd.d` is a compile error, `A.d` the read (core/labels/rule/argument-place) (the owner's strong lean, entailed by carve-out-reading and caller-label-export; to be confirmed).
+- A label the caller writes in its own text inside the argument is the caller's own (argument-label, ruled: core/labels/export/arguments): `B([a = A]) & (a.d: ..)` is legal (the line "A label written on the argument").
+- Readings of it (the manager's, each run): (c) a condition INSIDE the argument beside its own group travels with the template (`occurrences(/(?<n>\d+)/ & (n: <100))`, lib/search/occurrences); (d) a label the body writes on the spot names the place's gate: `B.dd.d` reads the argument's `d` by that gate, `A.d` by the caller's shorthand (core/labels/rule/argument-place).
 - A binding used alone in a definition IS placed: its name stands for its spot there (core/labels/paths/binding-prefix).
-- The refusal is at the reference and names this rule; its message is the manager's call (a reading).
-Used twice in the caller's text: modes: a compile error (`B(A) SEQ A & (A.d: <5)`, A := `/(?<d>\d)/`, B(rx) := `/${rx}xx/`: the binding is not referenced unambiguously (condition 1); label the uses).
+- To read a placement other than the last, label the uses (core/labels/paths/binding-prefix).
+Used twice in the caller's text, the last placement: WHOLE `7xx3` HOLDS, `3xx7` FAILS / SEARCHED `3xx7 7xx3` `7xx3`@5 / FIND-ALL `7xx3 3xx7 9xx1` [`7xx3`@0, `9xx1`@10] (`B(A) SEQ A & (A.d: <5)`, A := `/(?<d>\d)/`, B(rx) := `/${rx}xx/`)
 The caller's read through the shorthand: WHOLE `3xx` HOLDS, `7xx` FAILS / SEARCHED `7xx 3xx` `3xx`@4 / FIND-ALL `3xx 7xx 4xx` [`3xx`@0, `4xx`@8] (`B(A) & (A.d: <5)`, A := `/(?<d>\d)/`, B(rx) := `/${rx}xx/`)
 Written out: WHOLE `3xx` HOLDS, `7xx` FAILS / SEARCHED `7xx 3xx` `3xx`@4 / FIND-ALL `3xx 7xx 4xx` [`3xx`@0, `4xx`@8] (`B([A = A]) & (A.d: <5)`, A := `/(?<d>\d)/`, B(rx) := `/${rx}xx/`)
 Both uses: WHOLE `7-3` HOLDS, `3-7` FAILS / SEARCHED `7-3 3-7` `7-3`@0 / FIND-ALL `7-3 3-7 1-2 9-9` [`7-3`@0, `1-2`@8] (`B(A) & (A.d: <5)`, B(rx) := `/${[p = rx]}-${rx}/`, A := `/(?<d>\d)/`)
 Alone first: WHOLE `3-7` FAILS, `7-3` HOLDS / SEARCHED `7-3 3-7` `7-3`@0 / FIND-ALL `7-3 3-7 1-2 9-9` [`7-3`@0, `1-2`@8] (`B(A) & (A.d: <5)`, B(rx) := `/${rx}-${[p = rx]}/`, A := `/(?<d>\d)/`): the last mention, the labelled spot
 Alone first, written out: WHOLE `3-7` FAILS, `7-3` HOLDS / SEARCHED `7-3 3-7` `7-3`@0 / FIND-ALL `7-3 3-7 1-2 9-9` [`7-3`@0, `1-2`@8] (`B([A = A]) & (A.d: <5)`, B(rx) := `/${rx}-${[p = rx]}/`, A := `/(?<d>\d)/`)
 From outside: modes: a compile error (`[pub = B(A)] & (pub.A.h: <5)`, A := `/(?<h>\d)/`, B(rx) := `/${[p = rx]}xx/`: the shorthand label is protected: it adds no export (core/labels/paths/shorthand-outside)).
-From outside, written out: modes: a compile error (`[pub = B([A = A])] & (pub.A.h: <5)`, A := `/(?<h>\d)/`, B(rx) := `/${[p = rx]}xx/`: the path through the call's label passes B's argument place: read `A.h`) (the owner's strong lean, entailed by carve-out-reading and caller-label-export; to be confirmed)
+From outside, written out: WHOLE `3xx` HOLDS, `7xx` FAILS / SEARCHED `7xx 3xx` `3xx`@4 / FIND-ALL `3xx 7xx 4xx` [`3xx`@0, `4xx`@8] (`[pub = B([A = A])] & (pub.A.h: <5)`, A := `/(?<h>\d)/`, B(rx) := `/${[p = rx]}xx/`)
 A label written on the argument: WHOLE `42xx` HOLDS, `100xx` FAILS, `042xx` FAILS / SEARCHED `x100xx 42xx` `0xx`@3 / FIND-ALL `100xx 42xx 7xx 300xx` [`0xx`@2, `42xx`@6, `7xx`@11, `0xx`@17] (`B([a = A]) & (a.d: <100)`, A := `[d = rx.digits]`, B(rx) := `/${rx}xx/`)
-Through a part label in the body: modes: a compile error (`B(A) & (B.dd.d: <100)`, A := `[d = rx.digits]`, B(rx) := `/${[dd = rx]}xx/`: the path passes B's argument place, which no list opens: read `A.d`, with the answers of "Example 1, the spot labelled, by the argument's name" (core/holes/bare-condition/nested-scope)) (the owner's strong lean, entailed by carve-out-reading and caller-label-export; to be confirmed)
+Through a part label in the body: WHOLE `42xx` HOLDS, `100xx` FAILS, `042xx` FAILS / SEARCHED `x100xx 42xx` `0xx`@3 / FIND-ALL `100xx 42xx 7xx 300xx` [`0xx`@2, `42xx`@6, `7xx`@11, `0xx`@17] (`B(A) & (B.dd.d: <100)`, A := `[d = rx.digits]`, B(rx) := `/${[dd = rx]}xx/`)
 
 ### The shorthand read from outside   [core/labels/paths/shorthand-outside]   ruled 2026-11-27
 The shorthand label is protected and adds no export: a read from outside the caller through a label on the call (`pub.A.h` for `[pub = B(A)]`) is a compile error.
@@ -1374,14 +1359,15 @@ needs: core/labels/paths/argument-default
 see: core/labels/rule/kinds
 - His words: "shorthand-outside: error. Agree."; the lean as put: "An implicit name, whether from a part used
   alone or from an argument passed by name, behaves one way: named inside, invisible outside."
-- Written out, `[pub = B([A = A])]`, the label `A` is the caller's own text; through the call's label `pub` the
-  read passes B's argument place, so it is a compile error too (caller-label-export; the second line) (the owner's strong lean, entailed by carve-out-reading and caller-label-export; to be confirmed).
+- Written out, `[pub = B([A = A])]`, the label `A` is the caller's own text, written directly in the argument:
+  through the call's label `pub` it is read like `Y.c.a.h` (core/labels/rule/caller-label; the second line).
 - The two part from a binding that uses the caller: the written label is exported with its exports, `X.A.h`
   (core/labels/rule/caller-label), the shorthand is not (the last two lines). The not-taken
   candidate is in the details entry.
 From outside: modes: a compile error (`[pub = B(A)] & (pub.A.h: <5)`, A := `/(?<h>\d)/`, B(rx) := `/${[p = rx]}xx/`: the shorthand label is protected: it adds no export).
-From outside, written out: modes: a compile error (`[pub = B([A = A])] & (pub.A.h: <5)`, A := `/(?<h>\d)/`, B(rx) := `/${[p = rx]}xx/`: the path through the call's label passes B's argument place: read `A.h`) (the owner's strong lean, entailed by carve-out-reading and caller-label-export; to be confirmed)
-From a binding that uses the caller, written out: WHOLE `3xx!` HOLDS, `7xx!` FAILS / SEARCHED `7xx! 3xx!` `3xx!`@5 / FIND-ALL `3xx! 7xx! 4xx!` [`3xx!`@0, `4xx!`@10] (`X & (X.A.h: <5)`, A := `/(?<h>\d)/`, B(rx) := `/${[p = rx]}xx/`, X := `[pub = B([A = A])] SEQ "!"`)
+From outside, written out: WHOLE `3xx` HOLDS, `7xx` FAILS / SEARCHED `7xx 3xx` `3xx`@4 / FIND-ALL `3xx 7xx 4xx` [`3xx`@0, `4xx`@8] (`[pub = B([A = A])] & (pub.A.h: <5)`, A := `/(?<h>\d)/`, B(rx) := `/${[p = rx]}xx/`)
+From a binding
+ that uses the caller, written out: WHOLE `3xx!` HOLDS, `7xx!` FAILS / SEARCHED `7xx! 3xx!` `3xx!`@5 / FIND-ALL `3xx! 7xx! 4xx!` [`3xx!`@0, `4xx!`@10] (`X & (X.A.h: <5)`, A := `/(?<h>\d)/`, B(rx) := `/${[p = rx]}xx/`, X := `[pub = B([A = A])] SEQ "!"`)
 From a binding that uses the caller, the shorthand: modes: a compile error (`X & (X.A.h: <5)`, A := `/(?<h>\d)/`, B(rx) := `/${[p = rx]}xx/`, X := `[pub = B(A)] SEQ "!"`: the shorthand label is protected: it adds no export)
 
 ### A name with two sources   [core/labels/paths/two-sources]   ruled 2026-11-27
@@ -1406,7 +1392,7 @@ The second shape, read bare: WHOLE `1,7` HOLDS, `7,1` FAILS / SEARCHED `7,1 1,7`
 With a part label: WHOLE `1,7` HOLDS, `7,1` FAILS / SEARCHED `7,1 1,7` `1,7`@4 / FIND-ALL `1,7 7,1 1,2 9,9` [`1,7`@0, `1,2`@8] (`[w = /(?<h>\d)/] SEQ A & (w.h: <5)`, A := `/,(?<h>\d)/`)
 
 ### A plain read through a prefix with one use   [core/labels/paths/one-use-read]   ruled 2026-11-22
-With ONE use, a plain read through a binding's prefix (`A.h`) is legal, and with it the plain idiom `isodate & (isodate.year: < 2100)`; used more than once it is binding-prefix's compile error.
+With ONE use, a plain read through a binding's prefix (`A.h`) is legal, and so is the idiom `isodate & (isodate.year: < 2100)`; with more uses it reads the last placement (binding-prefix).
 needs: core/labels/paths/binding-prefix core/labels/paths/label-reference
 see: core/labels/flow core/labels/export
 - Ruled by default-export (the record's manager entry closing idiom-confirm, no owner words): the statement put to him before he ruled
@@ -1415,12 +1401,34 @@ see: core/labels/flow core/labels/export
   different access locally"). That IS the one-use plain read through the binding's name.
 - So `isodate & (isodate.year: < 2100)` at the top, where isodate is used alone, is legal (the line "The plain
   idiom, one use"), and his point 4 of the label-flow proposal ("4. A . B & (A.h: blah) error. A is a binding not a
-  label and could be ambigous if its used multiple times in an expression") holds for more than one use only.
+  label and could be ambigous if its used multiple times in an expression") is answered for more than one use by
+  last-placement: the last placement written before the read (core/labels/paths/binding-prefix).
 - It is binding-as-label's shorthand inside one definition (core/labels/rule line 3; condition 1 is the one use).
 - Every program re-spelled under label-reference with a one-use prefix rests on it (the line "One use",
-  core/labels/paths/binding-prefix); with several uses the part is labelled (`[aa = A]`, `aa.h`).
+  core/labels/paths/binding-prefix); with several uses a part is labelled to read one but the last (`[aa = A]`, `aa.h`).
+
 One use: WHOLE `12` HOLDS, `21` FAILS / SEARCHED `21 12` `12`@3 / FIND-ALL `12 21 10` [`12`@0, `10`@6] (`A & B & (A.h: <2)`, A := `/(?<h>\d)\d/`, B := `/\d(?<h>\d)/`)
 The plain idiom, one use: WHOLE `2025-01-02` HOLDS, `2100-01-02` FAILS / SEARCHED `2100-01-02 2025-03-04` `2025-03-04`@11 / FIND-ALL `2025-01-02 2100-01-02 1999-12-31` [`2025-01-02`@0, `1999-12-31`@22] (`isodate & (isodate.year: < 2100)`, isodate := `[year = /\d{4}/] SEQ "-" SEQ [month = /\d\d/] SEQ "-" SEQ [day = /\d\d/]`)
+
+### A path placed in a pattern   [core/labels/paths/placed-part]   ruled 2026-11-28
+A path in pattern position (`isodate.year`) places the part it names, as written under its label: its text only, no condition written outside it; a part that refers outside itself is a compile error.
+
+needs: core/labels/paths core/labels/rule/gates
+see: core/operators/bindings/reference core/labels/backreferences core/values/reads core/labels/rule/kinds
+- His words: "part-of-argument: agree 1-4 although I don't like 3 but I understand it. 5. refers to the local implicit label which we could simply say for now is limited to a binding or arg but not a path.", on: "1. A path in pattern position places the part the path names, as written under its label. It works on a binding as well as an argument: `isodate.year` anywhere. 2. The path follows the ordinary path rules: gates named, exactly one such label. A label the argument lacks is an error at the call. 3. You get the part's text, not its surroundings. A filter or condition written outside the part does not come along (with `date := isodate & (year: < 2100)`, `date.year` is still any four digits). 4. A part that refers outside itself, such as a `\k<x>` to a group not in the part, is a compile error. 5. The placement is a gate like any other. I would name it by the last step, so `Y(isodate) & (year: < 2100)` reads it in the body, unless you write a label on it." His dislike of line 3 is his, recorded; no change asked.
+- Line 5, his answer: the implicit label is "limited to a binding or arg but not a path". A placed path makes no label (the manager's reading): to read a placed part, label it (`[y = date.year]`, `y`); a bare read of its last step is a compile error for now (the line "Placed, read bare").
+- Line 3's example runs with the condition written over the labelled part, `date`'s own `year`, in place (a program must name `isodate.year` under label-reference): the placed part is still any four digits.
+- The dollar form `$date.year` stays the VALUE read (core/values/reads; the manager's reading, not run).
+- The labels inside a placed part come with it, behind its gate, nameless until labelled; a part under a loop or an optional places its text once, the quantifier outside it (the manager's readings, not run).
+- A parameter's path in a body (`Y(date) := [y = date.year] SEQ "!"`) places the argument's part (line 1; the line "An argument's part").
+Placed: WHOLE `2024!` HOLDS, `2024-01-02!` FAILS, `24!` FAILS / SEARCHED `x 1999! 2024` `1999!`@2 / FIND-ALL `2024! 1999! 12!` [`2024!`@0, `1999!`@6] (`isodate.year SEQ "!"`, isodate := `[year = /\d{4}/] SEQ "-" SEQ [month = /\d\d/] SEQ "-" SEQ [day = /\d\d/]`)
+The context left behind: WHOLE `2024!` HOLDS, `2150!` HOLDS / SEARCHED `x 2150!` `2150!`@2 / FIND-ALL `2024! 2150! 1999!` [`2024!`@0, `2150!`@6, `1999!`@12] (`date.year SEQ "!"`, date := `[year = /\d{4}/] SEQ "-" SEQ /\d\d-\d\d/ & (year: < 2100)`)
+Placed and labelled: WHOLE `2024!` HOLDS, `2150!` FAILS / SEARCHED `x 2150! 2024!` `2024!`@8 / FIND-ALL `2024! 2150! 1999!` [`2024!`@0, `1999!`@12] (`[y = date.year] SEQ "!" & (y: < 2100)`, date := `[year = /\d{4}/] SEQ "-" SEQ /\d\d-\d\d/ & (year: < 2100)`)
+Placed, read bare: modes: a compile error (`date.year SEQ "!" & (year: < 2100)`, date := `[year = /\d{4}/] SEQ "-" SEQ /\d\d-\d\d/ & (year: < 2100)`: `year` is no label here: a placed path makes no implicit label (line 5); label it)
+Past a gate: modes: a compile error (`X.year SEQ "!"`, X := `[d = isodate] SEQ ";"`, isodate := `[year = /\d{4}/] SEQ "-" SEQ [month = /\d\d/] SEQ "-" SEQ [day = /\d\d/]`: the path `X.year` placed: `X.year`: a `year` sits behind a gate, which is never skipped: write `X.d.year` (a compile error, label-names-gate))
+Past a gate, the gate named: WHOLE `2024!` HOLDS, `24!` FAILS / SEARCHED `x 2024!` `2024!`@2 / FIND-ALL `2024! 1999!` [`2024!`@0, `1999!`@6] (`X.d.year SEQ "!"`, X := `[d = isodate] SEQ ";"`, isodate := `[year = /\d{4}/] SEQ "-" SEQ [month = /\d\d/] SEQ "-" SEQ [day = /\d\d/]`)
+A part that refers outside itself: modes: a compile error (`X.b`, X := `/(?<a>\d)(?<b>\k<a>)x/`: the part `X.b` refers outside itself (`\k<a>`): a compile error (part-of-argument 4))
+An argument's part: WHOLE `2024!` HOLDS, `2150!` FAILS / SEARCHED `2150! 1999!` `1999!`@6 / FIND-ALL `2024! 2150! 1999!` [`2024!`@0, `1999!`@12] (`Y(isodate) & (Y.y: < 2100)`, Y(date) := `[y = date.year] SEQ "!"`, isodate := `[year = /\d{4}/] SEQ "-" SEQ [month = /\d\d/] SEQ "-" SEQ [day = /\d\d/]`)
 
 ### Backreferences   [core/labels/backreferences]   ruled 2026-11-18
 `\k<y>` reads PCRE's capture; a backreference to a name two groups of one literal carry is a compile error unless the literal says `(?J)`.
@@ -2364,7 +2372,7 @@ by: core/principles/namespace-at-reference
   see d as a flat look into A"; under label-reference it is spelled `C := B(A) & (A.d: <100)`, what his flat look
   meant (core/holes/bare-condition/nested-scope): legal, B using the argument alone, the shorthand of a label on
   the spot (core/labels/paths/argument-default), whatever B does with the spot ("shorthand-is-callers: yes"); where
-  B labels the spot, B's path (`B.dd.d`) passes the argument's place, a compile error (core/labels/rule/argument-place) (the owner's strong lean, entailed by carve-out-reading and caller-label-export; to be confirmed).
+  B labels the spot, B's path (`B.dd.d`) names the place's gate and reads the same `d` (core/labels/rule/argument-place).
 WHOLE `2025-x` HOLDS, `1999-x` FAILS / SEARCHED `1999-x 2025-x` `2025-x`@7 / FIND-ALL `2025-x 1999-x 2001-x` [`2025-x`@0, `2001-x`@14] (`/${year}-x/ & (year.v: >= 2000)`, year := `/(?<v>\d{4})/`)
 
 ### Same-name groups through a hole   [core/holes/same-name]   ruled 2026-11-19
@@ -2418,40 +2426,27 @@ Fixed, holds: WHOLE `3` HOLDS, `7` HOLDS / SEARCHED `x3 7` `3`@1 / FIND-ALL `3 7
 Two definitions: WHOLE `73` FAILS, `37` FAILS / SEARCHED `37 73` FAILS / FIND-ALL `73 37 51` [] (`A SEQ B`, A := `/(?<c>\d)/`, B := `/${(c: >= 5)}(?<c>\d)/`)
 One definition: WHOLE `73` HOLDS, `37` FAILS / SEARCHED `37 73` `73`@3 / FIND-ALL `73 37 51` [`73`@0, `51`@6] (`/(?<c>\d)${(c: >= 5)}(?<c>\d)/`)
 
-### What a hole in a used definition may name   [core/holes/bare-condition/nested-scope]   ruled 2026-11-22
-A separately defined piece names only labels it holds and reads only its own settings of them; its `0` is its own match so far; a parameter's labels are not its to name, but a reference's listed ones.
+### What a hole in a used definition may name   [core/holes/bare-condition/nested-scope]   ruled 2026-11-28
+A separately defined piece names only labels it holds and reads only its own settings of them; its `0` is its own match so far; a placed parameter's labels it names through the gate (`rx.d`, `dd.d`).
 needs: core/holes/bare-condition/labels core/values/reads core/conditions/match-so-far
 see: core/labels/flow core/operators/bindings/label-variables core/holes/bare-condition/bound-condition
-- NAMES: a piece that names a label it does not hold is a compile error at its definition ("case 1: compile error
-  at inner"): `inner := /x${(h: <5)}/` is refused wherever it is used. The caller passes the condition instead
-  (`inner(c) := /x${c}/`, `inner((h: <5))`); a label variable is under construction
-  (core/operators/bindings/label-variables). A condition or computed value bound alone that names a label its
-  binding does not hold is the same compile error (core/holes/bare-condition/bound-condition); one naming only `0`
-  is a compile error for now (core/holes/bare-condition/zero-binding).
-- VALUES: a read inside a piece, a group question and `h[k]` included (array-in-piece), sees the piece's own
-  settings only, unset before its own group the first time, the
-  previous pass of a loop written inside it ("i meant b"). So the same rx written as one definition and composed
-  from two can answer differently: the exception to "a compose and a literal rx have the same label behavior"
-  (core/labels/flow) (the lines "Two definitions", "One definition"); for what a piece's USER reads, default-export narrows it too: the user reads only what each piece exports (a consequence, the manager's reading; core/labels/flow).
+- NAMES: a piece that names a label it does not hold is a compile error at its definition ("case 1: compile error at inner"): `inner := /x${(h: <5)}/` is refused wherever it is used. The caller passes the condition instead (`inner(c) := /x${c}/`, `inner((h: <5))`); a label variable is under construction (core/operators/bindings/label-variables). A condition or computed value bound alone that names a label its binding does not hold is the same compile error (core/holes/bare-condition/bound-condition); one naming only `0` is a compile error for now (core/holes/bare-condition/zero-binding).
+- VALUES: a read inside a piece, a group question and `h[k]` included (array-in-piece), sees the piece's own settings only, unset before its own group the first time, the previous pass of a loop written inside it ("i meant b"). So the same rx written as one definition and composed from two can answer differently: the exception to "a compose and a literal rx have the same label behavior" (core/labels/flow) (the lines "Two definitions", "One definition"); for what a piece's USER reads, default-export narrows it too: the user reads only what each piece exports (a consequence, the manager's reading; core/labels/flow).
 - `0`: the match so far of the definition it is written in (core/conditions/match-so-far).
 - A group question in a bound piece: "if it was written A & /B-defintion/ then the some(h) would see the h from A. but because B is bound first, its internal references refer only to what can be seen at that point." (array-in-piece).
-- A used piece takes only an explicit `i` at its hole (core/holes/flags), its own file's defaults otherwise, and
-  not the labels around it: the two differ by construction ("bindings define scope").
-- His three examples, "rather than rules", with A := `[d = digits]` (his spelling; the runs use `rx.digits`):
-  1. `B(rx) := /${rx}xx/`, `C := B(A) & (d: <100)` "is legal. C can see d as a flat look into A. C cannot see rx
-     as its a binding variable not a label." (spelled `A.d`): legal whatever the body does with the spot (the line "Example 1, the spot labelled, by the argument's name"); through B's label, `B.dd.d`, a compile error (core/labels/rule/argument-place) (the owner's strong lean, entailed by carve-out-reading and caller-label-export; to be confirmed).
-  2. `B(rx) := /${rx}xx/ & (d: <100)` "is incorrect".
-  3. `B(rx) := /${[dd = rx]}xx/ & (dd: <100)` "would be correct".
-- Readings (the manager's): a piece is a binding or a macro body, and what is written inside ONE definition
-  (literals, operands, holes, an `&` operand's hole) is one piece; an argument is the caller's text and reads the
-  caller's labels; two uses of one piece are two pieces (core/principles/binding-fixed), so a user's loop around a piece makes
-  each pass a fresh use and `B SEQ ";"` looped twice agrees with it written out (the lines "A user's loop",
-  "Written out"; inside one definition the loop reads its previous pass, "One definition" with the loop).
+- A used piece takes only an explicit `i` at its hole (core/holes/flags), its own file's defaults otherwise, and not the labels around it: the two differ by construction ("bindings define scope").
+- His three examples, "rather than rules", with A := `[d = digits]` (his spelling; the runs use `rx.digits`): 1. `B(rx) := /${rx}xx/`, `C := B(A) & (d: <100)` "is legal. C can see d as a flat look into A. C cannot see rx as its a binding variable not a label." (spelled `A.d`): legal whatever the body does with the spot (the line "Example 1, the spot labelled, by the argument's name"); through B's label, `B.dd.d`, the same spot by the place's gate (core/labels/rule/argument-place). 2. `B(rx) := /${rx}xx/ & (d: <100)` "is incorrect"; his words on it (reference-example-checked): "This is error because where does d come from? No gate. rx.d would be the gate." (the lines "Example 2", "Example 2, the gate"). 3. `B(rx) := /${[dd = rx]}xx/ & (dd: <100)` "would be correct"; his words: "This is the explicit label so this works as would dd.d if d existed there." (the line "Example 3, into the argument"); the label written on the place is the gate's name, so `rx.d` there is no read (core/labels/rule/gates).
+- Readings (the manager's): a piece is a binding or a macro body, and what is written inside ONE definition (literals, operands, holes, an `&` operand's hole) is one piece; an argument is the caller's text and reads the caller's labels; two uses of one piece are two pieces (core/principles/binding-fixed), so a user's loop around a piece makes each pass a fresh use and `B SEQ ";"` looped twice agrees with it written out (the lines "A user's loop", "Written out"; inside one definition the loop reads its previous pass, "One definition" with the loop).
 Match so far: WHOLE `3x` FAILS, `7x` FAILS / SEARCHED `a3x` FAILS / FIND-ALL `3x 7x` [] (`/(?<h>\d)${inner}/`, inner := `/x${(0: /\dx/)}/`)
 Example 1: WHOLE `42xx` HOLDS, `100xx` FAILS, `042xx` FAILS / SEARCHED `x100xx 42xx` `0xx`@3 / FIND-ALL `100xx 42xx 7xx 300xx` [`0xx`@2, `42xx`@6, `7xx`@11, `0xx`@17] (`C := B(A) & (A.d: <100)`, A := `[d = rx.digits]`, B(rx) := `/${rx}xx/`)
-Example 1, the spot labelled: modes: a compile error (`C := B(A) & (B.dd.d: <100)`, A := `[d = rx.digits]`, B(rx) := `/${[dd = rx]}xx/`: the path passes B's argument place, which no list opens: read `A.d`, the next line) (the owner's strong lean, entailed by carve-out-reading and caller-label-export; to be confirmed)
+Example 1, the spot labelled: WHOLE `42xx` HOLDS, `100xx` FAILS, `042xx` FAILS / SEARCHED `x100xx 42xx` `0xx`@3 / FIND-ALL `100xx 42xx 7xx 300xx` [`0xx`@2, `42xx`@6, `7xx`@11, `0xx`@17] (`B(A) & (B.dd.d: <100)`, A := `[d = rx.digits]`, B(rx) := `/${[dd = rx]}xx/`)
 Example 1, the spot labelled, by the argument's name: WHOLE `42xx` HOLDS, `100xx` FAILS, `042xx` FAILS / SEARCHED `x100xx 42xx` `0xx`@3 / FIND-ALL `100xx 42xx 7xx 300xx` [`0xx`@2, `42xx`@6, `7xx`@11, `0xx`@17] (`B(A) & (A.d: <100)`, A := `[d = rx.digits]`, B(rx) := `/${[dd = rx]}xx/`)
-Example 3: WHOLE `42xx` HOLDS, `100xx` FAILS, `042xx` FAILS / SEARCHED `x100xx 42xx` `0xx`@3 / FIND-ALL `100xx 42xx 7xx 300xx` [`0xx`@2, `42xx`@6, `7xx`@11, `0xx`@17] (`B(A)`, A := `[d = rx.digits]`, B(rx) := `/${[dd = rx]}xx/ & (dd: <100)`)
+Example 2: modes: a compile error (`B(A)`, A := `/(?<d>\d)/`, B(rx) := `/${rx}xx/ & (d: <5)`: `d`: no label `d` is written in this text (a compile error: a bare read is a read of the text's own labels; the start of a path is a label it writes, a binding's or a macro's name, or, inside a body, a parameter))
+Example 2, the gate: WHOLE `3xx` HOLDS, `7xx` FAILS / SEARCHED `7xx 3xx` `3xx`@4 / FIND-ALL `3xx 7xx 4xx` [`3xx`@0, `4xx`@8] (`B(A)`, A := `/(?<d>\d)/`, B(rx) := `/${rx}xx/ & (rx.d: <5)`)
+Example 3, into the argument: WHOLE `3xx` HOLDS, `7xx` FAILS / SEARCHED `7xx 3xx` `3xx`@4 / FIND-ALL `3xx 7xx 4xx` [`3xx`@0, `4xx`@8] (`B(A)`, A := `/(?<d>\d)/`, B(rx) := `/${[dd = rx]}xx/ & (dd.d: <5)`)
+Example 3, the parameter's name under the body's label: modes: a compile error (`B(A)`, A := `/(?<d>\d)/`, B(rx) := `/${[dd = rx]}xx/ & (rx.d: <5)`: `rx.d`: no label `rx` is written in this text (a compile error: a bare read is a read of the text's own labels; the start of a path is a label it writes, a binding's or a macro's name, or, inside a body, a parameter))
+Example 3: WHOLE
+ `42xx` HOLDS, `100xx` FAILS, `042xx` FAILS / SEARCHED `x100xx 42xx` `0xx`@3 / FIND-ALL `100xx 42xx 7xx 300xx` [`0xx`@2, `42xx`@6, `7xx`@11, `0xx`@17] (`B(A)`, A := `[d = rx.digits]`, B(rx) := `/${[dd = rx]}xx/ & (dd: <100)`)
 Passing the condition: WHOLE `3x` HOLDS, `7x` FAILS / SEARCHED `7x 3x` `3x`@3 / FIND-ALL `3x 7x 4x` [`3x`@0, `4x`@6] (`/(?<h>\d)${inner((h: <5))}/`, inner(c) := `/x${c}/`)
 Two definitions: WHOLE `73` FAILS, `37` FAILS / SEARCHED `37 73` FAILS / FIND-ALL `73 37 51` [] (`A SEQ B`, A := `/(?<c>\d)/`, B := `/${(c: >= 5)}(?<c>\d)/`)
 One definition: WHOLE `73` HOLDS, `37` FAILS / SEARCHED `37 73` `73`@3 / FIND-ALL `73 37 51` [`73`@0, `51`@6] (`/(?<c>\d)${(c: >= 5)}(?<c>\d)/`)
@@ -2564,7 +2559,7 @@ needs: core/patterns/sequence core/patterns/quantifiers core/filters/and core/va
 - A string runs from its quote to the same quote on its line (core/patterns/strings); nothing inside it is an operator.
 - Inside `/.../` none of this applies: rx text has PCRE's meaning, a hole `${...}` excepted.
 WHOLE `2` HOLDS, `x2` FAILS / SEARCHED `x2` `2`@1 / FIND-ALL `x1 2 x2` [`x1`@0, `2`@3, `2`@6] (`"x" SEQ "1" | "2"` is `(?:x1)|2`)
-The label set beside `|`: WHOLE `25` FAILS, `13` HOLDS / SEARCHED `25` FAILS / FIND-ALL `25 13` [`13`@3] (`[ab = [b = B] | [a = A]] & (ab.l: <20)`, A := `/(?<l>\d)\d/`, B := `/(?<l>\d\d)/`)
+The label set beside `|`: WHOLE `25` FAILS, `13` HOLDS / SEARCHED `25` FAILS / FIND-ALL `25 13` [`13`@3] (`[ab = [b = /(?<l>\d\d)/] | [a = /(?<l>\d)\d/]] & (ab.l: <20)`)
 
 ### Bindings and macros   [core/operators/bindings]   ruled 2026-11-22
 `name := expression` binds a name to whatever the expression is, an rx or a macro; `m(p1, p2) := body` makes a macro, and a call is the macro applied to one record.
@@ -2691,43 +2686,27 @@ The reference kind by the label mark: modes: a compile error (`A(x:, /\w/)`, A(a
 A path as a marked argument: modes: a compile error (`A(x.d:)`, A(l:) := `/(?<:${l}>\d)/`: a marked argument is one new name).
 A body reading its own label after placing it: WHOLE `3` HOLDS, `7` FAILS / SEARCHED `7 3` `3`@2 / FIND-ALL `3 7 4` [`3`@0, `4`@4] (`C(x:)`, C(l:) := `/(?<:${l}>\d)/ & (l: <5)`)
 
-### A reference parameter, declared   [core/operators/bindings/reference]   ruled 2026-11-27
+### A reference parameter, declared   [core/operators/bindings/reference]   ruled 2026-11-28
 A reference parameter is declared in the head as the list of labels it needs (`before2100((=year))`); the body reads the listed names bare; nothing is inferred from the body.
 needs: core/operators/bindings/label-kinds core/labels/export/export-list
 see: core/operators/bindings/reference-call core/holes/bare-condition/bound-condition core/operators/bindings/macro-types core/holes/bare-condition/nested-scope parked/ideas/reference-kind core/spellings/placeholders
-- His words: "param-reference: yes all four."; lines 1, 2 and 4 as asked (line 3: core/operators/bindings/reference-call):
-  "1. **Declared.** A reference parameter is written in the head as the list of labels it needs:
-  `before2100((=year))`, `weekday_of((=year, =month, =day))`. Two references that need the same label rename it in
-  the list, `((y1 = year), (y2 = year))`, as the export list already allows.
-  2. **Enforced in the body.** The body reads the listed names bare. It cannot place the parameter, because the
-  parameter has no name to place. It can read nothing of the argument that the head did not list."; line 4: "4.
-  **Nothing inferred.** A plain parameter that a body reads and never places, `A(B) := (B.year: < 2100)`, is an
-  error at the definition, and the message names the list form. A plain parameter that the body places and then
-  reads stays legal, as today."
-- His requirement before it: "I dislike the secret change from pattern to reference. Even if it's detectable, I
-  think it should be declared then enforced." The four lines are the rules label-kinds waited for, for users: "the
-  reference kind can be used by natives but stays off limits for users until we see a valid, safe set of rules for
-  it." (core/operators/bindings/label-kinds). The spellings are placeholders.
-- The head's list has the export list's forms (core/labels/export/export-list): `(=year)`, renamed `(y1 = year)`,
-  several `(=year, =month, =day)`.
-- "Places and then reads, as today" (a marked reading, the fold's, pending the owner question
-  reference-example-checked: the example shown to him, `checked(B) := B & (B.year: < 2100)`, today's rules refuse):
-  the body places the parameter under a label of its own and reads that label, nested-scope's example 3
-  (`B(rx) := /${[dd = rx]}xx/ & (dd: <100)`), and `checked` stays a compile error (the line "Placed, then read by the
-  parameter's name"). The other reading, line 4's second sentence a NEW rule (a body may read the labels of a
-  parameter it places, by the parameter's name), RUN on `checked(isodate)`: WHOLE `2024-02-29` HOLDS, `2150-01-01`
-  FAILS / SEARCHED `x 2150-01-01 1999-12-31` `1999-12-31`@13 / FIND-ALL `2024-02-29 2150-01-01 1999-12-31`
-  [`2024-02-29`@0, `1999-12-31`@22].
-- Cells still open, each with its trigger (a reference beside a label parameter, a reference to a looped label, one
-  inside a group question, the wildcard list forms in a head, an export from a reference call): the details entry.
-- His direction, his words: "I like the direction and the fact that this allows one to bind conditions": a body that
-  is a condition over a declared reference names its target in its head (core/holes/bare-condition/bound-condition).
+- His words: "param-reference: yes all four."; lines 1, 2 and 4 as asked (line 3: core/operators/bindings/reference-call): "1. **Declared.** A reference parameter is written in the head as the list of labels it needs: `before2100((=year))`, `weekday_of((=year, =month, =day))`. Two references that need the same label rename it in the list, `((y1 = year), (y2 = year))`, as the export list already allows. 2. **Enforced in the body.** The body reads the listed names bare. It cannot place the parameter, because the parameter has no name to place. It can read nothing of the argument that the head did not list."; line 4: "4. **Nothing inferred.** A plain parameter that a body reads and never places, `A(B) := (B.year: < 2100)`, is an error at the definition, and the message names the list form. A plain parameter that the body places and then reads stays legal, as today."
+- His requirement before it: "I dislike the secret change from pattern to reference. Even if it's detectable, I think it should be declared then enforced." The four lines are the rules label-kinds waited for, for users: "the reference kind can be used by natives but stays off limits for users until we see a valid, safe set of rules for it." (core/operators/bindings/label-kinds). The spellings are placeholders.
+- The head's list has the export list's forms (core/labels/export/export-list): `(=year)`, renamed `(y1 = year)`, several `(=year, =month, =day)`.
+- Line 4's "reads and never places" is read as: reads in a condition and never places (a path in pattern position places a part: core/labels/paths/placed-part).
+- His words: "reference-example-checked: checked(B) := B & (B.year: < 2100) Originally this was an example in reference but here it's just a pattern arg. The pattern is placed then the year is checked. B.year uses the temp label that's created locally for binding B": line 4's second sentence stands. A body that places a parameter reads its labels through the parameter's name (`B.year`, the local implicit label made where it is placed) or its own label on the place (`dd.d`); a bare `year` is a compile error, his "No gate" (the line "Placed, then read bare"); a gate: core/labels/rule/argument-place.
+- An argument that lacks the label is an error at the call (argument-is-gate 4; the line "An argument without `year`").
+- Cells still open, each with its trigger (a reference beside a label parameter, a reference to a looped label, one inside a group question, the wildcard list forms in a head, an export from a reference call): the details entry.
+- His direction, his words: "I like the direction and the fact that this allows one to bind conditions": a body that is a condition over a declared reference names its target in its head (core/holes/bare-condition/bound-condition).
 - Not decided, left for later (told to him): whether the CALL also carries a mark.
 Declared, read bare: WHOLE `2024-02-29` HOLDS, `2150-01-01` FAILS / SEARCHED `x 2150-01-01 1999-12-31` `1999-12-31`@13 / FIND-ALL `2024-02-29 2150-01-01 1999-12-31` [`2024-02-29`@0, `1999-12-31`@22] (`isodate & before2100(isodate)`, before2100((=year)) := `(year: < 2100)`, isodate := `[year = /\d{4}/] SEQ "-" SEQ [month = /\d\d/] SEQ "-" SEQ [day = /\d\d/]`)
 Two uses, each labelled: WHOLE `2024-02-29 2150-01-01` HOLDS, `2150-01-01 2024-02-29` FAILS, `2024-02-29 2025-03-01` FAILS / SEARCHED `2150-01-01 2024-02-29 2150-01-01` `2024-02-29 2150-01-01`@11 / FIND-ALL `2024-02-29 2150-01-01 1999-12-31 2200-05-05` [`2024-02-29 2150-01-01`@0, `1999-12-31 2200-05-05`@22] (`[d = isodate] SEQ " " SEQ [e = isodate] & before2100(d) & !before2100(e)`, before2100((=year)) := `(year: < 2100)`, isodate := `[year = /\d{4}/] SEQ "-" SEQ [month = /\d\d/] SEQ "-" SEQ [day = /\d\d/]`)
 A label the head did not list: modes: a compile error (`isodate & jan(isodate)`, jan((=year)) := `(month: "01")`: at jan's definition: `month` is not in the head's list `(=year)`)
 Read and never placed, undeclared: modes: a compile error (`isodate & A(isodate)`, A(B) := `(B.year: < 2100)`: at A's definition: the body reads `B` and never places it: declare the reference in the head, `A((=year))`)
-Placed, then read by the parameter's name: modes: a compile error (`checked(isodate)`, checked(B) := `B & (B.year: < 2100)`, isodate := `[year = /\d{4}/] SEQ "-" SEQ [month = /\d\d/] SEQ "-" SEQ [day = /\d\d/]`: at checked's definition: `B.year` names a label the parameter holds, not checked's; a marked reading)
+Placed, then read by the parameter's name: WHOLE `2024-02-29` HOLDS, `2150-01-01` FAILS / SEARCHED `x 2150-01-01 1999-12-31` `1999-12-31`@13 / FIND-ALL `2024-02-29 2150-01-01 1999-12-31` [`2024-02-29`@0, `1999-12-31`@22] (`checked(isodate)`, checked(B) := `B & (B.year: < 2100)`, isodate := `[year = /\d{4}/] SEQ "-" SEQ [month = /\d\d/] SEQ "-" SEQ [day = /\d\d/]`)
+Placed, then read bare: modes: a compile error (`checked2(isodate)`, checked2(B) := `B & (year: < 2100)`, isodate := `[year = /\d{4}/] SEQ "-" SEQ [month = /\d\d/] SEQ "-" SEQ [day = /\d\d/]`: at checked2's definition: `year` is not written in its text: no gate; read `B.year`)
+An argument without `year`: modes: a compile error (`checked(nodate)`, checked(B) := `B & (B.year: < 2100)`, nodate := `[y = /\d{4}/]`: at the call: the argument has no `year`, which `B.year` reads)
+
 
 ### A reference argument at the call   [core/operators/bindings/reference-call]   ruled 2026-11-27
 At the call a reference argument names something the caller has placed; each listed label is read there by the caller's own path rules, at the point of the call.
