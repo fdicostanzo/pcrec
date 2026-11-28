@@ -648,3 +648,18 @@ predfold1128_report.md, predfix113_report.md; review docs/dev/reviews/2026-11-27
 after your merge. Plan-row status for [COND-FAMILY]: seven owner questions open (owner.md of the predicate
 session lists them); no build asked. Proposed pcrec-critic skill edit (r113): create and check every evidence
 scratch directory in its own command before a design-mode re-run.
+
+P-37 (2026-11-28) done: a fourth fold with review r114 ruled, applied and filed. Branch lane/pred-rev28, tip after
+this commit (the merge of lane/predfix114 is b1594aeda). Eleven owner rulings of 2026-11-28 folded
+(reference-example-checked, named-list-body-read, label-names-gate, argument-is-gate, part-of-argument,
+last-placement, same-path-last, list-opens-one-step, the empty list an error, branch-in-loop, and his correction
+on stacked labels); his strong lean no-path-through-argument ENDED by argument-is-gate, its 40 markers removed.
+Reports docs/dev/lanes/predfold1129_report.md, predfix114_report.md; review
+docs/dev/reviews/2026-11-28-r114-predfold1129.md. pred_doc_lint 10817/0; test-plan-lint and test-doc-lint green.
+Design documents and evidence only. Worktrees predfold1129, predfix114 free to prune after your merge. Plan-row
+status for [COND-FAMILY]: owner questions open (group-over-hole asked; a gate skipped across an alternation;
+two consequences to tell); no build asked. Proposed pcrec-critic skill edits (r114): (1) a fold's stale-text
+check takes its search strings from the record's own REVISES/REVERSES sentences and every piece in each ruling's
+tags line; (2) ship a probe kit that loads the evidence engine with a CONTROL switch in every design-mode round
+whose evidence has an engine; (3) drill each fallback path of an evidence engine with a program the new rule
+moves. Proposed lint clause (r114 F21): no blank line inside a bullet of a predicate piece.

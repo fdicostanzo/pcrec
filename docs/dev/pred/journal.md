@@ -1395,3 +1395,8 @@ wake.md says (read the draft WHOLE first; A4 is a ruled-words finding: read his 
   IN FLIGHT. Late rulings go to its rulings file as R-n.
 - To tell him later: F8 (a reference argument placed twice), F14 (a caller's label changes a body's `rx.g`);
   questions group-over-hole (F6), gate-beside-direct-branch (F7).
+- RULED by the owner: list-opens-one-step (his words: a list is no path element; `p` under a list hidden from
+  above), the empty list a compile error, branch-in-loop "error for now. Ambiguous". Sent to predfix114 as R-1..R-3.
+- Lane predfix114 DELIVERED (tip 05b3b98d0), merged at b1594aeda, stopped: lint 10817/0, model 10 checks 0
+  failed, 18 plants caught; r114 filed. 12 programs legal to error (stacked labels ordered), `B1.h` to legal.
+  Three checks green on the branch. P-37 written; main told. Asked the owner group-over-hole.
