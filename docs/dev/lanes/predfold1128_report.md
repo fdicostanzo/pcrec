@@ -14,8 +14,8 @@ param-reference: "yes all four"; ...", "OWNER, a STRONG LEAN on no-path-through-
 - The rulings file `docs/dev/lanes/predfold1128_rulings.md` was re-read before each commit, before each run over two
   minutes and before this report. It stayed empty: no entry was applied (last entry applied: none).
 - Branch tip: the commit carrying this report.
-- pred_doc_lint: `@@LINT@@`. `make -s test-plan-lint`: green.
-- Model: `@@MODEL@@` (full, SUCCESSOR128 included); sabotage: `@@PLANTS@@` (one plant per check).
+- pred_doc_lint: `pred_doc_lint: checks passed 10524, failed 0`. `make -s test-plan-lint`: green.
+- Model: `predfold1128_model: 16 checks, 0 failed` (full, SUCCESSOR128 included); sabotage: `PASS PLANTS128: 18 plants, caught 18` (at least one plant per check; two each for RULE128 and REF128).
 - Premise, before any edit: predfix112 full at 8e7cca4a9: `predfix112_model: 11 checks, 0 failed`.
 - Printed lines moved: 10 (8 three-mode lines to compile errors, 1 compile error to legal, 1 error message). Marker
   sites: 38 (core.md 35, library.md 3; MARK128 counts them).
@@ -156,7 +156,7 @@ Each printed as a MARKED reading under the study's lean, both readings RUN (OPEN
 - Full: `(cd worktrees/predfold1128 && PREDFOLD1128_SUCCDIR=$PCREC_TMPDIR/scratch/predfold1128/<empty dir> timeout
   6000 python3 -I -B docs/dev/lanes/predfold1128_evidence/predfold1128_model.py)`.
 - Sabotage: the same with `PREDFOLD1128_SABOTAGE=all PREDFOLD1128_READDUMP=1` (each plant in a LIGHT subprocess).
-- SUCCESSOR128: @@SUCC@@
+- SUCCESSOR128: predfix112 run in full into an empty directory; it re-ran the twenty before it. 21 models read, 88 reds, each declared in predfold1128_succ_decl.tsv by its red_key10 key: 40 unchanged since predfix112's declarations, 38 with a changed key and 10 new, each with its reason (the lines this fold moved, the 2026-11-27 record titles past older pinned commits, the kinds/ownership cells for an argument's place, the new reference spans); no traceback. predfix112 itself is now red on TABLE112, SWEEP112, ERRSWEEP112, SPECLINES112, QUOTES112 and SUCCESSOR112, every one declared with the text of its own FAIL line (for example `FAIL TABLE112: 7 rows modelled, 2 rows added read; differing: [("an argument's place", 'passed only through a list on it, a node', ['None'])]`).
 - Lint: `python3 scripts/pred_doc_lint.py`; `make -s test-plan-lint`.
 - Only python3 `-I` with `re` and `datetime` (the weekday stand-in), one process per model, every run under
   `timeout`. No make but `make -s test-plan-lint`, no box queue, no suite, no timing.
