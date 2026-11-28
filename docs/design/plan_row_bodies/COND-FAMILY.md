@@ -12938,3 +12938,19 @@ The record on what a list takes (told to him): core/labels/export/export-list, r
 "[d = isodate] exports all. How about this: [(=year) = isodate]"; the piece's summary: "the binding takes the
 listed labels of the part as labels of its own (exported; read bare inside it) and nothing else of the part";
 the forms table (a reading): `[(=) = isodate]`: "all the part exports".
+
+### 2026-11-28 MANAGER — after lane predfold1129 and review r114: the dispositions; no owner words
+tags: core/labels/rule/gates core/labels/paths/placed-part core/labels/rule/one-path core/labels/paths/binding-prefix
+Lane predfold1129 folded the seven rulings of 2026-11-28 (merged at a156faf93; lint 10658/0; model 10 checks, 0
+failed; census at 43bbce01f: 413 printed programs, 120 not parsed, 227 reads judged; error to legal 16 base + 10
+details; legal to error 13 base, each re-spelled with equal answers; the strong-lean marker 40 to 0).
+Review r114 (design; one opus coordinator, four opus critics): 28 findings, none rejected; evidence green at the
+freeze, "every answer-level finding sits where no check reaches". Dispositions RULED by the manager
+(`/var/tmp/pcrec-pcrec/scratch/crit-predfold1129/dispositions.md`): all accepted as proposed. Answer level: F1
+the stacked labels printed as equal names (settled by his correction of this day); F2 `when.h` left an error
+though `W.h` moved; F3 placements in two `|` branches of a body read the last written, not the branch taken (the
+text right, the engine wrong); F4 a read written before the only placement reads it; F5 last-placement line 4
+without a printed line; F6 a named group around a hole against label-names-gate 2 (an owner question,
+group-over-hole); F7 a gate skipped across `|` beside a direct target (pre-existing; an owner question with
+branch-in-loop). To tell him: F8 (a reference argument placed twice now reads the last by his own rule), F14 (a
+label the caller writes in an argument changes whether the body's `rx.g` is legal: `rx.a.g`).
