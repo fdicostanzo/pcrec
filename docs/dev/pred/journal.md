@@ -1325,3 +1325,7 @@ wake.md says (read the draft WHOLE first; A4 is a ruled-words finding: read his 
   one-path RULED ("yes all five"; it answers gate-twice-scope; the array form exempt). Merged main back (637a5e79c).
   LAUNCHED fold lane predfold1127 (opus; the two rulings; lanewatch armed). Review number r112 from main for its
   small critic round. One question the lane will bring back: the array form over a part used alone.
+- Lane predfold1127 DELIVERED (lanewatch DONE; lint 10099/0; model 13/0; 15 plants caught), merged at 860331f12,
+  stopped. Eight printed reads moved to compile errors (three more than the census four). LAUNCHED critic round
+  r112 (crit-predfold1127, opus coordinator, two critics). Owner questions from the lane: array-gate (asked),
+  body-own-name (next). A stray predfold1125.out my census driver left in the worktree root was moved to scratch.
