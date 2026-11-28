@@ -28778,3 +28778,27 @@ Next
   (proof.exits ALLDONE at 10:50); a nudge with the file's contents finished it. And I safekilled a PID I took for the
   lane's watcher that was my own monread; restarted at once, no verdict lost.
 - Next: F4 (K163), the last unit.
+
+## 2026-11-28 (session 144, night): [ARENA-SCOPES] F4 landed; the row is COMPLETED
+
+- F4 (K163, the lent channel): lane f4 (opus) built it; review r110 (small, 2 critics) found no answer or speed issues.
+  Fixes in lane f4fix: doc narrowing, the static seam rule, the lent-count static checks, sabotage S3654 (the V2 shape).
+  The handler-top check was not taken. test, mech and alloc were GREEN. memgate instr was RED: 183 of 7,402 compiles
+  over the 1.020 max band, max 1.044, all deep-nesting allocation-heavy cells.
+- Triage lane f4tri: the cost was the check itself (+7 instr per `pcrec_arena_alloc`), not the call. Owner f4-instr:
+  "try but not very hard. I accept the marginal slowdown." Lane f4flag (opus): a monotonic count plus one cold
+  `noipa` nomem helper, +7 -> +4 instr/call. One-critic round crit-f4flag: equal counts, OOM routes unchanged.
+- f4flag gates: alloc, test and mech (14 rows) GREEN; memgate peak WITHIN, rungs IDENTICAL, instr p95 1.00467, max
+  1.02533, 25 over. ACCEPTED, and recorded beside the band in tests/core/memgate/CLAUDE.md.
+- Landing lane f4land: r110 filed and ruled; its 3 lessons went to guide/critics.md; critic skill §3 gained the
+  every-net rule for UNDETECTED plants and the predicate manager's by-name branch-ref rule (its P-34/P-35);
+  K163/D109 addenda. [ARENA-SCOPES] moved to plan_completed.md. Its r102 B27 UNLOCK was re-filed as [TRACE-RESTORE]
+  (not started, unscheduled).
+- CI red at ba4d73c20 (the predicate manager's third fold). `entry -g .` page 1 printed 4102 of 4096 B because the
+  15-hit page had a count cap but no byte cap. Triage lane ci15tri diagnosed it; lane pagebyte made pages
+  byte-bounded (`PAGE_BYTES` 4000, lines cut to fit) without raising the limit. The predicate skill now runs
+  test-doc-lint before each delivery.
+- Also merged for the predicate manager: three folds (P-34/35/36, reviews r109/r111/r112/r113, docs only).
+  Assigned review numbers r112 and r113. Pruned 7 worktrees and 11 branches.
+- Next: push once CI on c5d95a2e4 is green; prune f4*, pagebyte and the predicate trees; rewrite wake.md at a
+  natural point. Next free review: r114. Sabotage: S3655. K: K164.

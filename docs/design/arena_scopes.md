@@ -899,7 +899,7 @@ Listed for the pre-go briefing; under D191 addendum 2 they need no go of their o
 | B29 generic release, base level | DOC | API kind table (`release(void *storage)`); D-2 L7 (base = bottom) |
 | B30 one Job-owning point | DOC | D-3 |
 | B31 count commands | DOC | Cost and measurement, "NUMBERS CITED" |
-| B27 trace restores | PLAN | [ARENA-SCOPES] refs in docs/dev/plan.md (unlock and trigger); Open questions (h) |
+| B27 trace restores | PLAN | [TRACE-RESTORE] in docs/dev/plan.md (unlock and trigger; filed at [ARENA-SCOPES]'s close, 2026-11-28); Open questions (h) |
 | B32 driverless Ctxs | NOTED | Discipline and checks, after the handler table |
 
 ## r103 disposition

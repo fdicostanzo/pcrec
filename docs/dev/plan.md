@@ -1223,6 +1223,11 @@ Owner waits: a row or stage waiting on the OWNER (a charter, a build go, an answ
   trigger: (D77) a census of lookahead-led corpus and bench patterns whose start set the item narrows, or start_set's next touch
   refs: docs/design/span_arms.md §14.8 item 14, §12 (the D168 addendum: the item is the one producer); docs/dev/reviews/2026-11-19-r55-l1feat.md J, TABLE-3 (iii); [START-SET]; [REQ-LOOKAROUND]
   A second reader of the item is also the trigger for moving its assembly from req.c into desc.c (the D168 addendum, D77).
+- [TRACE-RESTORE] STATE:not-started — the trace build's longjmp-skipped restores as a scope entry kind
+  filed: 2026-11-28 manager at [ARENA-SCOPES]'s close (review r102 B27, an UNLOCK, ruled PLAN: filed, not scheduled)
+  status (2026-11-28): not started; UNSCHEDULED. The trace build's arrival restores (`pcrec_cand_eval_reset` at compile_driver's handler top, the 6 `pcrec_cand_trace_quiet` brackets a longjmp skips) may be GENFORM-9's second non-memory member: a restore entry kind under U6
+  trigger: (D77) a manager ruling that trace-only members count toward GENFORM-9, or a longjmp-skipped bracket that the trace floor catches in a shipped trace run
+  refs: docs/design/arena_scopes.md Open questions (h) and the r102 disposition table (B27); review r96 GENFORM-9; [ARENA-SCOPES] in plan_completed.md
 - [NEVER-DEAD] STATE:not-started — `never_matches` names a pattern the run walk lists `dead`
   filed: 2026-11-19 lane l1ffix (review r55 J, UNLOCK 2, ruled PLAN: filed, not scheduled)
   status (2026-11-19): not started; UNSCHEDULED. [NEVER-MATCH]'s trigger (span_arms L1's landing) FIRED: the walk's proof and the machines' disagree on a measured pattern, utf8 `x(?=\x{100})y` lists `req_whole_run` `dead` with `never_matches no`; `foo(?=bar)baz` (a VM artifact, no machine) likewise
