@@ -12657,3 +12657,36 @@ round's words) and an argument holding the listed label in two labelled parts (t
 against one-path). PLAN: the general form the round names, "a declared label interface" (the named list, the
 declared reference, the `(=)` convention, macro-types (ii), the natives' reference kind and bound-condition's
 target as one family): a parked piece with triggers.
+
+### 2026-11-28 OWNER RULING — reference-example-checked: `B.year` in `checked` "uses the temp label that's created locally for binding B"
+tags: core/operators/bindings/reference core/holes/bare-condition/nested-scope core/labels/rule/argument-place core/labels/paths
+Asked as a question with the slug (the statement asked: does param-reference line 4's second sentence, "A plain
+parameter that the body places and then reads stays legal, as today", stand as a NEW rule or fall; the manager's
+lean: it falls; told to him: today's documents refuse `checked`, quoting his three examples of 2026-11-22).
+His words, verbatim: "reference-example-checked:
+checked(B) := B & (B.year: < 2100)
+Originally this was an example in reference but here it's just a pattern arg. The pattern is placed then the year
+is checked. B.year uses the temp label that's created locally for binding B
+Your example:
+B(rx) := /${rx}xx/ & (d: <100)
+This is error because where does d come from? No gate. rx.d would be the gate.
+B(rx) := /${[dd = rx]}xx/ & (dd: <100)
+This is the explicit label so this works as would dd.d if d existed there."
+Class: RULING (answered by slug). The manager's reading of it (said to him in the same turn): the sentence
+STANDS. A body that places a parameter may read the argument's labels through the parameter's name (`B.year`,
+`rx.d`: the shorthand label of binding-as-label, made where the parameter is placed) or through the body's own
+explicit label on the place (`dd.d`); a bare `d` stays an error ("No gate"). The manager's lean (falls) is NOT
+taken.
+The run told with the question (pasted; scratch `pred/checked.py`, `isodate & (isodate.year: < 2100)`):
+WHOLE 2024-02-29 HOLDS
+WHOLE 2150-01-01 FAILS
+SEARCHED x 2150-01-01 1999-12-31 ('1999-12-31', 13)
+FIND-ALL 2024-02-29 2150-01-01 1999-12-31 [('2024-02-29', 0), ('1999-12-31', 22)]
+The manager's readings, to be tested by the fold (none ruled):
+- an argument that has no `year` is a use error at the CALL (as named-list-use), not at checked's definition;
+- "a parameter's label inside the body is not nameable" (core/labels/paths, nested-scope's summary) is REVERSED
+  for the two gated spellings and kept for the bare name;
+- `dd.d` ("as would dd.d if d existed there") is a body's path through its own label INTO the argument: the
+  strong lean no-path-through-argument, never ruled, must be restated as a rule about readers OUTSIDE the body
+  (a caller's `B.dd.d`), or it conflicts with this ruling; to be asked with the lean's confirmation;
+- a parameter placed twice: `rx.d` follows one-path (two labels visible, an error), untested.
