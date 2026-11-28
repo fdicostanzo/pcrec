@@ -465,9 +465,9 @@ see: core/labels/rule/one-path core/labels/rule/stacked-chain core/labels/owners
 - With them, as put: "'Any label on the path may be used as a start' means a label the binding's own text writes.
   A label held by a used binding is still read with its source, as you ruled under label-reference." Rule 4's
   "unambiguously" is the one-path rule (his words: "one-path: yes all five"; core/labels/rule/one-path): a step may
-  be skipped only when exactly one label of that name is visible from the start, counted within one match (a read
-  into `|` is legal), a part used alone never skipped, the array form exempt, uses counted under the start; across
-  `&` a name both sides set stays ambiguous. Across bindings, as put:
+  be skipped only when exactly one label of that name is visible from the start (a wall hides: skip-past-wall),
+  counted within one match (a read into `|` is legal), a part used alone never skipped, the array form exempt, uses
+  counted under the start; across `&` a name both sides set stays ambiguous. Across bindings, as put:
   5. From outside, the start is the binding's name, a macro's name at its call, or a label written on the use. The
      path then continues into that binding's tree by rules 1, 2 and 4.
   6. A part used alone inside a binding is crossed from outside as an underscore label is, and is a start inside

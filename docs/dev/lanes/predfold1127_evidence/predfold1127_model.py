@@ -941,3 +941,121 @@ heads = [ws(h_) for h_ in re.findall(r"^#{2,3} (.*)$", REC1127, re.M)]   # noqa:
 t_miss = [t_[:80] for t_ in cited if not any(h_.rstrip(".") == ws(t_) or h_.startswith(ws(t_) + " (") for h_ in heads)]   # noqa: F821
 check("QUOTES1127", not q_miss and not t_miss and cited, "%d quoted sentences (missing: %s); %d record titles cited "
       "(not a title at %s: %s)" % (len(QQ1127), q_miss or "none", len(cited), START1127, t_miss or "none"))
+
+unit1127("MECH1127", "the legal full-path and one-target reads of RULE1127 answered by MECH111 (python `re` on the regex "
+         "built mechanically from the program text and its bindings' bodies, the target group named), against the engine")
+MECH1127 = [
+    ("[n = ([a = P] SEQ [b = Q])] & (n.b.d: <5)", [PB, QB], ("Q", 1, "d"), T2),
+    ("[n = ([a = P] SEQ Q)] & (n.a.d: <5)", [PB, QB], ("P", 1, "d"), T2),
+    ("[n = ([m = P] SEQ [_x = Q])] & (n.d: <5)", [PB, QB], ("P", 1, "d"), T2),
+    ("[n = (P SEQ Q)] SEQ \";\" SEQ [m = (P SEQ Q)] & (n.Q.d: <5)", [PB, QB], ("Q", 1, "d"),
+     ["7,3;7,7", "7,7;7,3", "1,2;3,4", "7,3;7,3"]),
+    ("X & (X.h: <5)", [AB, "X := [n = [m = A]] SEQ \"!\""], ("A", 1, "h"), ["3!", "7!", "x3!", "3"]),
+    ("B(A) & (B.h: <5)", [AB, "B(rx) := /${[p = rx]}xx/"], ("A", 1, "h"), ["3xx", "7xx", "x3xx"]),
+]
+if s1127("s14"):
+    MECH1127[0] = (MECH1127[0][0], MECH1127[0][1], ("P", 1, "d"), MECH1127[0][3])
+mc_bad = []
+for e_, b_, tgt, texts in MECH1127:
+    P_, err_ = run11(e_, b_)                                 # noqa: F821
+    try:
+        R_ = mech(e_, b_, target=tgt, cond=(0, 4))           # noqa: F821
+    except MechError as x_:                                  # noqa: F821
+        mc_bad.append((e_, "MECH " + str(x_)))
+        continue
+    same = P_ is not None and answers(P_, texts) == answers(R_, texts)   # noqa: F821
+    print("   %-62s MECH111 %s the engine" % (e_[:62], "equal to" if same else "NOT equal to"))
+    if not same:
+        mc_bad.append((e_, err_ or "answers differ"))
+check("MECH1127", not mc_bad, "%d reads; not equal: %s" % (len(MECH1127), mc_bad or "none"))   # noqa: F821
+
+unit1127("SUCCESSOR1127", "every in-force model re-run: predfix111 in full, and the eighteen its SUCCESSOR111 re-runs "
+         "(their outputs dumped through it); each red DECLARED in predfold1127_succ_decl.tsv by predfix90's `red_key10` "
+         "key, which carries the red's own FAIL line and no document line numbers; a traceback never")
+P90_1127 = os.path.join(LANES1127, "predfix90_evidence", "predfix90_model.py")
+_src90_1127 = builtins.open(P90_1127, encoding="utf-8").read()
+exec(compile(_src90_1127[_src90_1127.index("CRASH10 = re.compile("):_src90_1127.index("succ_bad, succ_n, succ_t, succ_seen = ")],   # noqa: S102
+             P90_1127, "exec"), globals())                   # predfix90's red key, verbatim
+DECLF1127 = os.path.join(HERE1127, "predfold1127_succ_decl.tsv")
+SD1127 = {}
+if os.path.exists(DECLF1127):
+    for l_ in builtins.open(DECLF1127, encoding="utf-8").read().split("\n"):
+        if l_ and not l_.startswith("#"):
+            m_, r_, cls_, why_, key_ = l_.split("\t", 4)
+            SD1127.setdefault(m_, {})[r_] = (cls_, key_, why_)
+if s1127("s15") and SD1127:
+    _m = sorted(SD1127)[0]
+    _r = sorted(SD1127[_m])[0]
+    SD1127[_m][_r] = (SD1127[_m][_r][0], SD1127[_m][_r][1] + " planted", SD1127[_m][_r][2])
+SCR1127 = os.environ.get("PREDFOLD1127_SUCCDIR", "")
+RD1127 = os.environ.get("PREDFOLD1127_READDUMP") == "1"
+sc_bad, sc_seen, sc_outs = [], [], {}
+if not LIGHT1127 or RD1127:
+    if not RD1127:
+        env = {k: v for k, v in os.environ.items() if not k.startswith(("PREDFIX111_", "PREDFOLD1125_", "PREDFOLD1127_",
+                                                                        "PREDFIX90_"))}
+        env["PREDFIX111_SUCCDIR"] = SCR1127
+        o_ = subprocess.run([sys.executable, "-I", "-B", P111], stdout=subprocess.PIPE, stderr=subprocess.STDOUT,
+                            text=True, env=env, timeout=5400).stdout
+        builtins.open(os.path.join(SCR1127, "predfix111.out"), "w", encoding="utf-8").write(o_)
+    for f_ in sorted(os.listdir(SCR1127)):
+        if f_.endswith(".out"):
+            sc_outs[f_[:-4]] = builtins.open(os.path.join(SCR1127, f_), encoding="utf-8").read()
+    for mname, out in sorted(sc_outs.items()):
+        lines_ = out.rstrip("\n").split("\n")
+        last = lines_[-1]
+        mm = re.match(r"%s_model: (\d+) checks, (\d+) failed(?: \(([^)]*)\))?$" % mname, last)
+        reds = {}
+        if mm and not any(x_.startswith("Traceback") for x_ in lines_):
+            for r in [x_.strip() for x_ in (mm.group(3) or "").split(",") if x_.strip()]:
+                fl_ = next((l_ for l_ in lines_ if l_.startswith("FAIL %s:" % r) or
+                            re.match(r"%s\s+FAIL\b" % re.escape(r), l_)), "")
+                reds[r] = red_key10(r, lines_, fl_)          # noqa: F821
+        else:
+            reds["TRACEBACK"] = ("TRACEBACK", last)
+        decl = SD1127.get(mname, {})
+        print("   %-13s last line: %s" % (mname, last[:150]))
+        for r, (cls_, key_) in sorted(reds.items()):
+            sc_seen.append((mname, r, cls_, key_))
+            d_ = decl.get(r)
+            if cls_ == "TRACEBACK" or d_ is None or d_[1] != key_:
+                sc_bad.append((mname, r, "UNDECLARED" if d_ is None else ("KEY CHANGED" if cls_ != "TRACEBACK" else cls_)))
+        for r in sorted(set(decl) - set(reds)):
+            sc_bad.append((mname, r, "DECLARED, NOW GREEN"))
+    WD = os.environ.get("PREDFOLD1127_WRITEDECL", "")
+    if WD:
+        with builtins.open(WD, "w", encoding="utf-8") as fh:
+            fh.write("# model\tred\tclass\twhy\tkey (red_key10: the red's own FAIL line text, no document line numbers)\n")
+            for mname, r, cls_, key_ in sc_seen:
+                fh.write("%s\t%s\t%s\t%s\t%s\n" % (mname, r, cls_, SD1127.get(mname, {}).get(r, ("", "", "WHY?"))[2], key_))
+    for x_ in sc_bad:
+        print("   NOT AS DECLARED %s %s: %s" % x_)
+    check("SUCCESSOR1127", len(sc_outs) >= 19 and not sc_bad, "%d models read, %d reds, each against its declared "   # noqa: F821
+          "key (%d declared): %s" % (len(sc_outs), len(sc_seen), sum(len(v) for v in SD1127.values()),
+                                     sc_bad or "all as declared"))
+else:
+    print("   LIGHT: SUCCESSOR1127 not run")
+
+PLANTS1127 = {"s1": "CANARY1127", "s2": "RULE1127", "s3": "READINGS1127", "s4": "READINGS1127", "s5": "SWEEP1127",
+              "s6": "ERRSWEEP1127", "s7": "STALE1127", "s8": "QUOTES1127", "s9": "QUOTES1127", "s10": "SPECLINES1127",
+              "s11": "CENSUS1127", "s12": "READ_D1127", "s13": "TABLE1127", "s14": "MECH1127",
+              "s15": "SUCCESSOR1127"}
+if SAB1127 == "all":
+    caught = []
+    for q_, tgt in sorted(PLANTS1127.items(), key=lambda kv: int(kv[0][1:])):
+        env = dict(os.environ, PREDFOLD1127_SABOTAGE=q_, PREDFOLD1127_LIGHT="1")
+        if q_ == "s15":
+            env["PREDFOLD1127_READDUMP"] = "1"
+        o_ = subprocess.run([sys.executable, "-I", "-B", MY1127], stdout=subprocess.PIPE, stderr=subprocess.STDOUT,
+                            text=True, env=env, timeout=3000)
+        fl = [l_ for l_ in o_.stdout.split("\n") if l_.startswith("FAIL ")]
+        ok_ = o_.returncode != 0 and any(l_.startswith("FAIL %s:" % tgt) for l_ in fl) and "Traceback" not in o_.stdout
+        caught.append((q_, tgt, ok_))
+        print("   PLANT %s -> %s: %s; FAIL lines: %s" % (q_, tgt, "CAUGHT" if ok_ else "NOT CAUGHT",
+                                                       [l_[:90] for l_ in fl]))
+    check("PLANTS1127", all(c_[2] for c_ in caught), "%d plants, caught %d" % (len(caught), sum(c_[2] for c_ in caught)))   # noqa: F821
+
+failed1127 = [n_ for n_, ok_ in RESULTS if not ok_]         # noqa: F821
+print("predfold1127_model: %d checks, %d failed%s" % (len(RESULTS), len(failed1127),   # noqa: F821
+                                                     (" (%s)" % ", ".join(failed1127)) if failed1127 else ""))
+sys.exit(1 if failed1127 else 0)
