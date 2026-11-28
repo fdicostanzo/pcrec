@@ -1386,3 +1386,12 @@ wake.md says (read the draft WHOLE first; A4 is a ruled-words finding: read his 
   marker 40 -> 0. New pieces core/labels/rule/gates, core/labels/paths/placed-part. Lane's new question:
   stacked-across-place (`Y.c.p.h`). Critic round r114 LAUNCHED (coordinator crit-predfold1129). IN FLIGHT.
 - Asked the owner branch-in-loop (run in the record); sent-over-body-label and list-over-label told as derived.
+- Owner CORRECTED my derived reading: stacked labels are ordered steps, the label on the crossing is the gate
+  (`x.h` an error, `x.p.h` legal). My telling "`Y.c.a.h` becomes legal" was wrong (it skips the body's gate `p`);
+  told to him. His answer: `[p = [(=) = rx]]` as `[p = rx]`. Open with him: list-opens-one-step (the other order;
+  my lean now his reading), branch-in-loop.
+- Review r114 back: 28 findings, 0 rejected; all dispositions ACCEPTED (scratch crit-predfold1129/dispositions.md;
+  record entry). Coordinator stopped. Fix lane predfix114 (opus) LAUNCHED from b935b91b6; it files the review.
+  IN FLIGHT. Late rulings go to its rulings file as R-n.
+- To tell him later: F8 (a reference argument placed twice), F14 (a caller's label changes a body's `rx.g`);
+  questions group-over-hole (F6), gate-beside-direct-branch (F7).
