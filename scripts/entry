@@ -713,10 +713,11 @@ def list_items(ctx, a, out):
             lines.append("")
         lines += it.text(level)
     if note:
-        lines = [ln if len(ln) <= LINE_CLIP else ln[:LINE_CLIP] + "…" for ln in lines]  # a page stays small; KEY has the whole
+        foot = "entry: %d items (profile %s, level %d)\n" % (n, a["p"] or ",".join(sorted({p["name"] for p in ps if p["form"] != "dormant"})), level)
+        lines = clip_page(lines, len(note.encode()) + 1 + len(foot.encode()))  # a page stays small; KEY has the whole
         lines.append(note)
         out.write("".join(ln + "\n" for ln in lines))
-        out.write("entry: %d items (profile %s, level %d)\n" % (n, a["p"] or ",".join(sorted({p["name"] for p in ps if p["form"] != "dormant"})), level))
+        out.write(foot)
         return 0
     emit(out, lines, hits, level, a["p"])
     return 0 if hits else EXIT_NONE
@@ -724,6 +725,18 @@ def list_items(ctx, a, out):
 
 # -g relevance: the table is doc_profiles.RELEVANCE; each row's field is cut from the item here.
 LINE_CLIP = 200
+
+
+def clip_page(lines, reserve):
+    """Clip each line to LINE_CLIP chars, then narrower until the page (plus RESERVE footer bytes) fits
+    doc_profiles.PAGE_BYTES in BYTES, whatever the content; a cut line ends in a visible "…"."""
+    width = LINE_CLIP
+    while True:
+        out = [ln if len(ln) <= width else ln[:width] + "…" for ln in lines]
+        total = sum(len(ln.encode()) + 1 for ln in out) + reserve
+        if total <= doc_profiles.PAGE_BYTES or width <= 8:
+            return out
+        width -= 1
 KEYWORDS = re.compile(r"\{[^{}]*\}\s*$")
 
 
@@ -1075,6 +1088,16 @@ def selftest():
     check("detail refused above the cap", ["-g", "needle", "-in", "2", "-l", "1"], 2, profiles=pg, has=["40 hits", "refused", "--all"])
     check("detail allowed with --all", ["-g", "needle", "-in", "2", "-l", "1", "--all"], 0, profiles=pg, has=["ZZ-BODY"])
     check("detail allowed under the cap", ["-g", "PG-1[0-3]\\]", "-l", "1"], 0, profiles=pg, has=["PG-12"])
+    # a page of over-long lines stays under PAGE_BYTES whatever the content (multi-byte text included)
+    longrows = ["- [LG-%d] STATE:not-started — longneedle %s" % (k, "é" * 400) for k in range(1, 21)]
+    w("fixlong.md", "# fixture\n\n## Backlog\n" + "\n".join(longrows) + "\n")
+    lg = [dict(pg[0], name="fixlong", index="fixlong.md")]
+    b = io.StringIO()
+    run(["-g", "longneedle"], b, tmp, lg)
+    n[0] += 1
+    nb = len(b.getvalue().encode())
+    if nb > doc_profiles.PAGE_BYTES or "…" not in b.getvalue() or "showing 1-15; next: --page 2" not in b.getvalue():
+        bad.append("page bytes: %d B (limit %d) or no cut marker/page note" % (nb, doc_profiles.PAGE_BYTES))
     # the real plan parses (non-vacuity: the plan_lint floor) and its Policy templates are not items
     o = io.StringIO()
     rc = run(["-g", r"^- \[ID\]", "-p", "plan"], o, ROOT)
