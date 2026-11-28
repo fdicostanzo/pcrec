@@ -12444,3 +12444,216 @@ case, nor on `B(A) & (B.d: <5)` with B(rx) := `/${[p = rx]}-(?<d>\d)/` (both the
 One cell left for him, gate-beside-direct: `[n = (P SEQ /,(?<d>\d)/)] & (n.d: <5)`, the binding's own `d`
 directly under `n` beside a gated one: legal by body-own-name's "always" (printed, the lane's lean), or the
 gate-beside-label error. Both RUN in the lane's report.
+
+### 2026-11-27 MANAGER — after study lane predarg (the problem hunt he asked for on no-path-through-argument); a wording of the manager's found ambiguous; no owner words
+tags: core/labels/rule/one-path core/labels/rule/paths core/labels/paths/call-prefix lib/convention/argument-labels core/labels/export/export-list core/labels/export/arguments lib/search/hits
+Study lane predarg (opus; no document change; `docs/dev/lanes/predarg_report.md`, evidence `predarg_evidence/`)
+classed 111 printed reads through a macro or into an argument, out of 309 printed programs: the body labels the
+place (route 1) 20; the body's export list (route 2) 15; the sender's own names (route 3) 55; the body's own
+label 14; mixed 3; other 4 (17 classed by hand). Under the candidate 9 printed lines go from legal to a compile
+error; each keeps its answers by the sender's spelling except `X.c.h` (stacked-chain), which has no spelling
+unless the body lists its argument.
+THE MANAGER'S WORDING FOUND AMBIGUOUS (problem 1): the carve-out as put to him ended "in which case they count as
+the body's own labels". Read as a DOOR (the list lets a path pass the place; one-path still counts the labels as
+reached by a skip) `W.h` over two arguments that both set `h` stays a compile error; read word for word as the
+body's OWN labels it is legal, the last mention, and reverses three one-path errors; and under "own" the ANSWER of
+`Bo.d` changes with the argument, with no error (problem 2: Bo(rx) := `/(?<d>\d)-${[(=) = rx]}/`). The manager
+meant the door; the sentence is re-put to him without the ambiguous clause.
+Other problems found, each with a run in the report: two provided pieces lose a documented read (`hits.hit.g`,
+`occurrences.hit.n`: their bodies label the place and write no list); a list one label above the place; a body
+that forwards its parameter to another macro; a label the caller writes in an argument, read from a binding that
+uses the caller (`Y.a.h`); a sent label placed above a label of the body's; where his use-error for a named list
+(`[(=foo) = rx]`) lands (two settings legal; an error two bodies away; one shape decidable at the definition); a
+message naming the wrong cause; no row for "an argument's place" in the label-kind table. Seven questions for him,
+by slug: carve-out-reading, hits-through-hit, list-over-label, forwarded-place, caller-label-export,
+sent-over-body-label, named-list-use.
+
+### 2026-11-27 OWNER RULING — gate-beside-direct: "legal"
+tags: core/labels/rule/one-path core/labels/rule/alone-as-middle
+His words, verbatim: "gate-beside-direct: legal"
+RULED (answered by slug): the first reading as asked, for `[n = (P SEQ /,(?<d>\d)/)] & (n.d: <5)`, P :=
+`/(?<d>\d)/`: "Legal, n's own `d`: nothing is skipped"; `n.P.d` reads P's. It is what the documents print since
+lane predfix112 (a marked reading there); the mark becomes his ruling at the next fold. It keeps body-own-name
+without an exception; gate-beside-label stands for a read where every candidate needs a skip.
+
+### 2026-11-27 OWNER RULING — carve-out-reading: "agree with lean" (the door); an OBSERVATION: the writer can leave a label out of the list
+tags: core/labels/rule/one-path lib/convention/argument-labels core/labels/export/export-list core/labels/paths/call-prefix
+His words, verbatim: "carve-out-reading: agree with lean
+That said, the writer could have hidden the d from the export rx as well. ((=,_=d)=..."
+RULED (answered by slug), the statement AS ASKED, quoted: "**carve-out-reading:** a body's export list opens a
+door through the argument's place. A path may pass it, and one-path and body-own-name apply to what is reached as
+they do anywhere else."; the lean: "yes, the door. An argument can then cause an error at the caller's read but
+can never change an answer silently." The clause "in which case they count as the body's own labels" of the
+earlier statement is the manager's, WITHDRAWN.
+His OBSERVATION (his words; the message ends mid-form): a body's writer who does not want an argument's `d`
+beside the body's own can leave it out of the list, the "all but one" form `[(=, _ = d) = rx]` of
+core/labels/export/export-list. The manager's reading: it is the body author's remedy for the clash of problem 2
+(Bo), available today; nothing new to rule.
+STILL A STRONG LEAN, not ruled: the base statement no-path-through-argument itself ("a path never goes through an
+argument's place ..."); the manager asks it as a ruling once the study's other questions are settled.
+
+### 2026-11-27 OWNER RULING — caller-label-export: "agree first read. If they didn't want to export use _a label."
+tags: core/labels/rule/one-path core/labels/export core/labels/export/arguments core/labels/paths/shorthand-outside core/labels/rule/stacked-chain
+His words, verbatim: "caller-label-export: agree first read. If they didn't want to export use _a label."
+RULED (answered by slug): the first reading as asked, for Y := `[c = B([a = A])] SEQ "!"`, B(rx) :=
+`/${[p = rx]}xx/`: "The label is Y's own text, so Y exports it like any label it writes": `Y.a.h` legal;
+`Y.c.a.h` "an error: that path goes through B's argument place". The lean as put: "A label the sender writes is
+the sender's own and travels with the sender's exports; only the path through the call's own label is a path
+through the argument's place." His second sentence gives the sender's way to keep it in: an underscore label
+(`[_a = A]`), private as any underscore label is.
+The manager's readings, for the fold to test: stacked-chain's stranded `X.c.h` is re-spelled by Y labelling the
+argument (`X.a.h`); shorthand-outside's contrast stands (the implicit name an error, the written label legal by
+its own name, `pub.A.h` for `[pub = B([A = A])]`).
+
+### 2026-11-27 OWNER, on named-list-use: its PURPOSE ("a macro that simply needed the form to match like accepting a date looking argument"); a LEAN yes; a QUESTION ("is the form too brittle?")
+tags: core/labels/export/export-list core/labels/export/arguments core/operators/bindings/macro-types
+His words, verbatim: "named-list-use: I asked about this under the idea that you could make a macro that simply
+needed the form to match like accepting a date looking argument to calculate the leap or day of week. I lean yes.
+Is this a good application for this or is the form too brittle?"
+Class: the PURPOSE of his lean, a LEAN ("I lean yes"), and a QUESTION to the manager; not a ruling; named-list-use
+stays open.
+
+### 2026-11-27 OWNER, an IDEA: the list declared in the macro's head, "weekday_of((=year, =month,=day)) := ..."; and "A(B) := B.year"
+tags: core/operators/bindings/label-kinds core/operators/bindings/macro-types core/labels/export/export-list core/labels/export/arguments lib/planned/standard
+His words, verbatim: "weekday_of((=year, =month,=day)) := ...
+Thoughts? It's declared in the args so it doesn't have to declare the date as consuming to get this fields. One
+could rewrite date.
+By the same token, A(B) := B.year"
+Class: an IDEA with a QUESTION ("Thoughts?"); spellings are placeholders; nothing ruled. ("this fields" read as
+"these fields".) What the record holds that it meets (quoted): label-kinds, 2026-11-23: "label-kinds: yes, one
+mark meaning. the reference kind can be used by natives but stays off limits for users until we see a valid, safe
+set of rules for it."; core/operators/bindings/label-kinds: "To test a caller's label in a body, pass the
+condition: `A(c, B) := B & c`"; core/operators/bindings/macro-types (under construction), his `B(d & isodate) :=
+(year: < 2100)` and its reading (ii), "a promise checked at the call that x holds isodate's labels";
+lib/planned/standard: `weekday_of($rest.year, $rest.month, $rest.day)`, a native over three values.
+
+### 2026-11-27 OWNER RULING — named-list-use: "agree use it."; and a REQUEST on param-reference: "please provide examples as you read it"
+tags: core/labels/export/export-list core/labels/export/arguments core/operators/bindings/label-kinds core/operators/bindings/macro-types
+His words, verbatim: "named-list-use: agree use it.
+
+param-reference:  please provide examples as you read it."
+RULED (answered by slug): named-list-use, the statement AS LAST PUT, quoted: "your lean (an error at the call, not
+the definition), with the three edges from last turn: an argument setting the label twice is legal and reads the
+last; the error is raised at the call that supplies the argument and traces back through forwarding macros; and a
+definition that can never be satisfied is an error where it is written." With it, told to him: "the use error
+names the missing label and the list that demands it". Its purpose, in his words (the entry before last): "a
+macro that simply needed the form to match like accepting a date looking argument". It moves the printed line "A
+named list on a spot" (core/labels/export/arguments) from a definition error to legal for an argument that has
+the label.
+param-reference: NOT ruled; he asks for examples of the manager's reading. The run for them
+(`docs/dev/lanes/predbang_evidence/paramref.py`: each program is the EXPANSION under the manager's reading, a
+regex and a test on its groups; pasted from `paramref.out`):
+```
+1. before2100(B) := (B.year: < 2100) ; isodate & before2100(isodate)  ==  isodate & (isodate.year: < 2100)
+   WHOLE `2024-02-29` HOLDS / `2150-01-01` FAILS | SEARCHED `x 2150-01-01 1999-12-31`: 1999-12-31@13 | FIND-ALL `2024-02-29 2150-01-01 1999-12-31`: ['2024-02-29@0', '1999-12-31@22']
+2. [d = isodate] SEQ " " SEQ [e = isodate] & before2100(d) & !before2100(e)  ==  ... & (d.year: < 2100) & !(e.year: < 2100)
+   WHOLE `2024-02-29 2150-01-01` HOLDS / `2150-01-01 2024-02-29` FAILS / `2024-02-29 2025-03-01` FAILS | SEARCHED `2150-01-01 2024-02-29 2150-01-01`: 2024-02-29 2150-01-01@11 | FIND-ALL `2024-02-29 2150-01-01 1999-12-31 2200-05-05`: ['2024-02-29 2150-01-01@0', '1999-12-31 2200-05-05@22']
+3. checked(B) := B & (B.year: < 2100) ; checked(isodate)  ==  isodate & (isodate.year: < 2100): the answers of 1
+```
+
+### 2026-11-27 OWNER, restating the manager's reading of param-reference: "Essentially the arg is a label instead of a binding"
+tags: core/operators/bindings/label-kinds core/operators/bindings/macro-types core/labels/export/arguments
+His words, verbatim: "So your reading is that if I refer to an arg label without placing it, then the arg must be
+a reference to something placed elsewhere. Essentially the arg is a label instead of a binding."
+Class: his RESTATEMENT of the manager's reading, put as a check (not a ruling; param-reference stays open). The
+manager's answer, told to him: yes; the argument then names something the caller placed (a label the caller
+wrote, or a binding's name as the caller used it), and which kind a parameter is can be read off the definition
+(placed: a pattern; read and never placed: a reference), though NOT off the call.
+
+### 2026-11-27 OWNER, on param-reference: "I dislike the secret change from pattern to reference ... it should be declared then enforced"
+tags: core/operators/bindings/label-kinds core/operators/bindings/macro-types core/holes/bare-condition/bound-condition core/labels/export/arguments
+His words, verbatim: "I like the direction and the fact that this allows one to bind conditions. I dislike the
+secret change from pattern to reference. Even if it's detectable, I think it should be declared then enforced."
+Class: a LEAN for the direction and a REQUIREMENT on its form (a reference parameter is DECLARED, then ENFORCED;
+it is never inferred from the body); not a ruling of a statement; param-reference is re-put to him with the
+declaration. The manager's reading of what falls: his own shorthand of two entries back, `A(B) := B.year` with no
+declaration, is the "secret change" and would be an error at the definition; the head list
+(`weekday_of((=year, =month,=day))`) is a declaration already. "bind conditions": a macro whose body is a
+condition over a declared reference is a named condition with its target declared
+(core/holes/bare-condition/bound-condition, core/operators/bindings/macro-types).
+
+### 2026-11-27 OWNER RULING — param-reference: "yes all four"; and a QUESTION with an example, "Wednesday June 12, 1994"
+tags: core/operators/bindings/label-kinds core/operators/bindings/macro-types core/holes/bare-condition/bound-condition core/labels/export/arguments lib/planned/standard
+His words, verbatim: "param-reference: yes all four.
+Wednesday June 12, 1994
+Could you use it to match the Wednesday via day of the week. My guess is no because the date follows the
+Wednesday"
+RULED (answered by slug), the statement AS ASKED, quoted:
+"1. **Declared.** A reference parameter is written in the head as the list of labels it needs:
+`before2100((=year))`, `weekday_of((=year, =month, =day))`. Two references that need the same label rename it in
+the list, `((y1 = year), (y2 = year))`, as the export list already allows.
+2. **Enforced in the body.** The body reads the listed names bare. It cannot place the parameter, because the
+parameter has no name to place. It can read nothing of the argument that the head did not list.
+3. **Enforced at the call.** The argument must be a name of something the caller has placed: a label, or a
+binding as the caller used it. Each listed label is read there, by the caller's own path rules, at the point of
+the call. A pattern written in place, a missing label, a name used twice, or a read before the match is an error
+at the call.
+4. **Nothing inferred.** A plain parameter that a body reads and never places, `A(B) := (B.year: < 2100)`, is an
+error at the definition, and the message names the list form. A plain parameter that the body places and then
+reads stays legal, as today."
+It REVISES label-kinds (2026-11-23: "the reference kind can be used by natives but stays off limits for users
+until we see a valid, safe set of rules for it"): these four lines are that set of rules, for users. Left for
+later, told to him: whether the CALL also carries a mark. Spellings are placeholders. NOT FOLDED.
+His QUESTION (the weekday NAME standing before the date it must agree with): answered by a run
+(`docs/dev/lanes/predbang_evidence/weekday.py`; python's datetime stands in for the planned native; the test is
+written after both are matched; pasted from `weekday.out`):
+```
+June 12, 1994 was a Sunday
+WHOLE 'Wednesday June 12, 1994' FAILS
+WHOLE 'Sunday June 12, 1994' HOLDS
+WHOLE 'Wednesday June 15, 1994' HOLDS
+SEARCHED 'Wednesday June 12, 1994; Sunday June 12, 1994; Wednesday June 15, 1994' Sunday June 12, 1994@25
+FIND-ALL ['Sunday June 12, 1994@25', 'Wednesday June 15, 1994@47']
+```
+The frozen draft's worked example has the same shape (`predicates_draft.md` §4.4, quoted): "wd :=
+weekday_of($rest.year, $rest.month, $rest.day)" then "rfc & (wname.index: ==$wd)": the test stands after the whole
+pattern, joined by `&`. The manager's reading, for the fold to test: "at the point of the call" in line 3 makes a
+call written at the weekday's own spot (before the date) the error "a read before the match", and a call written
+as a filter over the whole pattern legal.
+
+### 2026-11-27 OWNER, a DIRECTION: "Let's stop questions for tonight. Fold now"
+tags: core/labels/rule/one-path lib/convention/argument-labels core/operators/bindings/label-kinds
+His words, verbatim: "Let's stop questions for tonight. Fold now"
+Class: a direction on the work (no ruling). Done on it: fold lane predfold1128 for the rulings since lane
+predfix112: gate-beside-direct, carve-out-reading, caller-label-export, named-list-use, param-reference.
+The manager's decision on what is NOT ruled, to be told to him: the base statement no-path-through-argument is his
+STRONG LEAN, never asked as a ruling; two rulings he gave rest on it (carve-out-reading: "a body's export list
+opens a door through the argument's place"; caller-label-export: "`Y.c.a.h` ... an error: that path goes through
+B's argument place"). The fold therefore applies it and MARKS it at every site as "the owner's strong lean,
+entailed by carve-out-reading and caller-label-export; to be confirmed", so that it can be confirmed or lifted in
+one place. The three study questions not asked (sent-over-body-label, forwarded-place, list-over-label) are
+printed as marked readings with both readings run. hits-through-hit: the manager's call under transform-export
+(the two provided bodies carry the list under their label), told to him 2026-11-27; he did not object.
+
+### 2026-11-27 MANAGER — after lane predfold1128: five rulings folded; a TELLING of the manager's found false (param-reference line 4, "as today"); no owner words
+tags: core/operators/bindings/label-kinds core/labels/paths core/labels/rule/argument-place core/labels/paths/shorthand-outside
+Lane predfold1128 folded gate-beside-direct, carve-out-reading, caller-label-export, named-list-use and
+param-reference, and applied his strong lean no-path-through-argument at 38 MARKED sites (home piece
+core/labels/rule/argument-place); lint failed 0; `predfold1128_model: 16 checks, 0 failed`. Ten printed lines
+moved (eight to compile errors, one more than the study listed; `N.h` to legal; one message).
+THE MANAGER'S TELLING FOUND FALSE (the lane's STOP RULE): param-reference line 4 as put to him ends "A plain
+parameter that the body places and then reads stays legal, as today", and example 4 told him
+`checked(B) := B & (B.year: < 2100)` "already works by the existing rules". The documents say otherwise
+(core/labels/paths, quoted by the lane: "a parameter's label inside the body is not nameable"), and the model
+refuses it ("checked names a label it does not hold"). The manager said it without a run. NOT folded either way;
+to be told to him and asked: whether line 4's second sentence stands as a NEW rule (a body may read the labels of
+a parameter it places, by the parameter's name) or falls. Slug: reference-example-checked.
+A reading of the manager's NOT SUPPORTED by the lane: "shorthand-outside's contrast stands ... `pub.A.h` for
+`[pub = B([A = A])]`": by caller-label-export's asked words that path goes through the call's label and is an
+error; the contrast holds as `X.A.h` (the sender's own label by its own name). WITHDRAWN.
+
+### 2026-11-27 MANAGER — review r113 (predfold1128): the dispositions; no owner words
+tags: core/labels/rule/argument-place core/operators/bindings/label-kinds core/labels/export/export-list lib/search/hits
+Review r113 (design; one opus coordinator, two opus critics; subject the fold merged at 5248d8a1c): NO
+answer-level finding (18 moved or added legal lines re-derived, 0 differ; a sweep of 561 printed lines, 0 hits);
+evidence green (model 16/0, lint 10524/0). Dispositions RULED by the manager
+(`/var/tmp/pcrec-pcrec/scratch/crit-predfold1128/dispositions.md`; filed by lane predfix113): all accepted.
+Design-level, accepted: param-reference line 4's "as today" is false (confirmed against the documents before the
+fold: "a parameter's label inside the body is not nameable"); the WITHDRAWN meaning "as the body's own" was still
+printed at two sites; a cell decided by the model only (`k.a.h` over `[k = [c = B(..)]]`); the strong-lean marker
+over-marked three sites and missed three. For the owner, with reference-example-checked: a placed parameter's
+NAMED list read in the body (`N(rx) := /${[(=h) = rx]}/ & (h: <5)`: "the honest spelling of `checked`", the
+round's words) and an argument holding the listed label in two labelled parts (the ruled "set twice is legal"
+against one-path). PLAN: the general form the round names, "a declared label interface" (the named list, the
+declared reference, the `(=)` convention, macro-types (ii), the natives' reference kind and bound-condition's
+target as one family): a parked piece with triggers.

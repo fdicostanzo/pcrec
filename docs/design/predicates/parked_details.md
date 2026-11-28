@@ -871,15 +871,27 @@ history:
 - 2026-11-23 (lane predfold1123b, the fold of the 2026-11-23 rulings after zero-open): its trigger "the call-forms ruling" has fired: call-forms and unspecified-rule are ruled; `_` covers a part not written; the empty position itself stays parked (a bullet).
 - 2026-11-23 (lane predfix88, review r88 A15; record "2026-11-23 MANAGER — review r88 (predfold1123b): the dispositions; no owner words"): the fired trigger "or the call-forms ruling" dropped.
 
-## parked/ideas/reference-kind — A reference kind of label parameter for users
+## parked/ideas/reference-kind — A reference by the label mark, for users
 slugs: 
 rulings:
 - 2026-11-23 (class: RULING) "the reference kind can be used by natives but stays off limits for users until we see a valid, safe set of rules for it." (record: "2026-11-23 OWNER RULING — label-kinds: yes, one mark, one meaning; the reference kind is for natives, off limits for users for now")
+- 2026-11-27 "param-reference: yes all four." (record: "2026-11-27 OWNER RULING — param-reference: "yes all four"; and a QUESTION with an example, "Wednesday June 12, 1994""); the record: "these four lines are that set of rules, for users": the idea's old trigger met for the declared list, so the piece is narrowed to the label-mark form.
 rejected:
 readings:
 evidence:
 history:
 - 2026-11-23 (lane predfold1123, the fold of 2026-11-22 late and 2026-11-23; record "2026-11-23 OWNER RULING — label-kinds: yes, one mark, one meaning; the reference kind is for natives, off limits for users for now"): a new parked piece.
+- 2026-11-27 (lane predfix113, review r113 RULING-5, the manager's dispositions): narrowed to the label-mark form: its trigger ("a valid, safe set of rules for it", his words) met by param-reference for the declared list. Until then, verbatim: "### A reference kind of label parameter for users   [parked/ideas/reference-kind]   parked 2026-11-23" / "A macro parameter naming a label the caller already has, read but never placed by the body." / "Trigger: a valid, safe set of rules for it (his words), or a user macro that cannot be written by passing a condition."
+
+## parked/ideas/label-interface — A declared label interface
+slugs:
+rulings:
+rejected:
+readings:
+- the general form (the named list, the declared reference, the `(=)` convention, macro-types (ii), the natives' reference kind and bound-condition's target as one family; the lean as "an undeclared interface is empty") is review r113's RULING-7 (its ruling critic), filed by the manager as PLAN, a unification candidate — a reading; UNTESTED (no answer moves).
+evidence: review r113, docs/dev/reviews/2026-11-27-r113-predfold1128/ruling.findings.md (RULING-7).
+history:
+- 2026-11-27 (lane predfix113, review r113 RULING-7, PLAN, the manager's dispositions): a new parked piece.
 
 ## parked/ideas/label-symbol — A label pre-defined as a symbol
 slugs: 

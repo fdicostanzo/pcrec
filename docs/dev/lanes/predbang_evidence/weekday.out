@@ -1,0 +1,6 @@
+June 12, 1994 was a Sunday
+WHOLE 'Wednesday June 12, 1994' FAILS
+WHOLE 'Sunday June 12, 1994' HOLDS
+WHOLE 'Wednesday June 15, 1994' HOLDS
+SEARCHED 'Wednesday June 12, 1994; Sunday June 12, 1994; Wednesday June 15, 1994' Sunday June 12, 1994@25
+FIND-ALL ['Sunday June 12, 1994@25', 'Wednesday June 15, 1994@47']

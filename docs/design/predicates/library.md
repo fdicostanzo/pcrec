@@ -21,9 +21,9 @@ see: parked/ideas/user-doc-traps core/principles/label-names-spot
 module: ?
 - His words: "transform-export: yes." on the statement above, as put to him; before it, on the wrappers, "wrapper-export:
   agree (a). I was worried you'd say peek() doesn't work. It's just a definition change."
-- The spot is each place a body lays its argument into its pattern; the list on it, `[(=) = x]`, takes every label the
-  argument exports as the body's own, so the caller reads them through the call (`peek.d`; `[c = peek(..)]`, `c.d`):
-  a call exports what its body exports (core/labels/export statement 3).
+- The spot is each place a body lays its argument into its pattern; the list on it, `[(=) = x]`, is the door
+  (core/labels/rule/argument-door): it passes every label the argument exports through the call, so the caller reads
+  them (`peek.d`; `[c = peek(..)]`, `c.d`): a call exports what its body exports (core/labels/export statement 3).
 - What an argument exports, and what the caller writes inside one: core/labels/export/arguments (the line
   "An expression exports what its text writes" is run here).
 - Covered, each piece restating its body with the list on its spot: peek, atomic, when, list_of, padded, padded_to, quoted,
@@ -36,8 +36,7 @@ module: ?
   call (`identity.d`, `hits.hit.d`), and by its own name too: `A.d` is the caller's shorthand label, whatever the
   body does with the spot (core/labels/paths/argument-default; core/labels/ownership). A body using its argument
   alone (`hide`) passes nothing through the call, and there `A.d` is the only read.
-- A spot the body labels exports through that label instead (the manager's reading (d)): `hits` and `occurrences` keep
-  the label-only `hit` around their argument and do not also write `(=)`; the caller reads `hits.hit.g`.
+- A label the body writes on a spot passes nothing of the argument by itself (core/labels/rule/argument-place) (the owner's strong lean, entailed by carve-out-reading and caller-label-export; to be confirmed); so `hits` and `occurrences` write the list under their `hit`, `(?<:hit>${[(=) = r]})`, and the caller reads `hits.hit.g` (hits-through-hit: the manager's call under transform-export, told to him, no objection).
 - Two spots of one argument (list_of, padded_to) or several arguments (when) holding one name: a read through the
   call skips the list on each spot, a compile error where two are set in one match (core/labels/rule/one-path; the
   line "Two arguments"), the branch taken in two branches (padded_to); a label the caller writes on an argument reads
@@ -427,14 +426,13 @@ Through the argument's name: WHOLE `3` HOLDS, `7` FAILS / SEARCHED `7 3` `3`@2 /
 ## Search   [lib/search]
 
 ### occurrences   [lib/search/occurrences]   ruled 2026-11-22
-`occurrences(x, min = 0)` is the lazy-gap loop `/(?:(?s:.*?)(?<:hit>${x})){${min},}(?s:.*)/`: each hit one pass of the label `hit`, a label and no capture.
+`occurrences(x, min = 0)` is the lazy-gap loop `/(?:(?s:.*?)(?<:hit>${[(=) = x]})){${min},}(?s:.*)/` (its list the manager's call, transform-export): each hit one pass of `hit`.
 needs: core/holes/pattern core/holes/count core/patterns/quantifiers
 see: core/diagnostics/nullable-hit core/labels/label-only-group core/labels/paths/call-prefix
 module: ?
 defined: language
 - A rewrite: x goes into the hole of the loop template, like any hole. Its first path has a plain search's hits,
-  leftmost and non-overlapping, along PCRE's own parse.
-- `min = n` means at least n hits, for any n; there is no `max`.
+  leftmost and non-overlapping, along PCRE's own parse. `min = n` means at least n hits, for any n; there is no `max`.
 - A condition inside x after its group reads that hit's own labels; one BEFORE the group reads the previous hit's
   value (it carries). Writing the condition after the label gives the plain search's hits.
 - The hits are re-split whenever a condition rejects: `occurrences(/(?<n>\d+)/ & (n: <100))` on `1234` HOLDS with
@@ -450,8 +448,8 @@ defined: language
   the argument (the lines below).
 - His ruling: "occurences et al should only set labels not captures unless they are so declared." The body's `hit`
   is the label-only group (core/labels/label-only-group): no caller capture. A group written in the ARGUMENT is the
-  caller's own text (`occurrences(/(?<n>\d+)/)`: n): read through the spot the body labels, `occurrences.hit.n`
-  (the manager's reading (d): `hit` is a spot, so the body writes no `(=)`), or bare, the caller's own
+  caller's own text (`occurrences(/(?<n>\d+)/)`: n): read through `hit` and the list under it, `occurrences.hit.n`
+  (hits-through-hit, the manager's call; lib/convention/argument-labels) (the owner's strong lean, entailed by carve-out-reading and caller-label-export; to be confirmed), or bare, the caller's own
   (core/labels/export/arguments); a binding passed whole through `hit` or its name (core/labels/ownership); a
   caller capture only where the program asks for one (capture-export); its declaring: lib/structural/capture/add-on.
 - A call may name its hit label (his spelling `occurrences(x, label = "foo")`, a placeholder: `label` is reserved
@@ -466,13 +464,15 @@ WHOLE `1a2` HOLDS, `12` HOLDS, `1` FAILS / SEARCHED `x1y2` `x1y2`@0 / FIND-ALL `
 Plain read, the last hit: WHOLE `a1b3` HOLDS, `a9b3` HOLDS, `a3b9` HOLDS, `a1b22` HOLDS, `ab` FAILS / SEARCHED `x9 3` `x9 3`@0 / FIND-ALL `a9b3 c7` [`a9b3 c7`@0] (`[hits = occurrences(/\d+/)] & (hits.hit: <5)`)
 Every hit, a group question: WHOLE `a1b3` HOLDS, `a9b3` HOLDS, `a3b9` HOLDS, `a1b22` HOLDS, `ab` HOLDS / SEARCHED `x9 3` `x9 3`@0 / FIND-ALL `a9b3 c7` [`a9b3 c7`@0, ``@7] (`[hits = occurrences(/\d+/)] & occurs.none(@hits.hit, >= 5)`)
 The argument's group, through the hit: WHOLE `a1b3` HOLDS, `a3b1` HOLDS, `ab` FAILS / SEARCHED `x1 3` `x1 3`@0 / FIND-ALL `a3 b1 3` [`a3 b1 3`@0] (`occurrences(/(?<n>\d+)/) & (occurrences.hit.n: "3")`)
+The argument's group, through the door: WHOLE `a1b3` HOLDS, `a3b1` HOLDS, `ab` FAILS / SEARCHED `x1 3` `x1 3`@0 / FIND-ALL `a3 b1 3` [`a3 b1 3`@0] (`occurrences(/(?<n>\d+)/) & (occurrences.n: "3")`): a reading (the door and one-path: `hit` and the list skipped, one `n` in view; the last hit's)
 
 ### hits   [lib/search/hits]   ruled 2026-11-22
 `hits(r)` is the one-pattern search made atomic and anchored to the text it is applied to: a fixed list of hits, judged after it.
 needs: lib/search/occurrences core/patterns/atomic
 module: ?
 defined: language
-- The body: `hits(r) := /\A(?>(?:(?s:.*?)(?<:hit>${r}))*[\s\S]*)\z/`: an atomic group around the WHOLE loop.
+- The body: `hits(r) := /\A(?>(?:(?s:.*?)(?<:hit>${[(=) = r]}))*[\s\S]*)\z/` (the list under `hit` the manager's call under
+  transform-export, hits-through-hit): an atomic group around the WHOLE loop.
 - Once it has matched nothing re-enters it: its hits are a plain search's (with no condition before the group),
   and tests on them judge a fixed list.
 - Anchored: it covers the text it is applied to from end to end; standing alone in a searched program that text
@@ -481,8 +481,8 @@ defined: language
   group question on the array of `hit`, one setting per hit, the call labelled: `[h = hits(/\d+/)] &
   occurs.none(@h.hit, >= 100)` (a reading; core/labels/paths/call-prefix).
 - The body's `hit` is the label-only group: a label and no capture (helper-captures: lib/search/occurrences). It is
-  the spot the body labels, so the argument's labels pass on through it (`hits.hit.g`) and the body writes no `(=)`
-  (the manager's reading (d); lib/convention/argument-labels). A group written in the argument in place is the
+  the spot the body labels, and the list under it passes the argument's labels on through it (`hits.hit.g`;
+  hits-through-hit, the manager's call; lib/convention/argument-labels) (the owner's strong lean, entailed by carve-out-reading and caller-label-export; to be confirmed). A group written in the argument in place is the
   caller's own, read bare too (`g`, the last hit's; core/labels/export/arguments). A binding passed whole is read
   through `hit`, or by its own name, the caller's shorthand label (core/labels/ownership; the line "Through the argument's name").
   Reading the hits out as values is the captures level (the opt-in that reads captured text out; lib/builtin/import
@@ -493,6 +493,7 @@ defined: language
   is 3 and some hit is 4"): a test inside the argument chooses the hits; a test after the atomic `hits` judges
   them (a reading, run: `4 9 3` and `43` HOLD with the test inside, FAIL with every number tested after).
 WHOLE `aax` HOLDS (hits [`a`, `ax`]), `axa` FAILS (hits [`ax`, `a`]: the last hit's g unset) / SEARCHED `axa` FAILS / FIND-ALL `aax axa` [] (`hits(/a(?<g>x)?/) & (hits.hit.g: "x")`: the hit list is the whole subject's)
+Through the door, `hit` skipped: WHOLE `aax` HOLDS (hits [`a`, `ax`]), `axa` FAILS (hits [`ax`, `a`]: the last hit's g unset) / SEARCHED `axa` FAILS / FIND-ALL `aax axa` [] (`hits(/a(?<g>x)?/) & (hits.g: "x")`: a reading, the door and one-path: `hit` and the list skipped, one `g` in view; the hit list is the whole subject's)
 Through the argument's name: WHOLE `a1b3` HOLDS, `a3b9` FAILS, `ab` FAILS / SEARCHED `x9 3` `x9 3`@0 / FIND-ALL `a9b3 c7` [] (`hits(A) & (A.d: <5)`, A := `/(?<d>\d)/`)
 Bare, the caller's own: WHOLE `ax` HOLDS, `a` FAILS, `axa` FAILS / SEARCHED `a ax` `a ax`@0 / FIND-ALL `a ax ax` [`a ax ax`@0] (`hits(/a(?<g>x)?/) & (g: "x")`)
 Plain read, the last hit: WHOLE `a1b3` HOLDS (hits [`1`, `3`]), `a9b3` HOLDS (hits [`9`, `3`]), `a3b9` FAILS (hits [`3`, `9`]), `a1b22` FAILS (hits [`1`, `22`]), `ab` FAILS (hits []) / SEARCHED `x9 3` `x9 3`@0 / FIND-ALL `a9b3 c7` [] (`[h = hits(/\d+/)] & (h.hit: <5)`)
