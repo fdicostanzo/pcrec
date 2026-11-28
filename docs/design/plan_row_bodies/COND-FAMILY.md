@@ -12571,3 +12571,42 @@ declaration, is the "secret change" and would be an error at the definition; the
 (`weekday_of((=year, =month,=day))`) is a declaration already. "bind conditions": a macro whose body is a
 condition over a declared reference is a named condition with its target declared
 (core/holes/bare-condition/bound-condition, core/operators/bindings/macro-types).
+
+### 2026-11-27 OWNER RULING — param-reference: "yes all four"; and a QUESTION with an example, "Wednesday June 12, 1994"
+tags: core/operators/bindings/label-kinds core/operators/bindings/macro-types core/holes/bare-condition/bound-condition core/labels/export/arguments lib/planned/standard
+His words, verbatim: "param-reference: yes all four.
+Wednesday June 12, 1994
+Could you use it to match the Wednesday via day of the week. My guess is no because the date follows the
+Wednesday"
+RULED (answered by slug), the statement AS ASKED, quoted:
+"1. **Declared.** A reference parameter is written in the head as the list of labels it needs:
+`before2100((=year))`, `weekday_of((=year, =month, =day))`. Two references that need the same label rename it in
+the list, `((y1 = year), (y2 = year))`, as the export list already allows.
+2. **Enforced in the body.** The body reads the listed names bare. It cannot place the parameter, because the
+parameter has no name to place. It can read nothing of the argument that the head did not list.
+3. **Enforced at the call.** The argument must be a name of something the caller has placed: a label, or a
+binding as the caller used it. Each listed label is read there, by the caller's own path rules, at the point of
+the call. A pattern written in place, a missing label, a name used twice, or a read before the match is an error
+at the call.
+4. **Nothing inferred.** A plain parameter that a body reads and never places, `A(B) := (B.year: < 2100)`, is an
+error at the definition, and the message names the list form. A plain parameter that the body places and then
+reads stays legal, as today."
+It REVISES label-kinds (2026-11-23: "the reference kind can be used by natives but stays off limits for users
+until we see a valid, safe set of rules for it"): these four lines are that set of rules, for users. Left for
+later, told to him: whether the CALL also carries a mark. Spellings are placeholders. NOT FOLDED.
+His QUESTION (the weekday NAME standing before the date it must agree with): answered by a run
+(`docs/dev/lanes/predbang_evidence/weekday.py`; python's datetime stands in for the planned native; the test is
+written after both are matched; pasted from `weekday.out`):
+```
+June 12, 1994 was a Sunday
+WHOLE 'Wednesday June 12, 1994' FAILS
+WHOLE 'Sunday June 12, 1994' HOLDS
+WHOLE 'Wednesday June 15, 1994' HOLDS
+SEARCHED 'Wednesday June 12, 1994; Sunday June 12, 1994; Wednesday June 15, 1994' Sunday June 12, 1994@25
+FIND-ALL ['Sunday June 12, 1994@25', 'Wednesday June 15, 1994@47']
+```
+The frozen draft's worked example has the same shape (`predicates_draft.md` §4.4, quoted): "wd :=
+weekday_of($rest.year, $rest.month, $rest.day)" then "rfc & (wname.index: ==$wd)": the test stands after the whole
+pattern, joined by `&`. The manager's reading, for the fold to test: "at the point of the call" in line 3 makes a
+call written at the weekday's own spot (before the date) the error "a read before the match", and a call written
+as a filter over the whole pattern legal.
