@@ -12526,3 +12526,27 @@ set of rules for it."; core/operators/bindings/label-kinds: "To test a caller's 
 condition: `A(c, B) := B & c`"; core/operators/bindings/macro-types (under construction), his `B(d & isodate) :=
 (year: < 2100)` and its reading (ii), "a promise checked at the call that x holds isodate's labels";
 lib/planned/standard: `weekday_of($rest.year, $rest.month, $rest.day)`, a native over three values.
+
+### 2026-11-27 OWNER RULING — named-list-use: "agree use it."; and a REQUEST on param-reference: "please provide examples as you read it"
+tags: core/labels/export/export-list core/labels/export/arguments core/operators/bindings/label-kinds core/operators/bindings/macro-types
+His words, verbatim: "named-list-use: agree use it.
+
+param-reference:  please provide examples as you read it."
+RULED (answered by slug): named-list-use, the statement AS LAST PUT, quoted: "your lean (an error at the call, not
+the definition), with the three edges from last turn: an argument setting the label twice is legal and reads the
+last; the error is raised at the call that supplies the argument and traces back through forwarding macros; and a
+definition that can never be satisfied is an error where it is written." With it, told to him: "the use error
+names the missing label and the list that demands it". Its purpose, in his words (the entry before last): "a
+macro that simply needed the form to match like accepting a date looking argument". It moves the printed line "A
+named list on a spot" (core/labels/export/arguments) from a definition error to legal for an argument that has
+the label.
+param-reference: NOT ruled; he asks for examples of the manager's reading. The run for them
+(`docs/dev/lanes/predbang_evidence/paramref.py`: each program is the EXPANSION under the manager's reading, a
+regex and a test on its groups; pasted from `paramref.out`):
+```
+1. before2100(B) := (B.year: < 2100) ; isodate & before2100(isodate)  ==  isodate & (isodate.year: < 2100)
+   WHOLE `2024-02-29` HOLDS / `2150-01-01` FAILS | SEARCHED `x 2150-01-01 1999-12-31`: 1999-12-31@13 | FIND-ALL `2024-02-29 2150-01-01 1999-12-31`: ['2024-02-29@0', '1999-12-31@22']
+2. [d = isodate] SEQ " " SEQ [e = isodate] & before2100(d) & !before2100(e)  ==  ... & (d.year: < 2100) & !(e.year: < 2100)
+   WHOLE `2024-02-29 2150-01-01` HOLDS / `2150-01-01 2024-02-29` FAILS / `2024-02-29 2025-03-01` FAILS | SEARCHED `2150-01-01 2024-02-29 2150-01-01`: 2024-02-29 2150-01-01@11 | FIND-ALL `2024-02-29 2150-01-01 1999-12-31 2200-05-05`: ['2024-02-29 2150-01-01@0', '1999-12-31 2200-05-05@22']
+3. checked(B) := B & (B.year: < 2100) ; checked(isodate)  ==  isodate & (isodate.year: < 2100): the answers of 1
+```
