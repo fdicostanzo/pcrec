@@ -50,7 +50,7 @@ identity: WHOLE `3` HOLDS, `7` FAILS / SEARCHED `7 3` `3`@2 / FIND-ALL `3 7 4` [
 hide: modes: a compile error (`hide(A) & (hide.d: <5)`, hide(x) := `/${x}/`: hide uses x alone, so its call exports no `d`).
 The same match, either body: WHOLE `3` HOLDS, `7` HOLDS / SEARCHED `7 3` `7`@0 / FIND-ALL `3 7 4` [`3`@0, `7`@2, `4`@4] (`hide(A)`, A := `/(?<d>\d)/`, hide(x) := `/${x}/`; `identity(A)` alike)
 Two arguments: modes: a compile error (`W(/(?<h>\d)/, /;(?<h>\d)/) & (W.h: "3")`, W(a, b) := `[(=) = a] SEQ [(=) = b]`, the shape of when's then branch: two labels `h` are visible from `W`, and no path names one (core/labels/rule/one-path)).
-Two arguments, labelled: WHOLE `7;3` HOLDS, `3;7` FAILS / SEARCHED `x3;7 7;3` `7;3`@5 / FIND-ALL `7;3 3;7 1;3` [`7;3`@0, `1;3`@8] (`W([a = /(?<h>\d)/], [b = /;(?<h>\d)/]) & (b.h: "3")`, W(a, b) := `[(=) = a] SEQ [(=) = b]`)
+Two arguments, labelled: WHOLE `7;3` HOLDS, `3;7` FAILS / SEARCHED `x3;7 7;3` `7;3`@5 / FIND-ALL `7;3 3;7 1;3` [`7;3`@0, `1;3`@8] (`W([x = /(?<h>\d)/], [y = /;(?<h>\d)/]) & (y.h: "3")`, W(a, b) := `[(=) = a] SEQ [(=) = b]`)
 A binding used alone in a call, through its name: WHOLE `3` HOLDS, `7` FAILS / SEARCHED `7 3` `3`@2 / FIND-ALL `3 7 4` [`3`@0, `4`@4] (`identity(A) & (identity.d: <5)`, A := `/(?<d>\d)/`, identity(x) := `/${[(=) = x]}/`)
 The same read through the argument's name: WHOLE `3` HOLDS, `7` FAILS / SEARCHED `7 3` `3`@2 / FIND-ALL `3 7 4` [`3`@0, `4`@4] (`identity(A) & (A.d: <5)`, A := `/(?<d>\d)/`, identity(x) := `/${[(=) = x]}/`)
 An expression exports what its text writes: WHOLE `25` FAILS, `13` HOLDS / SEARCHED `25` FAILS / FIND-ALL `25 13` [`13`@3] (`atomic(/(?<l>\d\d)/ | /(?<l>\d)\d/) & (atomic.l: <20)`); `atomic(B | A) & (atomic.l: <20)`, B and A bindings used alone in it, is a compile error
@@ -613,6 +613,8 @@ defined: native (a question over a name's array of settings; no expression of th
   `some(@ok, anything)`.
 - `!some(@d, S)` and `occurs.none(@d, S)` are one question (core/model/table/group-truth).
 - It is not `assert.some`: an assertion asks whether a SET has a string, at compile time (lib/assert/assert).
+- Through a part used alone the array form is a compile error, a gate never skipped, array or not (array-gate):
+  `[n = (P SEQ Q)] & some(@n.d, <5)` (core/labels/rule/one-path).
 WHOLE `1,7,` HOLDS, `1,2,` FAILS / SEARCHED `1,2, 7,` `7,`@5 / FIND-ALL `7,1, 2, 3,7,` [`7,1,`@0, `3,7,`@8] (`/(?:(?<d>\d),)+/ & some(@d, "7")`)
 
 ### count   [lib/counting/count]   ruled 2026-11-25
@@ -629,6 +631,7 @@ defined: native (a count over a name's array of settings; no expression of the l
 - No positional rule forbids it; where it would cost more states than the budget allows, the compiler refuses it
   and names the `occurs` form; below the budget `occurs` may be recommended as the way to reduce states.
 - A later optimisation may turn `count` into `occurs` where the answers provably do not change.
+- Through a part used alone, `count(@n.d)` is a compile error, as `some`'s (array-gate; core/labels/rule/one-path).
 Every setting counted: WHOLE `1,2,` HOLDS, `1,,2,` HOLDS, `1,` FAILS / SEARCHED `1, 1,2,` `1,2,`@3 / FIND-ALL `1,2, 3, 4,,5,` [`1,2,`@0, `4,,5,`@8] (`/(?:(?<d>\d)?,)+/ & (count(@d): ==2)`)
 WHOLE `7,1,7,` HOLDS, `7,1,` FAILS / SEARCHED `7,7,7,` `7,7,`@0 / FIND-ALL `7,7,7, 1,7,7,` [`7,7,`@0, `1,7,7,`@7] (`/(?:(?<d>\d),)+/ & (count(@d, "7"): ==2)`)
 
@@ -658,6 +661,7 @@ defined: language (`every(@d, S) := occurs.none(@d, ~S)`)
   form, the condition written inside the loop (the lines "Every setting" and "The item form"); a loop that can make
   no pass parts nothing, both true there (the two "No pass" lines).
 - "Set at least once and every setting in S" is `some(@d, S) & every(@d, S)`.
+- Through a part used alone, `every(@n.d, S)` is a compile error, as `some`'s (array-gate; core/labels/rule/one-path).
 Every setting: WHOLE `7,7,` HOLDS, `7,,` HOLDS, `7,1,` FAILS, `,` HOLDS / SEARCHED `1, 7,,` `,`@1 / FIND-ALL `7,, 7,1, 7,7,` [`7,,`@0, `7,`@4, `,`@7, `7,7,`@9] (`/(?:(?<d>\d)?,)+/ & every(@d, "7")`)
 Set at least once: WHOLE `7,7,` HOLDS, `7,,` HOLDS, `7,1,` FAILS / SEARCHED `7,, 7,7,` `7,,`@0 / FIND-ALL `7,, 7,1, 7,7,` [`7,,`@0, `7,`@4, `7,7,`@9] (`/(?:(?<d>\d)?,)+/ & some(@d, "7") & every(@d, "7")`)
 No pass, set at least once: WHOLE `x` FAILS, `7,x` HOLDS / SEARCHED `-x` FAILS / FIND-ALL `x 7,x 1,x` [`7,x`@2] (`/(?:(?<d>\d),)*x/ & some(@d, "7") & every(@d, "7")`)

@@ -1,0 +1,109 @@
+== library bodies (library.md): chars ([ch = /(?s:.)/])* ; length(S) := chars & (count((chars.ch: /(?s:.)/)): S) ; month_numbered(S) := months & (months.mname.index: S) ; between: >= lo & <= hi
+== months := [mname = [/Jan(?:uary)?/, /Feb(?:ruary)?/, /Mar(?:ch)?/, /Apr(?:il)?/, /May/, /June?/, /July?/, /Aug(?:ust)?/, /Sep(?:tember)?/, /Oct(?:ober)?/, /Nov(?:ember)?/, /Dec(?:ember)?/]]
+PATCH R-5 walk10: 3 lines replaced by 17
+PATCH R-5 path10: 2 lines replaced by 10
+PATCH R-5 g_eval: 2 lines replaced by 3
+== CANARY112: X112 off is predfold1127's walker as merged (the control): `c.d` over a body and an argument that each set `d` refused; X112 on (body-own-name) legal, the body's own
+PASS CANARY112: off: `c.d`: 2 labels `d` are visible from `c`, so no step may be skipped: no path from `c` names one of them alone (a compile error, core/labels/rule/paths rule 4, one-path); on: legal, the body's own
+== RULE112: reads judged by the model's full program builder against hand-filled verdicts, each citing the ruled line it rests on; every legal read's answers against a regex written by hand from the sentence
+   [c = B(A)] & (c.d: <5)                                         body-own-name: nothing skipped, the body's own | legal, equal to the hand regex `\d-[0-4]`
+   B(A) & (B.d: <5)                                               body-own-name: the call-prefix line, the body's own | legal, equal to the hand regex `\d-[0-4]`
+   B(/(?<d>\d)/) & (B.d: <5)                                      body-own-name: two-sources' "The body's own" | legal, equal to the hand regex `\d-[0-4]`
+   B(A) & (A.d: <5)                                               argument-default: the argument's own by its source | legal, equal to the hand regex `[0-4]-\d`
+   X & (X.d: <5)                                                  body-own-name: X's own | legal, equal to the hand regex `\d;[0-4]`
+   X & (X.a.d: <5)                                                rule 1, the full path | legal, equal to the hand regex `[0-4];\d`
+   B(A) & (B.d: <5)                                               body-own-name: the body's own beside a written label on the spot | legal, equal to the hand regex `\d-[0-4]`
+   B(A) & (B.p.d: <5)                                             rule 1, through the body's label | legal, equal to the hand regex `[0-4]-\d`
+   B(A) & (B.h: <5)                                               body-own-name: the shorthand cell's case, the body's own `h` | legal, equal to the hand regex `\d[0-4]`
+   [n = (P SEQ /,(?<d>\d)/)] & (n.d: <5)                          body-own-name's "always": the direct group beside a gate | legal, equal to the hand regex `\d,[0-4]`
+   [n = (P SEQ /,(?<d>\d)/)] & (n.P.d: <5)                        alone-as-middle: the gate as a step | legal, equal to the hand regex `[0-4],\d`
+   D2 & (D2.c: "3")                                               label flow: nothing skipped, the last mention | legal, equal to the hand regex `\d3`
+   date & (date.v: <5)                                            one-path line 4, unchanged | `date.v`: 2 labels `v` are visible from `date`, so no step may be skipped: write the full path, `date.m.v` or `date.y.v` (a compil
+   [n = ([a = P] SEQ Q)] & (n.d: <5)                              gate-beside-label, unchanged | `n.d`: a `d` sits behind a gate (a part used alone is never skipped): write the full path, `n.Q.d` or `n.a.d` (a compile error, co
+   [n = (P SEQ Q)] & some(@n.d, <5)                               array-gate: an error, array or not | `n.d`: a `d` sits behind a gate (a part used alone is never skipped): write the full path, `n.P.d` or `n.Q.d` (a compile error, co
+   [n = (P SEQ Q)] & (n.d: <5)                                    one-path line 2, unchanged | `n.d`: a `d` sits behind a gate (a part used alone is never skipped): write the full path, `n.P.d` or `n.Q.d` (a compile error, co
+   W(/(?<h>\d)/, /;(?<h>\d)/) & (W.h: "3")                        one-path line 4: both skipped (aliases), unchanged | `W.h`: 2 labels `h` are visible from `W`, so no step may be skipped: no path from `W` names one of them alone (a compile error, co
+   pair(A) & (pair.d: <5)                                         one-path line 5: both skipped, unchanged | `pair.d`: 2 labels `d` are visible from `pair`, so no step may be skipped: no path from `pair` names one of them alone (a compile 
+   list_of(/(?<h>\d)/, sep = ",") & (list_of.h: "5")              one-path line 5: both skipped, unchanged | `list_of.h`: 2 labels `h` are visible from `list_of`, so no step may be skipped: no path from `list_of` names one of them alone (a
+   W([x = /(?<h>\d)/], [y = /;(?<h>\d)/]) & (y.h: "3")            argument-label: the caller's label (EXAMPLES-5's names) | legal, equal to the hand regex `\d;3`
+PASS RULE112: 20 reads (13 legal against hand regexes); not as the ruling says: none
+== READINGS112: the manager's readings (a)-(c) of the body-own-name entry, each RUN; his ground against the asked statement (the switch GROUND112); the gate beside a direct target, both sides
+   asked  [c = B(A)] & (c.d: <5)             WHOLE `7-3` HOLDS, `3-7` FAILS, `1-2` HOLDS / SEARCHED `3-7 7-3` `7-3`@4 / FIND-ALL `7-3 3-7 1-2 7-7` [`7-3`@0, `1-2`@8]
+   ground [c = B(A)] & (c.d: <5)             WHOLE `7-3` HOLDS, `3-7` FAILS, `1-2` HOLDS / SEARCHED `3-7 7-3` `7-3`@4 / FIND-ALL `7-3 3-7 1-2 7-7` [`7-3`@0, `1-2`@8]
+   asked  B(A) & (B.d: <5)                   WHOLE `7-3` HOLDS, `3-7` FAILS, `1-2` HOLDS / SEARCHED `3-7 7-3` `7-3`@4 / FIND-ALL `7-3 3-7 1-2 7-7` [`7-3`@0, `1-2`@8]
+   ground B(A) & (B.d: <5)                   WHOLE `7-3` HOLDS, `3-7` FAILS, `1-2` HOLDS / SEARCHED `3-7 7-3` `7-3`@4 / FIND-ALL `7-3 3-7 1-2 7-7` [`7-3`@0, `1-2`@8]
+   asked  B(/(?<d>\d)/) & (B.d: <5)          WHOLE `7-3` HOLDS, `3-7` FAILS, `1-2` HOLDS / SEARCHED `3-7 7-3` `7-3`@4 / FIND-ALL `7-3 3-7 1-2 7-7` [`7-3`@0, `1-2`@8]
+   ground B(/(?<d>\d)/) & (B.d: <5)          WHOLE `7-3` HOLDS, `3-7` FAILS, `1-2` HOLDS / SEARCHED `3-7 7-3` `7-3`@4 / FIND-ALL `7-3 3-7 1-2 7-7` [`7-3`@0, `1-2`@8]
+   asked  B(A) & (B.d: <5)                   WHOLE `7-3` HOLDS, `3-7` FAILS, `1-2` HOLDS / SEARCHED `3-7 7-3` `7-3`@4 / FIND-ALL `7-3 3-7 1-2 7-7` [`7-3`@0, `1-2`@8]
+   ground B(A) & (B.d: <5)                   WHOLE `7-3` HOLDS, `3-7` FAILS, `1-2` HOLDS / SEARCHED `3-7 7-3` `7-3`@4 / FIND-ALL `7-3 3-7 1-2 7-7` [`7-3`@0, `1-2`@8]
+   asked  X & (X.d: <5)                      WHOLE `7;3` HOLDS, `3;7` FAILS, `1;2` HOLDS / SEARCHED `3;7 7;3` `7;3`@4 / FIND-ALL `7;3 3;7 1;2 9;9` [`7;3`@0, `1;2`@8]
+   [c = B(A)] & (c.d: <5) ['B(rx) := /${rx}-(?<d>\\d)/']: asked ('legal', 'B:B', 'd') / ground ('legal', 'B:B', 'd')
+   B(A) & (B.d: <5) ['B(rx) := /${rx}-(?<d>\\d)/']: asked ('legal', 'B:B', 'd') / ground ('legal', 'B:B', 'd')
+   B(/(?<d>\d)/) & (B.d: <5) ['B(rx) := /${rx}-(?<d>\\d)/']: asked ('legal', 'B:B', 'd') / ground ('legal', 'B:B', 'd')
+   B(A) & (B.d: <5) ['B(rx) := /${[p = rx]}-(?<d>\\d)/']: asked ('legal', 'B:B', 'd') / ground ('legal', 'B:B', 'd')
+   X & (X.d: <5) : asked ('legal', 'B:X', 'd') / ground ('refused', '`X.d`: 2 labels `d` are visible from `X`, so no step may be skipped: write the full path, `X.a.d`; 1 of them no other path from `X` names (a compile error, core/labels/rule/paths rule 4, one-path)')
+   (a) reading (f) replaced at its three sites: SUPPORTED ((f) text left at none; body-own-name named at 3 of 3)
+   (b) his ground and the asked statement agree on every call case, `/${[p = rx]}-(?<d>\d)/` included: SUPPORTED (parting: none (X.d is no call: his ground is silent there))
+   (c) the argument's own label read by its source, `A.d`: SUPPORTED (legal, A's `d` (hand regex `[0-4]-\d`))
+   a direct target beside a gate: the asked statement's "always" legal; gate-beside-label's manager reading refused: SUPPORTED (asked ('legal', 'P', 'd') / gate-beside reading `n.d`: a `d` sits behind a gate (a part used alone is never skipped): write the full path,)
+PASS READINGS112: 4 readings run, 4 supported
+== TABLE112: the label-kind table of core/labels/rule/kinds, read cell by cell, against KINDS111 (the rows the walker models); the two rows added (a list's alias, an argument's place) against the walker's node kinds
+   ROW a written part label         document ('yes', 'yes', 'yes', 'yes', 'yes'), walker ('yes', 'yes', 'yes', 'yes', 'yes')
+   ROW an underscore part label     document ('yes', 'wall', 'wall', 'wall', 'no'), walker ('yes', 'wall', 'wall', 'wall', 'no')
+   ROW the blank label              document ('no', 'wall', 'wall', 'wall', 'no'), walker ('no', 'wall', 'wall', 'wall', 'no')
+   ROW a part used alone            document ('yes', 'yes', 'gate', 'wall', 'no'), walker ('yes', 'yes', 'gate', 'wall', 'no')
+   ROW a macro call used alone      document ('yes', 'yes', 'gate', 'wall', 'no'), walker ('yes', 'yes', 'gate', 'wall', 'no')
+   ROW a named group of rx text     document ('yes', 'yes', 'yes', 'yes', 'yes'), walker ('yes', 'yes', 'yes', 'yes', 'yes')
+   ROW an underscore group          document ('yes', 'wall', 'wall', 'wall', 'no'), walker ('yes', 'wall', 'wall', 'wall', 'no')
+   ROW a list's alias               document start 'no, it has no name (', middle 'no, it has no name (', skippable 'always passed, a node between '; walker kinds ['None']
+   ROW an argument's place          document start 'no, it has no name (', middle 'no, it has no name (', skippable 'always passed, a node between '; walker kinds ['None']
+PASS TABLE112: 7 rows modelled, 2 rows added read; differing: none
+== SWEEP112: every printed three-mode line RUN under this model; the starting commit 2d7718d4e's lines under the control (X112 off: predfold1127's walker) against these, keyed by the program; every key gone DECLARED
+   DROPPED OR MOVED BY A RULING core.md:1139 `B(A) & (B.d: <5)`: body-own-name: "By the macro's name" re-spelled with A := /(?<d>\d)/, its old answers (the argument setting no `d` was the predfold1127 keeper)
+   DROPPED OR MOVED BY A RULING library.md:53 `W([a = /(?<h>\d)/], [b = /;(?<h>\d)/]) & (b.h: "3")`: review r112 EXAMPLES-5: the caller's labels renamed `x`, `y`, the same answers
+   ADDED core.md:524 `X & (X.d: <5)`: WHOLE `7;3` HOLDS, `3;7` FAILS / SEARCHED `3;7 7;3` `7;3`@4 / FIND-ALL `7;3 3;7 1;2 9;9` [`7;3`@0, `1;2`@8]
+   ADDED core.md:525 `[n = (P SEQ /,(?<d>\d)/)] & (n.d: <5)`: WHOLE `7,3` HOLDS, `3,7` FAILS / SEARCHED `3,7 7,3` `7,3`@4 / FIND-ALL `7,3 3,7 1,2` [`7,3`@0, `1,2`@8]
+   ADDED core.md:1135 `[c = B(A)] & (c.d: <5)`: WHOLE `7-3` HOLDS, `3-7` FAILS, `3-3` HOLDS / SEARCHED `3-7 7-3` `7-3`@4 / FIND-ALL `7-3 3-7 1-2 9-9` [`7-3`@0, `1-2`@8]
+   ADDED core.md:1137 `B(A) & (B.d: <5)`: WHOLE `7-3` HOLDS, `3-7` FAILS, `3-3` HOLDS / SEARCHED `3-7 7-3` `7-3`@4 / FIND-ALL `7-3 3-7 1-2 9-9` [`7-3`@0, `1-2`@8]
+   ADDED core.md:1238 `B(/(?<d>\d)/) & (B.d: <5)`: WHOLE `7-3` HOLDS, `3-7` FAILS / SEARCHED `3-7 7-3` `7-3`@4 / FIND-ALL `7-3 3-7 1-2 9-9` [`7-3`@0, `1-2`@8]
+   ADDED library.md:53 `W([x = /(?<h>\d)/], [y = /;(?<h>\d)/]) & (y.h: "3")`: WHOLE `7;3` HOLDS, `3;7` FAILS / SEARCHED `x3;7 7;3` `7;3`@5 / FIND-ALL `7;3 3;7 1;3` [`7;3`@0, `1;3`@8]
+PASS SWEEP112: 418 printed lines now (DIFF 7, REFUSED 53, same 357, unparsed 1), 388 keys at the starting commit; not same and not inherited 0 (inherited 61); moved 0; gone 0; declared 2; added 6; stale 0
+== ERRSWEEP112: every printed compile-error line of the base files refused under this model, no crash; each named form in the refusal's message (MSG111's rows and predfold1127's MSG1127, less the reads now legal)
+PASS ERRSWEEP112: 89 compile-error lines read, each refused with no crash: bad none; named form missing none; message rows with no line none
+== SPECLINES112: every printed line new in this lane (not in its file at the starting commit) is RUN: a three-mode line SAME as run, a compile-error line refused
+PASS SPECLINES112: 8 new printed lines: three-mode 7, compile-error 1, unread 0; not as printed: none
+== STALE112: the base files, continuation lines joined, hold none of the texts this fix retires
+PASS STALE112: 9 retired texts searched; found none
+== QUOTES112: the owner's words this lane quotes, each in the record at the PINNED starting commit and in its piece; every record title a predfix112 item cites is a title of that record
+PASS QUOTES112: 5 quoted sentences (missing: none); 8 record titles cited (not a title at 2d7718d4e: none)
+== MECH112: every read this lane makes legal answered by MECH111 (python `re` on the regex built mechanically from the program text and its bindings' bodies, the target group named), against the engine
+   [c = B(A)] & (c.d: <5)                                     MECH111 equal to the engine
+   B(A) & (B.d: <5)                                           MECH111 equal to the engine
+   B(/(?<d>\d)/) & (B.d: <5)                                  MECH111 equal to the engine
+   B(A) & (B.d: <5)                                           MECH111 equal to the engine
+   X & (X.d: <5)                                              MECH111 equal to the engine
+   [n = (G SEQ /,(?<d>\d)/)] & (n.d: <5)                      MECH111 equal to the engine
+PASS MECH112: 6 reads; not equal: none
+== SUCCESSOR112: every in-force model re-run: predfold1127 in full, and the nineteen its SUCCESSOR1127 re-runs (their outputs dumped through it); each red DECLARED in predfix112_succ_decl.tsv by predfix90's `red_key10` key, which carries the red's own FAIL line and no document line numbers; a traceback never
+   predarr       last line: predarr_model: 17 checks, 1 failed (DOC)
+   predbound     last line: predbound_model: 21 checks, 2 failed (MARKS, DOC)
+   predcall      last line: predcall_model: 14 checks, 5 failed (CLOSED, MARKS, SCAN, PREDREF, DOC)
+   preddef       last line: preddef_model: 22 checks, 5 failed (UNMARKED, SUCCESSOR, SWEEP, MARKS, DOC)
+   predfix111    last line: predfix111_model: 14 checks, 5 failed (SWEEP111, ERRSWEEP111, SPECLINES111, QUOTES111, SUCCESSOR111)
+   predfix77     last line: predfix77_model: 20 checks, 2 failed (MARKS, DOC)
+   predfix82     last line: predfix82_model: 22 checks, 5 failed (REPRINT, SUCCESSOR, SWEEP, MARKS, DOC)
+   predfix83     last line: predfix83_model: 25 checks, 5 failed (UNMARKED, SWEEP, SUCCESSOR, MARKS, DOC)
+   predfix84     last line: predfix84_model: 37 checks, 3 failed (GRID, SWEEP, DOC)
+   predfix86     last line: predfix86_model: 29 checks, 2 failed (SWEEP, DOC)
+   predfix88     last line: predfix88_model: 25 checks, 8 failed (UNSPEC, SHORTHAND, STACKCHAIN, SPOTON, TABLE, NAMEGRID, SWEEP, DOC)
+   predfix90     last line: predfix90_model: 26 checks, 6 failed (NAMEGRID, PATHS10, GRID, SWEEP, ERRSWEEP, DOC)
+   predfold1123  last line: predfold1123_model: 18 checks, 3 failed (SWEEP, NULLABLE, DOC)
+   predfold1123b last line: predfold1123b_model: 18 checks, 2 failed (SWEEP, DOC)
+   predfold1124  last line: predfold1124_model: 20 checks, 5 failed (NAMEGRID, FLAGS, SWEEP, ERRSWEEP, DOC)
+   predfold1125  last line: predfold1125_model: 15 checks, 6 failed (CENSUS11, SWEEP11, ERRSWEEP11, SUCCESSOR11, QUOTES11, DOC11)
+   predfold1127  last line: predfold1127_model: 13 checks, 5 failed (SWEEP1127, ERRSWEEP1127, SPECLINES1127, QUOTES1127, SUCCESSOR1127)
+   predref       last line: predref_model: 8 checks, 3 failed (SCAN, MARKS, DOC)
+   predscope     last line: predscope_model: 20 checks, 2 failed (CLOSEDB, DOC)
+   predspot      last line: predspot_model: 27 checks, 3 failed (GRID, FSWEEP, DOC)
+PASS SUCCESSOR112: 20 models read, 78 reds, each against its declared key (78 declared): all as declared
+predfix112_model: 11 checks, 0 failed
