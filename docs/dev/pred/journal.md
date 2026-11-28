@@ -1345,3 +1345,8 @@ wake.md says (read the draft WHOLE first; A4 is a ruled-words finding: read his 
   conflict, both sides kept), stopped: 111 reads classed, 9 printed lines move, 11 problems, 7 questions. My
   carve-out wording was ambiguous (door vs own labels). Open with the owner: gate-beside-direct; then the seven,
   carve-out-reading first.
+- Rulings after the study: gate-beside-direct (legal), carve-out-reading (the door), caller-label-export,
+  named-list-use, param-reference (yes all four; his idea of a list in a macro's head; "declared then enforced").
+  He stopped questions for the night: "Fold now". Merged main back (8e7cca4a9). LAUNCHED fold lane predfold1128
+  (opus; the five rulings; his strong lean no-path-through-argument applied and MARKED; lanewatch armed). Review
+  number r113 from main. wake.md rewritten in flight. Next, mine: accept, merge, critic round r113, fix, P-36.
