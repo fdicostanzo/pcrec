@@ -216,11 +216,30 @@ see: core/operators/bindings/label-omitted core/operators/bindings/call-forms co
   position left out of the record entirely stays this idea.
 modes: n/a (parked: not in the language)
 
-### A reference kind of label parameter for users   [parked/ideas/reference-kind]   parked 2026-11-23
-A macro parameter naming a label the caller already has, read but never placed by the body.
-Trigger: a valid, safe set of rules for it (his words), or a user macro that cannot be written by passing a condition.
-Source: his label-kinds ruling (the details entry).
-see: core/operators/bindings/label-kinds core/holes/bare-condition/bound-condition
+### A reference by the label mark, for users   [parked/ideas/reference-kind]   parked 2026-11-27
+A label parameter naming a label the caller already has (`A(a:, B) := B & (a: 5)`), read but never placed: the label mark as a reference; users declare a reference as a list in the head.
+Trigger: a user macro that the declared reference (core/operators/bindings/reference) cannot write and the label mark can.
+Source: his label-kinds ruling and his param-reference ruling (the details entry).
+see: core/operators/bindings/label-kinds core/operators/bindings/reference core/holes/bare-condition/bound-condition
+- The declared list in the head is the taken form ("param-reference: yes all four"); the label-mark reference stays
+  a compile error naming the list form (core/operators/bindings/label-kinds, "The reference kind by the label mark").
+modes: n/a (parked: not in the language)
+
+### A declared label interface   [parked/ideas/label-interface]   parked 2026-11-27
+Every parameter may carry a declared label interface in the export list's named forms, checked at the call and the body's only access to its argument's labels; placed or not is a separate question.
+Trigger: the owner's answer to reference-example-checked, or the spelling step for a head's list and a place's list.
+Source: a critic round's general form, filed by the manager as a unification candidate (the details entry).
+see: core/labels/export/named-list core/operators/bindings/reference lib/convention/argument-labels core/operators/bindings/macro-types lib/planned/standard core/holes/bare-condition/bound-condition core/labels/rule/argument-place
+- Its members, each a piece today: the named list on a place (placed, declared at the place); the declared
+  reference (unplaced, declared in the head); the `(=)` convention (placed, interface "all"); macro-types' meaning
+  (ii) (an interface named by a binding's exports); the natives' reference kind (unplaced, by value); a bound
+  condition's target, which the head supplies.
+- Under it the strong lean reads "an undeclared interface is empty"; the four param-reference lines, named-list-use's
+  three edges and the door are one rule set. No rule changes and no answer moves by filing it.
+- Unlocks, each with its trigger: `checked` and his named-list purpose (a date-shaped argument) get one spelling,
+  placed and declared (the answer to reference-example-checked); macro-types' meaning (ii) closes as "the interface is
+  a binding's export set" (macro-types next asked); whether the call carries a mark, and the head's list against the
+  place's list, settled once (the spelling step); `weekday_of` written as a user macro (the planned natives defined).
 modes: n/a (parked: not in the language)
 
 ### A label pre-defined as a symbol   [parked/ideas/label-symbol]   parked 2026-11-23
