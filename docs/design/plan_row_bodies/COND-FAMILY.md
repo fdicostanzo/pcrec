@@ -12467,3 +12467,11 @@ uses the caller (`Y.a.h`); a sent label placed above a label of the body's; wher
 message naming the wrong cause; no row for "an argument's place" in the label-kind table. Seven questions for him,
 by slug: carve-out-reading, hits-through-hit, list-over-label, forwarded-place, caller-label-export,
 sent-over-body-label, named-list-use.
+
+### 2026-11-27 OWNER RULING — gate-beside-direct: "legal"
+tags: core/labels/rule/one-path core/labels/rule/alone-as-middle
+His words, verbatim: "gate-beside-direct: legal"
+RULED (answered by slug): the first reading as asked, for `[n = (P SEQ /,(?<d>\d)/)] & (n.d: <5)`, P :=
+`/(?<d>\d)/`: "Legal, n's own `d`: nothing is skipped"; `n.P.d` reads P's. It is what the documents print since
+lane predfix112 (a marked reading there); the mark becomes his ruling at the next fold. It keeps body-own-name
+without an exception; gate-beside-label stands for a read where every candidate needs a skip.
