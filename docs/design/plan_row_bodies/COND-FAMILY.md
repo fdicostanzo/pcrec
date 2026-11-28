@@ -12345,3 +12345,30 @@ RULED (answered by slug): the first reading as asked, for `[n = (P SEQ Q)] & som
 is never skipped, array or not"; the lean as put: ""Exempt" was about needing exactly one target, not about
 gates, and keeping the gate absolute makes it a rule with no exceptions." The documents' marked reading in
 core/labels/rule/one-path ("The array form through a gate") becomes ruled at the fix after review r112.
+
+### 2026-11-27 MANAGER — review r112 (predfold1127): the dispositions; a TELLING of the manager's corrected; no owner words
+tags: core/labels/rule/one-path core/labels/paths/call-prefix core/labels/export/flat-read-outside lib/convention/argument-labels
+Review r112 (design; one opus coordinator, two opus critics; subject the fold merged at 860331f12) returned 15
+findings consolidated to F1 to F8 and COORD-1, none refuted; evidence green at the freeze (lint 10099/0, model
+13/0). Dispositions RULED by the manager (`/var/tmp/pcrec-pcrec/scratch/crit-predfold1127/dispositions.md`): all
+accepted.
+THE MANAGER'S TELLING CORRECTED (F2): one-path line 4 as put to him said "Four printed reads become errors that
+ask for the full path". The round's count: SEVEN printed reads move (`date.v`; `[c = B(A)]` `c.d`; two-sources
+`B.d`; call-prefix `B.d`; `W.h`; `pair.d`; `list_of.h`), plus `when.h` in prose; and for five of them (`W.h`,
+`c.d`, `B.d`, `pair.d`, `list_of.h`) NO full path exists: the caller must label the argument. `list_of.h`, the
+plain read of a provided piece, was never named to him. To be told to him; his ruling stands unless he objects.
+Also to be told (F1, informational): one-path reverses the sequence half of flat-read-outside (a) (2026-11-21)
+and revives its rejected candidate (c); it reverses transform-export's two stated cases (2026-11-22).
+body-own-name (F3) is BROADER than a call: under the lane's reading (f) ("a target reached directly beside one
+reached by a skip counts as two") any binding's own label beside a same-name label under one of its steps cannot
+be named; it collides with the manager's recorded consequence of argument-label, "the body's own is `B.d`". Re-put
+to him in the general form. The run for the other reading (`docs/dev/lanes/predbang_evidence/ownname.py`, pasted
+from `ownname.out`):
+```
+[c = B(A)] & (c.d: <5), A := /(?<d>\d)/, B(rx) := /${rx}-(?<d>\d)/ ; the body's own d:
+   WHOLE 7-3 HOLDS 3-7 FAILS | SEARCHED 3-7 7-3: 7-3@4 | FIND-ALL 7-3 3-7 1-2 9-9: ['7-3@0', '1-2@8']
+X & (X.d: <5), X := [a = P] SEQ /;(?<d>\d)/, P := /(?<d>\d)/ ; X's own d:
+   WHOLE 7;3 HOLDS 3;7 FAILS | SEARCHED 3;7 7;3: 7;3@4 | FIND-ALL 7;3 3;7 1;2 9;9: ['7;3@0', '1;2@8']
+the same X, the labelled part's d by its full path X.a.d:
+   WHOLE 7;3 FAILS 3;7 HOLDS | SEARCHED 7;3 3;7: 3;7@4 | FIND-ALL 7;3 3;7 1;2 9;9: ['3;7@4', '1;2@8']
+```

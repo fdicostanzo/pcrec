@@ -1,0 +1,6 @@
+[c = B(A)] & (c.d: <5), A := /(?<d>\d)/, B(rx) := /${rx}-(?<d>\d)/ ; the body's own d:
+   WHOLE 7-3 HOLDS 3-7 FAILS | SEARCHED 3-7 7-3: 7-3@4 | FIND-ALL 7-3 3-7 1-2 9-9: ['7-3@0', '1-2@8']
+X & (X.d: <5), X := [a = P] SEQ /;(?<d>\d)/, P := /(?<d>\d)/ ; X's own d:
+   WHOLE 7;3 HOLDS 3;7 FAILS | SEARCHED 3;7 7;3: 7;3@4 | FIND-ALL 7;3 3;7 1;2 9;9: ['7;3@0', '1;2@8']
+the same X, the labelled part's d by its full path X.a.d:
+   WHOLE 7;3 FAILS 3;7 HOLDS | SEARCHED 7;3 3;7: 3;7@4 | FIND-ALL 7;3 3;7 1;2 9;9: ['3;7@4', '1;2@8']
