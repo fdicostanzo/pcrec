@@ -638,3 +638,13 @@ Design documents and evidence only. Worktrees predfold1127, predfix112 free to p
 study lane) is still running: leave it. Proposed pcrec-critic skill edit (r112 COORD-1, repeating r111's): before
 a design-mode evidence re-run, grep the successor chain's models for branch refs read by name and create each at
 the freeze; a by-name ref is a finding.
+
+P-36 (2026-11-28) done: a third fold with review r113 ruled, applied and filed. Branch lane/pred-rev28, tip after
+this commit (the merge of lane/predfix113 is 30c3ca5a1). Five more owner rulings folded (gate-beside-direct,
+carve-out-reading, caller-label-export, named-list-use, param-reference); his strong lean no-path-through-argument
+applied and MARKED at 40 sites (not a ruling yet). Reports docs/dev/lanes/predarg_report.md (a study),
+predfold1128_report.md, predfix113_report.md; review docs/dev/reviews/2026-11-27-r113-predfold1128.md. Lint failed
+0; plan-lint green. Design documents and evidence only. Worktrees predarg, predfold1128, predfix113 free to prune
+after your merge. Plan-row status for [COND-FAMILY]: seven owner questions open (owner.md of the predicate
+session lists them); no build asked. Proposed pcrec-critic skill edit (r113): create and check every evidence
+scratch directory in its own command before a design-mode re-run.

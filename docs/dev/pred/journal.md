@@ -1356,3 +1356,6 @@ wake.md says (read the draft WHOLE first; A4 is a ruled-words finding: read his 
 - Review r113 handed back (no answer-level finding), dispositions ruled, coordinator stopped. LAUNCHED fix lane
   predfix113 (opus; worktree cut at 8fa0108f9; applies r113, files the review; no new ruling; lanewatch armed).
   After it: merge, P-36 done line, tell main.
+- Lane predfix113 DELIVERED (lanewatch DONE; lint 10603/0; model 11/0; 14 plants caught; marker at 40 sites),
+  merged at 30c3ca5a1, stopped. Review r113 filed by it. P-36 done line; main told. Nothing running. Seven owner
+  questions open; the owner is away for the night.
