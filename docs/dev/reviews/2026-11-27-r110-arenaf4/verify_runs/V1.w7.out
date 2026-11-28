@@ -1,0 +1,12 @@
+PASS: W7 control (planted hand-kept strand): all 1 trial(s) read STRANDED (the planted hand-kept arena): the window SEES a stranded arena
+pcrec: warning: large artifact: 537859 bytes of emitted C source (16863 of code), over --warn-emit-bytes=250000. Unroll factor K=8 (default); prefilter language n/a (no VM prefilter). See docs/spec/tuning.md for the levers, or raise/disable the warning with --warn-emit-bytes.
+PASS: W7/W3 (unicode-props/utf8): every one of 528 forced allocation failures was diagnosed (rc == -1, non-empty message), never abort/signal/success, no new stranded heap
+INFO: W7/W6 lent window (compound split): 0 trial points (the lent window is empty by construction after F4: the pre-fix control and sabotage (9)'s floor, not a gate)
+
+checks passed: 2
+checks failed: 0
+PASS: alloc_check: 2 witness(es) — every forced allocation failure was diagnosed
+
+checks passed: 1
+checks failed: 0
+alloc rc=0
