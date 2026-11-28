@@ -12491,3 +12491,16 @@ core/labels/export/export-list. The manager's reading: it is the body author's r
 (Bo), available today; nothing new to rule.
 STILL A STRONG LEAN, not ruled: the base statement no-path-through-argument itself ("a path never goes through an
 argument's place ..."); the manager asks it as a ruling once the study's other questions are settled.
+
+### 2026-11-27 OWNER RULING — caller-label-export: "agree first read. If they didn't want to export use _a label."
+tags: core/labels/rule/one-path core/labels/export core/labels/export/arguments core/labels/paths/shorthand-outside core/labels/rule/stacked-chain
+His words, verbatim: "caller-label-export: agree first read. If they didn't want to export use _a label."
+RULED (answered by slug): the first reading as asked, for Y := `[c = B([a = A])] SEQ "!"`, B(rx) :=
+`/${[p = rx]}xx/`: "The label is Y's own text, so Y exports it like any label it writes": `Y.a.h` legal;
+`Y.c.a.h` "an error: that path goes through B's argument place". The lean as put: "A label the sender writes is
+the sender's own and travels with the sender's exports; only the path through the call's own label is a path
+through the argument's place." His second sentence gives the sender's way to keep it in: an underscore label
+(`[_a = A]`), private as any underscore label is.
+The manager's readings, for the fold to test: stacked-chain's stranded `X.c.h` is re-spelled by Y labelling the
+argument (`X.a.h`); shorthand-outside's contrast stands (the implicit name an error, the written label legal by
+its own name, `pub.A.h` for `[pub = B([A = A])]`).
