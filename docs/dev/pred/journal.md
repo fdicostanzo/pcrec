@@ -1359,3 +1359,5 @@ wake.md says (read the draft WHOLE first; A4 is a ruled-words finding: read his 
 - Lane predfix113 DELIVERED (lanewatch DONE; lint 10603/0; model 11/0; 14 plants caught; marker at 40 sites),
   merged at 30c3ca5a1, stopped. Review r113 filed by it. P-36 done line; main told. Nothing running. Seven owner
   questions open; the owner is away for the night.
+- Main merged P-36 (lane/pred-rev28 at a59768a50) into main and pushed (ba4d73c20); it prunes predarg,
+  predfold1128, predfix113. Session at rest: nothing running; seven owner questions queued (wake.md).

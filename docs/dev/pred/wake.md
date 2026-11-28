@@ -8,8 +8,8 @@ reviewed, fixed and delivered. Committed docs win on any disagreement.
 
 - Branch `lane/pred-rev28` (worktree `worktrees/pred`), tip = the close commit; lint failed 0; plan-lint green.
 - ON MAIN (merged by main at b35175102, P-35): the first two folds of this session, reviews r109, r111, r112.
-- DELIVERED, awaiting main's merge (P-36): the third fold (lane predfold1128) with review r113 ruled, applied
-  (lane predfix113) and filed; study `docs/dev/lanes/predarg_report.md`. Check `git log main` for the merge.
+- ON MAIN too (merged by main at ba4d73c20, P-36): the third fold (lane predfold1128) with review r113 ruled, applied
+  (lane predfix113) and filed; study `docs/dev/lanes/predarg_report.md`.
 - TWENTY-FIVE owner rulings of 2026-11-25 and 2026-11-27 are in the documents: drop-not, array-argument,
   brace-counts, map-creator, string-literals; bang-split, and-not, sent-label-wall, label-needs-mark,
   skip-past-wall, equivalence-inside, alone-as-middle, shorthand-outside, group-node, peek-name,
