@@ -12790,3 +12790,37 @@ WHOLE 2024 HOLDS
 WHOLE 2024-02-29 FAILS
 SEARCHED x 2024-02-29 ('2024', 2)
 FIND-ALL 2024-02-29 1999 12345678 [('2024', 0), ('1999', 11), ('1234', 16), ('5678', 20)]
+
+### 2026-11-28 OWNER RULING — part-of-argument: "agree 1-4 although I don't like 3 but I understand it"; line 5: the implicit label "limited to a binding or arg but not a path"
+tags: core/operators/bindings/reference core/labels/paths core/labels/rule/paths core/labels/backreferences
+Asked as a question with the slug; his words, verbatim: "part-of-argument: agree 1-4 although I don't like 3 but
+I understand it. 5. refers to the local implicit label which we could simply say for now is limited to a binding
+or arg but not a path." Class: RULING on lines 1 to 4 as asked; line 5 answered by him in his own words.
+The lines as asked (quoted):
+"1. A path in pattern position places the part the path names, as written under its label. It works on a binding
+as well as an argument: `isodate.year` anywhere.
+2. The path follows the ordinary path rules: gates named, exactly one such label. A label the argument lacks is
+an error at the call.
+3. You get the part's text, not its surroundings. A filter or condition written outside the part does not come
+along (with `date := isodate & (year: < 2100)`, `date.year` is still any four digits).
+4. A part that refers outside itself, such as a `\k<x>` to a group not in the part, is a compile error.
+5. The placement is a gate like any other. I would name it by the last step, so `Y(isodate) & (year: < 2100)`
+reads it in the body, unless you write a label on it."
+The manager's reading of his line 5: a placed PATH makes no implicit label ("for now"); the implicit label exists
+only for a binding or an argument placed by its bare name; to read a placed part, label it (`[y = date.year]`).
+So `Y(isodate) & (year: < 2100)` and `(date.year: ..)` after it are compile errors for now. His dislike of line 3
+is recorded as such (no change asked). Told with it: param-reference line 4 is reworded to "reads in a condition
+and never places"; the context-loss line is printed as a run example.
+The manager's readings for the fold to test: the dollar form `$date.year` stays the VALUE; the labels INSIDE the
+placed part come with it (the part is a crossing, a gate, nameless until labelled, so they are reached only
+under a written label); a part under a loop or optional places its text once (the quantifier is outside it).
+
+### 2026-11-28 MANAGER — the run for the question last-placement (no owner words)
+tags: core/labels/paths/binding-prefix
+`A := [g = digit]`, `B(rx) := (rx & (rx.g: < 5)) seq (rx & (rx.g: < 5))`, `B(A)`, each `rx.g` reading the
+placement written just before it (pasted; scratch `pred/lastplace.py`):
+WHOLE 34 HOLDS
+WHOLE 37 FAILS
+WHOLE 73 FAILS
+SEARCHED 37 34 [('34', 3)]
+FIND-ALL 12 37 40 [('12', 0), ('40', 6)]
