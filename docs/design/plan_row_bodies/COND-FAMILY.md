@@ -12954,3 +12954,24 @@ without a printed line; F6 a named group around a hole against label-names-gate 
 group-over-hole); F7 a gate skipped across `|` beside a direct target (pre-existing; an owner question with
 branch-in-loop). To tell him: F8 (a reference argument placed twice now reads the last by his own rule), F14 (a
 label the caller writes in an argument changes whether the body's `rx.g` is legal: `rx.a.g`).
+
+### 2026-11-28 OWNER RULING — list-opens-one-step: "a list provides [no] path element to the target ... p is hidden from outside (and hidden from inside starting at a)"
+tags: core/labels/rule/list-over-label core/labels/export/export-list core/labels/rule/gates
+Asked as a question with the slug (four lines: 1. over a binding's use or a parameter, as today; 2. "Over a
+written label (`[(=) = [p = rx]]`): `p` is not visible outside; what is under `p` comes up (`B1.h`). Inside the
+body `p.h` still works."; 3. a named list passes up only what it names and the body may read those bare, an
+unnamed list is a pass-through with nothing made visible in the body; 4. under a label (`[p = [(=) = rx]]`) the
+label is the gate again; the manager's lean: yes to all four, with a compile error for a list that passes
+nothing).
+His words, verbatim: "list-opens-one-step: in terms of path, each label level is a path and a list provides so
+path element to the target
+
+[a= [(=) = [p = rx]]]
+There is no path from a to p therefore p is hidden from outside (and hidden from inside starting at a)"
+Class: RULING (answered by slug, in his own words). The manager's reading of it (said to him the same turn):
+"so" is "no" (phone autocorrect): a list is no step of a path and gives the thing it is written over no path
+element; so the label `p` under a list cannot be reached from above it (`a.p`, `a.p.h` are compile errors, from
+outside and inside alike), while a path that STARTS at `p` inside the body (`p.h`) is untouched. That is line 2's
+first half in his words. Line 2's second half (what is under `p` comes up: `a.h`, `B1.h` legal) is the asked
+statement he answered under the slug and the manager takes it as ruled with it, saying so to him. NOT answered:
+the compile error for a list that passes nothing (stays the manager's proposal).
