@@ -1379,3 +1379,4 @@ wake.md says (read the draft WHOLE first; A4 is a ruled-words finding: read his 
   IN FLIGHT. Review number to be asked of main before the critic round.
 - Queue left for him: sent-over-body-label, list-over-label (the lane prints what the gate rule derives);
   the derived answers of label-above-call and forwarded-place to SHOW him; the later list in wake.md.
+- Main gave review number r114 for predfold1129 (design); main is closed for reset, next free r115.
