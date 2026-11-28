@@ -1,0 +1,5 @@
+Coordinator re-runs at the freeze 5248d8a1c (2026-11-27 ~23:35-23:50), in R/tree:
+- predfold1128_model.py FULL (SUCCDIR set): last line `predfold1128_model: 16 checks, 0 failed`
+  (SUCCESSOR128: 21 models read, 88 reds, all as declared). PASS/FAIL lines identical to the committed model.out.
+- scripts/pred_doc_lint.py: `pred_doc_lint: checks passed 10524, failed 0` (3 soft-cap L7 WARNs).
+- Sabotage not re-run (committed sabotage.out: see its last lines).
