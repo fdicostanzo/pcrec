@@ -1,0 +1,83 @@
+P: W(/(?<h>\d)/, /;(?<h>\d)/) & (W.h: "3")
+B: W(a, b) := [(=) = a] SEQ [(=) = b]
+T: 7;3 3;7
+
+P: B(A)
+B: A := [g = /\d/]
+B: B(rx) := rx SEQ ";" SEQ rx & some(@rx.g, "7")
+T: 3;7 7;3 3;3
+
+P: A SEQ ";" SEQ A & some(@A.g, "7")
+B: A := [g = /\d/]
+T: 3;7 3;3
+
+P: A SEQ ";" SEQ (A)? & (A.g: <5)
+B: A := [g = /\d/]
+T: 7;3 3;7
+
+P: [aa = /(?<h>\d)/] SEQ ";" SEQ ([aa = /(?<h>\d)/])? & (aa.h: <5)
+T: 7;3 3;7 3;
+
+P: N([a = /(?<h>\d)/]) & (N.h: <5)
+B: N(rx) := /${[(=h) = rx]}/
+T: 3 7
+
+P: /(?<g>${A})x/ & (g.h: <5)
+B: A := /(?<h>\d)/
+T: 3x 7x
+
+P: [g = A] SEQ /x/ & (g.h: <5)
+B: A := /(?<h>\d)/
+T: 3x 7x
+
+P: [n = (P | /a(?<d>\d)/)] & (n.d: <5)
+B: P := /(?<d>\d)/
+T: 3 7 a3 a7
+
+P: B(A)
+B: A := [g = /\d/]
+B: B(rx) := (rx | (rx SEQ "!")) & (rx.g: <5)
+T: 3 3! 7!
+
+P: ([r = A] | ([r = A] SEQ "!")) & (r.g: <5)
+B: A := [g = /\d/]
+T: 3 3! 7
+
+P: B(A)
+B: A := [g = /\d/]
+B: B(rx) := (rx SEQ ";"){2} & (rx.g: <5)
+T: 7;3; 3;7;
+
+P: B([a = A])
+B: A := [g = /\d/]
+B: B(rx) := rx & (rx.g: <5)
+T: 3 7
+
+P: B(A)
+B: A := [g = /\d/]
+B: B(rx) := rx SEQ /${$rx.g}/
+T: 33 37
+
+P: B(A)
+B: A := [g = /\d/]
+B: B(rx) := (/\d/ & (rx.g: <5)) SEQ rx
+T: 13 17 31
+
+P: B(A)
+B: A := [g = /\d/]
+B: B(rx) := /${[(=g) = rx]}x/ & (g: <5)
+T: 3x 7x
+
+P: (A SEQ /\d/) & (/\d/ SEQ A) & (A.h: <5)
+B: A := /(?<h>\d)/
+T: 33
+
+P: B(A) & (B.g: <5)
+B: A := [g = /\d/]
+B: B(rx) := rx SEQ ";" SEQ rx
+T: 3;3
+
+P: B(A) & (B.A.g: <5)
+B: A := [g = /\d/]
+B: B(rx) := rx SEQ ";" SEQ rx
+T: 3;3

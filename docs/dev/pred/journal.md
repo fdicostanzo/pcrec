@@ -1359,3 +1359,44 @@ wake.md says (read the draft WHOLE first; A4 is a ruled-words finding: read his 
 - Lane predfix113 DELIVERED (lanewatch DONE; lint 10603/0; model 11/0; 14 plants caught; marker at 40 sites),
   merged at 30c3ca5a1, stopped. Review r113 filed by it. P-36 done line; main told. Nothing running. Seven owner
   questions open; the owner is away for the night.
+- Main merged P-36 (lane/pred-rev28 at a59768a50) into main and pushed (ba4d73c20); it prunes predarg,
+  predfold1128, predfix113. Session at rest: nothing running; seven owner questions queued (wake.md).
+- 2026-11-28: main reports CI red on the P-36 merge: `make test-doc-lint`'s budget check (`entry -g .` page 1,
+  4102 of 4096 bytes: the new long predicate entries). Not a document fault; main fixes `scripts/entry`. From now
+  on `make -s test-doc-lint` is a pre-delivery check of mine and of every lane brief (reproduced on the branch:
+  17 passed, 1 failed, 2.5 s). Asked main to add it to the skill's "no make except" line.
+- Main's `scripts/entry` fix (c5d95a2e4) merged back; the branch is green on pred_doc_lint, test-plan-lint and
+  test-doc-lint. The skill's make line now names both targets (main's edit). At rest.
+
+## 2026-11-28 — eleventh session (continues the tenth after a compaction)
+- Owner back with /q. SEVEN rulings, each recorded verbatim the same hour (record entries dated 2026-11-28):
+  reference-example-checked (the sentence STANDS; my lean, falls, not taken), named-list-body-read (legal),
+  label-names-gate (yes all five: a label on an outside binding/call/parameter is the gate's name, never
+  skipped), argument-is-gate (yes all five: ENDS the strong lean no-path-through-argument; `Y.c.a.h` legal),
+  part-of-argument (lines 1-4; a placed path makes no implicit label), last-placement (reverses binding-prefix's
+  error), same-path-last (one-path counts distinct full paths; my wording of one-path corrected to his sentence).
+- Lane predfold1129 (opus) LAUNCHED on branch lane/predfold1129 from 43bbce01f: census first, then the fold.
+  IN FLIGHT. Review number to be asked of main before the critic round.
+- Queue left for him: sent-over-body-label, list-over-label (the lane prints what the gate rule derives);
+  the derived answers of label-above-call and forwarded-place to SHOW him; the later list in wake.md.
+- Main gave review number r114 for predfold1129 (design); main is closed for reset, next free r115.
+- Lane predfold1129 DELIVERED (tip f154e5d0b), accepted, merged at a156faf93, stopped: lint 10658/0; model 10
+  checks 0 failed; plan-lint and doc-lint green. Census at 43bbce01f: 413 printed programs, 120 not parsed, 227
+  reads judged; error to legal 17 base + 10 details; legal to error 13 base (each re-spelled, equal answers);
+  marker 40 -> 0. New pieces core/labels/rule/gates, core/labels/paths/placed-part. Lane's new question:
+  stacked-across-place (`Y.c.p.h`). Critic round r114 LAUNCHED (coordinator crit-predfold1129). IN FLIGHT.
+- Asked the owner branch-in-loop (run in the record); sent-over-body-label and list-over-label told as derived.
+- Owner CORRECTED my derived reading: stacked labels are ordered steps, the label on the crossing is the gate
+  (`x.h` an error, `x.p.h` legal). My telling "`Y.c.a.h` becomes legal" was wrong (it skips the body's gate `p`);
+  told to him. His answer: `[p = [(=) = rx]]` as `[p = rx]`. Open with him: list-opens-one-step (the other order;
+  my lean now his reading), branch-in-loop.
+- Review r114 back: 28 findings, 0 rejected; all dispositions ACCEPTED (scratch crit-predfold1129/dispositions.md;
+  record entry). Coordinator stopped. Fix lane predfix114 (opus) LAUNCHED from b935b91b6; it files the review.
+  IN FLIGHT. Late rulings go to its rulings file as R-n.
+- To tell him later: F8 (a reference argument placed twice), F14 (a caller's label changes a body's `rx.g`);
+  questions group-over-hole (F6), gate-beside-direct-branch (F7).
+- RULED by the owner: list-opens-one-step (his words: a list is no path element; `p` under a list hidden from
+  above), the empty list a compile error, branch-in-loop "error for now. Ambiguous". Sent to predfix114 as R-1..R-3.
+- Lane predfix114 DELIVERED (tip 05b3b98d0), merged at b1594aeda, stopped: lint 10817/0, model 10 checks 0
+  failed, 18 plants caught; r114 filed. 12 programs legal to error (stacked labels ordered), `B1.h` to legal.
+  Three checks green on the branch. P-37 written; main told. Asked the owner group-over-hole.

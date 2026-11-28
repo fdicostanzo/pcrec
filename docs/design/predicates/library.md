@@ -36,10 +36,10 @@ module: ?
   call (`identity.d`, `hits.hit.d`), and by its own name too: `A.d` is the caller's shorthand label, whatever the
   body does with the spot (core/labels/paths/argument-default; core/labels/ownership). A body using its argument
   alone (`hide`) passes nothing through the call, and there `A.d` is the only read.
-- A label the body writes on a spot passes nothing of the argument by itself (core/labels/rule/argument-place) (the owner's strong lean, entailed by carve-out-reading and caller-label-export; to be confirmed); so `hits` and `occurrences` write the list under their `hit`, `(?<:hit>${[(=) = r]})`, and the caller reads `hits.hit.g` (hits-through-hit: the manager's call under transform-export, told to him, no objection).
+- A label the body writes on a spot names the place's gate (core/labels/rule/argument-place); `hits` and `occurrences` write the list under their `hit`, `(?<:hit>${[(=) = r]})`, and the caller reads `hits.hit.g` (hits-through-hit: the manager's call under transform-export, told to him, no objection).
 - Two spots of one argument (list_of, padded_to) or several arguments (when) holding one name: a read through the
-  call skips the list on each spot, a compile error where two are set in one match (core/labels/rule/one-path; the
-  line "Two arguments"), the branch taken in two branches (padded_to); a label the caller writes on an argument reads
+  call skips the list on each spot and reaches one full path, the last mention where two are set in one match
+  (same-path-last 1; the line "Two arguments"), the branch taken in two branches (padded_to); a label the caller writes on an argument reads
   its spot ("Two arguments, labelled"); a looped spot (rx.repeat): the loop's rules, the array for a group question.
 - A USER's macro gets none of this unless its author writes the list (the reading taken on his two definitions, transform-export;
   parked/ideas/user-doc-traps). His pair, `hide(x) := /${x}/` and `identity(x) := /${[(=) = x]}/`, is the worked
@@ -48,7 +48,7 @@ module: ?
 identity: WHOLE `3` HOLDS, `7` FAILS / SEARCHED `7 3` `3`@2 / FIND-ALL `3 7 4` [`3`@0, `4`@4] (`identity(A) & (identity.d: <5)`, A := `/(?<d>\d)/`, identity(x) := `/${[(=) = x]}/`)
 hide: modes: a compile error (`hide(A) & (hide.d: <5)`, hide(x) := `/${x}/`: hide uses x alone, so its call exports no `d`).
 The same match, either body: WHOLE `3` HOLDS, `7` HOLDS / SEARCHED `7 3` `7`@0 / FIND-ALL `3 7 4` [`3`@0, `7`@2, `4`@4] (`hide(A)`, A := `/(?<d>\d)/`, hide(x) := `/${x}/`; `identity(A)` alike)
-Two arguments: modes: a compile error (`W(/(?<h>\d)/, /;(?<h>\d)/) & (W.h: "3")`, W(a, b) := `[(=) = a] SEQ [(=) = b]`, the shape of when's then branch: two labels `h` are visible from `W`, and no path names one (core/labels/rule/one-path)).
+Two arguments: WHOLE `7;3` HOLDS, `3;7` FAILS / SEARCHED `3;7 7;3` `7;3`@4 / FIND-ALL `7;3 3;7 1;3` [`7;3`@0, `1;3`@8] (`W(/(?<h>\d)/, /;(?<h>\d)/) & (W.h: "3")`, W(a, b) := `[(=) = a] SEQ [(=) = b]`): the shape of when's then branch; one full path, the last mention
 Two arguments, labelled: WHOLE `7;3` HOLDS, `3;7` FAILS / SEARCHED `x3;7 7;3` `7;3`@5 / FIND-ALL `7;3 3;7 1;3` [`7;3`@0, `1;3`@8] (`W([x = /(?<h>\d)/], [y = /;(?<h>\d)/]) & (y.h: "3")`, W(a, b) := `[(=) = a] SEQ [(=) = b]`)
 A binding used alone in a call, through its name: WHOLE `3` HOLDS, `7` FAILS / SEARCHED `7 3` `3`@2 / FIND-ALL `3 7 4` [`3`@0, `4`@4] (`identity(A) & (identity.d: <5)`, A := `/(?<d>\d)/`, identity(x) := `/${[(=) = x]}/`)
 The same read through the argument's name: WHOLE `3` HOLDS, `7` FAILS / SEARCHED `7 3` `3`@2 / FIND-ALL `3 7 4` [`3`@0, `4`@4] (`identity(A) & (A.d: <5)`, A := `/(?<d>\d)/`, identity(x) := `/${[(=) = x]}/`)
@@ -372,9 +372,9 @@ defined: language
   in then", on a user macro of the same shape). `when(A, (A.h: ..))` reads A's `h` by the caller's shorthand label,
   whatever the body does with the spot (core/labels/paths/argument-default; the line "Through the argument's
   name"); `when([a = A], (a.h: ..))` and `when.h` read it too.
-  A name test and then both hold is two through the call: `when.h` is a compile error (core/labels/rule/one-path; run
-  on a user macro of the same shape: lib/convention/argument-labels' line "Two arguments"); `A.h` or the caller's own
-  label reads each.
+  A name test and then both hold is one full path reached twice through the call: `when.h` reads the last, then's
+  (same-path-last, core/labels/rule/one-path; run on a user macro of the same shape: lib/convention/argument-labels'
+  line "Two arguments"); `A.h` or the caller's own label reads each.
 - `//` stands for the owner's `null`, "nothing required"; `when`, `then`, `else` are placeholder spellings.
 WHOLE `12` HOLDS, `1` FAILS / SEARCHED `x123` `x`@0 / FIND-ALL `12 x 123 1x 7` [`12`@0, `x`@3, `12`@5, `x`@10] (`when(^/\d/, /\d\d/, else = /\w/)` is `(?=\d)\d\d|(?!\d)\w`)
 A read in then: WHOLE `3` HOLDS, `7` FAILS / SEARCHED `7 3` `3`@2 / FIND-ALL `3 7 4` [`3`@0, `4`@4] (`W(/(?<h>\d)/, (h: <5))`, W(a, b) := `[(=) = a] SEQ [(=) = b]`)
@@ -431,35 +431,14 @@ needs: core/holes/pattern core/holes/count core/patterns/quantifiers
 see: core/diagnostics/nullable-hit core/labels/label-only-group core/labels/paths/call-prefix
 module: ?
 defined: language
-- A rewrite: x goes into the hole of the loop template, like any hole. Its first path has a plain search's hits,
-  leftmost and non-overlapping, along PCRE's own parse. `min = n` means at least n hits, for any n; there is no `max`.
-- A condition inside x after its group reads that hit's own labels; one BEFORE the group reads the previous hit's
-  value (it carries). Writing the condition after the label gives the plain search's hits.
-- The hits are re-split whenever a condition rejects: `occurrences(/(?<n>\d+)/ & (n: <100))` on `1234` HOLDS with
-  the hits `12`, `34` (a read inside the argument beside its own group travels with the template: legal, the
-  manager's reading (c) of argument-default, run).
-- A nullable argument draws a warning. Its hits (a reading of the ruled premise): the plain search's hits up
-  to and including the first empty hit, which ends the loop; the first `min` hits are always taken and may be
-  empty (`occurrences(/\d*/)` on `1a`: [`1`@0, ``@1]).
-- A condition after it reads the LAST hit's own labels, through the macro's name (`occurrences(/\d+/) &
-  (occurrences.hit: <5)`, one call) or a label on the call; his example:
-  `[ hits = occurences(...) ] & (hits.hit: <5)` (core/labels/paths/call-prefix). A rejecting condition after it
-  re-chooses the hits (re-splits or drops them), so a test on the hits belongs after the atomic `hits` or inside
-  the argument (the lines below).
-- His ruling: "occurences et al should only set labels not captures unless they are so declared." The body's `hit`
-  is the label-only group (core/labels/label-only-group): no caller capture. A group written in the ARGUMENT is the
-  caller's own text (`occurrences(/(?<n>\d+)/)`: n): read through `hit` and the list under it, `occurrences.hit.n`
-  (hits-through-hit, the manager's call; lib/convention/argument-labels) (the owner's strong lean, entailed by carve-out-reading and caller-label-export; to be confirmed), or bare, the caller's own
-  (core/labels/export/arguments); a binding passed whole through `hit` or its name (core/labels/ownership); a
-  caller capture only where the program asks for one (capture-export); its declaring: lib/structural/capture/add-on.
-- A call may name its hit label (his spelling `occurrences(x, label = "foo")`, a placeholder: `label` is reserved
-  metadata). Called twice in one definition, a plain read through the macro's name is binding-prefix's compile
-  error, its fix to label the call (`a.hit`, `b.hit`); a group question through the name reads every call's
-  settings, in order, joined by `SEQ` or by `&` alike; only the index `h[k]` across `&` is refused for now
-  (core/labels/paths/call-prefix, core/labels/paths/binding-prefix; a reading for `&`).
-- A check of the whole text: `J & C & occurrences(M)` matched WHOLE, a parse J of the whole text, a check C on it,
-  M's matches read through the hit list; no `fail` piece is needed. Its SEARCHED shape (each match of M reported as
-  a match of the program) has no ruled spelling.
+- A rewrite: x goes into the hole of the loop template, like any hole. Its first path has a plain search's hits, leftmost and non-overlapping, along PCRE's own parse. `min = n` means at least n hits, for any n; there is no `max`.
+- A condition inside x after its group reads that hit's own labels; one BEFORE the group reads the previous hit's value (it carries). Writing the condition after the label gives the plain search's hits.
+- The hits are re-split whenever a condition rejects: `occurrences(/(?<n>\d+)/ & (n: <100))` on `1234` HOLDS with the hits `12`, `34` (a read inside the argument beside its own group travels with the template: legal, the manager's reading (c) of argument-default, run).
+- A nullable argument draws a warning. Its hits (a reading of the ruled premise): the plain search's hits up to and including the first empty hit, which ends the loop; the first `min` hits are always taken and may be empty (`occurrences(/\d*/)` on `1a`: [`1`@0, ``@1]).
+- A condition after it reads the LAST hit's own labels, through the macro's name (`occurrences(/\d+/) & (occurrences.hit: <5)`, one call) or a label on the call; his example: `[ hits = occurences(...) ] & (hits.hit: <5)` (core/labels/paths/call-prefix). A rejecting condition after it re-chooses the hits (re-splits or drops them), so a test on the hits belongs after the atomic `hits` or inside the argument (the lines below).
+- His ruling: "occurences et al should only set labels not captures unless they are so declared." The body's `hit` is the label-only group (core/labels/label-only-group): no caller capture. A group written in the ARGUMENT is the caller's own text (`occurrences(/(?<n>\d+)/)`: n): read through `hit` and the list under it, `occurrences.hit.n` (hits-through-hit, the manager's call; lib/convention/argument-labels), or bare, the caller's own (core/labels/export/arguments); a binding passed whole through `hit` or its name (core/labels/ownership); a caller capture only where the program asks for one (capture-export); its declaring: lib/structural/capture/add-on.
+- A call may name its hit label (his spelling `occurrences(x, label = "foo")`, a placeholder: `label` is reserved metadata). Called twice in one definition, a plain read through the macro's name reads the last call written before it (binding-prefix, last-placement); to read another, label the call (`a.hit`, `b.hit`); a group question through the name reads every call's settings, in order, joined by `SEQ` or by `&` alike; only the index `h[k]` across `&` is refused for now (core/labels/paths/call-prefix, core/labels/paths/binding-prefix; a reading for `&`).
+- A check of the whole text: `J & C & occurrences(M)` matched WHOLE, a parse J of the whole text, a check C on it, M's matches read through the hit list; no `fail` piece is needed. Its SEARCHED shape (each match of M reported as a match of the program) has no ruled spelling.
 WHOLE `1a2` HOLDS, `12` HOLDS, `1` FAILS / SEARCHED `x1y2` `x1y2`@0 / FIND-ALL `1 2 x 3` [`1 2 x 3`@0] (`occurrences(/\d+/, min = 2)`)
 Plain read, the last hit: WHOLE `a1b3` HOLDS, `a9b3` HOLDS, `a3b9` HOLDS, `a1b22` HOLDS, `ab` FAILS / SEARCHED `x9 3` `x9 3`@0 / FIND-ALL `a9b3 c7` [`a9b3 c7`@0] (`[hits = occurrences(/\d+/)] & (hits.hit: <5)`)
 Every hit, a group question: WHOLE `a1b3` HOLDS, `a9b3` HOLDS, `a3b9` HOLDS, `a1b22` HOLDS, `ab` HOLDS / SEARCHED `x9 3` `x9 3`@0 / FIND-ALL `a9b3 c7` [`a9b3 c7`@0, ``@7] (`[hits = occurrences(/\d+/)] & occurs.none(@hits.hit, >= 5)`)
@@ -482,7 +461,7 @@ defined: language
   occurs.none(@h.hit, >= 100)` (a reading; core/labels/paths/call-prefix).
 - The body's `hit` is the label-only group: a label and no capture (helper-captures: lib/search/occurrences). It is
   the spot the body labels, and the list under it passes the argument's labels on through it (`hits.hit.g`;
-  hits-through-hit, the manager's call; lib/convention/argument-labels) (the owner's strong lean, entailed by carve-out-reading and caller-label-export; to be confirmed). A group written in the argument in place is the
+  hits-through-hit, the manager's call; lib/convention/argument-labels). A group written in the argument in place is the
   caller's own, read bare too (`g`, the last hit's; core/labels/export/arguments). A binding passed whole is read
   through `hit`, or by its own name, the caller's shorthand label (core/labels/ownership; the line "Through the argument's name").
   Reading the hits out as values is the captures level (the opt-in that reads captured text out; lib/builtin/import
@@ -761,10 +740,11 @@ defined: language
   the loop would leave the label unset on one item).
 - Its minimum (zero items) is not stated.
 - Every spot carries the list (wrapper-export; lib/convention/argument-labels): a read through the call, `list_of.h`,
-  sees the item's label at two spots, a compile error (core/labels/rule/one-path); a label the caller writes on the
+  sees the item's label at two spots of one full path, the last item (same-path-last 1); a label the caller writes on the
   argument, `list_of([x = ..])`, reads the last item by the label rules (`x.h`), the array every item.
 WHOLE `7,3,5` HOLDS / SEARCHED `x7,3` `7,3`@1 / FIND-ALL `1,2 3` [`1,2`@0, `3`@4] (`list_of(/(?<h>\d)/, sep = ",")`)
-Through the call: modes: a compile error (`list_of(/(?<h>\d)/, sep = ",") & (list_of.h: "5")`: two labels `h` are visible from `list_of`, one at each spot (core/labels/rule/one-path)).
+Through the call: WHOLE `7,3,5` HOLDS, `7,5,3` FAILS / SEARCHED `x7,5 3,5` `7,5`@1 / FIND-ALL `1,5 3 5` [`1,5`@0, `5`@6] (`list_of(/(?<h>\d)/, sep = ",") & (list_of.h: "5")`): the last item
+
 The last item, by a label on the argument: WHOLE `7,3,5` HOLDS, `7,5,3` FAILS / SEARCHED `x7,5 3,5` `7,5`@1 / FIND-ALL `1,5 3 5` [`1,5`@0, `5`@6] (`list_of([x = /(?<h>\d)/], sep = ",") & (x.h: "5")`)
 
 ### param   [lib/records/param]   reading 2026-11-19

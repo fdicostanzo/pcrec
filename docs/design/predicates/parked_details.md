@@ -892,6 +892,7 @@ readings:
 evidence: review r113, docs/dev/reviews/2026-11-27-r113-predfold1128/ruling.findings.md (RULING-7).
 history:
 - 2026-11-27 (lane predfix113, review r113 RULING-7, PLAN, the manager's dispositions): a new parked piece.
+- 2026-11-28 (lane predfold1129, argument-is-gate; record "2026-11-28 OWNER RULING — argument-is-gate"): the members bullet read "Under it the strong lean reads "an undeclared interface is empty""; the lean is replaced by the ruling, no answer moved.
 
 ## parked/ideas/label-symbol — A label pre-defined as a symbol
 slugs: 
@@ -1365,3 +1366,23 @@ evidence: none (parked).
 history:
 - 2026-11-27 (lane predfold1125, the fold of drop-not, array-argument, brace-counts, map-creator, string-literals, bang-split and and-not): a new parked piece.
 
+## parked/ideas/label-rules-one-form — The label rules as one stated rule
+slugs:
+rulings:
+rejected:
+readings:
+- the five-sentence general form, one definition of "inside" and the one node-by-name table are the review's proposals (review r114 F25, F26, F27), parked as PLAN; the trigger is the manager's — a reading.
+evidence: none (parked).
+history:
+- 2026-11-28 (lane predfix114, review r114 F25, F26, F27; record "2026-11-28 MANAGER — after lane predfold1129 and review r114: the dispositions; no owner words"): a new parked piece, one joint note.
+
+## parked/ideas/branch-last-pass — The branch of a loop's last pass
+slugs: branch-in-loop
+rulings:
+- 2026-11-28 "branch-in-loop: error for now. Ambiguous" (record: "2026-11-28 OWNER RULINGS — a list that passes nothing: "Agree compiler error"; branch-in-loop: "error for now. Ambiguous"")
+rejected:
+readings:
+- the last-pass reading RUN as the model's switch (docs/dev/lanes/predfix114_evidence/ predfix114_model.py OTHER114, LOOPALT114); its answers equal the record's MANAGER run of that day.
+evidence: docs/dev/lanes/predfix114_evidence/ predfix114_model.py OTHER114.
+history:
+- 2026-11-28 (lane predfix114, rulings R-3; record "2026-11-28 OWNER RULINGS — a list that passes nothing: "Agree compiler error"; branch-in-loop: "error for now. Ambiguous""): a new parked piece, the reading "for now" leaves open.

@@ -12657,3 +12657,337 @@ round's words) and an argument holding the listed label in two labelled parts (t
 against one-path). PLAN: the general form the round names, "a declared label interface" (the named list, the
 declared reference, the `(=)` convention, macro-types (ii), the natives' reference kind and bound-condition's
 target as one family): a parked piece with triggers.
+
+### 2026-11-28 OWNER RULING — reference-example-checked: `B.year` in `checked` "uses the temp label that's created locally for binding B"
+tags: core/operators/bindings/reference core/holes/bare-condition/nested-scope core/labels/rule/argument-place core/labels/paths
+Asked as a question with the slug (the statement asked: does param-reference line 4's second sentence, "A plain
+parameter that the body places and then reads stays legal, as today", stand as a NEW rule or fall; the manager's
+lean: it falls; told to him: today's documents refuse `checked`, quoting his three examples of 2026-11-22).
+His words, verbatim: "reference-example-checked:
+checked(B) := B & (B.year: < 2100)
+Originally this was an example in reference but here it's just a pattern arg. The pattern is placed then the year
+is checked. B.year uses the temp label that's created locally for binding B
+Your example:
+B(rx) := /${rx}xx/ & (d: <100)
+This is error because where does d come from? No gate. rx.d would be the gate.
+B(rx) := /${[dd = rx]}xx/ & (dd: <100)
+This is the explicit label so this works as would dd.d if d existed there."
+Class: RULING (answered by slug). The manager's reading of it (said to him in the same turn): the sentence
+STANDS. A body that places a parameter may read the argument's labels through the parameter's name (`B.year`,
+`rx.d`: the shorthand label of binding-as-label, made where the parameter is placed) or through the body's own
+explicit label on the place (`dd.d`); a bare `d` stays an error ("No gate"). The manager's lean (falls) is NOT
+taken.
+The run told with the question (pasted; scratch `pred/checked.py`, `isodate & (isodate.year: < 2100)`):
+WHOLE 2024-02-29 HOLDS
+WHOLE 2150-01-01 FAILS
+SEARCHED x 2150-01-01 1999-12-31 ('1999-12-31', 13)
+FIND-ALL 2024-02-29 2150-01-01 1999-12-31 [('2024-02-29', 0), ('1999-12-31', 22)]
+The manager's readings, to be tested by the fold (none ruled):
+- an argument that has no `year` is a use error at the CALL (as named-list-use), not at checked's definition;
+- "a parameter's label inside the body is not nameable" (core/labels/paths, nested-scope's summary) is REVERSED
+  for the two gated spellings and kept for the bare name;
+- `dd.d` ("as would dd.d if d existed there") is a body's path through its own label INTO the argument: the
+  strong lean no-path-through-argument, never ruled, must be restated as a rule about readers OUTSIDE the body
+  (a caller's `B.dd.d`), or it conflicts with this ruling; to be asked with the lean's confirmation;
+- a parameter placed twice: `rx.d` follows one-path (two labels visible, an error), untested.
+
+### 2026-11-28 OWNER RULING — named-list-body-read: "yes same as before"; his strong lean on arguments "flipped"; and a RECONSIDERATION: a label on an outside binding or argument should not be skipped ("the above needs a.dd.g or dd.g")
+tags: core/labels/export/named-list core/labels/rule/argument-place core/labels/rule/alone-as-middle core/labels/rule/one-path core/labels/rule/paths
+Asked as a question with the slug named-list-body-read (may a body read, bare, a label that its own list on the
+place names: `N2(rx) := /${[(=h) = rx]}/ & (h: <5)`; the manager's lean: legal, "The body reads bare what its own
+list names, and nothing else of the argument"; told with it: with `(=)` a bare read would still be an error).
+His words, verbatim: "named-list-body-read: yes same as before.
+I did have the strong lean against reading through arguments but then we had the discussion about late label
+determination and I flipped.
+The one thing I'm not sure of that we ruled before is (in relation to reading into any outside binding (or arg I
+think)) if you can skip the gate if you label it.
+A := [g = digit]
+B(rx) := [a = /${[dd = rx]}xx/] & (a.g: <7)
+B(A)
+Whether rx is an arg or a binding. I said you needed to specify a gate referring to a situation like above
+without the dd label (rx.g). You read that as saying if there is a label, the gate is open like above is legal
+(this was binding but maybe arg applies as well). I agreed but it honestly hasn't sat right and the above needs
+a.dd.g or dd.g"
+Classes: (1) RULING, named-list-body-read: legal (the manager's reading of "yes same as before": yes to the lean
+as asked). (2) A STATEMENT about his own strong lean no-path-through-argument: he "flipped" after "the discussion
+about late label determination" (the manager's reading: named-list-use's error at the call). NOT a ruling; the 40
+marked sites stay marked until he is asked what replaces the lean. (3) A RECONSIDERATION, class LEAN, of what
+alone-as-middle left standing ("A label someone WROTE (`[a = P]`) is still skipped by rule 4", the piece's
+words): a label written on an outside binding or argument is the gate's name and is not skipped. Nothing ruled;
+asked next as a question, slug label-names-gate.
+What the documents say of his example today: with a BINDING in rx's place, `a.g` is legal (dd skipped, rule 4,
+one `g` visible: one-path); with the ARGUMENT, a compile error by the applied lean (the path passes the
+argument's place).
+The run of the example's answers where the read is legal (pasted; scratch `pred/labgate.py`):
+WHOLE 3xx HOLDS
+WHOLE 7xx FAILS
+SEARCHED 7xx 3xx [('3xx', 4)]
+FIND-ALL 3xx 7xx 4xx [('3xx', 0), ('4xx', 8)]
+
+### 2026-11-28 OWNER RULING — label-names-gate: "yes all five"
+tags: core/labels/rule/alone-as-middle core/labels/rule/one-path core/labels/rule/paths core/labels/rule/kinds core/labels/export/export-list core/labels/rule/argument-place
+Asked as a question with the slug; his words, verbatim: "label-names-gate: yes all five". Class: RULING.
+The statement as asked (quoted):
+"1. Every crossing from one definition's text into another (a binding used, a macro called, a parameter placed)
+is a gate. A gate is one step of the path and is never skipped.
+2. The gate's name is the label written directly on it (`dd`). Where none is written, it is the thing's own name
+(`rx`, `Q`, `B`).
+3. Only a label over text written right there may be skipped. In `[a = /${..}xx/]`, the label `a` sits over a
+literal, so the reader of that line can see what is under it.
+4. So your example needs `a.dd.g` or `dd.g`. A bare `a.g` is an error naming both.
+5. An export list is still the way to flatten on purpose: `[(=) = rx]` lifts the labels up, and then `a.g` is
+legal."
+(The example: `A := [g = digit]`, `B(rx) := [a = /${[dd = rx]}xx/] & (a.g: <7)`, `B(A)`.)
+Told with it: `X := [n = Q]`, `X.d` becomes `X.n.d` unless X writes the list; "An unknown number of printed reads
+move from answers to errors. I have no count; it needs a run over every printed program before the fold"; under
+yes, "one-path then counts only labels over in-place text and lists" (the manager's reading, to be tested).
+It REVISES alone-as-middle's kept sentence "A label someone WROTE (`[a = P]`) is still skipped by rule 4" for a
+label written directly on a binding's use, a macro call or a placed parameter.
+The manager's readings, for the fold to test (none ruled): `[n = (Q)]`, `n.d` stays legal (n is the gate's name
+and is named); a stacked label on a gate (`[a = [b = Q]]`): both are names of the one gate (stacked labels are
+equal names of one spot, label-doors), so `a.d` and `b.d` and `a.b.d` are legal; a label over a parenthesised
+composition (`[n = (P SEQ Q)]`) is over in-place text and skippable, P and Q the gates.
+
+### 2026-11-28 OWNER RULING — argument-is-gate: "yes all five"; a DISCUSSION, "any placement is a binding/arg and any reference is a label"; and a QUESTION, `Y(date) := date.year`
+tags: core/labels/rule/argument-place core/labels/rule/caller-label core/labels/paths/binding-prefix core/operators/bindings/reference core/holes/bare-condition/nested-scope
+His words, verbatim: "argument-is-gate: yes all five.
+
+A := [g = digit]
+B(rx) := rx & (rx.g: < 5)
+
+Discussion Argument as label: you showed an example like above before and I agreed with it but I want to discuss.
+The original idea was that rx is an arg until it's placed then it can be used as a local label like bindings. This
+works if we allow that any placement is a binding/arg and any reference is a label
+B(rx) := rx & (rx.g: < 5) seq  rx & (rx.g: < 5)
+Each rx.g refers to the last placement.
+Question:
+Y(date) := date.year
+This places the year portion only. Does this work? We have not discussed subroutines but that is what this is.
+It's not in a label reference position."
+Classes: (1) RULING, argument-is-gate, on the five lines as asked (quoted):
+"1. A placed parameter is a gate like any other; there is no separate rule for arguments.
+2. Named by the body's label, it is a step anyone may take: `dd.g` inside the body, `B.dd.g` from the caller.
+3. Unlabelled, its name is the parameter's (`rx.g`), which exists only inside the body. From outside, the caller
+reads its own name for what it sent, `A.g`, as today.
+4. A label the argument lacks is an error at the read when the reader can see the argument (the caller), and at
+the call when the reader is the body.
+5. The export list stays the way to flatten: `[(=) = rx]` makes `B.g` legal."
+Told with it and so part of what was ruled: `Y.c.a.h` (caller-label-export's error) becomes legal, "a full path
+that skips nothing"; `Y.a.h` stays legal; under yes "the fold removes the marker at all 40 sites and re-derives
+each line"; label-above-call and forwarded-place "follow from the gate rule; I will show you the derived answers
+instead of asking each". It ENDS the strong lean no-path-through-argument (his statement of the entry before: he
+"flipped") and REVISES caller-label-export for `Y.c.a.h`.
+(2) DISCUSSION (nothing ruled): a parameter "is an arg until it's placed then it can be used as a local label like
+bindings"; "any placement is a binding/arg and any reference is a label"; with two placements "Each rx.g refers to
+the last placement". The record against it, to be told to him: binding-prefix (RULED 2026-11-22, his lean (a)): a
+plain read through a binding's name with the binding used twice or more is a compile error; the piece's reading
+"the error may later relax to the last use without changing an answer"; an explicit part label mentioned twice
+already reads its last mention where the reference is written. To be asked, slug last-placement.
+(3) QUESTION (his): `Y(date) := date.year`, a path in pattern position, "places the year portion only"; "that is
+what this is" (a subroutine). Answered in discussion and put to him as a question, slug part-of-argument.
+The run told with it (pasted; scratch `pred/partof.py`, the part `/\d{4}/`):
+WHOLE 2024 HOLDS
+WHOLE 2024-02-29 FAILS
+SEARCHED x 2024-02-29 ('2024', 2)
+FIND-ALL 2024-02-29 1999 12345678 [('2024', 0), ('1999', 11), ('1234', 16), ('5678', 20)]
+
+### 2026-11-28 OWNER RULING — part-of-argument: "agree 1-4 although I don't like 3 but I understand it"; line 5: the implicit label "limited to a binding or arg but not a path"
+tags: core/operators/bindings/reference core/labels/paths core/labels/rule/paths core/labels/backreferences
+Asked as a question with the slug; his words, verbatim: "part-of-argument: agree 1-4 although I don't like 3 but
+I understand it. 5. refers to the local implicit label which we could simply say for now is limited to a binding
+or arg but not a path." Class: RULING on lines 1 to 4 as asked; line 5 answered by him in his own words.
+The lines as asked (quoted):
+"1. A path in pattern position places the part the path names, as written under its label. It works on a binding
+as well as an argument: `isodate.year` anywhere.
+2. The path follows the ordinary path rules: gates named, exactly one such label. A label the argument lacks is
+an error at the call.
+3. You get the part's text, not its surroundings. A filter or condition written outside the part does not come
+along (with `date := isodate & (year: < 2100)`, `date.year` is still any four digits).
+4. A part that refers outside itself, such as a `\k<x>` to a group not in the part, is a compile error.
+5. The placement is a gate like any other. I would name it by the last step, so `Y(isodate) & (year: < 2100)`
+reads it in the body, unless you write a label on it."
+The manager's reading of his line 5: a placed PATH makes no implicit label ("for now"); the implicit label exists
+only for a binding or an argument placed by its bare name; to read a placed part, label it (`[y = date.year]`).
+So `Y(isodate) & (year: < 2100)` and `(date.year: ..)` after it are compile errors for now. His dislike of line 3
+is recorded as such (no change asked). Told with it: param-reference line 4 is reworded to "reads in a condition
+and never places"; the context-loss line is printed as a run example.
+The manager's readings for the fold to test: the dollar form `$date.year` stays the VALUE; the labels INSIDE the
+placed part come with it (the part is a crossing, a gate, nameless until labelled, so they are reached only
+under a written label); a part under a loop or optional places its text once (the quantifier is outside it).
+
+### 2026-11-28 MANAGER — the run for the question last-placement (no owner words)
+tags: core/labels/paths/binding-prefix
+`A := [g = digit]`, `B(rx) := (rx & (rx.g: < 5)) seq (rx & (rx.g: < 5))`, `B(A)`, each `rx.g` reading the
+placement written just before it (pasted; scratch `pred/lastplace.py`):
+WHOLE 34 HOLDS
+WHOLE 37 FAILS
+WHOLE 73 FAILS
+SEARCHED 37 34 [('34', 3)]
+FIND-ALL 12 37 40 [('12', 0), ('40', 6)]
+
+### 2026-11-28 OWNER RULING — last-placement: "1. yes but local implicit. 2,3,4,5 agree"; and a LEAN with a question: a skipped read to one label mentioned twice "should be the last so all reads are the same"
+tags: core/labels/paths/binding-prefix core/labels/rule/one-path core/labels/rule/alone-as-middle core/labels/flow
+Asked as a question with the slug last-placement; his words, verbatim: "last-placement: 1. yes but local
+implicit. 2,3,4,5 agree.
+Label questions:
+Let's say we took example and added label r to both rx placements. Last label above would work the same. Then
+wrap the whole thing twice in label x then y for an example. So the path would be y.x.r. Does that still refer to
+the last label?
+My concern is also skipping inconsistency. My read is that this is multiple paths to r by those rules. But
+really it should be the last label reference. So would y.r be the last or an error? It should be the last so all
+reads are the same (outside @ reads).
+Thoughts?"
+Classes: (1) RULING, last-placement, on the five lines as asked (quoted):
+"1. A placement makes a label of the thing's own name; a reference is a read of a label. This is your sentence.
+2. Placed more than once, a plain read reaches the last placement written before the read, exactly as an
+explicit label mentioned twice does.
+3. A read written after all of them, such as a filter at the end, reaches the last one.
+4. The group questions are unchanged: `some(@rx.g, ..)` reads every placement, in order.
+5. From outside the definition nothing changes: an unlabelled placement exports nothing."
+Line 1 with his amendment "but local implicit" (the manager's reading: the label a placement makes is the LOCAL
+IMPLICIT one, inside the definition only; line 5 says the same). It REVERSES binding-prefix's compile error
+(2026-11-22, his lean (a)) for a plain read through a name placed twice or more. Told with it: alone-as-middle's
+"used twice, not a step" follows the same rule; the manager's offered sixth line (a warning) was not taken up.
+(2) A LEAN with a QUESTION ("Thoughts?"), nothing ruled: with `r` written on both placements and the whole
+wrapped in `x` then `y`, `y.x.r` is the last `r`; `y.r` (x skipped) "should be the last so all reads are the same
+(outside @ reads)", where one-path as ruled ("exactly one label of that name is visible from the start", line 4
+"It replaces 'in a sequence the last mention wins' for skipped reads") makes it a compile error. Put to him as a
+question, slug same-path-last.
+The run told with it (pasted; scratch `pred/samepath.py`; `[y = [x = [r = A] seq [r = A]]] & (y.x.r.g: < 5)`,
+A := `[g = digit]`, the read reaching the last `r`):
+WHOLE 73 HOLDS
+WHOLE 37 FAILS
+SEARCHED 37 73 [('73', 3)]
+FIND-ALL 73 37 12 [('73', 0), ('12', 6)]
+
+### 2026-11-28 OWNER RULING — same-path-last: "yes all three"
+tags: core/labels/rule/one-path core/labels/flow core/labels/export/named-list
+Asked as a question with the slug; his words, verbatim: "same-path-last: yes all three". Class: RULING.
+The lines as asked (quoted):
+"1. A skip is legal when every label it could reach has the same full path. Then it reads what the full path
+reads: the last mention.
+2. Two different full paths are still an error naming both: `n.d` over `[n = ([a = P] SEQ [b = Q])]` reaches
+`n.a.d` and `n.b.d`.
+3. Gates, walls and the array form are unchanged."
+It REVISES one-path's sentence ("exactly one label of that name is visible from the start") and its line 4 ("It
+replaces 'in a sequence the last mention wins' for skipped reads") to count distinct full paths; the manager's
+wording of one-path is corrected to his sentence "exactly one path possible from the start". Told with it: it
+settles named-list-two-parts (one path twice reads the last; `h` under two different labels is two paths, an
+error at the call: the printed marked reading stands, unmarked); "Of the reads that moved to errors when you
+ruled it, any that reach one path twice come back as legal; the fold reports which"; `date.v` stays an error.
+
+### 2026-11-28 MANAGER — two queued questions derived, not asked; the run for the question branch-in-loop (no owner words)
+tags: core/labels/rule/sent-over-body-label core/labels/rule/list-over-label core/labels/rule/one-path
+The manager's readings (told to him; the fold lane predfold1129 tests them): sent-over-body-label follows from
+label-names-gate with label-doors ("stacked labels are equal names of one spot"): in
+`Rs(l:, v) := /${[l = [p = v]]}xx/` both labels name the one gate, so `x.h` and `x.p.h` are legal.
+list-over-label follows from label-names-gate: in `[(=) = [p = rx]]` the list lifts `p`, the gate's name;
+`B1.h` skips the gate, a compile error; `B1.p.h` is legal (argument-is-gate), and `[p = [(=) = rx]]` passes both.
+The run told with branch-in-loop (pasted; scratch `pred/altloop.py`; `[n = rx.repeat([a = /(?<d>\d)/] |
+[b = /x(?<d>\d)/], min = 1, max = (underscore))] & (n.d: < 5)`, the reading "the branch of the last pass";
+shorter matches tried after the longest):
+WHOLE x73 HOLDS a= 3 b= 7
+WHOLE 3x7 FAILS a= 3 b= 7
+SEARCHED x7 3x7 x73 [('3', 3)]
+FIND-ALL x73 3x7 x12 [('x73', 0), ('3', 4), ('x12', 8)]
+
+### 2026-11-28 OWNER, a CORRECTION of the manager's reading on sent-over-body-label ("stacked" are "ordered as usual"; "p is a gate"); and DISCUSSION on list-over-label: `[(=) = rx]` "is a pass thru export"
+tags: core/labels/rule/sent-over-body-label core/labels/rule/list-over-label core/labels/rule/gates core/labels/export/export-list core/labels/rule/caller-label
+To the manager's telling of two DERIVED answers (not asked as questions; "Object if either looks wrong":
+sent-over-body-label legal for `x.h` and `x.p.h` over `Rs(l:, v) := /${[l = [p = v]]}xx/`, "the two labels are
+stacked on one gate, and you ruled stacked labels equal names of one spot"; list-over-label an error for `B1.h`
+over `[(=) = [p = rx]]`, "`B1.p.h` is legal, and `[p = [(=) = rx]]` passes both").
+His words, verbatim: "sent-over-body-label: this was refined and is not a rule. "stacked" are not the same but
+ordered as usual. Sometimes you can skip the upper stack label per usual skip rules. Here however you can't
+because p is a gate.
+
+list-over-label:  need more specific examples.
+
+[p = [(=) = rx]]
+Is interesting as it is basically the same as just using the p label.
+
+[(=) = rx]
+I'm thinking this does export the labels but since they are not mentioned, they are not locally visible. It is a
+pass thru export. The above wrap of p puts them behind p again which makes it the same as if you'd used p alone."
+Classes: (1) his CORRECTION, by slug, of a reading told to him (the manager did not ask it as a question; put back
+to him for a yes as the read `x.p.h` legal, `x.h` a compile error). Stacked labels are ORDERED steps (the record:
+path-rules, 2026-11-23, "Stacked labels chain"; the manager's "stacked labels do not chain" withdrawn that day);
+the label written directly on the crossing (`p`) is the gate and is never skipped; an upper label may be skipped
+"per usual skip rules". WITHDRAWN by the manager: the reading in the label-names-gate entry "a stacked label on a
+gate: both are names of the one gate ... `a.d` and `b.d` and `a.b.d` are legal" (`a.d` skips the gate `b`), and
+the lane's printed readings that rest on it (sent-over-body-label `x.h` legal; stacked-across-place `Y.c.p.h`).
+A TELLING OF THE MANAGER'S NOW IN DOUBT, to be told to him: with argument-is-gate he was told "`Y.c.a.h` ...
+becomes legal, as a full path that skips nothing"; with the body's `p` on the place it skips the gate `p`.
+(2) DISCUSSION (class LEAN: "I'm thinking"), nothing ruled: `[(=) = rx]` exports the argument's labels as a
+pass-through, "not locally visible" because not mentioned; `[p = [(=) = rx]]` "is basically the same as just
+using the p label". The manager's "`[p = [(=) = rx]]` passes both" is WITHDRAWN. list-over-label is re-put with
+specific examples.
+
+### 2026-11-28 OWNER, on list-over-label: `[p = [(=) = rx]]` "as if just [p=rx]"; `[(=) = [p = rx]]` "let's discuss ... the outer export would hide the inner p label from outside"
+tags: core/labels/rule/list-over-label core/labels/export/export-list core/labels/rule/gates
+To the re-put question list-over-label (a six-row table of holes, `${rx}`, `${[p = rx]}`, `${[(=) = rx]}`,
+`${[(=h) = rx]}`, `${[p = [(=) = rx]]}`, `${[(=) = [p = rx]]}`, and three lines: an unnamed list is a
+pass-through and makes nothing visible in the body; a named list does both; a label and a list on one place, in
+either order, mean the label alone).
+His words, verbatim: "${[p=[(=) = rx]]} as if just [p=rx]
+
+${[(=) = [p=rx]]} let's discuss because I think the outer export would hide the inner p label from outside."
+Classes: the first sentence his ANSWER for that row (as the lean); the second a DISCUSSION with a LEAN ("I
+think"), against line 3's "in either order". Nothing else of the table is answered; list-over-label stays open.
+The record on what a list takes (told to him): core/labels/export/export-list, ruled 2026-11-22 on his proposal
+"[d = isodate] exports all. How about this: [(=year) = isodate]"; the piece's summary: "the binding takes the
+listed labels of the part as labels of its own (exported; read bare inside it) and nothing else of the part";
+the forms table (a reading): `[(=) = isodate]`: "all the part exports".
+
+### 2026-11-28 MANAGER — after lane predfold1129 and review r114: the dispositions; no owner words
+tags: core/labels/rule/gates core/labels/paths/placed-part core/labels/rule/one-path core/labels/paths/binding-prefix
+Lane predfold1129 folded the seven rulings of 2026-11-28 (merged at a156faf93; lint 10658/0; model 10 checks, 0
+failed; census at 43bbce01f: 413 printed programs, 120 not parsed, 227 reads judged; error to legal 16 base + 10
+details; legal to error 13 base, each re-spelled with equal answers; the strong-lean marker 40 to 0).
+Review r114 (design; one opus coordinator, four opus critics): 28 findings, none rejected; evidence green at the
+freeze, "every answer-level finding sits where no check reaches". Dispositions RULED by the manager
+(`/var/tmp/pcrec-pcrec/scratch/crit-predfold1129/dispositions.md`): all accepted as proposed. Answer level: F1
+the stacked labels printed as equal names (settled by his correction of this day); F2 `when.h` left an error
+though `W.h` moved; F3 placements in two `|` branches of a body read the last written, not the branch taken (the
+text right, the engine wrong); F4 a read written before the only placement reads it; F5 last-placement line 4
+without a printed line; F6 a named group around a hole against label-names-gate 2 (an owner question,
+group-over-hole); F7 a gate skipped across `|` beside a direct target (pre-existing; an owner question with
+branch-in-loop). To tell him: F8 (a reference argument placed twice now reads the last by his own rule), F14 (a
+label the caller writes in an argument changes whether the body's `rx.g` is legal: `rx.a.g`).
+
+### 2026-11-28 OWNER RULING — list-opens-one-step: "a list provides [no] path element to the target ... p is hidden from outside (and hidden from inside starting at a)"
+tags: core/labels/rule/list-over-label core/labels/export/export-list core/labels/rule/gates
+Asked as a question with the slug (four lines: 1. over a binding's use or a parameter, as today; 2. "Over a
+written label (`[(=) = [p = rx]]`): `p` is not visible outside; what is under `p` comes up (`B1.h`). Inside the
+body `p.h` still works."; 3. a named list passes up only what it names and the body may read those bare, an
+unnamed list is a pass-through with nothing made visible in the body; 4. under a label (`[p = [(=) = rx]]`) the
+label is the gate again; the manager's lean: yes to all four, with a compile error for a list that passes
+nothing).
+His words, verbatim: "list-opens-one-step: in terms of path, each label level is a path and a list provides so
+path element to the target
+
+[a= [(=) = [p = rx]]]
+There is no path from a to p therefore p is hidden from outside (and hidden from inside starting at a)"
+Class: RULING (answered by slug, in his own words). The manager's reading of it (said to him the same turn):
+"so" is "no" (phone autocorrect): a list is no step of a path and gives the thing it is written over no path
+element; so the label `p` under a list cannot be reached from above it (`a.p`, `a.p.h` are compile errors, from
+outside and inside alike), while a path that STARTS at `p` inside the body (`p.h`) is untouched. That is line 2's
+first half in his words. Line 2's second half (what is under `p` comes up: `a.h`, `B1.h` legal) is the asked
+statement he answered under the slug and the manager takes it as ruled with it, saying so to him. NOT answered:
+the compile error for a list that passes nothing (stays the manager's proposal).
+
+### 2026-11-28 OWNER RULINGS — a list that passes nothing: "Agree compiler error"; branch-in-loop: "error for now. Ambiguous"
+tags: core/labels/export/export-list core/labels/rule/list-over-label core/labels/rule/one-path
+His words, verbatim: "List opens one step:
+[(=) = [year = /\d{4}/]]
+Agree compiler error as there is nothing inside year to export
+
+branch-in-loop: error for now. Ambiguous"
+Classes: (1) RULING, the manager's proposal left open with list-opens-one-step ("a list that passes nothing,
+such as `[(=) = [year = /\d{4}/]]`, being a compile error"): agreed, his reason "there is nothing inside year to
+export". He raised no objection to the reading told to him of list-opens-one-step (`a.p`, `a.p.h` errors; `p.h`
+inside untouched; `a.h` legal).
+(2) RULING, branch-in-loop (asked with the slug; the example `[n = rx.repeat([a = /(?<d>\d)/] | [b = /x(?<d>\d)/],
+min = 1, max = (underscore))] & (n.d: < 5)`; the manager's lean "an error for now, with the message naming both
+full paths and the array form"): "error for now. Ambiguous". "For now": the last-pass reading stays a direction,
+not refused for good (parked with its run, the MANAGER entry of this day).

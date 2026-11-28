@@ -1,0 +1,278 @@
+== library bodies (library.md): chars ([ch = /(?s:.)/])* ; length(S) := chars & (count((chars.ch: /(?s:.)/)): S) ; month_numbered(S) := months & (months.mname.index: S) ; between: >= lo & <= hi
+== months := [mname = [/Jan(?:uary)?/, /Feb(?:ruary)?/, /Mar(?:ch)?/, /Apr(?:il)?/, /May/, /June?/, /July?/, /Aug(?:ust)?/, /Sep(?:tember)?/, /Oct(?:ober)?/, /Nov(?:ember)?/, /Dec(?:ember)?/]]
+PATCH R-5 walk10: 3 lines replaced by 17
+PATCH R-5 path10: 2 lines replaced by 10
+PATCH R-5 g_eval: 2 lines replaced by 3
+predfold1129 census at 43bbce01f: 413 printed programs on three-mode and compile-error lines of the six documents (363 in base files); the reader could not parse 120 of them (104 in base files); 227 reads judged in the rest. Against the in-force engine (predfix113), programs whose legality moves: error to legal (details) 10, error to legal (base) 17, legal to error (base) 13; legal reads whose spot moves: 0
+
+== error to legal, base files (17)
+core.md:602 [compile error] `[n = (Q SEQ Q)] & (n.Q.d: <5)`   Q := /,(?<d>\d)/
+      n.Q.d: GATE129 legal (last mention)
+      in-force engine: refused: `n.Q.d`: `Q` is used more than once here, so it is not a step (a compile error, alone-as-middle)
+core.md:604 [compile error] `[n = (P SEQ B(Q))] & (n.B.p.d: <5)`   P := /(?<d>\d)/; Q := /,(?<d>\d)/; B(rx) := /${[p = rx]}xx/
+      n.B.p.d: GATE129 legal (one)
+      in-force engine: refused: `n.B.p.d`: the path passes B's argument place, which no list opens (a compile error, core/labels/rule/argument-place): read it by the sender's own name (`A.h` for `B(A)`), label the argument, or list 
+core.md:667 [compile error] `B(A) & (B.p.h: <5)`   A := /(?<h>\d)/; B(rx) := /${[p = rx]}xx/
+      B.p.h: GATE129 legal (one)
+      in-force engine: refused: `B.p.h`: the path passes B's argument place, which no list opens (a compile error, core/labels/rule/argument-place): read it by the sender's own name (`A.h` for `B(A)`), label the argument, or list it
+core.md:668 [compile error] `B([a = A]) & (B.a.h: <5)`   A := /(?<h>\d)/; B(rx) := /${[p = rx]}xx/
+      B.a.h: GATE129 legal (one)
+      in-force engine: refused: `B.a.h`: the path passes B's argument place, which no list opens (a compile error, core/labels/rule/argument-place): read it by the sender's own name (`A.h` for `B(A)`), label the argument, or list it
+core.md:719 [compile error] `Y & (Y.c.a.h: <5)`   A := /(?<h>\d)/; B(rx) := /${[p = rx]}xx/; Y := [c = B([a = A])] SEQ "!"
+      Y.c.a.h: GATE129 legal (one)
+      in-force engine: refused: `Y.c.a.h`: the path passes B's argument place, which no list opens (a compile error, core/labels/rule/argument-place): read it by the sender's own name (`A.h` for `B(A)`), label the argument, or list 
+core.md:721 [compile error] `[k = [c = B([a = A])]] & (k.a.h: <5)`   A := /(?<h>\d)/; B(rx) := /${[p = rx]}xx/
+      k.a.h: GATE129 legal (one)
+      in-force engine: refused: `k.a.h`: the path passes B's argument place, which no list opens (a compile error, core/labels/rule/argument-place): read it by the sender's own name (`A.h` for `B(A)`), label the argument, or list it
+core.md:1235 [compile error] `/${A},${A}/ & (A.d: <5)`   A := /(?<d>\d)/
+      A.d: GATE129 legal (last placement)
+      in-force engine: refused: `A.d`: A is used 2 times here; label the part (`[left = A]`) to read one use
+core.md:1297 [compile error] `pair(A) & (pair.d: <5)`   A := /(?<d>\d)/; pair(p) := /${[(=) = p]},${[(=) = p]}/
+      pair.d: GATE129 legal (one)
+      in-force engine: refused: `pair.d`: 2 labels `d` are visible from `pair`, so no step may be skipped: no path from `pair` names one of them alone (a compile error, core/labels/rule/paths rule 4, one-path)
+core.md:1323 [compile error] `B(A) & (B.p.d: <5)`   A := /(?<d>\d)/; B(rx) := /${[p = rx]}-(?<d>\d)/
+      B.p.d: GATE129 legal (one)
+      in-force engine: refused: `B.p.d`: the path passes B's argument place, which no list opens (a compile error, core/labels/rule/argument-place): read it by the sender's own name (`A.h` for `B(A)`), label the argument, or list it
+core.md:1360 [compile error] `B(A) SEQ A & (A.d: <5)`   A := /(?<d>\d)/; B(rx) := /${rx}xx/
+      A.d: GATE129 legal (last placement)
+      in-force engine: refused: `A.`: the binding `A` is used 2 times in this definition, so its name is no shorthand for a label (a compile error, binding-as-label condition 1)
+core.md:1367 [compile error] `[pub = B([A = A])] & (pub.A.h: <5)`   A := /(?<h>\d)/; B(rx) := /${[p = rx]}xx/
+      pub.A.h: GATE129 legal (one)
+      in-force engine: refused: `pub.A.h`: the path passes B's argument place, which no list opens (a compile error, core/labels/rule/argument-place): read it by the sender's own name (`A.h` for `B(A)`), label the argument, or list 
+core.md:1369 [compile error] `B(A) & (B.dd.d: <100)`   A := [d = rx.digits]; B(rx) := /${[dd = rx]}xx/
+      B.dd.d: GATE129 legal (one)
+      in-force engine: refused: `B.dd.d`: the path passes B's argument place, which no list opens (a compile error, core/labels/rule/argument-place): read it by the sender's own name (`A.h` for `B(A)`), label the argument, or list i
+core.md:1383 [compile error] `[pub = B([A = A])] & (pub.A.h: <5)`   A := /(?<h>\d)/; B(rx) := /${[p = rx]}xx/
+      pub.A.h: GATE129 legal (one)
+      in-force engine: refused: `pub.A.h`: the path passes B's argument place, which no list opens (a compile error, core/labels/rule/argument-place): read it by the sender's own name (`A.h` for `B(A)`), label the argument, or list 
+core.md:2491 [three-mode] `/(?<h>\d)/ & (h: >5)`   late := (h: >5)
+      in-force engine: refused: at the binding `late := (h: >5)`: late names a label it does not hold: h
+core.md:2730 [compile error] `checked(isodate)`   checked(B) := B & (B.year: < 2100); isodate := [year = /\d{4}/] SEQ "-" SEQ [month = /\d\d/] SEQ "-" SEQ [day = /\d\d/]
+      B.year (in B:checked): GATE129 legal (one)
+      in-force engine: refused: at the binding `checked(B) := B & (B.year: < 2100)`: checked names a label it does not hold: B__r230.year
+library.md:51 [compile error] `W(/(?<h>\d)/, /;(?<h>\d)/) & (W.h: "3")`   W(a, b) := [(=) = a] SEQ [(=) = b]
+      W.h: GATE129 legal (last mention)
+      in-force engine: refused: `W.h`: 2 labels `h` are visible from `W`, so no step may be skipped: no path from `W` names one of them alone (a compile error, core/labels/rule/paths rule 4, one-path)
+library.md:767 [compile error] `list_of(/(?<h>\d)/, sep = ",") & (list_of.h: "5")`   
+      list_of.h: GATE129 legal (one)
+      in-force engine: refused: `list_of.h`: 2 labels `h` are visible from `list_of`, so no step may be skipped: no path from `list_of` names one of them alone (a compile error, core/labels/rule/paths rule 4, one-path)
+
+== legal to error, base files (13)
+core.md:326 [three-mode] `[ab = ([b = B] | [a = A])] & (ab.l: <20)`   A := /(?<l>\d)\d/; B := /(?<l>\d\d)/
+      ab.l: GATE129 refused: `ab.l`: a `l` sits behind a gate, which is never skipped: write `ab.a.l` or `ab.b.l` (a compile error, label-names-gate)
+      in-force engine: legal
+core.md:381 [three-mode] `atomic([ab = ([b = B] | [a = A])]) & (ab.l: <20)`   A := /(?<l>\d)\d/; B := /(?<l>\d\d)/
+      ab.l: GATE129 refused: `ab.l`: a `l` sits behind a gate, which is never skipped: write `ab.a.l` or `ab.b.l` (a compile error, label-names-gate)
+      in-force engine: legal
+core.md:490 [three-mode] `[n = [m = P] SEQ "!"] & (n.d: <5)`   P := /(?<d>\d)\d/
+      n.d: GATE129 refused: `n.d`: a `d` sits behind a gate, which is never skipped: write `n.m.d` (a compile error, label-names-gate)
+      in-force engine: legal
+core.md:522 [three-mode] `[n = ([a = P] SEQ [b = Q])] & some(@n.d, <5)`   P := /(?<d>\d)/; Q := /,(?<d>\d)/
+      n.d: GATE129 refused: `@n.d`: a `d` sits behind a gate, write `n.a.d` or `n.b.d`; array or not, a gate is never skipped (a compile error, array-gate)
+      in-force engine: legal
+core.md:542 [three-mode] `X & (X.h: <5)`   A := /(?<h>\d)/; X := [n = [m = A]] SEQ "!"
+      X.h: GATE129 refused: `X.h`: a `h` sits behind a gate, which is never skipped: write `X.n.h` (a compile error, label-names-gate)
+      in-force engine: legal
+core.md:545 [three-mode] `X & (X.a.h: <5)`   A := /(?<h>\d)/; B(rx) := /${[p = rx]}xx/; Y := [c = B([a = A])] SEQ "!"; X := [y = Y] SEQ ";"
+      X.a.h: GATE129 refused: `X.a.h`: a `a` sits behind a gate, which is never skipped: write `X.y.c.a.h` (a compile error, label-names-gate)
+      in-force engine: legal
+core.md:566 [three-mode] `[n = ([m = P] SEQ [_x = Q])] & (n.d: <5)`   P := /(?<d>\d)/; Q := /,(?<d>\d)/
+      n.d: GATE129 refused: `n.d`: a `d` sits behind a gate, which is never skipped: write `n.m.d` (a compile error, label-names-gate)
+      in-force engine: legal
+core.md:567 [three-mode] `[n = ([m = P] & [_x = Q])] & (n.d: <5)`   P := /(?<d>\d)\d/; Q := /\d(?<d>\d)/
+      n.d: GATE129 refused: `n.d`: a `d` sits behind a gate, which is never skipped: write `n.m.d` (a compile error, label-names-gate)
+      in-force engine: legal
+core.md:568 [three-mode] `[n = ([m = P] | [_x = Q])] & (n.d: <5)`   P := /(?<d>\d)/; Q := /a(?<d>\d)/
+      n.d: GATE129 refused: `n.d`: a `d` sits behind a gate, which is never skipped: write `n.m.d` (a compile error, label-names-gate)
+      in-force engine: legal
+core.md:989 [three-mode] `pub & (pub.h: <5)`   pub := [a = A] SEQ "!"; A := /(?<h>\d)/
+      pub.h: GATE129 refused: `pub.h`: a `h` sits behind a gate, which is never skipped: write `pub.a.h` (a compile error, label-names-gate)
+      in-force engine: legal
+core.md:1022 [three-mode] `pub & (pub.h: <5)`   pub := [a = A] SEQ A; A := /(?<h>\d)/
+      pub.h: GATE129 refused: `pub.h`: a `h` sits behind a gate, which is never skipped: write `pub.a.h` (a compile error, label-names-gate)
+      in-force engine: legal
+core.md:1196 [three-mode] `X & (X.n.d: <5)`   P := /(?<d>\d)/; Q := /,(?<d>\d)/; X := [n = ([m = P] SEQ Q)] SEQ "!"
+      X.n.d: GATE129 refused: `X.n.d`: a `d` sits behind a gate, which is never skipped: write `X.n.m.d` (a compile error, label-names-gate)
+      in-force engine: legal
+core.md:2567 [three-mode] `[ab = [b = B] | [a = A]] & (ab.l: <20)`   A := /(?<l>\d)\d/; B := /(?<l>\d\d)/
+      ab.l: GATE129 refused: `ab.l`: a `l` sits behind a gate, which is never skipped: write `ab.a.l` or `ab.b.l` (a compile error, label-names-gate)
+      in-force engine: legal
+
+== error to legal, details files (10)
+core_details.md:793 [three-mode, field history] `[n = (P SEQ B(Q))] & (n.B.p.d: <5)`   P := /(?<d>\d)/; Q := /,(?<d>\d)/; B(rx) := /${[p = rx]}xx/; P := /(?<d>\d)/; Q := /,(?<d>\d)/; B(rx) := /${[p = rx]}xx/
+      n.B.p.d: GATE129 legal (one)
+      in-force engine: refused: `n.B.p.d`: the path passes B's argument place, which no list opens (a compile error, core/labels/rule/argument-place): read it by the sender's own name (`A.h` for `B(A)`), label the argument, or list 
+core_details.md:1498 [three-mode, field history] `[c = B(A)] & (c.d: <5)`   A := /(?<e>\d)/; A := /(?<d>\d)/; B(rx) := /${rx}-(?<d>\d)/; pair(p) := /${p},${p}/
+      c.d: GATE129 legal (one)
+      in-force engine: refused: `A` is defined twice: one head per name (a compile error, call-forms line 1)
+core_details.md:1498 [three-mode, a further program, field history] `B(A) & (B.d: <5)`   A := /(?<e>\d)/; A := /(?<d>\d)/; B(rx) := /${rx}-(?<d>\d)/; pair(p) := /${p},${p}/
+      B.d: GATE129 legal (one)
+      in-force engine: refused: `A` is defined twice: one head per name (a compile error, call-forms line 1)
+core_details.md:1499 [three-mode, field history] `[c = B(A)] & (c.d: <5)`   A := /(?<d>\d)/; B(rx) := /${rx}-(?<d>\d)/; A := /(?<e>\d)/; B(rx) := /${rx}-(?<d>\d)/; A := /(?<e>\d)/; B(rx) := /${rx}-(?<d>\d)/
+      c.d: GATE129 legal (one)
+      in-force engine: refused: `A` is defined twice: one head per name (a compile error, call-forms line 1)
+core_details.md:1499 [three-mode, a further program, field history] `B(A) & (B.d: <5)`   A := /(?<d>\d)/; B(rx) := /${rx}-(?<d>\d)/; A := /(?<e>\d)/; B(rx) := /${rx}-(?<d>\d)/; A := /(?<e>\d)/; B(rx) := /${rx}-(?<d>\d)/
+      B.d: GATE129 legal (one)
+      in-force engine: refused: `A` is defined twice: one head per name (a compile error, call-forms line 1)
+core_details.md:1547 [three-mode, field history] `B(A) & (B.p.d: <5)`   A := /(?<d>\d)/; B(rx) := /${[p = rx]}-(?<d>\d)/
+      B.p.d: GATE129 legal (one)
+      in-force engine: refused: `B.p.d`: the path passes B's argument place, which no list opens (a compile error, core/labels/rule/argument-place): read it by the sender's own name (`A.h` for `B(A)`), label the argument, or list it
+core_details.md:1587 [three-mode, a further program, field history] `B(A) & (B.dd.d: <100)`   A := /(?<h>\d)/; B(rx) := /${[p = rx]}xx/; A := [d = rx.digits]; B(rx) := /${[dd = rx]}xx/
+      B.dd.d: GATE129 legal (one)
+      in-force engine: refused: `B.dd.d`: the path passes B's argument place, which no list opens (a compile error, core/labels/rule/argument-place): read it by the sender's own name (`A.h` for `B(A)`), label the argument, or list i
+core_details.md:1605 [three-mode, field history] `[pub = B([A = A])] & (pub.A.h: <5)`   A := /(?<h>\d)/; B(rx) := /${[p = rx]}xx/
+      pub.A.h: GATE129 legal (one)
+      in-force engine: refused: `pub.A.h`: the path passes B's argument place, which no list opens (a compile error, core/labels/rule/argument-place): read it by the sender's own name (`A.h` for `B(A)`), label the argument, or list 
+library_details.md:32 [three-mode, field history] `W(/(?<h>\d)/, /;(?<h>\d)/) & (W.h: "3")`   W(a, b) := [(=) = a] SEQ [(=) = b]
+      W.h: GATE129 legal (last mention)
+      in-force engine: refused: `W.h`: 2 labels `h` are visible from `W`, so no step may be skipped: no path from `W` names one of them alone (a compile error, core/labels/rule/paths rule 4, one-path)
+library_details.md:1014 [three-mode, field history] `list_of(/(?<h>\d)/, sep = ",") & (list_of.h: "5")`   
+      list_of.h: GATE129 legal (one)
+      in-force engine: refused: `list_of.h`: 2 labels `h` are visible from `list_of`, so no step may be skipped: no path from `list_of` names one of them alone (a compile error, core/labels/rule/paths rule 4, one-path)
+
+== legal reads whose spot moves (0)
+
+== the line's kind is not the in-force engine's verdict (prose, a joined line, or a history record) (21)
+core.md:2491 [three-mode, base] `/(?<h>\d)/ & (h: >5)`: the engine refuses: at the binding `late := (h: >5)`: late names a label it does not hold: h
+core_details.md:655 [three-mode, history] `B(A) & (B.h: <5)`: the engine refuses: `B.h`: the path passes B's argument place, which no list opens (a compile error, core/labe
+core_details.md:707 [three-mode, history] `X & (X.c.h: <5)`: the engine refuses: `X.c.h`: the path passes B's argument place, which no list opens (a compile error, core/la
+core_details.md:732 [three-mode, rejected] `[n = ([m = P] SEQ [k = Q])] & (n.d: <5)`: the engine refuses: `n.d`: 2 labels `d` are visible from `n`, so no step may be skipped: write the full path, 
+core_details.md:792 [three-mode, history] `[n = ([a = P] SEQ Q)] & (n.d: <5)`: the engine refuses: `n.d`: a `d` sits behind a gate (a part used alone is never skipped): write the full path,
+core_details.md:793 [three-mode, history] `[n = (P SEQ B(Q))] & (n.B.p.d: <5)`: the engine refuses: `n.B.p.d`: the path passes B's argument place, which no list opens (a compile error, core/
+core_details.md:1006 [three-mode, rejected] `/(?:(?<d>\d)?,)+/ & (n: ==0)`: the engine refuses: a group question takes the array form of a label and a set (array-argument line 1): write 
+core_details.md:1214 [three-mode, history] `date & (date.v: <5)`: the engine refuses: `date.v`: 2 labels `v` are visible from `date`, so no step may be skipped: write the full 
+core_details.md:1313 [compile error, history] `B(A) & (A.d: <5)`: the engine legal
+core_details.md:1498 [three-mode, history] `[c = B(A)] & (c.d: <5)`: the engine refuses: `A` is defined twice: one head per name (a compile error, call-forms line 1)
+core_details.md:1499 [three-mode, history] `[c = B(A)] & (c.d: <5)`: the engine refuses: `A` is defined twice: one head per name (a compile error, call-forms line 1)
+core_details.md:1547 [three-mode, history] `B(A) & (B.p.d: <5)`: the engine refuses: `B.p.d`: the path passes B's argument place, which no list opens (a compile error, core/la
+core_details.md:1577 [compile error, history] `B([a = A]) & (a.d: <100)`: the engine legal
+core_details.md:1587 [three-mode, history] `[pub = B([A = A])] & (pub.A.h: <5)`: the engine refuses: `pub.A.h`: the path passes B's argument place, which no list opens (a compile error, core/
+core_details.md:1605 [three-mode, history] `[pub = B([A = A])] & (pub.A.h: <5)`: the engine refuses: `pub.A.h`: the path passes B's argument place, which no list opens (a compile error, core/
+core_details.md:1628 [compile error, history] `B(/(?<d>\d)/) & (d: <5)`: the engine legal
+core_details.md:1628 [compile error, history] `B([x = /(?<d>\d)/]) & (x.d: <5)`: the engine legal
+core_details.md:1633 [compile error, history] `B(/(?<d>\d)/) & (B.d: <5)`: the engine legal
+library_details.md:32 [three-mode, history] `W(/(?<h>\d)/, /;(?<h>\d)/) & (W.h: "3")`: the engine refuses: `W.h`: 2 labels `h` are visible from `W`, so no step may be skipped: no path from `W` name
+library_details.md:1014 [three-mode, history] `list_of(/(?<h>\d)/, sep = ",") & (list_of.h: "5")`: the engine refuses: `list_of.h`: 2 labels `h` are visible from `list_of`, so no step may be skipped: no path f
+library_details.md:1169 [three-mode, rejected] `/(?<h>\d)?x/ & (h: "3" | capture("h"))`: the engine refuses: a capture request inside a set operator (`h: "3" | capture("h")`): a compile error for now
+
+== not parsed (120)
+core.md:191 [base] `/(?:(?<d>\d)?,)+/ & !some(@d, "7")`: Unparsed: atom !(d: /x/)
+core.md:414 [base] `^/(?<d>\d)/ SEQ /\d\d/ & (d: <5)`: Unparsed: atom ^/(?<d>\d)/
+core.md:415 [base] `!^/(?<d>\d)/ SEQ /\w/ & (d: <5)`: Unparsed: atom !^/(?<d>\d)/
+core.md:556 [base] `R(x:, A) & (x.h: <5)`: Unparsed: label parameter
+core.md:557 [base] `R(x:, A) & (x.h: <5)`: Unparsed: label parameter
+core.md:695 [base] `Bo(Ad) & (Bo.d: <5)`: Unparsed: label [(=, _ = d) = rx]
+core.md:752 [base] `Rs(x:, A) & (x.h: <5)`: Unparsed: label parameter
+core.md:878 [base] `([ok = [it = item] & ((it.h, it.m): ("5", "3"))] | item)+ & some(@ok, anything)`: Unparsed: atom ([ok = [it = item] & ((it.h, it.m): ("5"
+core.md:1019 [base] `a`: Unparsed: name a
+core.md:1079 [base] `date & (date.year: >= 2000)`: Unparsed: label [(=year) = isodate]
+core.md:1080 [base] `date & (date.month: "01")`: Unparsed: label [(=year) = isodate]
+core.md:1081 [base] `[(=d) = B(A)] & (d: <5)`: Unparsed: label [(=d) = B(A)]
+core.md:1082 [base] `date & (date.day: "02")`: Unparsed: label [(=, _ = month) = isodate]
+core.md:1083 [base] `[(=l) = atomic(/(?<l>\d)/)] & (l: <5)`: Unparsed: label [(=l) = atomic(/(?<l>\d)/)]
+core.md:1115 [base] `R(x:, isodate) & (x.year: 2000)`: Unparsed: label parameter
+core.md:1118 [base] `A(x:) & (A.x: 5)`: Unparsed: label parameter
+core.md:1118 [base] `[c = A(x:)] & (c.x: 5)`: Unparsed: label parameter
+core.md:1150 [base] `N(A) & (N.h: <5)`: Unparsed: label [(=h) = rx]
+core.md:1151 [base] `N(Ae) & (N.h: <5)`: Unparsed: label [(=h) = rx]
+core.md:1152 [base] `N(Aw) & (N.h: <5)`: Unparsed: label [(=h) = rx]
+core.md:1153 [base] `N(Au) & (N.h: <5)`: Unparsed: label [(=h) = rx]
+core.md:1154 [base] `N(As) & (N.h: <5)`: Unparsed: label [(=h) = rx]
+core.md:1155 [base] `N2(A)`: Unparsed: label [(=h) = rx]
+core.md:1155 [base] `h`: Unparsed: name h
+core.md:1156 [base] `N([a = P] SEQ [b = Q]) & (N.h: <5)`: Unparsed: label [(=h) = rx]
+core.md:1157 [base] `N(A2) & (N.h: <5)`: Unparsed: label [(=h) = rx]
+core.md:1158 [base] `M(Ae) & (M.h: <5)`: Unparsed: label [(=h) = rx]
+core.md:1226 [base] `chars SEQ ":" SEQ chars & (count(@chars.ch, anything): ==5)`: Unparsed: name chars
+core.md:1235 [base] `pair(A) & (A.d: <5)`: Unparsed: call pair
+core.md:1236 [base] `chars SEQ ":" SEQ chars & (chars.ch: "a")`: Unparsed: name chars
+core.md:1259 [base] `chars & (count(@chars.ch, /(?s:.)/): ==3)`: Unparsed: name chars
+core.md:1260 [base] `chars & (count(@ch, /(?s:.)/): ==3)`: Unparsed: name chars
+core.md:1290 [base] `occurrences(/\d/) SEQ ";" SEQ occurrences(/\d/) & some(@occurrences.hit, "9")`: Unparsed: call occurrences
+core.md:1299 [base] `occurrences(/\d/) SEQ ";" SEQ occurrences(/\d/) & (occurrences.hit: "9")`: Unparsed: call occurrences
+core.md:1301 [base] `[hits = occurrences(/\d+/)] & hits(/\d/) & (hits.hit: <5)`: Unparsed: call occurrences
+core.md:1522 [base] `some(@h, "7")`: Unparsed: no pattern
+core.md:1557 [base] `/(?<h>\d)?x/ & !(h: <5)`: Unparsed: atom !(h: <5)
+core.md:1558 [base] `some(@h, "7")`: Unparsed: no pattern
+core.md:1597 [base] `/(?:(?<h>\d):(?<m>\d),)+/ & some((h: "5", m: "3"))`: Unparsed: call some
+core.md:1597 [base] `some(@h, "5")`: Unparsed: no pattern
+core.md:1625 [base] `(/(?<h>\d)/ SEQ (h: <5) SEQ ";")+`: Unparsed: atom (/(?<h>\d)/ SEQ (h: <5) SEQ ";")+
+core.md:1638 [base] `[h = rx.digit] SEQ ((h: <5))?`: Unparsed: atom rx.digit
+core.md:1639 [base] `[h = rx.digit] SEQ (h: <5)`: Unparsed: atom rx.digit
+core.md:1678 [base] `/(?<d>\d)+/ & some(@0, "1")`: AttributeError: 'NoneType' object has no attribute 'group'
+core.md:1693 [base] `([d = /\d/] SEQ (d: ~"7") SEQ ";")+`: Unparsed: atom ([d = /\d/] SEQ (d: ~"7") SEQ ";")+
+core.md:1705 [base] `/(?:(?=(?<n>\d))${!(h: /\d/) | (n: >= $h)}(?<h>\d);)*/`: Unparsed: atom !(h: /\d/)
+core.md:1757 [base] `/(?<h>\d)?x/ & !(h: <5)`: Unparsed: atom !(h: <5)
+core.md:1758 [base] `/(?<h>\d)/ & ~(h: <5)`: Unparsed: atom ~(h: <5)
+core.md:1758 [base] `!(h: <5)`: Unparsed: atom !(h: <5)
+core.md:1793 [base] `/(?<h>\d)?x/ & !(h: <5)`: Unparsed: atom !(h: <5)
+core.md:1794 [base] `/(?:(?<d>\d)?,)+/ & !some(@d, "7")`: Unparsed: atom !(d: /x/)
+core.md:1795 [base] `/(?<h>\d)?x/ & !!(h: <5)`: Unparsed: atom !!(h: <5)
+core.md:1816 [base] `when(/(?<d>\d)/ & (d: capture("d")), /x/)`: Unparsed: call when
+core.md:1817 [base] `/(?<h>\d)?x/ & !(h: capture("h"))`: Unparsed: atom !(h: capture("h"))
+core.md:1819 [base] `/(?<h>\d)?x/ & (h: capture("h")) & !(h: >= 5)`: Unparsed: atom !(h: >= 5)
+core.md:1855 [base] `/(?<h>\d)/ SEQ when((h: <5), /a/, /b/)`: Unparsed: atom !(h: >=5)
+core.md:1984 [base] `/${days}/ & (days.w.index: >= 2)`: Unparsed: label [/Mon/, /Tue/, /Wed/]
+core.md:2161 [base] `A(x:) SEQ "!"`: Unparsed: label parameter
+core.md:2413 [base] `/(?:${!(h: >= 5)}(?<h>\d);)+/`: Unparsed: atom !(h: >= 5)
+core.md:2417 [base] `/${!(c: >= 5)}(?<c>\d)/`: Unparsed: atom !(c: >= 5)
+core.md:2458 [base] `rx.repeat(B SEQ ";", min = 2, max = 2)`: Unparsed: atom rx.repeat(B SEQ ";", min = 2, max = 2)
+core.md:2459 [base] `B SEQ ";" SEQ B SEQ ";"`: Unparsed: atom !(c: >= 5)
+core.md:2460 [base] `/(?:${!(c: >= 5)}(?<c>\d);){2}/`: Unparsed: atom !(c: >= 5)
+core.md:2612 [base] `A(x:) & (x: 5)`: Unparsed: label parameter
+core.md:2613 [base] `A(x:) SEQ "," SEQ A(x:) & (x: 5)`: Unparsed: label parameter
+core.md:2614 [base] `A(x:) SEQ "," SEQ A(x:) & some(@x, "5")`: Unparsed: label parameter
+core.md:2615 [base] `A(x:) SEQ "," SEQ A(x:) & (x[1]: 5)`: Unparsed: label parameter
+core.md:2616 [base] `A(x:) & A(x:) & (x: 5)`: Unparsed: label parameter
+core.md:2633 [base] `R(x:, A) & (x.h: <5)`: Unparsed: label parameter
+core.md:2659 [base] `A(_:) SEQ "!"`: Unparsed: label parameter
+core.md:2660 [base] `W(_:, A) & (A.h: <5)`: Unparsed: label parameter
+core.md:2661 [base] `A(n:, /\d/)`: Unparsed: label parameter
+core.md:2662 [base] `A(_:, /\d/)`: Unparsed: label parameter
+core.md:2663 [base] `C(_:)`: Unparsed: label parameter
+core.md:2663 [base] `l`: Unparsed: name l
+core.md:2674 [base] `A2(l = x:) & (x: 5)`: Unparsed: label parameter
+core.md:2676 [base] `A2() & (ts: 5)`: Unparsed: label parameter
+core.md:2690 [base] `A(x:, /\w/)`: Unparsed: label parameter
+core.md:2690 [base] `A((=a), B)`: Unparsed: label parameter
+core.md:2691 [base] `A(x.d:)`: Unparsed: label parameter
+core.md:2692 [base] `C(x:)`: Unparsed: label parameter
+core.md:2729 [base] `B`: Unparsed: name B
+core.md:2729 [base] `A((=year))`: Unparsed: atom =year
+core.md:2730 [base] `B.year`: Unparsed: atom B.year
+core.md:2770 [base] `W(_:, S(body:)) & (body: <5)`: Unparsed: label parameter
+core.md:2771 [base] `W3(S(body:)) & (body: <5)`: Unparsed: label parameter
+core.md:2781 [base] `B(x:) & (x: <5)`: Unparsed: label parameter
+core.md:2782 [base] `V(x:) & (x: <5)`: Unparsed: label parameter
+core.md:2861 [base] `A(_:) SEQ "!"`: Unparsed: label parameter
+core_details.md:847 [history] `Bo(Ad) & (Bo.d: <5)`: Unparsed: label [(=, _ = d) = rx]
+core_details.md:1002 [rejected] `/(?:(?<d>\d)(?<d>\d),)+/ & some((d: "7"))`: Unparsed: call some
+core_details.md:1003 [rejected] `/(?<h>\d);(?:(?<h>\d);)*/ & some((h: "7"))`: Unparsed: call some
+core_details.md:1004 [rejected] `/(?:(?<h>\d):(?<m>\d),)+/ & some((h: "5", m: "3"))`: Unparsed: call some
+core_details.md:1005 [rejected] `/(?:(?<d>\d)?,)+/ & some(NOT (d: "7"))`: Unparsed: call some
+core_details.md:1320 [history] `N(A) & (N.h: <5)`: Unparsed: label [(=h) = rx]
+core_details.md:1338 [history] `N(A) & (N.h: <5)`: Unparsed: label [(=h) = rx]
+core_details.md:1431 [rejected] `chars & (count((ch: /(?s:.)/)): ==3)`: Unparsed: name chars
+core_details.md:2857 [history] `A SEQ B`: Unparsed: name A
+core_details.md:2857 [history] `A SEQ B`: Unparsed: name A
+core_details.md:2933 [rejected] `/(?<h>\d)${lt5(<5)}/`: Unparsed: atom <5
+core_details.md:3132 [history] `W(_:, A) & (A.h: <5)`: Unparsed: label parameter
+core_details.md:3161 [history] `A(x:, /\w/)`: Unparsed: label parameter
+library.md:55 [base] `atomic(B | A) & (atomic.l: <20)`: Unparsed: name B
+library.md:311 [base] `chars & (count(@chars.ch, /(?s:.)/): ==3)`: Unparsed: name chars
+library.md:464 [base] `[hits = occurrences(/\d+/)] & (hits.hit: <5)`: Unparsed: call occurrences
+library.md:465 [base] `[hits = occurrences(/\d+/)] & occurs.none(@hits.hit, >= 5)`: Unparsed: call occurrences
+library.md:466 [base] `occurrences(/(?<n>\d+)/) & (occurrences.hit.n: "3")`: Unparsed: call occurrences
+library.md:467 [base] `occurrences(/(?<n>\d+)/) & (occurrences.n: "3")`: Unparsed: call occurrences
+library.md:593 [base] `prefix_in(3, /(?<a>ab)c|xy/) & (prefix_in.a: "ab")`: Unparsed: atom 3
+library.md:845 [base] `[r = rx.repeat(/(?<a>\d)/, min = 1, max = _)] & (r.a: "3")`: Unparsed: atom rx.repeat(/(?<a>\d)/, min = 1, max = _)
+library.md:846 [base] `rx.repeat([a = rx.digit], min = 1, max = _) & (a: <5)`: Unparsed: atom rx.repeat([a = rx.digit], min = 1, max =
+library.md:847 [base] `[r = rx.repeat(/(?<a>\d)/, min = 1, max = _)] & some(@r.a, "7")`: Unparsed: atom rx.repeat(/(?<a>\d)/, min = 1, max = _)
+library.md:987 [base] `row(m:, "msg", contains("timeout"))`: Unparsed: call row
+library.md:987 [base] `row(m:, "msg") & (m: contains("timeout"))`: Unparsed: call row
+library.md:988 [base] `row(v:, "v") & (v: "ok" | <5)`: Unparsed: call row
+library.md:989 [base] `row(lo:, "lo") & row(hi:, "hi") & (lo: <$hi)`: Unparsed: call row
+library.md:990 [base] `row(x:, "a" | "b") & (x: <5)`: Unparsed: call row
+library_details.md:640 [history] `hits(/a(?<g>x)?/) & (g: \"x\")`: TrError: an unterminated string
+library_details.md:806 [readings] `/(?:(?<d>\d),)+/ & some((d: "7"))`: Unparsed: call some
+library_details.md:888 [readings] `/(?:(?<d>\d)?,)+/ & some((d: "7")) & occurs.none(NOT (d: "7"))`: Unparsed: call some

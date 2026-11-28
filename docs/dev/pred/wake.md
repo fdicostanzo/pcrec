@@ -8,8 +8,8 @@ reviewed, fixed and delivered. Committed docs win on any disagreement.
 
 - Branch `lane/pred-rev28` (worktree `worktrees/pred`), tip = the close commit; lint failed 0; plan-lint green.
 - ON MAIN (merged by main at b35175102, P-35): the first two folds of this session, reviews r109, r111, r112.
-- DELIVERED, awaiting main's merge (P-36): the third fold (lane predfold1128) with review r113 ruled, applied
-  (lane predfix113) and filed; study `docs/dev/lanes/predarg_report.md`. Check `git log main` for the merge.
+- ON MAIN too (merged by main at ba4d73c20, P-36): the third fold (lane predfold1128) with review r113 ruled, applied
+  (lane predfix113) and filed; study `docs/dev/lanes/predarg_report.md`.
 - TWENTY-FIVE owner rulings of 2026-11-25 and 2026-11-27 are in the documents: drop-not, array-argument,
   brace-counts, map-creator, string-literals; bang-split, and-not, sent-label-wall, label-needs-mark,
   skip-past-wall, equivalence-inside, alone-as-middle, shorthand-outside, group-node, peek-name,
@@ -73,6 +73,11 @@ QUESTIONS LEFT). Take them in this order:
 - Driving a lane's model from another directory leaves its dump files in the cwd (a stray `predfold1125.out`):
   run such drivers from scratch, or pass the model its scratch path.
 - Critic coordinators send late idle notices after TaskStop; they carry nothing new.
+- PRE-DELIVERY CHECKS are now three (main, 2026-11-28, after CI went red on the P-36 merge): `pred_doc_lint`,
+  `make -s test-plan-lint` AND `make -s test-doc-lint` (2.5 s; its budget check on `scripts/entry -g .` page 1
+  failed at 4102 of 4096 bytes because the new predicate entries are long; main is fixing `scripts/entry`, not
+  the documents). Put all three in every lane brief. Main's fix (c5d95a2e4) is merged back: the branch is green on
+  all three, and the skill's make line now names both make targets.
 
 ## READ, IN THIS ORDER, next session
 

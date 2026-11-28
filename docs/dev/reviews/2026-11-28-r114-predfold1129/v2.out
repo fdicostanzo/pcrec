@@ -1,0 +1,14 @@
+PROGRAM [n = [m = P]] & (n.d: <5)  BINDS ['P := /(?<d>\\d)xx/']
+  LEGAL
+  3xx            WHOLE HOLDS  SEARCHED (0, 3)  FIND-ALL [('3xx', 0)]
+  7xx            WHOLE FAILS  SEARCHED None  FIND-ALL []
+PROGRAM [n = ([m = P])] & (n.d: <5)  BINDS ['P := /(?<d>\\d)xx/']
+  LEGAL
+  3xx            WHOLE HOLDS  SEARCHED (0, 3)  FIND-ALL [('3xx', 0)]
+PROGRAM [n = [m = P]] & (m.d: <5)  BINDS ['P := /(?<d>\\d)xx/']
+  LEGAL
+  3xx            WHOLE HOLDS  SEARCHED (0, 3)  FIND-ALL [('3xx', 0)]
+PROGRAM Rs(x:, A) & (x.p.h: <5)  BINDS ['A := /(?<h>\\d)/', 'Rs(l:, v) := /${[l = [p = v]]}xx/']
+  LEGAL
+  3xx            WHOLE HOLDS  SEARCHED (0, 3)  FIND-ALL [('3xx', 0)]
+  7xx            WHOLE FAILS  SEARCHED None  FIND-ALL []
