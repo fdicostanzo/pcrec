@@ -12444,3 +12444,26 @@ case, nor on `B(A) & (B.d: <5)` with B(rx) := `/${[p = rx]}-(?<d>\d)/` (both the
 One cell left for him, gate-beside-direct: `[n = (P SEQ /,(?<d>\d)/)] & (n.d: <5)`, the binding's own `d`
 directly under `n` beside a gated one: legal by body-own-name's "always" (printed, the lane's lean), or the
 gate-beside-label error. Both RUN in the lane's report.
+
+### 2026-11-27 MANAGER — after study lane predarg (the problem hunt he asked for on no-path-through-argument); a wording of the manager's found ambiguous; no owner words
+tags: core/labels/rule/one-path core/labels/rule/paths core/labels/paths/call-prefix lib/convention/argument-labels core/labels/export/export-list core/labels/export/arguments lib/search/hits
+Study lane predarg (opus; no document change; `docs/dev/lanes/predarg_report.md`, evidence `predarg_evidence/`)
+classed 111 printed reads through a macro or into an argument, out of 309 printed programs: the body labels the
+place (route 1) 20; the body's export list (route 2) 15; the sender's own names (route 3) 55; the body's own
+label 14; mixed 3; other 4 (17 classed by hand). Under the candidate 9 printed lines go from legal to a compile
+error; each keeps its answers by the sender's spelling except `X.c.h` (stacked-chain), which has no spelling
+unless the body lists its argument.
+THE MANAGER'S WORDING FOUND AMBIGUOUS (problem 1): the carve-out as put to him ended "in which case they count as
+the body's own labels". Read as a DOOR (the list lets a path pass the place; one-path still counts the labels as
+reached by a skip) `W.h` over two arguments that both set `h` stays a compile error; read word for word as the
+body's OWN labels it is legal, the last mention, and reverses three one-path errors; and under "own" the ANSWER of
+`Bo.d` changes with the argument, with no error (problem 2: Bo(rx) := `/(?<d>\d)-${[(=) = rx]}/`). The manager
+meant the door; the sentence is re-put to him without the ambiguous clause.
+Other problems found, each with a run in the report: two provided pieces lose a documented read (`hits.hit.g`,
+`occurrences.hit.n`: their bodies label the place and write no list); a list one label above the place; a body
+that forwards its parameter to another macro; a label the caller writes in an argument, read from a binding that
+uses the caller (`Y.a.h`); a sent label placed above a label of the body's; where his use-error for a named list
+(`[(=foo) = rx]`) lands (two settings legal; an error two bodies away; one shape decidable at the definition); a
+message naming the wrong cause; no row for "an argument's place" in the label-kind table. Seven questions for him,
+by slug: carve-out-reading, hits-through-hit, list-over-label, forwarded-place, caller-label-export,
+sent-over-body-label, named-list-use.

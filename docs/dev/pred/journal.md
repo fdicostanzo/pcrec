@@ -1341,3 +1341,7 @@ wake.md says (read the draft WHOLE first; A4 is a ruled-words finding: read his 
 - Lane predfix112 DELIVERED (lanewatch DONE; lint 10121/0; model 11/0; 12 plants caught), merged at af340ff45, stopped.
   Review r112 filed by it. P-35 done line; main told. One cell for the owner: gate-beside-direct. Study lane
   predarg still running.
+- Main merged P-35 (b35175102). Study lane predarg DELIVERED (lanewatch DONE), merged (the routine history-index
+  conflict, both sides kept), stopped: 111 reads classed, 9 printed lines move, 11 problems, 7 questions. My
+  carve-out wording was ambiguous (door vs own labels). Open with the owner: gate-beside-direct; then the seven,
+  carve-out-reading first.
