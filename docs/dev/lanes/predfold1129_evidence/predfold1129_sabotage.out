@@ -1,0 +1,123 @@
+== library bodies (library.md): chars ([ch = /(?s:.)/])* ; length(S) := chars & (count((chars.ch: /(?s:.)/)): S) ; month_numbered(S) := months & (months.mname.index: S) ; between: >= lo & <= hi
+== months := [mname = [/Jan(?:uary)?/, /Feb(?:ruary)?/, /Mar(?:ch)?/, /Apr(?:il)?/, /May/, /June?/, /July?/, /Aug(?:ust)?/, /Sep(?:tember)?/, /Oct(?:ober)?/, /Nov(?:ember)?/, /Dec(?:ember)?/]]
+PATCH R-5 walk10: 3 lines replaced by 17
+PATCH R-5 path10: 2 lines replaced by 10
+PATCH R-5 g_eval: 2 lines replaced by 3
+== RULE129: the gate rule and its six neighbours on 30 programs, each verdict typed from the ruled words, each legal read's texts from the record's own runs
+PASS RULE129: 30 programs; not as ruled: none
+== CENSUS129: the census of every printed read at START129 (before any document edit) re-run in its own process; its output equal to the committed predfold1129_census.out
+PASS CENSUS129: 267 lines, 267 committed; differing lines 0; headline: predfold1129 census at 43bbce01f: 413 printed programs on three-mode and compile-error lines of the six documents (363 in base files); the reader could not parse 120 of them (104 in base files); 227 reads judged in the rest. Against the in-force engine (predfi
+== SWEEP129: every printed three-mode line RUN under this model; the starting commit 43bbce01f's lines under the control (X129 off: predfix113 as merged) against these, keyed by the program; every key gone or moved DECLARED
+   DROPPED OR MOVED BY A RULING core.md:326 `[ab = ([b = B] | [a = A])] & (ab.l: <20)`: label-names-gate: the label over a binding's use is a gate, never skipped; the alternation line re-spelled with each branch's text in place under its label, answers equal
+   DROPPED OR MOVED BY A RULING core.md:381 `atomic([ab = ([b = B] | [a = A])]) & (ab.l: <20)`: label-names-gate: the label over a binding's use is a gate, never skipped; the atomic line re-spelled the same way, answers equal
+   DROPPED OR MOVED BY A RULING core.md:490 `[n = [m = P] SEQ "!"] & (n.d: <5)`: label-names-gate: the label over a binding's use is a gate, never skipped; core/labels/paths' in-place reading moved to the text in place; the binding form is now a printed compile error
+   DROPPED OR MOVED BY A RULING core.md:522 `[n = ([a = P] SEQ [b = Q])] & some(@n.d, <5)`: label-names-gate: the label over a binding's use is a gate, never skipped; one-path's array line: the array form is exempt from one-path, not from a gate; re-spelled in place, the binding form a printed compile error
+   DROPPED OR MOVED BY A RULING core.md:542 `X & (X.h: <5)`: label-names-gate: the label over a binding's use is a gate, never skipped; stacked-chain: `X.h` skips the gate n; now a printed compile error beside `X.n.h` and `X.m.h`
+   DROPPED OR MOVED BY A RULING core.md:545 `X & (X.a.h: <5)`: label-names-gate: the label over a binding's use is a gate, never skipped; stacked-chain's two-levels line re-spelled with the gates named
+   DROPPED OR MOVED BY A RULING core.md:566 `[n = ([m = P] SEQ [_x = Q])] & (n.d: <5)`: label-names-gate: the label over a binding's use is a gate, never skipped; skip-past-wall: `m` over text in place; the binding form a printed compile error
+   DROPPED OR MOVED BY A RULING core.md:567 `[n = ([m = P] & [_x = Q])] & (n.d: <5)`: label-names-gate: the label over a binding's use is a gate, never skipped; skip-past-wall's `&` line re-spelled in place, answers equal
+   DROPPED OR MOVED BY A RULING core.md:568 `[n = ([m = P] | [_x = Q])] & (n.d: <5)`: label-names-gate: the label over a binding's use is a gate, never skipped; skip-past-wall's `|` line re-spelled in place, answers equal
+   DROPPED OR MOVED BY A RULING core.md:989 `pub & (pub.h: <5)`: label-names-gate: the label over a binding's use is a gate, never skipped; export's public lines re-spelled with the gate named (`pubhin`, `pubh`)
+   DROPPED OR MOVED BY A RULING core.md:1022 `pub & (pub.h: <5)`: label-names-gate: the label over a binding's use is a gate, never skipped; export's public lines re-spelled with the gate named (`pubhin`, `pubh`)
+   DROPPED OR MOVED BY A RULING core.md:1196 `X & (X.n.d: <5)`: label-names-gate: the label over a binding's use is a gate, never skipped; core/labels/paths' public-part line now reads `X.n.m.d`, answers equal
+   DROPPED OR MOVED BY A RULING core.md:2454 `B(A)`: nested-scope (part-of-argument, last-placement): Example 3's line (`A := [d = rx.digits]`, a bare `dd` read) re-written under the ruled statement as the lines ex3d and ex3rx
+   DROPPED OR MOVED BY A RULING core.md:2567 `[ab = [b = B] | [a = A]] & (ab.l: <20)`: label-names-gate: the label over a binding's use is a gate, never skipped; the precedence line re-spelled the same way, answers equal
+   ADDED core.md:326 `[ab = ([b = /(?<l>\d\d)/] | [a = /(?<l>\d)\d/])] & (ab.l: <20)`: WHOLE `25` HOLDS, `7` FAILS / SEARCHED `25` `25`@0 / FIND-ALL `25 13` [`25`@0, `13`@3]
+   ADDED core.md:381 `atomic([ab = ([b = /(?<l>\d\d)/] | [a = /(?<l>\d)\d/])]) & (ab.l: <20)`: WHOLE `25` FAILS, `13` HOLDS / SEARCHED `25` FAILS / FIND-ALL `25 13` [`13`@3]
+   ADDED core.md:467 `[n = [m = /(?<d>\d)\d/] SEQ "!"] & (n.d: <5)`: WHOLE `37!` HOLDS, `73!` FAILS / SEARCHED `73! 37!` `37!`@4 / FIND-ALL `37! 73! 14!` [`37!`@0, `14!`@8]
+   ADDED core.md:469 `[n = [m = P] SEQ "!"] & (n.m.d: <5)`: WHOLE `37!` HOLDS, `73!` FAILS / SEARCHED `73! 37!` `37!`@4 / FIND-ALL `37! 73! 14!` [`37!`@0, `14!`@8]
+   ADDED core.md:498 `B(A)`: WHOLE `3xx` HOLDS, `8xx` FAILS / SEARCHED `8xx 3xx` `3xx`@4 / FIND-ALL `3xx 8xx 4xx` [`3xx`@0, `4xx`@8]
+   ADDED core.md:499 `B(A)`: WHOLE `3xx` HOLDS, `8xx` FAILS / SEARCHED `8xx 3xx` `3xx`@4 / FIND-ALL `3xx 8xx 4xx` [`3xx`@0, `4xx`@8]
+   ADDED core.md:500 `B(A)`: WHOLE `3xx` HOLDS, `8xx` FAILS / SEARCHED `8xx 3xx` `3xx`@4 / FIND-ALL `3xx 8xx 4xx` [`3xx`@0, `4xx`@8]
+   ADDED core.md:519 `[n = ([a = /(?<d>\d)/] SEQ [b = /,(?<d>\d)/])] & some(@n.d, <5)`: WHOLE `7,3` HOLDS, `3,7` HOLDS, `7,7` FAILS / SEARCHED `7,7 3,7` `3,7`@4 / FIND-ALL `7,3 7,7 1,2` [`7,3`@0, `1,2`@8]
+   ADDED core.md:521 `[y = [x = [r = A] SEQ [r = A]]] & (y.r.g: <5)`: WHOLE `73` HOLDS, `37` FAILS / SEARCHED `37 73` `73`@3 / FIND-ALL `73 37 12` [`73`@0, `12`@6]
+   ADDED core.md:522 `[y = [x = [r = A] SEQ [r = A]]] & (y.x.r.g: <5)`: WHOLE `73` HOLDS, `37` FAILS / SEARCHED `37 73` `73`@3 / FIND-ALL `73 37 12` [`73`@0, `12`@6]
+   ADDED core.md:548 `X & (X.n.h: <5)`: WHOLE `3!` HOLDS, `7!` FAILS / SEARCHED `7! 3!` `3!`@3 / FIND-ALL `3! 7! 4!` [`3!`@0, `4!`@6]
+   ADDED core.md:549 `X & (X.m.h: <5)`: WHOLE `3!` HOLDS, `7!` FAILS / SEARCHED `7! 3!` `3!`@3 / FIND-ALL `3! 7! 4!` [`3!`@0, `4!`@6]
+   ADDED core.md:553 `X & (X.y.c.p.h: <5)`: WHOLE `3xx!;` HOLDS, `7xx!;` FAILS / SEARCHED `7xx!; 3xx!;` `3xx!;`@6 / FIND-ALL `3xx!; 7xx!; 4xx!;` [`3xx!;`@0, `4xx!;`@12]
+   ADDED core.md:555 `X & (X.y.a.h: <5)`: WHOLE `3xx!;` HOLDS, `7xx!;` FAILS / SEARCHED `7xx!; 3xx!;` `3xx!;`@6 / FIND-ALL `3xx!; 7xx!; 4xx!;` [`3xx!;`@0, `4xx!;`@12]
+   ADDED core.md:556 `X & (X.y.c.a.h: <5)`: WHOLE `3xx!;` HOLDS, `7xx!;` FAILS / SEARCHED `7xx!; 3xx!;` `3xx!;`@6 / FIND-ALL `3xx!; 7xx!; 4xx!;` [`3xx!;`@0, `4xx!;`@12]
+   ADDED core.md:577 `[n = ([m = /(?<d>\d)/] SEQ [_x = Q])] & (n.d: <5)`: WHOLE `3,7` HOLDS, `7,3` FAILS / SEARCHED `7,3 3,7` `3,7`@4 / FIND-ALL `3,7 7,3 4,1` [`3,7`@0, `4,1`@8]
+   ADDED core.md:578 `[n = ([m = /(?<d>\d)\d/] & [_x = Q])] & (n.d: <5)`: WHOLE `37` HOLDS, `73` FAILS / SEARCHED `73 37` `37`@3 / FIND-ALL `37 73 14` [`37`@0, `14`@6]
+   ADDED core.md:579 `[n = ([m = /(?<d>\d)/] | [_x = Q])] & (n.d: <5)`: WHOLE `3` HOLDS, `a3` FAILS, `a7` FAILS / SEARCHED `a7 a3` `3`@4 / FIND-ALL `3 a7 a4` [`3`@0, `4`@6]
+   ADDED core.md:581 `[n = ([m = P] SEQ [_x = Q])] & (n.m.d: <5)`: WHOLE `3,7` HOLDS, `7,3` FAILS / SEARCHED `7,3 3,7` `3,7`@4 / FIND-ALL `3,7 7,3 4,1` [`3,7`@0, `4,1`@8]
+   ADDED core.md:617 `[n = (Q SEQ Q)] & (n.Q.d: <5)`: WHOLE `,7,3` HOLDS, `,3,7` FAILS / SEARCHED `,3,7 ,7,3` `,7,3`@5 / FIND-ALL `,7,3 ,3,7 ,1,2` [`,7,3`@0, `,1,2`@10]
+   ADDED core.md:619 `[n = (P SEQ B(Q))] & (n.B.p.d: <5)`: WHOLE `7,3xx` HOLDS, `3,7xx` FAILS / SEARCHED `3,7xx 7,3xx` `7,3xx`@6 / FIND-ALL `7,3xx 3,7xx 4,1xx` [`7,3xx`@0, `4,1xx`@12]
+   ADDED core.md:680 `B(A) & (B.p.h: <5)`: WHOLE `3xx` HOLDS, `7xx` FAILS / SEARCHED `7xx 3xx` `3xx`@4 / FIND-ALL `3xx 7xx 4xx` [`3xx`@0, `4xx`@8]
+   ADDED core.md:682 `B([a = A]) & (B.a.h: <5)`: WHOLE `3xx` HOLDS, `7xx` FAILS / SEARCHED `7xx 3xx` `3xx`@4 / FIND-ALL `3xx 7xx 4xx` [`3xx`@0, `4xx`@8]
+   ADDED core.md:683 `B([a = A]) & (B.p.a.h: <5)`: WHOLE `3xx` HOLDS, `7xx` FAILS / SEARCHED `7xx 3xx` `3xx`@4 / FIND-ALL `3xx 7xx 4xx` [`3xx`@0, `4xx`@8]
+   ADDED core.md:733 `Y & (Y.c.a.h: <5)`: WHOLE `3xx!` HOLDS, `7xx!` FAILS / SEARCHED `7xx! 3xx!` `3xx!`@5 / FIND-ALL `3xx! 7xx! 4xx!` [`3xx!`@0, `4xx!`@10]
+   ADDED core.md:735 `Y & (Y.c.p.h: <5)`: WHOLE `3xx!` HOLDS, `7xx!` FAILS / SEARCHED `7xx! 3xx!` `3xx!`@5 / FIND-ALL `3xx! 7xx! 4xx!` [`3xx!`@0, `4xx!`@10]
+   ADDED core.md:737 `[k = [c = B([a = A])]] & (k.a.h: <5)`: WHOLE `3xx` HOLDS, `7xx` FAILS / SEARCHED `7xx 3xx` `3xx`@4 / FIND-ALL `3xx 7xx 4xx` [`3xx`@0, `4xx`@8]
+   ADDED core.md:738 `[k = [c = B([a = A])]] & (c.a.h: <5)`: WHOLE `3xx` HOLDS, `7xx` FAILS / SEARCHED `7xx 3xx` `3xx`@4 / FIND-ALL `3xx 7xx 4xx` [`3xx`@0, `4xx`@8]
+   ADDED core.md:750 `B1(A) & (B1.p.h: <5)`: WHOLE `3xx` HOLDS, `7xx` FAILS / SEARCHED `7xx 3xx` `3xx`@4 / FIND-ALL `3xx 7xx 4xx` [`3xx`@0, `4xx`@8]
+   ADDED core.md:765 `Mt(A) & (Mt.t.h: <5)`: WHOLE `<3>` HOLDS, `<7>` FAILS / SEARCHED `<7> <3>` `<3>`@4 / FIND-ALL `<3> <7> <4>` [`<3>`@0, `<4>`@8]
+   ADDED core.md:778 `Rs(x:, A) & (x.p.h: <5)`: WHOLE `3xx` HOLDS, `7xx` FAILS / SEARCHED `7xx 3xx` `3xx`@4 / FIND-ALL `3xx 7xx 4xx` [`3xx`@0, `4xx`@8]
+   ADDED core.md:1008 `pub & (pub.h: <5)`: WHOLE `3!` HOLDS, `7!` FAILS / SEARCHED `7! 3!` `3!`@3 / FIND-ALL `3! 7! 4!` [`3!`@0, `4!`@6]
+   ADDED core.md:1043 `pub & (pub.h: <5)`: WHOLE `37` HOLDS, `73` FAILS / SEARCHED `73 37` `37`@3 / FIND-ALL `37 73 14` [`37`@0, `14`@6]
+   ADDED core.md:1045 `pub & (pub.a.h: <5)`: WHOLE `37` HOLDS, `73` FAILS / SEARCHED `73 37` `37`@3 / FIND-ALL `37 73 14` [`37`@0, `14`@6]
+   ADDED core.md:1178 `N2(A)`: WHOLE `3` HOLDS, `7` FAILS / SEARCHED `7 3` `3`@2 / FIND-ALL `3 7 4` [`3`@0, `4`@4]
+   ADDED core.md:1221 `X & (X.n.m.d: <5)`: WHOLE `3,7!` HOLDS, `7,3!` FAILS / SEARCHED `7,3! 3,7!` `3,7!`@5 / FIND-ALL `3,7! 7,3! 4,1!` [`3,7!`@0, `4,1!`@10]
+   ADDED core.md:1245 `/${A},${A}/ & (A.d: <5)`: WHOLE `7,3` HOLDS, `3,7` FAILS / SEARCHED `3,7 7,3` `7,3`@4 / FIND-ALL `7,3 3,7 1,2` [`7,3`@0, `1,2`@8]
+   ADDED core.md:1246 `chars SEQ ":" SEQ chars & (chars.ch: "a")`: WHOLE `ab:ca` HOLDS, `ab:ac` FAILS, `a:b` FAILS / SEARCHED `xb:a b:c` `xb:a`@0 / FIND-ALL `b:a a:b c:a` [`b:a a:b c:a`@0]
+   ADDED core.md:1247 `B(A)`: WHOLE `3;4` HOLDS, `3;7` FAILS, `7;3` FAILS / SEARCHED `7;3 3;4` `3;4`@4 / FIND-ALL `3;4 7;3 1;2` [`3;4`@0, `1;2`@8]
+   ADDED core.md:1248 `B(A)`: WHOLE `7;3` HOLDS, `3;7` FAILS / SEARCHED `3;7 7;3` `7;3`@4 / FIND-ALL `7;3 3;7 1;2` [`7;3`@0, `1;2`@8]
+   ADDED core.md:1295 `pair(A) & (pair.d: <5)`: WHOLE `7,3` HOLDS, `3,7` FAILS, `3,3` HOLDS / SEARCHED `3,7 7,3` `7,3`@4 / FIND-ALL `7,3 3,7 1,2 9,9` [`7,3`@0, `1,2`@8]
+   ADDED core.md:1297 `occurrences(/\d/) SEQ ";" SEQ occurrences(/\d/) & (occurrences.hit: "9")`: WHOLE `1;9` HOLDS, `9;1` FAILS, `1;19` HOLDS / SEARCHED `x;1 9;` `x;1 9;`@0 / FIND-ALL `9;1 1;1 1;9` [`9;1 1;1 1;9`@0]
+   ADDED core.md:1323 `B(A) & (B.p.d: <5)`: WHOLE `7-3` FAILS, `3-7` HOLDS, `3-3` HOLDS / SEARCHED `7-3 3-7` `3-7`@4 / FIND-ALL `7-3 3-7 1-2 9-9` [`3-7`@4, `1-2`@8]
+   ADDED core.md:1345 `B(A) SEQ A & (A.d: <5)`: WHOLE `7xx3` HOLDS, `3xx7` FAILS / SEARCHED `3xx7 7xx3` `7xx3`@5 / FIND-ALL `7xx3 3xx7 9xx1` [`7xx3`@0, `9xx1`@10]
+   ADDED core.md:1352 `[pub = B([A = A])] & (pub.A.h: <5)`: WHOLE `3xx` HOLDS, `7xx` FAILS / SEARCHED `7xx 3xx` `3xx`@4 / FIND-ALL `3xx 7xx 4xx` [`3xx`@0, `4xx`@8]
+   ADDED core.md:1354 `B(A) & (B.dd.d: <100)`: WHOLE `42xx` HOLDS, `100xx` FAILS, `042xx` FAILS / SEARCHED `x100xx 42xx` `0xx`@3 / FIND-ALL `100xx 42xx 7xx 300xx` [`0xx`@2, `42xx`@6, `7xx`@11, `0xx
+   ADDED core.md:1424 `isodate.year SEQ "!"`: WHOLE `2024!` HOLDS, `2024-01-02!` FAILS, `24!` FAILS / SEARCHED `x 1999! 2024` `1999!`@2 / FIND-ALL `2024! 1999! 12!` [`2024!`@0, `1999!`@6]
+   ADDED core.md:1425 `date.year SEQ "!"`: WHOLE `2024!` HOLDS, `2150!` HOLDS / SEARCHED `x 2150!` `2150!`@2 / FIND-ALL `2024! 2150! 1999!` [`2024!`@0, `2150!`@6, `1999!`@12]
+   ADDED core.md:1426 `[y = date.year] SEQ "!" & (y: < 2100)`: WHOLE `2024!` HOLDS, `2150!` FAILS / SEARCHED `x 2150! 2024!` `2024!`@8 / FIND-ALL `2024! 2150! 1999!` [`2024!`@0, `1999!`@12]
+   ADDED core.md:1429 `X.d.year SEQ "!"`: WHOLE `2024!` HOLDS, `24!` FAILS / SEARCHED `x 2024!` `2024!`@2 / FIND-ALL `2024! 1999!` [`2024!`@0, `1999!`@6]
+   ADDED core.md:1431 `Y(isodate) & (Y.y: < 2100)`: WHOLE `2024!` HOLDS, `2150!` FAILS / SEARCHED `2150! 1999!` `1999!`@6 / FIND-ALL `2024! 2150! 1999!` [`2024!`@0, `1999!`@12]
+   ADDED core.md:2445 `B(A)`: WHOLE `3xx` HOLDS, `7xx` FAILS / SEARCHED `7xx 3xx` `3xx`@4 / FIND-ALL `3xx 7xx 4xx` [`3xx`@0, `4xx`@8]
+   ADDED core.md:2446 `B(A)`: WHOLE `3xx` HOLDS, `7xx` FAILS / SEARCHED `7xx 3xx` `3xx`@4 / FIND-ALL `3xx 7xx 4xx` [`3xx`@0, `4xx`@8]
+   ADDED core.md:2562 `[ab = [b = /(?<l>\d\d)/] | [a = /(?<l>\d)\d/]] & (ab.l: <20)`: WHOLE `25` FAILS, `13` HOLDS / SEARCHED `25` FAILS / FIND-ALL `25 13` [`13`@3]
+   ADDED core.md:2706 `checked(isodate)`: WHOLE `2024-02-29` HOLDS, `2150-01-01` FAILS / SEARCHED `x 2150-01-01 1999-12-31` `1999-12-31`@13 / FIND-ALL `2024-02-29 2150-01-01 1999-12-31` [`2024
+   ADDED library.md:51 `W(/(?<h>\d)/, /;(?<h>\d)/) & (W.h: "3")`: WHOLE `7;3` HOLDS, `3;7` FAILS / SEARCHED `3;7 7;3` `7;3`@4 / FIND-ALL `7;3 3;7 1;3` [`7;3`@0, `1;3`@8]
+   ADDED library.md:748 `list_of(/(?<h>\d)/, sep = ",") & (list_of.h: "5")`: WHOLE `7,3,5` HOLDS, `7,5,3` FAILS / SEARCHED `x7,5 3,5` `7,5`@1 / FIND-ALL `1,5 3 5` [`1,5`@0, `5`@6]
+PASS SWEEP129: 475 printed lines now (DIFF 7, REFUSED 52, same 415, unparsed 1), 405 keys at the starting commit; not same and not inherited 0 (inherited 60); moved 0; gone 0; declared 13; added 57; stale 0
+== ERRSWEEP129: every printed compile-error line of the base files refused under this model, no crash; each of this lane's new error lines refused NAMING the form the ruling gives (MSG129)
+PASS ERRSWEEP129: 121 compile-error lines read, each refused with no crash: bad none; named form missing none; message rows with no line none
+== MARK129: the strong lean's marker phrase (predfix113's MARK113 string): the count at 43bbce01f (git, by id) above zero, now zero in all six documents; no variant phrase
+PASS MARK129: at 43bbce01f 40; now core.md 0, core_details.md 0, library.md 0, library_details.md 0, parked.md 0, parked_details.md 0; a variant phrase in none
+== QUOTES129: every "His words" bullet quoting one of the seven rulings: each quoted span (12 characters or more) a verbatim substring of the record at the PINNED start commit 43bbce01f, whitespace normalised
+PASS QUOTES129: 8 bullets, 15 quoted spans; not in the record: none
+== STALE129: the texts this lane retires, searched in the base files with continuation lines joined: none printed (each present at 43bbce01f, counted from git by id)
+PASS STALE129: 6 retired texts searched; found none; absent at the start (a search that cannot fire) none
+== PART129: part-of-argument: each placed-part program's answers against a python regex typed by hand from the ruled statement (the part's text only, its context's condition left behind), never from the documents
+PASS PART129: 5 programs x 9 texts, three modes; not as ruled: 0
+== OTHER129: each open reading the lane leaves to the owner, BOTH readings run: the printed one (this model) and the other (a switch), each against a verdict and texts typed by hand from the reading's own words
+   list-over-label `B1(A) & (B1.h: <5)` printed reading: error (`B1.h`: a `h` sits behind a gate, which is never skipped: write `B1.p.h` (a compile error, label-names-gate))
+   list-over-label `B1(A) & (B1.h: <5)` other reading: legal 3xx HOLDS; 7xx FAILS
+   sent-over-body-label `Rs(x:, A) & (x.h: <5)` printed reading: legal 3xx HOLDS; 7xx FAILS
+   sent-over-body-label `Rs(x:, A) & (x.h: <5)` other reading: error (the path from the sent label passes the body's label and the argument's place (sent-over-body-label's other re)
+   forwarded-place `Mx(A) & (Mx.h: <5)` printed reading: legal <3> HOLDS; <7> FAILS
+   forwarded-place `Mx(A) & (Mx.h: <5)` other reading: error (`Mx.h`: the path passes L2's argument place, which no list opens (a compile error, core/labels/rule/argument-p)
+   stacked-across-place `Y & (Y.c.p.h: <5)` printed reading: legal 3xx! HOLDS; 7xx! FAILS
+   stacked-across-place `Y & (Y.c.p.h: <5)` other reading: error (`Y.c.p.h`: a `h` sits behind a gate, which is never skipped: write `Y.c.p.a.h` (a compile error, label-names-g)
+   stacked-across-place `B([a = A]) & (B.p.a.h: <5)` printed reading: legal 3xx HOLDS; 7xx FAILS
+   stacked-across-place `B([a = A]) & (B.p.a.h: <5)` other reading: legal 3xx HOLDS; 7xx FAILS
+PASS OTHER129: 5 open readings, both run; not as stated: none
+== SUCCESSOR129: every in-force model re-run: predfix113 in full (its SUCCESSOR113 re-runs predfold1128 and the twenty-one before it, their outputs dumped beside it); each red DECLARED in predfold1129_succ_decl.tsv by predfix90's `red_key10` key (the red's own FAIL line, no document line numbers); a traceback never
+   LIGHT: SUCCESSOR129 not run
+   PLANT s1 -> RULE129: CAUGHT; FAIL lines: ["FAIL RULE129: 30 programs; not as ruled: ['last-placement 3: a read after all of them']", 'FAIL SWEEP129: 475 printed lines now (DIFF 11, REFUSED 53, same 410, unparsed 1), 405 keys']
+   PLANT s2 -> RULE129: CAUGHT; FAIL lines: ["FAIL RULE129: 30 programs; not as ruled: ['label-names-gate 4: a bare a.g', 'label-names-g", "FAIL ERRSWEEP129: 121 compile-error lines read, each refused with no crash: bad [('core.md", "FAIL OTHER129: 5 open readings, both run; not as stated: [('list-over-label', 'B1(A) & (B1"]
+   PLANT s3 -> RULE129: CAUGHT; FAIL lines: ["FAIL RULE129: 30 programs; not as ruled: ['same-path-last, told: date.v']", "FAIL ERRSWEEP129: 121 compile-error lines read, each refused with no crash: bad [('core.md"]
+   PLANT s4 -> RULE129: CAUGHT; FAIL lines: ["FAIL RULE129: 30 programs; not as ruled: ['shorthand-outside: the shorthand from outside']", "FAIL ERRSWEEP129: 121 compile-error lines read, each refused with no crash: bad [('core.md"]
+   PLANT s5 -> OTHER129: CAUGHT; FAIL lines: ['FAIL SWEEP129: 475 printed lines now (DIFF 7, REFUSED 53, same 414, unparsed 1), 405 keys ', "FAIL OTHER129: 5 open readings, both run; not as stated: [('stacked-across-place', 'Y & (Y"]
+   PLANT s6 -> CENSUS129: CAUGHT; FAIL lines: ['FAIL CENSUS129: 266 lines, 267 committed; differing lines 1; headline: predfold1129 census']
+   PLANT s7 -> SWEEP129: CAUGHT; FAIL lines: ['FAIL SWEEP129: 475 printed lines now (DIFF 8, REFUSED 52, same 414, unparsed 1), 405 keys ']
+   PLANT s8 -> ERRSWEEP129: CAUGHT; FAIL lines: ["FAIL ERRSWEEP129: 121 compile-error lines read, each refused with no crash: bad [('core.md"]
+   PLANT s9 -> MARK129: CAUGHT; FAIL lines: ['FAIL MARK129: at 43bbce01f 40; now core.md 0, core_details.md 0, library.md 1, library_det']
+   PLANT s10 -> QUOTES129: CAUGHT; FAIL lines: ["FAIL QUOTES129: 8 bullets, 15 quoted spans; not in the record: [('core.md', 'label-names-g"]
+   PLANT s11 -> STALE129: CAUGHT; FAIL lines: ["FAIL STALE129: 7 retired texts searched; found [('core.md', 'planted')]; absent at the sta"]
+   PLANT s12 -> PART129: CAUGHT; FAIL lines: ['FAIL PART129: 5 programs x 9 texts, three modes; not as ruled: 5']
+   PLANT s13 -> OTHER129: CAUGHT; FAIL lines: ["FAIL OTHER129: 5 open readings, both run; not as stated: [('list-over-label', 'B1(A) & (B1"]
+   PLANT s14 -> RULE129: CAUGHT; FAIL lines: ["FAIL RULE129: 30 programs; not as ruled: ['label-names-gate 4: a.dd.g', 'label-names-gate ", 'FAIL SWEEP129: 475 printed lines now (DIFF 39, REFUSED 52, same 383, unparsed 1), 405 keys', "FAIL OTHER129: 5 open readings, both run; not as stated: [('stacked-across-place', 'Y & (Y"]
+   PLANT s15 -> SUCCESSOR129: CAUGHT; FAIL lines: ['FAIL SUCCESSOR129: 23 models read, 105 reds, each against its declared key (105 declared):']
+PASS PLANTS129: 15 plants, caught 15
+predfold1129_model: 10 checks, 0 failed

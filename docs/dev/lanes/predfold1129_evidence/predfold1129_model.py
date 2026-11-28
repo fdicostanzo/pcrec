@@ -586,6 +586,8 @@ DIGITSUB129 = re.compile(r"^(?:\\d(?:\{\d\})?|\[0-9\](?:\{\d\})?)+$")
 def _narrow129(sub, test, lits):
     """the strings of a fixed-length digit pattern that pass the test, as an alternation (enumerated)."""
     import itertools
+    if s129("s14"):
+        return "(?:%s)" % sub                                # plant: MECH129 drops the condition
     if lits is not None:
         ok = [x for x in lits if re.fullmatch(sub, x)]
         return "(?:%s)" % "|".join(re.escape(x) for x in ok) if ok else "(?!)"
@@ -1010,8 +1012,6 @@ def program_verdict129(e, binds):
 def census129(docs):
     rows, spots, unparsed, kinds, total = [], [], [], [], 0
     progs = printed129(docs)
-    if s129("s6"):
-        progs = progs[1:]                                    # plant: one printed program not counted
     for f, ln, kind, e, binds, fld in progs:
         X129[0] = False
         try:
@@ -1131,11 +1131,6 @@ RULE129 = [
 ]
 unit129("RULE129", "the gate rule and its six neighbours on %d programs, each verdict typed from the ruled words, "
         "each legal read's texts from the record's own runs" % len(RULE129))
-if s129("s14"):
-    _place129_real = _place129
-
-    def _place129(t, binds):                                 # noqa: F811  plant: a backreference outside the part ignored
-        return _place129_real(re.sub(r"\\k<\w+>", "", t), binds)
 rl_bad = []
 for nm_, e_, b_, want, tx_ in RULE129:
     Pg, err = run11(e_, b_)                                  # noqa: F821
@@ -1160,6 +1155,8 @@ _co129 = subprocess.run([sys.executable, "-I", "-B", MY129], stdout=subprocess.P
 _keep129 = lambda t: [l_ for l_ in t.split("\n") if l_ and not l_.startswith(("PATCH ", "== library bodies",   # noqa: E731
                                                                                "== months :="))]
 _cn129, _cc129 = _keep129(_co129), _keep129(builtins.open(CENSF129, encoding="utf-8").read())
+if s129("s6"):
+    _cn129 = _cn129[:-1]                                     # plant: the run's last census line lost
 _hd129 = [l_ for l_ in _cn129 if l_.startswith("predfold1129 census at")]
 check("CENSUS129", _cn129 == _cc129 and len(_hd129) == 1,   # noqa: F821
       "%d lines, %d committed; differing lines %d; headline: %s" % (
