@@ -12875,3 +12875,18 @@ wording of one-path is corrected to his sentence "exactly one path possible from
 settles named-list-two-parts (one path twice reads the last; `h` under two different labels is two paths, an
 error at the call: the printed marked reading stands, unmarked); "Of the reads that moved to errors when you
 ruled it, any that reach one path twice come back as legal; the fold reports which"; `date.v` stays an error.
+
+### 2026-11-28 MANAGER — two queued questions derived, not asked; the run for the question branch-in-loop (no owner words)
+tags: core/labels/rule/sent-over-body-label core/labels/rule/list-over-label core/labels/rule/one-path
+The manager's readings (told to him; the fold lane predfold1129 tests them): sent-over-body-label follows from
+label-names-gate with label-doors ("stacked labels are equal names of one spot"): in
+`Rs(l:, v) := /${[l = [p = v]]}xx/` both labels name the one gate, so `x.h` and `x.p.h` are legal.
+list-over-label follows from label-names-gate: in `[(=) = [p = rx]]` the list lifts `p`, the gate's name;
+`B1.h` skips the gate, a compile error; `B1.p.h` is legal (argument-is-gate), and `[p = [(=) = rx]]` passes both.
+The run told with branch-in-loop (pasted; scratch `pred/altloop.py`; `[n = rx.repeat([a = /(?<d>\d)/] |
+[b = /x(?<d>\d)/], min = 1, max = (underscore))] & (n.d: < 5)`, the reading "the branch of the last pass";
+shorter matches tried after the longest):
+WHOLE x73 HOLDS a= 3 b= 7
+WHOLE 3x7 FAILS a= 3 b= 7
+SEARCHED x7 3x7 x73 [('3', 3)]
+FIND-ALL x73 3x7 x12 [('x73', 0), ('3', 4), ('x12', 8)]
