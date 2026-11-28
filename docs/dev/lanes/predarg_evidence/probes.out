@@ -377,6 +377,18 @@ SAME core.md, The mark written
       WHOLE `3-7` FAILS, `7-3` HOLDS, `3-3` HOLDS, `7-7` FAILS / SEARCHED `7-7 3-7` FAILS / FIND-ALL `3-7 7-3 1-2 9-9` [`7-3`@4, `1-2`@8]
       (regex (?:(?:(?:(?:(?:(?P<g0>\d)))))-(?P<g1>[0-4])))
 
+== body-label-beside-own: body-own-name's reading (b): the argument under a label the body writes, the body's own d beside it
+   program `B(A) & (B.d: <5)`, A := /(?<d>\d)/; B(rx) := /${[p = rx]}-(?<d>\d)/
+   read B.d
+      now  legal (one, B:B's d)
+      A0   legal (one, B:B's d)
+      A    legal (one, B:B's d)
+      A2   legal (one, B:B's d)
+      B    legal (one, B:B's d)
+   RUN the body's own d:
+      WHOLE `7-3` HOLDS, `3-7` FAILS, `3-3` HOLDS / SEARCHED `3-7 7-3` `7-3`@4 / FIND-ALL `7-3 3-7 1-2 9-9` [`7-3`@0, `1-2`@8]
+      (regex (?:(?:(?P<g1>(?:(?:(?P<g0>\d)))))-(?P<g2>[0-4])))
+
 == w-one-arg-has: two listed places, only one argument sets h
    program `W(/(?<h>\d)/, /;(?<e>\d)/) & (W.h: <5)`, W(a, b) := [(=) = a] SEQ [(=) = b]
    read W.h

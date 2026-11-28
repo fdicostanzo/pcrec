@@ -204,6 +204,10 @@ PROBES = [
     dict(id="listed-then-own", title="the body's own d AFTER the listed place, the argument with d",
          prog="Bb(Ad) & (Bb.d: <5)", binds=["Ad := /(?<d>\\d)/", "Bb(rx) := /${[(=) = rx]}-(?<d>\\d)/"],
          reads=["Bb.d"], texts=TDASH, readings={"the body's own d (both readings agree)": ("d", 2)}),
+    dict(id="body-label-beside-own", title="body-own-name's reading (b): the argument under a label the body "
+                                           "writes, the body's own d beside it",
+         prog="B(A) & (B.d: <5)", binds=["A := /(?<d>\\d)/", "B(rx) := /${[p = rx]}-(?<d>\\d)/"], reads=["B.d"],
+         texts=(["7-3", "3-7", "3-3"], "3-7 7-3", "7-3 3-7 1-2 9-9"), readings={"the body's own d": ("d", 2)}),
     dict(id="w-one-arg-has", title="two listed places, only one argument sets h", prog="W(/(?<h>\\d)/, /;(?<e>\\d)/) & (W.h: <5)",
          binds=["W(a, b) := [(=) = a] SEQ [(=) = b]"], reads=["W.h"], texts=(["3;7", "7;3"], "7;3 3;7", "3;7 7;3 1;2"),
          readings={"the first argument's h": ("h", 1)}),
