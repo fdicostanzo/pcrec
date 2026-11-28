@@ -815,10 +815,10 @@ history:
 ## core/labels/rule/argument-place — No path through an argument's place
 slugs: no-path-through-argument
 rulings:
-- 2026-11-27 (class: STRONG LEAN) "no-path-through-argument: let's do a strong lean yes with your carve out for exported labels. Can you find any other unanticipated problems?  If someone is doing (=) = type export they should know what they're doing." (record: "2026-11-27 OWNER, a STRONG LEAN on no-path-through-argument"); NOT a ruling: the statement as put; its clause "in which case they count as the body's own labels" is the manager's, WITHDRAWN at carve-out-reading, never printed.
+- 2026-11-27 (class: STRONG LEAN) "no-path-through-argument: let's do a strong lean yes with your carve out for exported labels. Can you find any other unanticipated problems?  If someone is doing (=) = type export they should know what they're doing." (record: "2026-11-27 OWNER, a STRONG LEAN on no-path-through-argument"); NOT a ruling: the statement as put, less the manager's clause on a list's labels, WITHDRAWN at carve-out-reading.
 - 2026-11-27 (class: a direction) "Let's stop questions for tonight. Fold now" (record: "2026-11-27 OWNER, a DIRECTION: "Let's stop questions for tonight. Fold now""); the manager's decision in that entry: the base statement is applied and MARKED at every site, "the owner's strong lean, entailed by carve-out-reading and caller-label-export; to be confirmed", so it can be confirmed or lifted in one place.
 rejected:
-- reading B of the carve-out, the listed labels "count as the body's own labels" (nothing skipped) — by owner ruling carve-out-reading ("agree with lean", the door) — under it `Bo.d` changed its answer with the argument, silently (docs/dev/lanes/predarg_report.md problem 2).
+- reading B of the carve-out, the listed labels read as the body's own (nothing skipped) — by owner ruling carve-out-reading ("agree with lean", the door) — under it `Bo.d` changed its answer with the argument, silently (docs/dev/lanes/predarg_report.md problem 2).
 readings:
 - the place is a wall to every path but the sender's names, a door under a list (the study's candidate, mode A of docs/dev/lanes/predarg_evidence/cand.py) — RUN: docs/dev/lanes/predfold1128_evidence/ predfold1128_model.py PLACE128, RULE128.
 - the refusal's wording naming the rule and the ways in (study problem 10; the manager's wording, D26) — RUN: predfold1128_model.py MSG128.
