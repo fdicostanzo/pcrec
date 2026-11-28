@@ -1,0 +1,92 @@
+== library bodies (library.md): chars ([ch = /(?s:.)/])* ; length(S) := chars & (count((chars.ch: /(?s:.)/)): S) ; month_numbered(S) := months & (months.mname.index: S) ; between: >= lo & <= hi
+== months := [mname = [/Jan(?:uary)?/, /Feb(?:ruary)?/, /Mar(?:ch)?/, /Apr(?:il)?/, /May/, /June?/, /July?/, /Aug(?:ust)?/, /Sep(?:tember)?/, /Oct(?:ober)?/, /Nov(?:ember)?/, /Dec(?:ember)?/]]
+PATCH R-5 walk10: 3 lines replaced by 17
+PATCH R-5 path10: 2 lines replaced by 10
+PATCH R-5 g_eval: 2 lines replaced by 3
+== CANARY113: LIT113 off is predfold1128's boundary (the control): `k.a.h` over `[k = [c = B([a = A])]]` legal; on refused naming the place; `Y.a.h` and `X.a.h` (caller-label-export) legal both ways
+PASS CANARY113: off: legal; on: `k.a.h`: the path passes B's argument place, which no list opens (a compile error, core/labels/rule/argument-p; Y.a.h legal; X.a.h legal
+== OPEN113: each marked cell this lane prints, BOTH readings RUN: the printed reading refused as its line says; the other reading legal, its answers equal to a regex written by hand AND printed verbatim in the documents (continuation lines joined)
+   EXAMPLES-1 k.a.h     printed reading: `k.a.h`: the path passes B's argument place, which no list opens (a compile error, core/la | other: WHOLE `3xx` HOLDS, `7xx` FAILS / SEARCHED `7xx 3xx` `3xx`@4 / FIND-ALL `3xx 7xx 4xx` [`3xx; hand regex True; printed in the documents: True
+   RULING-6 row 1 N2    printed reading: at N2's definition: `h` is a label its parameter holds, not its to name (core/holes/bare-c | other: WHOLE `3` HOLDS, `7` FAILS / SEARCHED `7 3` `3`@2 / FIND-ALL `3 7 4` [`3`@0, `4`@4]; hand regex True; printed in the documents: True
+   RULING-6 row 8       printed reading: at `N([a = P] SEQ [b = Q])`: two labels `h` in the argument, `a.h` and `b.h`, which N's li | other: WHOLE `7,3` HOLDS, `3,7` FAILS / SEARCHED `3,7 7,3` `7,3`@4 / FIND-ALL `7,3 3,7 1,2` [`7,3; hand regex True; printed in the documents: True
+   RULING-3 checked     printed reading: at the binding `checked(B) := B & (B.year: < 2100)`: checked names a label it does not hol | other: WHOLE `2024-02-29` HOLDS, `2150-01-01` FAILS / SEARCHED `x 2150-01-01 1999-12-31` `1999-12; hand regex True; printed in the documents: True
+PASS OPEN113: 4 cells, both readings run; not as printed: none
+== SWEEP113: every printed three-mode line RUN under this model; the starting commit 8fa0108f9's lines under the control (X113 off: predfold1128 as merged) against these, keyed by the program; every key gone or moved DECLARED
+   DROPPED OR MOVED BY A RULING core.md:689 `Bo(Ad) & (Bo.d: <5)`: EXAMPLES-2: "His remedy" re-written with the body's `d` under `q` (the separating witness); the old program, the same answers as the line before it, is gone
+   ADDED core.md:695 `Bo(Ad) & (Bo.d: <5)`: WHOLE `3-7` HOLDS, `7-3` FAILS, `3-3` HOLDS, `7-7` FAILS / SEARCHED `7-7 3-7` `3-7`@4 / FIND-ALL `3-7 7-3 1-2 9-9` [`3-7`@0, `1-2`@8]
+   ADDED library.md:467 `occurrences(/(?<n>\d+)/) & (occurrences.n: "3")`: WHOLE `a1b3` HOLDS, `a3b1` HOLDS, `ab` FAILS / SEARCHED `x1 3` `x1 3`@0 / FIND-ALL `a3 b1 3` [`a3 b1 3`@0]
+   ADDED library.md:496 `hits(/a(?<g>x)?/) & (hits.g: "x")`: WHOLE `aax` HOLDS, `axa` FAILS / SEARCHED `axa` FAILS / FIND-ALL `aax axa` []
+PASS SWEEP113: 430 printed lines now (DIFF 7, REFUSED 53, same 369, unparsed 1), 403 keys at the starting commit; not same and not inherited 0 (inherited 61); moved 0; gone 0; declared 1; added 3; stale 0
+== ERRSWEEP113: every printed compile-error line of the base files refused under this model, no crash; each named form in the refusal's message (predfold1128's rows, and this lane's)
+PASS ERRSWEEP113: 119 compile-error lines read, each refused with no crash: bad none; named form missing none; message rows with no line none
+== SPECLINES113: every printed line new in this lane (not in its file at the starting commit) is RUN: a three-mode line SAME as run, a compile-error line refused
+   RUN A label above the call's label
+   RUN A list above the body's label
+   RUN At the weekday's own spot
+   RUN His remedy
+   RUN Lacking it, a part used alone in it
+   RUN Lacking it, behind an underscore group
+   RUN Lacking it, behind an underscore label
+   RUN Placed, then read by the parameter's name
+   RUN The argument's group, through the door
+   RUN The body reads the named label
+   RUN Through a call, the sender's name
+   RUN Through the call's label
+   RUN Through the door, `hit` skipped
+   RUN Two binding levels, the sender's label
+   RUN Two binding levels, through the call's label
+   RUN Two labelled parts
+   RUN Without his remedy
+PASS SPECLINES113: 17 new printed lines: three-mode 5, compile-error 12, unread 0; not as printed: none; 4 bullets carrying a reading's answers, not an OPEN113 run: none
+== HAND113: the new legal lines' answers against regexes written by hand (a second source beside the sweep): the remedy (the body's `d`), `hits.g` and `occurrences.n` against the printed `.hit` lines of their piece
+   hits(/a(?<g>x)?/) & (hits.g: "x")`                           answers equal to the printed `hits(/a(?<g>x)?/) & (hits.hit.g: "x")`` line at 8fa0108f9: True
+   occurrences(/(?<n>\d+)/) & (occurrences.n: "3")`             answers equal to the printed `occurrences(/(?<n>\d+)/) & (occurrence` line at 8fa0108f9: True
+PASS HAND113: 3 lines; differing: none
+== MARK113: the strong lean's mark: the exact phrase counted (the start's count, less the two RULING-4 drops, plus its four adds); dropped and added at the named sites; the re-worded site; no variant phrase
+PASS MARK113: 40 marked sites now (core.md 37, library.md 3, parked.md 0); at 8fa0108f9 38; expected 40; sites not as ruled: none; a variant phrase: none
+== QUOTES113: RULING-1: param-reference's lines as printed, each a verbatim substring of the record at the PINNED start commit (line 3 with "own"; lines 1-2 and 4 quoted apart, no splice)
+PASS QUOTES113: 3 quotes found (lines 1-2, 4, 3); not in the record at 8fa0108f9: none; the statement carries "own": True
+== STALE113: the texts this lane retires, searched with continuation lines joined: none printed
+PASS STALE113: 9 retired texts searched; found none
+== TEXT113: each FIX-NOW mark the dispositions rule, present at its piece (the piece read by its tag, continuation lines joined): a list written from the dispositions, not from the documents
+PASS TEXT113: 19 marks at their pieces, 3 in the details; missing: none
+== SUCCESSOR113: every in-force model re-run: predfold1128 in full (its SUCCESSOR128 re-runs predfix112 and the twenty before it, their outputs dumped beside it); each red DECLARED in predfix113_succ_decl.tsv by predfix90's `red_key10` key (the red's own FAIL line, no document line numbers); a traceback never
+   predarr       last line: predarr_model: 17 checks, 1 failed (DOC)
+   predbound     last line: predbound_model: 21 checks, 3 failed (SWEEP, MARKS, DOC)
+   predcall      last line: predcall_model: 14 checks, 5 failed (CLOSED, MARKS, SCAN, PREDREF, DOC)
+   preddef       last line: preddef_model: 22 checks, 5 failed (UNMARKED, SUCCESSOR, SWEEP, MARKS, DOC)
+   predfix111    last line: predfix111_model: 14 checks, 5 failed (SWEEP111, ERRSWEEP111, SPECLINES111, QUOTES111, SUCCESSOR111)
+   predfix112    last line: predfix112_model: 11 checks, 6 failed (TABLE112, SWEEP112, ERRSWEEP112, SPECLINES112, QUOTES112, SUCCESSOR112)
+   predfix77     last line: predfix77_model: 20 checks, 2 failed (MARKS, DOC)
+   predfix82     last line: predfix82_model: 22 checks, 5 failed (REPRINT, SUCCESSOR, SWEEP, MARKS, DOC)
+   predfix83     last line: predfix83_model: 25 checks, 5 failed (UNMARKED, SWEEP, SUCCESSOR, MARKS, DOC)
+   predfix84     last line: predfix84_model: 37 checks, 3 failed (GRID, SWEEP, DOC)
+   predfix86     last line: predfix86_model: 29 checks, 2 failed (SWEEP, DOC)
+   predfix88     last line: predfix88_model: 25 checks, 8 failed (UNSPEC, SHORTHAND, STACKCHAIN, SPOTON, TABLE, NAMEGRID, SWEEP, DOC)
+   predfix90     last line: predfix90_model: 26 checks, 8 failed (TABLE, NAMEGRID, PATHS10, GRID, TABLE10, SWEEP, ERRSWEEP, DOC)
+   predfold1123  last line: predfold1123_model: 18 checks, 3 failed (SWEEP, NULLABLE, DOC)
+   predfold1123b last line: predfold1123b_model: 18 checks, 2 failed (SWEEP, DOC)
+   predfold1124  last line: predfold1124_model: 20 checks, 6 failed (TABLE, NAMEGRID, FLAGS, SWEEP, ERRSWEEP, DOC)
+   predfold1125  last line: predfold1125_model: 15 checks, 6 failed (CENSUS11, SWEEP11, ERRSWEEP11, SUCCESSOR11, QUOTES11, DOC11)
+   predfold1127  last line: predfold1127_model: 13 checks, 5 failed (SWEEP1127, ERRSWEEP1127, SPECLINES1127, QUOTES1127, SUCCESSOR1127)
+   predfold1128  last line: predfold1128_model: 16 checks, 3 failed (ERRSWEEP128, SPECLINES128, SUCCESSOR128)
+   predref       last line: predref_model: 8 checks, 3 failed (SCAN, MARKS, DOC)
+   predscope     last line: predscope_model: 20 checks, 2 failed (CLOSEDB, DOC)
+   predspot      last line: predspot_model: 27 checks, 3 failed (GRID, FSWEEP, DOC)
+PASS SUCCESSOR113: 22 models read, 91 reds, each against its declared key (91 declared): all as declared
+   PLANT s1 -> CANARY113: CAUGHT; FAIL lines: ['FAIL CANARY113: off: legal; on: LEGAL; Y.a.h legal; X.a.h legal', "FAIL OPEN113: 4 cells, both readings run; not as printed: ['EXAMPLES-1 k.a.h']", "FAIL ERRSWEEP113: 119 compile-error lines read, each refused with no crash: bad [('core.md", 'FAIL SPECLINES113: 17 new printed lines: three-mode 5, compile-error 12, unread 0; not as ']
+   PLANT s2 -> ERRSWEEP113: CAUGHT; FAIL lines: ["FAIL ERRSWEEP113: 119 compile-error lines read, each refused with no crash: bad [('core.md", 'FAIL SPECLINES113: 17 new printed lines: three-mode 5, compile-error 12, unread 0; not as ']
+   PLANT s3 -> ERRSWEEP113: CAUGHT; FAIL lines: ["FAIL OPEN113: 4 cells, both readings run; not as printed: ['RULING-6 row 8']", 'FAIL ERRSWEEP113: 119 compile-error lines read, each refused with no crash: bad none; name', 'FAIL SPECLINES113: 17 new printed lines: three-mode 5, compile-error 12, unread 0; not as ']
+   PLANT s4 -> OPEN113: CAUGHT; FAIL lines: ["FAIL OPEN113: 4 cells, both readings run; not as printed: ['RULING-6 row 8']", 'FAIL SPECLINES113: 17 new printed lines: three-mode 5, compile-error 12, unread 0; not as ']
+   PLANT s5 -> OPEN113: CAUGHT; FAIL lines: ["FAIL OPEN113: 4 cells, both readings run; not as printed: ['RULING-3 checked']"]
+   PLANT s6 -> SWEEP113: CAUGHT; FAIL lines: ['FAIL SWEEP113: 430 printed lines now (DIFF 8, REFUSED 53, same 368, unparsed 1), 403 keys ', 'FAIL SPECLINES113: 17 new printed lines: three-mode 5, compile-error 12, unread 0; not as ']
+   PLANT s7 -> ERRSWEEP113: CAUGHT; FAIL lines: ["FAIL ERRSWEEP113: 119 compile-error lines read, each refused with no crash: bad [('core.md", 'FAIL SPECLINES113: 17 new printed lines: three-mode 5, compile-error 12, unread 0; not as ']
+   PLANT s8 -> SPECLINES113: CAUGHT; FAIL lines: ['FAIL SPECLINES113: 18 new printed lines: three-mode 5, compile-error 12, unread 1; not as ']
+   PLANT s9 -> HAND113: CAUGHT; FAIL lines: ["FAIL HAND113: 3 lines; differing: ['His remedy']"]
+   PLANT s10 -> MARK113: CAUGHT; FAIL lines: ['FAIL MARK113: 40 marked sites now (core.md 37, library.md 3, parked.md 0); at 8fa0108f9 38']
+   PLANT s11 -> QUOTES113: CAUGHT; FAIL lines: ["FAIL QUOTES113: 3 quotes found (lines 1-2, 4, 3); not in the record at 8fa0108f9: ['3. **E"]
+   PLANT s12 -> STALE113: CAUGHT; FAIL lines: ["FAIL STALE113: 10 retired texts searched; found [('core.md', 'planted')]"]
+   PLANT s13 -> TEXT113: CAUGHT; FAIL lines: ["FAIL TEXT113: 20 marks at their pieces, 3 in the details; missing: [('planted', 'core/labe"]
+   PLANT s14 -> SUCCESSOR113: CAUGHT; FAIL lines: ['FAIL SUCCESSOR113: 22 models read, 91 reds, each against its declared key (91 declared): [']
+PASS PLANTS113: 14 plants, caught 14
+predfix113_model: 12 checks, 0 failed
