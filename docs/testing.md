@@ -5170,8 +5170,10 @@ its last row (an unreachable table checks nothing). Its static complement is
 census of compile-path heap builders, which sees the sites no witness
 reaches. Witness W6 (`^abc|x+$`, review r96) runs the compound walk, the one
 fixed shape (a callee's heap result handed to the arena) the scan cannot
-see: BASE strands a part's text on 10 refusals, the fix 0; its 1014
-of 1057 (1010 of 1045 at [ARENA-SCOPES] F1, 982 of 1008 before F1's registry
+see: BASE strands a part's text on 10 refusals, the fix 0; its 1016
+of 1061 (`make alloc`, [ARENA-SCOPES] F4: per part, a second hold and the forms
+string's heap copy through the part's own channel, K163; 1014 of 1057 at F3;
+1010 of 1045 at F1, 982 of 1008 before F1's registry
 records; a one-array registry, tried and reverted, read 984; F3's S11
 `splice_mark` scope, 2 records in each of 2 part compiles, added 4; S10/S12 do not run in a part compile) single-shot absorptions are the compound row's by-design fallback, pinned
 exactly with that reason (a pinned count prints a NOTE, any other count

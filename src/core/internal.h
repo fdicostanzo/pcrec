@@ -558,10 +558,26 @@ bool    pcrec_arena_open_p(const Arena *a);
  * exists (the one step that can fail); refused while a scope is open (L7). */
 void  **pcrec_arena_hold(Arena *a);
 /* The one error-channel read: every refusal or nomem made through an
- * Arena's or a StrBuf's `.cx` in arena.c and sb.c takes its Ctx from it
- * (D-7; the scanner's scope). The `sb->cx` refusals in vm_stmt.c and enc.c
- * still read the Ctx directly (an F4 input). */
+ * Arena's or a StrBuf's `.cx` in arena.c and sb.c takes its Ctx from it, and
+ * every allocating entry that holds a channel calls it unconditionally
+ * (`pcrec_arena_alloc`, `rec_take`, `sb_grow` past its capacity return,
+ * `pcrec_sb_take`, `pcrec_sb_render_prefix`), so a use through a LENT Ctx is
+ * counted whether or not it fails (D-7; the scanner's scope). NULL (a
+ * detached arena) is legal and counts nothing. The count covers ALLOCATING
+ * uses only (it is read after the part returns; a refusal longjmps first):
+ * the refusal-only half is covered by the scanner's seam rule "seam types
+ * carry no outer channel". The `sb->cx` refusals in vm_stmt.c and enc.c read
+ * the Ctx directly: outside the count. */
 Ctx    *pcrec_err_chan(Ctx *cx);
+/* [K163] THE LENT PAIR (D-7), called by compound.c `walk_part` only, around
+ * a nested part compile: while lent, `pcrec_err_chan` counts each use of
+ * `cx`'s channel (counted, never failed); `pcrec_ctx_unlend` ends the window
+ * and returns the count, which the caller refuses at its own point when
+ * nonzero. Neither allocates. */
+void     pcrec_ctx_lend(Ctx *cx);
+unsigned pcrec_ctx_unlend(Ctx *cx);
+/* READ-ONLY, for tests/core/alloc_check.c's W7 only: is `cx` lent (NULL: no). */
+bool     pcrec_ctx_lent_p(const Ctx *cx);
 
 /* The two comment CLASSES, decided at the emission site (D112 item 2).
  * ESSENTIAL is provenance and the embedder's contract — what the file IS and
@@ -4523,6 +4539,21 @@ struct Ctx {
      * above already have this shape; this field is the same idiom applied
      * to `pcrec_ctx_nomem`'s own arrival. */
     bool                 failed_nomem;
+    /* [ARENA-SCOPES] D-7 THE LENT CHANNEL ([K163]): true while a nested part
+     * compile runs under this Ctx (`pcrec_ctx_lend`/`pcrec_ctx_unlend`,
+     * compound.c `walk_part` only), and the uses of this Ctx's error channel
+     * counted meanwhile by `pcrec_err_chan` (an ALLOCATION through an Arena
+     * or a StrBuf whose `.cx` is this Ctx, made from inside the inner
+     * compile's recovery point; a refusal-only use longjmps before the
+     * count is read and is covered by the scanner's seam rule instead).
+     * The count is `chan_uses - lent_base`: `pcrec_err_chan` bumps
+     * `chan_uses` on EVERY use, lent or not (one add on the hot path, no
+     * flag read, lane f4flag), and `pcrec_ctx_lend` snapshots it into
+     * `lent_base`. WRITTEN and READ by arena.c only; zeroed per attempt by
+     * the same memset as `failed_nomem`. */
+    bool                 lent;
+    uint64_t             chan_uses;
+    uint64_t             lent_base;
     /* [REL-1.11] THE PER-COMPILE ENABLED FEATURE SET. Resolved ONCE by
      * `compile_driver` from `pcrec_options.features` (NULL = the CLI's own
      * bare-invocation default, `pcrec_default_features`), via the PURE
@@ -9085,8 +9116,11 @@ struct PcrecPartFacts {
     PcrecEmitSize simd_size;/* their caps breakdown, carried into the shell */
     size_t scaf_guarded;    /* [FINDALL-NEXT] its scaffold bytes, and */
     PcrecEmitSize scaf_size;/* their breakdown, carried into the shell */
-    Arena *into;            /* in: where the strings below are copied */
-    const char *memfn_forms;/* its `MEMFN_FORMS` value (in `into`) */
+    void **hold;            /* in: the OUTER compile's arena hold that owns
+                               the heap string below ([K163]; compound.c
+                               `walk_part` writes it before the part compiles,
+                               the part's compile_driver stores into it) */
+    const char *memfn_forms;/* its `MEMFN_FORMS` value (heap, in `*hold`) */
     unsigned find_consulted;/* the queries any of its attempts consulted
                                (a bit per `PCREC_FQ_*` row), for the shell's
                                knowledge stamp (window_contract.md §3.7.3a) */

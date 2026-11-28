@@ -165,10 +165,17 @@ struct CompWalk {
  * refused). Its parent options are P's own (the placeholder prefix: the text
  * is spliced unrendered, so K79 holds across the compound), and so is its
  * measurement set: this attempt's resolved one, never resolved again. Its
- * text (heap, the part compile's output) is stored into an arena HOLD taken
- * before the part compiles ([K155], pcrec_arena_hold) the moment it exists:
- * no refusal later in the walk, the next part's compile included, can strand
- * it, the arena frees it, and the shell reads it from there. A part has no header (`part_compile`). */
+ * two heap results, its text (the part compile's output) and its facts'
+ * forms string (copied by the part's own compile through ITS OWN channel),
+ * are each stored into an arena HOLD this level takes before the part
+ * compiles ([K155], [K163], pcrec_arena_hold) the moment it exists: no
+ * refusal later in the walk, the next part's compile included, can strand
+ * either, this arena frees them, and the shell reads them from there. The
+ * part compiles with this Ctx LENT (D-4's order, design arena_scopes.md): a
+ * use of this Ctx's channel from inside the part's recovery point (the K163
+ * class: a failure there would land HERE and strand the part's teardown) is
+ * counted, and a nonzero count is an internal-error refusal at this point,
+ * after both stores, so it strands nothing. A part has no header (`part_compile`). */
 static int walk_part(CompWalk *w, int i)
 {
     if (!w->tried[i]) {
@@ -179,8 +186,10 @@ static int walk_part(CompWalk *w, int i)
                                             ? w->cx->emit_in->harness->walk_arms : 0 };
         w->tried[i] = true;
         w->rep[i].killed = -1;   /* stays -1 unless the derivation ran */
-        w->facts[i].into = &w->cx->arena;
+        void **forms = pcrec_arena_hold(&w->cx->arena);
         void **text = pcrec_arena_hold(&w->cx->arena);
+        w->facts[i].hold = forms;
+        pcrec_ctx_lend(w->cx);
         w->rc[i] = part_compile(w->cx->pat, w->cx->opt, &w->row->parts[i],
                                 &w->rep[i], &w->facts[i], true,
                                 /* [ENTRY-TABLE] E1 the shell row the part's
@@ -189,7 +198,11 @@ static int walk_part(CompWalk *w, int i)
                                                     : PCREC_ENTRY_COMP_B,
                                 &meas, &w->out[i],
                                 &w->err[i]);
+        unsigned uses = pcrec_ctx_unlend(w->cx);
         if (w->rc[i] == 0) *text = w->out[i].c_src;
+        if (uses)
+            pcrec_ctx_fail(w->cx, 0, "internal error: a part compile used the "
+                           "enclosing compile's error channel %u time(s) [K163]", uses);
     }
     return w->rc[i];
 }

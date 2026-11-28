@@ -1,4 +1,5 @@
 #include <stddef.h>
+#include <limits.h>
 #include <stdint.h>
 #include <stdlib.h>
 #include <string.h>
@@ -56,11 +57,38 @@ static const struct LKind kind_arena  = { sizeof(Arena),   release_arena };
 static MarkPay *mark_pay(LEnt *m) { return (MarkPay *)(void *)m->payload; }
 
 /* The one error-channel read for a refusal or nomem made through an Arena's
- * or a StrBuf's `.cx` in arena.c and sb.c (D-7; vm_stmt.c's and enc.c's `sb->cx`
- * refusals do not use it yet: an F4 input). Returns `cx`; NULL (a detached arena) is legal. */
+ * or a StrBuf's `.cx` in arena.c and sb.c, called unconditionally by every
+ * allocating entry that holds a channel (D-7, internal.h). Returns `cx` and
+ * counts one use, lent or not (counted, never failed): the lender reads the
+ * uses made while `cx` was LENT (a nested part compile runs under it,
+ * [K163]) as the difference from its snapshot, so the hot path is one add
+ * and no flag read. NULL (a detached arena) is legal and counts nothing.
+ * vm_stmt.c's and enc.c's `sb->cx` refusals read the Ctx directly. */
 Ctx *pcrec_err_chan(Ctx *cx)
 {
+    if (cx) cx->chan_uses++;
     return cx;
+}
+
+/* [K163] THE LENT PAIR (D-7, D-4's order): compound.c `walk_part` lends its
+ * Ctx around a part compile and refuses at its own point on a nonzero count,
+ * after both of its holds are stored, so the refusal strands nothing. */
+void pcrec_ctx_lend(Ctx *cx)
+{
+    cx->lent = true;
+    cx->lent_base = cx->chan_uses;
+}
+
+unsigned pcrec_ctx_unlend(Ctx *cx)
+{
+    uint64_t n = cx->chan_uses - cx->lent_base;
+    cx->lent = false;
+    return n > UINT_MAX ? UINT_MAX : (unsigned)n;
+}
+
+bool pcrec_ctx_lent_p(const Ctx *cx)
+{
+    return cx && cx->lent;
 }
 
 /* An internal-error refusal from the registry: diagnosed through the
@@ -72,14 +100,25 @@ __attribute__((noreturn)) static void reg_fail(const Arena *a, const char *why)
     abort();
 }
 
+/* An out-of-memory refusal: diagnosed through the arena's compile when it
+ * has one, an abort on a detached arena. Out of line and cold so the
+ * allocation paths keep no channel live across their malloc (lane f4flag:
+ * `pcrec_arena_alloc` had held `a->cx` in a saved register for this;
+ * `noipa`, not `noinline`: IPA-SRA would pass `a->cx` in and undo it). */
+__attribute__((noreturn, cold, noipa)) static void arena_nomem(const Arena *a)
+{
+    if (a->cx) pcrec_ctx_nomem(pcrec_err_chan(a->cx));
+    abort();
+}
+
 /* A fresh zeroed record of `kind`, not yet linked: the one step of a
  * registration that can fail, taken while there is nothing yet to lose. */
 static LEnt *rec_take(Arena *a, const struct LKind *kind)
 {
+    (void)pcrec_err_chan(a->cx);   /* D-7: a use, counted while lent */
     LEnt *e = calloc(1, offsetof(LEnt, payload) + kind->size);
     if (!e) {
-        if (a->cx) pcrec_ctx_nomem(pcrec_err_chan(a->cx));
-        abort();
+        arena_nomem(a);
     }
     e->kind = kind;
     return e;
@@ -157,8 +196,7 @@ void *pcrec_scope_malloc(Scope *s, size_t n)
     rec_push(a, e);
     void *p = malloc(n ? n : 1);
     if (!p) {
-        if (a->cx) pcrec_ctx_nomem(pcrec_err_chan(a->cx));
-        abort();
+        arena_nomem(a);
     }
     *(void **)(void *)e->payload = p;
     return p;
@@ -168,8 +206,7 @@ void *pcrec_scope_calloc(Scope *s, size_t n, size_t sz)
 {
     if (sz && n > SIZE_MAX / sz) {
         scope_check(s);
-        if (s->a->cx) pcrec_ctx_nomem(pcrec_err_chan(s->a->cx));
-        abort();
+        arena_nomem(s->a);
     }
     void *p = pcrec_scope_malloc(s, n * sz);
     memset(p, 0, n * sz);
@@ -247,6 +284,7 @@ void **pcrec_arena_hold(Arena *a)
  * (no Ctx) has no error channel to diagnose through. */
 void *pcrec_arena_alloc(Arena *a, size_t sz)
 {
+    (void)pcrec_err_chan(a->cx);   /* D-7: a use, counted while lent, block or not */
     sz = (sz + 15) & ~(size_t)15;
     ABlock *b = a->head;
     if (!b || b->cap - b->used < sz) {
@@ -255,11 +293,12 @@ void *pcrec_arena_alloc(Arena *a, size_t sz)
         /* [M4.7b/K7] A library must not kill its caller. The arena belongs to
          * a Ctx, so a failure here is an ordinary diagnosed refusal: the
          * longjmp lands in compile_driver, which frees this arena wholesale
-         * along with the Job's heap arrays. Nothing allocated so far leaks and
+         * along with the Job's heap arrays (the arena's Ctx is the running
+         * one: a use through a lent Ctx is counted above and refused by its
+         * lender, [K163]). Nothing allocated so far leaks and
          * nothing half-built is ever read again. */
         if (!b) {
-            if (a->cx) pcrec_ctx_nomem(pcrec_err_chan(a->cx));
-            abort();
+            arena_nomem(a);
         }
         b->next = a->head;
         b->used = 0;
