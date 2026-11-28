@@ -1321,3 +1321,7 @@ wake.md says (read the draft WHOLE first; A4 is a ruled-words finding: read his 
   same cell), gate-twice-scope (next). Marked readings told to him at the r111 report.
 - Main merged lane/pred-rev28 at dd873d4b4 into main and pushed (17468e317); it prunes predfold1125 and
   predfix111. Waiting on the owner: gate-beside-label, then gate-twice-scope.
+- gate-beside-label RULED (error). His proposal of a one-path rule for skipping, a census run (onepath.py), then
+  one-path RULED ("yes all five"; it answers gate-twice-scope; the array form exempt). Merged main back (637a5e79c).
+  LAUNCHED fold lane predfold1127 (opus; the two rulings; lanewatch armed). Review number r112 from main for its
+  small critic round. One question the lane will bring back: the array form over a part used alone.
