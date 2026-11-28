@@ -86,13 +86,22 @@ def _pname129(P, n):
 def _stack129(n):
     """the label stack a label node belongs to: (top, [labels top to bottom], the node under the bottom)."""
     top = n
-    while top.parent is not None and top.parent.k == "label" and len(top.parent.kids) == 1 \
-            and top.parent.kids[0] is top:
-        top = top.parent
+    while True:
+        q = top.parent
+        if q is not None and q.k == "label" and len(q.kids) == 1 and q.kids[0] is top:
+            top = q
+            continue
+        if q is not None and q.k == "arg" and not s129("s5") and q.parent is not None and q.parent.k == "label" \
+                and q.parent.kids[0] is q:                   # the place and the argument's own label: one spot
+            top = q.parent
+            continue
+        break
     labs, x = [], top
     while x.k == "label":
         labs.append(x)
         x = x.kids[0]
+        if x.k == "arg" and x.kids and x.kids[0].k == "label" and not s129("s5"):
+            x = x.kids[0]
     return top, labs, x
 
 
@@ -132,6 +141,30 @@ def _arg_contents129(call):
             go(k)
     go(call.kids[0])
     return sorted(seen.values(), key=lambda v: v[0].a)
+
+
+def _bare_arg129(P, n, chain):
+    """the use n IS its argument, written bare (`B(A)`), not inside an expression of the caller's (`B((A))`)."""
+    call = next((c for c in reversed(chain) if getattr(c, "k", None) == "call" and c.tid == n.tid
+                 and c.a <= n.a and n.b <= c.b), None)
+    if call is None:
+        return True
+    t = P.texts[n.tid]
+    i = t.index("(", call.a) + 1
+    depth, start = 0, i
+    for j in range(i, call.b):
+        ch = t[j]
+        if ch in "([{":
+            depth += 1
+        elif ch in ")]}":
+            if depth == 0:
+                return t[start:j].strip() == t[n.a:n.b] if start <= n.a <= j else True
+            depth -= 1
+        elif ch == "," and depth == 0:
+            if start <= n.a <= j:
+                return t[start:j].strip() == t[n.a:n.b]
+            start = j + 1
+    return True
 
 
 def _walled_place129(call, argn):
@@ -211,7 +244,7 @@ def _classify129(P, chain, rtid, named):
             if mates:
                 prev = n
                 continue
-            if labs[0] is n:                                 # one entry per stack
+            if n is next(m for m in labs if any(m is c for c in chain)):   # one entry per stack on this chain
                 gate = _is_crossing129(bottom) and _crossed129(bottom, chain)
                 (gates if gate else skips).append(n)
                 full.append(tuple([labs[0].name] + sorted(m.name for m in labs[1:])))
@@ -226,7 +259,7 @@ def _classify129(P, chain, rtid, named):
         if n.k in ("use", "call"):
             if not isinstance(p, R2129) and p.k in ("label", "list"):
                 continue                                     # labelled or listed: the label is the gate
-            if not isinstance(p, R2129) and p.k == "arg":
+            if not isinstance(p, R2129) and p.k == "arg" and _bare_arg129(P, n, chain):
                 continue                                     # the argument's own use under its place: one spot
             if n.tid != rtid:
                 walls.append(n)                              # from outside through an unlabelled gate (rule 6)
@@ -262,6 +295,7 @@ class Pre129:
     """the walker's view of one program: the parse (Prog1127 over prep1127's text), its root paths and order."""
 
     def __init__(self, expr, binds):
+        self.src = " ".join([expr] + list(binds))           # the group questions as written (prep rewrites them)
         e = _lookaround_not(expr)                            # noqa: F821  fe111's text rewrites, in its order
         e = re.sub(r"\[(\s*_?\w+\s*=\s*)\(\s*([A-Za-z_]\w*)\s*\)\]", r"[\1\2]", e)
         if "when(" in e:
@@ -384,8 +418,13 @@ def walk129(pre, path, rtid="P", scope=None, rpos=None, array=False):
         uniq = []                                            # one per spot: the best route to it
         rank = lambda c: (2 if c[2] else (1 if c[3] else 0), len(c[4]))   # noqa: E731
         for c in sorted(cands, key=rank):
-            if not any(u[0] is c[0] and _same_place129(u[1], c[1]) for u in uniq):
+            j = next((j for j, u in enumerate(uniq) if u[0] is c[0]), None)
+            if j is None:
                 uniq.append(c)
+            elif rank(uniq[j])[0] == rank(c)[0] and _key129(pre, c[6]) > _key129(pre, uniq[j][6]) \
+                    and not s129("s1"):
+                uniq[j] = c                                  # one spot placed twice: its last placement
+
         gated = [c for c in uniq if c[2]]
         direct = [c for c in uniq if not c[2] and not c[3]]
         if s129("s2"):
@@ -442,12 +481,6 @@ def _fp129(full):
     return tuple(frozenset(x) for x in full)
 
 
-def _same_place129(c1, c2):
-    a1 = [n for n in c1 if getattr(n, "k", None) == "arg"]
-    a2 = [n for n in c2 if getattr(n, "k", None) == "arg"]
-    return not a1 or not a2 or a1[-1] is a2[-1] or True
-
-
 def _gatesay129(path, i, cs):
     fps = sorted(set(".".join(list(path[:i]) + [g for g in c[7]] + list(path[i:])) for c in cs))
     return "write " + " or ".join("`%s`" % f for f in fps)
@@ -457,6 +490,11 @@ def _gatesay129(path, i, cs):
 READC129 = re.compile(r"\(\s*(@?)([A-Za-z_]\w*(?:\.[A-Za-z_]\w*)*)\s*:\s*(.*)\)$", re.S)
 
 
+def _isarr129(pre, path):
+    """the read is a group question's array, as written (`some(@n.d, ..)`; prep rewrites it to a condition)."""
+    return re.search(r"\b(%s)\(\s*@%s\b(?!\.)" % ("|".join(GQ129), re.escape(".".join(path))), pre.src) is not None
+
+
 def reads129(pre):
     """every read the program writes: (path, rtid, scope node, read position, array, condition text)."""
     P = pre.P
@@ -464,7 +502,7 @@ def reads129(pre):
     for x, y in P.conds:
         t = P.texts["P"][x:y]
         for path, a, b in reads_of(t):                       # noqa: F821
-            arr = a > 0 and t[a - 1] == "@"
+            arr = (a > 0 and t[a - 1] == "@") or _isarr129(pre, path)
             out.append((path, "P", None, x + a, arr, t))
     seen = set()
     for n, chain in _walk_down129(P.root):
@@ -475,9 +513,12 @@ def reads129(pre):
                       and c.kids and c.kids[0].tid == n.tid), None)
         if scope is None and n.tid != "P":
             continue
+        if scope is not None and scope.k == "call" and re.search(r"%s\((\(|[^)]*__ref__)" % re.escape(scope.name or "?"),
+                                                                 pre.src):
+            continue                                         # a declared reference: read bare by its head's list
         t = P.texts[n.tid][n.a:n.b]
         for path, a, b in reads_of(t):                       # noqa: F821
-            arr = a > 0 and t[a - 1] == "@"
+            arr = (a > 0 and t[a - 1] == "@") or _isarr129(pre, path)
             out.append((path, n.tid, scope, n.a + a, arr, t))
     return out
 
@@ -685,6 +726,142 @@ def mech129(expr, binds):
         raise Mech129Error("re: " + str(e))
 
 
+# ================================================================== PART129 and the engine: prog with GATE129 in front
+PATHATOM129 = re.compile(r"(?<![\w.$@(])([A-Za-z_]\w*(?:\.[A-Za-z_]\w*)+)(?![\w.(])")
+
+
+def _part129(expr, binds):
+    """part-of-argument: a path in pattern position places the text written under the label (or rx group) it names
+    (lines 1-3); a part whose text refers outside itself (`\\k<x>`, x not in the part) is a compile error (line 4).
+    A macro whose body places a path of its parameter is specialized at a call with a bare binding name as the
+    argument: the call `Y(isodate)` becomes the binding `Y` with `isodate` written for the parameter (the call's gate
+    and the binding's are both named Y; an approximation the report declares)."""
+    defs = _defs128(binds)                                   # noqa: F821
+    for n, (head, body, _) in list(defs.items()):
+        ps = _params128(head) if head else []                # noqa: F821
+        if len(ps) != 1 or not ps[0][0] or not re.search(r"(?<![\w.])%s\.[A-Za-z_]" % re.escape(ps[0][0]), body):
+            continue
+        calls = _calls128(expr, n)                           # noqa: F821
+        if not calls or any(not re.fullmatch(r"[A-Za-z_]\w*", c[2][0].strip()) for c in calls):
+            continue
+        argn = calls[0][2][0].strip()
+        nb = re.sub(r"(?<![\w.])%s(?=\.)" % re.escape(ps[0][0]), argn, body)
+        for a_, b_, args in reversed(calls):
+            expr = expr[:a_] + n + expr[b_:]
+        binds = [x for x in binds if n not in _defs128([x])] + ["%s := %s" % (n, nb)]   # noqa: F821
+    texts = [expr] + [x.split(":=", 1)[1] for x in binds]
+    heads = [None] + [x.split(":=", 1)[0] for x in binds]
+    out = []
+    for t, h in zip(texts, heads):
+        out.append(_place129(t, binds) if h is None or "(" not in h else t)
+    return out[0], ["%s:=%s" % (h, t) for h, t in zip(heads[1:], out[1:])]
+
+
+def _place129(t, binds):
+    segs, i = [], 0
+    for m in PATHATOM129.finditer(t):
+        pre_ = t[:m.start()]
+        if pre_.count("`") % 2 or pre_.count("/") % 2 or pre_.count('"') % 2 or _in_cond129(t, m.start()):
+            continue
+        path = m.group(1).split(".")
+        if path[0] in ("rx", "occurs") or path[0] in LIBMACROS:   # noqa: F821  a library name, no path
+            continue
+        probe = "%s & (%s: 0)" % (path[0], m.group(1))
+        try:
+            pre = Pre129(probe, binds)
+            r = walk129(pre, path)
+        except Refused129 as e:
+            raise CompileError("the path `%s` placed: %s" % (m.group(1), str(e)))   # noqa: F821
+        except (Unparsed, CompileError, Mech129Error, KeyError, ValueError):   # noqa: F821  beyond the reader: as written
+            continue
+        node = r[1]
+        if node.k not in ("label", "grp"):
+            raise CompileError("the path `%s` placed names no part" % m.group(1))   # noqa: F821
+        c = node.kids[0]
+        text = pre.P.texts[c.tid][c.a:c.b]
+        refs = set(re.findall(r"\\k<(\w+)>", text))
+        own = set(re.findall(r"\(\?<:?(\w+)>", text))
+        if refs - own:
+            raise CompileError("the part `%s` refers outside itself (`\\k<%s>`): a compile error "   # noqa: F821
+                               "(part-of-argument 4)" % (m.group(1), sorted(refs - own)[0]))
+        if node.k == "grp" or c.k == "rx":
+            text = "/%s/" % text
+        segs.append(t[i:m.start()] + "(" + text + ")")
+        i = m.end()
+    return "".join(segs) + t[i:]
+
+
+def _in_cond129(t, k):
+    """k sits inside a condition (a parenthesis whose own level holds a `:`, the tuple form `((a, b): ..)` included)
+    or a group question's parentheses."""
+    starts = []
+    for j, ch in enumerate(t[:k]):
+        if ch == "(":
+            starts.append(j)
+        elif ch == ")" and starts:
+            starts.pop()
+    for j in starts:
+        if re.search(r"\b(%s)\($" % "|".join(GQ129), t[:j + 1]):
+            return True
+        d, i = 0, j
+        while i < len(t):
+            d += {"(": 1, ")": -1}.get(t[i], 0)
+            if d == 0:
+                break
+            if d == 1 and t[i] == ":" and t[i + 1:i + 2] != "=":
+                return True
+            i += 1
+    return False
+
+
+# A program the reader cannot parse whose read last-placement makes legal: judged BY HAND (the report says so) and
+# answered by the in-force engine on a spelling that labels the last placement, the same spot by last-placement 2.
+RESPELL129 = {
+    'B(A) & (B.dd.d: <100)': 'B(A) & (A.d: <100)',             # the place's gate `dd` holds A: A's own `d`
+    'C := B(A) & (B.dd.d: <100)': 'C := B(A) & (A.d: <100)',   # nested-scope's example 1, alike
+    'chars SEQ ":" SEQ chars & (chars.ch: "a")': 'chars SEQ ":" SEQ [r = chars] & (r.ch: "a")',
+    'occurrences(/\\d/) SEQ ";" SEQ occurrences(/\\d/) & (occurrences.hit: "9")':
+        'occurrences(/\\d/) SEQ ";" SEQ [o = occurrences(/\\d/)] & (o.hit: "9")',
+}
+_PROG113 = prog                                              # noqa: F821  predfix113's entry
+MECHLOG129 = []
+
+
+def prog(expr, binds=(), **opts):                            # noqa: F811
+    if not X129[0]:
+        return _PROG113(expr, binds, **opts)
+    binds = list(binds)
+    ROW1_113[0], CHECKED113[0] = "legal", "new"              # noqa: F821  named-list-body-read; reference-example-checked
+    try:
+        if PATHATOM129.search(" ".join(t for t in [expr] + [b.split(":=", 1)[1] for b in binds if ":=" in b])):
+            expr, binds = _part129(expr, binds)
+        try:
+            pre, vs = verdict129(expr, binds)
+        except (Unparsed, Mech129Error, Refused129, TR11.TrError, AttributeError):   # noqa: F821  beyond the reader: the in-force engine
+            if expr in RESPELL129:
+                MECHLOG129.append(expr)
+                return _PROG113(RESPELL129[expr], binds, **opts)
+            return _PROG113(expr, binds, **opts)
+        for rd, rtid, v, r in vs:
+            if v[0] == "refused":
+                raise CompileError(v[1])                     # noqa: F821
+        try:
+            return _PROG113(expr, binds, **opts)
+        except CompileError as e:                            # noqa: F821
+            try:
+                P_ = mech129(expr, binds)
+            except (Mech129Error, Unparsed, Refused129) as x:   # noqa: F821
+                if expr in RESPELL129:
+                    MECHLOG129.append(expr)
+                    return _PROG113(RESPELL129[expr], binds, **opts)
+                raise CompileError("legal by GATE129 but MECH129 cannot build it (%s); the in-force engine: %s" % (   # noqa: F821
+                    str(x)[:60], str(e)[:80]))
+            MECHLOG129.append(expr)
+            return P_
+    finally:
+        ROW1_113[0], CHECKED113[0] = "error", "error"        # noqa: F821
+
+
 # ================================================================== the census: every printed read, old walker against GATE129
 BIND129 = re.compile(r"([\w.]+(?:\([\w, =:]*\))?) := `([^`]*)`")
 GQ129 = ("some", "every", "count", "none", "all", "occurs")
@@ -826,8 +1003,14 @@ def program_verdict129(e, binds):
 def census129(docs):
     rows, spots, unparsed, kinds, total = [], [], [], [], 0
     progs = printed129(docs)
+    if s129("s6"):
+        progs = progs[1:]                                    # plant: one printed program not counted
     for f, ln, kind, e, binds, fld in progs:
-        eng = run11(e, binds)                                # noqa: F821  the in-force engine: the baseline
+        X129[0] = False
+        try:
+            eng = run11(e, binds)                            # noqa: F821  the in-force engine (predfix113): the baseline
+        finally:
+            X129[0] = True
         ov = "legal" if eng[0] is not None else "error"
         pv = "error" if kind == "compile error" else "legal"
         try:
@@ -849,7 +1032,8 @@ def census129(docs):
 
 
 if CENSUS129:
-    progs_, rows_, spots_, unp_, kinds_, tot_ = census129(NOWS)   # noqa: F821
+    progs_, rows_, spots_, unp_, kinds_, tot_ = census129(   # the documents AT START129, before any edit
+        {f_: _git8("docs/design/predicates/" + f_, START129) for f_ in DOCF})   # noqa: F821
     by_ = {}
     for r_ in rows_:
         by_.setdefault((r_[0], r_[3] in ("base",)), []).append(r_)
@@ -878,3 +1062,200 @@ if CENSUS129:
     for f, ln, fld, e, why in unp_:
         print("%s:%d [%s] `%s`: %s" % (f, ln, fld, e[:120], why))
     sys.exit(0)
+
+
+# ==== CHECKS129 (a probe loads the model up to this line)
+def unit129(name, what):
+    print("== %s: %s" % (name, what))
+
+
+ISO129 = 'isodate := [year = /\\d{4}/] SEQ "-" SEQ [month = /\\d\\d/] SEQ "-" SEQ [day = /\\d\\d/]'
+G129 = "A := [g = /\\d/]"
+BP129 = "B(rx) := /${[p = rx]}xx/"
+AH129 = "A := /(?<h>\\d)/"
+PQ129 = ["P := /(?<d>\\d)/", "Q := /,(?<d>\\d)/"]
+# RULE129: hand verdicts typed from the ruled statements' OWN words (the record), never from the walker or the
+# documents: (ruling and line, program, bindings, "legal"/"error", [(text, HOLDS/FAILS), ..] from the record's runs).
+RULE129 = [
+    ("label-names-gate 4: a bare a.g", "B(A)", [G129, "B(rx) := [a = /${[dd = rx]}xx/] & (a.g: <7)"], "error", []),
+    ("label-names-gate 4: a.dd.g", "B(A)", [G129, "B(rx) := [a = /${[dd = rx]}xx/] & (a.dd.g: <7)"], "legal",
+     [("3xx", "HOLDS"), ("8xx", "FAILS")]),
+    ("label-names-gate 4: dd.g", "B(A)", [G129, "B(rx) := [a = /${[dd = rx]}xx/] & (dd.g: <7)"], "legal",
+     [("3xx", "HOLDS"), ("8xx", "FAILS")]),
+    ("label-names-gate 5: the list", "B(A)", [G129, "B(rx) := [a = /${[(=) = rx]}xx/] & (a.g: <7)"], "legal",
+     [("3xx", "HOLDS"), ("8xx", "FAILS")]),
+    ("label-names-gate, told: X.d", "X & (X.d: <5)", ["X := [n = Q]", PQ129[1]], "error", []),
+    ("label-names-gate, told: X.n.d", "X & (X.n.d: <5)", ["X := [n = Q]", PQ129[1]], "legal", [(",3", "HOLDS"), (",7", "FAILS")]),
+    ("argument-is-gate, his example", "B(A)", [G129, "B(rx) := rx & (rx.g: < 5)"], "legal", [("3", "HOLDS"), ("7", "FAILS")]),
+    ("argument-is-gate 2: B.dd.g from the caller", "B(A) & (B.dd.g: <5)", [G129, "B(rx) := /${[dd = rx]}xx/"], "legal",
+     [("3xx", "HOLDS"), ("7xx", "FAILS")]),
+    ("argument-is-gate 3: A.g from the caller", "B(A) & (A.g: <5)", [G129, "B(rx) := /${rx}xx/"], "legal", [("3xx", "HOLDS")]),
+    ("argument-is-gate 3: rx only inside the body", "B(A) & (B.rx.g: <5)", [G129, "B(rx) := /${rx}xx/"], "error", []),
+    ("argument-is-gate 5: B.g through the list", "B(A) & (B.g: <5)", [G129, "B(rx) := /${[(=) = rx]}xx/"], "legal",
+     [("3xx", "HOLDS"), ("7xx", "FAILS")]),
+    ("argument-is-gate, told: Y.c.a.h", "Y & (Y.c.a.h: <5)", [AH129, BP129, 'Y := [c = B([a = A])] SEQ "!"'], "legal",
+     [("3xx!", "HOLDS"), ("7xx!", "FAILS")]),
+    ("argument-is-gate, told: Y.a.h", "Y & (Y.a.h: <5)", [AH129, BP129, 'Y := [c = B([a = A])] SEQ "!"'], "legal",
+     [("3xx!", "HOLDS"), ("7xx!", "FAILS")]),
+    ("shorthand-outside: the shorthand from outside", "[pub = B(A)] & (pub.A.h: <5)", [AH129, BP129], "error", []),
+    ("reference-example-checked: checked", "checked(isodate)", ["checked(B) := B & (B.year: < 2100)", ISO129], "legal",
+     [("2024-02-29", "HOLDS"), ("2150-01-01", "FAILS")]),
+    ("reference-example-checked: no gate", "B(A)", ["A := [d = /\\d/]", "B(rx) := /${rx}xx/ & (d: <5)"], "error", []),
+    ("reference-example-checked: dd", "B(A)", ["A := [d = /\\d/]", "B(rx) := /${[dd = rx]}xx/ & (dd: <5)"], "legal",
+     [("3xx", "HOLDS"), ("7xx", "FAILS")]),
+    ("named-list-body-read: N2", "N2(A)", [AH129, "N2(rx) := /${[(=h) = rx]}/ & (h: <5)"], "legal", [("3", "HOLDS"), ("7", "FAILS")]),
+    ("named-list-body-read, told: with (=) a bare read", "N3(A)", [AH129, "N3(rx) := /${[(=) = rx]}/ & (h: <5)"], "error", []),
+    ("last-placement 3: a read after all of them", "B(A)", [G129, 'B(rx) := rx SEQ ";" SEQ rx & (rx.g: < 5)'], "legal",
+     [("7;3", "HOLDS"), ("3;7", "FAILS")]),
+    ("last-placement, the run told: y.x.r.g", "[y = [x = [r = A] SEQ [r = A]]] & (y.x.r.g: < 5)", [G129], "legal",
+     [("73", "HOLDS"), ("37", "FAILS")]),
+    ("same-path-last 1: y.r.g, the last", "[y = [x = [r = A] SEQ [r = A]]] & (y.r.g: < 5)", [G129], "legal",
+     [("73", "HOLDS"), ("37", "FAILS")]),
+    ("same-path-last 2: two full paths", "[n = ([a = P] SEQ [b = Q])] & (n.d: <5)", PQ129, "error", []),
+    ("same-path-last, told: date.v", "date & (date.v: <5)", ['date := [y = /(?<v>\\d)/] SEQ "-" SEQ [m = /(?<v>\\d)/]'], "error", []),
+    ("one-path 1: into an alternation", "pair & (pair.x: <5)", ["pair := [b = /(?<x>\\d)/] | [c = /a(?<x>\\d)/]"], "legal",
+     [("3", "HOLDS"), ("a3", "HOLDS"), ("a7", "FAILS")]),
+    ("array-gate", "[n = (P SEQ Q)] & some(@n.d, <5)", PQ129, "error", []),
+    ("path-rules 6: from outside, a part used alone", "X2 & (X2.A.h: <5)", [AH129, 'X2 := A SEQ "!"'], "error", []),
+    ("gate-beside-direct", "[n = (P SEQ /,(?<d>\\d)/)] & (n.d: <5)", PQ129[:1], "legal", [("7,3", "HOLDS"), ("3,7", "FAILS")]),
+    ("part-of-argument 3: the context left behind", 'date.year SEQ "!"',
+     ['date := [year = /\\d{4}/] SEQ "-" SEQ /\\d\\d-\\d\\d/ & (year: < 2100)'], "legal", [("2150!", "HOLDS"), ("2150-01-01!", "FAILS")]),
+    ("part-of-argument 4: a part that refers outside", "X.b", ["X := /(?<a>\\d)(?<b>\\k<a>)x/"], "error", []),
+]
+unit129("RULE129", "the gate rule and its six neighbours on %d programs, each verdict typed from the ruled words, "
+        "each legal read's texts from the record's own runs" % len(RULE129))
+if s129("s14"):
+    _place129_real = _place129
+
+    def _place129(t, binds):                                 # noqa: F811  plant: no outside-reference check
+        return re.sub(r"\\\\k<\w+>", "", _place129_real(t, binds)) if "\\k" not in t else t.replace(".b", "")
+rl_bad = []
+for nm_, e_, b_, want, tx_ in RULE129:
+    Pg, err = run11(e_, b_)                                  # noqa: F821
+    got = "legal" if Pg is not None else "error"
+    bad_tx = []
+    if Pg is not None:
+        for t_, w_ in tx_:
+            if ("HOLDS" if Pg.whole(t_) else "FAILS") != w_:
+                bad_tx.append((t_, w_))
+    if got != want or bad_tx:
+        rl_bad.append((nm_, want, got, bad_tx, (err or "")[:120]))
+for x_ in rl_bad:
+    print("   NOT AS RULED %s: want %s, got %s %s %s" % x_)
+check("RULE129", not rl_bad, "%d programs; not as ruled: %s" % (len(RULE129), [x_[0] for x_ in rl_bad] or "none"))   # noqa: F821
+
+unit129("CENSUS129", "the census of every printed read at START129 (before any document edit) re-run in its own "
+        "process; its output equal to the committed predfold1129_census.out")
+CENSF129 = os.path.join(HERE129, "predfold1129_census.out")
+_env129 = dict(os.environ, PREDFOLD1129_CENSUS="1")
+_co129 = subprocess.run([sys.executable, "-I", "-B", MY129], stdout=subprocess.PIPE, stderr=subprocess.STDOUT,
+                        text=True, env=_env129, timeout=3000).stdout
+_keep129 = lambda t: [l_ for l_ in t.split("\n") if l_ and not l_.startswith(("PATCH ", "== library bodies",   # noqa: E731
+                                                                               "== months :="))]
+_cn129, _cc129 = _keep129(_co129), _keep129(builtins.open(CENSF129, encoding="utf-8").read())
+_hd129 = [l_ for l_ in _cn129 if l_.startswith("predfold1129 census at")]
+check("CENSUS129", _cn129 == _cc129 and len(_hd129) == 1,   # noqa: F821
+      "%d lines, %d committed; differing lines %d; headline: %s" % (
+          len(_cn129), len(_cc129), sum(1 for a_, b_ in zip(_cn129, _cc129) if a_ != b_) + abs(len(_cn129) - len(_cc129)),
+          (_hd129 or ["NONE"])[0][:260]))
+
+unit129("SWEEP129", "every printed three-mode line RUN under this model; the starting commit %s's lines under the "
+        "control (X129 off: predfix113 as merged) against these, keyed by the program; every key gone or moved "
+        "DECLARED" % START129)
+_sw129a = _src128.index('exec(compile(_src11[_src11.index("def sw11(docs):")')   # noqa: F821
+_sw129b = _src128.index("OLD128 = {f_: _git8(")             # noqa: F821
+exec(compile(_src128[_sw129a:_sw129b], P128, "exec"), globals())     # noqa: S102,F821  the sweep and error-line readers, verbatim
+OLD129 = {f_: _git8("docs/design/predicates/" + f_, START129) for f_ in DOCF}   # noqa: F821
+X129[0] = False
+OLD_T129 = sw11(OLD129)                                      # noqa: F821
+X129[0] = True
+NOWS129 = dict(NOWS)                                         # noqa: F821
+if s129("s7"):
+    NOWS["core.md"] = NOWS["core.md"].replace("His example, the full path: WHOLE `3xx` HOLDS", "His example, the full path: WHOLE `3xx` FAILS", 1)   # noqa: F821
+if s129("s5"):
+    pass                                                     # the plant is in the walker (_stack129)
+NEW_T129 = sw11(NOWS)                                        # noqa: F821
+NOWS.update(NOWS129)                                         # noqa: F821
+# MOVED129 / GONE129: the declarations, program -> the ruling that moved or dropped its printed line (data below)
+MOVED129 = {}
+GONE129 = {}
+exec(builtins.open(os.path.join(HERE129, "predfold1129_decl.py"), encoding="utf-8").read(), globals())   # noqa: S102
+inh = set((k_, f_, st_) for k_, vs in OLD_T129.items() for f_, _, st_, _, _ in vs if st_ != "same")
+sw_bad, sw_moved, sw_gone, sw_new, sw_inh, cnt, used = [], [], [], [], [], {}, set()
+for k_, vs in NEW_T129.items():
+    for f_, ln_, st_, got_, pr_ in vs:
+        cnt[st_] = cnt.get(st_, 0) + 1
+        if st_ != "same":
+            (sw_inh if (k_, f_, st_) in inh else sw_bad).append((f_, ln_, st_, k_[0], got_[:160]))
+for k_, vs0 in OLD_T129.items():
+    for f0 in sorted(set(v_[0] for v_ in vs0)):
+        vs = [v_ for v_ in vs0 if v_[0] == f0]
+        nk = [v_ for v_ in NEW_T129.get(k_, []) if v_[0] == f0]
+        if nk:
+            po, pn = sorted(set(v_[4] for v_ in vs)), sorted(set(v_[4] for v_ in nk))
+            if po != pn:
+                if k_[0] in MOVED129:
+                    used.add(k_[0])
+                    print("   MOVED BY A RULING %s `%s`: %s" % (f0, k_[0], MOVED129[k_[0]]))
+                else:
+                    sw_moved.append((f0, k_[0], " || ".join(po)[:200], " || ".join(pn)[:200]))
+            continue
+        if k_[0] in GONE129:
+            used.add(k_[0])
+            print("   DROPPED OR MOVED BY A RULING %s:%d `%s`: %s" % (vs[0][0], vs[0][1], k_[0], GONE129[k_[0]]))
+            continue
+        sw_gone.append((vs[0][0], vs[0][1], k_[0], vs[0][2]))
+stale = sorted(k_ for k_ in list(GONE129) + list(MOVED129) if k_ not in used)
+for k_, vs in NEW_T129.items():
+    if k_ not in OLD_T129:
+        sw_new.append((vs[0][0], vs[0][1], k_[0], vs[0][3][:150]))
+for x_ in sw_new:
+    print("   ADDED %s:%d `%s`: %s" % x_)
+for x_ in sw_gone:
+    print("   GONE %s:%d %r (was %s)" % x_)
+for x_ in sw_moved:
+    print("   MOVED %s %r\n      old: %s\n      now: %s" % x_)
+for x_ in sw_bad:
+    print("   BAD %s:%d %s `%s`: %s" % x_)
+for x_ in stale:
+    print("   STALE DECLARATION %s" % x_)
+check("SWEEP129", OLD_T129 and not sw_bad and not sw_moved and not sw_gone and not stale and len(sw_new) >= 3,   # noqa: F821
+      "%d printed lines now (%s), %d keys at the starting commit; not same and not inherited %d (inherited %d); "
+      "moved %d; gone %d; declared %d; added %d; stale %d" % (
+          sum(len(v) for v in NEW_T129.values()), ", ".join("%s %d" % kv for kv in sorted(cnt.items())),
+          len(OLD_T129), len(sw_bad), len(sw_inh), len(sw_moved), len(sw_gone), len(GONE129) + len(MOVED129),
+          len(sw_new), len(stale)))
+
+unit129("ERRSWEEP129", "every printed compile-error line of the base files refused under this model, no crash; each "
+        "of this lane's new error lines refused NAMING the form the ruling gives (MSG129)")
+MSG129 = {   # program -> a phrase the refusal must carry (the ruled form: the gate, the full paths, the way in)
+    'X & (X.h: <5)': "gate",
+    '[n = [m = P] SEQ "!"] & (n.d: <5)': "gate",
+    '[n = ([a = P] SEQ [b = Q])] & some(@n.d, <5)': "gate",
+    '[n = ([m = P] SEQ [_x = Q])] & (n.d: <5)': "gate",
+    'B(A) & (B.h: <5)': "gate",
+    '[n = ([a = P] SEQ [b = Q])] & (n.d: <5)': "n.a.d",
+    "[pub = B(A)] & (pub.A.h: <5)": "pub.A.h",
+}
+D8.clear()                                                   # noqa: F821
+D8.update(NOWS)                                              # noqa: F821
+if s129("s8"):
+    D8["core.md"] = D8["core.md"].replace("modes: a compile error (`X & (X.h: <5)`", "modes: a compile error (`X & (X.n.h: <5)`", 1)   # noqa: F821
+es_now = [x_ for x_ in err_lines({f_: _enc_ref128(v_) for f_, v_ in D8.items()}) if not x_[0].endswith("_details.md")]   # noqa: F821
+D8.clear()                                                   # noqa: F821
+D8.update(NOWS)                                              # noqa: F821
+es_bad, es_msg = [], []
+for f_, ln_, e_, b_ in es_now:
+    Pg, err = run11(e_, b_)                                  # noqa: F821
+    if Pg is not None or (err or "").startswith("CRASH"):
+        es_bad.append((f_, ln_, e_, "legal" if Pg is not None else err[:100]))
+    elif e_ in MSG129 and MSG129[e_] not in err:
+        es_msg.append((f_, ln_, e_, MSG129[e_], err[:140]))
+for x_ in es_bad:
+    print("   BAD (printed a compile error, runs legal or crashes) %s" % (x_,))
+for x_ in es_msg:
+    print("   MESSAGE %s:%d `%s` lacks %s: %s" % x_)
+msg_unseen = sorted(set(MSG129) - set(e_ for _, _, e_, _ in es_now))
+check("ERRSWEEP129", es_now and not es_bad and not es_msg and not msg_unseen,   # noqa: F821
+      "%d compile-error lines read, each refused with no crash: bad %s; named form missing %s; message rows with no "
+      "line %s" % (len(es_now), es_bad or "none", es_msg or "none", msg_unseen or "none"))
