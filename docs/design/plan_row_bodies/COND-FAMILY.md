@@ -12504,3 +12504,11 @@ through the argument's place." His second sentence gives the sender's way to kee
 The manager's readings, for the fold to test: stacked-chain's stranded `X.c.h` is re-spelled by Y labelling the
 argument (`X.a.h`); shorthand-outside's contrast stands (the implicit name an error, the written label legal by
 its own name, `pub.A.h` for `[pub = B([A = A])]`).
+
+### 2026-11-27 OWNER, on named-list-use: its PURPOSE ("a macro that simply needed the form to match like accepting a date looking argument"); a LEAN yes; a QUESTION ("is the form too brittle?")
+tags: core/labels/export/export-list core/labels/export/arguments core/operators/bindings/macro-types
+His words, verbatim: "named-list-use: I asked about this under the idea that you could make a macro that simply
+needed the form to match like accepting a date looking argument to calculate the leap or day of week. I lean yes.
+Is this a good application for this or is the form too brittle?"
+Class: the PURPOSE of his lean, a LEAN ("I lean yes"), and a QUESTION to the manager; not a ruling; named-list-use
+stays open.
