@@ -77,6 +77,7 @@ PROFILES = [
 # matches the regex; ties: more matches first, then the newer entry first. Field extraction is scripts/entry's
 # (FIELDS there), keyed by the row name; every profile uses this one table.
 PAGE_SIZE = 15
+PAGE_BYTES = 4000  # a -g page prints at most this many bytes (the doc-lint budget is 4096); lines are cut to fit
 RELEVANCE = (
     ("id", "the ID or slug"),
     ("statement", "the one-line statement / title"),
