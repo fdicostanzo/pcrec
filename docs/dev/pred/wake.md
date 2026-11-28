@@ -73,6 +73,11 @@ QUESTIONS LEFT). Take them in this order:
 - Driving a lane's model from another directory leaves its dump files in the cwd (a stray `predfold1125.out`):
   run such drivers from scratch, or pass the model its scratch path.
 - Critic coordinators send late idle notices after TaskStop; they carry nothing new.
+- PRE-DELIVERY CHECKS are now three (main, 2026-11-28, after CI went red on the P-36 merge): `pred_doc_lint`,
+  `make -s test-plan-lint` AND `make -s test-doc-lint` (2.5 s; its budget check on `scripts/entry -g .` page 1
+  failed at 4102 of 4096 bytes because the new predicate entries are long; main is fixing `scripts/entry`, not
+  the documents). Put all three in every lane brief. At this writing test-doc-lint is RED on the branch (17
+  passed, 1 failed) until main's fix is merged back: merge main first, then re-run it.
 
 ## READ, IN THIS ORDER, next session
 

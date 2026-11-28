@@ -1361,3 +1361,7 @@ wake.md says (read the draft WHOLE first; A4 is a ruled-words finding: read his 
   questions open; the owner is away for the night.
 - Main merged P-36 (lane/pred-rev28 at a59768a50) into main and pushed (ba4d73c20); it prunes predarg,
   predfold1128, predfix113. Session at rest: nothing running; seven owner questions queued (wake.md).
+- 2026-11-28: main reports CI red on the P-36 merge: `make test-doc-lint`'s budget check (`entry -g .` page 1,
+  4102 of 4096 bytes: the new long predicate entries). Not a document fault; main fixes `scripts/entry`. From now
+  on `make -s test-doc-lint` is a pre-delivery check of mine and of every lane brief (reproduced on the branch:
+  17 passed, 1 failed, 2.5 s). Asked main to add it to the skill's "no make except" line.
