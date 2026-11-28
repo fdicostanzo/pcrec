@@ -12824,3 +12824,38 @@ WHOLE 37 FAILS
 WHOLE 73 FAILS
 SEARCHED 37 34 [('34', 3)]
 FIND-ALL 12 37 40 [('12', 0), ('40', 6)]
+
+### 2026-11-28 OWNER RULING — last-placement: "1. yes but local implicit. 2,3,4,5 agree"; and a LEAN with a question: a skipped read to one label mentioned twice "should be the last so all reads are the same"
+tags: core/labels/paths/binding-prefix core/labels/rule/one-path core/labels/rule/alone-as-middle core/labels/flow
+Asked as a question with the slug last-placement; his words, verbatim: "last-placement: 1. yes but local
+implicit. 2,3,4,5 agree.
+Label questions:
+Let's say we took example and added label r to both rx placements. Last label above would work the same. Then
+wrap the whole thing twice in label x then y for an example. So the path would be y.x.r. Does that still refer to
+the last label?
+My concern is also skipping inconsistency. My read is that this is multiple paths to r by those rules. But
+really it should be the last label reference. So would y.r be the last or an error? It should be the last so all
+reads are the same (outside @ reads).
+Thoughts?"
+Classes: (1) RULING, last-placement, on the five lines as asked (quoted):
+"1. A placement makes a label of the thing's own name; a reference is a read of a label. This is your sentence.
+2. Placed more than once, a plain read reaches the last placement written before the read, exactly as an
+explicit label mentioned twice does.
+3. A read written after all of them, such as a filter at the end, reaches the last one.
+4. The group questions are unchanged: `some(@rx.g, ..)` reads every placement, in order.
+5. From outside the definition nothing changes: an unlabelled placement exports nothing."
+Line 1 with his amendment "but local implicit" (the manager's reading: the label a placement makes is the LOCAL
+IMPLICIT one, inside the definition only; line 5 says the same). It REVERSES binding-prefix's compile error
+(2026-11-22, his lean (a)) for a plain read through a name placed twice or more. Told with it: alone-as-middle's
+"used twice, not a step" follows the same rule; the manager's offered sixth line (a warning) was not taken up.
+(2) A LEAN with a QUESTION ("Thoughts?"), nothing ruled: with `r` written on both placements and the whole
+wrapped in `x` then `y`, `y.x.r` is the last `r`; `y.r` (x skipped) "should be the last so all reads are the same
+(outside @ reads)", where one-path as ruled ("exactly one label of that name is visible from the start", line 4
+"It replaces 'in a sequence the last mention wins' for skipped reads") makes it a compile error. Put to him as a
+question, slug same-path-last.
+The run told with it (pasted; scratch `pred/samepath.py`; `[y = [x = [r = A] seq [r = A]]] & (y.x.r.g: < 5)`,
+A := `[g = digit]`, the read reaching the last `r`):
+WHOLE 73 HOLDS
+WHOLE 37 FAILS
+SEARCHED 37 73 [('73', 3)]
+FIND-ALL 73 37 12 [('73', 0), ('12', 6)]
