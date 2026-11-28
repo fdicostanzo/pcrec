@@ -467,3 +467,11 @@ Source: a review's general-form lens (one rule, one "inside", one table); parked
 - It restructures core/labels/rule and its pieces, core/labels/rule/kinds, core/labels/ownership and core/diagnostics/errors; no printed answer moves.
 see: core/labels/rule core/labels/rule/kinds core/labels/ownership core/diagnostics/errors
 modes: n/a (parked: a restructuring, not a construct)
+
+### The branch of a loop's last pass   [parked/ideas/branch-last-pass]   parked 2026-11-28
+A plain read through a loop around an alternation reads the branch of the last pass (`n.d`, the `d` that pass set), in place of the compile error.
+Trigger: a token loop that wants the last item's value.
+Source: the record, branch-in-loop ("error for now. Ambiguous"); "for now" is his; parked with its run.
+- Its run, the model's switch LOOPALT114 (`[n = rx.repeat([a = /(?<d>\d)/] | [b = /x(?<d>\d)/], min = 1, max = _)] & (n.d: < 5)`): WHOLE `x73` HOLDS, `3x7` FAILS / SEARCHED `x7 3x7 x73` `3`@3 / FIND-ALL `x73 3x7 x12` [`x73`@0, `3`@4, `x12`@8].
+see: core/labels/rule/one-path
+modes: n/a (parked: not in the language)

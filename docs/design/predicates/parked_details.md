@@ -1375,3 +1375,14 @@ readings:
 evidence: none (parked).
 history:
 - 2026-11-28 (lane predfix114, review r114 F25, F26, F27; record "2026-11-28 MANAGER — after lane predfold1129 and review r114: the dispositions; no owner words"): a new parked piece, one joint note.
+
+## parked/ideas/branch-last-pass — The branch of a loop's last pass
+slugs: branch-in-loop
+rulings:
+- 2026-11-28 "branch-in-loop: error for now. Ambiguous" (record: "2026-11-28 OWNER RULINGS — a list that passes nothing: "Agree compiler error"; branch-in-loop: "error for now. Ambiguous"")
+rejected:
+readings:
+- the last-pass reading RUN as the model's switch (docs/dev/lanes/predfix114_evidence/ predfix114_model.py OTHER114, LOOPALT114); its answers equal the record's MANAGER run of that day.
+evidence: docs/dev/lanes/predfix114_evidence/ predfix114_model.py OTHER114.
+history:
+- 2026-11-28 (lane predfix114, rulings R-3; record "2026-11-28 OWNER RULINGS — a list that passes nothing: "Agree compiler error"; branch-in-loop: "error for now. Ambiguous""): a new parked piece, the reading "for now" leaves open.
