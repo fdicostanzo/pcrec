@@ -1350,3 +1350,6 @@ wake.md says (read the draft WHOLE first; A4 is a ruled-words finding: read his 
   He stopped questions for the night: "Fold now". Merged main back (8e7cca4a9). LAUNCHED fold lane predfold1128
   (opus; the five rulings; his strong lean no-path-through-argument applied and MARKED; lanewatch armed). Review
   number r113 from main. wake.md rewritten in flight. Next, mine: accept, merge, critic round r113, fix, P-36.
+- Lane predfold1128 DELIVERED (lanewatch DONE; lint 10524/0; model 16/0; 18 plants caught), merged at 5248d8a1c,
+  stopped. It caught a false telling of mine in param-reference line 4 ("as today"): recorded; a question for the
+  owner (reference-example-checked). LAUNCHED critic round r113 (crit-predfold1128, two critics).

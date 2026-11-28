@@ -12624,3 +12624,20 @@ entailed by carve-out-reading and caller-label-export; to be confirmed", so that
 one place. The three study questions not asked (sent-over-body-label, forwarded-place, list-over-label) are
 printed as marked readings with both readings run. hits-through-hit: the manager's call under transform-export
 (the two provided bodies carry the list under their label), told to him 2026-11-27; he did not object.
+
+### 2026-11-27 MANAGER — after lane predfold1128: five rulings folded; a TELLING of the manager's found false (param-reference line 4, "as today"); no owner words
+tags: core/operators/bindings/label-kinds core/labels/paths core/labels/rule/argument-place core/labels/paths/shorthand-outside
+Lane predfold1128 folded gate-beside-direct, carve-out-reading, caller-label-export, named-list-use and
+param-reference, and applied his strong lean no-path-through-argument at 38 MARKED sites (home piece
+core/labels/rule/argument-place); lint failed 0; `predfold1128_model: 16 checks, 0 failed`. Ten printed lines
+moved (eight to compile errors, one more than the study listed; `N.h` to legal; one message).
+THE MANAGER'S TELLING FOUND FALSE (the lane's STOP RULE): param-reference line 4 as put to him ends "A plain
+parameter that the body places and then reads stays legal, as today", and example 4 told him
+`checked(B) := B & (B.year: < 2100)` "already works by the existing rules". The documents say otherwise
+(core/labels/paths, quoted by the lane: "a parameter's label inside the body is not nameable"), and the model
+refuses it ("checked names a label it does not hold"). The manager said it without a run. NOT folded either way;
+to be told to him and asked: whether line 4's second sentence stands as a NEW rule (a body may read the labels of
+a parameter it places, by the parameter's name) or falls. Slug: reference-example-checked.
+A reading of the manager's NOT SUPPORTED by the lane: "shorthand-outside's contrast stands ... `pub.A.h` for
+`[pub = B([A = A])]`": by caller-label-export's asked words that path goes through the call's label and is an
+error; the contrast holds as `X.A.h` (the sender's own label by its own name). WITHDRAWN.
