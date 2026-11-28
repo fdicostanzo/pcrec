@@ -37,7 +37,7 @@ Plan linting refuses a `[TAG]` shaped like rows 2, 3, 5 or 6 (PL18), so a tag is
 `-g` searches each item at level `-in` (default 0 = index lines; 2 = full content) and prints the matching items
 at level `-l` (default 0), RELEVANCE-ordered (the RELEVANCE table in scripts/doc_profiles.py: a hit in the ID or
 slug ranks above the statement, then keywords, working fields, details body; ties: more matches, then newer), at
-most 15 per call (`--page K` for the next, `--all` lifts the cap); with more than 15 hits `-l 1`/`-l 2` is refused (rc 2) unless `--all` (Frank 2026-11-10: a bad search must not load a bulk of tokens).
+most 15 per call and at most 4000 bytes (`PAGE_BYTES`: lines are cut at 200 characters, narrower if the page would still exceed the bytes, a cut line ends in `…`; `-l 0` page listings only) (`--page K` for the next, `--all` lifts the cap); with more than 15 hits `-l 1`/`-l 2` is refused (rc 2) unless `--all` (Frank 2026-11-10: a bad search must not load a bulk of tokens).
 The archive is read only with `-p completed`. `--work` = first the rows with `waits: owner — ...` (section "waiting on the owner"), then every ready, started,
 blocked and not-started plan row (sections in that order), then ongoing rows, at level 1, by state; it never reads the archive. `--rev SHA` reads the files at that commit
 (read-only `git show`) with the WORKING TREE's profile table, the form chosen by which files exist at SHA.
