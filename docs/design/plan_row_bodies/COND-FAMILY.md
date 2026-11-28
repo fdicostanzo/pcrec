@@ -12747,3 +12747,46 @@ The manager's readings, for the fold to test (none ruled): `[n = (Q)]`, `n.d` st
 and is named); a stacked label on a gate (`[a = [b = Q]]`): both are names of the one gate (stacked labels are
 equal names of one spot, label-doors), so `a.d` and `b.d` and `a.b.d` are legal; a label over a parenthesised
 composition (`[n = (P SEQ Q)]`) is over in-place text and skippable, P and Q the gates.
+
+### 2026-11-28 OWNER RULING — argument-is-gate: "yes all five"; a DISCUSSION, "any placement is a binding/arg and any reference is a label"; and a QUESTION, `Y(date) := date.year`
+tags: core/labels/rule/argument-place core/labels/rule/caller-label core/labels/paths/binding-prefix core/operators/bindings/reference core/holes/bare-condition/nested-scope
+His words, verbatim: "argument-is-gate: yes all five.
+
+A := [g = digit]
+B(rx) := rx & (rx.g: < 5)
+
+Discussion Argument as label: you showed an example like above before and I agreed with it but I want to discuss.
+The original idea was that rx is an arg until it's placed then it can be used as a local label like bindings. This
+works if we allow that any placement is a binding/arg and any reference is a label
+B(rx) := rx & (rx.g: < 5) seq  rx & (rx.g: < 5)
+Each rx.g refers to the last placement.
+Question:
+Y(date) := date.year
+This places the year portion only. Does this work? We have not discussed subroutines but that is what this is.
+It's not in a label reference position."
+Classes: (1) RULING, argument-is-gate, on the five lines as asked (quoted):
+"1. A placed parameter is a gate like any other; there is no separate rule for arguments.
+2. Named by the body's label, it is a step anyone may take: `dd.g` inside the body, `B.dd.g` from the caller.
+3. Unlabelled, its name is the parameter's (`rx.g`), which exists only inside the body. From outside, the caller
+reads its own name for what it sent, `A.g`, as today.
+4. A label the argument lacks is an error at the read when the reader can see the argument (the caller), and at
+the call when the reader is the body.
+5. The export list stays the way to flatten: `[(=) = rx]` makes `B.g` legal."
+Told with it and so part of what was ruled: `Y.c.a.h` (caller-label-export's error) becomes legal, "a full path
+that skips nothing"; `Y.a.h` stays legal; under yes "the fold removes the marker at all 40 sites and re-derives
+each line"; label-above-call and forwarded-place "follow from the gate rule; I will show you the derived answers
+instead of asking each". It ENDS the strong lean no-path-through-argument (his statement of the entry before: he
+"flipped") and REVISES caller-label-export for `Y.c.a.h`.
+(2) DISCUSSION (nothing ruled): a parameter "is an arg until it's placed then it can be used as a local label like
+bindings"; "any placement is a binding/arg and any reference is a label"; with two placements "Each rx.g refers to
+the last placement". The record against it, to be told to him: binding-prefix (RULED 2026-11-22, his lean (a)): a
+plain read through a binding's name with the binding used twice or more is a compile error; the piece's reading
+"the error may later relax to the last use without changing an answer"; an explicit part label mentioned twice
+already reads its last mention where the reference is written. To be asked, slug last-placement.
+(3) QUESTION (his): `Y(date) := date.year`, a path in pattern position, "places the year portion only"; "that is
+what this is" (a subroutine). Answered in discussion and put to him as a question, slug part-of-argument.
+The run told with it (pasted; scratch `pred/partof.py`, the part `/\d{4}/`):
+WHOLE 2024 HOLDS
+WHOLE 2024-02-29 FAILS
+SEARCHED x 2024-02-29 ('2024', 2)
+FIND-ALL 2024-02-29 1999 12345678 [('2024', 0), ('1999', 11), ('1234', 16), ('5678', 20)]
