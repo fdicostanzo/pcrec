@@ -705,6 +705,7 @@ history:
 - 2026-11-23 (lane predfold1124, the fold of the 2026-11-23 rulings after review r88; record "2026-11-23 OWNER RULING — path-rules: yes (his four rules for paths within a binding, the manager's two readings of them, and rules 5 and 6 across bindings)"): open stacked-chain to ruled 2026-11-23: the chain is legal. The statement until then: "Two public labels stacked on one spot (`[n = [m = P]]`) are equal names of it; read today they do not chain: `n.d` and `m.d`, not `n.m.d` (the manager's reading)." The candidates bullet until then: "Candidates: (a) equal names only, no chain: `n.d` and `m.d` legal, `n.m.d` a compile error (the reading meanwhile, conservative: it may relax later without changing a legal answer); (b) they chain too: `n.m.d` legal, run as the nested form `[n = ([m = P])]`, where the parentheses make two spots (core/labels/rule, reading (a))." The line "Candidate (a), a chain" (a compile error) is now "The chain", legal; the lines "Candidate (a), the first name", "Candidate (a), the second name" and "Candidate (b), run as the nested form" renamed "The first name", "The second name", "Two spots, the nested form" (answers unchanged); the lines "From outside, the chain" and "From outside, by name" added.
 - 2026-11-25 (lane predfix90, review r90 A2; record "2026-11-25 MANAGER — review r90 (predfold1124): the dispositions; no owner words"): a bullet: rule 4 applied repeatedly (a reading); printed lines at depth 3 and at two binding levels.
 - 2026-11-27 (lane predfold1128, the strong lean no-path-through-argument applied and marked (record "2026-11-27 OWNER, a DIRECTION: "Let's stop questions for tonight. Fold now""; core/labels/rule/argument-place) and caller-label-export: `X.c.h` a compile error, the line "Two binding levels, the sender's label" added). Until then, verbatim: "P]]]`; two binding levels up, `X.c.h` skips `y` and the body's `p` (the last two lines)." / "Two binding levels, the middles skipped: WHOLE `3xx!;` HOLDS, `7xx!;` FAILS / SEARCHED `7xx!; 3xx!;` `3xx!;`@6 / FIND-ALL `3xx!; 7xx!; 4xx!;` [`3xx!;`@0, `4xx!;`@12] (`X & (X.c.h: <5)`, A := `/(?<h>\d)/`, B(rx) := `/${[p = rx]}xx/`, Y := `[c = B(A)] SEQ "!"`, X := `[y = Y] SEQ ";"`): rules 5 and 4, applied repeatedly (a reading)"
+- 2026-11-27 (lane predfix113, review r113 RULING-4, EXAMPLES-3, the manager's dispositions): the line "Two binding levels, the sender's label" (`X.a.h`) no longer carries the strong-lean marker (legal under either reading: caller-label-export rules `Y.a.h`); the refusal of `X.c.h` names the way in (`X.a.h`, the next line).
 
 ## core/labels/rule/sent-label-wall — A sent label above the body's blank
 slugs: sent-label-wall
@@ -826,6 +827,7 @@ readings:
 evidence: docs/dev/lanes/predarg_evidence/ (census, moves, probes); docs/dev/lanes/predfold1128_evidence/ predfold1128_model.py PLACE128, RULE128, MSG128, MARK128, MECH128.
 history:
 - 2026-11-27 (lane predfold1128, the fold of carve-out-reading, caller-label-export and the strong lean, record "2026-11-27 OWNER, a DIRECTION: "Let's stop questions for tonight. Fold now""): a new piece, the home of the strong lean; the moved lines listed in its body, each in its own piece's history with its old text.
+- 2026-11-27 (lane predfix113, review r113 RULING-4, EXAMPLES-5, the manager's dispositions): the line "Through a call, the sender's name" (`A.h`, shorthand-is-callers) no longer carries the marker; the "What moved" list names nested-scope's line "Example 1, the spot labelled" and says `X.c.h` is a different program (Y labels its argument), not a re-spelling.
 
 ## core/labels/rule/argument-door — The door: a list on the place
 slugs: carve-out-reading hits-through-hit
@@ -838,9 +840,11 @@ rejected:
 readings:
 - `Bo.d` reads the body's own `d` beside a listed place, with or without the remedy — RUN: predfold1128_model.py RULE128 (both bodies), SWEEP128.
 - the list under the body's label passes both reads (`B2.h`, `B2.p.h`) — RUN: predfold1128_model.py RULE128.
+- the remedy separates only where the body's `d` is reached by a skip (`[q = ..]`): without it `Bo.d` sees two `d`, with it one — RUN: docs/dev/lanes/predfix113_evidence/ predfix113_model.py PRINTED113.
 evidence: docs/dev/lanes/predfold1128_evidence/ predfold1128_model.py RULE128, SWEEP128, MECH128.
 history:
 - 2026-11-27 (lane predfold1128): a new ruled piece, the door.
+- 2026-11-27 (lane predfix113, review r113 EXAMPLES-2, the manager's dispositions): the line "His remedy" printed the same program shape and answers as the line before it; replaced by the separating witness (the body's `d` under its own label `q`): "Without his remedy" a compile error, "His remedy" legal. Until then, verbatim: "His remedy: WHOLE `3-7` HOLDS, `7-3` FAILS, `3-3` HOLDS, `7-7` FAILS / SEARCHED `7-7 3-7` `3-7`@4 / FIND-ALL `3-7 7-3 1-2 9-9` [`3-7`@0, `1-2`@8] (`Bo(Ad) & (Bo.d: <5)`, Ad := `/(?<d>\d)/`, Bo(rx) := `/(?<d>\d)-${[(=, _ = d) = rx]}/`)".
 
 ## core/labels/rule/caller-label — A label the sender writes in an argument
 slugs: caller-label-export
@@ -850,9 +854,11 @@ rejected:
 - reading (ii), the sender's label crosses the place and is an error from outside (`Y.a.h` refused) — by owner ruling caller-label-export — it would strand `X.c.h` with no spelling (docs/dev/lanes/predarg_report.md problem 7).
 readings:
 - in the sender's own text the call's label is a path through the place too (`pub.A.h` for `[pub = B([A = A])]`), and so is the macro's name (`B.a.h`) — RUN: predfold1128_model.py RULE128; the manager's reading that shorthand-outside's contrast stands — SUPPORTED in a moved form only: from a binding that uses the caller (`X.A.h`), NOT as `pub.A.h` (the asked statement's "only the path through the call's own label" refuses it).
+- a label above the call's label in the sender's own text: the path passes `c` and the place, a compile error — the lean read literally, a marked reading; the other reading (legal, predfold1128's PLACE128 boundary "a label directly on the call") RUN: predfix113_model.py LIT113, OPEN113; an owner question with no-path-through-argument's confirmation.
 evidence: docs/dev/lanes/predfold1128_evidence/ predfold1128_model.py RULE128, READINGS128.
 history:
 - 2026-11-27 (lane predfold1128): a new ruled piece.
+- 2026-11-27 (lane predfix113, review r113 RULING-4, EXAMPLES-1, EXAMPLES-3, the manager's dispositions): the third bullet (`pub.A.h`, `B.a.h` in the sender's own text) marked a reading and with the strong-lean marker; the line "Through the call's label" re-worded: `Y.c.a.h` ruled (caller-label-export), its ground the strong lean, `Y.c.h` alike marked; its refusal names `Y.a.h`. New: the cell `k.a.h` over `[k = [c = B([a = A])]]`, a marked reading (the lean read literally, an error), the other reading (predfold1128's PLACE128: a label directly on the call) RUN, an owner question with the lean's confirmation (slug label-above-call).
 
 ## core/labels/rule/list-over-label — A list one label above the place
 slugs: list-over-label
@@ -863,6 +869,7 @@ readings:
 evidence: docs/dev/lanes/predarg_report.md problem 5; docs/dev/lanes/predfold1128_evidence/ predfold1128_model.py OPEN128.
 history:
 - 2026-11-27 (lane predfold1128): a new open piece, asked of him next under its slug.
+- 2026-11-27 (lane predfix113, review r113 EXAMPLES-3, the manager's dispositions): the line "A list above the body's label" names the body's form `[p = [(=) = rx]]` in its refusal.
 
 ## core/labels/rule/forwarded-place — A body that passes its parameter on
 slugs: forwarded-place
@@ -908,6 +915,7 @@ history:
 - 2026-11-27 (lane predfold1127, the fold of one-path and gate-beside-label; record "2026-11-27 OWNER RULING — one-path: "yes all five"" and "2026-11-27 OWNER RULING — gate-beside-label: error"): three skippable cells name one-path. Until then, verbatim: "| a written part label `[x = A]` | ... | yes (path-rules 4) | ...", "| a part used alone `Q` | ... | no, a gate (alone-as-middle) | ...", "| a named group of rx text `(?<g>X)` | ... | yes (group-node) | ..." (the other cells unchanged).
 - 2026-11-27 (lane predfix112, review r112 applied with array-gate and body-own-name; records "2026-11-27 OWNER RULING — array-gate: "error. Agree with lean"" and "2026-11-27 OWNER RULING — body-own-name: "agree"; his read of the call case ("rx as an arg cant be directly on a path")"): two rows added, a list's alias and an argument's place (review r112 F6); the shorthand cell names one-path and body-own-name. The cell until then, verbatim: "yes, past the body's label: `B.h` (a reading)".
 - 2026-11-27 (lane predfold1128, the strong lean no-path-through-argument applied and marked (record "2026-11-27 OWNER, a DIRECTION: "Let's stop questions for tonight. Fold now""; core/labels/rule/argument-place): the shorthand row's skippable cell corrected (study problem 11), the place row's outside and export cells, a bullet). Until then, verbatim: "| an argument's shorthand label (`A` in `B(A)`) | yes, the caller's (shorthand-is-callers) | no, a start only (a reading) | yes, past the body's label, by one-path; a body's own `h` beside it is read instead (body-own-name): `B.h` (a reading) | no (shorthand-outside) | no (shorthand-outside) |" / "| a label the caller writes in an argument | yes, the caller's own (closing-own-label) | as a written label (a reading) | as a written label (a reading) | as a written label (a reading) | as a written label (a reading) |" / "| an argument's place (`${rx}` in a body) | no, it has no name (a reading) | no, it has no name (a reading) | always passed, a node between (one-path, a reading); a target across it beside a direct one is not counted (body-own-name) | through the call (call-prefix) | only through a list or a label on its spot (transform-export, argument-default) |"
+- 2026-11-27 (lane predfix113, review r113 RULING-4, the manager's dispositions): the strong-lean marker added to the shorthand row's skippable cell and to the caller-label row's outside cell, where `B.a.h` is a reading (was attributed to caller-label-export whole).
 
 ## core/labels/ownership — Who reads a label, and how
 slugs: label-doors shorthand-is-callers path-rules
@@ -1274,6 +1282,7 @@ history:
 - 2026-11-22 (lane predfix83, review r83 A2, D6, D16, D18; record "2026-11-22 MANAGER — review r83 (preddef1122): dispositions ruled; one correction; idiom-confirm closed on default-export (no owner words)"): bullets: two lists of one label (D16), the cross case (D16), the part's own prefix and a listed part label's path inside the binding (D18), the bullet "Some labels but not others" moved here from core/labels/export; the refusal line "Through a call that uses its argument alone" (A2); his caveat classed AGREEMENT and reading (a) marked (D6).
 - 2026-11-23 (lane predfix84, review r84 D3; record "2026-11-23 MANAGER — review r84 (predspot1122): the dispositions, ruled with the 2026-11-23 rulings in hand; no owner words"): the refusal line until then ended "; `[(=l) = atomic(B | A)]` alike: the call exports no such label, so the list cannot take it)." (atomic used its argument alone before wrapper-export); now the B case keeps that reason and the atomic case names its own (a part used alone in the argument exports nothing); the positive line "Through a call that passes its argument's labels on" added.
 - 2026-11-23 (lane predfix86, review r86 C11; record "2026-11-23 MANAGER — review r86 (predfold1123): the dispositions; three errors of the manager's own brief named; no owner words"): the line "Through a call that uses its argument alone" pointed at lib/convention/argument-labels for its ground, which no longer holds the sentence (moved to core/labels/export/arguments by lane predfold1123); the pointer moved.
+- 2026-11-27 (lane predfix113, review r113 RULING-2, the manager's dispositions): the bullet "A listed name the binding also writes itself is the same label, the last mention" is for a part; on a parameter's place the list is the door, not labels of the body's own (that bullet on a place gave the rejected answer for `Bo`: `3-7` FAILS where the door reads HOLDS).
 
 ## core/labels/export/arguments — What the caller writes inside an argument
 slugs: argument-label argument-export closing-own-label
@@ -1319,9 +1328,15 @@ rejected:
 - a compile error at the definition ("a parameter exports nothing the definition can see, so the list names no exported label", the printed line until 2026-11-27) — by owner ruling named-list-use — his lean: "a use error base on arg not a declaration error of A".
 readings:
 - the never-satisfiable case `M2(r) := /<${N([q = r])}>/` is decidable at the definition only under the strong lean (`[q = r]` passes nothing) — RUN: predfold1128_model.py NAMED128; marked.
+- row 1, `N2(rx) := /${[(=h) = rx]}/ & (h: <5)`: a compile error by nested-scope's statement — a marked reading; the other reading (legal, the body reads what its list names) RUN: predfix113_model.py ROWS113, OPEN113; an owner question with reference-example-checked.
+- row 8, `N([a = P] SEQ [b = Q])` with `(=h)`: one-path's error naming `a.h` and `b.h` — a marked reading; the other reading (the ruled edge "set twice ... reads the last" read for two parts: `b`'s) RUN: predfix113_model.py ROWS113, OPEN113; an owner question with reference-example-checked.
+- open cell, a renamed list `[(y = year) = rx]` lacking `year`: the use error names the argument's `year` and the list `(y = year)`; `N.y` reads the alias by the door — UNTESTED (trigger: the first renaming list in a provided body).
+- open cell, a gate, wall or underscore group in a REFERENCE argument (`D := isodate SEQ "!"`, `[_d = isodate]`): "a missing label" naming the path rule that hides it — UNTESTED (trigger: message wording only, the spelling step).
+- open cell, the same for a plain parameter with `(=)`: unchanged (transform-export, export 3) — UNTESTED (no trigger needed).
 evidence: docs/dev/lanes/predarg_report.md problem 9; docs/dev/lanes/predfold1128_evidence/ predfold1128_model.py NAMED128, SWEEP128, ERRSWEEP128.
 history:
 - 2026-11-27 (lane predfold1128): a new ruled piece, split from core/labels/export/arguments (its 40-line cap); the line "A named list on a spot" moved here from a compile error to legal. Until then, verbatim: "A named list on a spot: modes: a compile error (`N(A) & (N.h: <5)`, A := `/(?<h>\d)/`, N(rx) := `/${[(=h) = rx]}/`: a parameter exports nothing the definition can see, so the list names no exported label)."
+- 2026-11-27 (lane predfix113, review r113 RULING-2, RULING-6, the manager's dispositions): the bullet "The list takes the named label as the body's own, an alias" (the withdrawn meaning of carve-out-reading) re-worded to the door; three "Lacking it" lines printed (an underscore label, an underscore group, a part used alone); two cells printed as marked readings, both readings RUN, owner questions with reference-example-checked: the body reading its named label (`N2`, row 1) and an argument holding `h` in two labelled parts (row 8).
 
 ## core/labels/paths — Part labels and paths
 slugs: path-and-ambiguity
@@ -1358,6 +1373,7 @@ history:
 - 2026-11-23 (lane predfix86, review r86 C4; record "2026-11-23 MANAGER — review r86 (predfold1123): the dispositions; three errors of the manager's own brief named; no owner words"): the pure-label item annotated: revised by capture-export (1 no) for a part of a composed program.
 - 2026-11-23 (lane predfix88, review r88 A18 (U1); record "2026-11-23 MANAGER — review r88 (predfold1123b): the dispositions; no owner words"): "[c = B(A)] does not allow c.A" re-grounded by core/labels/rule line 2.
 - 2026-11-25 (lane predfix90, review r90 A4, A8; record "2026-11-25 MANAGER — review r90 (predfold1124): the dispositions; no owner words"): the EXPRESSION bullet: rule 6 below such a label and below a hole, two printed lines (the compile-error example now RUN, and the mixed case reading m's `d`); the c.A bullet re-grounded on reading (b) of shorthand-is-callers (was: "no label, written or skipped, is named A there").
+- 2026-11-27 (lane predfix113, review r113 RULING-5, the manager's dispositions): the bullet "A macro's parameter is not a part whose labels the body may name" carries param-reference's exception (a declared reference's listed names).
 
 ## core/labels/paths/binding-prefix — A binding's name as a label prefix
 slugs: binding-prefix
@@ -1482,6 +1498,7 @@ history:
 - 2026-11-27 (lane predfold1127, the fold of one-path and gate-beside-label; record "2026-11-27 OWNER RULING — one-path: "yes all five"" and "2026-11-27 OWNER RULING — gate-beside-label: error"): `c.d` and `B.d` over an argument that sets `d` beside the body's own, and `pair.d`, became compile errors; the body's own `d` printed with A := `/(?<e>\d)/`; "An argument used twice by the body, the caller's label" (`pair([x = A]) & (x.d: <5)`) added; each keeps the old answers. Until then, verbatim: "d as the call exports it, the body's own: WHOLE `7-3` HOLDS, `3-7` FAILS, `3-3` HOLDS / SEARCHED `3-7 7-3` `7-3`@4 / FIND-ALL `7-3 3-7 1-2 9-9` [`7-3`@0, `1-2`@8] (`[c = B(A)] & (c.d: <5)`, A := `/(?<d>\d)/`, B(rx) := `/${rx}-(?<d>\d)/`)"; "By the macro's name: ... (`B(A) & (B.d: <5)`, the same A and B)" with the same answers; "An argument used twice by the body: WHOLE `7,3` HOLDS, `3,7` FAILS, `3,3` HOLDS / SEARCHED `3,7 7,3` `7,3`@4 / FIND-ALL `7,3 3,7 1,2 9,9` [`7,3`@0, `1,2`@8] (`pair(A) & (pair.d: <5)`, ...)"; the bullet "- An argument used twice: with the list on both spots (...) the caller reads `pair.d`, the last mention (the manager's answer on wrapper-export; ...)".
 - 2026-11-27 (lane predfix112, review r112 applied with array-gate and body-own-name; records "2026-11-27 OWNER RULING — array-gate: "error. Agree with lean"" and "2026-11-27 OWNER RULING — body-own-name: "agree"; his read of the call case ("rx as an arg cant be directly on a path")"): `c.d` and `B.d` over an argument that sets a `d` legal again, the body's own (body-own-name). Until then, verbatim: `c.d` under `[c = B(A)]`, are the body's own `d` or one a part label in the body passes (`B(rx) := /${[p = rx]}xx/`); where the body writes none and labels none (`B(rx) := /${rx}xx/`) both are compile errors; where the body and the argument each set one, two are visible: compile errors (core/labels/rule/one-path; no path names the body's own then, owner question body-own-name). `A.d` reads A's / d as the call exports it, the argument setting one too: modes: a compile error (`[c = B(A)] & (c.d: <5)`, A := `/(?<d>\d)/`, B(rx) := `/${rx}-(?<d>\d)/`: two labels `d` are visible from `c`, the argument's and the body's (core/labels/rule/one-path); `B(A) & (B.d: <5)` alike). / d as the call exports it, the body's own: WHOLE `7-3` HOLDS, `3-7` FAILS, `3-3` HOLDS / SEARCHED `3-7 7-3` `7-3`@4 / FIND-ALL `7-3 3-7 1-2 9-9` [`7-3`@0, `1-2`@8] (`[c = B(A)] & (c.d: <5)`, A := `/(?<e>\d)/`, B(rx) := `/${rx}-(?<d>\d)/`) / By the macro's name: WHOLE `7-3` HOLDS, `3-7` FAILS, `3-3` HOLDS / SEARCHED `3-7 7-3` `7-3`@4 / FIND-ALL `7-3 3-7 1-2 9-9` [`7-3`@0, `1-2`@8] (`B(A) & (B.d: <5)`, A := `/(?<e>\d)/`, B(rx) := `/${rx}-(?<d>\d)/`)
 - 2026-11-27 (lane predfold1128, the strong lean no-path-through-argument applied and marked (record "2026-11-27 OWNER, a DIRECTION: "Let's stop questions for tonight. Fold now""; core/labels/rule/argument-place): the reading bullet on `B.d` through a label the body writes). Until then, verbatim: "`c.d` under `[c = B(A)]`, are the body's own `d` or one a part label in the body passes (`B(rx) := /${[p = rx]}xx/`); where the body writes none and labels none (`B(rx) := /${rx}xx/`) both are compile errors; where the body and the argument each set one, the body's own, a path that skips nothing (core/labels/rule/one-path, body-own-name); the argument's is `A.d`. `A.d` reads A's"
+- 2026-11-27 (lane predfix113, review r113 RULING-5, the manager's dispositions): the sentence "a parameter's label inside the body is not nameable" carries param-reference's exception.
 
 ## core/labels/paths/closed-argument — When a macro makes a label on its argument's spot
 slugs: closed-argument spot-read-name binding-as-label shorthand-is-callers list-is-label
@@ -2900,6 +2917,7 @@ history:
 - 2026-11-25 (lane predfix90, review r90 B2; record "2026-11-25 MANAGER — review r90 (predfold1124): the dispositions; no owner words"): the binding-as-label `rulings:` item marked revised in part by shorthand-is-callers; the shorthand-is-callers `rulings:` item added after it; the text until then, verbatim: "- 2026-11-23 \"binding-as-label: yes\" (record: \"2026-11-23 OWNER RULING — binding-as-label: yes (a path is canonically a chain of labels; a binding's name is a shorthand for a skipped label, under four conditions)\"); RULED on the statement as put: ...".
 - 2026-11-27 (lane predfold1125, the fold of drop-not, array-argument, brace-counts, map-creator, string-literals, bang-split and and-not): printed `NOT` re-spelled `!`, a complement's `!` re-spelled `~`, a group question's condition re-spelled to the array form, as the rulings carry; no answer changed (model SWEEP11).
 - 2026-11-27 (lane predfold1128, the strong lean no-path-through-argument applied and marked (record "2026-11-27 OWNER, a DIRECTION: "Let's stop questions for tonight. Fold now""; core/labels/rule/argument-place): the line "Example 1, the spot labelled" (`B.dd.d`) a compile error, missed by the study's census (its key carries `C :=`); its bullet). Until then, verbatim: "as its a binding variable not a label." (spelled `A.d`): legal whatever the body does with the spot (the lines "Example 1, the spot labelled", by both names)." / "Example 1, the spot labelled: WHOLE `42xx` HOLDS, `100xx` FAILS, `042xx` FAILS / SEARCHED `x100xx 42xx` `0xx`@3 / FIND-ALL `100xx 42xx 7xx 300xx` [`0xx`@2, `42xx`@6, `7xx`@11, `0xx`@17] (`C := B(A) & (B.dd.d: <100)`, A := `[d = rx.digits]`, B(rx) := `/${[dd = rx]}xx/`)"
+- 2026-11-27 (lane predfix113, review r113 RULING-5, the manager's dispositions): the statement carries param-reference's exception for a declared reference. Until then, verbatim: "A separately defined piece names only labels it holds and reads only its own settings of them; its `0` is its own match so far; the label a parameter holds is not its to name."
 
 ## core/holes/bare-condition/bound-condition — A condition bound to a name of its own
 slugs: bound-condition
@@ -3133,7 +3151,7 @@ rulings:
 - 2026-11-23 "label-kinds: yes, one mark meaning. the reference kind can be used by natives but stays off limits for users until we see a valid, safe set of rules for it." (record: "2026-11-23 OWNER RULING — label-kinds: yes, one mark, one meaning; the reference kind is for natives, off limits for users for now")
 - 2026-11-27 "param-reference: yes all four." (record: "2026-11-27 OWNER RULING — param-reference: "yes all four"; and a QUESTION with an example, "Wednesday June 12, 1994""); REVISES this piece for users: the reference kind by a declared list in the head, not by the label mark
 rejected:
-- a reference kind for users (a parameter naming a caller's existing label) — by owner ruling — "stays off limits for users until we see a valid, safe set of rules for it" (parked/ideas/reference-kind).
+- a reference kind for users (a parameter naming a caller's existing label) — by owner ruling — "stays off limits for users until we see a valid, safe set of rules for it" (parked/ideas/reference-kind); REVISED by param-reference ("yes all four"): users declare a reference as a list in the head; the label-mark reference stays refused.
 readings:
 - (a) reading a parameter never placed is refused at the definition — SUPPORTED as run (docs/dev/lanes/predfold1123_evidence/ predfold1123_model.py READINGS, LPRULES).
 - (b) `x.d:` at a call is refused (one new name, never a path) — SUPPORTED as run (docs/dev/lanes/predfold1123_evidence/ predfold1123_model.py READINGS).
@@ -3141,6 +3159,7 @@ evidence: docs/dev/lanes/predfold1123_evidence/ predfold1123_model.py LPRULES, R
 history:
 - 2026-11-23 (lane predfold1123, the fold of 2026-11-22 late and 2026-11-23; record "2026-11-23 OWNER RULING — label-kinds: yes, one mark, one meaning; the reference kind is for natives, off limits for users for now"): a new piece, split from core/operators/bindings/label-variables.
 - 2026-11-27 (lane predfold1128, param-reference: the statement, a bullet, a line's message). Until then, verbatim: "### One label mark, one meaning   [core/operators/bindings/label-kinds]   ruled 2026-11-23" / "The label mark is the setting kind only: a call names one new label; a body reading a label parameter it never places is a compile error at its definition; the reference kind is for natives." / "- To test a caller's label in a body, pass the condition: `A(c, B) := B & c`, `A((x: 5), /\w/)`." / "The reference kind in a user macro: modes: a compile error (`A(x:, /\w/)`, A(a:, B) := `B & (a: 5)`: A reads a label it never places, off limits for users)."
+- 2026-11-27 (lane predfix113, review r113 RULING-5, the manager's dispositions): the `rejected:` item "a reference kind for users" marked REVISED by param-reference (for the declared list; the label-mark reference stays refused, parked/ideas/reference-kind).
 
 ## core/operators/bindings/reference — A reference parameter, declared
 slugs: param-reference
@@ -3153,9 +3172,16 @@ readings:
 - the manager's runs of the reading before the declaration (docs/dev/lanes/predbang_evidence/ paramref.py, paramref.out): examples 1 and 2 re-spelled with the declared head, the same answers — RUN: predfold1128_model.py REF128.
 - the manager's example 3, `checked(B) := B & (B.year: < 2100)` — NOT FOLDED: line 4 says a plain parameter placed and then read "stays legal, as today", while core/labels/paths says a parameter's labels are not nameable in the body (`rx.d`); both readings RUN (REF128), listed for him.
 - "places and then reads" read as nested-scope's example 3 (the body's own label on the placed parameter) — a reading, consistent with both.
+- line 4's second sentence, the fold's reading (placing under the body's own label, nested-scope's example 3; `checked` a compile error) — a marked reading pending reference-example-checked; the other reading (a NEW rule: `checked(isodate)` legal, the answers of `isodate & (isodate.year: < 2100)`) RUN: predfix113_model.py CHECKED113, OPEN113.
+- open cell, a reference beside a label parameter, `f(l:, (=year))`, may the list name `(=l)`: a compile error (a label parameter is a name, not a caller's label) — UNTESTED (trigger: the first such library macro, or the call-mark question).
+- open cell, a reference to a label set many times (a loop, `[d = ..]` under `*`): the last pass; the array only by an explicit `@` entry, refused for now — UNTESTED (trigger: a macro over a repeated field).
+- open cell, a reference inside a group question, `some(@h, before2100)`: a compile error for now — UNTESTED (trigger: a library ask for per-element macro tests).
+- open cell, the wildcard list forms in a head, `before2100((=))`, `((=, _ = month))`: refused (a wildcard is a secret dependency) against "The head's list has the export list's forms" — UNTESTED (trigger: the spelling step).
+- open cell, a reference call exporting its listed labels (`[r = before2100(d)]`, `r.year`): no, the body places nothing — UNTESTED (no trigger needed).
 evidence: docs/dev/lanes/predbang_evidence/ paramref.py; docs/dev/lanes/predfold1128_evidence/ predfold1128_model.py REF128, SWEEP128, ERRSWEEP128.
 history:
 - 2026-11-27 (lane predfold1128): a new ruled piece.
+- 2026-11-27 (lane predfix113, review r113 RULING-1, RULING-3, RULING-6, the manager's dispositions): the quote of lines 1, 2 and 4 closed after line 2 and reopened at line 4 (it was one spliced string); the bullet "Places and then reads", as today, marked the fold's reading pending reference-example-checked (the example shown to him, `checked`, is refused by today's rules: record "2026-11-27 MANAGER — after lane predfold1128: five rulings folded; a TELLING of the manager's found false (param-reference line 4, "as today"); no owner words"), with the line "Placed, then read by the parameter's name" and the other reading RUN; the open cells pointed at.
 
 ## core/operators/bindings/reference-call — A reference argument at the call
 slugs: none
@@ -3167,6 +3193,7 @@ readings:
 evidence: docs/dev/lanes/predbang_evidence/ weekday.py; docs/dev/lanes/predfold1128_evidence/ predfold1128_model.py WEEKDAY128, ERRSWEEP128.
 history:
 - 2026-11-27 (lane predfold1128): a new ruled piece.
+- 2026-11-27 (lane predfix113, review r113 RULING-1, EXAMPLES-3, EXAMPLES-4, the manager's dispositions): "own" restored in the quote of line 3 and in the statement ("by the caller's own path rules", as asked); the line "At the weekday's own spot" names the filter form; one sentence on `weekday_of`'s two shapes (line 1's head his placeholder example, the native planned over values). Until then, the statement verbatim: "At the call a reference argument names something the caller has placed; each listed label is read there by the caller's path rules, at the point of the call."
 
 ## core/operators/bindings/label-in-argument — A label sent inside an argument
 slugs: label-in-argument
@@ -3218,6 +3245,7 @@ history:
 - 2026-11-22 (lane predcall, call-prefix case 1 folded): the bullet's end until then, verbatim: "(the head's bare `year`: his spelling, what label-reference would make of it is open, core/labels/paths/call-prefix)." became the reading that under label-reference the body would name it through the parameter, `d.year`; his example predates that ruling by an hour; not asked. Lane predref's question on it answered by this reading (the manager's, in the brief). No line moves.
 - 2026-11-22 (lane predfix82, review r82 RULING-8 (a); record "2026-11-22 MANAGER — review r82 (predfold1122): dispositions ruled; two corrections of record entries (no owner words)"): "written an hour before label-reference was ruled" became "written before label-reference was ruled".
 - 2026-11-27 (lane predfold1128, param-reference: a bullet).
+- 2026-11-27 (lane predfix113, review r113 RULING-3, the manager's dispositions): the reading `d.year` marked replaced by param-reference line 2 (the body reads the listed names bare).
 
 ## core/operators/bindings/call-forms — One head per name
 slugs: call-forms
