@@ -1366,3 +1366,12 @@ evidence: none (parked).
 history:
 - 2026-11-27 (lane predfold1125, the fold of drop-not, array-argument, brace-counts, map-creator, string-literals, bang-split and and-not): a new parked piece.
 
+## parked/ideas/label-rules-one-form — The label rules as one stated rule
+slugs:
+rulings:
+rejected:
+readings:
+- the five-sentence general form, one definition of "inside" and the one node-by-name table are the review's proposals (review r114 F25, F26, F27), parked as PLAN; the trigger is the manager's — a reading.
+evidence: none (parked).
+history:
+- 2026-11-28 (lane predfix114, review r114 F25, F26, F27; record "2026-11-28 MANAGER — after lane predfold1129 and review r114: the dispositions; no owner words"): a new parked piece, one joint note.

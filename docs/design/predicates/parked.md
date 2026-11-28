@@ -459,3 +459,11 @@ Trigger: the owner asks it as its own question; it would reverse the ruled compi
 Source: the record, drop-not's reading line 4 ("NOT taken ... its own question, not asked"); bang-split spells the lookahead `!^A` instead.
 see: core/filters/kinds core/patterns/lookaround/ahead
 modes: n/a (parked: not in the language)
+
+### The label rules as one stated rule   [parked/ideas/label-rules-one-form]   parked 2026-11-28
+One stated general form of the label rules (one rule for every crossing, one meaning of "inside", one table of nodes by names) in place of the per-crossing pieces.
+Trigger: the next fold that touches the labels hub, with the owner's yes to the one sentence of "inside" (a label of a text's own is reached only by a path that crosses no gate before it).
+Source: a review's general-form lens (one rule, one "inside", one table); parked by the manager, not asked.
+- It restructures core/labels/rule and its pieces, core/labels/rule/kinds, core/labels/ownership and core/diagnostics/errors; no printed answer moves.
+see: core/labels/rule core/labels/rule/kinds core/labels/ownership core/diagnostics/errors
+modes: n/a (parked: a restructuring, not a construct)

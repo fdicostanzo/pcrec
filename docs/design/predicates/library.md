@@ -372,9 +372,9 @@ defined: language
   in then", on a user macro of the same shape). `when(A, (A.h: ..))` reads A's `h` by the caller's shorthand label,
   whatever the body does with the spot (core/labels/paths/argument-default; the line "Through the argument's
   name"); `when([a = A], (a.h: ..))` and `when.h` read it too.
-  A name test and then both hold is two through the call: `when.h` is a compile error (core/labels/rule/one-path; run
-  on a user macro of the same shape: lib/convention/argument-labels' line "Two arguments"); `A.h` or the caller's own
-  label reads each.
+  A name test and then both hold is one full path reached twice through the call: `when.h` reads the last, then's
+  (same-path-last, core/labels/rule/one-path; run on a user macro of the same shape: lib/convention/argument-labels'
+  line "Two arguments"); `A.h` or the caller's own label reads each.
 - `//` stands for the owner's `null`, "nothing required"; `when`, `then`, `else` are placeholder spellings.
 WHOLE `12` HOLDS, `1` FAILS / SEARCHED `x123` `x`@0 / FIND-ALL `12 x 123 1x 7` [`12`@0, `x`@3, `12`@5, `x`@10] (`when(^/\d/, /\d\d/, else = /\w/)` is `(?=\d)\d\d|(?!\d)\w`)
 A read in then: WHOLE `3` HOLDS, `7` FAILS / SEARCHED `7 3` `3`@2 / FIND-ALL `3 7 4` [`3`@0, `4`@4] (`W(/(?<h>\d)/, (h: <5))`, W(a, b) := `[(=) = a] SEQ [(=) = b]`)
@@ -437,9 +437,7 @@ defined: language
 - A nullable argument draws a warning. Its hits (a reading of the ruled premise): the plain search's hits up to and including the first empty hit, which ends the loop; the first `min` hits are always taken and may be empty (`occurrences(/\d*/)` on `1a`: [`1`@0, ``@1]).
 - A condition after it reads the LAST hit's own labels, through the macro's name (`occurrences(/\d+/) & (occurrences.hit: <5)`, one call) or a label on the call; his example: `[ hits = occurences(...) ] & (hits.hit: <5)` (core/labels/paths/call-prefix). A rejecting condition after it re-chooses the hits (re-splits or drops them), so a test on the hits belongs after the atomic `hits` or inside the argument (the lines below).
 - His ruling: "occurences et al should only set labels not captures unless they are so declared." The body's `hit` is the label-only group (core/labels/label-only-group): no caller capture. A group written in the ARGUMENT is the caller's own text (`occurrences(/(?<n>\d+)/)`: n): read through `hit` and the list under it, `occurrences.hit.n` (hits-through-hit, the manager's call; lib/convention/argument-labels), or bare, the caller's own (core/labels/export/arguments); a binding passed whole through `hit` or its name (core/labels/ownership); a caller capture only where the program asks for one (capture-export); its declaring: lib/structural/capture/add-on.
-- A call may name its hit label (his spelling `occurrences(x, label = "foo")`, a placeholder: `label` is reserved metadata). Called twice in one definition, a plain read through the macro's name reads the last call written before it (binding-prefix, last-placement); to read another, label the call (`a.hit`, `b.hit`); a group question through the name reads every call's
-
-  settings, in order, joined by `SEQ` or by `&` alike; only the index `h[k]` across `&` is refused for now (core/labels/paths/call-prefix, core/labels/paths/binding-prefix; a reading for `&`).
+- A call may name its hit label (his spelling `occurrences(x, label = "foo")`, a placeholder: `label` is reserved metadata). Called twice in one definition, a plain read through the macro's name reads the last call written before it (binding-prefix, last-placement); to read another, label the call (`a.hit`, `b.hit`); a group question through the name reads every call's settings, in order, joined by `SEQ` or by `&` alike; only the index `h[k]` across `&` is refused for now (core/labels/paths/call-prefix, core/labels/paths/binding-prefix; a reading for `&`).
 - A check of the whole text: `J & C & occurrences(M)` matched WHOLE, a parse J of the whole text, a check C on it, M's matches read through the hit list; no `fail` piece is needed. Its SEARCHED shape (each match of M reported as a match of the program) has no ruled spelling.
 WHOLE `1a2` HOLDS, `12` HOLDS, `1` FAILS / SEARCHED `x1y2` `x1y2`@0 / FIND-ALL `1 2 x 3` [`1 2 x 3`@0] (`occurrences(/\d+/, min = 2)`)
 Plain read, the last hit: WHOLE `a1b3` HOLDS, `a9b3` HOLDS, `a3b9` HOLDS, `a1b22` HOLDS, `ab` FAILS / SEARCHED `x9 3` `x9 3`@0 / FIND-ALL `a9b3 c7` [`a9b3 c7`@0] (`[hits = occurrences(/\d+/)] & (hits.hit: <5)`)
