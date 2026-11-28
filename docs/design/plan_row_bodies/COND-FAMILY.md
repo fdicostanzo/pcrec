@@ -12301,3 +12301,13 @@ sentence); the 3 "branch taken" reads (`ab.l` twice, `pair.x`) skip a step with 
 errors or legal by whether "exactly one path" is counted over the definition or within one match. His sentence
 answers gate-twice-scope as "counted from the start". It does not by itself keep the gate ("never skipped",
 alone-as-middle): a lone gated target is one path.
+
+### 2026-11-27 OWNER, on gate-twice-scope and the one-path rule: "arrays would not require that rule"
+tags: core/labels/rule/paths core/labels/rule/alone-as-middle lib/counting/some
+His words, verbatim: "gate-twice-scope: arrays would not require that rule"
+Class: an answer by slug to ONE of the three points put to him (the manager's "Arrays. `@n.d` asks for every
+setting, so "exactly one" should not apply to it"): the array form is exempt from the one-path rule. The
+manager's reading of what it does NOT say: it does not rule his own sentence in ("skipping steps in a path is
+available when there is exactly one path possible from the start to any end label visible from that start"),
+nor the per-match counting for an alternation, nor that the gate stays on top. Those are re-put to him as one
+statement; gate-twice-scope stays open until then.
