@@ -6,6 +6,9 @@ from "2026-11-28 OWNER RULING — reference-example-checked" to the end (not edi
 
 ## STATE AT HANDOFF
 
+OWED: none
+IDS: none
+
 - Rulings file `docs/dev/lanes/predfold1129_rulings.md`: empty at every re-read (before each commit, before each run
   over two minutes, before this report). No entry applied; the last entry applied: none.
 - `scripts/pred_doc_lint.py`: `pred_doc_lint: checks passed 10658, failed 0`.
