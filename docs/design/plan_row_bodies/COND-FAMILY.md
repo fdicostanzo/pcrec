@@ -12975,3 +12975,19 @@ outside and inside alike), while a path that STARTS at `p` inside the body (`p.h
 first half in his words. Line 2's second half (what is under `p` comes up: `a.h`, `B1.h` legal) is the asked
 statement he answered under the slug and the manager takes it as ruled with it, saying so to him. NOT answered:
 the compile error for a list that passes nothing (stays the manager's proposal).
+
+### 2026-11-28 OWNER RULINGS — a list that passes nothing: "Agree compiler error"; branch-in-loop: "error for now. Ambiguous"
+tags: core/labels/export/export-list core/labels/rule/list-over-label core/labels/rule/one-path
+His words, verbatim: "List opens one step:
+[(=) = [year = /\d{4}/]]
+Agree compiler error as there is nothing inside year to export
+
+branch-in-loop: error for now. Ambiguous"
+Classes: (1) RULING, the manager's proposal left open with list-opens-one-step ("a list that passes nothing,
+such as `[(=) = [year = /\d{4}/]]`, being a compile error"): agreed, his reason "there is nothing inside year to
+export". He raised no objection to the reading told to him of list-opens-one-step (`a.p`, `a.p.h` errors; `p.h`
+inside untouched; `a.h` legal).
+(2) RULING, branch-in-loop (asked with the slug; the example `[n = rx.repeat([a = /(?<d>\d)/] | [b = /x(?<d>\d)/],
+min = 1, max = (underscore))] & (n.d: < 5)`; the manager's lean "an error for now, with the message naming both
+full paths and the array form"): "error for now. Ambiguous". "For now": the last-pass reading stays a direction,
+not refused for good (parked with its run, the MANAGER entry of this day).
