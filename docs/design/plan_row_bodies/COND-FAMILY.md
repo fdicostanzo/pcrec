@@ -12337,3 +12337,11 @@ are label flow, untouched: the last mention; (c) the four reads the census names
 are the ones that move, and the 59 reads the walker did not parse are to be judged, not assumed; (d) the array
 form over a gate: line 3 exempts it from one-path, line 2 still says a gate is never skipped: which wins for
 `@n.d` through a part used alone is to be RUN both ways and listed as a question, not chosen.
+
+### 2026-11-27 OWNER RULING — array-gate: "error. Agree with lean"
+tags: core/labels/rule/one-path core/labels/rule/alone-as-middle lib/counting/some
+His words, verbatim: "array-gate: error. Agree with lean"
+RULED (answered by slug): the first reading as asked, for `[n = (P SEQ Q)] & some(@n.d, <5)`: "An error: a gate
+is never skipped, array or not"; the lean as put: ""Exempt" was about needing exactly one target, not about
+gates, and keeping the gate absolute makes it a rule with no exceptions." The documents' marked reading in
+core/labels/rule/one-path ("The array form through a gate") becomes ruled at the fix after review r112.
