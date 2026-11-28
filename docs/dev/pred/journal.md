@@ -1365,3 +1365,5 @@ wake.md says (read the draft WHOLE first; A4 is a ruled-words finding: read his 
   4102 of 4096 bytes: the new long predicate entries). Not a document fault; main fixes `scripts/entry`. From now
   on `make -s test-doc-lint` is a pre-delivery check of mine and of every lane brief (reproduced on the branch:
   17 passed, 1 failed, 2.5 s). Asked main to add it to the skill's "no make except" line.
+- Main's `scripts/entry` fix (c5d95a2e4) merged back; the branch is green on pred_doc_lint, test-plan-lint and
+  test-doc-lint. The skill's make line now names both targets (main's edit). At rest.
