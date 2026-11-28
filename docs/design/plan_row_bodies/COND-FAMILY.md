@@ -12690,3 +12690,36 @@ The manager's readings, to be tested by the fold (none ruled):
   strong lean no-path-through-argument, never ruled, must be restated as a rule about readers OUTSIDE the body
   (a caller's `B.dd.d`), or it conflicts with this ruling; to be asked with the lean's confirmation;
 - a parameter placed twice: `rx.d` follows one-path (two labels visible, an error), untested.
+
+### 2026-11-28 OWNER RULING — named-list-body-read: "yes same as before"; his strong lean on arguments "flipped"; and a RECONSIDERATION: a label on an outside binding or argument should not be skipped ("the above needs a.dd.g or dd.g")
+tags: core/labels/export/named-list core/labels/rule/argument-place core/labels/rule/alone-as-middle core/labels/rule/one-path core/labels/rule/paths
+Asked as a question with the slug named-list-body-read (may a body read, bare, a label that its own list on the
+place names: `N2(rx) := /${[(=h) = rx]}/ & (h: <5)`; the manager's lean: legal, "The body reads bare what its own
+list names, and nothing else of the argument"; told with it: with `(=)` a bare read would still be an error).
+His words, verbatim: "named-list-body-read: yes same as before.
+I did have the strong lean against reading through arguments but then we had the discussion about late label
+determination and I flipped.
+The one thing I'm not sure of that we ruled before is (in relation to reading into any outside binding (or arg I
+think)) if you can skip the gate if you label it.
+A := [g = digit]
+B(rx) := [a = /${[dd = rx]}xx/] & (a.g: <7)
+B(A)
+Whether rx is an arg or a binding. I said you needed to specify a gate referring to a situation like above
+without the dd label (rx.g). You read that as saying if there is a label, the gate is open like above is legal
+(this was binding but maybe arg applies as well). I agreed but it honestly hasn't sat right and the above needs
+a.dd.g or dd.g"
+Classes: (1) RULING, named-list-body-read: legal (the manager's reading of "yes same as before": yes to the lean
+as asked). (2) A STATEMENT about his own strong lean no-path-through-argument: he "flipped" after "the discussion
+about late label determination" (the manager's reading: named-list-use's error at the call). NOT a ruling; the 40
+marked sites stay marked until he is asked what replaces the lean. (3) A RECONSIDERATION, class LEAN, of what
+alone-as-middle left standing ("A label someone WROTE (`[a = P]`) is still skipped by rule 4", the piece's
+words): a label written on an outside binding or argument is the gate's name and is not skipped. Nothing ruled;
+asked next as a question, slug label-names-gate.
+What the documents say of his example today: with a BINDING in rx's place, `a.g` is legal (dd skipped, rule 4,
+one `g` visible: one-path); with the ARGUMENT, a compile error by the applied lean (the path passes the
+argument's place).
+The run of the example's answers where the read is legal (pasted; scratch `pred/labgate.py`):
+WHOLE 3xx HOLDS
+WHOLE 7xx FAILS
+SEARCHED 7xx 3xx [('3xx', 4)]
+FIND-ALL 3xx 7xx 4xx [('3xx', 0), ('4xx', 8)]
