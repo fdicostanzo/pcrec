@@ -1,0 +1,176 @@
+== library bodies (library.md): chars ([ch = /(?s:.)/])* ; length(S) := chars & (count((chars.ch: /(?s:.)/)): S) ; month_numbered(S) := months & (months.mname.index: S) ; between: >= lo & <= hi
+== months := [mname = [/Jan(?:uary)?/, /Feb(?:ruary)?/, /Mar(?:ch)?/, /Apr(?:il)?/, /May/, /June?/, /July?/, /Aug(?:ust)?/, /Sep(?:tember)?/, /Oct(?:ober)?/, /Nov(?:ember)?/, /Dec(?:ember)?/]]
+PATCH R-5 walk10: 3 lines replaced by 17
+PATCH R-5 path10: 2 lines replaced by 10
+PATCH R-5 g_eval: 2 lines replaced by 3
+== CANARY1127: X1127 off is predfix111's walker (the control): `date.v` legal (the last mention) and gate-beside's `n.d` legal (reading (ii)); X1127 on refuses both
+PASS CANARY1127: off: legal / legal; on: `date.v`: 2 labels `v` are visible from `date`, so no step may be skipped: write the full path, `date.m.v` or `date.y.v` (a compile error, core/labels/rule/paths rule 4, one-path) / `n.d`: a `d` sits behind a gate (a part used alone is never skipped): write the full path, `n.Q.d` or `n.a.d` (a compile error, core/labels/rule/paths rule 4, one-path)
+== RULE1127: reads judged by the model's full program builder against hand-filled verdicts, each citing the ruled line it rests on; every legal read's answers against a regex written by hand from the sentence
+   date & (date.v: <5)                                                one-path line 4 (his example) | `date.v`: 2 labels `v` are visible from `date`, so no step may be skipped: write the full path, `date.m.v` or `date.y.v` (a compile error, c
+   date & (date.m.v: <5)                                              rule 1, the full path | legal, equal to the hand regex `\d-[0-4]`
+   date & (date.y.v: <5)                                              rule 1, the full path | legal, equal to the hand regex `[0-4]-\d`
+   pair & (pair.x: <5)                                                one-path line 1 (his example): the branch taken | legal, equal to the hand regex `(?:[0-4]|a[0-4])`
+   [n = ([a = P] SEQ [b = Q])] & (n.d: <5)                            one-path line 4 | `n.d`: 2 labels `d` are visible from `n`, so no step may be skipped: write the full path, `n.a.d` or `n.b.d` (a compile error, core/labels/r
+   [n = ([a = P] SEQ [b = Q])] & (n.b.d: <5)                          rule 1 | legal, equal to the hand regex `\d,[0-4]`
+   [n = ([a = P] SEQ [b = Q])] & some(@n.d, <5)                       one-path line 3, exempt | legal, equal to the hand regex `(?:[0-4],\d|\d,[0-4])`
+   [n = ([a = P] SEQ Q)] & (n.d: <5)                                  gate-beside-label: error | `n.d`: a `d` sits behind a gate (a part used alone is never skipped): write the full path, `n.Q.d` or `n.a.d` (a compile error, core/labels/
+   [n = ([a = P] SEQ Q)] & (n.d: <5)                                  gate-beside-label: `n.a.d` or `n.Q.d` | `n.d`: a `d` sits behind a gate (a part used alone is never skipped): write the full path, `n.Q.d` or `n.a.d` (a compile error, core/labels/
+   [n = ([a = P] SEQ Q)] & (n.a.d: <5)                                rule 1 | legal, equal to the hand regex `[0-4],\d`
+   [n = (P SEQ Q)] & (n.d: <5)                                        one-path line 2 (alone-as-middle) | `n.d`: a `d` sits behind a gate (a part used alone is never skipped): write the full path, `n.P.d` or `n.Q.d` (a compile error, core/labels/
+   /(?<g>${A})x/ & (g.h: <5)                                          one-path line 2: the only target, gated | `g.h`: a `h` sits behind a gate (a part used alone is never skipped): write the full path, `g.A.h` (a compile error, core/labels/rule/paths 
+   [n = ([m = P] SEQ [_x = Q])] & (n.d: <5)                           skip-past-wall: a wall hides its labels | legal, equal to the hand regex `[0-4],\d`
+   [n = ([m = P] & [_x = Q])] & (n.d: <5)                             skip-past-wall, across `&` | legal, equal to the hand regex `[0-4]\d`
+   [n = ([m = P] & [k = Q])] & (n.d: <5)                              rule 4: across `&` ambiguous (one-path keeps it) | `n.d`: both sides of `&` set `d`, an ambiguous reference (a compile error, core/labels/flow)
+   D2 & (D2.c: "3")                                                   label flow: nothing skipped (a reading) | legal, equal to the hand regex `\d3`
+   [aa = /(?<h>\d)/] SEQ "," SEQ [aa = /(?<h>\d)/] & (aa.h: <5)       label flow: nothing skipped (a reading) | legal, equal to the hand regex `\d,[0-4]`
+   [n = (P SEQ Q)] SEQ ";" SEQ [m = (P SEQ Q)] & (n.Q.d: <5)          one-path line 5: counted under the start | legal, equal to the hand regex `\d,[0-4];\d,\d`
+   [n = (Q SEQ Q)] & (n.Q.d: <5)                                      one-path line 5: twice under the start | `n.Q.d`: `Q` is used more than once here, so it is not a step (a compile error, alone-as-middle)
+   X & (X.h: <5)                                                      rule 4, one target, two skipped | legal, equal to the hand regex `[0-4]!`
+   B(A) & (B.h: <5)                                                   rule 4 through a call, one target | legal, equal to the hand regex `[0-4]xx`
+   [c = B(A)] & (c.d: <5)                                             one-path line 4 (`c.d`, the census) | `c.d`: 2 labels `d` are visible from `c`, so no step may be skipped: no path from `c` names one of them alone (a compile error, core/labels/
+   B(A) & (B.d: <5)                                                   one-path as worded (the line beside `c.d`) | `B.d`: 2 labels `d` are visible from `B`, so no step may be skipped: no path from `B` names one of them alone (a compile error, core/labels/
+   [c = B(A)] & (c.d: <5)                                             one target: the body's own | legal, equal to the hand regex `\d-[0-4]`
+   B(/(?<d>\d)/) & (B.d: <5)                                          one-path line 4 (`B.d`, the census) | `B.d`: 2 labels `d` are visible from `B`, so no step may be skipped: no path from `B` names one of them alone (a compile error, core/labels/
+   W(/(?<h>\d)/, /;(?<h>\d)/) & (W.h: "3")                            one-path line 4 (`W.h`, the census) | `W.h`: 2 labels `h` are visible from `W`, so no step may be skipped: no path from `W` names one of them alone (a compile error, core/labels/
+   pair(A) & (pair.d: <5)                                             one-path line 5: the argument placed twice under the start | `pair.d`: 2 labels `d` are visible from `pair`, so no step may be skipped: no path from `pair` names one of them alone (a compile error, cor
+   list_of(/(?<h>\d)/, sep = ",") & (list_of.h: "5")                  one-path line 5: two spots of the argument | `list_of.h`: 2 labels `h` are visible from `list_of`, so no step may be skipped: no path from `list_of` names one of them alone (a compile e
+   [ab = ([b = B] | [a = A])] & (ab.l: <20)                           one-path line 1: one per branch | legal, equal to the hand regex `(?:[01]\d|\d\d)`
+PASS RULE1127: 29 reads (15 legal against hand regexes); not as the ruling says: none
+== READINGS1127: the manager's readings of the two record entries, each RUN: one-path (a)-(c) and the direct/skip pair; gate-beside-label's three
+   (a) visible: a wall hides, a gate holds: SUPPORTED (('legal', 'B:P', 'd') / `n.d`: a `d` sits behind a gate (a part used alone is never skipped): write the )
+   (b) D2.c, aa.h skip nothing: label flow: SUPPORTED (D2.c: nodes between each target [0, 0], last mention; aa.h: nodes between each target [0, 0], last mention)
+   (f) direct beside a skip: printed error; `wins` keeps c.d, B.d legal (the body's own), date.v still an error: SUPPORTED (c.d: refused / wins ('legal', 'B:B', 'd'); B.d: refused / wins ('legal', 'B:B', 'd'); date.v: refused / wins ('refused', '`date.v`: 2 labels `v` are visible from `date`, so no step may be skipped: write the full path, `date.m.v` or `date.y.v` (a compile error, core/labels/rule/paths rule 4, one-path)'))
+   gate-beside (1): the error with another legal target beside the gate: SUPPORTED (`n.d`: a `d` sits behind a gate (a part used alone is never skipped): write the full path, `n.Q.d` or `n.a.d` (a compile)
+   gate-beside (2): `g.h` over /(?<g>${A})x/, the same rule with no other target: SUPPORTED (`g.h`: a `h` sits behind a gate (a part used alone is never skipped): write the full path, `g.A.h` (a compile error, cor)
+   gate-beside (3): a private part beside a written label unchanged (skip-past-wall): SUPPORTED (('legal', 'B:P', 'd'))
+PASS READINGS1127: 6 readings run, 6 supported
+== READ_D1127: reading (d), a QUESTION: the array form through a gate (`some(@n.d, <5)` over `[n = (P SEQ Q)]`), both readings RUN: `error` (printed, marked) and `exempt` (every setting read, the gated ones too)
+   error: `n.d`: a `d` sits behind a gate (a part used alone is never skipped): write the full path, `n.P.d` or `n.Q.d` (a compile
+   exempt: ('legal', None, None, 'array'); the engine on `[n = ([p__1 = P] SEQ [q__2 = Q])] & some(@n.d, <5)`: equal to the hand regex `(?:[0-4],\d|\d,[0-4])`
+   exempt answers: WHOLE `7,3` HOLDS, `3,7` HOLDS, `7,7` FAILS / SEARCHED `7,7 3,7` `3,7`@4 / FIND-ALL `7,3 7,7 1,2` [`7,3`@0, `1,2`@8]
+PASS READ_D1127: error: refused (the program refused: True); exempt: legal
+== CENSUS1127: every dotted read of every printed three-mode program at the starting commit 637a5e79c: the control's walker (WALK111) against WALK1127; every read that moves DECLARED (MOVED1127); every read WALK1127 does not parse given its category and a count of the target's name written as a label in its text
+      3  control branch taken  now branch taken
+      2  control last mention  now last mention
+      4  control last mention  now refused
+     51  control one           now one
+      2  control one           now refused
+      2  control refused       now refused
+      4  control unparsed      now array
+      1  control unparsed      now branch taken
+      7  control unparsed      now one
+      1  control unparsed      now refused
+      8  control unparsed      now refused by both (its bindings are not on the line)
+     38  control unparsed      now unparsed
+   MOVED n.d        `[n = ([a = P] SEQ Q)] & (n.d: <5)` (core.md:575): gate-beside-label: error
+   MOVED date.v     `date & (date.v: <5)` (core.md:860): one-path line 4 (the census; his example)
+   MOVED c.d        `[c = B(A)] & (c.d: <5)` (core.md:1101): one-path line 4 (the census)
+   MOVED pair.d     `pair(A) & (pair.d: <5)` (core.md:1103): one-path line 5: the argument at two spots under the start (the census counted one)
+   MOVED B.d        `B(/(?<d>\d)/) & (B.d: <5)` (core.md:1201): one-path line 4 (the census)
+   MOVED W.h        `W(/(?<h>\d)/, /;(?<h>\d)/) & (W.h: "3")` (library.md:51): one-path line 4 (the census)
+   MOVED list_of.h  `list_of(/(?<h>\d)/, sep = ",") & (list_of.h: "5")` (library.md:758): one-path line 5: two spots (the census did not parse it)
+   NOT PARSED ab.l         `atomic([ab = ([b = B] | [a = A])]) & (ab.l: <20)` [no start ab] labels of the name in its text: 2; a start the walker does not place (the caller's shorthand `A`, a label the caller writes in an argument, a sent label, a list's name): one label of the name under it, by hand
+   NOT PARSED A.d          `B(A) & (A.d: <5)` [no start A] labels of the name in its text: 1; a start the walker does not place (the caller's shorthand `A`, a label the caller writes in an argument, a sent label, a list's name): one label of the name under it, by hand
+   NOT PARSED a.h          `B([a = A]) & (a.h: <5)` [no start a] labels of the name in its text: 1; a start the walker does not place (the caller's shorthand `A`, a label the caller writes in an argument, a sent label, a list's name): one label of the name under it, by hand
+   NOT PARSED date.year    `date & (date.year: >= 2000)` [label [(=year) = isodate]] labels of the name in its text: 2; a binding list over a part (`[(=year) = isodate]`): the list takes one label
+   NOT PARSED date.day     `date & (date.day: "02")` [label [(=, _ = month) = isodate]] labels of the name in its text: 1; a binding list over a part (`[(=year) = isodate]`): the list takes one label
+   NOT PARSED d.year       `B([d = isodate]) & (d.year: 2000)` [no start d] labels of the name in its text: 1; a start the walker does not place (the caller's shorthand `A`, a label the caller writes in an argument, a sent label, a list's name): one label of the name under it, by hand
+   NOT PARSED isodate.year `B(isodate & (isodate.year: 2000))` [no start isodate] labels of the name in its text: 1; a start the walker does not place (the caller's shorthand `A`, a label the caller writes in an argument, a sent label, a list's name): one label of the name under it, by hand
+   NOT PARSED A.d          `B(A) & (A.d: <5)` [no start A] labels of the name in its text: 1; a start the walker does not place (the caller's shorthand `A`, a label the caller writes in an argument, a sent label, a list's name): one label of the name under it, by hand
+   NOT PARSED a.h          `identity([a = A]) & (a.h: <5)` [no start a] labels of the name in its text: 1; a start the walker does not place (the caller's shorthand `A`, a label the caller writes in an argument, a sent label, a list's name): one label of the name under it, by hand
+   NOT PARSED A.h          `B(A & (A.h: "3"))` [no start A] labels of the name in its text: 1; a start the walker does not place (the caller's shorthand `A`, a label the caller writes in an argument, a sent label, a list's name): one label of the name under it, by hand
+   NOT PARSED occurrences.hit `occurrences(/\d/) SEQ ";" SEQ occurrences(/\d/) & some(@occurrences.hit, "9")` [call occurrences] labels of the name in its text: 0; a provided name the walker does not parse (a native body, a loop, a list_of default): one label of the name at its spot, by hand
+   NOT PARSED A.d          `B(A) & (A.d: <5)` [no start A] labels of the name in its text: 2; a start the walker does not place (the caller's shorthand `A`, a label the caller writes in an argument, a sent label, a list's name): one label of the name under it, by hand
+   NOT PARSED A.d          `B(A) & (A.d: <5)` [no start A] labels of the name in its text: 2; a start the walker does not place (the caller's shorthand `A`, a label the caller writes in an argument, a sent label, a list's name): one label of the name under it, by hand
+   NOT PARSED A.d          `pair(A) & (A.d: <5)` [no start A] labels of the name in its text: 1; a start the walker does not place (the caller's shorthand `A`, a label the caller writes in an argument, a sent label, a list's name): one label of the name under it, by hand
+   NOT PARSED hits.hit     `[hits = occurrences(/\d+/)] & hits(/\d/) & (hits.hit: <5)` [call occurrences] labels of the name in its text: 1; a provided name the walker does not parse (a native body, a loop, a list_of default): one label of the name at its spot, by hand
+   NOT PARSED A.d          `B(A) & (A.d: <5)` [no start A] labels of the name in its text: 1; a start the walker does not place (the caller's shorthand `A`, a label the caller writes in an argument, a sent label, a list's name): one label of the name under it, by hand
+   NOT PARSED A.d          `B(A) & (A.d: <5)` [no start A] labels of the name in its text: 1; a start the walker does not place (the caller's shorthand `A`, a label the caller writes in an argument, a sent label, a list's name): one label of the name under it, by hand
+   NOT PARSED a.h          `B([a = A]) & (a.h: <5)` [no start a] labels of the name in its text: 1; a start the walker does not place (the caller's shorthand `A`, a label the caller writes in an argument, a sent label, a list's name): one label of the name under it, by hand
+   NOT PARSED A.d          `B([A = A]) & (A.d: <5)` [no start A] labels of the name in its text: 1; a start the walker does not place (the caller's shorthand `A`, a label the caller writes in an argument, a sent label, a list's name): one label of the name under it, by hand
+   NOT PARSED A.d          `B(A) & (A.d: <5)` [no start A] labels of the name in its text: 1; a start the walker does not place (the caller's shorthand `A`, a label the caller writes in an argument, a sent label, a list's name): one label of the name under it, by hand
+   NOT PARSED A.d          `B(A) & (A.d: <5)` [no start A] labels of the name in its text: 1; a start the walker does not place (the caller's shorthand `A`, a label the caller writes in an argument, a sent label, a list's name): one label of the name under it, by hand
+   NOT PARSED A.d          `B([A = A]) & (A.d: <5)` [no start A] labels of the name in its text: 1; a start the walker does not place (the caller's shorthand `A`, a label the caller writes in an argument, a sent label, a list's name): one label of the name under it, by hand
+   NOT PARSED a.d          `B([a = A]) & (a.d: <100)` [atom rx.digits] labels of the name in its text: 1; a provided name the walker does not parse (a native body, a loop, a list_of default): one label of the name at its spot, by hand
+   NOT PARSED B.dd.d       `B(A) & (B.dd.d: <100)` [atom rx.digits] labels of the name in its text: 1; a provided name the walker does not parse (a native body, a loop, a list_of default): one label of the name at its spot, by hand
+   NOT PARSED days.w.index `/${days}/ & (days.w.index: >= 2)` [label [/Mon/, /Tue/, /Wed/]] labels of the name in its text: 0; an array literal (`days`): one label of the name
+   NOT PARSED A.d          `B(A) & (A.d: <100)` [atom rx.digits] labels of the name in its text: 1; a provided name the walker does not parse (a native body, a loop, a list_of default): one label of the name at its spot, by hand
+   NOT PARSED A.d          `identity(A) & (A.d: <5)` [no start A] labels of the name in its text: 1; a start the walker does not place (the caller's shorthand `A`, a label the caller writes in an argument, a sent label, a list's name): one label of the name under it, by hand
+   NOT PARSED A.d          `peek(A) SEQ /\d/ & (A.d: <5)` [no start A] labels of the name in its text: 1; a start the walker does not place (the caller's shorthand `A`, a label the caller writes in an argument, a sent label, a list's name): one label of the name under it, by hand
+   NOT PARSED A.h          `W(A, (A.h: <5))` [no start A] labels of the name in its text: 1; a start the walker does not place (the caller's shorthand `A`, a label the caller writes in an argument, a sent label, a list's name): one label of the name under it, by hand
+   NOT PARSED a.h          `W([a = A], (a.h: <5))` [no start a] labels of the name in its text: 1; a start the walker does not place (the caller's shorthand `A`, a label the caller writes in an argument, a sent label, a list's name): one label of the name under it, by hand
+   NOT PARSED A.d          `atomic(A) & (A.d: <5)` [no start A] labels of the name in its text: 1; a start the walker does not place (the caller's shorthand `A`, a label the caller writes in an argument, a sent label, a list's name): one label of the name under it, by hand
+   NOT PARSED hits.hit     `[hits = occurrences(/\d+/)] & (hits.hit: <5)` [call occurrences] labels of the name in its text: 0; a provided name the walker does not parse (a native body, a loop, a list_of default): one label of the name at its spot, by hand
+   NOT PARSED hits.hit     `[hits = occurrences(/\d+/)] & occurs.none(@hits.hit, >= 5)` [call occurrences] labels of the name in its text: 0; a provided name the walker does not parse (a native body, a loop, a list_of default): one label of the name at its spot, by hand
+   NOT PARSED occurrences.hit.n `occurrences(/(?<n>\d+)/) & (occurrences.hit.n: "3")` [call occurrences] labels of the name in its text: 1; a provided name the walker does not parse (a native body, a loop, a list_of default): one label of the name at its spot, by hand
+   NOT PARSED A.d          `hits(A) & (A.d: <5)` [no start A] labels of the name in its text: 1; a start the walker does not place (the caller's shorthand `A`, a label the caller writes in an argument, a sent label, a list's name): one label of the name under it, by hand
+   NOT PARSED prefix_in.a  `prefix_in(3, /(?<a>ab)c|xy/) & (prefix_in.a: "ab")` [atom 3] labels of the name in its text: 1; a provided name with a value argument (`prefix_in(3, ..)`): one label of the name
+   NOT PARSED r.a          `[r = rx.repeat(/(?<a>\d)/, min = 1, max = _)] & (r.a: "3")` [atom rx.repeat(/(?<a>\d)/, min = 1, max = _)] labels of the name in its text: 1; a provided name the walker does not parse (a native body, a loop, a list_of default): one label of the name at its spot, by hand
+   NOT PARSED r.a          `[r = rx.repeat(/(?<a>\d)/, min = 1, max = _)] & some(@r.a, "7")` [atom rx.repeat(/(?<a>\d)/, min = 1, max = _)] labels of the name in its text: 1; a provided name the walker does not parse (a native body, a loop, a list_of default): one label of the name at its spot, by hand
+PASS CENSUS1127: 123 reads; moved 7 (declared 7; undeclared none; declared, not moved none); not parsed 38, each categorised: True; named twice in its text, unjudged: none
+== TABLE1127: the label-kind table of core/labels/rule/kinds, read cell by cell, against KINDS111 (the rows the walker models; WALK1127 reads the same table)
+   ROW a written part label         document ('yes', 'yes', 'yes', 'yes', 'yes'), walker ('yes', 'yes', 'yes', 'yes', 'yes')
+   ROW an underscore part label     document ('yes', 'wall', 'wall', 'wall', 'no'), walker ('yes', 'wall', 'wall', 'wall', 'no')
+   ROW the blank label              document ('no', 'wall', 'wall', 'wall', 'no'), walker ('no', 'wall', 'wall', 'wall', 'no')
+   ROW a part used alone            document ('yes', 'yes', 'gate', 'wall', 'no'), walker ('yes', 'yes', 'gate', 'wall', 'no')
+   ROW a macro call used alone      document ('yes', 'yes', 'gate', 'wall', 'no'), walker ('yes', 'yes', 'gate', 'wall', 'no')
+   ROW a named group of rx text     document ('yes', 'yes', 'yes', 'yes', 'yes'), walker ('yes', 'yes', 'yes', 'yes', 'yes')
+   ROW an underscore group          document ('yes', 'wall', 'wall', 'wall', 'no'), walker ('yes', 'wall', 'wall', 'wall', 'no')
+PASS TABLE1127: 7 rows; differing: none
+== SWEEP1127: every printed three-mode line RUN under this model; the starting commit 637a5e79c's lines under the control (X1127 off: predfix111's walker) against these, keyed by the program; every key gone DECLARED
+   DROPPED OR MOVED BY A RULING core.md:575 `[n = ([a = P] SEQ Q)] & (n.d: <5)`: gate-beside-label: the line is the compile error; `n.a.d` printed with its old answers
+   DROPPED OR MOVED BY A RULING core.md:860 `date & (date.v: <5)`: one-path line 4: the compile error; `date.m.v` printed with its old answers
+   DROPPED OR MOVED BY A RULING core.md:1101 `[c = B(A)] & (c.d: <5)`: one-path line 4: the compile error; the body's own `d` printed with an argument that sets no `d`, its old answers
+   DROPPED OR MOVED BY A RULING core.md:1102 `B(A) & (B.d: <5)`: one-path: the compile error (beside `c.d`); `B.d` printed with an argument that sets no `d`, its old answers
+   DROPPED OR MOVED BY A RULING core.md:1103 `pair(A) & (pair.d: <5)`: one-path line 5: the compile error; the caller's label `pair([x = A])` printed with its old answers
+   DROPPED OR MOVED BY A RULING core.md:1201 `B(/(?<d>\d)/) & (B.d: <5)`: one-path line 4: the compile error (two-sources' line "Through the call, both")
+   DROPPED OR MOVED BY A RULING library.md:51 `W(/(?<h>\d)/, /;(?<h>\d)/) & (W.h: "3")`: one-path line 4: the compile error; the caller's labels printed with its old answers
+   DROPPED OR MOVED BY A RULING library.md:758 `list_of(/(?<h>\d)/, sep = ",") & (list_of.h: "5")`: one-path line 5: the compile error; the caller's label printed with its old answers
+   ADDED core.md:527 `[n = ([a = P] SEQ [b = Q])] & (n.b.d: <5)`: WHOLE `7,3` HOLDS, `3,7` FAILS / SEARCHED `3,7 7,3` `7,3`@4 / FIND-ALL `7,3 3,7 1,2` [`7,3`@0, `1,2`@8]
+   ADDED core.md:528 `[n = ([a = P] SEQ [b = Q])] & some(@n.d, <5)`: WHOLE `7,3` HOLDS, `3,7` HOLDS, `7,7` FAILS / SEARCHED `7,7 3,7` `3,7`@4 / FIND-ALL `7,3 7,7 1,2` [`7,3`@0, `1,2`@8]
+   ADDED core.md:611 `[n = ([a = P] SEQ Q)] & (n.a.d: <5)`: WHOLE `3,7` HOLDS, `7,3` FAILS / SEARCHED `7,3 3,7` `3,7`@4 / FIND-ALL `3,7 7,3 4,1` [`3,7`@0, `4,1`@8]
+   ADDED core.md:898 `date & (date.m.v: <5)`: WHOLE `7-3` HOLDS, `3-7` FAILS / SEARCHED `3-7 7-3` `7-3`@4 / FIND-ALL `7-3 3-7 1-2` [`7-3`@0, `1-2`@8]
+   ADDED core.md:1138 `[c = B(A)] & (c.d: <5)`: WHOLE `7-3` HOLDS, `3-7` FAILS, `3-3` HOLDS / SEARCHED `3-7 7-3` `7-3`@4 / FIND-ALL `7-3 3-7 1-2 9-9` [`7-3`@0, `1-2`@8]
+   ADDED core.md:1139 `B(A) & (B.d: <5)`: WHOLE `7-3` HOLDS, `3-7` FAILS, `3-3` HOLDS / SEARCHED `3-7 7-3` `7-3`@4 / FIND-ALL `7-3 3-7 1-2 9-9` [`7-3`@0, `1-2`@8]
+   ADDED core.md:1141 `pair([x = A]) & (x.d: <5)`: WHOLE `7,3` HOLDS, `3,7` FAILS, `3,3` HOLDS / SEARCHED `3,7 7,3` `7,3`@4 / FIND-ALL `7,3 3,7 1,2 9,9` [`7,3`@0, `1,2`@8]
+   ADDED library.md:53 `W([a = /(?<h>\d)/], [b = /;(?<h>\d)/]) & (b.h: "3")`: WHOLE `7;3` HOLDS, `3;7` FAILS / SEARCHED `x3;7 7;3` `7;3`@5 / FIND-ALL `7;3 3;7 1;3` [`7;3`@0, `1;3`@8]
+   ADDED library.md:763 `list_of([x = /(?<h>\d)/], sep = ",") & (x.h: "5")`: WHOLE `7,3,5` HOLDS, `7,5,3` FAILS / SEARCHED `x7,5 3,5` `7,5`@1 / FIND-ALL `1,5 3 5` [`1,5`@0, `5`@6]
+PASS SWEEP1127: 414 printed lines now (DIFF 7, REFUSED 53, same 353, unparsed 1), 387 keys at the starting commit; not same and not inherited 0 (inherited 61); moved 0; gone 0; declared 8; added 9; stale 0
+== ERRSWEEP1127: every printed compile-error line of the base files refused under this model, no crash; each named form in the refusal's message (MSG111's rows and this lane's MSG1127)
+PASS ERRSWEEP1127: 91 compile-error lines read, each refused with no crash: bad none; named form missing none; message rows with no line none
+== SPECLINES1127: every printed line new in this lane (not in its file at the starting commit) is RUN: a three-mode line SAME as run, a compile-error line refused
+PASS SPECLINES1127: 21 new printed lines: three-mode 11, compile-error 10, unread 0; not as printed: none
+== STALE1127: the base files, continuation lines joined, hold none of the texts this fold retires
+PASS STALE1127: 11 retired texts searched; found none
+== QUOTES1127: the owner's words this lane quotes, each in the record at the PINNED starting commit and in its piece; every record title a predfold1127 item cites is a title of that record
+PASS QUOTES1127: 11 quoted sentences (missing: none); 4 record titles cited (not a title at 637a5e79c: none)
+== MECH1127: the legal full-path and one-target reads of RULE1127 answered by MECH111 (python `re` on the regex built mechanically from the program text and its bindings' bodies, the target group named), against the engine
+   [n = ([a = P] SEQ [b = Q])] & (n.b.d: <5)                      MECH111 equal to the engine
+   [n = ([a = P] SEQ Q)] & (n.a.d: <5)                            MECH111 equal to the engine
+   [n = ([m = P] SEQ [_x = Q])] & (n.d: <5)                       MECH111 equal to the engine
+   [n = (P SEQ Q)] SEQ ";" SEQ [m = (P SEQ Q)] & (n.Q.d: <5)      MECH111 equal to the engine
+   X & (X.h: <5)                                                  MECH111 equal to the engine
+   B(A) & (B.h: <5)                                               MECH111 equal to the engine
+PASS MECH1127: 6 reads; not equal: none
+== SUCCESSOR1127: every in-force model re-run: predfix111 in full, and the eighteen its SUCCESSOR111 re-runs (their outputs dumped through it); each red DECLARED in predfold1127_succ_decl.tsv by predfix90's `red_key10` key, which carries the red's own FAIL line and no document line numbers; a traceback never
+   predarr       last line: predarr_model: 17 checks, 1 failed (DOC)
+   predbound     last line: predbound_model: 21 checks, 2 failed (MARKS, DOC)
+   predcall      last line: predcall_model: 14 checks, 5 failed (CLOSED, MARKS, SCAN, PREDREF, DOC)
+   preddef       last line: preddef_model: 22 checks, 5 failed (UNMARKED, SUCCESSOR, SWEEP, MARKS, DOC)
+   predfix111    last line: predfix111_model: 14 checks, 5 failed (SWEEP111, ERRSWEEP111, SPECLINES111, QUOTES111, SUCCESSOR111)
+   predfix77     last line: predfix77_model: 20 checks, 2 failed (MARKS, DOC)
+   predfix82     last line: predfix82_model: 22 checks, 5 failed (REPRINT, SUCCESSOR, SWEEP, MARKS, DOC)
+   predfix83     last line: predfix83_model: 25 checks, 5 failed (UNMARKED, SWEEP, SUCCESSOR, MARKS, DOC)
+   predfix84     last line: predfix84_model: 37 checks, 3 failed (GRID, SWEEP, DOC)
+   predfix86     last line: predfix86_model: 29 checks, 2 failed (SWEEP, DOC)
+   predfix88     last line: predfix88_model: 25 checks, 8 failed (UNSPEC, SHORTHAND, STACKCHAIN, SPOTON, TABLE, NAMEGRID, SWEEP, DOC)
+   predfix90     last line: predfix90_model: 26 checks, 6 failed (NAMEGRID, PATHS10, GRID, SWEEP, ERRSWEEP, DOC)
+   predfold1123  last line: predfold1123_model: 18 checks, 3 failed (SWEEP, NULLABLE, DOC)
+   predfold1123b last line: predfold1123b_model: 18 checks, 2 failed (SWEEP, DOC)
+   predfold1124  last line: predfold1124_model: 20 checks, 5 failed (NAMEGRID, FLAGS, SWEEP, ERRSWEEP, DOC)
+   predfold1125  last line: predfold1125_model: 15 checks, 6 failed (CENSUS11, SWEEP11, ERRSWEEP11, SUCCESSOR11, QUOTES11, DOC11)
+   predref       last line: predref_model: 8 checks, 3 failed (SCAN, MARKS, DOC)
+   predscope     last line: predscope_model: 20 checks, 2 failed (CLOSEDB, DOC)
+   predspot      last line: predspot_model: 27 checks, 3 failed (GRID, FSWEEP, DOC)
+PASS SUCCESSOR1127: 19 models read, 73 reds, each against its declared key (73 declared): all as declared
+predfold1127_model: 13 checks, 0 failed

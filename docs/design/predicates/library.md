@@ -14,7 +14,7 @@ imported; how a `module: ?` name is reached is open (core/modules/default-set/me
 
 How the provided bodies treat what they are given: a convention for provided bodies only, so no language rule moves.
 
-### An argument's labels pass on at its spot   [lib/convention/argument-labels]   ruled 2026-11-22
+### An argument's labels pass on at its spot   [lib/convention/argument-labels]   ruled 2026-11-27
 A provided body that places its argument in the match passes that argument's labels on, by the export list on each spot, unless its piece says otherwise.
 needs: core/labels/export/export-list core/labels/paths/argument-default
 see: parked/ideas/user-doc-traps core/principles/label-names-spot
@@ -38,9 +38,10 @@ module: ?
   alone (`hide`) passes nothing through the call, and there `A.d` is the only read.
 - A spot the body labels exports through that label instead (the manager's reading (d)): `hits` and `occurrences` keep
   the label-only `hit` around their argument and do not also write `(=)`; the caller reads `hits.hit.g`.
-- Two spots of one argument (list_of, padded_to): the same names, read by the label rules (the last mention,
-  the branch taken); several arguments (when): a name two of them hold is one label by the same rules; a looped spot
-  (rx.repeat): the loop's label rules, the array for a group question (the same answer; the lines below).
+- Two spots of one argument (list_of, padded_to) or several arguments (when) holding one name: a read through the
+  call skips the list on each spot, a compile error where two are set in one match (core/labels/rule/one-path; the
+  line "Two arguments"), the branch taken in two branches (padded_to); a label the caller writes on an argument reads
+  its spot ("Two arguments, labelled"); a looped spot (rx.repeat): the loop's rules, the array for a group question.
 - A USER's macro gets none of this unless its author writes the list (the reading taken on his two definitions, transform-export;
   parked/ideas/user-doc-traps). His pair, `hide(x) := /${x}/` and `identity(x) := /${[(=) = x]}/`, is the worked
   example, NOT provided names (whether they join the library is his to say): both match what x matches; `identity`
@@ -48,7 +49,8 @@ module: ?
 identity: WHOLE `3` HOLDS, `7` FAILS / SEARCHED `7 3` `3`@2 / FIND-ALL `3 7 4` [`3`@0, `4`@4] (`identity(A) & (identity.d: <5)`, A := `/(?<d>\d)/`, identity(x) := `/${[(=) = x]}/`)
 hide: modes: a compile error (`hide(A) & (hide.d: <5)`, hide(x) := `/${x}/`: hide uses x alone, so its call exports no `d`).
 The same match, either body: WHOLE `3` HOLDS, `7` HOLDS / SEARCHED `7 3` `7`@0 / FIND-ALL `3 7 4` [`3`@0, `7`@2, `4`@4] (`hide(A)`, A := `/(?<d>\d)/`, hide(x) := `/${x}/`; `identity(A)` alike)
-Two arguments: WHOLE `7;3` HOLDS, `3;7` FAILS / SEARCHED `x3;7 7;3` `7;3`@5 / FIND-ALL `7;3 3;7 1;3` [`7;3`@0, `1;3`@8] (`W(/(?<h>\d)/, /;(?<h>\d)/) & (W.h: "3")`, W(a, b) := `[(=) = a] SEQ [(=) = b]`, the shape of when's then branch)
+Two arguments: modes: a compile error (`W(/(?<h>\d)/, /;(?<h>\d)/) & (W.h: "3")`, W(a, b) := `[(=) = a] SEQ [(=) = b]`, the shape of when's then branch: two labels `h` are visible from `W`, and no path names one (core/labels/rule/one-path)).
+Two arguments, labelled: WHOLE `7;3` HOLDS, `3;7` FAILS / SEARCHED `x3;7 7;3` `7;3`@5 / FIND-ALL `7;3 3;7 1;3` [`7;3`@0, `1;3`@8] (`W([x = /(?<h>\d)/], [y = /;(?<h>\d)/]) & (y.h: "3")`, W(a, b) := `[(=) = a] SEQ [(=) = b]`)
 A binding used alone in a call, through its name: WHOLE `3` HOLDS, `7` FAILS / SEARCHED `7 3` `3`@2 / FIND-ALL `3 7 4` [`3`@0, `4`@4] (`identity(A) & (identity.d: <5)`, A := `/(?<d>\d)/`, identity(x) := `/${[(=) = x]}/`)
 The same read through the argument's name: WHOLE `3` HOLDS, `7` FAILS / SEARCHED `7 3` `3`@2 / FIND-ALL `3 7 4` [`3`@0, `4`@4] (`identity(A) & (A.d: <5)`, A := `/(?<d>\d)/`, identity(x) := `/${[(=) = x]}/`)
 An expression exports what its text writes: WHOLE `25` FAILS, `13` HOLDS / SEARCHED `25` FAILS / FIND-ALL `25 13` [`13`@3] (`atomic(/(?<l>\d\d)/ | /(?<l>\d)\d/) & (atomic.l: <20)`); `atomic(B | A) & (atomic.l: <20)`, B and A bindings used alone in it, is a compile error
@@ -371,8 +373,9 @@ defined: language
   in then", on a user macro of the same shape). `when(A, (A.h: ..))` reads A's `h` by the caller's shorthand label,
   whatever the body does with the spot (core/labels/paths/argument-default; the line "Through the argument's
   name"); `when([a = A], (a.h: ..))` and `when.h` read it too.
-  A name test and then both hold is one label, the last mention (the manager's answer on wrapper-export; run on a user macro of
-  the same shape: lib/convention/argument-labels' line "Two arguments").
+  A name test and then both hold is two through the call: `when.h` is a compile error (core/labels/rule/one-path; run
+  on a user macro of the same shape: lib/convention/argument-labels' line "Two arguments"); `A.h` or the caller's own
+  label reads each.
 - `//` stands for the owner's `null`, "nothing required"; `when`, `then`, `else` are placeholder spellings.
 WHOLE `12` HOLDS, `1` FAILS / SEARCHED `x123` `x`@0 / FIND-ALL `12 x 123 1x 7` [`12`@0, `x`@3, `12`@5, `x`@10] (`when(^/\d/, /\d\d/, else = /\w/)` is `(?=\d)\d\d|(?!\d)\w`)
 A read in then: WHOLE `3` HOLDS, `7` FAILS / SEARCHED `7 3` `3`@2 / FIND-ALL `3 7 4` [`3`@0, `4`@4] (`W(/(?<h>\d)/, (h: <5))`, W(a, b) := `[(=) = a] SEQ [(=) = b]`)
@@ -610,6 +613,8 @@ defined: native (a question over a name's array of settings; no expression of th
   `some(@ok, anything)`.
 - `!some(@d, S)` and `occurs.none(@d, S)` are one question (core/model/table/group-truth).
 - It is not `assert.some`: an assertion asks whether a SET has a string, at compile time (lib/assert/assert).
+- Through a part used alone the array form is a compile error, a gate never skipped, array or not (array-gate):
+  `[n = (P SEQ Q)] & some(@n.d, <5)` (core/labels/rule/one-path).
 WHOLE `1,7,` HOLDS, `1,2,` FAILS / SEARCHED `1,2, 7,` `7,`@5 / FIND-ALL `7,1, 2, 3,7,` [`7,1,`@0, `3,7,`@8] (`/(?:(?<d>\d),)+/ & some(@d, "7")`)
 
 ### count   [lib/counting/count]   ruled 2026-11-25
@@ -626,6 +631,7 @@ defined: native (a count over a name's array of settings; no expression of the l
 - No positional rule forbids it; where it would cost more states than the budget allows, the compiler refuses it
   and names the `occurs` form; below the budget `occurs` may be recommended as the way to reduce states.
 - A later optimisation may turn `count` into `occurs` where the answers provably do not change.
+- Through a part used alone, `count(@n.d)` is a compile error, as `some`'s (array-gate; core/labels/rule/one-path).
 Every setting counted: WHOLE `1,2,` HOLDS, `1,,2,` HOLDS, `1,` FAILS / SEARCHED `1, 1,2,` `1,2,`@3 / FIND-ALL `1,2, 3, 4,,5,` [`1,2,`@0, `4,,5,`@8] (`/(?:(?<d>\d)?,)+/ & (count(@d): ==2)`)
 WHOLE `7,1,7,` HOLDS, `7,1,` FAILS / SEARCHED `7,7,7,` `7,7,`@0 / FIND-ALL `7,7,7, 1,7,7,` [`7,7,`@0, `1,7,7,`@7] (`/(?:(?<d>\d),)+/ & (count(@d, "7"): ==2)`)
 
@@ -655,6 +661,7 @@ defined: language (`every(@d, S) := occurs.none(@d, ~S)`)
   form, the condition written inside the loop (the lines "Every setting" and "The item form"); a loop that can make
   no pass parts nothing, both true there (the two "No pass" lines).
 - "Set at least once and every setting in S" is `some(@d, S) & every(@d, S)`.
+- Through a part used alone, `every(@n.d, S)` is a compile error, as `some`'s (array-gate; core/labels/rule/one-path).
 Every setting: WHOLE `7,7,` HOLDS, `7,,` HOLDS, `7,1,` FAILS, `,` HOLDS / SEARCHED `1, 7,,` `,`@1 / FIND-ALL `7,, 7,1, 7,7,` [`7,,`@0, `7,`@4, `,`@7, `7,7,`@9] (`/(?:(?<d>\d)?,)+/ & every(@d, "7")`)
 Set at least once: WHOLE `7,7,` HOLDS, `7,,` HOLDS, `7,1,` FAILS / SEARCHED `7,, 7,7,` `7,,`@0 / FIND-ALL `7,, 7,1, 7,7,` [`7,,`@0, `7,`@4, `7,7,`@9] (`/(?:(?<d>\d)?,)+/ & some(@d, "7") & every(@d, "7")`)
 No pass, set at least once: WHOLE `x` FAILS, `7,x` HOLDS / SEARCHED `-x` FAILS / FIND-ALL `x 7,x 1,x` [`7,x`@2] (`/(?:(?<d>\d),)*x/ & some(@d, "7") & every(@d, "7")`)
@@ -744,18 +751,20 @@ defined: native (a compile-time search over a text)
 - The names are placeholders.
 modes: n/a (a compile-time tool over a file's text; it builds an array, it matches no subject)
 
-### list_of   [lib/records/list-of]   reading 2026-11-22
-`list_of(X, sep = S)` is the separated list `/(?:${[(=) = X]}${[(=) = S]})*${[(=) = X]}/`: its label is the last item, its array every item.
+### list_of   [lib/records/list-of]   reading 2026-11-27
+`list_of(X, sep = S)` is the separated list `/(?:${[(=) = X]}${[(=) = S]})*${[(=) = X]}/`: a label on its argument reads the last item, its array every item.
 needs: core/holes/pattern core/labels/one-rule lib/convention/argument-labels
 module: ?
 defined: language
 - One item or more; written this way the label and the array are right at every length (one copy of X before
   the loop would leave the label unset on one item).
 - Its minimum (zero items) is not stated.
-- Every spot carries the list (wrapper-export; lib/convention/argument-labels): the caller reads the item's label
-  through the call, `list_of.h`, the last item by the label rules (two spots, the same names: the manager's answer on wrapper-export).
-WHOLE `7,3,5` HOLDS (list_of.h = `5`) / SEARCHED `x7,3` `7,3`@1 / FIND-ALL `1,2 3` [`1,2`@0, `3`@4] (`list_of(/(?<h>\d)/, sep = ",")`)
-The last item, through the call: WHOLE `7,3,5` HOLDS, `7,5,3` FAILS / SEARCHED `x7,5 3,5` `7,5`@1 / FIND-ALL `1,5 3 5` [`1,5`@0, `5`@6] (`list_of(/(?<h>\d)/, sep = ",") & (list_of.h: "5")`)
+- Every spot carries the list (wrapper-export; lib/convention/argument-labels): a read through the call, `list_of.h`,
+  sees the item's label at two spots, a compile error (core/labels/rule/one-path); a label the caller writes on the
+  argument, `list_of([x = ..])`, reads the last item by the label rules (`x.h`), the array every item.
+WHOLE `7,3,5` HOLDS / SEARCHED `x7,3` `7,3`@1 / FIND-ALL `1,2 3` [`1,2`@0, `3`@4] (`list_of(/(?<h>\d)/, sep = ",")`)
+Through the call: modes: a compile error (`list_of(/(?<h>\d)/, sep = ",") & (list_of.h: "5")`: two labels `h` are visible from `list_of`, one at each spot (core/labels/rule/one-path)).
+The last item, by a label on the argument: WHOLE `7,3,5` HOLDS, `7,5,3` FAILS / SEARCHED `x7,5 3,5` `7,5`@1 / FIND-ALL `1,5 3 5` [`1,5`@0, `5`@6] (`list_of([x = /(?<h>\d)/], sep = ",") & (x.h: "5")`)
 
 ### param   [lib/records/param]   reading 2026-11-19
 `param(rx)` is a run-time input: an rx whose string the caller fixes per match, read-only, validated against rx.

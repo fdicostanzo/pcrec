@@ -629,3 +629,12 @@ predfix111 and their branches are free to prune after your merge. Proposed pcrec
 process finding): when re-running evidence in a clone, create every branch ref the models read by name; models
 pin commits, not branch names. Plan-row status for [COND-FAMILY]: two owner questions open (gate-beside-label,
 gate-twice-scope); no build asked.
+
+P-35 (2026-11-27) done: a second fold with review r112 ruled, applied and filed. Branch lane/pred-rev28, tip after
+this commit (the merge of lane/predfix112 is af340ff45). Five more owner rulings folded (gate-beside-label, one-path,
+array-gate, body-own-name; gate-twice-scope closed by one-path). Reports docs/dev/lanes/predfold1127_report.md,
+predfix112_report.md; review docs/dev/reviews/2026-11-27-r112-predfold1127.md. Lint failed 0; plan-lint green.
+Design documents and evidence only. Worktrees predfold1127, predfix112 free to prune after your merge; predarg (a
+study lane) is still running: leave it. Proposed pcrec-critic skill edit (r112 COORD-1, repeating r111's): before
+a design-mode evidence re-run, grep the successor chain's models for branch refs read by name and create each at
+the freeze; a by-name ref is a finding.

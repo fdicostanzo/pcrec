@@ -12244,3 +12244,203 @@ error.
 THE MANAGER'S OWN STATEMENTS CORRECTED by the round: none of his words; the fold (on the manager's brief) had
 re-tagged lib/control/peek as an open question that no record entry asked (F10); the manager then asked it and he
 ruled it.
+
+### 2026-11-27 OWNER RULING — gate-beside-label: error ("Skipping labels is about efficiency in total clarity")
+tags: core/labels/rule/alone-as-middle core/labels/rule/paths core/labels/rule/kinds
+His words, verbatim: "gate-beside-label: error. One may be writing the last line not knowing how Q is defined. So
+did they know Q had a d and chose to skip it? Or did they think it did have d and were intending to use it?
+Skipping labels is about efficiency in total clarity."
+RULED (answered by slug): the first reading as asked: "A compile error: a `d` sits behind a gate, so say which you
+mean (`n.a.d` or `n.Q.d`)", for `[n = ([a = P] SEQ Q)] & (n.d: <5)`, P := `/(?<d>\d)/`, Q := `/,(?<d>\d)/`.
+His last sentence is a statement of PRINCIPLE in his words (a candidate line for core/labels/rule/paths rule 4:
+a skip is legal only where it leaves nothing unclear).
+NOT FOLDED: the documents print reading (ii) (the written label's `d`) as a marked reading (lane predfix111);
+it becomes this compile error at the next fold, with gate-twice-scope.
+The manager's readings, for that fold to test: the error is raised when ANY target of the skipped name lies
+behind a gate under the read's start, whether or not another legal target exists; `g.h` over `/(?<g>${A})x/`
+(already a compile error) is the same rule with no other target; a private part beside a written label is
+unchanged (skip-past-wall: its labels do not exist for the read).
+
+### 2026-11-27 OWNER PROPOSAL on gate-twice-scope: "skipping steps in a path is available when there is exactly one path possible from the start to any end label visible from that start"
+tags: core/labels/rule/paths core/labels/rule/alone-as-middle core/labels/rule/kinds core/labels/flow
+His words, verbatim: "gate-twice-scope: would it be more clear if we said that: skipping steps in a path is
+available when there is exactly one path possible from the start to any end label visible from that start."
+Class: a PROPOSAL put as a question (not an answer choosing a reading; gate-twice-scope stays open). It would
+restate his rule 4 ("if a legal path exists a.b.c and c can be unambiguously referenced from a, then b can be
+skipped a.c"), whose "unambiguously" was put and ruled on 2026-11-23 as "the existing rule: across `&` a name
+both sides set is ambiguous; in a sequence the last mention wins; across `|` the branch taken."
+
+### 2026-11-27 MANAGER — a census for his one-path proposal (no owner words)
+tags: core/labels/rule/paths core/labels/rule/alone-as-middle core/labels/flow
+For the proposal of the entry before. Run: `docs/dev/lanes/predbang_evidence/onepath.py` (predfix111's walker over
+every printed program's dotted reads; the walker does not parse 59 of them, mostly reads through a macro call:
+those are NOT counted either way). Pasted from `onepath.out`, the counts and the multi-target reads:
+```
+59 unparsed
+53 one
+6 last mention
+3 branch taken
+2 refused
+6 last mention
+      D2.c  [D2 & (D2.c: "3")]  D2 := /(?<c>\d)(?<c>\d)/
+      date.v  [date & (date.v: <5)]  date := [y = /(?<v>\d)/] SEQ "-" SEQ [m = /(?<v>\d)/]
+      aa.h  [[aa = /(?<h>\d)/] SEQ "," SEQ [aa = /(?<h>\d)/] & (aa.h: <5)]  
+      c.d  [[c = B(A)] & (c.d: <5)]  A := /(?<d>\d)/; B(rx) := /${rx}-(?<d>\d)/
+      B.d  [B(/(?<d>\d)/) & (B.d: <5)]  B(rx) := /${rx}-(?<d>\d)/
+      W.h  [W(/(?<h>\d)/, /;(?<h>\d)/) & (W.h: "3")]  W(a, b) := [(=) = a] SEQ [(=) = b]
+3 branch taken
+      ab.l  [[ab = ([b = B] | [a = A])] & (ab.l: <20)]  A := /(?<l>\d)\d/; B := /(?<l>\d\d)/
+      pair.x  [pair & (pair.x: <5)]  pair := [b = /(?<x>\d)/] | [c = /a(?<x>\d)/]
+      ab.l  [[ab = [b = B] | [a = A]] & (ab.l: <20)]  A := /(?<l>\d)\d/; B := /(?<l>\d\d)/
+2 refused
+```
+The manager's readings (for the fold to test; none his words): under his sentence the 53 one-path reads are
+unchanged; of the 6 "last mention" reads, `date.v`, `c.d`, `B.d`, `W.h` skip a step with two targets and become
+compile errors, while `D2.c` and `aa.h` skip nothing (two settings of the name itself: label flow, not his
+sentence); the 3 "branch taken" reads (`ab.l` twice, `pair.x`) skip a step with one target per branch, and are
+errors or legal by whether "exactly one path" is counted over the definition or within one match. His sentence
+answers gate-twice-scope as "counted from the start". It does not by itself keep the gate ("never skipped",
+alone-as-middle): a lone gated target is one path.
+
+### 2026-11-27 OWNER, on gate-twice-scope and the one-path rule: "arrays would not require that rule"
+tags: core/labels/rule/paths core/labels/rule/alone-as-middle lib/counting/some
+His words, verbatim: "gate-twice-scope: arrays would not require that rule"
+Class: an answer by slug to ONE of the three points put to him (the manager's "Arrays. `@n.d` asks for every
+setting, so "exactly one" should not apply to it"): the array form is exempt from the one-path rule. The
+manager's reading of what it does NOT say: it does not rule his own sentence in ("skipping steps in a path is
+available when there is exactly one path possible from the start to any end label visible from that start"),
+nor the per-match counting for an alternation, nor that the gate stays on top. Those are re-put to him as one
+statement; gate-twice-scope stays open until then.
+
+### 2026-11-27 OWNER RULING — one-path: "yes all five" (a step is skipped only where exactly one label of that name is visible from the start; it answers gate-twice-scope)
+tags: core/labels/rule/paths core/labels/rule/alone-as-middle core/labels/rule/kinds core/labels/flow lib/counting/some
+His words, verbatim: "one-path: yes all five"
+RULED (answered by slug), the statement AS ASKED, quoted:
+"**one-path:** a step in a path may be skipped only when exactly one label of that name is visible from the start.
+1. It is counted within one match, so a read into an alternation is legal: `pair.x` for `pair := [b =
+/(?<x>\d)/] | [c = /a(?<x>\d)/]` reads the `x` of the branch taken.
+2. A part used alone is still never skipped, even when it holds the only target.
+3. The array form is exempt, as you just said.
+4. It replaces "in a sequence the last mention wins" for skipped reads. Four printed reads become errors that ask
+for the full path, for example `date.v` over `[y = /(?<v>\d)/] SEQ "-" SEQ [m = /(?<v>\d)/]`.
+5. A name counts as used once or twice by what lies under the path's start, which answers gate-twice-scope."
+Its origin is his own sentence (the PROPOSAL entry above): "skipping steps in a path is available when there is
+exactly one path possible from the start to any end label visible from that start."
+It AMENDS rule 4's "unambiguously" as put and ruled 2026-11-23 ("in a sequence the last mention wins; across `|`
+the branch taken") for SKIPPED reads: the sequence clause is replaced (line 4), the alternation clause kept (line
+1), `&` an error as before. It CLOSES gate-twice-scope (line 5: under the start; the documents' marked reading
+(b)). With gate-beside-label (ruled above) it leaves no marked placeholder in core/labels/rule/alone-as-middle.
+The manager's readings, for the fold to test: (a) "visible" excludes what a wall hides (skip-past-wall) and
+INCLUDES what a gate holds (so a gated target beside a written one is two, the gate-beside-label error); (b) two
+settings of the NAME ITSELF with nothing skipped (`D2.c` over `/(?<c>\d)(?<c>\d)/`, `aa.h` over two `[aa = ..]`)
+are label flow, untouched: the last mention; (c) the four reads the census names (`date.v`, `c.d`, `B.d`, `W.h`)
+are the ones that move, and the 59 reads the walker did not parse are to be judged, not assumed; (d) the array
+form over a gate: line 3 exempts it from one-path, line 2 still says a gate is never skipped: which wins for
+`@n.d` through a part used alone is to be RUN both ways and listed as a question, not chosen.
+
+### 2026-11-27 OWNER RULING — array-gate: "error. Agree with lean"
+tags: core/labels/rule/one-path core/labels/rule/alone-as-middle lib/counting/some
+His words, verbatim: "array-gate: error. Agree with lean"
+RULED (answered by slug): the first reading as asked, for `[n = (P SEQ Q)] & some(@n.d, <5)`: "An error: a gate
+is never skipped, array or not"; the lean as put: ""Exempt" was about needing exactly one target, not about
+gates, and keeping the gate absolute makes it a rule with no exceptions." The documents' marked reading in
+core/labels/rule/one-path ("The array form through a gate") becomes ruled at the fix after review r112.
+
+### 2026-11-27 MANAGER — review r112 (predfold1127): the dispositions; a TELLING of the manager's corrected; no owner words
+tags: core/labels/rule/one-path core/labels/paths/call-prefix core/labels/export/flat-read-outside lib/convention/argument-labels
+Review r112 (design; one opus coordinator, two opus critics; subject the fold merged at 860331f12) returned 15
+findings consolidated to F1 to F8 and COORD-1, none refuted; evidence green at the freeze (lint 10099/0, model
+13/0). Dispositions RULED by the manager (`/var/tmp/pcrec-pcrec/scratch/crit-predfold1127/dispositions.md`): all
+accepted.
+THE MANAGER'S TELLING CORRECTED (F2): one-path line 4 as put to him said "Four printed reads become errors that
+ask for the full path". The round's count: SEVEN printed reads move (`date.v`; `[c = B(A)]` `c.d`; two-sources
+`B.d`; call-prefix `B.d`; `W.h`; `pair.d`; `list_of.h`), plus `when.h` in prose; and for five of them (`W.h`,
+`c.d`, `B.d`, `pair.d`, `list_of.h`) NO full path exists: the caller must label the argument. `list_of.h`, the
+plain read of a provided piece, was never named to him. To be told to him; his ruling stands unless he objects.
+Also to be told (F1, informational): one-path reverses the sequence half of flat-read-outside (a) (2026-11-21)
+and revives its rejected candidate (c); it reverses transform-export's two stated cases (2026-11-22).
+body-own-name (F3) is BROADER than a call: under the lane's reading (f) ("a target reached directly beside one
+reached by a skip counts as two") any binding's own label beside a same-name label under one of its steps cannot
+be named; it collides with the manager's recorded consequence of argument-label, "the body's own is `B.d`". Re-put
+to him in the general form. The run for the other reading (`docs/dev/lanes/predbang_evidence/ownname.py`, pasted
+from `ownname.out`):
+```
+[c = B(A)] & (c.d: <5), A := /(?<d>\d)/, B(rx) := /${rx}-(?<d>\d)/ ; the body's own d:
+   WHOLE 7-3 HOLDS 3-7 FAILS | SEARCHED 3-7 7-3: 7-3@4 | FIND-ALL 7-3 3-7 1-2 9-9: ['7-3@0', '1-2@8']
+X & (X.d: <5), X := [a = P] SEQ /;(?<d>\d)/, P := /(?<d>\d)/ ; X's own d:
+   WHOLE 7;3 HOLDS 3;7 FAILS | SEARCHED 3;7 7;3: 7;3@4 | FIND-ALL 7;3 3;7 1;2 9;9: ['7;3@0', '1;2@8']
+the same X, the labelled part's d by its full path X.a.d:
+   WHOLE 7;3 FAILS 3;7 HOLDS | SEARCHED 7;3 3;7: 3;7@4 | FIND-ALL 7;3 3;7 1;2 9;9: ['3;7@4', '1;2@8']
+```
+
+### 2026-11-27 OWNER RULING — body-own-name: "agree"; his read of the call case ("rx as an arg cant be directly on a path")
+tags: core/labels/rule/one-path core/labels/paths/call-prefix core/labels/paths/two-sources lib/convention/argument-labels
+His words, verbatim: "body-own-name: agree. My read: Within the macro, the d from A is outside and would have to
+gate through rx but rx as an arg cant be directly on a path.
+B(rx) := rx seq "-" seq [d = digit ]"
+RULED (answered by slug, after the manager's corrected telling of one-path's cost; he did not reopen one-path),
+the statement AS ASKED, quoted: "**body-own-name:** a path that skips nothing is always legal and reads the label
+directly under its last step; one-path limits only reads that skip a step." Told with it: "two of the seven moved
+reads become legal again (`c.d` and `B.d`, which read the body's own); the other five stay errors."
+His read is HIS GROUND for the call case, in his words, with his own sketch of the body (`B(rx) := rx seq "-" seq
+[d = digit ]`: spellings are placeholders): the argument's `d` is "outside" the macro and could only come in
+"through rx", and an argument "cant be directly on a path".
+The manager's readings, for the fix lane to test: (a) it replaces the lane's reading (f) ("a target reached
+directly beside one reached by a skip counts as two") at its three sites; (b) his ground and the asked statement
+agree on every printed program (`c.d`, both `B.d`, `X.d` over `[a = P] SEQ /;(?<d>\d)/`): a difference would show
+only where an argument is placed under a WRITTEN label of the body (`B(rx) := /${[p = rx]}-(?<d>\d)/`, read
+`B.d`): RUN it under both and list it if they part; (c) the argument's own label stays read by its source
+(`A.d`), as printed.
+
+### 2026-11-27 OWNER, a LEAN and a QUESTION: "Can the path go through an argument? ... I'm leaning at saying it's never true"
+tags: core/labels/rule/one-path core/labels/rule/paths core/labels/paths/call-prefix lib/convention/argument-labels core/labels/export/arguments
+His words, verbatim: "X.d over [a = P] SEQ /;(?<d>\d)/: I was thinking of this very case. Can the path go through
+an argument? We've only done paths through bindings which are known at the time of the binding macro like A := B,
+B is known at As binding. But that isn't true for args. I'm leaning at saying it's never true as it's
+unpredictable and preciously legal binding macros can error depending on the arguments they receive. Plus a
+sending can label an argument if they want access. Thoughts?"
+Class: a LEAN with a QUESTION ("Thoughts?"); nothing ruled. ("preciously" read as "previously", "a sending" as
+"a sender": phone autocorrect.)
+What the record and documents hold that it meets (quoted): transform-export, 2026-11-22, "transform-export: yes."
+and before it "wrapper-export: agree (a). I was worried you'd say peek() doesn't work. It's just a definition
+change."; lib/convention/argument-labels: "the list on it, `[(=) = x]`, takes every label the argument exports as
+the body's own, so the caller reads them through the call (`peek.d`; `[c = peek(..)]`, `c.d`)"; and the printed
+line "Through a call, the middle label skipped" (`B(A) & (B.h: <5)`, B(rx) := `/${[p = rx]}xx/`), a read through a
+label the BODY writes on the argument's place. A grep of the printed conditions that read through a macro's name
+(not classed by the model): `B.d` 6, `B.h` 4, `identity.h` 2, `identity.d` 2, `B.dd.d` 2, `B.a` 2, and one each
+of `peek.d`, `pair.x`, `pair.d`, `pair.b.x`, `list_of.h`, `identity.a.h`, `W.h`, `B.y.a`, `B.x.a`, `B.p.d`,
+`B.n.h`, `B.a.d`.
+
+### 2026-11-27 OWNER, a STRONG LEAN on no-path-through-argument ("yes with your carve out for exported labels"); a request ("Can you find any other unanticipated problems?"); a LEAN on a listed label an argument lacks
+tags: core/labels/rule/one-path core/labels/rule/paths core/labels/paths/call-prefix lib/convention/argument-labels core/labels/export/export-list core/labels/export/arguments
+His words, verbatim: "no-path-through-argument: let's do a strong lean yes with your carve out for exported
+labels. Can you find any other unanticipated problems?  If someone is doing (=) = type export they should know
+what they're doing.
+Also,
+A(rx) := [(=foo) = rx]
+That is basically declaring that it requires the foo label exists. I lean a use error base on arg not a
+declaration error of A"
+Class: a STRONG LEAN, in his word, on the statement as put: "a path never goes through an argument's place. The
+labels inside an argument are reached only by the sender's own names for it, or where the body passes them on by
+an export list, in which case they count as the body's own labels." NOT a ruling: he asks first for other
+unanticipated problems. A second LEAN: a body's export list that NAMES a label of its argument
+(`A(rx) := [(=foo) = rx]`) requires the argument to have it; an argument without `foo` is an error at the USE
+(the call), not at A's definition. (The documents print no line for a listed name the part lacks:
+core/labels/export/export-list, read today.)
+Done on his request: a study lane (predarg, read-only on the documents) to class every printed read through a
+macro by its route, list what the lean moves, and hunt for problems; its report comes back to him before the
+statement is asked as a ruling.
+
+### 2026-11-27 MANAGER — after lane predfix112: review r112 applied and filed; a telling corrected; one cell for the owner (no owner words)
+tags: core/labels/rule/one-path core/labels/rule/alone-as-middle core/labels/paths/call-prefix
+Lane predfix112 applied review r112 as ruled, folded array-gate and body-own-name, and filed the review
+(`docs/dev/reviews/2026-11-27-r112-predfold1127.md`); lint failed 0; `predfix112_model: 11 checks, 0 failed`.
+THE MANAGER'S TELLING CORRECTED (the lane's count): the body-own-name entry told him "two of the seven moved reads
+become legal again (`c.d` and `B.d`) ...; the other five stay errors"; the seven count `B.d` twice (call-prefix and
+two-sources), both legal again: THREE are legal again and FOUR stay errors (`date.v`, `W.h`, `pair.d`,
+`list_of.h`).
+Readings tested by the lane: his ground and the asked statement of body-own-name do not part on any printed call
+case, nor on `B(A) & (B.d: <5)` with B(rx) := `/${[p = rx]}-(?<d>\d)/` (both the body's own `d`).
+One cell left for him, gate-beside-direct: `[n = (P SEQ /,(?<d>\d)/)] & (n.d: <5)`, the binding's own `d`
+directly under `n` beside a gated one: legal by body-own-name's "always" (printed, the lane's lean), or the
+gate-beside-label error. Both RUN in the lane's report.

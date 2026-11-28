@@ -1319,3 +1319,25 @@ wake.md says (read the draft WHOLE first; A4 is a ruled-words finding: read his 
   declared), merged at aa3f2c296, stopped. Review r111 filed by it. P-34 done line written; main told. Open with the
   owner: gate-beside-label (asked; the lane printed (ii) as a marked reading; `g.h` over `/(?<g>${A})x/` is the
   same cell), gate-twice-scope (next). Marked readings told to him at the r111 report.
+- Main merged lane/pred-rev28 at dd873d4b4 into main and pushed (17468e317); it prunes predfold1125 and
+  predfix111. Waiting on the owner: gate-beside-label, then gate-twice-scope.
+- gate-beside-label RULED (error). His proposal of a one-path rule for skipping, a census run (onepath.py), then
+  one-path RULED ("yes all five"; it answers gate-twice-scope; the array form exempt). Merged main back (637a5e79c).
+  LAUNCHED fold lane predfold1127 (opus; the two rulings; lanewatch armed). Review number r112 from main for its
+  small critic round. One question the lane will bring back: the array form over a part used alone.
+- Lane predfold1127 DELIVERED (lanewatch DONE; lint 10099/0; model 13/0; 15 plants caught), merged at 860331f12,
+  stopped. Eight printed reads moved to compile errors (three more than the census four). LAUNCHED critic round
+  r112 (crit-predfold1127, opus coordinator, two critics). Owner questions from the lane: array-gate (asked),
+  body-own-name (next). A stray predfold1125.out my census driver left in the worktree root was moved to scratch.
+- array-gate RULED (error). Review r112 handed back (F1 to F8, COORD-1), dispositions ruled, coordinator stopped;
+  it corrected my telling of one-path's cost (seven reads move, not four; five have no full path): told to the
+  owner, who did not reopen one-path. body-own-name RULED ("agree": a path that skips nothing is always legal).
+  LAUNCHED fix lane predfix112 (opus; worktree cut at 2d7718d4e; applies r112, folds array-gate and
+  body-own-name, files the review; lanewatch armed). Waiting on its delivery.
+- His lean: a path never goes through an argument's place, with the manager's carve-out for labels a body passes
+  on by an export list ("a strong lean yes"; not ruled); and a lean that `[(=foo) = rx]` with an argument lacking
+  `foo` is an error at the use. He asked for other unanticipated problems: LAUNCHED study lane predarg (opus,
+  read-only on the documents, worktree cut at 88cda0d38; lanewatch armed) beside the running fix lane predfix112.
+- Lane predfix112 DELIVERED (lanewatch DONE; lint 10121/0; model 11/0; 12 plants caught), merged at af340ff45, stopped.
+  Review r112 filed by it. P-35 done line; main told. One cell for the owner: gate-beside-direct. Study lane
+  predarg still running.
