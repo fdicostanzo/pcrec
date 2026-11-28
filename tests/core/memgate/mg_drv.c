@@ -249,6 +249,7 @@ int main(void)
         pcrec_default_options(&o);
         o.features = strcmp(feat, "-") ? feat : NULL;
         o.engine = atoi(eng);
+        { const char *enc = getenv("MG_ENC"); if (enc) o.encoding = atoi(enc); }   /* memgate.py's MG_ENC lever */
         if (atoi(raise)) { o.max_emit_code_bytes = UINT64_MAX / 2; o.max_emit_bytes = UINT64_MAX / 2; }
         pcrec_output out;
         memset(&out, 0, sizeof out);
