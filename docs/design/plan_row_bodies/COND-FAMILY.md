@@ -12430,3 +12430,17 @@ core/labels/export/export-list, read today.)
 Done on his request: a study lane (predarg, read-only on the documents) to class every printed read through a
 macro by its route, list what the lean moves, and hunt for problems; its report comes back to him before the
 statement is asked as a ruling.
+
+### 2026-11-27 MANAGER — after lane predfix112: review r112 applied and filed; a telling corrected; one cell for the owner (no owner words)
+tags: core/labels/rule/one-path core/labels/rule/alone-as-middle core/labels/paths/call-prefix
+Lane predfix112 applied review r112 as ruled, folded array-gate and body-own-name, and filed the review
+(`docs/dev/reviews/2026-11-27-r112-predfold1127.md`); lint failed 0; `predfix112_model: 11 checks, 0 failed`.
+THE MANAGER'S TELLING CORRECTED (the lane's count): the body-own-name entry told him "two of the seven moved reads
+become legal again (`c.d` and `B.d`) ...; the other five stay errors"; the seven count `B.d` twice (call-prefix and
+two-sources), both legal again: THREE are legal again and FOUR stay errors (`date.v`, `W.h`, `pair.d`,
+`list_of.h`).
+Readings tested by the lane: his ground and the asked statement of body-own-name do not part on any printed call
+case, nor on `B(A) & (B.d: <5)` with B(rx) := `/${[p = rx]}-(?<d>\d)/` (both the body's own `d`).
+One cell left for him, gate-beside-direct: `[n = (P SEQ /,(?<d>\d)/)] & (n.d: <5)`, the binding's own `d`
+directly under `n` beside a gated one: legal by body-own-name's "always" (printed, the lane's lean), or the
+gate-beside-label error. Both RUN in the lane's report.

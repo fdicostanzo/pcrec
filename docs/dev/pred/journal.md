@@ -1338,3 +1338,6 @@ wake.md says (read the draft WHOLE first; A4 is a ruled-words finding: read his 
   on by an export list ("a strong lean yes"; not ruled); and a lean that `[(=foo) = rx]` with an argument lacking
   `foo` is an error at the use. He asked for other unanticipated problems: LAUNCHED study lane predarg (opus,
   read-only on the documents, worktree cut at 88cda0d38; lanewatch armed) beside the running fix lane predfix112.
+- Lane predfix112 DELIVERED (lanewatch DONE; lint 10121/0; model 11/0; 12 plants caught), merged at af340ff45, stopped.
+  Review r112 filed by it. P-35 done line; main told. One cell for the owner: gate-beside-direct. Study lane
+  predarg still running.
