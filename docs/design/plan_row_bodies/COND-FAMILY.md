@@ -12641,3 +12641,19 @@ a parameter it places, by the parameter's name) or falls. Slug: reference-exampl
 A reading of the manager's NOT SUPPORTED by the lane: "shorthand-outside's contrast stands ... `pub.A.h` for
 `[pub = B([A = A])]`": by caller-label-export's asked words that path goes through the call's label and is an
 error; the contrast holds as `X.A.h` (the sender's own label by its own name). WITHDRAWN.
+
+### 2026-11-27 MANAGER — review r113 (predfold1128): the dispositions; no owner words
+tags: core/labels/rule/argument-place core/operators/bindings/label-kinds core/labels/export/export-list lib/search/hits
+Review r113 (design; one opus coordinator, two opus critics; subject the fold merged at 5248d8a1c): NO
+answer-level finding (18 moved or added legal lines re-derived, 0 differ; a sweep of 561 printed lines, 0 hits);
+evidence green (model 16/0, lint 10524/0). Dispositions RULED by the manager
+(`/var/tmp/pcrec-pcrec/scratch/crit-predfold1128/dispositions.md`; filed by lane predfix113): all accepted.
+Design-level, accepted: param-reference line 4's "as today" is false (confirmed against the documents before the
+fold: "a parameter's label inside the body is not nameable"); the WITHDRAWN meaning "as the body's own" was still
+printed at two sites; a cell decided by the model only (`k.a.h` over `[k = [c = B(..)]]`); the strong-lean marker
+over-marked three sites and missed three. For the owner, with reference-example-checked: a placed parameter's
+NAMED list read in the body (`N(rx) := /${[(=h) = rx]}/ & (h: <5)`: "the honest spelling of `checked`", the
+round's words) and an argument holding the listed label in two labelled parts (the ruled "set twice is legal"
+against one-path). PLAN: the general form the round names, "a declared label interface" (the named list, the
+declared reference, the `(=)` convention, macro-types (ii), the natives' reference kind and bound-condition's
+target as one family): a parked piece with triggers.

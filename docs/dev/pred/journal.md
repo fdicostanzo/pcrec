@@ -1353,3 +1353,6 @@ wake.md says (read the draft WHOLE first; A4 is a ruled-words finding: read his 
 - Lane predfold1128 DELIVERED (lanewatch DONE; lint 10524/0; model 16/0; 18 plants caught), merged at 5248d8a1c,
   stopped. It caught a false telling of mine in param-reference line 4 ("as today"): recorded; a question for the
   owner (reference-example-checked). LAUNCHED critic round r113 (crit-predfold1128, two critics).
+- Review r113 handed back (no answer-level finding), dispositions ruled, coordinator stopped. LAUNCHED fix lane
+  predfix113 (opus; worktree cut at 8fa0108f9; applies r113, files the review; no new ruling; lanewatch armed).
+  After it: merge, P-36 done line, tell main.
