@@ -18,3 +18,4 @@ make -s test-plan-lint PASS; make -s test-doc-lint PASS (one pre-existing WARN L
 
 ## STATE AT HANDOFF
 Committed on lane/f4land. Rulings file empty: no R-n applied. No src/cli/lib/memfn/tests-code/scripts edits (tests/core/memgate/CLAUDE.md is doc).
+OWED: none
