@@ -12512,3 +12512,17 @@ needed the form to match like accepting a date looking argument to calculate the
 Is this a good application for this or is the form too brittle?"
 Class: the PURPOSE of his lean, a LEAN ("I lean yes"), and a QUESTION to the manager; not a ruling; named-list-use
 stays open.
+
+### 2026-11-27 OWNER, an IDEA: the list declared in the macro's head, "weekday_of((=year, =month,=day)) := ..."; and "A(B) := B.year"
+tags: core/operators/bindings/label-kinds core/operators/bindings/macro-types core/labels/export/export-list core/labels/export/arguments lib/planned/standard
+His words, verbatim: "weekday_of((=year, =month,=day)) := ...
+Thoughts? It's declared in the args so it doesn't have to declare the date as consuming to get this fields. One
+could rewrite date.
+By the same token, A(B) := B.year"
+Class: an IDEA with a QUESTION ("Thoughts?"); spellings are placeholders; nothing ruled. ("this fields" read as
+"these fields".) What the record holds that it meets (quoted): label-kinds, 2026-11-23: "label-kinds: yes, one
+mark meaning. the reference kind can be used by natives but stays off limits for users until we see a valid, safe
+set of rules for it."; core/operators/bindings/label-kinds: "To test a caller's label in a body, pass the
+condition: `A(c, B) := B & c`"; core/operators/bindings/macro-types (under construction), his `B(d & isodate) :=
+(year: < 2100)` and its reading (ii), "a promise checked at the call that x holds isodate's labels";
+lib/planned/standard: `weekday_of($rest.year, $rest.month, $rest.day)`, a native over three values.
