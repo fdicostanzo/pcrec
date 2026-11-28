@@ -12610,3 +12610,17 @@ weekday_of($rest.year, $rest.month, $rest.day)" then "rfc & (wname.index: ==$wd)
 pattern, joined by `&`. The manager's reading, for the fold to test: "at the point of the call" in line 3 makes a
 call written at the weekday's own spot (before the date) the error "a read before the match", and a call written
 as a filter over the whole pattern legal.
+
+### 2026-11-27 OWNER, a DIRECTION: "Let's stop questions for tonight. Fold now"
+tags: core/labels/rule/one-path lib/convention/argument-labels core/operators/bindings/label-kinds
+His words, verbatim: "Let's stop questions for tonight. Fold now"
+Class: a direction on the work (no ruling). Done on it: fold lane predfold1128 for the rulings since lane
+predfix112: gate-beside-direct, carve-out-reading, caller-label-export, named-list-use, param-reference.
+The manager's decision on what is NOT ruled, to be told to him: the base statement no-path-through-argument is his
+STRONG LEAN, never asked as a ruling; two rulings he gave rest on it (carve-out-reading: "a body's export list
+opens a door through the argument's place"; caller-label-export: "`Y.c.a.h` ... an error: that path goes through
+B's argument place"). The fold therefore applies it and MARKS it at every site as "the owner's strong lean,
+entailed by carve-out-reading and caller-label-export; to be confirmed", so that it can be confirmed or lifted in
+one place. The three study questions not asked (sent-over-body-label, forwarded-place, list-over-label) are
+printed as marked readings with both readings run. hits-through-hit: the manager's call under transform-export
+(the two provided bodies carry the list under their label), told to him 2026-11-27; he did not object.
