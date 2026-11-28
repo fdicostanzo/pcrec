@@ -6,6 +6,8 @@ in the directory beside it, and a line in docs/dev/reviews/INDEX.md.
 
 ## STATE AT HANDOFF
 
+OWED: none
+
 - Rulings file: three entries, R-1 (list-opens-one-step ruled), R-2 (a list that passes nothing ruled), R-3
   (branch-in-loop ruled "error for now"). The last entry applied is R-3. The record entries for R-1..R-3 were on
   lane/pred-rev28 after this lane's cut; the lane took the manager's three commits (27a041a8a, 464414cce, 4b2a952b3)
