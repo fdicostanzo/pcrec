@@ -1,0 +1,58 @@
+PROGRAM W(/(?<h>\d)/, /;(?<h>\d)/) & (W.h: "3")  BINDS ['W(a, b) := [(=) = a] SEQ [(=) = b]']
+  LEGAL
+  7;3            WHOLE HOLDS  SEARCHED (0, 3)  FIND-ALL [('7;3', 0)]
+  3;7            WHOLE FAILS  SEARCHED None  FIND-ALL []
+PROGRAM B(A)  BINDS ['A := [g = /\\d/]', 'B(rx) := rx SEQ ";" SEQ rx & some(@rx.g, "7")']
+  ERROR at the binding `B(rx) := rx SEQ ";" SEQ rx & some((rx.g: "7"))`: B names a label it does not hold: rx__r1.g
+PROGRAM A SEQ ";" SEQ A & some(@A.g, "7")  BINDS ['A := [g = /\\d/]']
+  ERROR legal by GATE129 but MECH129 cannot build it (a group question); the in-force engine: `A.g`: A is used 2 times here; label the part (`[left = A]`) to read one use
+PROGRAM A SEQ ";" SEQ (A)? & (A.g: <5)  BINDS ['A := [g = /\\d/]']
+  ERROR `A.g`: A is used 2 times here; label the part (`[left = A]`) to read one use
+PROGRAM [aa = /(?<h>\d)/] SEQ ";" SEQ ([aa = /(?<h>\d)/])? & (aa.h: <5)  BINDS []
+  LEGAL
+  7;3            WHOLE HOLDS  SEARCHED (0, 3)  FIND-ALL [('7;3', 0)]
+  3;7            WHOLE FAILS  SEARCHED None  FIND-ALL []
+  3;             WHOLE FAILS  SEARCHED None  FIND-ALL []
+PROGRAM N([a = /(?<h>\d)/]) & (N.h: <5)  BINDS ['N(rx) := /${[(=h) = rx]}/']
+  ERROR at `N([a = /(?<h>\d)/])`: the argument exports no `h`, which N's list `(=h)` demands
+PROGRAM /(?<g>${A})x/ & (g.h: <5)  BINDS ['A := /(?<h>\\d)/']
+  ERROR `g.h`: a `h` sits behind a gate, which is never skipped: write `g.A.h` (a compile error, label-names-gate)
+PROGRAM [g = A] SEQ /x/ & (g.h: <5)  BINDS ['A := /(?<h>\\d)/']
+  LEGAL
+  3x             WHOLE HOLDS  SEARCHED (0, 2)  FIND-ALL [('3x', 0)]
+  7x             WHOLE FAILS  SEARCHED None  FIND-ALL []
+PROGRAM [n = (P | /a(?<d>\d)/)] & (n.d: <5)  BINDS ['P := /(?<d>\\d)/']
+  LEGAL
+  3              WHOLE HOLDS  SEARCHED (0, 1)  FIND-ALL [('3', 0)]
+  7              WHOLE FAILS  SEARCHED None  FIND-ALL []
+  a3             WHOLE HOLDS  SEARCHED (0, 2)  FIND-ALL [('a3', 0)]
+  a7             WHOLE FAILS  SEARCHED None  FIND-ALL []
+PROGRAM B(A)  BINDS ['A := [g = /\\d/]', 'B(rx) := (rx | (rx SEQ "!")) & (rx.g: <5)']
+  LEGAL
+  3              WHOLE FAILS  SEARCHED None  FIND-ALL []
+  3!             WHOLE HOLDS  SEARCHED None  FIND-ALL []
+  7!             WHOLE FAILS  SEARCHED None  FIND-ALL []
+PROGRAM ([r = A] | ([r = A] SEQ "!")) & (r.g: <5)  BINDS ['A := [g = /\\d/]']
+  LEGAL
+  3              WHOLE HOLDS  SEARCHED (0, 1)  FIND-ALL [('3', 0)]
+  3!             WHOLE HOLDS  SEARCHED (0, 1)  FIND-ALL [('3', 0)]
+  7              WHOLE FAILS  SEARCHED None  FIND-ALL []
+PROGRAM B(A)  BINDS ['A := [g = /\\d/]', 'B(rx) := (rx SEQ ";"){2} & (rx.g: <5)']
+  ERROR at the binding `B(rx) := /(?:${(rx SEQ ";")}){2}/ & (rx.g: <5)`: B names a label it does not hold: rx__r3.g
+PROGRAM B([a = A])  BINDS ['A := [g = /\\d/]', 'B(rx) := rx & (rx.g: <5)']
+  ERROR `rx.g`: a `g` sits behind a gate, which is never skipped: write `rx.a.g` (a compile error, label-names-gate)
+PROGRAM B(A)  BINDS ['A := [g = /\\d/]', 'B(rx) := rx SEQ /${$rx.g}/']
+  ERROR at the binding `B(rx) := rx SEQ /${$rx.g}/`: B names a label it does not hold: rx.g
+PROGRAM B(A)  BINDS ['A := [g = /\\d/]', 'B(rx) := (/\\d/ & (rx.g: <5)) SEQ rx']
+  LEGAL
+  13             WHOLE HOLDS  SEARCHED (0, 2)  FIND-ALL [('13', 0)]
+  17             WHOLE FAILS  SEARCHED None  FIND-ALL []
+  31             WHOLE HOLDS  SEARCHED (0, 2)  FIND-ALL [('31', 0)]
+PROGRAM B(A)  BINDS ['A := [g = /\\d/]', 'B(rx) := /${[(=g) = rx]}x/ & (g: <5)']
+  ERROR an undeclared name: B(A)
+PROGRAM (A SEQ /\d/) & (/\d/ SEQ A) & (A.h: <5)  BINDS ['A := /(?<h>\\d)/']
+  ERROR `A.h`: both sides of `&` place `A`, an ambiguous reference (a compile error, core/labels/flow)
+PROGRAM B(A) & (B.g: <5)  BINDS ['A := [g = /\\d/]', 'B(rx) := rx SEQ ";" SEQ rx']
+  ERROR `B.g`: a `g` sits behind a gate, which is never skipped: write `B.A.g` (a compile error, label-names-gate)
+PROGRAM B(A) & (B.A.g: <5)  BINDS ['A := [g = /\\d/]', 'B(rx) := rx SEQ ";" SEQ rx']
+  ERROR `B.A.g`: no label `A` is reached from `B` (a compile error: it is not there, or behind a wall)

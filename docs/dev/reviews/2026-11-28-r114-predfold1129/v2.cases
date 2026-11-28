@@ -1,0 +1,16 @@
+P: [n = [m = P]] & (n.d: <5)
+B: P := /(?<d>\d)xx/
+T: 3xx 7xx
+
+P: [n = ([m = P])] & (n.d: <5)
+B: P := /(?<d>\d)xx/
+T: 3xx
+
+P: [n = [m = P]] & (m.d: <5)
+B: P := /(?<d>\d)xx/
+T: 3xx
+
+P: Rs(x:, A) & (x.p.h: <5)
+B: A := /(?<h>\d)/
+B: Rs(l:, v) := /${[l = [p = v]]}xx/
+T: 3xx 7xx
