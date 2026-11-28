@@ -12859,3 +12859,19 @@ WHOLE 73 HOLDS
 WHOLE 37 FAILS
 SEARCHED 37 73 [('73', 3)]
 FIND-ALL 73 37 12 [('73', 0), ('12', 6)]
+
+### 2026-11-28 OWNER RULING — same-path-last: "yes all three"
+tags: core/labels/rule/one-path core/labels/flow core/labels/export/named-list
+Asked as a question with the slug; his words, verbatim: "same-path-last: yes all three". Class: RULING.
+The lines as asked (quoted):
+"1. A skip is legal when every label it could reach has the same full path. Then it reads what the full path
+reads: the last mention.
+2. Two different full paths are still an error naming both: `n.d` over `[n = ([a = P] SEQ [b = Q])]` reaches
+`n.a.d` and `n.b.d`.
+3. Gates, walls and the array form are unchanged."
+It REVISES one-path's sentence ("exactly one label of that name is visible from the start") and its line 4 ("It
+replaces 'in a sequence the last mention wins' for skipped reads") to count distinct full paths; the manager's
+wording of one-path is corrected to his sentence "exactly one path possible from the start". Told with it: it
+settles named-list-two-parts (one path twice reads the last; `h` under two different labels is two paths, an
+error at the call: the printed marked reading stands, unmarked); "Of the reads that moved to errors when you
+ruled it, any that reach one path twice come back as legal; the fold reports which"; `date.v` stays an error.
