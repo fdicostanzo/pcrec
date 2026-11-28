@@ -1367,3 +1367,15 @@ wake.md says (read the draft WHOLE first; A4 is a ruled-words finding: read his 
   17 passed, 1 failed, 2.5 s). Asked main to add it to the skill's "no make except" line.
 - Main's `scripts/entry` fix (c5d95a2e4) merged back; the branch is green on pred_doc_lint, test-plan-lint and
   test-doc-lint. The skill's make line now names both targets (main's edit). At rest.
+
+## 2026-11-28 — eleventh session (continues the tenth after a compaction)
+- Owner back with /q. SEVEN rulings, each recorded verbatim the same hour (record entries dated 2026-11-28):
+  reference-example-checked (the sentence STANDS; my lean, falls, not taken), named-list-body-read (legal),
+  label-names-gate (yes all five: a label on an outside binding/call/parameter is the gate's name, never
+  skipped), argument-is-gate (yes all five: ENDS the strong lean no-path-through-argument; `Y.c.a.h` legal),
+  part-of-argument (lines 1-4; a placed path makes no implicit label), last-placement (reverses binding-prefix's
+  error), same-path-last (one-path counts distinct full paths; my wording of one-path corrected to his sentence).
+- Lane predfold1129 (opus) LAUNCHED on branch lane/predfold1129 from 43bbce01f: census first, then the fold.
+  IN FLIGHT. Review number to be asked of main before the critic round.
+- Queue left for him: sent-over-body-label, list-over-label (the lane prints what the gate rule derives);
+  the derived answers of label-above-call and forwarded-place to SHOW him; the later list in wake.md.
