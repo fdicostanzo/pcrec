@@ -12372,3 +12372,22 @@ X & (X.d: <5), X := [a = P] SEQ /;(?<d>\d)/, P := /(?<d>\d)/ ; X's own d:
 the same X, the labelled part's d by its full path X.a.d:
    WHOLE 7;3 FAILS 3;7 HOLDS | SEARCHED 7;3 3;7: 3;7@4 | FIND-ALL 7;3 3;7 1;2 9;9: ['3;7@4', '1;2@8']
 ```
+
+### 2026-11-27 OWNER RULING — body-own-name: "agree"; his read of the call case ("rx as an arg cant be directly on a path")
+tags: core/labels/rule/one-path core/labels/paths/call-prefix core/labels/paths/two-sources lib/convention/argument-labels
+His words, verbatim: "body-own-name: agree. My read: Within the macro, the d from A is outside and would have to
+gate through rx but rx as an arg cant be directly on a path.
+B(rx) := rx seq "-" seq [d = digit ]"
+RULED (answered by slug, after the manager's corrected telling of one-path's cost; he did not reopen one-path),
+the statement AS ASKED, quoted: "**body-own-name:** a path that skips nothing is always legal and reads the label
+directly under its last step; one-path limits only reads that skip a step." Told with it: "two of the seven moved
+reads become legal again (`c.d` and `B.d`, which read the body's own); the other five stay errors."
+His read is HIS GROUND for the call case, in his words, with his own sketch of the body (`B(rx) := rx seq "-" seq
+[d = digit ]`: spellings are placeholders): the argument's `d` is "outside" the macro and could only come in
+"through rx", and an argument "cant be directly on a path".
+The manager's readings, for the fix lane to test: (a) it replaces the lane's reading (f) ("a target reached
+directly beside one reached by a skip counts as two") at its three sites; (b) his ground and the asked statement
+agree on every printed program (`c.d`, both `B.d`, `X.d` over `[a = P] SEQ /;(?<d>\d)/`): a difference would show
+only where an argument is placed under a WRITTEN label of the body (`B(rx) := /${[p = rx]}-(?<d>\d)/`, read
+`B.d`): RUN it under both and list it if they part; (c) the argument's own label stays read by its source
+(`A.d`), as printed.
