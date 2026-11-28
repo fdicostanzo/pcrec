@@ -1218,7 +1218,7 @@ see: core/labels/export/export-list core/labels/rule/argument-door core/operator
   is the use error at the call (the line "The argument lacks it" and the three "Lacking it" lines).
 - His words: "named-list-body-read: yes same as before.", on: `N2(rx) := /${[(=h) = rx]}/ & (h: <5)` legal, "The
   body reads bare what its own list names, and nothing else of the argument" (the line "The body reads the named
-  label"); with `(=)` a bare read stays a compile error (the line "The whole list, a bare read"). "Nothing else"
+  label"); with `(=)` a bare read stays a compile error (the line "The whole list, a bare read"). Its "nothing else"
   is read as nothing else BARE (the manager's reading): the body's gated reads stay as argument-is-gate gives them.
 - An argument holding `h` in two parts labelled on their uses (`[a = P] SEQ [b = Q]`) holds it only behind the
   gates `a` and `b` (label-names-gate): no flat `h`, an error at the call (the line "Two labelled parts"). A label

@@ -6,7 +6,7 @@ COND-FAMILY.md, the 2026-11-28 entries to the end; the owner's CORRECTION on sta
 list-over-label row). DESIGN evidence only: nothing here rules; no check under `make` reads it.
 
 It LOADS predfold1129's model unchanged up to its checks (`# ==== CHECKS129`; the older models load through it),
-then changes its walker GATE129 in five places, switched by X114[0] (off: predfold1129 as merged, the control):
+then changes its walker GATE129 and its entry, switched by X114[0] (off: predfold1129 as merged, the control):
   ORDER114  stacked labels are ORDERED steps (the owner's correction: "\"stacked\" are not the same but ordered as
             usual. Sometimes you can skip the upper stack label per usual skip rules. Here however you can't because
             p is a gate."): the label written DIRECTLY on a crossing is the gate, never skipped; a label above it
@@ -25,6 +25,15 @@ then changes its walker GATE129 in five places, switched by X114[0] (off: predfo
   LOUD114   a crash is never a refusal (an exception the reader did not raise is reported `CRASH`, r114 F24); a
             program GATE129 cannot read that the in-force engine REFUSES is refused `FALLBACK114: ...` (loud, never
             an answer of the ruled rules, r114 F5); a legal fallback answer is logged.
+  LIST114   his answer ("${[p=[(=) = rx]]} as if just [p=rx]"), list-opens-one-step (RULED: a list is no step of a
+            path; the label under it is hidden from above, what is under that label comes up) and a list that passes
+            nothing (RULED, a compile error where it is written); LISTLEAN114 "gate" = the withdrawn reading.
+  LOOP114   branch-in-loop (RULED "error for now. Ambiguous"): a plain read skipping to a name two branches of an
+            alternation under `rx.repeat` hold is a compile error naming both full paths and the array form;
+            LOOPALT114 "last" = the parked reading, the branch of the last pass.
+  BRANCH114 and NAMEBOTH114: a switch for gate-beside-direct-branch's other reading; refusals naming every way in.
+The checks: RULE114, TWIN114, LOUD114, SWEEP114, ERRSWEEP114, QUOTES114, STALE114, TAGS114, OTHER114,
+SUCCESSOR114, PLANTS114 (s1..s18, one per check at least).
 The verdict is the last line, `predfix114_model: N checks, F failed`; it exits non-zero iff that line reports a
 failure. PINNED COMMITS: this model reads git ONLY by commit id (START114).
 `PREDFIX114_LIGHT=1` skips SUCCESSOR114; `PREDFIX114_SUCCDIR=DIR` an existing EMPTY scratch directory for the
@@ -576,12 +585,14 @@ unit114("RULE114", "the correction, his answer, list-opens-one-step, a list that
         "words" % len(RULE114))
 if s114("s14"):
     RULE114[0] = RULE114[0][:3] + ("legal",) + RULE114[0][4:]
+RULEMSG114 = {"a list that passes nothing": "nothing inside `year` to export",   # the reason the ruling gives
+              "branch-in-loop: error for now": "`n.a.d` and `n.b.d`"}
 rl_bad = []
 for nm_, e_, b_, want, tx_ in RULE114:
     Pg, err = run11(e_, b_)                                  # noqa: F821
     got = "legal" if Pg is not None else "error"
     bad_tx = [(t_, w_) for t_, w_ in tx_ if Pg is not None and ("HOLDS" if Pg.whole(t_) else "FAILS") != w_]
-    if got != want or bad_tx or (err or "").startswith("CRASH"):
+    if got != want or bad_tx or (err or "").startswith("CRASH") or RULEMSG114.get(nm_, "") not in (err or ""):
         rl_bad.append((nm_, want, got, bad_tx, (err or "")[:120]))
 for x_ in rl_bad:
     print("   NOT AS RULED %s: want %s, got %s %s %s" % x_)
@@ -766,7 +777,7 @@ qt_n, qt_bad, qt_b = 0, [], 0
 for f_ in BASES114:
     t_ = JOIN114[f_]
     if s114("s13") and f_ == "core.md":
-        t_ = t_.replace('"branch-in-loop: error for now.', '"branch-in-loop: an error for now.', 1)
+        t_ = t_.replace('"list-opens-one-step: in terms of path', '"list-opens-one-step: in term of path', 1)
     for l_ in t_.split("\n"):
         if not re.match(r"- (His words|His answer|An unnamed list passes)", l_) or not any(s_ in l_ for s_ in SL114):
             continue
