@@ -337,8 +337,8 @@ check. Records beyond the storage (`layout_bytes` and the other StrBuf records) 
   (B17). The plan row's "registered on the Ctx" is met through the Ctx's own arena; D109's memset gives "empty at every
   attempt". A detached arena (cx NULL) may hold scopes too (the clskit test driver); its checks abort, the rule
   `pcrec_arena_alloc` already applies to a detached arena.
-- CORRECTED (B16): rev 1 said "not a new Ctx field". The lent check needs one Ctx field pair, `Ctx.lent` (bool) and
-  `Ctx.lent_uses` (unsigned). WRITER: arena.c only, through `pcrec_ctx_lend`, `pcrec_ctx_unlend` and `pcrec_err_chan`.
+- CORRECTED (B16): rev 1 said "not a new Ctx field". The lent check needs Ctx fields `Ctx.lent` (bool) and the count
+  (built as `Ctx.chan_uses`/`Ctx.lent_base`, see "Deviations at build", f4flag). WRITER: arena.c only, through `pcrec_ctx_lend`, `pcrec_ctx_unlend` and `pcrec_err_chan`.
   READERS: arena.c only, PLUS the test driver's two read-only accessors (r103 C9): `bool pcrec_arena_open_p(const Arena *)`
   (is a scope open) and `bool pcrec_ctx_lent_p(const Ctx *)`, declared in internal.h, named as read only by
   `tests/core/alloc_check.c` (W7's sampling reads both through them; nothing else calls them, which the scanner checks by
@@ -787,6 +787,13 @@ Listed for the pre-go briefing; under D191 addendum 2 they need no go of their o
   +512 B of requested peak on 4,464 of 7,402 compiles (66 at +1,024), over F1's bound of 232, where the per-record form
   is within it (max +184). The rung move is heap layout, not requested bytes: under the rung rule (D-9) it is a LAYOUT
   move. Numbers: `docs/dev/lanes/arenabuild2_report.md`.
+- f4flag (the owner, 2026-11-27, "f4-instr: try but not very hard"), the count's shape. `pcrec_err_chan` bumps a
+  monotonic `Ctx.chan_uses` (uint64) on EVERY use through a non-NULL channel, lent or not; `pcrec_ctx_lend` snapshots it
+  into `Ctx.lent_base` and `pcrec_ctx_unlend` returns the difference (clamped to UINT_MAX), so the hot path reads no
+  flag. arena.c's four nomem refusals share one cold `noipa` helper `arena_nomem`, so `pcrec_arena_alloc` keeps no
+  channel live across its malloc. D-7 unchanged: every counted entry still calls the accessor unconditionally first.
+  Measured on `cell/matrix/ncgroup.plus.second.lit@250` (368,460 `pcrec_arena_alloc` calls, callgrind): +7.0 instr per
+  call over the pre-F4 base before, +4.0 after. Numbers: `docs/dev/lanes/f4flag_report.md`.
 - R-6, the rung rule (the owner, 2026-11-25, "rung-edge: agree with lean"): rungs are judged on requested bytes; D-9
   states it and memgate `rungs` applies it.
 - F2 and F6 BUILT (lane f2f6, 2026-11-26; the Clients rows F2 and F6 above are delivered, validation OWED to the queue,

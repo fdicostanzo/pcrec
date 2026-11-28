@@ -4545,10 +4545,15 @@ struct Ctx {
      * counted meanwhile by `pcrec_err_chan` (an ALLOCATION through an Arena
      * or a StrBuf whose `.cx` is this Ctx, made from inside the inner
      * compile's recovery point; a refusal-only use longjmps before the
-     * count is read and is covered by the scanner's seam rule instead). WRITTEN and READ by arena.c only;
-     * per attempt by the same memset as `failed_nomem`. */
+     * count is read and is covered by the scanner's seam rule instead).
+     * The count is `chan_uses - lent_base`: `pcrec_err_chan` bumps
+     * `chan_uses` on EVERY use, lent or not (one add on the hot path, no
+     * flag read, lane f4flag), and `pcrec_ctx_lend` snapshots it into
+     * `lent_base`. WRITTEN and READ by arena.c only; zeroed per attempt by
+     * the same memset as `failed_nomem`. */
     bool                 lent;
-    unsigned             lent_uses;
+    uint64_t             chan_uses;
+    uint64_t             lent_base;
     /* [REL-1.11] THE PER-COMPILE ENABLED FEATURE SET. Resolved ONCE by
      * `compile_driver` from `pcrec_options.features` (NULL = the CLI's own
      * bare-invocation default, `pcrec_default_features`), via the PURE
