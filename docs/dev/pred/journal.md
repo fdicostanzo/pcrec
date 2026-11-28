@@ -1334,3 +1334,7 @@ wake.md says (read the draft WHOLE first; A4 is a ruled-words finding: read his 
   owner, who did not reopen one-path. body-own-name RULED ("agree": a path that skips nothing is always legal).
   LAUNCHED fix lane predfix112 (opus; worktree cut at 2d7718d4e; applies r112, folds array-gate and
   body-own-name, files the review; lanewatch armed). Waiting on its delivery.
+- His lean: a path never goes through an argument's place, with the manager's carve-out for labels a body passes
+  on by an export list ("a strong lean yes"; not ruled); and a lean that `[(=foo) = rx]` with an argument lacking
+  `foo` is an error at the use. He asked for other unanticipated problems: LAUNCHED study lane predarg (opus,
+  read-only on the documents, worktree cut at 88cda0d38; lanewatch armed) beside the running fix lane predfix112.
