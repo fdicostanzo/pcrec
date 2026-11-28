@@ -1329,3 +1329,8 @@ wake.md says (read the draft WHOLE first; A4 is a ruled-words finding: read his 
   stopped. Eight printed reads moved to compile errors (three more than the census four). LAUNCHED critic round
   r112 (crit-predfold1127, opus coordinator, two critics). Owner questions from the lane: array-gate (asked),
   body-own-name (next). A stray predfold1125.out my census driver left in the worktree root was moved to scratch.
+- array-gate RULED (error). Review r112 handed back (F1 to F8, COORD-1), dispositions ruled, coordinator stopped;
+  it corrected my telling of one-path's cost (seven reads move, not four; five have no full path): told to the
+  owner, who did not reopen one-path. body-own-name RULED ("agree": a path that skips nothing is always legal).
+  LAUNCHED fix lane predfix112 (opus; worktree cut at 2d7718d4e; applies r112, folds array-gate and
+  body-own-name, files the review; lanewatch armed). Waiting on its delivery.
