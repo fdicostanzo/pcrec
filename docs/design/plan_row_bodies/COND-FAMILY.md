@@ -12723,3 +12723,27 @@ WHOLE 3xx HOLDS
 WHOLE 7xx FAILS
 SEARCHED 7xx 3xx [('3xx', 4)]
 FIND-ALL 3xx 7xx 4xx [('3xx', 0), ('4xx', 8)]
+
+### 2026-11-28 OWNER RULING — label-names-gate: "yes all five"
+tags: core/labels/rule/alone-as-middle core/labels/rule/one-path core/labels/rule/paths core/labels/rule/kinds core/labels/export/export-list core/labels/rule/argument-place
+Asked as a question with the slug; his words, verbatim: "label-names-gate: yes all five". Class: RULING.
+The statement as asked (quoted):
+"1. Every crossing from one definition's text into another (a binding used, a macro called, a parameter placed)
+is a gate. A gate is one step of the path and is never skipped.
+2. The gate's name is the label written directly on it (`dd`). Where none is written, it is the thing's own name
+(`rx`, `Q`, `B`).
+3. Only a label over text written right there may be skipped. In `[a = /${..}xx/]`, the label `a` sits over a
+literal, so the reader of that line can see what is under it.
+4. So your example needs `a.dd.g` or `dd.g`. A bare `a.g` is an error naming both.
+5. An export list is still the way to flatten on purpose: `[(=) = rx]` lifts the labels up, and then `a.g` is
+legal."
+(The example: `A := [g = digit]`, `B(rx) := [a = /${[dd = rx]}xx/] & (a.g: <7)`, `B(A)`.)
+Told with it: `X := [n = Q]`, `X.d` becomes `X.n.d` unless X writes the list; "An unknown number of printed reads
+move from answers to errors. I have no count; it needs a run over every printed program before the fold"; under
+yes, "one-path then counts only labels over in-place text and lists" (the manager's reading, to be tested).
+It REVISES alone-as-middle's kept sentence "A label someone WROTE (`[a = P]`) is still skipped by rule 4" for a
+label written directly on a binding's use, a macro call or a placed parameter.
+The manager's readings, for the fold to test (none ruled): `[n = (Q)]`, `n.d` stays legal (n is the gate's name
+and is named); a stacked label on a gate (`[a = [b = Q]]`): both are names of the one gate (stacked labels are
+equal names of one spot, label-doors), so `a.d` and `b.d` and `a.b.d` are legal; a label over a parenthesised
+composition (`[n = (P SEQ Q)]`) is over in-place text and skippable, P and Q the gates.
