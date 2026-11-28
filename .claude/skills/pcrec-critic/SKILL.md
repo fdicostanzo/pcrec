@@ -100,7 +100,7 @@ message when the draft is ready.
    and records each verdict in `.coord/` (blind to critics). A re-run's verdict is the model's LAST LINE; an exit code is not evidence
    (r82 predfold1122: the first summary read rc=0 as green and one model was red). A red committed evidence at the freeze is a
    finding even if no critic reports it (r77 predfold1121). When an evidence script `git show`s older commits, tell critics that the
-   round's tree copy is a shared no-checkout clone at the freeze, not a plain copy (r83 preddef1122).
+   round's tree copy is a shared no-checkout clone at the freeze, not a plain copy (r83 preddef1122). Before a design-mode evidence re-run, grep the successor chain's models for branch refs read by name and create each at the freeze in the clone; a ref read by name is a finding (models pin commits, not branch names) (predicate manager P-34/P-35, reviews r111/r112).
 4. Profile: what does the subject touch? Several can apply:
    - design: a new mechanism or table; a measured quantity, check or data file;
      a caller-facing contract; a build proposal (cost, scope); rulings it rests on
@@ -233,7 +233,7 @@ critic; a missed input goes to a fresh critic.
    `VERIFY COMPLETE` line; 2026-10-29 landwalk: without one the verifier improvised its own shape).
    Per plant claim the verifier records the plant compiler's exit code beside the byte verdict (r2 sp1c). A REFUTED verdict quotes the exact call it ran; the coordinator re-runs every REFUTED that rests on a crafted input before drafting (2026-11-03 sp1f: a verifier refuted with a malformed key). The coordinator may instead verify inline, recording the calls, when every CONFIRMED finding is a quote claim or a one-call oracle repro (2026-11-15 r14 predspec12: a verifier agent would have cost more than the checks). Two critic findings that CONTRADICT each other go to the verifier as ONE item (kit round partd2, 2026-11-12). It writes `verify.md` INCREMENTALLY, one finding at a time (a nested agent's final reply is often
    lost: 2026-10-26 ic1b-code): HOLDS / REFUTED / PARTLY / not verified (why).
-   A SUSPECTED coverage claim (an unplanted decision point) is settled by a coordinator-built plant from the same plant builder (`plants/V<n>`) before drafting, not handed to a verifier that cannot rebuild (r64 k147fix: 3 plants, ~3 min, decided 3 claims).
+   A SUSPECTED coverage claim (an unplanted decision point) is settled by a coordinator-built plant from the same plant builder (`plants/V<n>`) before drafting, not handed to a verifier that cannot rebuild (r64 k147fix: 3 plants, ~3 min, decided 3 claims). A plant suspected UNDETECTED is verified against EVERY net (suite, mech, memgate levers, alloc) before it is declared undetected (r110: V1 read invisible to the suite and was caught by W6's exact pin).
    Use an opus verifier when the CONFIRMED findings are interlocking semantic claims, and group same-root findings as ONE item (2026-11-16 r29 predspec20: 16 items, 5 PARTLY corrections, one unification).
 3. Draft `$PCREC_TMPDIR/scratch/crit-<topic>/review.md` in the
    `docs/dev/reviews/` shape: subject; lenses as run (lens, model, question,

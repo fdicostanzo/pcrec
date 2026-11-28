@@ -691,10 +691,10 @@ the manager prefers fewer hand-offs. Validation per code unit: one `make test` (
 rungs run (its run time is measured at T1, then stated), mech REACH; one cloud growth LSan run (F3); one `make asan` at
 the end. Calendar: about two and a half working days of lane time plus the queue.
 
-RUN-TIME COST. Compile time: per arena allocation one accessor call (a load and a branch on `cx->lent`); per entry one
+RUN-TIME COST. Compile time: per arena allocation one add on the hot path and no flag read (the lent count is monotonic: `chan_uses` counts every channel use, and the lender reads the difference from its snapshot, `lent_base`, when the part returns); per entry one
 `calloc` and one `free`, and the release walk. Entries per compile are tens (8 per minimize call, 10 per scanedge
 call, 3 rewrites, the holds) against thousands of mallocs today. r102's measurement of the lent check on 2 patterns:
-about 0.04-0.05% of instructions; nothing superlinear in a size the user controls. G5 is gated per compile (memgate
+about 0.04-0.05% of instructions for the first form of the check (a load and a branch); the kept form, measured by memgate `instr` at F4 (lane f4flag, +4.0 instr per `pcrec_arena_alloc` call, down from +7.0): p50 1.00048, p95 1.00467, max 1.02533, 25 compiles over the 1.020 max band (deep-nesting, allocation-heavy cells), peak WITHIN, rungs IDENTICAL; accepted by the owner, f4-instr, 2026-11-27. Nothing superlinear in a size the user controls. G5 is gated per compile (memgate
 `instr`), so a heavy compile cannot hide a light one's regression (B13). Emitted code: none (G1).
 
 PREDICTED MEMORY MOVES (B7), per unit, glibc usable sizes on the dev box (a `calloc` of n bytes has usable size

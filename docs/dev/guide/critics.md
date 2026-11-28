@@ -354,3 +354,9 @@ Round 2026-11-20 r65, l3feat code round (`docs/dev/reviews/2026-11-20-r65-l3feat
 4. **Two bounds of one process tree are headroom per bound, never a sum** (R89-6), and a "wall = CPU" bound is not a hang guard (R89-7).
 5. **A tier selected by a named-exception flag is not a cost test.** The occasional tier took 107 cells that were measured cheap, against the ruling's own condition ("stay costly"), and dropped the ratchet they carried (R89-11); a tier's membership is a measured figure.
 6. **A pool worker that dies names its cell, fails promptly and cleans its work dir** (R89-2; the dead-worker drill of r87 again).
+
+2026-11-27 r110, arenaf4 code round (`docs/dev/reviews/2026-11-27-r110-arenaf4.md`), accepted 2026-11-28 (manager): **a counted-use detector is a NORMAL-RUN detector: when a fix counts uses of a channel to refuse later, every refusal-only path through that channel longjmps before the count is read, so a check-adequacy or lifetime lens asks "which uses are seen only on the failing run?"** (A: 5 refusal-only channel sites in arena.c/sb.c and 16 direct `sb->cx` refusals were invisible to the count).
+
+2026-11-27 r110, same round (accepted 2026-11-28, manager): **a control whose population is 0 by construction after the fix needs a plant that makes it SWEEP (the member back AND the fix's own refusal neutered); a plant that only restores the member is caught by the refusal first and never reaches the control** (B2: S3653 vs V2; S3654 is the V2 shape).
+
+2026-11-27 r110, same round (accepted 2026-11-28, manager): **every unconditional "count here" line in a counted class is its own site; a plant per class is not a plant per line** (B1: deleting any one of four counted entries left every gate green; only `pcrec_arena_alloc`'s line was netted).

@@ -7655,6 +7655,8 @@ expectation exists for still applies) — or when a floor's own margin turns
 out too tight against a real refactor, in which case the floor moves with
 the measurement recorded, not silently.
 
+**Addendum (2026-11-28, [ARENA-SCOPES] F4, K163, lanes f4/f4fix/f4flag):** F4 adds a second per-attempt `Ctx` channel fact in D109's class: `lent`, `chan_uses` and `lent_base` live in the `Ctx`, are zeroed by the same per-attempt `memset` in compile.c, and are read at the OUTER recovery point (`walk_part`, after the part's stores) rather than at the setjmp. See docs/design/arena_scopes.md D-4/D-7 and known_issues K163.
+
 ## D111 — The optimization-axis table gets ONE SOURCE, `src/core/axes.def`, with every reader derived from it (Frank, 2026-09-19, seventy-first session: "Yes. I like single source")
 
 The 2026-09-17 code review's L1-X9 (synthesis_collation.md §2.2) found the
