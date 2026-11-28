@@ -12922,3 +12922,19 @@ becomes legal, as a full path that skips nothing"; with the body's `p` on the pl
 pass-through, "not locally visible" because not mentioned; `[p = [(=) = rx]]` "is basically the same as just
 using the p label". The manager's "`[p = [(=) = rx]]` passes both" is WITHDRAWN. list-over-label is re-put with
 specific examples.
+
+### 2026-11-28 OWNER, on list-over-label: `[p = [(=) = rx]]` "as if just [p=rx]"; `[(=) = [p = rx]]` "let's discuss ... the outer export would hide the inner p label from outside"
+tags: core/labels/rule/list-over-label core/labels/export/export-list core/labels/rule/gates
+To the re-put question list-over-label (a six-row table of holes, `${rx}`, `${[p = rx]}`, `${[(=) = rx]}`,
+`${[(=h) = rx]}`, `${[p = [(=) = rx]]}`, `${[(=) = [p = rx]]}`, and three lines: an unnamed list is a
+pass-through and makes nothing visible in the body; a named list does both; a label and a list on one place, in
+either order, mean the label alone).
+His words, verbatim: "${[p=[(=) = rx]]} as if just [p=rx]
+
+${[(=) = [p=rx]]} let's discuss because I think the outer export would hide the inner p label from outside."
+Classes: the first sentence his ANSWER for that row (as the lean); the second a DISCUSSION with a LEAN ("I
+think"), against line 3's "in either order". Nothing else of the table is answered; list-over-label stays open.
+The record on what a list takes (told to him): core/labels/export/export-list, ruled 2026-11-22 on his proposal
+"[d = isodate] exports all. How about this: [(=year) = isodate]"; the piece's summary: "the binding takes the
+listed labels of the part as labels of its own (exported; read bare inside it) and nothing else of the part";
+the forms table (a reading): `[(=) = isodate]`: "all the part exports".
