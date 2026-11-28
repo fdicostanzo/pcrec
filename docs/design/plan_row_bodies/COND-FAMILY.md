@@ -12244,3 +12244,19 @@ error.
 THE MANAGER'S OWN STATEMENTS CORRECTED by the round: none of his words; the fold (on the manager's brief) had
 re-tagged lib/control/peek as an open question that no record entry asked (F10); the manager then asked it and he
 ruled it.
+
+### 2026-11-27 OWNER RULING — gate-beside-label: error ("Skipping labels is about efficiency in total clarity")
+tags: core/labels/rule/alone-as-middle core/labels/rule/paths core/labels/rule/kinds
+His words, verbatim: "gate-beside-label: error. One may be writing the last line not knowing how Q is defined. So
+did they know Q had a d and chose to skip it? Or did they think it did have d and were intending to use it?
+Skipping labels is about efficiency in total clarity."
+RULED (answered by slug): the first reading as asked: "A compile error: a `d` sits behind a gate, so say which you
+mean (`n.a.d` or `n.Q.d`)", for `[n = ([a = P] SEQ Q)] & (n.d: <5)`, P := `/(?<d>\d)/`, Q := `/,(?<d>\d)/`.
+His last sentence is a statement of PRINCIPLE in his words (a candidate line for core/labels/rule/paths rule 4:
+a skip is legal only where it leaves nothing unclear).
+NOT FOLDED: the documents print reading (ii) (the written label's `d`) as a marked reading (lane predfix111);
+it becomes this compile error at the next fold, with gate-twice-scope.
+The manager's readings, for that fold to test: the error is raised when ANY target of the skipped name lies
+behind a gate under the read's start, whether or not another legal target exists; `g.h` over `/(?<g>${A})x/`
+(already a compile error) is the same rule with no other target; a private part beside a written label is
+unchanged (skip-past-wall: its labels do not exist for the read).
