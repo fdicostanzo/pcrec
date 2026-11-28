@@ -12269,3 +12269,35 @@ Class: a PROPOSAL put as a question (not an answer choosing a reading; gate-twic
 restate his rule 4 ("if a legal path exists a.b.c and c can be unambiguously referenced from a, then b can be
 skipped a.c"), whose "unambiguously" was put and ruled on 2026-11-23 as "the existing rule: across `&` a name
 both sides set is ambiguous; in a sequence the last mention wins; across `|` the branch taken."
+
+### 2026-11-27 MANAGER — a census for his one-path proposal (no owner words)
+tags: core/labels/rule/paths core/labels/rule/alone-as-middle core/labels/flow
+For the proposal of the entry before. Run: `docs/dev/lanes/predbang_evidence/onepath.py` (predfix111's walker over
+every printed program's dotted reads; the walker does not parse 59 of them, mostly reads through a macro call:
+those are NOT counted either way). Pasted from `onepath.out`, the counts and the multi-target reads:
+```
+59 unparsed
+53 one
+6 last mention
+3 branch taken
+2 refused
+6 last mention
+      D2.c  [D2 & (D2.c: "3")]  D2 := /(?<c>\d)(?<c>\d)/
+      date.v  [date & (date.v: <5)]  date := [y = /(?<v>\d)/] SEQ "-" SEQ [m = /(?<v>\d)/]
+      aa.h  [[aa = /(?<h>\d)/] SEQ "," SEQ [aa = /(?<h>\d)/] & (aa.h: <5)]  
+      c.d  [[c = B(A)] & (c.d: <5)]  A := /(?<d>\d)/; B(rx) := /${rx}-(?<d>\d)/
+      B.d  [B(/(?<d>\d)/) & (B.d: <5)]  B(rx) := /${rx}-(?<d>\d)/
+      W.h  [W(/(?<h>\d)/, /;(?<h>\d)/) & (W.h: "3")]  W(a, b) := [(=) = a] SEQ [(=) = b]
+3 branch taken
+      ab.l  [[ab = ([b = B] | [a = A])] & (ab.l: <20)]  A := /(?<l>\d)\d/; B := /(?<l>\d\d)/
+      pair.x  [pair & (pair.x: <5)]  pair := [b = /(?<x>\d)/] | [c = /a(?<x>\d)/]
+      ab.l  [[ab = [b = B] | [a = A]] & (ab.l: <20)]  A := /(?<l>\d)\d/; B := /(?<l>\d\d)/
+2 refused
+```
+The manager's readings (for the fold to test; none his words): under his sentence the 53 one-path reads are
+unchanged; of the 6 "last mention" reads, `date.v`, `c.d`, `B.d`, `W.h` skip a step with two targets and become
+compile errors, while `D2.c` and `aa.h` skip nothing (two settings of the name itself: label flow, not his
+sentence); the 3 "branch taken" reads (`ab.l` twice, `pair.x`) skip a step with one target per branch, and are
+errors or legal by whether "exactly one path" is counted over the definition or within one match. His sentence
+answers gate-twice-scope as "counted from the start". It does not by itself keep the gate ("never skipped",
+alone-as-middle): a lone gated target is one path.
