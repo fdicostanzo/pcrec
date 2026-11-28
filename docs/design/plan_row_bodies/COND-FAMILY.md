@@ -12550,3 +12550,12 @@ regex and a test on its groups; pasted from `paramref.out`):
    WHOLE `2024-02-29 2150-01-01` HOLDS / `2150-01-01 2024-02-29` FAILS / `2024-02-29 2025-03-01` FAILS | SEARCHED `2150-01-01 2024-02-29 2150-01-01`: 2024-02-29 2150-01-01@11 | FIND-ALL `2024-02-29 2150-01-01 1999-12-31 2200-05-05`: ['2024-02-29 2150-01-01@0', '1999-12-31 2200-05-05@22']
 3. checked(B) := B & (B.year: < 2100) ; checked(isodate)  ==  isodate & (isodate.year: < 2100): the answers of 1
 ```
+
+### 2026-11-27 OWNER, restating the manager's reading of param-reference: "Essentially the arg is a label instead of a binding"
+tags: core/operators/bindings/label-kinds core/operators/bindings/macro-types core/labels/export/arguments
+His words, verbatim: "So your reading is that if I refer to an arg label without placing it, then the arg must be
+a reference to something placed elsewhere. Essentially the arg is a label instead of a binding."
+Class: his RESTATEMENT of the manager's reading, put as a check (not a ruling; param-reference stays open). The
+manager's answer, told to him: yes; the argument then names something the caller placed (a label the caller
+wrote, or a binding's name as the caller used it), and which kind a parameter is can be read off the definition
+(placed: a pattern; read and never placed: a reference), though NOT off the call.
