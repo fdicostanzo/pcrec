@@ -3,9 +3,9 @@
 PATCH R-5 walk10: 3 lines replaced by 17
 PATCH R-5 path10: 2 lines replaced by 10
 PATCH R-5 g_eval: 2 lines replaced by 3
-predfold1129 census at 43bbce01f: 413 printed programs on three-mode and compile-error lines of the six documents (363 in base files); the reader could not parse 120 of them (104 in base files); 227 reads judged in the rest. Against the in-force engine (predfix113), programs whose legality moves: error to legal (details) 10, error to legal (base) 18, legal to error (base) 13; legal reads whose spot moves: 0
+predfold1129 census at 43bbce01f: 413 printed programs on three-mode and compile-error lines of the six documents (363 in base files); the reader could not parse 120 of them (104 in base files); 227 reads judged in the rest. Against the in-force engine (predfix113), programs whose legality moves: error to legal (details) 10, error to legal (base) 17, legal to error (base) 13; legal reads whose spot moves: 0
 
-== error to legal, base files (18)
+== error to legal, base files (17)
 core.md:602 [compile error] `[n = (Q SEQ Q)] & (n.Q.d: <5)`   Q := /,(?<d>\d)/
       n.Q.d: GATE129 legal (last mention)
       in-force engine: refused: `n.Q.d`: `Q` is used more than once here, so it is not a step (a compile error, alone-as-middle)
@@ -24,9 +24,6 @@ core.md:719 [compile error] `Y & (Y.c.a.h: <5)`   A := /(?<h>\d)/; B(rx) := /${[
 core.md:721 [compile error] `[k = [c = B([a = A])]] & (k.a.h: <5)`   A := /(?<h>\d)/; B(rx) := /${[p = rx]}xx/
       k.a.h: GATE129 legal (one)
       in-force engine: refused: `k.a.h`: the path passes B's argument place, which no list opens (a compile error, core/labels/rule/argument-place): read it by the sender's own name (`A.h` for `B(A)`), label the argument, or list it
-core.md:1122 [compile error] `identity((A)) & (identity.h: <5)`   A := /(?<h>\d)/; identity(x) := /${[(=) = x]}/
-      identity.h: GATE129 legal (one)
-      in-force engine: refused: `identity.h`: the path skips a part used alone, which is never skipped inside its binding: write `identity.A.h` (a compile error, alone-as-middle)
 core.md:1235 [compile error] `/${A},${A}/ & (A.d: <5)`   A := /(?<d>\d)/
       A.d: GATE129 legal (last placement)
       in-force engine: refused: `A.d`: A is used 2 times here; label the part (`[left = A]`) to read one use

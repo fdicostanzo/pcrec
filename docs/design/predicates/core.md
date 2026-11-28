@@ -1431,12 +1431,13 @@ A part that refers outside itself: modes: a compile error (`X.b`, X := `/(?<a>\d
 An argument's part: WHOLE `2024!` HOLDS, `2150!` FAILS / SEARCHED `2150! 1999!` `1999!`@6 / FIND-ALL `2024! 2150! 1999!` [`2024!`@0, `1999!`@12] (`Y(isodate) & (Y.y: < 2100)`, Y(date) := `[y = date.year] SEQ "!"`, isodate := `[year = /\d{4}/] SEQ "-" SEQ [month = /\d\d/] SEQ "-" SEQ [day = /\d\d/]`)
 
 ### Backreferences   [core/labels/backreferences]   ruled 2026-11-18
-
 `\k<y>` reads PCRE's capture; a backreference to a name two groups of one literal carry is a compile error unless the literal says `(?J)`.
 needs: core/labels/labels-vs-captures core/labels/flow
 by: core/principles/namespace-at-reference
-- A reference uses the namespace as it is defined at the point of reference, read as labels are (the last mention); inside a part, the part's own names: a backreference inside a part reads the part's own group.
-- A reference inside an rx to a name that rx does not define is a compile error, never a look into the surroundings; a name crosses from one rx to another only by the defining rx exporting it.
+- A reference uses the namespace as it is defined at the point of reference, read as labels are (the last
+  mention); inside a part, the part's own names: a backreference inside a part reads the part's own group.
+- A reference inside an rx to a name that rx does not define is a compile error, never a look into the
+  surroundings; a name crosses from one rx to another only by the defining rx exporting it.
 - Under `(?J)` the backreference reads PCRE's first set group of the name.
 - A reference to a name unset at that point fails, as regex's does (a reading).
 - Through a hole: core/holes/same-name.
@@ -1841,7 +1842,8 @@ see: core/principles/all-dfa core/filters/kinds core/operators/precedence
 | `(h: ~S)` | a set | h present and outside S | a test | yes |
 | `A & ~B` | a pattern | A's paths whose stretch B does not match whole | filter only | maybe, about 0.8; build cost unmeasured |
 
-- One table of the operand's kind against the operator (the general form; each cell ruled where line 1, 2 or 4 says it, a reading where marked). A lookaround is zero width: it can match and is a test (line 1).
+- One table of the operand's kind against the operator (the general form; each cell ruled where line 1, 2 or 4
+  says it, a reading where marked). A lookaround is zero width: it can match and is a test (line 1).
 
 | operand | `!` | `~` | `^` |
 |---|---|---|---|
@@ -1850,8 +1852,11 @@ see: core/principles/all-dfa core/filters/kinds core/operators/precedence
 | a condition, a group question | its not (line 1) | a compile error naming `!` (line 4's twin) | `^c` is c, zero width already (a MARKED reading) |
 | a set S | a compile error naming `~` (line 4) | the complement `~S` (line 2) | not stated |
 
-- Lookbehind has no operator for now (line 6): rx text writes it, `/(?<=x)/` and `/(?<!x)/` (a lookaround in the table's second row; parked/ideas/lookbehind-operator). That `^` and `!` take ONE atom is a reading (core/operators/precedence).
-- `when`'s guard is `!^test` (lib/control/when): for a condition test it is `!c` by the third row's two readings (the line "A condition test in `when`").
+- Lookbehind has no operator for now (line 6): rx text writes it, `/(?<=x)/` and `/(?<!x)/` (a lookaround in the
+  table's second row; parked/ideas/lookbehind-operator). That `^` and `!` take ONE atom is a reading
+  (core/operators/precedence).
+- `when`'s guard is `!^test` (lib/control/when): for a condition test it is `!c` by the third row's two readings (the
+  line "A condition test in `when`").
 Ahead: WHOLE `7` FAILS, `7x` FAILS / SEARCHED `7x 8` `7`@0 / FIND-ALL `1x 2 3x4` [`1`@0, `3`@5] (`/\d/ SEQ ^/x/`)
 `!` on a lookaround in rx text: WHOLE `x` HOLDS, `x1` FAILS / SEARCHED `1x2 x3 4x x` `x`@8 / FIND-ALL `1x2 x3 4x x` [`x`@8, `x`@10] (`"x" SEQ !/(?=\d)/`)
 `^` on a condition: WHOLE `3x` HOLDS, `7x` FAILS / SEARCHED `7x 3x` `3x`@3 / FIND-ALL `3x 7x 4x` [`3x`@0, `4x`@6] (`/(?<h>\d)/ SEQ ^(h: <5) SEQ /x/`)

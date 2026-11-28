@@ -83,6 +83,13 @@ def _pname129(P, n):
     return P.texts[n.tid][n.a:n.b].strip()
 
 
+OTH129 = [""]                                                # OTHER129's switch: "nostack" = no stack across a place
+
+
+def _nostack129():
+    return s129("s5") or OTH129[0] == "nostack"
+
+
 def _stack129(n):
     """the label stack a label node belongs to: (top, [labels top to bottom], the node under the bottom)."""
     top = n
@@ -91,7 +98,7 @@ def _stack129(n):
         if q is not None and q.k == "label" and len(q.kids) == 1 and q.kids[0] is top:
             top = q
             continue
-        if q is not None and q.k == "arg" and not s129("s5") and q.parent is not None and q.parent.k == "label" \
+        if q is not None and q.k == "arg" and not _nostack129() and q.parent is not None and q.parent.k == "label" \
                 and q.parent.kids[0] is q:                   # the place and the argument's own label: one spot
             top = q.parent
             continue
@@ -100,7 +107,7 @@ def _stack129(n):
     while x.k == "label":
         labs.append(x)
         x = x.kids[0]
-        if x.k == "arg" and x.kids and x.kids[0].k == "label" and not s129("s5"):
+        if x.k == "arg" and x.kids and x.kids[0].k == "label" and not _nostack129():
             x = x.kids[0]
     return top, labs, x
 
@@ -1127,8 +1134,8 @@ unit129("RULE129", "the gate rule and its six neighbours on %d programs, each ve
 if s129("s14"):
     _place129_real = _place129
 
-    def _place129(t, binds):                                 # noqa: F811  plant: no outside-reference check
-        return re.sub(r"\\\\k<\w+>", "", _place129_real(t, binds)) if "\\k" not in t else t.replace(".b", "")
+    def _place129(t, binds):                                 # noqa: F811  plant: a backreference outside the part ignored
+        return _place129_real(re.sub(r"\\k<\w+>", "", t), binds)
 rl_bad = []
 for nm_, e_, b_, want, tx_ in RULE129:
     Pg, err = run11(e_, b_)                                  # noqa: F821
@@ -1259,3 +1266,242 @@ msg_unseen = sorted(set(MSG129) - set(e_ for _, _, e_, _ in es_now))
 check("ERRSWEEP129", es_now and not es_bad and not es_msg and not msg_unseen,   # noqa: F821
       "%d compile-error lines read, each refused with no crash: bad %s; named form missing %s; message rows with no "
       "line %s" % (len(es_now), es_bad or "none", es_msg or "none", msg_unseen or "none"))
+
+BASES129 = ("core.md", "library.md", "parked.md")
+JOIN129 = {f_: re.sub(r"\n  +", " ", NOWS[f_]) for f_ in NOWS}   # noqa: F821  continuation lines joined
+SLUGS129 = ("reference-example-checked", "named-list-body-read", "label-names-gate", "argument-is-gate",
+            "part-of-argument", "last-placement", "same-path-last")
+
+unit129("MARK129", "the strong lean's marker phrase (predfix113's MARK113 string): the count at %s (git, by id) "
+        "above zero, now zero in all six documents; no variant phrase" % START129)
+mk_old129 = sum(OLD129[f_].count(MARK129) for f_ in OLD129)
+_mk_docs129 = dict(NOWS)                                     # noqa: F821
+if s129("s9"):
+    _mk_docs129["library.md"] = _mk_docs129["library.md"] + "\n" + MARK129
+mk_now129 = {f_: _mk_docs129[f_].count(MARK129) for f_ in _mk_docs129}
+mk_var129 = [f_ for f_ in _mk_docs129 if re.search(r"strong lean, entailed", _mk_docs129[f_])]
+check("MARK129", mk_old129 > 0 and not any(mk_now129.values()) and not mk_var129,   # noqa: F821
+      "at %s %d; now %s; a variant phrase in %s" % (START129, mk_old129, ", ".join(
+          "%s %d" % kv for kv in sorted(mk_now129.items())), mk_var129 or "none"))
+
+unit129("QUOTES129", "every \"His words\" bullet quoting one of the seven rulings: each quoted span (12 characters or "
+        "more) a verbatim substring of the record at the PINNED start commit %s, whitespace normalised" % START129)
+REC129 = re.sub(r"\s+", " ", _git8("docs/design/plan_row_bodies/COND-FAMILY.md", START129))   # noqa: F821
+qt_n, qt_bad, qt_b = 0, [], 0
+for f_ in BASES129:
+    t_ = JOIN129[f_]
+    if s129("s10") and f_ == "core.md":
+        t_ = t_.replace('"label-names-gate: yes all five"', '"label-names-gate: yes, all five"', 1)
+    for l_ in t_.split("\n"):
+        if not l_.startswith("- His words:") or not any('"%s:' % s_ in l_ for s_ in SLUGS129):
+            continue
+        qt_b += 1
+        for seg in l_.split('"')[1::2]:
+            seg = re.sub(r"\s+", " ", seg).strip()
+            if len(seg) < 12 or re.search(r"(?m)^%s(?:, [^:]*)?: " % re.escape(seg), t_):
+                continue                                     # too short, or the name of a printed line, not his words
+            qt_n += 1
+            if seg not in REC129:
+                qt_bad.append((f_, seg[:80]))
+for x_ in qt_bad:
+    print("   NOT IN THE RECORD %s: %s" % x_)
+check("QUOTES129", qt_b >= 7 and qt_n >= 14 and not qt_bad, "%d bullets, %d quoted spans; not in the record: %s" % (   # noqa: F821
+    qt_b, qt_n, qt_bad or "none"))
+
+unit129("STALE129", "the texts this lane retires, searched in the base files with continuation lines joined: none "
+        "printed (each present at %s, counted from git by id)" % START129)
+STALE129 = [
+    (r"is binding-prefix's compile error", "last-placement: one-use-read's old statement"),
+    (r"not referenced unambiguously", "last-placement: argument-default's condition 1"),
+    (r"which no list opens", "argument-is-gate: the place passes nothing unless listed"),
+    (r"never passes an argument", "argument-is-gate: the old lean's spelling"),
+    (r"passes nothing of", "argument-is-gate: the old lean's spelling"),
+    (r"the strong lean reads", "argument-is-gate: label-interface's member bullet"),
+]
+if s129("s11"):
+    STALE129.append((r"label-names-gate", "planted"))
+OLDJ129 = {f_: re.sub(r"\n  +", " ", OLD129[f_]) for f_ in BASES129}
+st_hits129 = [(f_, why) for rx_, why in STALE129 for f_ in BASES129 if re.search(rx_, JOIN129[f_])]
+st_absent129 = [rx_ for rx_, why in STALE129 if not any(re.search(rx_, OLDJ129[f_]) for f_ in BASES129) and why != "planted"]
+for x_ in st_hits129:
+    print("   STALE %s (%s)" % x_)
+check("STALE129", not st_hits129 and not st_absent129, "%d retired texts searched; found %s; absent at the start "   # noqa: F821
+      "(a search that cannot fire) %s" % (len(STALE129), st_hits129 or "none", st_absent129 or "none"))
+
+unit129("PART129", "part-of-argument: each placed-part program's answers against a python regex typed by hand from "
+        "the ruled statement (the part's text only, its context's condition left behind), never from the documents")
+ISOB129 = 'isodate := [year = /\\d{4}/] SEQ "-" SEQ [month = /\\d\\d/] SEQ "-" SEQ [day = /\\d\\d/]'
+DATEB129 = 'date := [year = /\\d{4}/] SEQ "-" SEQ /\\d\\d-\\d\\d/ & (year: < 2100)'
+LT2100 = r"(?:1\d{3}|20\d\d)!"                          # a leading zero is no number (nested-scope's `042xx` FAILS)
+PART129 = [
+    ('isodate.year SEQ "!"', [ISOB129], r"\d{4}!"),
+    ('date.year SEQ "!"', [DATEB129], r"\d{4}!"),
+    ('[y = date.year] SEQ "!" & (y: < 2100)', [DATEB129], LT2100),
+    ('X.d.year SEQ "!"', ['X := [d = isodate] SEQ ";"', ISOB129], r"\d{4}!"),
+    ('Y(isodate) & (Y.y: < 2100)', ['Y(date) := [y = date.year] SEQ "!"', ISOB129], LT2100),
+]
+PTX129 = ["2024!", "2150!", "1999!", "0999!", "24!", "2024-01-02!", "x 2150! 2024! 0999!", "2099!2100!", "12345!"]
+if s129("s12"):
+    PART129[1] = (PART129[1][0], PART129[1][1], LT2100)
+pt_bad = []
+for e_, b_, rx_ in PART129:
+    Pg, err = run11(e_, b_)                                  # noqa: F821
+    if Pg is None:
+        pt_bad.append((e_, "refused: " + (err or "")[:80]))
+        continue
+    R_ = re.compile(rx_)
+    for t_ in PTX129:
+        m_ = R_.search(t_)
+        want = (R_.fullmatch(t_) is not None, (m_.start(), m_.end()) if m_ else None,
+                tuple((x_.group(0), x_.start()) for x_ in R_.finditer(t_)))
+        if ans11(Pg, [t_])[0] != want:                       # noqa: F821
+            pt_bad.append((e_, t_, ans11(Pg, [t_])[0], want))   # noqa: F821
+for x_ in pt_bad:
+    print("   NOT AS RULED %s" % (x_,))
+check("PART129", not pt_bad, "%d programs x %d texts, three modes; not as ruled: %d" % (len(PART129), len(PTX129), len(pt_bad)))   # noqa: F821
+
+unit129("OTHER129", "each open reading the lane leaves to the owner, BOTH readings run: the printed one (this model) "
+        "and the other (a switch), each against a verdict and texts typed by hand from the reading's own words")
+B1B = "B1(rx) := /${[(=) = [p = rx]]}xx/"
+OTHER129 = [   # (question, program, binds, switch of the other reading, printed verdict, other verdict, texts)
+    ("list-over-label", "B1(A) & (B1.h: <5)", [AH129, B1B], "A2", "error", "legal", [("3xx", "HOLDS"), ("7xx", "FAILS")]),
+    ("sent-over-body-label", "Rs(x:, A) & (x.h: <5)", [AH129, "Rs(l:, v) := /${[l = [p = v]]}xx/"], "SENT", "legal",
+     "error", [("3xx", "HOLDS"), ("7xx", "FAILS")]),
+    ("forwarded-place", "Mx(A) & (Mx.h: <5)", [AH129, "Mx(r) := /<${[(=) = L2(r)]}>/", "L2(x) := /${[(=) = x]}/"], "A0",
+     "legal", "error", [("<3>", "HOLDS"), ("<7>", "FAILS")]),
+    ("stacked-across-place", "Y & (Y.c.p.h: <5)", [AH129, BP129, 'Y := [c = B([a = A])] SEQ "!"'], "nostack", "legal",
+     "error", [("3xx!", "HOLDS"), ("7xx!", "FAILS")]),
+    ("stacked-across-place", "B([a = A]) & (B.p.a.h: <5)", [AH129, BP129], "nostack", "legal", "legal",
+     [("3xx", "HOLDS"), ("7xx", "FAILS")]),
+]
+if s129("s13"):
+    OTHER129[0] = OTHER129[0][:4] + ("legal",) + OTHER129[0][5:]
+
+
+def _run_other129(e_, b_, sw):
+    if sw == "nostack":
+        OTH129[0] = "nostack"
+    else:
+        X129[0] = False
+        MODE128[0] = sw if sw in ("A0", "A2") else "A"       # noqa: F821
+        SENT128[0] = sw == "SENT"                            # noqa: F821
+    try:
+        return run11(e_, b_)                                 # noqa: F821
+    finally:
+        OTH129[0] = ""
+        X129[0] = True
+        MODE128[0], SENT128[0] = "A", False                  # noqa: F821
+
+
+ot_bad = []
+for q_, e_, b_, sw, pv, ov, tx_ in OTHER129:
+    for rd, (Pg, err) in (("printed", run11(e_, b_)), ("other", _run_other129(e_, b_, sw))):   # noqa: F821
+        want = pv if rd == "printed" else ov
+        got = "legal" if Pg is not None else "error"
+        line_ = "   %s `%s` %s reading: %s" % (q_, e_, rd, got)
+        if Pg is not None:
+            line_ += " " + "; ".join("%s %s" % (t_, "HOLDS" if Pg.whole(t_) else "FAILS") for t_, _ in tx_)
+            if any(("HOLDS" if Pg.whole(t_) else "FAILS") != w_ for t_, w_ in tx_):
+                ot_bad.append((q_, e_, rd, "texts"))
+        else:
+            line_ += " (%s)" % (err or "")[:110]
+        print(line_)
+        if got != want:
+            ot_bad.append((q_, e_, rd, got))
+check("OTHER129", not ot_bad, "%d open readings, both run; not as stated: %s" % (len(OTHER129), ot_bad or "none"))   # noqa: F821
+
+unit129("SUCCESSOR129", "every in-force model re-run: predfix113 in full (its SUCCESSOR113 re-runs predfold1128 and the "
+        "twenty-one before it, their outputs dumped beside it); each red DECLARED in predfold1129_succ_decl.tsv by "
+        "predfix90's `red_key10` key (the red's own FAIL line, no document line numbers); a traceback never")
+P90_129 = os.path.join(LANES129, "predfix90_evidence", "predfix90_model.py")
+_src90_129 = builtins.open(P90_129, encoding="utf-8").read()
+exec(compile(_src90_129[_src90_129.index("CRASH10 = re.compile("):_src90_129.index("succ_bad, succ_n, succ_t, succ_seen = ")],   # noqa: S102
+             P90_129, "exec"), globals())                    # predfix90's red key, verbatim
+DECLF129 = os.path.join(HERE129, "predfold1129_succ_decl.tsv")
+SD129 = {}
+if os.path.exists(DECLF129):
+    for l_ in builtins.open(DECLF129, encoding="utf-8").read().split("\n"):
+        if l_ and not l_.startswith("#"):
+            m_, r_, cls_, why_, key_ = l_.split("\t", 4)
+            SD129.setdefault(m_, {})[r_] = (cls_, key_, why_)
+if s129("s15") and SD129:
+    _pm129 = sorted(SD129)[0]
+    _pr129 = sorted(SD129[_pm129])[0]
+    SD129[_pm129][_pr129] = (SD129[_pm129][_pr129][0], SD129[_pm129][_pr129][1] + " planted", SD129[_pm129][_pr129][2])
+SCR129 = os.environ.get("PREDFOLD1129_SUCCDIR", "")
+RD129 = os.environ.get("PREDFOLD1129_READDUMP") == "1"
+sc_bad, sc_seen, sc_outs = [], [], {}
+if not LIGHT129 or RD129:
+    if not SCR129 or not os.path.isdir(SCR129):
+        sc_bad.append(("PREDFOLD1129_SUCCDIR", SCR129, "NOT A DIRECTORY"))
+    elif not RD129 and os.listdir(SCR129):
+        sc_bad.append(("PREDFOLD1129_SUCCDIR", SCR129, "NOT EMPTY (a stale dump is read as a model)"))
+    elif not RD129:
+        env = {k: v for k, v in os.environ.items() if not k.startswith((
+            "PREDFIX111_", "PREDFOLD1125_", "PREDFOLD1127_", "PREDFIX90_", "PREDFIX112_", "PREDFOLD1128_", "PREDFIX113_",
+            "PREDFOLD1129_"))}
+        env["PREDFIX113_SUCCDIR"] = SCR129
+        o_ = subprocess.run([sys.executable, "-I", "-B", P113], stdout=subprocess.PIPE, stderr=subprocess.STDOUT,
+                            text=True, env=env, timeout=5950).stdout
+        builtins.open(os.path.join(SCR129, "predfix113.out"), "w", encoding="utf-8").write(o_)
+    if SCR129 and os.path.isdir(SCR129):
+        for f_ in sorted(os.listdir(SCR129)):
+            if f_.endswith(".out"):
+                sc_outs[f_[:-4]] = builtins.open(os.path.join(SCR129, f_), encoding="utf-8").read()
+    for mname, out in sorted(sc_outs.items()):
+        lines_ = out.rstrip("\n").split("\n")
+        last = lines_[-1]
+        mm = re.match(r"%s_model: (\d+) checks, (\d+) failed(?: \(([^)]*)\))?$" % mname, last)
+        reds = {}
+        if mm and not any(x_.startswith("Traceback") for x_ in lines_):
+            for r in [x_.strip() for x_ in (mm.group(3) or "").split(",") if x_.strip()]:
+                fl_ = next((l_ for l_ in lines_ if l_.startswith("FAIL %s:" % r) or
+                            re.match(r"%s\s+FAIL\b" % re.escape(r), l_)), "")
+                reds[r] = red_key10(r, lines_, fl_)          # noqa: F821
+        else:
+            reds["TRACEBACK"] = ("TRACEBACK", last)
+        decl = SD129.get(mname, {})
+        print("   %-13s last line: %s" % (mname, last[:150]))
+        for r, (cls_, key_) in sorted(reds.items()):
+            sc_seen.append((mname, r, cls_, key_))
+            d_ = decl.get(r)
+            if cls_ == "TRACEBACK" or d_ is None or d_[1] != key_:
+                sc_bad.append((mname, r, "UNDECLARED" if d_ is None else ("KEY CHANGED" if cls_ != "TRACEBACK" else cls_)))
+        for r in sorted(set(decl) - set(reds)):
+            sc_bad.append((mname, r, "DECLARED, NOW GREEN"))
+    WD129 = os.environ.get("PREDFOLD1129_WRITEDECL", "")
+    if WD129:
+        with builtins.open(WD129, "w", encoding="utf-8") as fh:
+            fh.write("# model\tred\tclass\twhy\tkey (red_key10: the red's own FAIL line text, no document line numbers)\n")
+            for mname, r, cls_, key_ in sc_seen:
+                fh.write("%s\t%s\t%s\t%s\t%s\n" % (mname, r, cls_, SD129.get(mname, {}).get(r, ("", "", "WHY?"))[2], key_))
+    for x_ in sc_bad:
+        print("   NOT AS DECLARED %s %s: %s" % x_)
+    check("SUCCESSOR129", len(sc_outs) >= 23 and not sc_bad, "%d models read, %d reds, each against its declared "   # noqa: F821
+          "key (%d declared): %s" % (len(sc_outs), len(sc_seen), sum(len(v) for v in SD129.values()),
+                                     sc_bad or "all as declared"))
+else:
+    print("   LIGHT: SUCCESSOR129 not run")
+
+PLANTS129 = {"s1": "RULE129", "s2": "RULE129", "s3": "RULE129", "s4": "RULE129", "s5": "OTHER129", "s6": "CENSUS129",
+             "s7": "SWEEP129", "s8": "ERRSWEEP129", "s9": "MARK129", "s10": "QUOTES129", "s11": "STALE129",
+             "s12": "PART129", "s13": "OTHER129", "s14": "RULE129", "s15": "SUCCESSOR129"}
+if SAB129 == "all":
+    caught = []
+    for q_, tgt in sorted(PLANTS129.items(), key=lambda kv: int(kv[0][1:])):
+        env = dict(os.environ, PREDFOLD1129_SABOTAGE=q_, PREDFOLD1129_LIGHT="1")
+        if q_ == "s15":
+            env["PREDFOLD1129_READDUMP"] = "1"
+        o_ = subprocess.run([sys.executable, "-I", "-B", MY129], stdout=subprocess.PIPE, stderr=subprocess.STDOUT,
+                            text=True, env=env, timeout=3000)
+        fl = [l_ for l_ in o_.stdout.split("\n") if l_.startswith("FAIL ")]
+        ok_ = o_.returncode != 0 and any(l_.startswith("FAIL %s:" % tgt) for l_ in fl) and "Traceback" not in o_.stdout
+        caught.append((q_, tgt, ok_))
+        print("   PLANT %s -> %s: %s; FAIL lines: %s" % (q_, tgt, "CAUGHT" if ok_ else "NOT CAUGHT",
+                                                       [l_[:90] for l_ in fl]))
+    check("PLANTS129", all(c_[2] for c_ in caught), "%d plants, caught %d" % (len(caught), sum(c_[2] for c_ in caught)))   # noqa: F821
+
+failed129 = [n_ for n_, ok_ in RESULTS if not ok_]           # noqa: F821
+print("predfold1129_model: %d checks, %d failed%s" % (len(RESULTS), len(failed129),   # noqa: F821
+                                                     (" (%s)" % ", ".join(failed129)) if failed129 else ""))
+sys.exit(1 if failed129 else 0)
