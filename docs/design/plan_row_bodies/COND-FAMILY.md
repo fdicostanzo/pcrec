@@ -12475,3 +12475,19 @@ RULED (answered by slug): the first reading as asked, for `[n = (P SEQ /,(?<d>\d
 `/(?<d>\d)/`: "Legal, n's own `d`: nothing is skipped"; `n.P.d` reads P's. It is what the documents print since
 lane predfix112 (a marked reading there); the mark becomes his ruling at the next fold. It keeps body-own-name
 without an exception; gate-beside-label stands for a read where every candidate needs a skip.
+
+### 2026-11-27 OWNER RULING — carve-out-reading: "agree with lean" (the door); an OBSERVATION: the writer can leave a label out of the list
+tags: core/labels/rule/one-path lib/convention/argument-labels core/labels/export/export-list core/labels/paths/call-prefix
+His words, verbatim: "carve-out-reading: agree with lean
+That said, the writer could have hidden the d from the export rx as well. ((=,_=d)=..."
+RULED (answered by slug), the statement AS ASKED, quoted: "**carve-out-reading:** a body's export list opens a
+door through the argument's place. A path may pass it, and one-path and body-own-name apply to what is reached as
+they do anywhere else."; the lean: "yes, the door. An argument can then cause an error at the caller's read but
+can never change an answer silently." The clause "in which case they count as the body's own labels" of the
+earlier statement is the manager's, WITHDRAWN.
+His OBSERVATION (his words; the message ends mid-form): a body's writer who does not want an argument's `d`
+beside the body's own can leave it out of the list, the "all but one" form `[(=, _ = d) = rx]` of
+core/labels/export/export-list. The manager's reading: it is the body author's remedy for the clash of problem 2
+(Bo), available today; nothing new to rule.
+STILL A STRONG LEAN, not ruled: the base statement no-path-through-argument itself ("a path never goes through an
+argument's place ..."); the manager asks it as a ruling once the study's other questions are settled.
