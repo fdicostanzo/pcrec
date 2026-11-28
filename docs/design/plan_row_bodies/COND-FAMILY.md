@@ -12260,3 +12260,12 @@ The manager's readings, for that fold to test: the error is raised when ANY targ
 behind a gate under the read's start, whether or not another legal target exists; `g.h` over `/(?<g>${A})x/`
 (already a compile error) is the same rule with no other target; a private part beside a written label is
 unchanged (skip-past-wall: its labels do not exist for the read).
+
+### 2026-11-27 OWNER PROPOSAL on gate-twice-scope: "skipping steps in a path is available when there is exactly one path possible from the start to any end label visible from that start"
+tags: core/labels/rule/paths core/labels/rule/alone-as-middle core/labels/rule/kinds core/labels/flow
+His words, verbatim: "gate-twice-scope: would it be more clear if we said that: skipping steps in a path is
+available when there is exactly one path possible from the start to any end label visible from that start."
+Class: a PROPOSAL put as a question (not an answer choosing a reading; gate-twice-scope stays open). It would
+restate his rule 4 ("if a legal path exists a.b.c and c can be unambiguously referenced from a, then b can be
+skipped a.c"), whose "unambiguously" was put and ruled on 2026-11-23 as "the existing rule: across `&` a name
+both sides set is ambiguous; in a sequence the last mention wins; across `|` the branch taken."
