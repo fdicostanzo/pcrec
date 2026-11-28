@@ -48,7 +48,8 @@ gives a build go in his own words; a build then goes THROUGH MAIN (architecture 
   a critic round (two coordinators negotiating numbers cost a rename, 2026-11-18).
 - **No box jobs.** Your runs are single-process evidence scripts under `timeout` (python3 `-I` `re`;
   libpcre2 as a LIBRARY through the evidence scripts' callout model). No `make` except
-  `make -s test-plan-lint`; no suite; nothing in the box queue; no timing.
+  `make -s test-plan-lint` and `make -s test-doc-lint` (both before every delivery; doc-lint added 2026-11-28 after its
+  `-g` page budget went red on CI at ba4d73c20); no suite; nothing in the box queue; no timing.
 - **A PCRE2 fact from its source** comes only from a `pcre2-reader` agent (D181), spawned with no name.
 
 ## 1. Wake up (in order)
