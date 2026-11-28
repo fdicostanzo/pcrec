@@ -12890,3 +12890,35 @@ WHOLE x73 HOLDS a= 3 b= 7
 WHOLE 3x7 FAILS a= 3 b= 7
 SEARCHED x7 3x7 x73 [('3', 3)]
 FIND-ALL x73 3x7 x12 [('x73', 0), ('3', 4), ('x12', 8)]
+
+### 2026-11-28 OWNER, a CORRECTION of the manager's reading on sent-over-body-label ("stacked" are "ordered as usual"; "p is a gate"); and DISCUSSION on list-over-label: `[(=) = rx]` "is a pass thru export"
+tags: core/labels/rule/sent-over-body-label core/labels/rule/list-over-label core/labels/rule/gates core/labels/export/export-list core/labels/rule/caller-label
+To the manager's telling of two DERIVED answers (not asked as questions; "Object if either looks wrong":
+sent-over-body-label legal for `x.h` and `x.p.h` over `Rs(l:, v) := /${[l = [p = v]]}xx/`, "the two labels are
+stacked on one gate, and you ruled stacked labels equal names of one spot"; list-over-label an error for `B1.h`
+over `[(=) = [p = rx]]`, "`B1.p.h` is legal, and `[p = [(=) = rx]]` passes both").
+His words, verbatim: "sent-over-body-label: this was refined and is not a rule. "stacked" are not the same but
+ordered as usual. Sometimes you can skip the upper stack label per usual skip rules. Here however you can't
+because p is a gate.
+
+list-over-label:  need more specific examples.
+
+[p = [(=) = rx]]
+Is interesting as it is basically the same as just using the p label.
+
+[(=) = rx]
+I'm thinking this does export the labels but since they are not mentioned, they are not locally visible. It is a
+pass thru export. The above wrap of p puts them behind p again which makes it the same as if you'd used p alone."
+Classes: (1) his CORRECTION, by slug, of a reading told to him (the manager did not ask it as a question; put back
+to him for a yes as the read `x.p.h` legal, `x.h` a compile error). Stacked labels are ORDERED steps (the record:
+path-rules, 2026-11-23, "Stacked labels chain"; the manager's "stacked labels do not chain" withdrawn that day);
+the label written directly on the crossing (`p`) is the gate and is never skipped; an upper label may be skipped
+"per usual skip rules". WITHDRAWN by the manager: the reading in the label-names-gate entry "a stacked label on a
+gate: both are names of the one gate ... `a.d` and `b.d` and `a.b.d` are legal" (`a.d` skips the gate `b`), and
+the lane's printed readings that rest on it (sent-over-body-label `x.h` legal; stacked-across-place `Y.c.p.h`).
+A TELLING OF THE MANAGER'S NOW IN DOUBT, to be told to him: with argument-is-gate he was told "`Y.c.a.h` ...
+becomes legal, as a full path that skips nothing"; with the body's `p` on the place it skips the gate `p`.
+(2) DISCUSSION (class LEAN: "I'm thinking"), nothing ruled: `[(=) = rx]` exports the argument's labels as a
+pass-through, "not locally visible" because not mentioned; `[p = [(=) = rx]]` "is basically the same as just
+using the p label". The manager's "`[p = [(=) = rx]]` passes both" is WITHDRAWN. list-over-label is re-put with
+specific examples.
