@@ -1380,3 +1380,9 @@ wake.md says (read the draft WHOLE first; A4 is a ruled-words finding: read his 
 - Queue left for him: sent-over-body-label, list-over-label (the lane prints what the gate rule derives);
   the derived answers of label-above-call and forwarded-place to SHOW him; the later list in wake.md.
 - Main gave review number r114 for predfold1129 (design); main is closed for reset, next free r115.
+- Lane predfold1129 DELIVERED (tip f154e5d0b), accepted, merged at a156faf93, stopped: lint 10658/0; model 10
+  checks 0 failed; plan-lint and doc-lint green. Census at 43bbce01f: 413 printed programs, 120 not parsed, 227
+  reads judged; error to legal 17 base + 10 details; legal to error 13 base (each re-spelled, equal answers);
+  marker 40 -> 0. New pieces core/labels/rule/gates, core/labels/paths/placed-part. Lane's new question:
+  stacked-across-place (`Y.c.p.h`). Critic round r114 LAUNCHED (coordinator crit-predfold1129). IN FLIGHT.
+- Asked the owner branch-in-loop (run in the record); sent-over-body-label and list-over-label told as derived.
