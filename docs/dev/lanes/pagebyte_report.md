@@ -14,3 +14,4 @@ make -s test-doc-lint (0 failed), make -s test-plan-lint (0 failed), entry --sel
 
 ## STATE AT HANDOFF
 Committed on lane/pagebyte. No rulings applied (rulings file empty). Nothing in flight.
+OWED: none
