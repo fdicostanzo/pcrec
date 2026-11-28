@@ -12391,3 +12391,22 @@ agree on every printed program (`c.d`, both `B.d`, `X.d` over `[a = P] SEQ /;(?<
 only where an argument is placed under a WRITTEN label of the body (`B(rx) := /${[p = rx]}-(?<d>\d)/`, read
 `B.d`): RUN it under both and list it if they part; (c) the argument's own label stays read by its source
 (`A.d`), as printed.
+
+### 2026-11-27 OWNER, a LEAN and a QUESTION: "Can the path go through an argument? ... I'm leaning at saying it's never true"
+tags: core/labels/rule/one-path core/labels/rule/paths core/labels/paths/call-prefix lib/convention/argument-labels core/labels/export/arguments
+His words, verbatim: "X.d over [a = P] SEQ /;(?<d>\d)/: I was thinking of this very case. Can the path go through
+an argument? We've only done paths through bindings which are known at the time of the binding macro like A := B,
+B is known at As binding. But that isn't true for args. I'm leaning at saying it's never true as it's
+unpredictable and preciously legal binding macros can error depending on the arguments they receive. Plus a
+sending can label an argument if they want access. Thoughts?"
+Class: a LEAN with a QUESTION ("Thoughts?"); nothing ruled. ("preciously" read as "previously", "a sending" as
+"a sender": phone autocorrect.)
+What the record and documents hold that it meets (quoted): transform-export, 2026-11-22, "transform-export: yes."
+and before it "wrapper-export: agree (a). I was worried you'd say peek() doesn't work. It's just a definition
+change."; lib/convention/argument-labels: "the list on it, `[(=) = x]`, takes every label the argument exports as
+the body's own, so the caller reads them through the call (`peek.d`; `[c = peek(..)]`, `c.d`)"; and the printed
+line "Through a call, the middle label skipped" (`B(A) & (B.h: <5)`, B(rx) := `/${[p = rx]}xx/`), a read through a
+label the BODY writes on the argument's place. A grep of the printed conditions that read through a macro's name
+(not classed by the model): `B.d` 6, `B.h` 4, `identity.h` 2, `identity.d` 2, `B.dd.d` 2, `B.a` 2, and one each
+of `peek.d`, `pair.x`, `pair.d`, `pair.b.x`, `list_of.h`, `identity.a.h`, `W.h`, `B.y.a`, `B.x.a`, `B.p.d`,
+`B.n.h`, `B.a.d`.
