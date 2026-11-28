@@ -74,8 +74,9 @@ class R2129:
     name = None
     kids = ()
 
-    def __init__(self, call):
+    def __init__(self, call, argn=None):
         self.call = call
+        self.argn = argn
 
 
 def _pname129(P, n):
@@ -147,7 +148,7 @@ def _norm129(pre, chain):
     out = []
     for n in chain:
         if isinstance(n, R2129):
-            out = None
+            out = list(pre.rootpath.get(id(n.argn), [n.argn])) if n.argn is not None else None
             continue
         if out is None:
             out = list(pre.rootpath.get(id(n), [n]))
@@ -171,7 +172,7 @@ def _walk_down129(start):
             for c, argn in _arg_contents129(n):
                 if _walled_place129(n, argn):
                     continue                                 # the body walls the place: no way in from the call
-                m = R2129(n)
+                m = R2129(n, argn)
                 ch = chain + [m, c]
                 out.append((c, ch))
                 go(c, ch, depth + 1)
@@ -282,11 +283,10 @@ class Pre129:
         self.order, self.rootpath = {}, {}
         k = [0]
 
-        def go(n, path):
-            if id(n) not in self.order:
-                self.order[id(n)] = k[0]
-                self.rootpath[id(n)] = path
-                k[0] += 1
+        def go(n, path):                                     # the LAST visit wins: an argument placed twice
+            self.order[id(n)] = k[0]                         # is read at its last placement (last-placement 2)
+            self.rootpath[id(n)] = path
+            k[0] += 1
             for c in n.kids:
                 go(c, path + [c])
         go(self.P.root, [self.P.root])
@@ -366,9 +366,11 @@ def walk129(pre, path, rtid="P", scope=None, rpos=None, array=False):
         cands = []
         for cur, named, fc in routes:
             for node, chain in _walk_down129(cur):
-                if x not in _names129(P, node, rtid) and not (node.k in ("use", "call") and node.name == x and
-                                                                node.tid != rtid and False):
+                if x not in _names129(P, node, rtid):
                     continue
+                if node.k in ("use", "call") and node.parent is not None and node.parent.k == "arg" \
+                        and not s129("s4"):
+                    continue                                 # the shorthand: a start only (shorthand-outside)
                 if last and node.k not in ("label", "grp"):
                     continue
                 walls, gates, skips, full = _classify129(P, chain, rtid, named + [node])
@@ -471,7 +473,7 @@ def reads129(pre):
         seen.add((id(n), n.tid))
         scope = next((c for c in reversed(chain[:-1]) if getattr(c, "k", None) in ("use", "call")
                       and c.kids and c.kids[0].tid == n.tid), None)
-        if scope is None:
+        if scope is None and n.tid != "P":
             continue
         t = P.texts[n.tid][n.a:n.b]
         for path, a, b in reads_of(t):                       # noqa: F821
@@ -493,6 +495,194 @@ def verdict129(expr, binds):
         except Refused129 as e:
             out.append((".".join(path), rtid, ("refused", str(e)), None))
     return pre, out
+
+
+# ================================================================== MECH129: python `re` from the parsed text
+class Mech129Error(Exception):
+    pass
+
+
+class RePg129(RePg):                                         # noqa: F821
+    """RePg with several needs: each a set of group names of which one must be set."""
+
+    def __init__(self, rx, needs):
+        RePg.__init__(self, rx)                              # noqa: F821
+        self.needs = needs
+
+    def _ok(self, m):
+        return m is not None and all(any(m.group(g) is not None for g in gs) for gs in self.needs)
+
+
+CONDRX129 = re.compile(r"\(\s*@?[A-Za-z_][\w.]*\s*:\s*(?:(==|<=|>=|<|>)\s*)?(-?\d+|\"[^\"]*\")\s*\)$")
+
+
+def _cond129(ct):
+    m = CONDRX129.match(ct.strip())
+    if not m:
+        raise Mech129Error("condition " + ct[:40])
+    op, v = m.group(1) or "==", m.group(2)
+    if v.startswith('"'):
+        if op != "==":
+            raise Mech129Error("an ordered string test")
+        lit = v[1:-1]
+        return lambda t: t == lit, [lit]
+    n = int(v)
+    f = {"==": lambda t: int(t) == n, "<": lambda t: int(t) < n, "<=": lambda t: int(t) <= n,
+         ">": lambda t: int(t) > n, ">=": lambda t: int(t) >= n}[op]
+    return f, None
+
+
+DIGITSUB129 = re.compile(r"^(?:\\d(?:\{\d\})?|\[0-9\](?:\{\d\})?)+$")
+
+
+def _narrow129(sub, test, lits):
+    """the strings of a fixed-length digit pattern that pass the test, as an alternation (enumerated)."""
+    import itertools
+    if lits is not None:
+        ok = [x for x in lits if re.fullmatch(sub, x)]
+        return "(?:%s)" % "|".join(re.escape(x) for x in ok) if ok else "(?!)"
+    if not DIGITSUB129.match(sub):
+        raise Mech129Error("a target that is no fixed run of digits: " + sub[:30])
+    n = len(re.sub(r"\\d|\[0-9\]", "0", re.sub(r"(\\d|\[0-9\])\{(\d)\}", lambda m: "0" * int(m.group(2)), sub)))
+    ok = ["".join(t) for t in itertools.product("0123456789", repeat=n) if test("".join(t))]
+    return "(?:%s)" % "|".join(ok) if ok else "(?!)"
+
+
+def _plain129(rx_):
+    """refuse a regex whose narrowed targets would not mean the condition: a hole left as text, an atomic group, a
+    lookaround, a backreference, a possessive quantifier, or a quantified group holding a target (the label of a
+    loop is the last pass's own; python's capture is the last pass that set it)."""
+    for bad in ("${", "(?>", "\\k", "(?=", "(?!", "(?<=", "(?<!", "*+", "++", "?+", "}+", "(?(", "(?J"):
+        if bad in rx_:
+            raise Mech129Error("a construct the narrowing cannot carry: " + bad)
+    st, i = [], 0
+    while i < len(rx_):
+        c = rx_[i]
+        if c == "\\":
+            i += 2
+            continue
+        if c == "[":
+            j = i + 1
+            if j < len(rx_) and rx_[j] == "^":
+                j += 1
+            if j < len(rx_) and rx_[j] == "]":
+                j += 1
+            while j < len(rx_) and rx_[j] != "]":
+                j += 2 if rx_[j] == "\\" else 1
+            i = j + 1
+            continue
+        if c == "(":
+            st.append(i)
+        elif c == ")":
+            a = st.pop()
+            if i + 1 < len(rx_) and rx_[i + 1] in "*+?{" and "(?P<T" in rx_[a:i]:
+                raise Mech129Error("a target under a quantifier")
+        i += 1
+
+
+def mech129(expr, binds):
+    """the program's regex, built from its parsed text: each read's target spot(s) a named group narrowed by its
+    condition. Raises Mech129Error where the text is beyond it, Refused129 where GATE129 refuses a read."""
+    pre = Pre129(expr, binds)
+    P = pre.P
+    spots = []                                               # (normalized chain ids, group name)
+    needs = []
+    k = [0]
+    for path, rtid, scope, pos, arr, ct in reads129(pre):
+        if arr:
+            raise Mech129Error("a group question")
+        r = walk129(pre, path, rtid, scope, pos, arr)
+        test, lits = _cond129(ct)
+        chains = r[2] if isinstance(r[1], list) else [r[2]]
+        gs = []
+        for ch in chains:
+            k[0] += 1
+            g = "T%d" % k[0]
+            spots.append(([id(x) for x in _norm129(pre, ch)], g, test, lits))
+            gs.append(g)
+        needs.append(gs)
+    stack = []
+
+    def mark(n):
+        ids = [id(x) for x in stack]
+        for ch, g, test, lits in spots:
+            if ch == ids:
+                return g, test, lits
+        return None
+
+    def wrap(n, inner):
+        m = mark(n)
+        if not m:
+            return "(?:%s)" % inner
+        g, test, lits = m
+        return "(?P<%s>%s)" % (g, _narrow129(inner, test, lits))
+
+    def r_(n):
+        stack.append(n)
+        try:
+            return r1(n)
+        finally:
+            stack.pop()
+
+    def r1(n):
+        if n.k == "alt":
+            return wrap(n, "|".join(r_(c) for c in n.kids)) if mark(n) else "(?:%s)" % "|".join(r_(c) for c in n.kids)
+        if n.k == "and":
+            pats = [c for c in n.kids if c.k != "cond"]
+            if len(pats) != 1:
+                raise Mech129Error("& between patterns")
+            return r_(pats[0])
+        if n.k == "seq":
+            return "".join(r_(c) for c in n.kids)
+        if n.k in ("label", "list", "use", "call", "arg", "hole"):
+            return wrap(n, r_(n.kids[0]))
+        if n.k == "leaf":
+            if "\\" in P.texts[n.tid][n.a:n.b]:
+                raise Mech129Error("an escape in a string")
+            return re.escape(TR11._unstring(P.texts[n.tid][n.a:n.b]))   # noqa: F821
+        if n.k == "rx":
+            return rxt(n)
+        if n.k == "grp":
+            return wrap(n, r_(n.kids[0]))
+        raise Mech129Error("a node " + n.k)
+
+    def rxt(n):
+        t = P.texts[n.tid]
+        out, i = [], n.a
+        for c in sorted(n.kids, key=lambda c: c.a):
+            seg = t[i:c.a]
+            if "(?<" in re.sub(r"\(\?<[=!]", "", seg):
+                raise Mech129Error("a group the parser kept as text")
+            out.append(seg)
+            if c.k == "hole":
+                out.append(r_(c))
+                i = c.b
+            else:                                            # a named group: its own rx node inside
+                stack.append(c)
+                try:
+                    m = mark(c)
+                    inner = r_(c.kids[0])
+                    out.append("(?P<%s>%s)" % (m[0], _narrow129(inner, m[1], m[2])) if m else "(?:%s)" % inner)
+                finally:
+                    stack.pop()
+                i = c.b
+        out.append(t[i:n.b])
+        return "".join(out)
+    for x, y in P.conds:
+        if len(reads_of(P.texts["P"][x:y])) != 1:           # noqa: F821
+            raise Mech129Error("a condition that is not one read")
+    for n, _ in _walk_down129(P.root):
+        if n.k == "cond" and len(reads_of(P.texts[n.tid][n.a:n.b])) != 1:   # noqa: F821
+            raise Mech129Error("a body's condition that is not one read")
+    rx_ = r_(P.root)
+    _plain129(rx_)
+    for ch, g, test, lits in spots:
+        if "(?P<%s>" % g not in rx_:
+            raise Mech129Error("a target spot not rendered (%s)" % g)
+    try:
+        return RePg129(rx_, needs)
+    except re.error as e:
+        raise Mech129Error("re: " + str(e))
 
 
 # ================================================================== the census: every printed read, old walker against GATE129
