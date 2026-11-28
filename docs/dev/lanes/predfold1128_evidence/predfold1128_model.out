@@ -1,0 +1,163 @@
+== library bodies (library.md): chars ([ch = /(?s:.)/])* ; length(S) := chars & (count((chars.ch: /(?s:.)/)): S) ; month_numbered(S) := months & (months.mname.index: S) ; between: >= lo & <= hi
+== months := [mname = [/Jan(?:uary)?/, /Feb(?:ruary)?/, /Mar(?:ch)?/, /Apr(?:il)?/, /May/, /June?/, /July?/, /Aug(?:ust)?/, /Sep(?:tember)?/, /Oct(?:ober)?/, /Nov(?:ember)?/, /Dec(?:ember)?/]]
+PATCH R-5 walk10: 3 lines replaced by 17
+PATCH R-5 path10: 2 lines replaced by 10
+PATCH R-5 g_eval: 2 lines replaced by 3
+== CANARY128: X128 off is predfix112's walker as merged (the control): `B.h` through a label the body writes on the place legal; X128 on refused, the message naming the rule and the ways in (MSG128)
+PASS CANARY128: off: legal; on: `B.h`: the path passes B's argument place, which no list opens (a compile error, core/labels/rule/argument-place): read it by the sender's own name (`
+== RULE128: reads judged by the model's full program builder against hand-filled verdicts, each citing the ruled line (or the marked lean) it rests on; every legal read's answers against a regex written by hand
+   B(A) & (B.h: <5)                                           the strong lean: a label the body writes passes nothing | `B.h`: the path passes B's argument place, which no list opens (a compile error, core/labels/rule/argument-place): read it by the 
+   B(A) & (A.h: <5)                                           the sender's name, the shorthand (argument-default) | legal, equal to the hand regex `[0-4]xx`
+   B(A) & (B.p: <5)                                           the body's label itself | legal, equal to the hand regex `[0-4]xx`
+   B(A) & (B.p.h: <5)                                         the strong lean | `B.p.h`: the path passes B's argument place, which no list opens (a compile error, core/labels/rule/argument-place): read it by th
+   B([a = A]) & (B.a.h: <5)                                   caller-label-export: the macro's name is the call | `B.a.h`: the path passes B's argument place, which no list opens (a compile error, core/labels/rule/argument-place): read it by th
+   Y & (Y.a.h: <5)                                            caller-label-export: `Y.a.h` legal | legal, equal to the hand regex `[0-4]xx!`
+   Y & (Y.c.a.h: <5)                                          caller-label-export: `Y.c.a.h` an error | `Y.c.a.h`: the path passes B's argument place, which no list opens (a compile error, core/labels/rule/argument-place): read it by 
+   Y & (Y.c.h: <5)                                            caller-label-export: the call's label | `Y.c.h`: the path passes B's argument place, which no list opens (a compile error, core/labels/rule/argument-place): read it by th
+   Y & (Y.a.h: <5)                                            caller-label-export: `_a` keeps it in | `Y.a.h`: `a.h` is not visible through `Y` (a compile error, core/labels/paths)
+   X & (X.c.h: <5)                                            stacked-chain moved | `X.c.h`: the path passes B's argument place, which no list opens (a compile error, core/labels/rule/argument-place): read it by th
+   X & (X.a.h: <5)                                            caller-label-export: the re-spelling of `X.c.h` | legal, equal to the hand regex `[0-4]xx!;`
+   [pub = B([A = A])] & (pub.A.h: <5)                         caller-label-export: the call's label | `pub.A.h`: the path passes B's argument place, which no list opens (a compile error, core/labels/rule/argument-place): read it by 
+   [pub = B([A = A])] & (A.h: <5)                             the sender's own label | legal, equal to the hand regex `[0-4]xx`
+   X & (X.A.h: <5)                                            caller-label-export: written, from a binding that uses the caller | legal, equal to the hand regex `[0-4]xx!`
+   X & (X.A.h: <5)                                            shorthand-outside: the shorthand adds no export | `X.A.h`: the path crosses `A`, a part used alone in it (a compile error, path-rules rule 6)
+   [n = (P SEQ B(Q))] & (n.B.p.d: <5)                         alone-as-middle moved | `n.B.p.d`: the path passes B's argument place, which no list opens (a compile error, core/labels/rule/argument-place): read it by 
+   [n = (P SEQ B(Q))] & (Q.d: <5)                             the sender's name | legal, equal to the hand regex `\d,[0-4]xx`
+   B(A) & (B.p.d: <5)                                         closed-argument moved | `B.p.d`: the path passes B's argument place, which no list opens (a compile error, core/labels/rule/argument-place): read it by th
+   B(A) & (B.d: <5)                                           body-own-name: the body's own beside the place | legal, equal to the hand regex `\d-[0-4]`
+   identity(A) & (identity.h: <5)                             carve-out-reading: the door | legal, equal to the hand regex `[0-4]`
+   identity([a = A]) & (identity.a.h: <5)                     the door, a path through it | legal, equal to the hand regex `[0-4]`
+   W(/(?<h>\d)/, /;(?<e>\d)/) & (W.h: <5)                     the door: one argument sets it | legal, equal to the hand regex `[0-4];\d`
+   W(/(?<h>\d)/, /;(?<h>\d)/) & (W.h: "3")                    the door: one-path counts (not "own") | `W.h`: 2 labels `h` are visible from `W`, so no step may be skipped: no path from `W` names one of them alone (a compile error, co
+   Bo(Ad) & (Bo.d: <5)                                        the door with body-own-name: the body's own | legal, equal to the hand regex `[0-4]-\d`
+   B2(A) & (B2.p.h: <5)                                       the list under the body's label | legal, equal to the hand regex `[0-4]xx`
+   B2(A) & (B2.h: <5)                                         the list under the body's label, skipped | legal, equal to the hand regex `[0-4]xx`
+   hits(/a(?<g>x)?/) & (hits.hit.g: "x")                      hits-through-hit: legal with the list under `hit` | legal
+   [n = (P SEQ /,(?<d>\d)/)] & (n.d: <5)                      gate-beside-direct: legal | legal, equal to the hand regex `\d,[0-4]`
+PASS RULE128: 28 reads (15 legal against hand regexes); not as the ruling says: none
+== READINGS128: the manager's readings in the record entries this lane folds, each RUN
+   param-reference example 3, `checked(B) := B & (B.year: < 2100)`, as the model reads it: at the binding `checked(B) := B & (B.year: < 2100)`: checked names a label it does not hold: B__r53.; the reading 'legal' answers as `isodate & (isodate.year: < 2100)`: WHOLE `2024-02-29` HOLDS, `2150-01-01` FAILS, `1999-12-31` HOLDS / SEARCHED `2024-02-29 2150-01-01 1999-12-31` `2024-02-29`@0 / FIND-ALL `2024-02-29 2150-01-01 1999-12-31` [`2024-02-29`@0, `1999-12-31`@22]
+   stacked-chain's `X.c.h` re-spelled by Y labelling the argument, `X.a.h`, the old answers: SUPPORTED (control `X.c.h` vs `X.a.h`)
+   shorthand-outside's contrast in its old form, `pub.A.h` written out, is REFUSED by caller-label-export's asked words (so the manager's reading holds only in the moved form below): SUPPORTED (`pub.A.h` written out: refused)
+   the contrast, moved: from a binding that uses the caller, written legal, the shorthand refused: SUPPORTED (written legal / shorthand `X.A.h`: the path crosses `A`, a part used alone in it (a co)
+   carve-out-reading's observation: the remedy `[(=, _ = d) = rx]` is available today, the same answers (the door reads the body's own anyway): SUPPORTED (with and without the remedy)
+   hits-through-hit (the manager's call): the list under `hit` keeps `hits.hit.g` legal, its answers; without it refused: SUPPORTED (without the list: `hits.hit.g`: the path passes hits's argument place, which no list opens (a comp)
+   param-reference: "at the point of the call": a filter over the whole legal, the call at the weekday's own spot "a read before the match": SUPPORTED (filter legal / own spot at `day_named(wdname, mdy)`: a read before the match: `mdy` is matched)
+   param-reference example 3 (`checked`) NOT FOLDED: both readings run (the line above), listed for him: SUPPORTED (run)
+PASS READINGS128: 7 readings run, 7 as stated
+== OPEN128: the three unasked questions, each reading RUN: the printed one (the study's lean) and the other
+   list-over-label, printed (A)                 refused: `B1.h`: the path passes B1's argument place, which no list opens (a compile error, core/la
+   list-over-label, the other (A2)              legal WHOLE `3xx` HOLDS, `7xx` FAILS / SEARCHED `7xx 3xx` `3xx`@4 / FIND-ALL `3xx 7xx 4xx` [`3xx`@0, `4xx`@8]
+   list-over-label, `B1.p` in both              legal WHOLE `3xx` HOLDS, `7xx` FAILS / SEARCHED `7xx 3xx` `3xx`@4 / FIND-ALL `3xx 7xx 4xx` [`3xx`@0, `4xx`@8]
+   forwarded-place, printed (A)                 legal WHOLE `<3>` HOLDS, `<7>` FAILS / SEARCHED `<7> <3>` `<3>`@4 / FIND-ALL `<3> <7> <4>` [`<3>`@0, `<4>`@8]
+   forwarded-place, the other (A0)              refused: `Mx.h`: the path passes L2's argument place, which no list opens (a compile error, core/la
+   sent-over-body-label, printed                legal WHOLE `3xx` HOLDS, `7xx` FAILS / SEARCHED `7xx 3xx` `3xx`@4 / FIND-ALL `3xx 7xx 4xx` [`3xx`@0, `4xx`@8]
+   sent-over-body-label, the other (SENT128)    refused: the path from the sent label passes the body's label and the argument's place (sent-over-b
+PASS OPEN128: 7 runs, as each reading says: all
+== NAMED128: named-list-use: the use error at the call (and through a forwarding body), the twice-set argument legal (the last), the never-satisfiable body at its definition; each message names the label and the list
+   N(A) & (N.h: <5)         legal, equal to the hand regex
+   N(Ae) & (N.h: <5)        at `N(Ae)`: the argument exports no `h`, which N's list `(=h)` demands
+   N(A2) & (N.h: <5)        legal, equal to the hand regex
+   N(Aw) & (N.h: <5)        at `N(Aw)`: the argument exports no `h`, which N's list `(=h)` demands
+   M(Ae) & (M.h: <5)        at `M(Ae)`: the argument exports no `h`, which N's list `(=h)` demands, through M's place
+   M2(A)                    at M2's definition: `[q = r]` passes no `h` to N's list `(=h)`
+PASS NAMED128: 6 programs; not as ruled: none
+== REF128: param-reference: declared heads, the definition errors (lines 2, 4), the call errors (line 3), the expansion's answers against hand regexes; the weekday by the stand-in (WEEKDAY128 below)
+   isodate & before2100(isodate)                        legal, equal to the hand regex
+   isodate & jan(isodate)                               at jan's definition: `month` is not in the head's list `(=year)`
+   isodate & A(isodate)                                 at A's definition: the body reads `B` and never places it: declare the reference in the head, `A((=year))`
+   /(?<year>\d{4})/ & before2100(/(?<year>\d{4})/)      at `before2100(/(?<year>\d{4})/)`: a reference argument names something the caller placed, not a pattern
+   yr & before2100(yr)                                  at `before2100(yr)`: `yr` exports no `year`, which the head's list needs
+   isodate SEQ " " SEQ isodate & before2100(isodate)    at `before2100(isodate)`: `isodate` is placed twice: label the uses
+   (wdname & day_named(wdname, mdy)) SEQ " " SEQ mdy    at `day_named(wdname, mdy)`: a read before the match: `mdy` is matched after the call
+PASS REF128: 7 programs; not as ruled: none
+== WEEKDAY128: his question "Wednesday June 12, 1994": the filter over the whole, by the stand-in, against weekday.py's committed answers (the manager's run: a different program text and regex; both use python's datetime, the stand-in by design) and the calendar fact June 12, 1994 was a Sunday
+   WHOLE `Wednesday June 12, 1994` FAILS, `Sunday June 12, 1994` HOLDS, `Wednesday June 15, 1994` HOLDS / SEARCHED `Wednesday June 12, 1994; Sunday June 12, 1994; Wednesday June 15, 1994` `Sunday June 12, 1994`@25 / FIND-ALL `Wednesday June 12, 1994; Sunday June 12, 1994; Wednesday June 15, 1994` [`Sunday June 12, 1994`@25, `Wednesday June 15, 1994`@47]
+PASS WEEKDAY128: whole [False, True, True], find-all [('Sunday June 12, 1994', 25), ('Wednesday June 15, 1994', 47)] (weekday.out agrees: True)
+== TABLE128: the kinds table's three rows this lane writes (an argument's place, the shorthand, a label the caller writes), their cells read as text, against the walker's runs (two sources: the table's words, the walker)
+   place, skippable: only through a list                          the table says True, the walker True
+   place, outside: a wall but the sender's names                  the table says True, the walker True
+   place, exported: a label the body writes passes nothing        the table says True, the walker True
+   shorthand, skippable: no                                       the table says True, the walker True
+   caller's label, outside: by its own name, never through the call the table says True, the walker True
+   caller's label, exported: an underscore label keeps it in      the table says True, the walker True
+PASS TABLE128: 12 rows read, 6 cells against runs; differing: none
+== SWEEP128: every printed three-mode line RUN under this model; the starting commit 8e7cca4a9's lines under the control (X128 off: predfix112's walker and engine) against these, keyed by the program; every key gone or moved DECLARED
+   DROPPED OR MOVED BY A RULING core.md:492 `B(A) & (B.h: <5)`: the strong lean no-path-through-argument (marked), core/labels/rule/paths: a compile error now; the read `A.h`, the same answers (core/labels/rule/argument-place, the line "Through a call, the sender's name")
+   DROPPED OR MOVED BY A RULING core.md:544 `X & (X.c.h: <5)`: the strong lean no-path-through-argument (marked), and caller-label-export: a compile error now; re-spelled by Y labelling the argument, `X.a.h`, the same answers (READINGS128)
+   DROPPED OR MOVED BY A RULING core.md:602 `[n = (P SEQ B(Q))] & (n.B.p.d: <5)`: the strong lean no-path-through-argument (marked), a compile error now; the read `Q.d`, the same answers
+   DROPPED OR MOVED BY A RULING core.md:1164 `B(A) & (B.p.d: <5)`: the strong lean no-path-through-argument (marked), a compile error now; the read `A.d`
+   DROPPED OR MOVED BY A RULING core.md:1208 `[pub = B([A = A])] & (pub.A.h: <5)`: the strong lean no-path-through-argument (marked), and caller-label-export ("only the path through the call's own label" is an error): a compile error now; `A.h`, or `X.A.h` from a binding that uses the caller
+   DROPPED OR MOVED BY A RULING core.md:1210 `B(A) & (B.dd.d: <100)`: the strong lean no-path-through-argument (marked), a compile error now (argument-default and nested-scope); the read `A.d`
+   DROPPED OR MOVED BY A RULING core.md:2287 `C := B(A) & (B.dd.d: <100)`: the strong lean no-path-through-argument (marked), nested-scope's example 1, a compile error now (missed by the study's census)
+   ADDED core.md:545 `X & (X.a.h: <5)`: WHOLE `3xx!;` HOLDS, `7xx!;` FAILS / SEARCHED `7xx!; 3xx!;` `3xx!;`@6 / FIND-ALL `3xx!; 7xx!; 4xx!;` [`3xx!;`@0, `4xx!;`@12]
+   ADDED core.md:605 `[n = (P SEQ B(Q))] & (Q.d: <5)`: WHOLE `7,3xx` HOLDS, `3,7xx` FAILS / SEARCHED `3,7xx 7,3xx` `7,3xx`@6 / FIND-ALL `7,3xx 3,7xx 4,1xx` [`7,3xx`@0, `4,1xx`@12]
+   ADDED core.md:663 `B(A) & (A.h: <5)`: WHOLE `3xx` HOLDS, `7xx` FAILS / SEARCHED `7xx 3xx` `3xx`@4 / FIND-ALL `3xx 7xx 4xx` [`3xx`@0, `4xx`@8]
+   ADDED core.md:664 `B(A) & (B.p: <5)`: WHOLE `3xx` HOLDS, `7xx` FAILS / SEARCHED `7xx 3xx` `3xx`@4 / FIND-ALL `3xx 7xx 4xx` [`3xx`@0, `4xx`@8]
+   ADDED core.md:687 `W(/(?<h>\d)/, /;(?<e>\d)/) & (W.h: <5)`: WHOLE `3;7` HOLDS, `7;3` FAILS / SEARCHED `7;3 3;7` `3;7`@4 / FIND-ALL `3;7 7;3 1;2` [`3;7`@0, `1;2`@8]
+   ADDED core.md:688 `Bo(Ad) & (Bo.d: <5)`: WHOLE `3-7` HOLDS, `7-3` FAILS, `3-3` HOLDS, `7-7` FAILS / SEARCHED `7-7 3-7` `3-7`@4 / FIND-ALL `3-7 7-3 1-2 9-9` [`3-7`@0, `1-2`@8]
+   ADDED core.md:689 `Bo(Ad) & (Bo.d: <5)`: WHOLE `3-7` HOLDS, `7-3` FAILS, `3-3` HOLDS, `7-7` FAILS / SEARCHED `7-7 3-7` `3-7`@4 / FIND-ALL `3-7 7-3 1-2 9-9` [`3-7`@0, `1-2`@8]
+   ADDED core.md:690 `B2(A) & (B2.p.h: <5)`: WHOLE `3xx` HOLDS, `7xx` FAILS / SEARCHED `7xx 3xx` `3xx`@4 / FIND-ALL `3xx 7xx 4xx` [`3xx`@0, `4xx`@8]
+   ADDED core.md:706 `Y & (Y.a.h: <5)`: WHOLE `3xx!` HOLDS, `7xx!` FAILS / SEARCHED `7xx! 3xx!` `3xx!`@5 / FIND-ALL `3xx! 7xx! 4xx!` [`3xx!`@0, `4xx!`@10]
+   ADDED core.md:719 `B1(A) & (B1.p: <5)`: WHOLE `3xx` HOLDS, `7xx` FAILS / SEARCHED `7xx 3xx` `3xx`@4 / FIND-ALL `3xx 7xx 4xx` [`3xx`@0, `4xx`@8]
+   ADDED core.md:729 `Mx(A) & (Mx.h: <5)`: WHOLE `<3>` HOLDS, `<7>` FAILS / SEARCHED `<7> <3>` `<3>`@4 / FIND-ALL `<3> <7> <4>` [`<3>`@0, `<4>`@8]
+   ADDED core.md:739 `Rs(x:, A) & (x.h: <5)`: WHOLE `3xx` HOLDS, `7xx` FAILS / SEARCHED `7xx 3xx` `3xx`@4 / FIND-ALL `3xx 7xx 4xx` [`3xx`@0, `4xx`@8]
+   ADDED core.md:1129 `N(A) & (N.h: <5)`: WHOLE `3` HOLDS, `7` FAILS / SEARCHED `7 3` `3`@2 / FIND-ALL `3 7 4` [`3`@0, `4`@4]
+   ADDED core.md:1131 `N(A2) & (N.h: <5)`: WHOLE `37` FAILS, `73` HOLDS / SEARCHED `37 73` `73`@3 / FIND-ALL `37 73 44` [`73`@3, `44`@6]
+   ADDED core.md:1357 `X & (X.A.h: <5)`: WHOLE `3xx!` HOLDS, `7xx!` FAILS / SEARCHED `7xx! 3xx!` `3xx!`@5 / FIND-ALL `3xx! 7xx! 4xx!` [`3xx!`@0, `4xx!`@10]
+   ADDED core.md:2691 `isodate & before2100(isodate)`: WHOLE `2024-02-29` HOLDS, `2150-01-01` FAILS / SEARCHED `x 2150-01-01 1999-12-31` `1999-12-31`@13 / FIND-ALL `2024-02-29 2150-01-01 1999-12-31` [`2024
+   ADDED core.md:2692 `[d = isodate] SEQ " " SEQ [e = isodate] & before2100(d) & !before2100(e)`: WHOLE `2024-02-29 2150-01-01` HOLDS, `2150-01-01 2024-02-29` FAILS, `2024-02-29 2025-03-01` FAILS / SEARCHED `2150-01-01 2024-02-29 2150-01-01` `2024-
+   ADDED core.md:2712 `wdname SEQ " " SEQ mdy & day_named(wdname, mdy)`: WHOLE `Wednesday June 12, 1994` FAILS, `Sunday June 12, 1994` HOLDS, `Wednesday June 15, 1994` HOLDS / SEARCHED `Wednesday June 12, 1994; Sunday June 
+PASS SWEEP128: 428 printed lines now (DIFF 7, REFUSED 53, same 367, unparsed 1), 392 keys at the starting commit; not same and not inherited 0 (inherited 61); moved 0; gone 0; declared 7; added 18; stale 0
+== ERRSWEEP128: every printed compile-error line of the base files refused under this model, no crash; each named form in the refusal's message (MSG112's rows less the reads now legal, and this lane's)
+PASS ERRSWEEP128: 111 compile-error lines read, each refused with no crash: bad none; named form missing none; message rows with no line none
+== SPECLINES128: every printed line new in this lane (not in its file at the starting commit) is RUN: a three-mode line SAME as run, a compile-error line refused
+PASS SPECLINES128: 44 new printed lines: three-mode 19, compile-error 25, unread 0; not as printed: none
+== STALE128: the base files, continuation lines joined, hold none of the texts this fold retires; the withdrawn clause printed nowhere in the six files
+PASS STALE128: 7 retired texts searched; found none
+== MARK128: the strong lean's mark: its exact phrase at every site, counted; the home piece open under its slug; every line this lane moved to a compile error by the lean carries it
+PASS MARK128: 38 marked sites (core.md 35, library.md 3, parked.md 0); home piece open and marked: True; moved lines unmarked or missing: none; a variant phrase: none
+== MECH128: every read MECHROUTE128 answered (MECH111 with the walker's target), where the control engine (X128 off, predfix112 as merged) also reads it legal and to the same group, answers equal: a second source
+   identity(A) & (identity.h: <5)                 routed True; MECH111 equal to the control engine
+   B2(A) & (B2.h: <5)                             routed True; MECH111 equal to the control engine
+   W(/(?<h>\d)/, /;(?<e>\d)/) & (W.h: <5)         routed True; MECH111 equal to the control engine
+   ROUTED B(A) & (B.d: <5)  read B.d  target ('A', 1, 'd')
+   ROUTED B1(A) & (B1.h: <5)  read B1.h  target ('A', 1, 'h')
+   ROUTED B2(A) & (B2.h: <5)  read B2.h  target ('A', 1, 'h')
+   ROUTED B2(A) & (B2.p.h: <5)  read B2.p.h  target ('A', 1, 'h')
+   ROUTED Bo(Ad) & (Bo.d: <5)  read Bo.d  target ('Bo', 1, 'd')
+   ROUTED Mx(A) & (Mx.h: <5)  read Mx.h  target ('A', 1, 'h')
+   ROUTED W(/(?<h>\d)/, /;(?<e>\d)/) & (W.h: <5)  read W.h  target ('P', 1, 'h')
+   ROUTED X & (X.A.h: <5)  read X.A.h  target ('A', 1, 'h')
+   ROUTED X & (X.a.h: <5)  read X.a.h  target ('A', 1, 'h')
+   ROUTED Y & (Y.a.h: <5)  read Y.a.h  target ('A', 1, 'h')
+   ROUTED identity(A) & (identity.d: <5)  read identity.d  target ('A', 1, 'd')
+   ROUTED identity(A) & (identity.h: <5)  read identity.h  target ('A', 1, 'h')
+   ROUTED identity([a = A]) & (identity.a.h: <5)  read identity.a.h  target ('A', 1, 'h')
+PASS MECH128: 13 distinct reads routed over the run so far; 3 controls routed and equal; not: none
+== QUOTES128: the owner's words this lane quotes, each in the record at the PINNED starting commit and in its piece; every record title a predfold1128 item cites is a title of that record
+PASS QUOTES128: 8 quoted sentences (missing: none); 9 record titles cited (not a title at 8e7cca4a9: none)
+== SUCCESSOR128: every in-force model re-run: predfix112 in full, and the twenty its SUCCESSOR112 re-runs (their outputs dumped through it); each red DECLARED in predfold1128_succ_decl.tsv by predfix90's `red_key10` key, which carries the red's own FAIL line and no document line numbers; a traceback never
+   predarr       last line: predarr_model: 17 checks, 1 failed (DOC)
+   predbound     last line: predbound_model: 21 checks, 3 failed (SWEEP, MARKS, DOC)
+   predcall      last line: predcall_model: 14 checks, 5 failed (CLOSED, MARKS, SCAN, PREDREF, DOC)
+   preddef       last line: preddef_model: 22 checks, 5 failed (UNMARKED, SUCCESSOR, SWEEP, MARKS, DOC)
+   predfix111    last line: predfix111_model: 14 checks, 5 failed (SWEEP111, ERRSWEEP111, SPECLINES111, QUOTES111, SUCCESSOR111)
+   predfix112    last line: predfix112_model: 11 checks, 6 failed (TABLE112, SWEEP112, ERRSWEEP112, SPECLINES112, QUOTES112, SUCCESSOR112)
+   predfix77     last line: predfix77_model: 20 checks, 2 failed (MARKS, DOC)
+   predfix82     last line: predfix82_model: 22 checks, 5 failed (REPRINT, SUCCESSOR, SWEEP, MARKS, DOC)
+   predfix83     last line: predfix83_model: 25 checks, 5 failed (UNMARKED, SWEEP, SUCCESSOR, MARKS, DOC)
+   predfix84     last line: predfix84_model: 37 checks, 3 failed (GRID, SWEEP, DOC)
+   predfix86     last line: predfix86_model: 29 checks, 2 failed (SWEEP, DOC)
+   predfix88     last line: predfix88_model: 25 checks, 8 failed (UNSPEC, SHORTHAND, STACKCHAIN, SPOTON, TABLE, NAMEGRID, SWEEP, DOC)
+   predfix90     last line: predfix90_model: 26 checks, 8 failed (TABLE, NAMEGRID, PATHS10, GRID, TABLE10, SWEEP, ERRSWEEP, DOC)
+   predfold1123  last line: predfold1123_model: 18 checks, 3 failed (SWEEP, NULLABLE, DOC)
+   predfold1123b last line: predfold1123b_model: 18 checks, 2 failed (SWEEP, DOC)
+   predfold1124  last line: predfold1124_model: 20 checks, 6 failed (TABLE, NAMEGRID, FLAGS, SWEEP, ERRSWEEP, DOC)
+   predfold1125  last line: predfold1125_model: 15 checks, 6 failed (CENSUS11, SWEEP11, ERRSWEEP11, SUCCESSOR11, QUOTES11, DOC11)
+   predfold1127  last line: predfold1127_model: 13 checks, 5 failed (SWEEP1127, ERRSWEEP1127, SPECLINES1127, QUOTES1127, SUCCESSOR1127)
+   predref       last line: predref_model: 8 checks, 3 failed (SCAN, MARKS, DOC)
+   predscope     last line: predscope_model: 20 checks, 2 failed (CLOSEDB, DOC)
+   predspot      last line: predspot_model: 27 checks, 3 failed (GRID, FSWEEP, DOC)
+PASS SUCCESSOR128: 21 models read, 88 reds, each against its declared key (88 declared): all as declared
+predfold1128_model: 16 checks, 0 failed
