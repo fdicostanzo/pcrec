@@ -757,8 +757,8 @@ history:
     25. A NAME IS PRIVATE WHEN IT STARTS WITH `_`, AND `[_ = A]` HIDES ALL OF A's NAMES (export-rule, ruled
         2026-11-18). A PART USED ALONE EXPORTS NOTHING (default-export, ruled 2026-11-22): outside a binding only its
         own names and what its public part labels pass are seen, a hole and the sequence operator alike; outside
-        `date := [y = year] SEQ "-" SEQ [m = month]`, `date.v` reads the last mention, the month's (flat-read-outside,
-        2026-11-21; the bare `v` refused since label-reference, 2026-11-22): write `date.m.v` to say which; outside
+        `date := [y = year] SEQ "-" SEQ [m = month]`, `date.v` is a compile error (one-path, 2026-11-27; before it the
+        last mention, flat-read-outside, 2026-11-21; the bare `v` refused since label-reference, 2026-11-22): write `date.m.v`; outside
         `date := year SEQ "-" SEQ month` there is no `v` at all. Spellings are placeholders. Added by lane
         predspec26; restated by lane predfix61; restated by lane predfix83 (review r83 D9: it taught hole-export's
         "a part's public labels pass through", reversed for an unlabelled part by default-export).
