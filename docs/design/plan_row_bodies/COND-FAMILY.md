@@ -12311,3 +12311,29 @@ manager's reading of what it does NOT say: it does not rule his own sentence in 
 available when there is exactly one path possible from the start to any end label visible from that start"),
 nor the per-match counting for an alternation, nor that the gate stays on top. Those are re-put to him as one
 statement; gate-twice-scope stays open until then.
+
+### 2026-11-27 OWNER RULING — one-path: "yes all five" (a step is skipped only where exactly one label of that name is visible from the start; it answers gate-twice-scope)
+tags: core/labels/rule/paths core/labels/rule/alone-as-middle core/labels/rule/kinds core/labels/flow lib/counting/some
+His words, verbatim: "one-path: yes all five"
+RULED (answered by slug), the statement AS ASKED, quoted:
+"**one-path:** a step in a path may be skipped only when exactly one label of that name is visible from the start.
+1. It is counted within one match, so a read into an alternation is legal: `pair.x` for `pair := [b =
+/(?<x>\d)/] | [c = /a(?<x>\d)/]` reads the `x` of the branch taken.
+2. A part used alone is still never skipped, even when it holds the only target.
+3. The array form is exempt, as you just said.
+4. It replaces "in a sequence the last mention wins" for skipped reads. Four printed reads become errors that ask
+for the full path, for example `date.v` over `[y = /(?<v>\d)/] SEQ "-" SEQ [m = /(?<v>\d)/]`.
+5. A name counts as used once or twice by what lies under the path's start, which answers gate-twice-scope."
+Its origin is his own sentence (the PROPOSAL entry above): "skipping steps in a path is available when there is
+exactly one path possible from the start to any end label visible from that start."
+It AMENDS rule 4's "unambiguously" as put and ruled 2026-11-23 ("in a sequence the last mention wins; across `|`
+the branch taken") for SKIPPED reads: the sequence clause is replaced (line 4), the alternation clause kept (line
+1), `&` an error as before. It CLOSES gate-twice-scope (line 5: under the start; the documents' marked reading
+(b)). With gate-beside-label (ruled above) it leaves no marked placeholder in core/labels/rule/alone-as-middle.
+The manager's readings, for the fold to test: (a) "visible" excludes what a wall hides (skip-past-wall) and
+INCLUDES what a gate holds (so a gated target beside a written one is two, the gate-beside-label error); (b) two
+settings of the NAME ITSELF with nothing skipped (`D2.c` over `/(?<c>\d)(?<c>\d)/`, `aa.h` over two `[aa = ..]`)
+are label flow, untouched: the last mention; (c) the four reads the census names (`date.v`, `c.d`, `B.d`, `W.h`)
+are the ones that move, and the 59 reads the walker did not parse are to be judged, not assumed; (d) the array
+form over a gate: line 3 exempts it from one-path, line 2 still says a gate is never skipped: which wins for
+`@n.d` through a part used alone is to be RUN both ways and listed as a question, not chosen.
