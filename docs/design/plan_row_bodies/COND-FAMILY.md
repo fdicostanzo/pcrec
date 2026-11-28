@@ -12410,3 +12410,23 @@ label the BODY writes on the argument's place. A grep of the printed conditions 
 (not classed by the model): `B.d` 6, `B.h` 4, `identity.h` 2, `identity.d` 2, `B.dd.d` 2, `B.a` 2, and one each
 of `peek.d`, `pair.x`, `pair.d`, `pair.b.x`, `list_of.h`, `identity.a.h`, `W.h`, `B.y.a`, `B.x.a`, `B.p.d`,
 `B.n.h`, `B.a.d`.
+
+### 2026-11-27 OWNER, a STRONG LEAN on no-path-through-argument ("yes with your carve out for exported labels"); a request ("Can you find any other unanticipated problems?"); a LEAN on a listed label an argument lacks
+tags: core/labels/rule/one-path core/labels/rule/paths core/labels/paths/call-prefix lib/convention/argument-labels core/labels/export/export-list core/labels/export/arguments
+His words, verbatim: "no-path-through-argument: let's do a strong lean yes with your carve out for exported
+labels. Can you find any other unanticipated problems?  If someone is doing (=) = type export they should know
+what they're doing.
+Also,
+A(rx) := [(=foo) = rx]
+That is basically declaring that it requires the foo label exists. I lean a use error base on arg not a
+declaration error of A"
+Class: a STRONG LEAN, in his word, on the statement as put: "a path never goes through an argument's place. The
+labels inside an argument are reached only by the sender's own names for it, or where the body passes them on by
+an export list, in which case they count as the body's own labels." NOT a ruling: he asks first for other
+unanticipated problems. A second LEAN: a body's export list that NAMES a label of its argument
+(`A(rx) := [(=foo) = rx]`) requires the argument to have it; an argument without `foo` is an error at the USE
+(the call), not at A's definition. (The documents print no line for a listed name the part lacks:
+core/labels/export/export-list, read today.)
+Done on his request: a study lane (predarg, read-only on the documents) to class every printed read through a
+macro by its route, list what the lean moves, and hunt for problems; its report comes back to him before the
+statement is asked as a ruling.
