@@ -29,7 +29,8 @@ under `make` reads it.
   - Its verdict is its last line, `predfix112_model: N checks, F failed`. It exits non-zero iff that line reports
     a failure.
   - Run: `timeout 6000 python3 -I -B <this dir>/predfix112_model.py` from the worktree root, with
-    `PREDFIX112_SUCCDIR=DIR` (an existing scratch directory for the successor outputs).
+    `PREDFIX112_SUCCDIR=DIR` (an existing EMPTY scratch directory for the successor outputs: the older models read
+    every `.out` in it, so a stale dump turns SUCCESSOR111 and SUCCESSOR1127 red; SUCCESSOR112 refuses a non-empty one).
     - `PREDFIX112_LIGHT=1` skips SUCCESSOR112. `PREDFIX112_READDUMP=1` reads DIR instead of re-running.
     - `PREDFIX112_WRITEDECL=F` writes the seen reds as a declaration draft.
   - `PREDFIX112_SABOTAGE=sN` plants one wrong rule, fact or text per check (PLANTS112, s1..s12). `=all` runs every

@@ -23,8 +23,8 @@ PINNED COMMITS (review r112 COORD-1): this model reads git ONLY by commit id (ST
 re-runs still read by branch NAME in one place: predfold1123_model.py reads `lane/pred-rev28:` (a clone without
 that local branch turns predfold1123 QUOTES and predfix111 SUCCESSOR111 red); those lane files are historical and
 are not edited.
-`PREDFIX112_LIGHT=1` skips SUCCESSOR112; `PREDFIX112_SUCCDIR=DIR` an existing scratch directory for the successor
-outputs; `PREDFIX112_READDUMP=1` reads DIR instead of re-running; `PREDFIX112_SABOTAGE=sN` plants one wrong rule,
+`PREDFIX112_LIGHT=1` skips SUCCESSOR112; `PREDFIX112_SUCCDIR=DIR` an existing EMPTY scratch directory for the
+successor outputs (the older models read every `.out` in it); `PREDFIX112_READDUMP=1` reads DIR instead of re-running; `PREDFIX112_SABOTAGE=sN` plants one wrong rule,
 fact or text per check (PLANTS112); `=all` runs each plant in its own LIGHT subprocess.
 Run: `timeout 6000 python3 -I -B <this dir>/predfix112_model.py`.
 """
@@ -475,6 +475,8 @@ SCR112 = os.environ.get("PREDFIX112_SUCCDIR", "")
 RD112 = os.environ.get("PREDFIX112_READDUMP") == "1"
 sc_bad, sc_seen, sc_outs = [], [], {}
 if not LIGHT112 or RD112:
+    if not RD112 and os.listdir(SCR112):                    # the older models read EVERY .out in the directory:
+        sc_bad.append(("PREDFIX112_SUCCDIR", SCR112, "NOT EMPTY (a stale dump is read as a model)"))   # a fresh one
     if not RD112:
         env = {k: v for k, v in os.environ.items() if not k.startswith(("PREDFIX111_", "PREDFOLD1125_", "PREDFOLD1127_",
                                                                         "PREDFIX90_", "PREDFIX112_"))}
