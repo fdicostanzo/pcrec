@@ -12559,3 +12559,15 @@ Class: his RESTATEMENT of the manager's reading, put as a check (not a ruling; p
 manager's answer, told to him: yes; the argument then names something the caller placed (a label the caller
 wrote, or a binding's name as the caller used it), and which kind a parameter is can be read off the definition
 (placed: a pattern; read and never placed: a reference), though NOT off the call.
+
+### 2026-11-27 OWNER, on param-reference: "I dislike the secret change from pattern to reference ... it should be declared then enforced"
+tags: core/operators/bindings/label-kinds core/operators/bindings/macro-types core/holes/bare-condition/bound-condition core/labels/export/arguments
+His words, verbatim: "I like the direction and the fact that this allows one to bind conditions. I dislike the
+secret change from pattern to reference. Even if it's detectable, I think it should be declared then enforced."
+Class: a LEAN for the direction and a REQUIREMENT on its form (a reference parameter is DECLARED, then ENFORCED;
+it is never inferred from the body); not a ruling of a statement; param-reference is re-put to him with the
+declaration. The manager's reading of what falls: his own shorthand of two entries back, `A(B) := B.year` with no
+declaration, is the "secret change" and would be an error at the definition; the head list
+(`weekday_of((=year, =month,=day))`) is a declaration already. "bind conditions": a macro whose body is a
+condition over a declared reference is a named condition with its target declared
+(core/holes/bare-condition/bound-condition, core/operators/bindings/macro-types).
